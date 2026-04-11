@@ -27,76 +27,96 @@ export function Hero({
   trustItems,
 }: HeroProps) {
   return (
-    <section className="relative min-h-[580px] md:min-h-[680px] flex items-center overflow-hidden bg-surface-dark">
-      {/* Background image — visible, not hidden */}
+    <section className="relative min-h-[520px] md:min-h-[600px] flex items-center overflow-hidden bg-surface-dark">
+      {/* Background image */}
       {backgroundImage && (
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-        >
-          {/* Gradient: strong on the left for text readability, transparent on right to show the image */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0c1018]/90 via-[#0c1018]/60 to-transparent" />
-        </div>
+        <>
+          <div
+            className="absolute inset-0 bg-cover bg-no-repeat"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundPosition: "35% 35%",
+            }}
+          />
+          {/* Gradient overlay — matches original exactly */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(to right, rgba(10,14,20,0.93) 0%, rgba(10,14,20,0.85) 22%, rgba(10,14,20,0.3) 38%, transparent 52%)",
+                "linear-gradient(to top, rgba(10,14,20,0.35) 0%, transparent 20%)",
+              ].join(", "),
+            }}
+          />
+        </>
       )}
       {!backgroundImage && (
         <div className="absolute inset-0 bg-gradient-to-br from-surface-dark via-brand-blue-dark/20 to-surface-dark" />
       )}
 
-      {/* Content */}
-      <div className="relative z-10 max-w-[1320px] mx-auto px-6 md:px-10 py-16 md:py-24 w-full">
-        <div className="max-w-[600px]">
-          {/* Badge — green dot + uppercase gold like original */}
+      {/* Content — max-width 400px like original */}
+      <div
+        className="relative z-10 w-full"
+        style={{ padding: "0 0 0 clamp(24px, 5vw, 80px)" }}
+      >
+        <div className="max-w-[420px] py-10 md:py-12">
+          {/* Badge — 12px uppercase with warm dot */}
           {badge && (
-            <div className="flex items-center gap-2 mb-6">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0" />
-              <span className="text-brand-gold uppercase text-sm font-bold tracking-widest">
+            <div className="flex items-center gap-1.5 mb-5">
+              <span className="w-2 h-2 rounded-full bg-brand-gold flex-shrink-0" />
+              <span className="text-brand-gold uppercase text-xs font-semibold tracking-[0.06em]">
                 {badge}
               </span>
             </div>
           )}
 
-          {/* Title — large, bold, Space Grotesk */}
-          <h1 className="font-display text-[2.5rem] md:text-[3.5rem] lg:text-[4rem] font-bold text-white leading-[1.08] mb-6 tracking-tight">
+          {/* Title — clamp(2.2rem, 4.5vw, 3rem), tracking -0.02em */}
+          <h1
+            className="font-display font-bold text-white mb-4"
+            style={{
+              fontSize: "clamp(2.2rem, 4.5vw, 3rem)",
+              lineHeight: 1.12,
+              letterSpacing: "-0.02em",
+            }}
+          >
             {title}
           </h1>
 
-          {/* Subtitle */}
+          {/* Subtitle — 1.05rem */}
           {subtitle && (
-            <p className="text-base md:text-lg text-gray-300/90 leading-relaxed mb-8 max-w-[480px]">
+            <p className="text-[1.05rem] text-text-on-dark leading-relaxed mb-7">
               {subtitle}
             </p>
           )}
 
-          {/* CTAs */}
-          <div className="flex flex-wrap gap-4 mb-12">
+          {/* CTAs — gap 12px */}
+          <div className="flex flex-wrap gap-3">
             {cta1Text && (
               <Link
                 href={cta1Url || "#"}
-                className="inline-flex items-center gap-2.5 bg-brand-blue hover:bg-brand-blue-light text-white px-7 py-3.5 rounded-lg font-semibold text-[15px] transition-all hover:translate-y-[-1px] hover:shadow-xl shadow-brand-blue/30"
+                className="inline-flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-light text-white px-6 py-3 rounded-lg font-semibold text-[15px] transition-all hover:translate-y-[-1px] hover:shadow-lg"
               >
                 {cta1Text}
-                <ArrowRight className="w-4.5 h-4.5" />
+                <ArrowRight className="w-4 h-4" />
               </Link>
             )}
             {cta2Text && (
               <Link
                 href={cta2Url || "#"}
-                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white px-7 py-3.5 rounded-lg font-semibold text-[15px] transition-all"
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 text-white px-6 py-3 rounded-lg font-semibold text-[15px] transition-all"
               >
                 {cta2Text}
               </Link>
             )}
           </div>
 
-          {/* Trust items — inline row */}
+          {/* Trust items — border-top, 13px, white bold */}
           {trustItems && trustItems.length > 0 && (
-            <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
+            <div className="flex items-center gap-6 mt-8 pt-5 border-t border-white/15 text-[13px] text-gray-400">
               {trustItems.map((item, i) => (
-                <div key={i} className="flex items-baseline gap-1.5">
-                  <span className="font-display text-xl md:text-2xl font-bold text-brand-gold">
-                    {item.bold}
-                  </span>
-                  <span className="text-sm text-gray-400">{item.text}</span>
+                <div key={i} className="flex items-center gap-1.5">
+                  <span className="text-white font-semibold">{item.bold}</span>
+                  <span>{item.text}</span>
                 </div>
               ))}
             </div>

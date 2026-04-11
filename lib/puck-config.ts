@@ -44,12 +44,12 @@ export const puckConfig: Config = {
       label: "Hero-sektion",
 
       fields: {
-        badge: { type: "text", label: "Badge-text" },
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "textarea", label: "Underrubrik" },
-        cta1Text: { type: "text", label: "Knapp 1 text" },
+        badge: { type: "text", label: "Badge-text", contentEditable: true },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "textarea", label: "Underrubrik", contentEditable: true },
+        cta1Text: { type: "text", label: "Knapp 1 text", contentEditable: true },
         cta1Url: { type: "text", label: "Knapp 1 länk" },
-        cta2Text: { type: "text", label: "Knapp 2 text" },
+        cta2Text: { type: "text", label: "Knapp 2 text", contentEditable: true },
         cta2Url: { type: "text", label: "Knapp 2 länk" },
         backgroundImage: { type: "text", label: "Bakgrundsbild URL" },
         trustItems: {
@@ -84,8 +84,8 @@ export const puckConfig: Config = {
       label: "Sidrubrik",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "textarea", label: "Underrubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "textarea", label: "Underrubrik", contentEditable: true },
         variant: {
           type: "select",
           label: "Variant",
@@ -121,8 +121,8 @@ export const puckConfig: Config = {
             { label: "Trädgård", value: "tradgard" },
           ],
         },
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "text", label: "Underrubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "text", label: "Underrubrik", contentEditable: true },
         showSearch: { type: "radio", label: "Visa sökfält", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
         showFilters: { type: "radio", label: "Visa filter", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
         filterBrands: { type: "text", label: "Filtermärken (kommaseparerade)" },
@@ -146,8 +146,8 @@ export const puckConfig: Config = {
       label: "Vanliga frågor",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "text", label: "Underrubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "text", label: "Underrubrik", contentEditable: true },
         items: {
           type: "array",
           label: "Frågor",
@@ -175,8 +175,8 @@ export const puckConfig: Config = {
       label: "Call to Action",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "text", label: "Underrubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "text", label: "Underrubrik", contentEditable: true },
         showPhone: { type: "radio", label: "Visa telefon", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
         showEmail: { type: "radio", label: "Visa e-post", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
         variant: {
@@ -203,8 +203,8 @@ export const puckConfig: Config = {
       label: "Varför oss",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "text", label: "Underrubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "text", label: "Underrubrik", contentEditable: true },
         points: {
           type: "array",
           label: "Punkter",
@@ -312,9 +312,9 @@ export const puckConfig: Config = {
       label: "Spotlight-sektion",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "textarea", label: "Underrubrik" },
-        ctaText: { type: "text", label: "Knapptext" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "textarea", label: "Underrubrik", contentEditable: true },
+        ctaText: { type: "text", label: "Knapptext", contentEditable: true },
         ctaUrl: { type: "text", label: "Knapplänk" },
         backgroundImage: { type: "text", label: "Bakgrundsbild URL" },
         tags: { type: "text", label: "Taggar (kommaseparerade)" },
@@ -334,7 +334,7 @@ export const puckConfig: Config = {
       label: "Partnerlogotyper",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
         logos: {
           type: "array",
           label: "Logotyper",
