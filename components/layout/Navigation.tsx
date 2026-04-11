@@ -36,26 +36,26 @@ export function Navigation() {
         scrolled ? "shadow-md" : ""
       }`}
     >
-      <div className="max-w-[1140px] mx-auto px-4 flex items-center justify-between h-16 md:h-20">
+      <div className="max-w-[1320px] mx-auto px-6 flex items-center justify-between h-[72px] md:h-[84px]">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0">
           <Image
             src="/img/hm-motor-logo.png"
             alt="HM Motor Krokom"
-            width={140}
-            height={48}
-            className="h-10 md:h-12 w-auto"
+            width={180}
+            height={60}
+            className="h-12 md:h-14 w-auto"
             priority
           />
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-2">
           {mainLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="px-3 py-2 text-sm font-medium text-text-primary hover:text-brand-blue transition-colors rounded-md hover:bg-surface-light"
+              className="px-4 py-2 text-[15px] font-medium text-text-primary hover:text-brand-blue transition-colors"
             >
               {link.label}
             </Link>
@@ -93,8 +93,8 @@ export function Navigation() {
         {/* CTA + hamburger */}
         <div className="flex items-center gap-3">
           <a
-            href="tel:+46640-10350"
-            className="hidden md:flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+            href="tel:+46703218232"
+            className="hidden md:flex items-center gap-2.5 bg-brand-blue hover:bg-brand-blue-dark text-white px-6 py-3 rounded-full text-[15px] font-semibold transition-all hover:shadow-lg shadow-brand-blue/20"
           >
             <Phone className="w-4 h-4" />
             Ring Håkan
