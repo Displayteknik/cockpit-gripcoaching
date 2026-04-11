@@ -1,65 +1,146 @@
-import Image from "next/image";
+import { type Data } from "@puckeditor/core";
+import { supabase } from "@/lib/supabase";
+import { PuckRenderer } from "@/components/PuckRenderer";
+import { TopBar } from "@/components/layout/TopBar";
+import { Navigation } from "@/components/layout/Navigation";
+import { Footer } from "@/components/layout/Footer";
+import { MobileStickyButton } from "@/components/layout/MobileStickyButton";
 
-export default function Home() {
+// Default homepage data if no page is saved yet
+const defaultHomepage: Data = {
+  content: [
+    {
+      type: "Hero",
+      props: {
+        id: "hero-1",
+        badge: "Auktoriserad CF Moto-återförsäljare",
+        title: "Rätt fordon för jobb och fritid i Jämtland",
+        subtitle:
+          "Personlig rådgivning, inga genvägar. Vi har hjälpt kunder i Krokom med omnejd sedan 1990.",
+        cta1Text: "Se fyrhjulingar",
+        cta1Url: "/fordon?kategori=atv",
+        cta2Text: "Begagnade bilar",
+        cta2Url: "/fordon?kategori=car",
+        backgroundImage: "https://www.cfmoto.co.uk/wp-content/uploads/2025/04/CFORCE-1000-MV_Action-5.webp",
+        trustItems: [
+          { bold: "35+", text: "års erfarenhet" },
+          { bold: "14", text: "ATV-modeller i lager" },
+          { bold: "Wasa Kredit", text: "finansiering" },
+        ],
+      },
+    },
+    {
+      type: "QuickCategories",
+      props: {
+        id: "cats-1",
+        items: [
+          { label: "Bilar", url: "/fordon?kategori=car", icon: "car", count: "" },
+          { label: "Fyrhjulingar", url: "/fordon?kategori=atv", icon: "tractor", count: "" },
+          { label: "Mopeder", url: "/fordon?kategori=moped", icon: "bike", count: "" },
+          { label: "Släpvagnar", url: "/fordon?kategori=slapvagn", icon: "truck", count: "" },
+          { label: "Trädgård", url: "/fordon?kategori=tradgard", icon: "trees", count: "" },
+        ],
+      },
+    },
+    {
+      type: "VehicleGrid",
+      props: {
+        id: "featured-1",
+        category: "all",
+        title: "Utvalda fordon",
+        subtitle: "Handplockade erbjudanden just nu",
+        showSearch: false,
+        showFilters: false,
+        filterBrands: "",
+        maxItems: 6,
+        featuredOnly: true,
+      },
+    },
+    {
+      type: "WhySection",
+      props: {
+        id: "why-1",
+        title: "Mer än bara fordon",
+        subtitle: "",
+        points: [
+          {
+            title: "Personlig service",
+            description: "Vi tar oss tid att förstå dina behov och hittar rätt fordon för dig.",
+            icon: "heart",
+          },
+          {
+            title: "Kvalitetsgaranti",
+            description: "Alla fordon genomgår noggrann kontroll innan leverans.",
+            icon: "shield",
+          },
+          {
+            title: "Fullservice verkstad",
+            description: "Service och reparation av alla märken — allt under ett tak.",
+            icon: "wrench",
+          },
+        ],
+      },
+    },
+    {
+      type: "FAQ",
+      props: {
+        id: "faq-1",
+        title: "Vanliga frågor",
+        subtitle: "",
+        items: [
+          {
+            question: "Vilka fyrhjulingar säljer ni?",
+            answer:
+              "Vi är auktoriserad CF Moto-återförsäljare och erbjuder ett brett utbud av ATV och UTV för både jobb och fritid.",
+          },
+          {
+            question: "Kan jag provköra innan köp?",
+            answer:
+              "Absolut! Ring oss på 0640-103 50 så bokar vi en provkörning som passar dig.",
+          },
+          {
+            question: "Erbjuder ni finansiering?",
+            answer:
+              "Ja, vi samarbetar med Wasa Kredit och kan erbjuda förmånliga avbetalningslösningar.",
+          },
+        ],
+      },
+    },
+    {
+      type: "CTASection",
+      props: {
+        id: "cta-1",
+        title: "Redo att hitta ditt nästa fordon?",
+        subtitle: "Kontakta oss för personlig rådgivning — vi hjälper dig hela vägen",
+        showPhone: true,
+        showEmail: true,
+        variant: "blue",
+      },
+    },
+  ],
+  root: { props: { title: "HM Motor Krokom" } },
+};
+
+export default async function HomePage() {
+  // Try to load from Supabase
+  const { data: page } = await supabase
+    .from("hm_pages")
+    .select("*")
+    .eq("slug", "index")
+    .eq("is_published", true)
+    .single();
+
+  const pageData = page ? (page.data as Data) : defaultHomepage;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <TopBar />
+      <Navigation />
+      <main className="flex-1">
+        <PuckRenderer data={pageData} />
       </main>
-    </div>
+      <Footer />
+      <MobileStickyButton />
+    </>
   );
 }
