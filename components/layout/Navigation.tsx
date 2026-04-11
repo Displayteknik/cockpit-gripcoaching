@@ -6,18 +6,17 @@ import Image from "next/image";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
 
 const mainLinks = [
-  { href: "/", label: "Hem" },
   { href: "/fordon?kategori=car", label: "Bilar" },
   { href: "/fordon?kategori=atv", label: "Fyrhjulingar" },
-  { href: "/fordon?kategori=moped", label: "Mopeder" },
+  { href: "/fordon?kategori=moped", label: "Mopeder & Elcyklar" },
+  { href: "/om-oss", label: "Om oss" },
+  { href: "/kontakt", label: "Kontakt" },
 ];
 
 const moreLinks = [
   { href: "/fordon?kategori=slapvagn", label: "Släpvagnar" },
   { href: "/fordon?kategori=tradgard", label: "Trädgård" },
-  { href: "/om-oss", label: "Om oss" },
   { href: "/blogg", label: "Blogg" },
-  { href: "/kontakt", label: "Kontakt" },
 ];
 
 export function Navigation() {
