@@ -36,6 +36,7 @@ export function RichEditor({ content, onChange }: RichEditorProps) {
       Placeholder.configure({ placeholder: "Skriv ditt blogginlägg här..." }),
     ],
     content: content || "",
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
