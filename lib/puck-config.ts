@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { createElement } from "react";
 import type { Config } from "@puckeditor/core";
+import { DesignWrapper } from "@/components/puck/fields/DesignWrapper";
 // Existing section components
 import { Hero } from "@/components/puck/Hero";
 import { PageHeader } from "@/components/puck/PageHeader";
@@ -28,9 +30,88 @@ import { TimelineItem } from "@/components/puck/TimelineItem";
 import { Card } from "@/components/puck/Card";
 import { Section } from "@/components/puck/Section";
 import { PromoCard } from "@/components/puck/PromoCard";
-import { ColorField } from "@/components/puck/fields/ColorField";
+import { GradientColorField } from "@/components/puck/fields/GradientColorField";
+import { FontField } from "@/components/puck/fields/FontField";
+import { SpacingField } from "@/components/puck/fields/SpacingField";
+import { SizeField } from "@/components/puck/fields/SizeField";
+import { ImageField } from "@/components/puck/fields/ImageField";
 
-export const puckConfig: Config = {
+// Reusable field definitions for design controls
+const spacingField = (mode: "padding" | "margin" = "padding") => ({
+  type: "custom" as const,
+  label: mode === "padding" ? "Padding" : "Marginal",
+  render: ({ value, onChange }: any) => SpacingField({ value: value || { top: "0", right: "0", bottom: "0", left: "0" }, onChange, mode }),
+});
+
+const sizeField = {
+  type: "custom" as const,
+  label: "Storlek",
+  render: ({ value, onChange }: any) => SizeField({ value: value || { width: "auto", height: "auto", minWidth: "", maxWidth: "" }, onChange }),
+};
+
+const gradientField = (label: string = "Färg") => ({
+  type: "custom" as const,
+  label,
+  render: ({ value, onChange }: any) => GradientColorField({ value: value || "", onChange }),
+});
+
+const fontField = {
+  type: "custom" as const,
+  label: "Typsnitt",
+  render: ({ value, onChange }: any) => FontField({ value: value || "", onChange }),
+};
+
+const imageFieldDef = (label: string = "Bild") => ({
+  type: "custom" as const,
+  label,
+  render: ({ value, onChange }: any) => ImageField({ value: value || "", onChange }),
+});
+
+const defaultSpacing = { top: "0", right: "0", bottom: "0", left: "0" };
+const defaultSize = { width: "auto", height: "auto", minWidth: "", maxWidth: "" };
+
+// Design fields that every component should have
+const designFields = {
+  _color: gradientField("Färg"),
+  _font: fontField,
+  _spacing: spacingField(),
+  _size: sizeField,
+};
+
+const designDefaults = {
+  _color: "",
+  _font: "",
+  _spacing: defaultSpacing,
+  _size: defaultSize,
+};
+
+// Components that already have their own design fields (don't override)
+const HAS_OWN_DESIGN = new Set(["Heading", "Text", "Button", "Card", "FAQItem", "TimelineItem", "PromoCard"]);
+
+// Post-process: add design fields + wrap render for all components that don't have their own
+function addDesignFields(config: Config): Config {
+  for (const [name, comp] of Object.entries(config.components)) {
+    if (HAS_OWN_DESIGN.has(name)) continue;
+    const c = comp as any;
+    c.fields = { ...c.fields, ...designFields };
+    c.defaultProps = { ...c.defaultProps, ...designDefaults };
+
+    // Wrap render so _color/_font/_spacing/_size actually affect the output
+    const Original = c.render;
+    c.render = (props: any) => {
+      const { _color, _font, _spacing, _size, ...rest } = props;
+      const isEditing = rest.puck?.isEditing || false;
+      return createElement(
+        DesignWrapper,
+        { spacing: _spacing, componentSize: _size, color: _color, fontFamily: _font, editMode: isEditing },
+        createElement(Original, rest)
+      );
+    };
+  }
+  return config;
+}
+
+export const puckConfig: Config = addDesignFields({
   categories: {
     building: {
       title: "Byggblock",
@@ -58,7 +139,7 @@ export const puckConfig: Config = {
         cta1Url: { type: "text", label: "Knapp 1 länk" },
         cta2Text: { type: "text", label: "Knapp 2 text", contentEditable: true },
         cta2Url: { type: "text", label: "Knapp 2 länk" },
-        backgroundImage: { type: "text", label: "Bakgrundsbild URL" },
+        backgroundImage: imageFieldDef("Bakgrundsbild"),
         trustItems: {
           type: "array",
           label: "Trust-siffror",
@@ -323,7 +404,7 @@ export const puckConfig: Config = {
         subtitle: { type: "textarea", label: "Underrubrik", contentEditable: true },
         ctaText: { type: "text", label: "Knapptext", contentEditable: true },
         ctaUrl: { type: "text", label: "Knapplänk" },
-        backgroundImage: { type: "text", label: "Bakgrundsbild URL" },
+        backgroundImage: imageFieldDef("Bakgrundsbild"),
         tags: { type: "text", label: "Taggar (kommaseparerade)" },
       },
       defaultProps: {
@@ -347,7 +428,7 @@ export const puckConfig: Config = {
           label: "Logotyper",
           arrayFields: {
             name: { type: "text", label: "Namn" },
-            imageUrl: { type: "text", label: "Bild-URL" },
+            imageUrl: imageFieldDef("Logotyp"),
             url: { type: "text", label: "Webbplats" },
           },
         },
@@ -502,7 +583,7 @@ export const puckConfig: Config = {
       label: "Bildsektion",
 
       fields: {
-        imageUrl: { type: "text", label: "Bild-URL" },
+        imageUrl: imageFieldDef("Bild"),
         alt: { type: "text", label: "Alt-text" },
         caption: { type: "text", label: "Bildtext" },
         fullWidth: { type: "radio", label: "Fullbredd", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
@@ -523,8 +604,9 @@ export const puckConfig: Config = {
         background: { type: "select", label: "Bakgrund", options: [
           { label: "Vit", value: "white" }, { label: "Ljus", value: "light" },
           { label: "Dämpad", value: "muted" }, { label: "Mörk", value: "dark" },
-          { label: "Blå", value: "blue" },
+          { label: "Blå", value: "blue" }, { label: "Egen färg/gradient", value: "custom" },
         ]},
+        customBg: gradientField("Egen bakgrund"),
         padding: { type: "select", label: "Padding", options: [
           { label: "Liten", value: "sm" }, { label: "Medium", value: "md" },
           { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
@@ -543,7 +625,7 @@ export const puckConfig: Config = {
           { label: "Litet", value: "sm" }, { label: "Medium", value: "md" }, { label: "Stort", value: "lg" },
         ]},
       },
-      defaultProps: { background: "white", padding: "lg", maxWidth: "wide", layout: "stack", gap: "md" },
+      defaultProps: { background: "white", padding: "lg", maxWidth: "wide", layout: "stack", gap: "md", customBg: "" },
       render: Section as any,
     },
 
@@ -559,18 +641,17 @@ export const puckConfig: Config = {
         align: { type: "select", label: "Justering", options: [
           { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
         ]},
-        color: {
-          type: "custom",
-          label: "Färg",
-          render: ({ value, onChange }: any) => ColorField({ value: value || "", onChange }),
-        },
+        color: gradientField("Färg"),
         size: { type: "select", label: "Storlek", options: [
           { label: "Liten", value: "sm" }, { label: "Medium", value: "md" },
           { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
           { label: "Jättestor", value: "2xl" },
         ]},
+        fontFamily: fontField,
+        spacing: spacingField(),
+        componentSize: sizeField,
       },
-      defaultProps: { text: "Rubrik", level: "h2", align: "left", color: "", size: "lg" },
+      defaultProps: { text: "Rubrik", level: "h2", align: "left", color: "", size: "lg", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
       render: Heading as any,
     },
 
@@ -582,17 +663,16 @@ export const puckConfig: Config = {
         align: { type: "select", label: "Justering", options: [
           { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
         ]},
-        color: {
-          type: "custom",
-          label: "Färg",
-          render: ({ value, onChange }: any) => ColorField({ value: value || "", onChange }),
-        },
+        color: gradientField("Färg"),
         size: { type: "select", label: "Storlek", options: [
           { label: "Liten", value: "sm" }, { label: "Normal", value: "base" },
           { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
         ]},
+        fontFamily: fontField,
+        spacing: spacingField(),
+        componentSize: sizeField,
       },
-      defaultProps: { text: "Skriv din text här...", align: "left", color: "", size: "base" },
+      defaultProps: { text: "Skriv din text här...", align: "left", color: "", size: "base", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
       render: Text as any,
     },
 
@@ -605,6 +685,7 @@ export const puckConfig: Config = {
         variant: { type: "select", label: "Stil", options: [
           { label: "Blå (fylld)", value: "blue" }, { label: "Outline", value: "outline" },
           { label: "Vit", value: "white" }, { label: "Ghost", value: "ghost" },
+          { label: "Egen färg", value: "custom" },
         ]},
         size: { type: "select", label: "Storlek", options: [
           { label: "Liten", value: "sm" }, { label: "Medium", value: "md" }, { label: "Stor", value: "lg" },
@@ -616,8 +697,13 @@ export const puckConfig: Config = {
         align: { type: "select", label: "Justering", options: [
           { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
         ]},
+        bgColor: gradientField("Bakgrundsfärg"),
+        textColor: gradientField("Textfärg"),
+        fontFamily: fontField,
+        spacing: spacingField(),
+        componentSize: sizeField,
       },
-      defaultProps: { text: "Klicka här", url: "#", variant: "blue", size: "md", icon: "none", align: "left" },
+      defaultProps: { text: "Klicka här", url: "#", variant: "blue", size: "md", icon: "none", align: "left", bgColor: "", textColor: "", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
       render: Button as any,
     },
 
@@ -635,8 +721,10 @@ export const puckConfig: Config = {
           { label: "Standard", value: "default" }, { label: "Centrerat", value: "centered" },
           { label: "Horisontellt", value: "horizontal" },
         ]},
+        spacing: spacingField(),
+        componentSize: sizeField,
       },
-      defaultProps: { title: "Titel", text: "Beskrivning...", icon: "heart", variant: "default" },
+      defaultProps: { title: "Titel", text: "Beskrivning...", icon: "heart", variant: "default", spacing: defaultSpacing, componentSize: defaultSize },
       render: Card as any,
     },
 
@@ -645,8 +733,12 @@ export const puckConfig: Config = {
       fields: {
         question: { type: "text", label: "Fråga", contentEditable: true },
         answer: { type: "textarea", label: "Svar", contentEditable: true },
+        color: gradientField("Textfärg"),
+        fontFamily: fontField,
+        spacing: spacingField(),
+        componentSize: sizeField,
       },
-      defaultProps: { question: "Fråga?", answer: "Svar..." },
+      defaultProps: { question: "Fråga?", answer: "Svar...", color: "", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
       render: FAQItem as any,
     },
 
@@ -656,8 +748,12 @@ export const puckConfig: Config = {
         year: { type: "text", label: "År", contentEditable: true },
         title: { type: "text", label: "Titel", contentEditable: true },
         text: { type: "textarea", label: "Text", contentEditable: true },
+        color: gradientField("Textfärg"),
+        fontFamily: fontField,
+        spacing: spacingField(),
+        componentSize: sizeField,
       },
-      defaultProps: { year: "2024", title: "Händelse", text: "Beskrivning..." },
+      defaultProps: { year: "2024", title: "Händelse", text: "Beskrivning...", color: "", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
       render: TimelineItem as any,
     },
 
@@ -669,9 +765,14 @@ export const puckConfig: Config = {
         text: { type: "textarea", label: "Text", contentEditable: true },
         linkUrl: { type: "text", label: "Länk URL" },
         linkText: { type: "text", label: "Länktext", contentEditable: true },
+        bgColor: gradientField("Bakgrundsfärg"),
+        textColor: gradientField("Textfärg"),
+        fontFamily: fontField,
+        spacing: spacingField(),
+        componentSize: sizeField,
       },
-      defaultProps: { label: "Nyhet", title: "Titel", text: "Beskrivning...", linkUrl: "#", linkText: "Läs mer" },
+      defaultProps: { label: "Nyhet", title: "Titel", text: "Beskrivning...", linkUrl: "#", linkText: "Läs mer", bgColor: "", textColor: "", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
       render: PromoCard as any,
     },
   },
-};
+});

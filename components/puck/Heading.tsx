@@ -1,11 +1,20 @@
 "use client";
 
+import { DesignWrapper } from "./fields/DesignWrapper";
+
+interface SpacingValue { top: string; right: string; bottom: string; left: string; }
+interface SizeValue { width: string; height: string; minWidth: string; maxWidth: string; }
+
 export interface HeadingProps {
   text: string;
   level: "h1" | "h2" | "h3" | "h4";
   align: "left" | "center" | "right";
   color: string;
   size: "sm" | "md" | "lg" | "xl" | "2xl";
+  fontFamily: string;
+  spacing: SpacingValue;
+  componentSize: SizeValue;
+  editMode?: boolean;
 }
 
 const sizeMap = {
@@ -16,18 +25,34 @@ const sizeMap = {
   "2xl": "text-4xl md:text-5xl",
 };
 
-export function Heading({ text, level = "h2", align = "left", color = "", size = "lg" }: HeadingProps) {
+export function Heading({ text, level = "h2", align = "left", color = "", size = "lg", fontFamily = "", spacing, componentSize, editMode }: HeadingProps) {
   const Tag = level;
   const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
+  const isGradient = color?.includes("gradient");
+
+  const style: React.CSSProperties = {};
+  if (color) {
+    if (isGradient) {
+      style.backgroundImage = color;
+      style.WebkitBackgroundClip = "text";
+      style.WebkitTextFillColor = "transparent";
+      style.backgroundClip = "text";
+    } else {
+      style.color = color;
+    }
+  }
+  if (fontFamily) style.fontFamily = fontFamily;
 
   return (
-    <div className="py-2">
-      <Tag
-        className={`font-display font-bold ${sizeMap[size]} ${alignClass} leading-tight`}
-        style={color ? { color } : undefined}
-      >
-        {text}
-      </Tag>
-    </div>
+    <DesignWrapper spacing={spacing} componentSize={componentSize} editMode={editMode}>
+      <div className="py-2">
+        <Tag
+          className={`${fontFamily ? "" : "font-display "}font-bold ${sizeMap[size]} ${alignClass} leading-tight`}
+          style={Object.keys(style).length ? style : undefined}
+        >
+          {text}
+        </Tag>
+      </div>
+    </DesignWrapper>
   );
 }

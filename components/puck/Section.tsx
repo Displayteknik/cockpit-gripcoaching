@@ -3,19 +3,21 @@
 import { DropZone } from "@puckeditor/core";
 
 export interface SectionProps {
-  background: "white" | "light" | "muted" | "dark" | "blue";
+  background: "white" | "light" | "muted" | "dark" | "blue" | "custom";
   padding: "sm" | "md" | "lg" | "xl";
   maxWidth: "narrow" | "medium" | "wide" | "full";
   layout: "stack" | "two-col" | "three-col" | "four-col";
   gap: "sm" | "md" | "lg";
+  customBg: string;
 }
 
-const bgMap = {
+const bgMap: Record<string, string> = {
   white: "bg-white",
   light: "bg-surface-light",
   muted: "bg-surface-muted",
   dark: "bg-surface-dark text-white",
   blue: "bg-brand-blue text-white",
+  custom: "",
 };
 
 const paddingMap = {
@@ -51,9 +53,11 @@ export function Section({
   maxWidth = "wide",
   layout = "stack",
   gap = "md",
+  customBg = "",
 }: SectionProps) {
+  const bgStyle: React.CSSProperties = background === "custom" && customBg ? { background: customBg } : {};
   return (
-    <section className={`${bgMap[background]} ${paddingMap[padding]}`}>
+    <section className={`${bgMap[background]} ${paddingMap[padding]}`} style={bgStyle}>
       <div className={`${widthMap[maxWidth]} mx-auto px-4 md:px-6 ${layoutMap[layout]} ${layout !== "stack" ? gapMap[gap] : `space-y-${gap === "sm" ? "3" : gap === "md" ? "5" : "8"}`}`}>
         <DropZone zone="content" />
       </div>
