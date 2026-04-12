@@ -686,16 +686,12 @@ export const puckConfig: Config = addDesignFields({
           { label: "Ingen", value: "none" }, { label: "Pil", value: "arrow" },
           { label: "Telefon", value: "phone" }, { label: "E-post", value: "mail" },
         ]},
-        align: { type: "select", label: "Justering", options: [
-          { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
-        ]},
         bgColor: gradientField("Bakgrundsfärg"),
-        textColor: gradientField("Textfärg"),
-        fontFamily: fontField,
+        typography: typographyFieldDef,
         spacing: spacingField(),
         componentSize: sizeField,
       },
-      defaultProps: { text: "Klicka här", url: "#", variant: "blue", size: "md", icon: "none", align: "left", bgColor: "", textColor: "", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
+      defaultProps: { text: "Klicka här", url: "#", variant: "blue", size: "md", icon: "none", bgColor: "", typography: defaultTypography, spacing: defaultSpacing, componentSize: defaultSize },
       render: Button as any,
     },
 

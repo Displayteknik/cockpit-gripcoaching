@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Phone, Mail } from "lucide-react";
 
 import { DesignWrapper } from "./fields/DesignWrapper";
+import type { TypographyValue } from "./fields/TypographyField";
 
 interface SpacingValue { top: string; right: string; bottom: string; left: string; }
 interface SizeValue { width: string; height: string; minWidth: string; maxWidth: string; }
@@ -14,10 +15,12 @@ export interface ButtonProps {
   variant: "blue" | "outline" | "white" | "ghost" | "custom";
   size: "sm" | "md" | "lg";
   icon: "none" | "arrow" | "phone" | "mail";
-  align: "left" | "center" | "right";
-  bgColor: string;
-  textColor: string;
-  fontFamily: string;
+  typography?: TypographyValue;
+  // Legacy props (fallback)
+  align?: "left" | "center" | "right";
+  bgColor?: string;
+  textColor?: string;
+  fontFamily?: string;
   spacing: SpacingValue;
   componentSize: SizeValue;
   editMode?: boolean;
@@ -39,16 +42,27 @@ const sizeStyles = {
   lg: "px-8 py-4 text-base",
 };
 
-export function Button({ text, url = "#", variant = "blue", size = "md", icon = "none", align = "left", bgColor = "", textColor = "", fontFamily = "", spacing, componentSize, editMode }: ButtonProps) {
+export function Button({ text, url = "#", variant = "blue", size = "md", icon = "none", typography, align, bgColor = "", textColor = "", fontFamily = "", spacing, componentSize, editMode }: ButtonProps) {
+  const t = (typography || {}) as Partial<TypographyValue>;
+  const finalAlign = t.textAlign || align || "left";
+  const finalColor = t.color || textColor || "";
+  const finalFont = t.fontFamily || fontFamily || "";
+  const finalWeight = t.fontWeight || "";
+  const finalStyle = t.fontStyle || "";
+  const finalSize = t.fontSize || "";
+
   const Icon = iconMap[icon];
-  const alignClass = align === "center" ? "flex justify-center" : align === "right" ? "flex justify-end" : "";
+  const alignClass = finalAlign === "center" ? "flex justify-center" : finalAlign === "right" ? "flex justify-end" : "";
 
   const customStyle: React.CSSProperties = {};
   if (variant === "custom" || bgColor) {
     if (bgColor) customStyle.background = bgColor;
-    if (textColor) customStyle.color = textColor;
   }
-  if (fontFamily) customStyle.fontFamily = fontFamily;
+  if (finalColor) customStyle.color = finalColor;
+  if (finalFont) customStyle.fontFamily = finalFont;
+  if (finalSize) customStyle.fontSize = finalSize;
+  if (finalWeight) customStyle.fontWeight = finalWeight;
+  if (finalStyle) customStyle.fontStyle = finalStyle as React.CSSProperties["fontStyle"];
 
   return (
     <DesignWrapper spacing={spacing} componentSize={componentSize} editMode={editMode}>
