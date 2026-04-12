@@ -16,11 +16,10 @@ export default function AdminEditor() {
   const [currentSlug, setCurrentSlug] = useState<string>("index");
   const [pageData, setPageData] = useState<Data>(emptyData);
   const [loading, setLoading] = useState(true);
-  const [showPageList, setShowPageList] = useState(false);
+  const [showNewForm, setShowNewForm] = useState(false);
   const [newPageSlug, setNewPageSlug] = useState("");
   const [newPageTitle, setNewPageTitle] = useState("");
 
-  // Load page list
   const loadPages = useCallback(async () => {
     const { data } = await supabase
       .from("hm_pages")
@@ -29,7 +28,6 @@ export default function AdminEditor() {
     setPages(data || []);
   }, []);
 
-  // Load specific page
   const loadPage = useCallback(async (slug: string) => {
     setLoading(true);
     const { data } = await supabase
@@ -51,7 +49,6 @@ export default function AdminEditor() {
     loadPages().then(() => loadPage("index"));
   }, [loadPages, loadPage]);
 
-  // Save page
   const handlePublish = async (data: Data) => {
     const title =
       (data.root?.props as Record<string, string>)?.title || currentSlug;
@@ -75,31 +72,24 @@ export default function AdminEditor() {
     }
   };
 
-  // Create new page
   const handleCreatePage = async () => {
     if (!newPageSlug || !newPageTitle) return;
-
-    const slug = newPageSlug
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-")
-      .replace(/-+/g, "-");
-
+    const slug = newPageSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
     const { error } = await supabase.from("hm_pages").insert({
-      slug,
-      title: newPageTitle,
-      data: emptyData,
-      is_published: false,
+      slug, title: newPageTitle, data: emptyData, is_published: false,
     });
+    if (error) { alert("Kunde inte skapa sida: " + error.message); return; }
+    setNewPageSlug(""); setNewPageTitle(""); setShowNewForm(false);
+    await loadPages();
+    loadPage(slug);
+  };
 
-    if (error) {
-      alert("Kunde inte skapa sida: " + error.message);
+  const switchPage = (slug: string) => {
+    if (slug === "__new__") {
+      setShowNewForm(true);
       return;
     }
-
-    setNewPageSlug("");
-    setNewPageTitle("");
-    setShowPageList(false);
-    await loadPages();
+    setShowNewForm(false);
     loadPage(slug);
   };
 
@@ -116,78 +106,70 @@ export default function AdminEditor() {
 
   return (
     <div className="h-screen relative">
-      {/* Page selector toolbar */}
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-gray-900 text-white h-10 flex items-center px-4 text-sm gap-4">
-        <span className="font-bold text-blue-400">HM Motor Editor</span>
-        <span className="text-gray-500">|</span>
+      {/* Top toolbar with prominent page selector */}
+      <div className="fixed top-0 left-0 right-0 z-[100] bg-[#1a1f2e] text-white h-11 flex items-center px-4 text-sm gap-3 shadow-lg">
+        <span className="font-bold text-blue-400 flex-shrink-0">HM Motor</span>
+        <span className="text-gray-600">|</span>
 
-        <button
-          onClick={() => setShowPageList(!showPageList)}
-          className="flex items-center gap-2 hover:text-blue-300 transition-colors"
-        >
-          <span>
-            Sida: <strong>{currentSlug}</strong>
-          </span>
-          <svg
-            className={`w-4 h-4 transition-transform ${showPageList ? "rotate-180" : ""}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* Page selector dropdown */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400 text-xs">Sida:</span>
+          <select
+            value={currentSlug}
+            onChange={(e) => switchPage(e.target.value)}
+            className="bg-[#2a3040] border border-gray-600 rounded-md px-3 py-1 text-sm text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none cursor-pointer min-w-[180px]"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+            {pages.map((p) => (
+              <option key={p.slug} value={p.slug}>
+                {p.title} — /{p.slug === "index" ? "" : p.slug}
+              </option>
+            ))}
+            <option value="__new__">+ Skapa ny sida...</option>
+          </select>
+        </div>
 
-        {/* Page dropdown */}
-        {showPageList && (
-          <div className="absolute top-10 left-0 w-80 bg-gray-800 border border-gray-700 rounded-b-lg shadow-2xl max-h-[80vh] overflow-y-auto">
-            <div className="p-3 border-b border-gray-700">
-              <h3 className="font-semibold mb-2">Sidor</h3>
-              {pages.map((page) => (
-                <button
-                  key={page.slug}
-                  onClick={() => {
-                    loadPage(page.slug);
-                    setShowPageList(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-700 transition-colors flex items-center justify-between ${
-                    page.slug === currentSlug ? "bg-blue-600" : ""
-                  }`}
-                >
-                  <span>{page.title}</span>
-                  <span className="text-xs text-gray-400">/{page.slug}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="p-3">
-              <h3 className="font-semibold mb-2 text-sm">Skapa ny sida</h3>
-              <input
-                type="text"
-                placeholder="Titel"
-                value={newPageTitle}
-                onChange={(e) => setNewPageTitle(e.target.value)}
-                className="w-full px-3 py-1.5 rounded bg-gray-700 border border-gray-600 text-sm mb-2"
-              />
-              <input
-                type="text"
-                placeholder="URL-slug (t.ex. om-oss)"
-                value={newPageSlug}
-                onChange={(e) => setNewPageSlug(e.target.value)}
-                className="w-full px-3 py-1.5 rounded bg-gray-700 border border-gray-600 text-sm mb-2"
-              />
-              <button
-                onClick={handleCreatePage}
-                disabled={!newPageSlug || !newPageTitle}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed py-1.5 rounded text-sm font-medium transition-colors"
-              >
-                Skapa sida
-              </button>
-            </div>
+        {/* New page inline form */}
+        {showNewForm && (
+          <div className="flex items-center gap-2 ml-2 bg-[#2a3040] rounded-lg px-3 py-1 border border-gray-600">
+            <input
+              type="text"
+              placeholder="Titel"
+              value={newPageTitle}
+              onChange={(e) => {
+                setNewPageTitle(e.target.value);
+                setNewPageSlug(e.target.value.toLowerCase().replace(/[åä]/g, "a").replace(/ö/g, "o").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
+              }}
+              className="bg-transparent border-none outline-none text-sm w-28 placeholder:text-gray-500"
+              autoFocus
+            />
+            <span className="text-gray-500 text-xs">/</span>
+            <input
+              type="text"
+              placeholder="slug"
+              value={newPageSlug}
+              onChange={(e) => setNewPageSlug(e.target.value)}
+              className="bg-transparent border-none outline-none text-sm w-24 placeholder:text-gray-500"
+            />
+            <button
+              onClick={handleCreatePage}
+              disabled={!newPageSlug || !newPageTitle}
+              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-2.5 py-0.5 rounded text-xs font-medium transition-colors"
+            >
+              Skapa
+            </button>
+            <button
+              onClick={() => { setShowNewForm(false); setCurrentSlug(pages[0]?.slug || "index"); }}
+              className="text-gray-500 hover:text-white p-0.5"
+            >
+              ✕
+            </button>
           </div>
         )}
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-4">
+          <a href="/dashboard" className="text-xs text-gray-400 hover:text-white transition-colors">
+            Dashboard
+          </a>
           <a
             href={currentSlug === "index" ? "/" : `/${currentSlug}`}
             target="_blank"
@@ -200,12 +182,8 @@ export default function AdminEditor() {
       </div>
 
       {/* Puck editor */}
-      <div className="pt-10 h-screen">
-        <Puck
-          config={puckConfig}
-          data={pageData}
-          onPublish={handlePublish}
-        />
+      <div className="pt-11 h-screen">
+        <Puck config={puckConfig} data={pageData} onPublish={handlePublish} />
       </div>
     </div>
   );
