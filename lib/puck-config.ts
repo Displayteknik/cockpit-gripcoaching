@@ -28,6 +28,7 @@ import { TimelineItem } from "@/components/puck/TimelineItem";
 import { Card } from "@/components/puck/Card";
 import { Section } from "@/components/puck/Section";
 import { PromoCard } from "@/components/puck/PromoCard";
+import { ColorField } from "@/components/puck/fields/ColorField";
 
 export const puckConfig: Config = {
   categories: {
@@ -548,7 +549,7 @@ export const puckConfig: Config = {
 
     Heading: {
       label: "Rubrik",
-      inline: true,
+
       fields: {
         text: { type: "text", label: "Text", contentEditable: true },
         level: { type: "select", label: "Nivå", options: [
@@ -558,7 +559,11 @@ export const puckConfig: Config = {
         align: { type: "select", label: "Justering", options: [
           { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
         ]},
-        color: { type: "text", label: "Färg (hex)" },
+        color: {
+          type: "custom",
+          label: "Färg",
+          render: ({ value, onChange }: any) => ColorField({ value: value || "", onChange }),
+        },
         size: { type: "select", label: "Storlek", options: [
           { label: "Liten", value: "sm" }, { label: "Medium", value: "md" },
           { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
@@ -571,13 +576,17 @@ export const puckConfig: Config = {
 
     Text: {
       label: "Text",
-      inline: true,
+
       fields: {
         text: { type: "textarea", label: "Text", contentEditable: true },
         align: { type: "select", label: "Justering", options: [
           { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
         ]},
-        color: { type: "text", label: "Färg (hex)" },
+        color: {
+          type: "custom",
+          label: "Färg",
+          render: ({ value, onChange }: any) => ColorField({ value: value || "", onChange }),
+        },
         size: { type: "select", label: "Storlek", options: [
           { label: "Liten", value: "sm" }, { label: "Normal", value: "base" },
           { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
@@ -589,7 +598,7 @@ export const puckConfig: Config = {
 
     Button: {
       label: "Knapp",
-      inline: true,
+
       fields: {
         text: { type: "text", label: "Text", contentEditable: true },
         url: { type: "text", label: "Länk" },

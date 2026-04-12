@@ -21,11 +21,13 @@ export function Heading({ text, level = "h2", align = "left", color = "", size =
   const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
 
   return (
-    <Tag
-      className={`font-display font-bold ${sizeMap[size]} ${alignClass} leading-tight`}
-      style={color ? { color } : undefined}
-    >
-      {text}
-    </Tag>
+    <div className="py-2">
+      <Tag
+        className={`font-display font-bold ${sizeMap[size]} ${alignClass} leading-tight`}
+        style={color ? { color } : undefined}
+      >
+        {text}
+      </Tag>
+    </div>
   );
 }

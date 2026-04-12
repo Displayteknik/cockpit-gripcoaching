@@ -32,13 +32,12 @@ export function Button({ text, url = "#", variant = "blue", size = "md", icon = 
   const alignClass = align === "center" ? "flex justify-center" : align === "right" ? "flex justify-end" : "";
 
   return (
-    <div className={alignClass}>
+    <div className={`py-2 ${alignClass}`}>
       <Link
         href={url}
         className={`inline-flex items-center gap-2 rounded-lg font-semibold transition-all hover:translate-y-[-1px] ${variantStyles[variant]} ${sizeStyles[size]}`}
       >
-        {Icon && icon === "phone" && <Icon className="w-4 h-4" />}
-        {Icon && icon === "mail" && <Icon className="w-4 h-4" />}
+        {Icon && (icon === "phone" || icon === "mail") && <Icon className="w-4 h-4" />}
         {text}
         {Icon && icon === "arrow" && <Icon className="w-4 h-4" />}
       </Link>

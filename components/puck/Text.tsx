@@ -18,11 +18,13 @@ export function Text({ text, align = "left", color = "", size = "base" }: TextPr
   const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
 
   return (
-    <p
-      className={`${sizeMap[size]} ${alignClass} leading-relaxed`}
-      style={color ? { color } : { color: "#6b7280" }}
-    >
-      {text}
-    </p>
+    <div className="py-1">
+      <p
+        className={`${sizeMap[size]} ${alignClass} leading-relaxed`}
+        style={color ? { color } : { color: "#6b7280" }}
+      >
+        {text}
+      </p>
+    </div>
   );
 }
