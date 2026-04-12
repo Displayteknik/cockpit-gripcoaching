@@ -70,17 +70,14 @@ const imageFieldDef = (label: string = "Bild") => ({
 const defaultSpacing = { top: "0", right: "0", bottom: "0", left: "0" };
 const defaultSize = { width: "auto", height: "auto", minWidth: "", maxWidth: "" };
 
-// Design fields that every component should have
-const designFields = {
-  _color: gradientField("Färg"),
-  _font: fontField,
+// Design fields for section components (only spacing/size — color/font don't work
+// on sections because their internal Tailwind classes override inherited styles)
+const sectionDesignFields = {
   _spacing: spacingField(),
   _size: sizeField,
 };
 
-const designDefaults = {
-  _color: "",
-  _font: "",
+const sectionDesignDefaults = {
   _spacing: defaultSpacing,
   _size: defaultSize,
 };
@@ -88,22 +85,22 @@ const designDefaults = {
 // Components that already have their own design fields (don't override)
 const HAS_OWN_DESIGN = new Set(["Heading", "Text", "Button", "Card", "FAQItem", "TimelineItem", "PromoCard"]);
 
-// Post-process: add design fields + wrap render for all components that don't have their own
+// Post-process: add spacing/size fields + wrap render for section components
 function addDesignFields(config: Config): Config {
   for (const [name, comp] of Object.entries(config.components)) {
     if (HAS_OWN_DESIGN.has(name)) continue;
     const c = comp as any;
-    c.fields = { ...c.fields, ...designFields };
-    c.defaultProps = { ...c.defaultProps, ...designDefaults };
+    c.fields = { ...c.fields, ...sectionDesignFields };
+    c.defaultProps = { ...c.defaultProps, ...sectionDesignDefaults };
 
-    // Wrap render so _color/_font/_spacing/_size actually affect the output
+    // Wrap render so _spacing/_size actually affect the output
     const Original = c.render;
     c.render = (props: any) => {
-      const { _color, _font, _spacing, _size, ...rest } = props;
+      const { _spacing, _size, ...rest } = props;
       const isEditing = rest.puck?.isEditing || false;
       return createElement(
         DesignWrapper,
-        { spacing: _spacing, componentSize: _size, color: _color, fontFamily: _font, editMode: isEditing },
+        { spacing: _spacing, componentSize: _size, editMode: isEditing },
         createElement(Original, rest)
       );
     };
