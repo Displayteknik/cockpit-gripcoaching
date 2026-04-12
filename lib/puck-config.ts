@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Config } from "@puckeditor/core";
+// Existing section components
 import { Hero } from "@/components/puck/Hero";
 import { PageHeader } from "@/components/puck/PageHeader";
 import { VehicleGrid } from "@/components/puck/VehicleGrid";
@@ -18,25 +19,30 @@ import { TradeInStrip } from "@/components/puck/TradeInStrip";
 import { Spacer } from "@/components/puck/Spacer";
 import { RichText } from "@/components/puck/RichText";
 import { ImageSection } from "@/components/puck/ImageSection";
+// Granular drag-drop components
+import { Heading } from "@/components/puck/Heading";
+import { Text } from "@/components/puck/Text";
+import { Button } from "@/components/puck/Button";
+import { FAQItem } from "@/components/puck/FAQItem";
+import { TimelineItem } from "@/components/puck/TimelineItem";
+import { Card } from "@/components/puck/Card";
+import { Section } from "@/components/puck/Section";
+import { PromoCard } from "@/components/puck/PromoCard";
 
 export const puckConfig: Config = {
   categories: {
-    hero: {
-      title: "Hero & Header",
+    building: {
+      title: "Byggblock",
       defaultExpanded: true,
-      components: ["Hero", "PageHeader", "Spotlight"],
+      components: ["Section", "Heading", "Text", "Button", "Card", "FAQItem", "TimelineItem", "PromoCard", "ImageSection", "Spacer"],
     },
-    content: {
-      title: "Innehåll",
-      components: ["FAQ", "CTASection", "WhySection", "JustNuCards", "QuickCategories", "PartnerLogos", "Timeline", "ValuesGrid", "ContactLayout", "RichText", "ImageSection"],
+    sections: {
+      title: "Färdiga sektioner",
+      components: ["Hero", "PageHeader", "Spotlight", "FAQ", "CTASection", "WhySection", "JustNuCards", "QuickCategories", "PartnerLogos", "Timeline", "ValuesGrid", "ContactLayout", "TradeInStrip", "RichText"],
     },
-    fordon: {
-      title: "Fordon & Blogg",
+    data: {
+      title: "Dynamiskt innehåll",
       components: ["VehicleGrid", "BlogGrid"],
-    },
-    layout: {
-      title: "Layout & Övrigt",
-      components: ["TradeInStrip", "Spacer"],
     },
   },
   components: {
@@ -507,6 +513,156 @@ export const puckConfig: Config = {
         fullWidth: false,
       },
       render: ImageSection as any,
+    },
+    // ═══ GRANULAR COMPONENTS ═══
+
+    Section: {
+      label: "Sektion (container)",
+      fields: {
+        background: { type: "select", label: "Bakgrund", options: [
+          { label: "Vit", value: "white" }, { label: "Ljus", value: "light" },
+          { label: "Dämpad", value: "muted" }, { label: "Mörk", value: "dark" },
+          { label: "Blå", value: "blue" },
+        ]},
+        padding: { type: "select", label: "Padding", options: [
+          { label: "Liten", value: "sm" }, { label: "Medium", value: "md" },
+          { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
+        ]},
+        maxWidth: { type: "select", label: "Maxbredd", options: [
+          { label: "Smal (640px)", value: "narrow" }, { label: "Medium (800px)", value: "medium" },
+          { label: "Bred (1140px)", value: "wide" }, { label: "Full (1320px)", value: "full" },
+        ]},
+        layout: { type: "select", label: "Layout", options: [
+          { label: "Stapel (vertikalt)", value: "stack" },
+          { label: "2 kolumner", value: "two-col" },
+          { label: "3 kolumner", value: "three-col" },
+          { label: "4 kolumner", value: "four-col" },
+        ]},
+        gap: { type: "select", label: "Avstånd", options: [
+          { label: "Litet", value: "sm" }, { label: "Medium", value: "md" }, { label: "Stort", value: "lg" },
+        ]},
+      },
+      defaultProps: { background: "white", padding: "lg", maxWidth: "wide", layout: "stack", gap: "md" },
+      render: Section as any,
+    },
+
+    Heading: {
+      label: "Rubrik",
+      inline: true,
+      fields: {
+        text: { type: "text", label: "Text", contentEditable: true },
+        level: { type: "select", label: "Nivå", options: [
+          { label: "H1", value: "h1" }, { label: "H2", value: "h2" },
+          { label: "H3", value: "h3" }, { label: "H4", value: "h4" },
+        ]},
+        align: { type: "select", label: "Justering", options: [
+          { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
+        ]},
+        color: { type: "text", label: "Färg (hex)" },
+        size: { type: "select", label: "Storlek", options: [
+          { label: "Liten", value: "sm" }, { label: "Medium", value: "md" },
+          { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
+          { label: "Jättestor", value: "2xl" },
+        ]},
+      },
+      defaultProps: { text: "Rubrik", level: "h2", align: "left", color: "", size: "lg" },
+      render: Heading as any,
+    },
+
+    Text: {
+      label: "Text",
+      inline: true,
+      fields: {
+        text: { type: "textarea", label: "Text", contentEditable: true },
+        align: { type: "select", label: "Justering", options: [
+          { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
+        ]},
+        color: { type: "text", label: "Färg (hex)" },
+        size: { type: "select", label: "Storlek", options: [
+          { label: "Liten", value: "sm" }, { label: "Normal", value: "base" },
+          { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
+        ]},
+      },
+      defaultProps: { text: "Skriv din text här...", align: "left", color: "", size: "base" },
+      render: Text as any,
+    },
+
+    Button: {
+      label: "Knapp",
+      inline: true,
+      fields: {
+        text: { type: "text", label: "Text", contentEditable: true },
+        url: { type: "text", label: "Länk" },
+        variant: { type: "select", label: "Stil", options: [
+          { label: "Blå (fylld)", value: "blue" }, { label: "Outline", value: "outline" },
+          { label: "Vit", value: "white" }, { label: "Ghost", value: "ghost" },
+        ]},
+        size: { type: "select", label: "Storlek", options: [
+          { label: "Liten", value: "sm" }, { label: "Medium", value: "md" }, { label: "Stor", value: "lg" },
+        ]},
+        icon: { type: "select", label: "Ikon", options: [
+          { label: "Ingen", value: "none" }, { label: "Pil", value: "arrow" },
+          { label: "Telefon", value: "phone" }, { label: "E-post", value: "mail" },
+        ]},
+        align: { type: "select", label: "Justering", options: [
+          { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
+        ]},
+      },
+      defaultProps: { text: "Klicka här", url: "#", variant: "blue", size: "md", icon: "none", align: "left" },
+      render: Button as any,
+    },
+
+    Card: {
+      label: "Kort",
+      fields: {
+        title: { type: "text", label: "Titel", contentEditable: true },
+        text: { type: "textarea", label: "Text", contentEditable: true },
+        icon: { type: "select", label: "Ikon", options: [
+          { label: "Hjärta", value: "heart" }, { label: "Sköld", value: "shield" },
+          { label: "Verktyg", value: "wrench" }, { label: "Användare", value: "users" },
+          { label: "Stjärna", value: "star" }, { label: "Plats", value: "mappin" },
+        ]},
+        variant: { type: "select", label: "Layout", options: [
+          { label: "Standard", value: "default" }, { label: "Centrerat", value: "centered" },
+          { label: "Horisontellt", value: "horizontal" },
+        ]},
+      },
+      defaultProps: { title: "Titel", text: "Beskrivning...", icon: "heart", variant: "default" },
+      render: Card as any,
+    },
+
+    FAQItem: {
+      label: "FAQ-fråga",
+      fields: {
+        question: { type: "text", label: "Fråga", contentEditable: true },
+        answer: { type: "textarea", label: "Svar", contentEditable: true },
+      },
+      defaultProps: { question: "Fråga?", answer: "Svar..." },
+      render: FAQItem as any,
+    },
+
+    TimelineItem: {
+      label: "Tidslinje-punkt",
+      fields: {
+        year: { type: "text", label: "År", contentEditable: true },
+        title: { type: "text", label: "Titel", contentEditable: true },
+        text: { type: "textarea", label: "Text", contentEditable: true },
+      },
+      defaultProps: { year: "2024", title: "Händelse", text: "Beskrivning..." },
+      render: TimelineItem as any,
+    },
+
+    PromoCard: {
+      label: "Kampanjkort",
+      fields: {
+        label: { type: "text", label: "Etikett", contentEditable: true },
+        title: { type: "text", label: "Titel", contentEditable: true },
+        text: { type: "textarea", label: "Text", contentEditable: true },
+        linkUrl: { type: "text", label: "Länk URL" },
+        linkText: { type: "text", label: "Länktext", contentEditable: true },
+      },
+      defaultProps: { label: "Nyhet", title: "Titel", text: "Beskrivning...", linkUrl: "#", linkText: "Läs mer" },
+      render: PromoCard as any,
     },
   },
 };
