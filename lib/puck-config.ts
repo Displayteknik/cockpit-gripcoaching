@@ -35,6 +35,7 @@ import { FontField } from "@/components/puck/fields/FontField";
 import { SpacingField } from "@/components/puck/fields/SpacingField";
 import { SizeField } from "@/components/puck/fields/SizeField";
 import { ImageField } from "@/components/puck/fields/ImageField";
+import { TypographyField } from "@/components/puck/fields/TypographyField";
 
 // Reusable field definitions for design controls
 const spacingField = (mode: "padding" | "margin" = "padding") => ({
@@ -66,6 +67,17 @@ const imageFieldDef = (label: string = "Bild") => ({
   label,
   render: ({ value, onChange }: any) => ImageField({ value: value || "", onChange }),
 });
+
+const typographyFieldDef = {
+  type: "custom" as const,
+  label: "Typografi",
+  render: ({ value, onChange }: any) => TypographyField({
+    value: value || { fontFamily: "", fontSize: "", fontWeight: "", fontStyle: "", color: "", textAlign: "" },
+    onChange,
+  }),
+};
+
+const defaultTypography = { fontFamily: "", fontSize: "", fontWeight: "", fontStyle: "", color: "", textAlign: "" };
 
 const defaultSpacing = { top: "0", right: "0", bottom: "0", left: "0" };
 const defaultSize = { width: "auto", height: "auto", minWidth: "", maxWidth: "" };
@@ -336,16 +348,16 @@ export const puckConfig: Config = addDesignFields({
       label: "Just nu-kort",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
         cards: {
           type: "array",
           label: "Kort",
           arrayFields: {
-            label: { type: "text", label: "Etikett" },
-            title: { type: "text", label: "Titel" },
-            text: { type: "textarea", label: "Text" },
+            label: { type: "text", label: "Etikett", contentEditable: true },
+            title: { type: "text", label: "Titel", contentEditable: true },
+            text: { type: "textarea", label: "Text", contentEditable: true },
             linkUrl: { type: "text", label: "Länk URL" },
-            linkText: { type: "text", label: "Länktext" },
+            linkText: { type: "text", label: "Länktext", contentEditable: true },
           },
         },
       },
@@ -441,8 +453,8 @@ export const puckConfig: Config = addDesignFields({
       label: "Blogg-rutnät",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
-        subtitle: { type: "text", label: "Underrubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "text", label: "Underrubrik", contentEditable: true },
         maxItems: { type: "number", label: "Antal inlägg" },
       },
       defaultProps: {
@@ -457,14 +469,14 @@ export const puckConfig: Config = addDesignFields({
       label: "Tidslinje",
 
       fields: {
-        title: { type: "text", label: "Rubrik" },
+        title: { type: "text", label: "Rubrik", contentEditable: true },
         items: {
           type: "array",
           label: "Händelser",
           arrayFields: {
-            year: { type: "text", label: "År" },
-            title: { type: "text", label: "Titel" },
-            text: { type: "textarea", label: "Beskrivning" },
+            year: { type: "text", label: "År", contentEditable: true },
+            title: { type: "text", label: "Titel", contentEditable: true },
+            text: { type: "textarea", label: "Beskrivning", contentEditable: true },
           },
         },
       },
@@ -485,8 +497,8 @@ export const puckConfig: Config = addDesignFields({
           type: "array",
           label: "Värden",
           arrayFields: {
-            title: { type: "text", label: "Titel" },
-            text: { type: "textarea", label: "Beskrivning" },
+            title: { type: "text", label: "Titel", contentEditable: true },
+            text: { type: "textarea", label: "Beskrivning", contentEditable: true },
             icon: {
               type: "select",
               label: "Ikon",
@@ -523,8 +535,8 @@ export const puckConfig: Config = addDesignFields({
       label: "Inbytes-strip",
 
       fields: {
-        text: { type: "text", label: "Text" },
-        ctaText: { type: "text", label: "Länktext" },
+        text: { type: "text", label: "Text", contentEditable: true },
+        ctaText: { type: "text", label: "Länktext", contentEditable: true },
         ctaUrl: { type: "text", label: "Länk URL" },
       },
       defaultProps: {
@@ -549,7 +561,7 @@ export const puckConfig: Config = addDesignFields({
       label: "Fritext",
 
       fields: {
-        content: { type: "textarea", label: "HTML-innehåll" },
+        content: { type: "textarea", label: "HTML-innehåll", contentEditable: true },
         maxWidth: {
           type: "select",
           label: "Maxbredd",
@@ -581,8 +593,8 @@ export const puckConfig: Config = addDesignFields({
 
       fields: {
         imageUrl: imageFieldDef("Bild"),
-        alt: { type: "text", label: "Alt-text" },
-        caption: { type: "text", label: "Bildtext" },
+        alt: { type: "text", label: "Alt-text", contentEditable: true },
+        caption: { type: "text", label: "Bildtext", contentEditable: true },
         fullWidth: { type: "radio", label: "Fullbredd", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
       },
       defaultProps: {
@@ -635,20 +647,11 @@ export const puckConfig: Config = addDesignFields({
           { label: "H1", value: "h1" }, { label: "H2", value: "h2" },
           { label: "H3", value: "h3" }, { label: "H4", value: "h4" },
         ]},
-        align: { type: "select", label: "Justering", options: [
-          { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
-        ]},
-        color: gradientField("Färg"),
-        size: { type: "select", label: "Storlek", options: [
-          { label: "Liten", value: "sm" }, { label: "Medium", value: "md" },
-          { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
-          { label: "Jättestor", value: "2xl" },
-        ]},
-        fontFamily: fontField,
+        typography: typographyFieldDef,
         spacing: spacingField(),
         componentSize: sizeField,
       },
-      defaultProps: { text: "Rubrik", level: "h2", align: "left", color: "", size: "lg", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
+      defaultProps: { text: "Rubrik", level: "h2", typography: defaultTypography, spacing: defaultSpacing, componentSize: defaultSize },
       render: Heading as any,
     },
 
@@ -657,19 +660,11 @@ export const puckConfig: Config = addDesignFields({
 
       fields: {
         text: { type: "textarea", label: "Text", contentEditable: true },
-        align: { type: "select", label: "Justering", options: [
-          { label: "Vänster", value: "left" }, { label: "Center", value: "center" }, { label: "Höger", value: "right" },
-        ]},
-        color: gradientField("Färg"),
-        size: { type: "select", label: "Storlek", options: [
-          { label: "Liten", value: "sm" }, { label: "Normal", value: "base" },
-          { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" },
-        ]},
-        fontFamily: fontField,
+        typography: typographyFieldDef,
         spacing: spacingField(),
         componentSize: sizeField,
       },
-      defaultProps: { text: "Skriv din text här...", align: "left", color: "", size: "base", fontFamily: "", spacing: defaultSpacing, componentSize: defaultSize },
+      defaultProps: { text: "Skriv din text här...", typography: defaultTypography, spacing: defaultSpacing, componentSize: defaultSize },
       render: Text as any,
     },
 
