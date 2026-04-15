@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.bbcdn.io",
       },
+      {
+        protocol: "https",
+        hostname: "alko-webshop-assets-prod.s3.eu-central-1.amazonaws.com",
+      },
     ],
   },
 };
