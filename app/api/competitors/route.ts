@@ -7,28 +7,16 @@ export const runtime = "nodejs";
 export async function GET() {
   const clientId = await getActiveClientId();
   const sb = supabaseServer();
-  const { data, error } = await sb
-    .from("hm_social_posts")
-    .select("*")
-    .eq("client_id", clientId)
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const { data, error } = await sb.from("competitors").select("*").eq("client_id", clientId).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
-export async function PATCH(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const clientId = await getActiveClientId();
   const body = await req.json();
-  const { id, ...rest } = body;
   const sb = supabaseServer();
-  const { data, error } = await sb
-    .from("hm_social_posts")
-    .update({ ...rest, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("client_id", clientId)
-    .select()
-    .single();
+  const { data, error } = await sb.from("competitors").insert({ ...body, client_id: clientId }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
@@ -38,7 +26,6 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id krävs" }, { status: 400 });
   const sb = supabaseServer();
-  const { error } = await sb.from("hm_social_posts").delete().eq("id", id).eq("client_id", clientId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await sb.from("competitors").delete().eq("id", id).eq("client_id", clientId);
   return NextResponse.json({ ok: true });
 }

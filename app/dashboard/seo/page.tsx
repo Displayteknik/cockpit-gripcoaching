@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch } from "lucide-react";
+import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch, Upload, HelpCircle, Sparkles, BarChart3 } from "lucide-react";
 
 interface Analytics {
   visits_24h: number;
@@ -52,6 +52,14 @@ export default function SEOPage() {
   const [auditing, setAuditing] = useState(false);
   const [skipPagespeed, setSkipPagespeed] = useState(false);
   const [newKw, setNewKw] = useState({ keyword: "", target_url: "", intent: "informational", search_volume: "" });
+  const [showGscImport, setShowGscImport] = useState(false);
+  const [showPaa, setShowPaa] = useState(false);
+  const [showAiAudit, setShowAiAudit] = useState(false);
+  const [gscRows, setGscRows] = useState<{ query: string; clicks: number; impressions: number; position: number }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/seo/gsc-import").then((r) => r.ok ? r.json() : []).then(setGscRows).catch(() => {});
+  }, []);
 
   useEffect(() => { reload(); }, []);
 
@@ -120,14 +128,30 @@ export default function SEOPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <TrendingUp className="w-6 h-6 text-emerald-600" />
-          SEO &amp; AEO
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Synlighet i Google + AI-motorer (ChatGPT, Perplexity, Google AI). Helt gratis verktyg.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <TrendingUp className="w-6 h-6 text-emerald-600" />
+            SEO &amp; AEO
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Synlighet i Google + AI-motorer (ChatGPT, Perplexity, Google AI). Helt gratis verktyg.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setShowGscImport(true)} className="flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-300 px-3 py-2 rounded-lg text-sm font-medium text-gray-700">
+            <Upload className="w-4 h-4" />
+            Importera GSC-data
+          </button>
+          <button onClick={() => setShowPaa(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90">
+            <HelpCircle className="w-4 h-4" />
+            People Also Ask
+          </button>
+          <button onClick={() => setShowAiAudit(true)} className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90">
+            <Sparkles className="w-4 h-4" />
+            AI Content-audit
+          </button>
+        </div>
       </div>
 
       {/* KPI strip */}
@@ -307,6 +331,50 @@ export default function SEOPage() {
         )}
       </Card>
 
+      {gscRows.length > 0 && (
+        <Card title="Google Search Console — top queries" subtitle={`${gscRows.length} importerade rader. Sortera och hitta snabba rank-vinster (position 4–15 = nära toppen).`}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gray-500 border-b border-gray-100">
+                  <th className="text-left py-2 px-2">Sökord</th>
+                  <th className="text-right py-2 px-2">Klick</th>
+                  <th className="text-right py-2 px-2">Visningar</th>
+                  <th className="text-right py-2 px-2">Position</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {gscRows.slice(0, 30).map((g, i) => (
+                  <tr key={i} className="border-b border-gray-50">
+                    <td className="py-2 px-2 font-medium text-gray-900">{g.query}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-emerald-700 font-medium">{g.clicks}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-gray-600">{g.impressions}</td>
+                    <td className="py-2 px-2 text-right tabular-nums">
+                      <span className={g.position <= 3 ? "text-emerald-700 font-bold" : g.position <= 10 ? "text-amber-700" : "text-gray-500"}>
+                        {g.position?.toFixed(1)}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2">
+                      <button
+                        onClick={() => { setNewKw({ keyword: g.query, target_url: "", intent: "informational", search_volume: g.impressions.toString() }); }}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        Spåra
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {showGscImport && <GscImportModal onClose={() => { setShowGscImport(false); reload(); fetch("/api/seo/gsc-import").then((r) => r.json()).then(setGscRows); }} />}
+      {showPaa && <PaaModal onClose={() => setShowPaa(false)} />}
+      {showAiAudit && <AiAuditModal onClose={() => setShowAiAudit(false)} />}
+
       <div className="bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-100 rounded-xl p-5">
         <h3 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-2">
           <Zap className="w-5 h-5 text-emerald-600" />
@@ -320,6 +388,207 @@ export default function SEOPage() {
           <li><strong>Punktlistor och tabeller</strong> citeras oftare av AI</li>
           <li>Visa <strong>uppdaterad-datum</strong> på varje sida</li>
         </ul>
+      </div>
+    </div>
+  );
+}
+
+function GscImportModal({ onClose }: { onClose: () => void }) {
+  const [csv, setCsv] = useState("");
+  const [period_start, setPs] = useState("");
+  const [period_end, setPe] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function run() {
+    if (!csv.trim()) return;
+    setLoading(true);
+    const r = await fetch("/api/seo/gsc-import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ csv, period_start, period_end }),
+    });
+    const d = await r.json();
+    setLoading(false);
+    if (r.ok) { alert(`Importerat ${d.imported} rader.`); onClose(); }
+    else alert("Fel: " + (d.error || "okänt"));
+  }
+
+  return (
+    <Modal title="Importera Google Search Console" onClose={onClose}>
+      <div className="text-sm text-gray-600 mb-3 space-y-1">
+        <p>Steg: <a href="https://search.google.com/search-console" target="_blank" rel="noopener" className="text-blue-600 underline">Search Console</a> → Performance → Export → Download CSV (Top queries).</p>
+        <p>Klistra in CSV-innehållet nedan. Format: <code className="bg-gray-100 px-1 rounded text-xs">Query,Clicks,Impressions,CTR,Position</code></p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div>
+          <label className="text-xs text-gray-500">Period start</label>
+          <input type="date" value={period_start} onChange={(e) => setPs(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">Period slut</label>
+          <input type="date" value={period_end} onChange={(e) => setPe(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+        </div>
+      </div>
+      <textarea
+        value={csv}
+        onChange={(e) => setCsv(e.target.value)}
+        rows={10}
+        placeholder="Query,Clicks,Impressions,CTR,Position&#10;atv jämtland,42,1200,3.5%,8.2&#10;..."
+        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-mono"
+      />
+      <div className="flex justify-end mt-4">
+        <button onClick={run} disabled={loading || !csv.trim()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          Importera
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function PaaModal({ onClose }: { onClose: () => void }) {
+  const [keyword, setKeyword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ questions: { question: string; short_answer: string; intent: string }[]; related_keywords: string[]; long_tail: string[] } | null>(null);
+
+  async function run() {
+    if (!keyword.trim()) return;
+    setLoading(true);
+    const r = await fetch("/api/seo/paa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keyword }),
+    });
+    const d = await r.json();
+    setLoading(false);
+    if (r.ok) setResult(d);
+    else alert("Fel: " + (d.error || "okänt"));
+  }
+
+  return (
+    <Modal title="People Also Ask & long-tail" onClose={onClose}>
+      <div className="text-sm text-gray-600 mb-3">Generera frågor som riktiga användare söker — för FAQ-sektioner och AEO.</div>
+      <div className="flex gap-2 mb-3">
+        <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="t.ex. atv jämtland" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+        <button onClick={run} disabled={loading || !keyword.trim()} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          Generera
+        </button>
+      </div>
+      {result && (
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div>
+            <div className="text-xs font-bold text-gray-700 uppercase mb-1">Frågor</div>
+            <div className="space-y-2">
+              {result.questions.map((q, i) => (
+                <div key={i} className="bg-purple-50 rounded p-2">
+                  <div className="font-medium text-sm">{q.question}</div>
+                  <div className="text-xs text-gray-600 mt-0.5">{q.short_answer}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-gray-700 uppercase mb-1">Relaterade sökord</div>
+            <div className="flex flex-wrap gap-1.5">
+              {result.related_keywords.map((k, i) => <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{k}</span>)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-gray-700 uppercase mb-1">Long-tail</div>
+            <div className="flex flex-wrap gap-1.5">
+              {result.long_tail.map((k, i) => <span key={i} className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">{k}</span>)}
+            </div>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function AiAuditModal({ onClose }: { onClose: () => void }) {
+  const [url, setUrl] = useState("");
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ overall_score: number; voice_match_score: number; ai_smell_score: number; conversion_score: number; ai_smell_phrases: string[]; rewrite_priorities: { issue: string; original: string; rewrite: string }[]; strengths: string[]; next_actions: string[] } | null>(null);
+
+  async function run() {
+    setLoading(true);
+    const r = await fetch("/api/seo/content-audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url || undefined, text: text || undefined }),
+    });
+    const d = await r.json();
+    setLoading(false);
+    if (r.ok) setResult(d);
+    else alert("Fel: " + (d.error || "okänt"));
+  }
+
+  return (
+    <Modal title="AI Content-audit" onClose={onClose}>
+      <div className="text-sm text-gray-600 mb-3">Gemini bedömer kvalitet, ton-match, AI-smell och konvertering. Hård granskning.</div>
+      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="URL (eller klistra text nedan)" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-2" />
+      <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="...eller klistra in text direkt" rows={5} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-3" />
+      <button onClick={run} disabled={loading || (!url && !text)} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2">
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+        Granska
+      </button>
+      {result && (
+        <div className="mt-4 space-y-3 max-h-[400px] overflow-y-auto">
+          <div className="grid grid-cols-4 gap-2">
+            <ScoreBox label="Total" v={result.overall_score} />
+            <ScoreBox label="Voice" v={result.voice_match_score} />
+            <ScoreBox label="No AI" v={result.ai_smell_score} />
+            <ScoreBox label="CR" v={result.conversion_score} />
+          </div>
+          {result.ai_smell_phrases?.length > 0 && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+              <div className="text-xs font-bold text-red-700 mb-1">AI-fraser hittade:</div>
+              <div className="flex flex-wrap gap-1">{result.ai_smell_phrases.map((p, i) => <span key={i} className="text-xs bg-white text-red-700 px-2 py-0.5 rounded border border-red-200">{p}</span>)}</div>
+            </div>
+          )}
+          {result.rewrite_priorities?.length > 0 && (
+            <div>
+              <div className="text-xs font-bold text-gray-700 uppercase mb-1">Skriv om</div>
+              <div className="space-y-2">
+                {result.rewrite_priorities.map((rw, i) => (
+                  <div key={i} className="bg-amber-50 rounded p-2 text-sm">
+                    <div className="font-bold text-amber-800">{rw.issue}</div>
+                    <div className="text-gray-600 line-through text-xs mt-1">{rw.original}</div>
+                    <div className="text-gray-900 text-xs mt-1">→ {rw.rewrite}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {result.next_actions?.length > 0 && (
+            <div className="bg-emerald-50 border-l-4 border-emerald-400 p-3 rounded">
+              <div className="text-xs font-bold text-emerald-700 mb-1">Nästa steg</div>
+              <ul className="text-sm text-gray-700 list-disc pl-5 space-y-0.5">{result.next_actions.map((a, i) => <li key={i}>{a}</li>)}</ul>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function ScoreBox({ label, v }: { label: string; v: number }) {
+  const c = v >= 80 ? "text-emerald-700 bg-emerald-50" : v >= 60 ? "text-amber-700 bg-amber-50" : "text-red-700 bg-red-50";
+  return <div className={`rounded-lg p-2 text-center ${c}`}><div className="text-xl font-bold tabular-nums">{v}</div><div className="text-[10px] opacity-70">{label}</div></div>;
+}
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="font-display font-bold text-lg">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 text-xl leading-none">×</button>
+        </div>
+        <div className="overflow-y-auto p-5">{children}</div>
       </div>
     </div>
   );

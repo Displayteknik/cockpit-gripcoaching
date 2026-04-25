@@ -9,7 +9,7 @@ export const maxDuration = 60;
 // mode=icp → kör ICP-wizard baserat på korta svar
 // mode=tone → bygg tonregler utifrån exempelmeningar
 interface AssistBody {
-  mode: "section" | "icp" | "tone";
+  mode: "section" | "icp" | "tone" | "voc";
   field?: string;
   current?: string;
   context?: Record<string, string>;
@@ -55,6 +55,32 @@ Bygg ICP nu.`;
         systemInstruction: system,
         prompt,
         temperature: 0.7,
+      });
+      return NextResponse.json(result);
+    }
+
+    if (body.mode === "voc") {
+      // Voice-of-Customer: extrahera språkmönster från riktiga recensioner/kundord
+      const inputs = body.inputs || {};
+      const system = `Du analyserar verkliga kundord (recensioner, mejl, samtal) och extraherar språkmönster som ska användas i marknadsföringen.
+
+Returnera JSON:
+{
+  "common_phrases": "5–10 fraser kunderna SJÄLVA använder, en per rad med - framför",
+  "pain_words": "ord/uttryck för smärta/frustration kunderna använder",
+  "joy_words": "ord/uttryck för det som gör dem nöjda",
+  "objections": "vad kunderna oroar sig för innan köp",
+  "tone_patterns": "stilen de skriver i (formell? skämtsam? kortfattad?)",
+  "summary_for_brand": "2–3 stycken instruktion till copywriter — så här SKA varumärket låta för att matcha kundens språk"
+}`;
+
+      const prompt = `Verkliga kundord:\n${inputs.quotes || ""}\n\nFöretag: ${inputs.company_name || ""}\n\nExtrahera mönstren nu.`;
+
+      const result = await generateJSON({
+        model: "gemini-2.5-pro",
+        systemInstruction: system,
+        prompt,
+        temperature: 0.5,
       });
       return NextResponse.json(result);
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle } from "lucide-react";
+import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle, Quote, Map, Users } from "lucide-react";
 
 interface Profile {
   company_name: string;
@@ -16,6 +16,9 @@ interface Profile {
   icp_primary: string;
   icp_secondary: string;
   pain_points: string;
+  customer_quotes: string;
+  competitors: string;
+  customer_journey: string;
   dos: string;
   donts: string;
   hashtags_base: string;
@@ -27,6 +30,7 @@ const EMPTY: Profile = {
   founder_name: "", founder_phone: "", founder_email: "",
   brand_story: "", usp: "", tone_rules: "",
   icp_primary: "", icp_secondary: "", pain_points: "",
+  customer_quotes: "", competitors: "", customer_journey: "",
   dos: "", donts: "", hashtags_base: "",
 };
 
@@ -37,6 +41,7 @@ export default function ProfilPage() {
   const [assisting, setAssisting] = useState<string | null>(null);
   const [showIcpWizard, setShowIcpWizard] = useState(false);
   const [showToneWizard, setShowToneWizard] = useState(false);
+  const [showVocExtractor, setShowVocExtractor] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile").then((r) => r.json()).then((d) => {
@@ -128,6 +133,13 @@ export default function ProfilPage() {
           <MessageSquare className="w-4 h-4" />
           Ton-wizard
         </button>
+        <button
+          onClick={() => setShowVocExtractor(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
+        >
+          <Quote className="w-4 h-4" />
+          Voice-of-Customer
+        </button>
       </div>
 
       <Section title="Grundinfo" icon={Building2}>
@@ -193,6 +205,37 @@ export default function ProfilPage() {
           onAssist={() => assistField("pain_points")}
           assisting={assisting === "pain_points"}
           rows={5}
+        />
+      </Section>
+
+      <Section title="Voice of Customer" icon={Quote}>
+        <TextArea
+          label="Kundord & recensioner"
+          hint="Klistra in riktiga kundrecensioner, mejl, samtalsanteckningar. AI:n extraherar språkmönster som matchar kundens egen ton."
+          value={profile.customer_quotes}
+          onChange={(v) => update("customer_quotes", v)}
+          rows={6}
+        />
+        <TextArea
+          label="Kundresa"
+          hint="5 stadier: medvetenhet → övervägande → beslut → köp → efterköp. Vad sker i varje?"
+          value={profile.customer_journey}
+          onChange={(v) => update("customer_journey", v)}
+          onAssist={() => assistField("customer_journey")}
+          assisting={assisting === "customer_journey"}
+          rows={5}
+        />
+      </Section>
+
+      <Section title="Konkurrenter" icon={Users}>
+        <TextArea
+          label="Konkurrent-översikt"
+          hint="Vilka är 3–5 huvudkonkurrenter? Vad gör de bra/dåligt? Detaljerad spaning gör du i Konkurrenter-fliken."
+          value={profile.competitors}
+          onChange={(v) => update("competitors", v)}
+          onAssist={() => assistField("competitors")}
+          assisting={assisting === "competitors"}
+          rows={4}
         />
       </Section>
 
@@ -266,7 +309,63 @@ export default function ProfilPage() {
           onClose={() => setShowToneWizard(false)}
         />
       )}
+
+      {showVocExtractor && (
+        <VocExtractor
+          seed={profile}
+          onDone={(result) => {
+            // Sammanställ till tone_rules + lägg råa quotes
+            const summary = `${result.summary_for_brand || ""}\n\nVANLIGA FRASER (kundens egna):\n${result.common_phrases || ""}\n\nSMÄRTORD: ${result.pain_words || ""}\nGLÄDJEORD: ${result.joy_words || ""}\nINVÄNDNINGAR: ${result.objections || ""}\nSTILMÖNSTER: ${result.tone_patterns || ""}`;
+            update("tone_rules", (profile.tone_rules ? profile.tone_rules + "\n\n--- Voice of Customer ---\n" : "") + summary);
+            setShowVocExtractor(false);
+          }}
+          onClose={() => setShowVocExtractor(false)}
+        />
+      )}
     </div>
+  );
+}
+
+function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { common_phrases?: string; pain_words?: string; joy_words?: string; objections?: string; tone_patterns?: string; summary_for_brand?: string }) => void; onClose: () => void }) {
+  const [quotes, setQuotes] = useState(seed.customer_quotes || "");
+  const [loading, setLoading] = useState(false);
+
+  async function run() {
+    setLoading(true);
+    const r = await fetch("/api/profile/assist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "voc", inputs: { quotes, company_name: seed.company_name } }),
+    });
+    const d = await r.json();
+    setLoading(false);
+    if (d.summary_for_brand || d.common_phrases) onDone(d);
+    else alert("Fel: " + (d.error || "okänt"));
+  }
+
+  return (
+    <Modal onClose={onClose} title="Voice of Customer — extrahera språkmönster">
+      <div className="text-sm text-gray-600 mb-3">
+        Klistra in 3–10 verkliga kundord (recensioner, mejl, chat-meddelanden, samtalsanteckningar). AI:n extraherar exakta fraser, smärtord och stilen — och bygger in dem i tonreglerna.
+      </div>
+      <textarea
+        value={quotes}
+        onChange={(e) => setQuotes(e.target.value)}
+        rows={10}
+        placeholder='"Jag var helt slut innan jag kom hit..."&#10;"Det skulle ta evigheter att fixa själv..."&#10;Recensioner / mejl / DM hit'
+        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-body leading-relaxed focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+      />
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={run}
+          disabled={loading || !quotes.trim()}
+          className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+          Extrahera mönster
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -274,7 +373,8 @@ function calcCompletion(p: Profile): number {
   const fields: (keyof Profile)[] = [
     "company_name", "tagline", "location", "founder_name",
     "brand_story", "usp", "tone_rules", "icp_primary",
-    "icp_secondary", "pain_points", "dos", "donts", "hashtags_base",
+    "icp_secondary", "pain_points", "customer_quotes", "customer_journey",
+    "competitors", "dos", "donts", "hashtags_base",
   ];
   const filled = fields.filter((f) => (p[f] || "").toString().trim().length > 10).length;
   return Math.round((filled / fields.length) * 100);

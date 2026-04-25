@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, type Vehicle } from "@/lib/supabase";
-import { Sparkles, Copy, Trash2, Loader2, Check } from "lucide-react";
+import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image } from "lucide-react";
 
 function Instagram({ className }: { className?: string }) {
   return (
@@ -24,6 +24,7 @@ function Facebook({ className }: { className?: string }) {
 
 type Platform = "instagram" | "facebook";
 
+interface Slide { number: number; headline: string; body: string; image_hint: string }
 interface SocialPost {
   id: string;
   platform: Platform;
@@ -34,6 +35,7 @@ interface SocialPost {
   cta: string;
   vehicle_id: string | null;
   status: string;
+  slides: Slide[] | null;
   created_at: string;
 }
 
@@ -109,6 +111,22 @@ export default function SocialPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(p.id);
     setTimeout(() => setCopiedId(null), 1500);
+  }
+
+  async function share(p: SocialPost) {
+    const recipientName = prompt("Mottagarens namn (visas i delningssidan):", "");
+    if (recipientName === null) return;
+    const recipientEmail = prompt("Mottagarens e-post (för din egen referens):", "") || "";
+    const r = await fetch("/api/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resource_type: "social", resource_id: p.id, recipient_name: recipientName, recipient_email: recipientEmail }),
+    });
+    if (!r.ok) { alert("Fel: " + (await r.text())); return; }
+    const { token } = await r.json();
+    const url = `${window.location.origin}/granska/${token}`;
+    navigator.clipboard.writeText(url);
+    alert("Granskningslänk skapad och kopierad:\n\n" + url + "\n\nSkicka via mejl/SMS. Kunden kan godkänna, avvisa eller kommentera.");
   }
 
   async function remove(id: string) {
@@ -265,6 +283,13 @@ export default function SocialPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button
+                        onClick={() => share(p)}
+                        className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-500 hover:text-blue-600 transition-colors"
+                        title="Dela för godkännande"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => copy(p)}
                         className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-brand-blue transition-colors"
                         title="Kopiera text + hashtags"
@@ -290,6 +315,26 @@ export default function SocialPage() {
                     <div className="mb-2 p-2 bg-purple-50 border-l-2 border-purple-400 rounded text-sm text-gray-800 font-medium">
                       🎣 {p.hook}
                     </div>
+                  )}
+                  {p.slides && p.slides.length > 0 && (
+                    <details className="mb-2 bg-gray-50 rounded-lg overflow-hidden">
+                      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-1">
+                        <Image className="w-3.5 h-3.5" />
+                        {p.slides.length} slides
+                      </summary>
+                      <div className="p-3 space-y-2 border-t border-gray-200">
+                        {p.slides.map((s) => (
+                          <div key={s.number} className="bg-white rounded p-2 border border-gray-200">
+                            <div className="flex items-start justify-between">
+                              <div className="text-xs font-bold text-purple-600">Slide {s.number}</div>
+                            </div>
+                            <div className="text-sm font-bold text-gray-900 mt-0.5">{s.headline}</div>
+                            <div className="text-xs text-gray-700 mt-1">{s.body}</div>
+                            <div className="text-[11px] text-gray-500 italic mt-1">📷 {s.image_hint}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
                   )}
                   <pre className="whitespace-pre-wrap text-sm text-gray-800 font-body leading-relaxed">{p.caption}</pre>
                   {p.hashtags && <div className="mt-2 text-xs text-blue-600">{p.hashtags}</div>}

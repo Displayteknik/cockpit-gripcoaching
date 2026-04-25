@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings } from "lucide-react";
+import { Car, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare } from "lucide-react";
+import ClientPicker from "@/components/ClientPicker";
 
 const navItems = [
   { href: "/dashboard", label: "Översikt", icon: Home },
@@ -13,6 +14,8 @@ const navItems = [
   { href: "/dashboard/social", label: "Social", icon: Sparkles },
   { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
   { href: "/dashboard/seo", label: "SEO", icon: TrendingUp },
+  { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
+  { href: "/dashboard/godkannande", label: "Godkännande", icon: MessageSquare },
   { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
   { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
 ];
@@ -29,12 +32,13 @@ export default function DashboardLayout({
       {/* Top bar */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <Link href="/dashboard" className="flex items-center gap-2">
               <LayoutDashboard className="w-5 h-5 text-brand-blue" />
-              <span className="font-display font-bold text-lg">HM Motor</span>
+              <span className="font-display font-bold text-base">Cockpit</span>
             </Link>
-            <nav className="flex items-center gap-1">
+            <ClientPicker />
+            <nav className="flex items-center gap-1 overflow-x-auto">
               {navItems.map((item) => {
                 const isActive =
                   item.href === "/dashboard"

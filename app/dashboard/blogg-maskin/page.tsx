@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Lightbulb, Loader2, Play, Trash2, Plus, Check, AlertCircle, FileText } from "lucide-react";
+import { BookOpen, Lightbulb, Loader2, Play, Trash2, Plus, Check, AlertCircle, FileText, FileSearch, Send, Edit3 } from "lucide-react";
 
+interface OutlineSection { heading: string; type: string; key_points: string[]; word_target: number }
+interface Outline { title: string; meta_description: string; primary_keyword: string; word_target: number; sections: OutlineSection[]; faq: { question: string; short_answer: string }[] }
 interface QueueItem {
   id: string;
   topic: string;
@@ -13,6 +15,8 @@ interface QueueItem {
   priority: number;
   blog_post_id: string | null;
   error: string | null;
+  outline: Outline | null;
+  outline_approved: boolean;
   created_at: string;
   generated_at: string | null;
 }
@@ -29,6 +33,8 @@ export default function BloggMaskinPage() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loadingIdeas, setLoadingIdeas] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
+  const [outlining, setOutlining] = useState<string | null>(null);
+  const [showOutline, setShowOutline] = useState<QueueItem | null>(null);
   const [newTopic, setNewTopic] = useState("");
   const [newAngle, setNewAngle] = useState("");
   const [newKeyword, setNewKeyword] = useState("");
@@ -83,13 +89,44 @@ export default function BloggMaskinPage() {
     loadQueue();
   }
 
+  async function generateOutline(q: QueueItem) {
+    setOutlining(q.id);
+    try {
+      const r = await fetch("/api/blog/outline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: q.topic, angle: q.angle, keyword: q.keyword, queue_id: q.id }),
+      });
+      if (!r.ok) {
+        const e = await r.json();
+        alert("Fel: " + (e.error || "okänt"));
+      } else {
+        await loadQueue();
+        const updated = (await (await fetch("/api/blog/queue")).json()).find((x: QueueItem) => x.id === q.id);
+        if (updated) setShowOutline(updated);
+      }
+    } finally {
+      setOutlining(null);
+    }
+  }
+
+  async function approveOutline(q: QueueItem) {
+    await fetch("/api/blog/queue", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: q.id, outline_approved: true }),
+    });
+    setShowOutline(null);
+    loadQueue();
+  }
+
   async function generateNow(q: QueueItem) {
     setGenerating(q.id);
     try {
       const r = await fetch("/api/blog/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: q.topic, angle: q.angle, keyword: q.keyword, queue_id: q.id }),
+        body: JSON.stringify({ topic: q.topic, angle: q.angle, keyword: q.keyword, queue_id: q.id, outline: q.outline }),
       });
       if (!r.ok) {
         const err = await r.json();
@@ -226,13 +263,32 @@ export default function BloggMaskinPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
+                  {!q.outline ? (
+                    <button
+                      onClick={() => generateOutline(q)}
+                      disabled={outlining === q.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      {outlining === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSearch className="w-3.5 h-3.5" />}
+                      Bygg disposition
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowOutline(q)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-medium transition-colors"
+                    >
+                      <FileSearch className="w-3.5 h-3.5" />
+                      {q.outline_approved ? "Granska" : "Granska & godkänn"}
+                    </button>
+                  )}
                   <button
                     onClick={() => generateNow(q)}
                     disabled={generating === q.id}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    title={q.outline_approved ? "Skriv från godkänd disposition" : q.outline ? "Skriv från ej godkänd disposition" : "Skriv direkt utan disposition"}
                   >
                     {generating === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                    Kör nu
+                    Skriv
                   </button>
                   <button
                     onClick={() => remove(q.id)}
@@ -246,6 +302,87 @@ export default function BloggMaskinPage() {
           </div>
         )}
       </div>
+
+      {showOutline && showOutline.outline && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowOutline(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-display font-bold text-lg text-gray-900">Disposition</h3>
+                <div className="text-xs text-gray-500">{showOutline.topic}</div>
+              </div>
+              <button onClick={() => setShowOutline(null)} className="text-gray-400 hover:text-gray-600 p-2">×</button>
+            </div>
+            <div className="overflow-y-auto p-6 space-y-3">
+              <div>
+                <div className="text-xs text-gray-500 uppercase">Titel</div>
+                <div className="font-display font-bold text-gray-900">{showOutline.outline.title}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase">Meta description</div>
+                <div className="text-sm text-gray-700">{showOutline.outline.meta_description}</div>
+              </div>
+              <div className="flex gap-3 text-xs">
+                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{showOutline.outline.primary_keyword}</span>
+                <span className="text-gray-500">~{showOutline.outline.word_target} ord</span>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase mb-2">Sektioner</div>
+                <div className="space-y-2">
+                  {showOutline.outline.sections.map((s, i) => (
+                    <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-bold text-sm text-gray-900">{s.heading}</div>
+                        <div className="text-xs text-gray-500">~{s.word_target} ord</div>
+                      </div>
+                      {s.key_points && s.key_points.length > 0 && (
+                        <ul className="text-xs text-gray-600 mt-1 list-disc pl-5 space-y-0.5">
+                          {s.key_points.map((kp, j) => <li key={j}>{kp}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {showOutline.outline.faq && showOutline.outline.faq.length > 0 && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase mb-2">FAQ (AEO-bonus)</div>
+                  <div className="space-y-2">
+                    {showOutline.outline.faq.map((f, i) => (
+                      <div key={i} className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                        <div className="font-medium text-sm text-gray-900">{f.question}</div>
+                        <div className="text-xs text-gray-600 mt-0.5">{f.short_answer}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+              <div className="text-xs text-gray-500">
+                {showOutline.outline_approved ? "✓ Redan godkänd" : "Godkänn för bättre artikel"}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => generateOutline(showOutline)} disabled={outlining === showOutline.id} className="flex items-center gap-2 text-sm text-purple-700 hover:bg-purple-100 px-3 py-2 rounded-lg disabled:opacity-50">
+                  {outlining === showOutline.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
+                  Bygg om
+                </button>
+                {!showOutline.outline_approved && (
+                  <button onClick={() => approveOutline(showOutline)} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700">
+                    <Check className="w-4 h-4" />
+                    Godkänn
+                  </button>
+                )}
+                <button onClick={() => { setShowOutline(null); generateNow(showOutline); }} className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
+                  <Play className="w-4 h-4" />
+                  Skriv artikeln
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Generated */}
       {generated.length > 0 && (

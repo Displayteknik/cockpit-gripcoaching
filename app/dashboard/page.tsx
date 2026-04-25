@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   Car, FileText, Layers, Sparkles, BookOpen, ExternalLink,
-  Pencil, Plus, TrendingUp, MessageSquare,
+  Pencil, Plus, TrendingUp, MessageSquare, Activity, ChevronRight,
 } from "lucide-react";
 
 interface Stats {
@@ -20,10 +20,20 @@ interface Stats {
   newLeads: number;
 }
 
+interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  link: string | null;
+  created_at: string;
+}
+
 export default function DashboardOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [activity, setActivity] = useState<Activity[]>([]);
 
   useEffect(() => {
+    fetch("/api/activity").then((r) => r.json()).then(setActivity).catch(() => {});
     (async () => {
       const [vAll, vSold, bPub, bDraft, sAll, sDraft, queue, leadsAll, leadsNew] = await Promise.all([
         supabase.from("hm_vehicles").select("id", { count: "exact", head: true }),
@@ -99,6 +109,33 @@ export default function DashboardOverview() {
         />
       </div>
 
+      {activity.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h2 className="font-display text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-600" />
+            Senaste aktivitet
+          </h2>
+          <div className="space-y-2">
+            {activity.slice(0, 8).map((a) => (
+              <div key={a.id} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-b-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activityColor(a.type)}`} />
+                  <div className="min-w-0">
+                    <div className="text-sm text-gray-900 truncate">{a.title}</div>
+                    <div className="text-xs text-gray-400">{relativeTime(a.created_at)}</div>
+                  </div>
+                </div>
+                {a.link && (
+                  <Link href={a.link} className="text-gray-400 hover:text-brand-blue flex-shrink-0">
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="font-display text-lg font-bold text-gray-900 mb-4">Snabblänkar</h2>
         <div className="flex flex-wrap gap-3">
@@ -129,6 +166,27 @@ export default function DashboardOverview() {
       </div>
     </div>
   );
+}
+
+function activityColor(type: string): string {
+  if (type.startsWith("blog")) return "bg-emerald-500";
+  if (type.startsWith("social")) return "bg-purple-500";
+  if (type.startsWith("share")) return "bg-blue-500";
+  if (type.includes("approve")) return "bg-emerald-600";
+  if (type.includes("reject")) return "bg-red-500";
+  if (type.startsWith("client")) return "bg-amber-500";
+  return "bg-gray-400";
+}
+
+function relativeTime(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "nu";
+  if (m < 60) return `${m} min sen`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} h sen`;
+  const d = Math.floor(h / 24);
+  return `${d} d sen`;
 }
 
 function nextCronText() {

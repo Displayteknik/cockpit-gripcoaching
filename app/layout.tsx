@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import CoachWidgetGate from "@/components/CoachWidgetGate";
 import VisitorTracker from "@/components/VisitorTracker";
+import StructuredData from "@/components/StructuredData";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-display",
@@ -39,6 +40,7 @@ export default function RootLayout({
   return (
     <html lang="sv" className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col font-body text-text-primary bg-white antialiased">
+        <StructuredData type="localbusiness" />
         {children}
         <VisitorTracker />
         <CoachWidgetGate />

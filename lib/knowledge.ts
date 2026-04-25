@@ -39,12 +39,14 @@ export async function getKnowledge(...names: string[]): Promise<string> {
 export async function getProfileAsMarkdown(): Promise<string> {
   try {
     const { createClient } = await import("@supabase/supabase-js");
+    const { getActiveClientId } = await import("./client-context");
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { auth: { persistSession: false } }
     );
-    const { data } = await sb.from("hm_brand_profile").select("*").eq("id", 1).single();
+    const clientId = await getActiveClientId();
+    const { data } = await sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle();
     if (!data) return "";
 
     const sections: [string, string | null][] = [
@@ -59,6 +61,9 @@ export async function getProfileAsMarkdown(): Promise<string> {
       ["Primär ICP", data.icp_primary],
       ["Sekundär ICP", data.icp_secondary],
       ["Smärtpunkter kunden har", data.pain_points],
+      ["Voice of Customer (kundord)", data.customer_quotes],
+      ["Konkurrenter", data.competitors],
+      ["Kundresa", data.customer_journey],
       ["GÖR", data.dos],
       ["GÖR INTE", data.donts],
       ["Hashtag-bas", data.hashtags_base],
