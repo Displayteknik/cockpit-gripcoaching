@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, FileText, LayoutDashboard, ExternalLink, Layers } from "lucide-react";
+import { Car, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Fordon", icon: Car },
+  { href: "/dashboard", label: "Översikt", icon: Home },
+  { href: "/dashboard/profil", label: "Profil", icon: Target },
+  { href: "/dashboard/fordon", label: "Fordon", icon: Car },
   { href: "/dashboard/blogg", label: "Blogg", icon: FileText },
   { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
+  { href: "/dashboard/social", label: "Social", icon: Sparkles },
+  { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
+  { href: "/dashboard/seo", label: "SEO", icon: TrendingUp },
+  { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
+  { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
 ];
 
 export default function DashboardLayout({
