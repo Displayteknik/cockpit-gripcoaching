@@ -5,13 +5,24 @@ import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { puckConfig } from "@/lib/puck-config";
 import { supabase, type PageData } from "@/lib/supabase";
+import DarekPuckEditor from "@/components/DarekPuckEditor";
 
 const emptyData: Data = {
   content: [],
   root: { props: { title: "Ny sida" } },
 };
 
-export default function AdminEditor() {
+export default function AdminRouter() {
+  const [resourceModule, setResourceModule] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => setResourceModule(c?.resource_module || "automotive"));
+  }, []);
+  if (resourceModule === null) return <div className="h-screen flex items-center justify-center bg-gray-50"><div className="text-gray-500">Laddar...</div></div>;
+  if (resourceModule === "art") return <DarekPuckEditor />;
+  return <AdminEditor />;
+}
+
+function AdminEditor() {
   const [pages, setPages] = useState<PageData[]>([]);
   const [currentSlug, setCurrentSlug] = useState<string>("index");
   const [pageData, setPageData] = useState<Data>(emptyData);
