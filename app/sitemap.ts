@@ -4,12 +4,13 @@ import { supabaseServer } from "@/lib/supabase-admin";
 export const runtime = "nodejs";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const HM = "00000000-0000-0000-0000-000000000001";
   const sb = supabaseServer();
   const [{ data: settings }, { data: vehicles }, { data: blog }, { data: pages }] = await Promise.all([
-    sb.from("hm_settings").select("*").eq("key", "site_url").maybeSingle(),
-    sb.from("hm_vehicles").select("slug, updated_at").eq("is_sold", false),
-    sb.from("hm_blog").select("slug, published_at").eq("published", true),
-    sb.from("hm_pages").select("slug, updated_at").eq("is_published", true),
+    sb.from("hm_settings").select("*").eq("client_id", HM).eq("key", "site_url").maybeSingle(),
+    sb.from("hm_vehicles").select("slug, updated_at").eq("client_id", HM).eq("is_sold", false),
+    sb.from("hm_blog").select("slug, published_at").eq("client_id", HM).eq("published", true),
+    sb.from("hm_pages").select("slug, updated_at").eq("client_id", HM).eq("is_published", true),
   ]);
 
   const base = (settings?.value || "https://hmmotor-next.vercel.app").replace(/\/$/, "");

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       const { data: post } = await sb2.from("hm_social_posts").select("hook, caption").eq("id", resource_id).maybeSingle();
       preview = post?.hook || post?.caption || "";
     } else if (resource_type === "blog") {
-      const { data: post } = await sb2.from("hm_blog").select("title, excerpt").eq("id", resource_id).maybeSingle();
+      const { data: post } = await sb2.from("hm_blog").select("title, excerpt").eq("id", resource_id).eq("client_id", clientId).maybeSingle();
       preview = post?.excerpt || post?.title || "";
     }
     const origin = req.nextUrl.origin;

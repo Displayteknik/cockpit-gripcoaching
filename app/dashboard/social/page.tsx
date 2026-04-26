@@ -75,12 +75,32 @@ export default function SocialPage() {
   const [previewFor, setPreviewFor] = useState<SocialPost | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("hm_vehicles")
-      .select("id, title, brand, category, slug")
-      .eq("is_sold", false)
-      .order("is_featured", { ascending: false })
-      .then(({ data }) => setVehicles((data || []) as Vehicle[]));
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => {
+      const cid = c?.id;
+      const mod = c?.resource_module;
+      if (cid && mod === "automotive") {
+        supabase
+          .from("hm_vehicles")
+          .select("id, title, brand, category, slug")
+          .eq("client_id", cid)
+          .eq("is_sold", false)
+          .order("is_featured", { ascending: false })
+          .then(({ data }) => setVehicles((data || []) as Vehicle[]));
+      } else if (cid && mod === "art") {
+        supabase
+          .from("art_works")
+          .select("id, title, technique, status, slug")
+          .eq("client_id", cid)
+          .neq("status", "archived")
+          .order("is_featured", { ascending: false })
+          .then(({ data }) => setVehicles(((data || []) as unknown[]).map((w) => {
+            const wo = w as { id: string; title: string; technique: string; status: string; slug: string };
+            return { id: wo.id, title: wo.title, brand: wo.technique, category: wo.status, slug: wo.slug } as unknown as Vehicle;
+          })));
+      } else {
+        setVehicles([]);
+      }
+    });
     loadPosts();
   }, []);
 

@@ -18,6 +18,7 @@ export async function generateMetadata({
   const { data: post } = await supabase
     .from("hm_blog")
     .select("title, excerpt")
+    .eq("client_id", "00000000-0000-0000-0000-000000000001")
     .eq("slug", slug)
     .single();
 
@@ -37,6 +38,7 @@ export default async function BlogPostPage({
   const { data: post } = await supabase
     .from("hm_blog")
     .select("*")
+    .eq("client_id", "00000000-0000-0000-0000-000000000001")
     .eq("slug", slug)
     .single();
 

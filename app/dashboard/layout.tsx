@@ -2,60 +2,82 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Car, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown } from "lucide-react";
 import ClientPicker from "@/components/ClientPicker";
 
 interface NavItem { href: string; label: string; icon: React.ComponentType<{ className?: string }> }
 interface NavSection { label: string; items: NavItem[] }
 
-const navSections: NavSection[] = [
-  {
-    label: "Strategi",
-    items: [
-      { href: "/dashboard", label: "Översikt", icon: Home },
-      { href: "/dashboard/profil", label: "Brand-profil", icon: Target },
-      { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
-      { href: "/dashboard/analysator", label: "Profil-analysator", icon: Search },
-    ],
-  },
-  {
-    label: "Instagram & Social",
-    items: [
-      { href: "/dashboard/social", label: "Skapa inlägg", icon: Sparkles },
-      { href: "/dashboard/scheduler", label: "Schemalägga", icon: Calendar },
-      { href: "/dashboard/analytics", label: "IG Analytics", icon: Activity },
-    ],
-  },
-  {
-    label: "Innehåll & SEO",
-    items: [
-      { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
-      { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: FileText },
-      { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
-      { href: "/dashboard/sidor", label: "Sidor (Puck)", icon: Layers },
-    ],
-  },
-  {
-    label: "Kund-förvaltning",
-    items: [
-      { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
-      { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
-      { href: "/dashboard/fordon", label: "Fordon", icon: Car },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
-      { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
-    ],
-  },
-];
+function buildNavSections(resourceModule: string): NavSection[] {
+  const resourceItems: NavItem[] =
+    resourceModule === "art"
+      ? [
+          { href: "/dashboard/verk", label: "Verk", icon: Palette },
+          { href: "/dashboard/utstallningar", label: "Utställningar", icon: ImageIcon },
+        ]
+      : resourceModule === "automotive"
+      ? [{ href: "/dashboard/fordon", label: "Fordon", icon: Car }]
+      : [];
+
+  return [
+    {
+      label: "Strategi",
+      items: [
+        { href: "/dashboard", label: "Översikt", icon: Home },
+        { href: "/dashboard/profil", label: "Brand-profil", icon: Target },
+        { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
+        { href: "/dashboard/analysator", label: "Profil-analysator", icon: Search },
+      ],
+    },
+    {
+      label: "Instagram & Social",
+      items: [
+        { href: "/dashboard/social", label: "Skapa inlägg", icon: Sparkles },
+        { href: "/dashboard/scheduler", label: "Schemalägga", icon: Calendar },
+        { href: "/dashboard/analytics", label: "IG Analytics", icon: Activity },
+      ],
+    },
+    {
+      label: "Innehåll & SEO",
+      items: [
+        { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
+        { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: FileText },
+        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
+        { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
+      ],
+    },
+    {
+      label: "Kund-förvaltning",
+      items: [
+        { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
+        { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
+        ...resourceItems,
+      ],
+    },
+    {
+      label: "System",
+      items: [
+        { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
+        { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
+      ],
+    },
+  ];
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [resourceModule, setResourceModule] = useState<string>("automotive");
+
+  useEffect(() => {
+    fetch("/api/clients/active")
+      .then((r) => r.json())
+      .then((c) => { if (c?.resource_module) setResourceModule(c.resource_module); })
+      .catch(() => {});
+  }, []);
+
+  const navSections = buildNavSections(resourceModule);
 
   // Hitta aktiv sektion-label för mobile-titel
   const activeItem = navSections.flatMap((s) => s.items).find((i) => i.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(i.href));

@@ -207,6 +207,7 @@ export default async function HomePage() {
   const { data: page } = await supabase
     .from("hm_pages")
     .select("*")
+    .eq("client_id", "00000000-0000-0000-0000-000000000001")
     .eq("slug", "index")
     .eq("is_published", true)
     .single();

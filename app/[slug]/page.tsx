@@ -22,6 +22,7 @@ export async function generateMetadata({
   const { data: page } = await supabase
     .from("hm_pages")
     .select("title")
+    .eq("client_id", "00000000-0000-0000-0000-000000000001")
     .eq("slug", slug)
     .eq("is_published", true)
     .single();
@@ -45,6 +46,7 @@ export default async function DynamicPage({
   const { data: page } = await supabase
     .from("hm_pages")
     .select("*")
+    .eq("client_id", "00000000-0000-0000-0000-000000000001")
     .eq("slug", slug)
     .eq("is_published", true)
     .single();

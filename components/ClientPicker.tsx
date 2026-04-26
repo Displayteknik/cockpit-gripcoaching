@@ -143,6 +143,7 @@ export default function ClientPicker() {
                 >
                   <option value="generic">Generisk (bara marknad/SEO/social)</option>
                   <option value="automotive">Automotive (fordon-CRUD)</option>
+                  <option value="art">Konst (verk + utställningar)</option>
                   <option value="services">Tjänsteföretag (tjänste-CRUD)</option>
                   <option value="ecommerce">E-handel (produkt-CRUD)</option>
                 </select>

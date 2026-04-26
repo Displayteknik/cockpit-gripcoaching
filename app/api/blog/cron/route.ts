@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin;
   const r = await fetch(`${origin}/api/blog/generate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", cookie: `active_client_id=${next.client_id}` },
     body: JSON.stringify({
       topic: next.topic,
       angle: next.angle,

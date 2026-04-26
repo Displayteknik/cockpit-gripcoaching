@@ -11,7 +11,6 @@ import { notFound } from "next/navigation";
 import { Phone, ArrowLeft, CreditCard, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import { vehicleJsonLd, jsonLdScript } from "@/lib/structured-data";
-import { getActiveClientId } from "@/lib/client-context";
 
 export async function generateMetadata({
   params,
@@ -19,9 +18,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const HM = "00000000-0000-0000-0000-000000000001";
   const { data: vehicle } = await supabase
     .from("hm_vehicles")
     .select("title, description")
+    .eq("client_id", HM)
     .eq("slug", slug)
     .single();
 
@@ -37,10 +38,12 @@ export default async function VehicleDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const HM = "00000000-0000-0000-0000-000000000001";
 
   const { data: vehicle } = await supabase
     .from("hm_vehicles")
     .select("*")
+    .eq("client_id", HM)
     .eq("slug", slug)
     .single();
 
@@ -50,10 +53,9 @@ export default async function VehicleDetailPage({
   const specs = v.specs || {};
 
   // JSON-LD Product per fordon
-  const clientId = await getActiveClientId();
   const [{ data: profile }, { data: settingsRows }] = await Promise.all([
-    supabase.from("hm_brand_profile").select("company_name, location, founder_phone, founder_email").eq("client_id", clientId).maybeSingle(),
-    supabase.from("hm_settings").select("key, value").eq("client_id", clientId),
+    supabase.from("hm_brand_profile").select("company_name, location, founder_phone, founder_email").eq("client_id", HM).maybeSingle(),
+    supabase.from("hm_settings").select("key, value").eq("client_id", HM),
   ]);
   const settings = Object.fromEntries((settingsRows || []).map((s) => [s.key, s.value])) as Record<string, string>;
   const productJsonLd = vehicleJsonLd(v as unknown as Parameters<typeof vehicleJsonLd>[0], profile || {}, settings);
@@ -62,6 +64,7 @@ export default async function VehicleDetailPage({
   const { data: related } = await supabase
     .from("hm_vehicles")
     .select("*")
+    .eq("client_id", HM)
     .eq("category", v.category)
     .neq("id", v.id)
     .eq("is_sold", false)

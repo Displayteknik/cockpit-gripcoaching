@@ -19,6 +19,7 @@ export function BlogGrid({ title, subtitle, maxItems = 3 }: BlogGridProps) {
       const { data } = await supabase
         .from("hm_blog")
         .select("*")
+        .eq("client_id", "00000000-0000-0000-0000-000000000001")
         .eq("published", true)
         .order("published_at", { ascending: false })
         .limit(maxItems);

@@ -38,10 +38,11 @@ export async function POST(req: NextRequest) {
   const knowledge = await getKnowledge("blog-playbook", "conversion");
   const sb = supabaseServer();
 
-  // Hämta befintliga publicerade artiklar för internal-linking-kontext
+  // Hämta befintliga publicerade artiklar för internal-linking-kontext (per klient)
   const { data: existing } = await sb
     .from("hm_blog")
     .select("title, slug, excerpt")
+    .eq("client_id", clientId)
     .eq("published", true)
     .limit(50);
   const existingCtx = (existing || []).map((b) => `- ${b.title} (/blogg/${b.slug})`).join("\n");

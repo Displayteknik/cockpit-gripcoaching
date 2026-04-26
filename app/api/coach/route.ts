@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generate, type GeminiMessage } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId } from "@/lib/client-context";
+import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,31 +17,41 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as ChatBody;
     const sb = supabaseServer();
     const clientId = await getActiveClientId();
+    const client = await getActiveClient();
+    const isAutomotive = client?.resource_module === "automotive";
+    const isArt = client?.resource_module === "art";
 
-    const { data: vehicles } = await sb
-      .from("hm_vehicles")
-      .select("slug, title, brand, category, price, price_label, is_featured")
-      .eq("is_sold", false)
-      .order("is_featured", { ascending: false })
-      .limit(30);
-
-    const lager = (vehicles || [])
-      .map(
-        (v) =>
-          `- ${v.category}: ${v.title} (${v.brand || "-"}) ${
-            v.price ? v.price + " kr" : v.price_label || "pris på begäran"
-          } — /fordon/${v.slug}`
-      )
-      .join("\n");
+    let inventoryBlock = "";
+    if (isAutomotive) {
+      const { data: vehicles } = await sb
+        .from("hm_vehicles")
+        .select("slug, title, brand, category, price, price_label, is_featured")
+        .eq("client_id", clientId)
+        .eq("is_sold", false)
+        .order("is_featured", { ascending: false })
+        .limit(30);
+      const lager = (vehicles || []).map((v) =>
+        `- ${v.category}: ${v.title} (${v.brand || "-"}) ${v.price ? v.price + " kr" : v.price_label || "pris på begäran"} — /fordon/${v.slug}`
+      ).join("\n");
+      inventoryBlock = `## NUVARANDE LAGER (${vehicles?.length || 0} st)\n${lager}\n\nNär du rekommenderar ett fordon: ge slug-länken "/fordon/[slug]" så kunden kan klicka direkt.`;
+    } else if (isArt) {
+      const { data: works } = await sb
+        .from("art_works")
+        .select("slug, title, technique, year, price, price_label, status")
+        .eq("client_id", clientId)
+        .neq("status", "archived")
+        .limit(30);
+      const lager = (works || []).map((w) =>
+        `- ${w.title} (${w.technique || "okänd teknik"}${w.year ? `, ${w.year}` : ""}) ${w.price ? w.price + " kr" : w.price_label || "pris på begäran"} — /verk/${w.slug} [${w.status}]`
+      ).join("\n");
+      inventoryBlock = `## VERK I PORTFOLIO (${works?.length || 0} st)\n${lager}\n\nNär du rekommenderar ett verk: ge slug-länken "/verk/[slug]" så kunden kan klicka direkt.`;
+    }
 
     const knowledge = await getKnowledge("company", "coach-instructions");
 
     const system = `${knowledge}
 
-## NUVARANDE LAGER (${vehicles?.length || 0} st)
-${lager}
-
-När du rekommenderar ett fordon: ge slug-länken "/fordon/[slug]" så kunden kan klicka direkt.`;
+${inventoryBlock}`;
 
     const contents: GeminiMessage[] = body.messages.map((m) => ({
       role: m.role === "assistant" ? "model" : "user",

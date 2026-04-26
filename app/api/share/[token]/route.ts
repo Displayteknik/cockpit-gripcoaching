@@ -15,10 +15,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   let resource: unknown = null;
   if (link.resource_type === "social") {
-    const { data } = await sb.from("hm_social_posts").select("*").eq("id", link.resource_id).maybeSingle();
+    const { data } = await sb.from("hm_social_posts").select("*").eq("id", link.resource_id).eq("client_id", link.client_id).maybeSingle();
     resource = data;
   } else if (link.resource_type === "blog") {
-    const { data } = await sb.from("hm_blog").select("*").eq("id", link.resource_id).maybeSingle();
+    const { data } = await sb.from("hm_blog").select("*").eq("id", link.resource_id).eq("client_id", link.client_id).maybeSingle();
     resource = data;
   }
 

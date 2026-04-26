@@ -4,23 +4,23 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
-  Car, FileText, Layers, Sparkles, BookOpen, ExternalLink,
+  Car, Palette, Image as ImageIcon, FileText, Sparkles, BookOpen, ExternalLink,
   Pencil, Plus, TrendingUp, MessageSquare, Activity, ChevronRight,
 } from "lucide-react";
 
 interface Stats {
-  vehicles: number;
-  vehiclesSold: number;
-  blogPosts: number;
-  blogDrafts: number;
+  productCount: number | null;
+  productSold: number | null;
+  blogPosts: number | null;
+  blogDrafts: number | null;
   socialPosts: number;
   socialDrafts: number;
-  queued: number;
+  queued: number | null;
   leads: number;
   newLeads: number;
 }
 
-interface Activity {
+interface ActivityItem {
   id: string;
   type: string;
   title: string;
@@ -28,41 +28,71 @@ interface Activity {
   created_at: string;
 }
 
-interface ActiveClient { id: string; name: string; industry: string | null; primary_color: string }
+interface ActiveClient { id: string; name: string; industry: string | null; primary_color: string; resource_module: string }
 
 export default function DashboardOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
-  const [activity, setActivity] = useState<Activity[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [client, setClient] = useState<ActiveClient | null>(null);
 
   useEffect(() => {
     fetch("/api/activity").then((r) => r.json()).then(setActivity).catch(() => {});
-    fetch("/api/clients/active").then((r) => r.json()).then(setClient).catch(() => {});
-    (async () => {
-      const [vAll, vSold, bPub, bDraft, sAll, sDraft, queue, leadsAll, leadsNew] = await Promise.all([
-        supabase.from("hm_vehicles").select("id", { count: "exact", head: true }),
-        supabase.from("hm_vehicles").select("id", { count: "exact", head: true }).eq("is_sold", true),
-        supabase.from("hm_blog").select("id", { count: "exact", head: true }).eq("published", true),
-        supabase.from("hm_blog").select("id", { count: "exact", head: true }).eq("published", false),
-        supabase.from("hm_social_posts").select("id", { count: "exact", head: true }),
-        supabase.from("hm_social_posts").select("id", { count: "exact", head: true }).eq("status", "draft"),
-        supabase.from("hm_blog_queue").select("id", { count: "exact", head: true }).eq("status", "queued"),
-        supabase.from("hm_leads").select("id", { count: "exact", head: true }),
-        supabase.from("hm_leads").select("id", { count: "exact", head: true }).eq("status", "new"),
-      ]);
-      setStats({
-        vehicles: vAll.count || 0,
-        vehiclesSold: vSold.count || 0,
-        blogPosts: bPub.count || 0,
-        blogDrafts: bDraft.count || 0,
-        socialPosts: sAll.count || 0,
-        socialDrafts: sDraft.count || 0,
-        queued: queue.count || 0,
-        leads: leadsAll.count || 0,
-        newLeads: leadsNew.count || 0,
-      });
-    })();
+    fetch("/api/clients/active").then((r) => r.json()).then((c: ActiveClient) => {
+      setClient(c);
+      loadStats(c);
+    }).catch(() => {});
   }, []);
+
+  const loadStats = async (c: ActiveClient) => {
+    const isAutomotive = c.resource_module === "automotive";
+    const isArt = c.resource_module === "art";
+
+    const productAll = isAutomotive
+      ? supabase.from("hm_vehicles").select("id", { count: "exact", head: true }).eq("client_id", c.id)
+      : isArt
+      ? supabase.from("art_works").select("id", { count: "exact", head: true }).eq("client_id", c.id)
+      : null;
+    const productSold = isAutomotive
+      ? supabase.from("hm_vehicles").select("id", { count: "exact", head: true }).eq("client_id", c.id).eq("is_sold", true)
+      : isArt
+      ? supabase.from("art_works").select("id", { count: "exact", head: true }).eq("client_id", c.id).eq("status", "sold")
+      : null;
+
+    const blogAll = supabase.from("hm_blog").select("id", { count: "exact", head: true }).eq("client_id", c.id).eq("published", true);
+    const blogDraftQ = supabase.from("hm_blog").select("id", { count: "exact", head: true }).eq("client_id", c.id).eq("published", false);
+    const queueQ = supabase.from("hm_blog_queue").select("id", { count: "exact", head: true }).eq("client_id", c.id).eq("status", "queued");
+
+    const [p, ps, b, bd, sAll, sDraft, queue, leadsAll, leadsNew] = await Promise.all([
+      productAll, productSold, blogAll, blogDraftQ,
+      supabase.from("hm_social_posts").select("id", { count: "exact", head: true }).eq("client_id", c.id),
+      supabase.from("hm_social_posts").select("id", { count: "exact", head: true }).eq("client_id", c.id).eq("status", "draft"),
+      queueQ,
+      supabase.from("hm_leads").select("id", { count: "exact", head: true }).eq("client_id", c.id),
+      supabase.from("hm_leads").select("id", { count: "exact", head: true }).eq("client_id", c.id).eq("status", "new"),
+    ]);
+
+    setStats({
+      productCount: p?.count ?? null,
+      productSold: ps?.count ?? null,
+      blogPosts: b?.count ?? null,
+      blogDrafts: bd?.count ?? null,
+      socialPosts: sAll.count || 0,
+      socialDrafts: sDraft.count || 0,
+      queued: queue?.count ?? null,
+      leads: leadsAll.count || 0,
+      newLeads: leadsNew.count || 0,
+    });
+  };
+
+  const module = client?.resource_module || "generic";
+  const isAutomotive = module === "automotive";
+  const isArt = module === "art";
+
+  const productConfig = isAutomotive
+    ? { label: "Fordon i lager", soldLabel: "sålda", icon: Car, href: "/dashboard/fordon", actionTitle: "Lägg upp fordon", actionDesc: "Bilar, ATV, UTV, släp — med bilder, specs och bytesstatus.", actionCta: "Öppna fordon" }
+    : isArt
+    ? { label: "Verk till salu", soldLabel: "sålda", icon: Palette, href: "/dashboard/verk", actionTitle: "Lägg upp verk", actionDesc: "Måleri, skulptur, foto — med teknik, mått, pris och status.", actionCta: "Öppna verk" }
+    : null;
 
   return (
     <div className="space-y-8">
@@ -78,8 +108,16 @@ export default function DashboardOverview() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Fordon i lager" value={stats ? stats.vehicles - stats.vehiclesSold : "—"} sub={stats ? `${stats.vehiclesSold} sålda` : ""} icon={Car} color="blue" />
-        <StatCard label="Bloggartiklar" value={stats?.blogPosts ?? "—"} sub={stats ? `${stats.blogDrafts} utkast` : ""} icon={FileText} color="emerald" />
+        {productConfig && (
+          <StatCard
+            label={productConfig.label}
+            value={stats && stats.productCount !== null ? (stats.productCount - (stats.productSold || 0)) : "—"}
+            sub={stats && stats.productSold !== null ? `${stats.productSold} ${productConfig.soldLabel}` : ""}
+            icon={productConfig.icon}
+            color="blue"
+          />
+        )}
+        <StatCard label="Bloggartiklar" value={stats?.blogPosts ?? "—"} sub={stats ? `${stats.blogDrafts ?? 0} utkast` : ""} icon={FileText} color="emerald" />
         <StatCard label="Social-inlägg" value={stats?.socialPosts ?? "—"} sub={stats ? `${stats.socialDrafts} utkast` : ""} icon={Sparkles} color="purple" />
         <StatCard label="Nya leads" value={stats?.newLeads ?? "—"} sub={stats ? `${stats.leads} totalt` : ""} icon={MessageSquare} color="amber" />
       </div>
@@ -95,28 +133,40 @@ export default function DashboardOverview() {
         />
         <ActionCard
           title="Blogg-maskinen"
-          description={stats?.queued ? `${stats.queued} ämnen i kön — nästa kör ${nextCronText()}` : "Generera nya artiklar 3 ggr/vecka automatiskt."}
+          description={stats?.queued ? `${stats.queued} ämnen i kön — nästa kör ${nextCronText()}` : "Generera nya artiklar automatiskt."}
           href="/dashboard/blogg-maskin"
           cta="Hantera ämnen"
           icon={BookOpen}
           color="emerald"
         />
+        {isArt && (
+          <ActionCard
+            title="Utställningar"
+            description="Hantera kommande, pågående och genomförda utställningar."
+            href="/dashboard/utstallningar"
+            cta="Öppna utställningar"
+            icon={ImageIcon}
+            color="emerald"
+          />
+        )}
         <ActionCard
-          title="Redigera startsida"
-          description="Puck-editorn öppnas direkt. Drag & drop med designverktyg."
-          href="/admin"
-          cta="Öppna editor"
+          title="Redigera sidor"
+          description="Puck-editorn — drag & drop med designverktyg."
+          href="/dashboard/sidor"
+          cta="Öppna sidor"
           icon={Pencil}
           color="blue"
         />
-        <ActionCard
-          title="Lägg upp fordon"
-          description="Bilar, ATV, UTV, släp — med bilder, specs och bytesstatus."
-          href="/dashboard/fordon"
-          cta="Öppna fordon"
-          icon={Plus}
-          color="amber"
-        />
+        {productConfig && (
+          <ActionCard
+            title={productConfig.actionTitle}
+            description={productConfig.actionDesc}
+            href={productConfig.href}
+            cta={productConfig.actionCta}
+            icon={Plus}
+            color="amber"
+          />
+        )}
       </div>
 
       {activity.length > 0 && (
@@ -149,10 +199,10 @@ export default function DashboardOverview() {
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="font-display text-lg font-bold text-gray-900 mb-4">Snabblänkar</h2>
         <div className="flex flex-wrap gap-3">
-          <QuickLink href="/" external>Visa publik sajt</QuickLink>
-          <QuickLink href="/admin" external>Sideditor (Puck)</QuickLink>
+          {isAutomotive && <QuickLink href="/" external>Visa publik sajt</QuickLink>}
           <QuickLink href="/dashboard/sidor">Alla sidor</QuickLink>
-          <QuickLink href="/dashboard/fordon">Fordon</QuickLink>
+          {productConfig && <QuickLink href={productConfig.href}>{isArt ? "Verk" : "Fordon"}</QuickLink>}
+          {isArt && <QuickLink href="/dashboard/utstallningar">Utställningar</QuickLink>}
           <QuickLink href="/dashboard/blogg">Blogg</QuickLink>
           <QuickLink href="/dashboard/social">Social generator</QuickLink>
           <QuickLink href="/dashboard/blogg-maskin">Blogg-maskin</QuickLink>
@@ -203,7 +253,7 @@ function nextCronText() {
   const now = new Date();
   const day = now.getDay();
   const hour = now.getHours();
-  const cronDays = [1, 3, 5]; // mån, ons, fre
+  const cronDays = [1, 3, 5];
   for (let offset = 0; offset < 8; offset++) {
     const d = (day + offset) % 7;
     if (cronDays.includes(d)) {

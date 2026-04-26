@@ -29,12 +29,11 @@ export async function POST(req: NextRequest) {
   const end = new Date();
   const start = new Date(Date.now() - 7 * 86400000);
 
-  // Samla data
   const [visits7, visitsPrev, leads7, blogs7, social7, gscRows, ga4row] = await Promise.all([
     sb.from("hm_visits").select("path, ts, referrer").eq("client_id", clientId).gte("ts", start.toISOString()),
     sb.from("hm_visits").select("id", { count: "exact", head: true }).eq("client_id", clientId).gte("ts", new Date(Date.now() - 14 * 86400000).toISOString()).lt("ts", start.toISOString()),
     sb.from("hm_leads").select("*").eq("client_id", clientId).gte("created_at", start.toISOString()),
-    sb.from("hm_blog").select("title, slug, published, published_at").gte("published_at", start.toISOString()),
+    sb.from("hm_blog").select("title, slug, published, published_at").eq("client_id", clientId).gte("published_at", start.toISOString()),
     sb.from("hm_social_posts").select("platform, format, status, hook, hashtags, created_at").eq("client_id", clientId).gte("created_at", start.toISOString()),
     sb.from("gsc_queries").select("query, clicks, impressions, position").eq("client_id", clientId).order("clicks", { ascending: false }).limit(30),
     sb.from("google_connections").select("ga_property_id").eq("client_id", clientId).maybeSingle(),

@@ -25,6 +25,47 @@ export interface Vehicle {
   sort_order: number;
 }
 
+export interface ArtWork {
+  id: string;
+  client_id: string;
+  slug: string;
+  title: string;
+  artist: string | null;
+  year: number | null;
+  technique: string | null;
+  medium: string | null;
+  width_cm: number | null;
+  height_cm: number | null;
+  depth_cm: number | null;
+  price: number;
+  price_label: string | null;
+  description: string | null;
+  image_url: string | null;
+  gallery: string[];
+  tags: string[];
+  status: "for_sale" | "sold" | "reserved" | "exhibition_only" | "archived";
+  is_featured: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Exhibition {
+  id: string;
+  client_id: string;
+  year: number;
+  title: string;
+  venue: string | null;
+  city: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  status: "upcoming" | "ongoing" | "past";
+  description: string | null;
+  image_url: string | null;
+  url: string | null;
+  sort_order: number;
+}
+
 export interface BlogPost {
   id: string;
   slug: string;
@@ -47,12 +88,16 @@ export interface PageData {
   updated_at: string;
 }
 
-// --- Vehicle queries ---
+// HM Motor klient-id — publika rutter (hmmotor-next.vercel.app/hmmotor.se) är HM-specifika
+export const HM_MOTOR_CLIENT_ID = "00000000-0000-0000-0000-000000000001";
+
+// --- Vehicle queries (HM Motor publika sajt) ---
 
 export async function getVehicles(category?: string, featured?: boolean) {
   let query = supabase
     .from("hm_vehicles")
     .select("*")
+    .eq("client_id", HM_MOTOR_CLIENT_ID)
     .eq("is_sold", false)
     .order("sort_order", { ascending: true });
 
@@ -68,18 +113,20 @@ export async function getVehicleBySlug(slug: string) {
   const { data, error } = await supabase
     .from("hm_vehicles")
     .select("*")
+    .eq("client_id", HM_MOTOR_CLIENT_ID)
     .eq("slug", slug)
     .single();
   if (error) throw error;
   return data as Vehicle;
 }
 
-// --- Blog queries ---
+// --- Blog queries (HM Motor publika sajt) ---
 
 export async function getBlogPosts(limit?: number) {
   let query = supabase
     .from("hm_blog")
     .select("*")
+    .eq("client_id", HM_MOTOR_CLIENT_ID)
     .eq("published", true)
     .order("published_at", { ascending: false });
 
@@ -94,18 +141,20 @@ export async function getBlogPostBySlug(slug: string) {
   const { data, error } = await supabase
     .from("hm_blog")
     .select("*")
+    .eq("client_id", HM_MOTOR_CLIENT_ID)
     .eq("slug", slug)
     .single();
   if (error) throw error;
   return data as BlogPost;
 }
 
-// --- Page queries ---
+// --- Page queries (HM Motor publika sajt) ---
 
 export async function getPage(slug: string) {
   const { data, error } = await supabase
     .from("hm_pages")
     .select("*")
+    .eq("client_id", HM_MOTOR_CLIENT_ID)
     .eq("slug", slug)
     .eq("is_published", true)
     .single();
@@ -117,23 +166,25 @@ export async function getAllPages() {
   const { data, error } = await supabase
     .from("hm_pages")
     .select("*")
+    .eq("client_id", HM_MOTOR_CLIENT_ID)
     .order("title", { ascending: true });
   if (error) throw error;
   return data as PageData[];
 }
 
-export async function savePage(slug: string, title: string, pageData: Record<string, unknown>) {
+export async function savePage(slug: string, title: string, pageData: Record<string, unknown>, clientId: string = HM_MOTOR_CLIENT_ID) {
   const { data, error } = await supabase
     .from("hm_pages")
     .upsert(
       {
+        client_id: clientId,
         slug,
         title,
         data: pageData,
         is_published: true,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "slug" }
+      { onConflict: "client_id,slug" }
     )
     .select()
     .single();

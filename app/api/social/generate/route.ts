@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClient, getActiveClientId, logActivity, HM_MOTOR_ID } from "@/lib/client-context";
+import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -38,15 +38,24 @@ export async function POST(req: NextRequest) {
     const client = await getActiveClient();
     const sb = supabaseServer();
 
-    // Endast HM Motor har vehicles
-    let vehicleCtx = "";
-    if (body.vehicle_id && clientId === HM_MOTOR_ID) {
+    // Resurs-kontext baserat på klientens module
+    let resourceCtx = "";
+    if (body.vehicle_id && client?.resource_module === "automotive") {
       const { data: v } = await sb
         .from("hm_vehicles")
         .select("title, brand, model, category, description, price, price_label, badge, specs")
+        .eq("client_id", clientId)
         .eq("id", body.vehicle_id)
         .single();
-      if (v) vehicleCtx = `\n## FORDONSKONTEXT\n${JSON.stringify(v, null, 2)}\n`;
+      if (v) resourceCtx = `\n## FORDONSKONTEXT\n${JSON.stringify(v, null, 2)}\n`;
+    } else if (body.vehicle_id && client?.resource_module === "art") {
+      const { data: w } = await sb
+        .from("art_works")
+        .select("title, artist, year, technique, medium, width_cm, height_cm, description, price, price_label, status, tags")
+        .eq("client_id", clientId)
+        .eq("id", body.vehicle_id)
+        .single();
+      if (w) resourceCtx = `\n## VERK-KONTEXT\n${JSON.stringify(w, null, 2)}\n`;
     }
 
     const knowledge = await getKnowledge("viral-hooks", "conversion");
@@ -94,7 +103,7 @@ RETURNERA JSON:
 Format: ${body.format}
 ${body.angle ? `Vinkel: ${body.angle}` : ""}
 ${body.extra ? `Extra info: ${body.extra}` : ""}
-${vehicleCtx}
+${resourceCtx}
 
 Skriv det konverterande inlägget enligt reglerna nu.`;
 
@@ -117,7 +126,7 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
         hashtags: post.hashtags,
         cta: post.cta,
         slides: post.slides || null,
-        vehicle_id: clientId === HM_MOTOR_ID ? body.vehicle_id ?? null : null,
+        vehicle_id: body.vehicle_id ?? null,
         status: "draft",
       })
       .select()

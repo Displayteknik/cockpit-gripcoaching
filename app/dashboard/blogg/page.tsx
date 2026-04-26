@@ -18,16 +18,23 @@ export default function BlogDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
+  }, []);
 
   const loadPosts = useCallback(async () => {
+    if (!clientId) return;
     setLoading(true);
     const { data } = await supabase
       .from("hm_blog")
       .select("*")
+      .eq("client_id", clientId)
       .order("published_at", { ascending: false });
     setPosts(data || []);
     setLoading(false);
-  }, []);
+  }, [clientId]);
 
   useEffect(() => { loadPosts(); }, [loadPosts]);
 
@@ -48,11 +55,11 @@ export default function BlogDashboardPage() {
   };
 
   const handleSave = async () => {
-    if (!editing) return;
+    if (!editing || !clientId) return;
     setSaving(true);
-    const payload = { ...editing };
+    const payload: Record<string, unknown> = { ...editing, client_id: clientId };
     if (!payload.slug && payload.title) {
-      payload.slug = payload.title.toLowerCase()
+      payload.slug = String(payload.title).toLowerCase()
         .replace(/[åä]/g, "a").replace(/ö/g, "o")
         .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     }
@@ -61,7 +68,7 @@ export default function BlogDashboardPage() {
       const { error } = await supabase.from("hm_blog").insert(payload);
       if (error) alert("Fel: " + error.message);
     } else {
-      const { error } = await supabase.from("hm_blog").update(payload).eq("id", editing.id);
+      const { error } = await supabase.from("hm_blog").update(payload).eq("id", editing.id!).eq("client_id", clientId);
       if (error) alert("Fel: " + error.message);
     }
     setSaving(false);
@@ -71,12 +78,12 @@ export default function BlogDashboardPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Är du säker på att du vill ta bort detta inlägg?")) return;
-    await supabase.from("hm_blog").delete().eq("id", id);
+    await supabase.from("hm_blog").delete().eq("id", id).eq("client_id", clientId!);
     loadPosts();
   };
 
   const togglePublished = async (post: BlogPost) => {
-    await supabase.from("hm_blog").update({ published: !post.published }).eq("id", post.id);
+    await supabase.from("hm_blog").update({ published: !post.published }).eq("id", post.id).eq("client_id", clientId!);
     loadPosts();
   };
 

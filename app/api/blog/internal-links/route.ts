@@ -1,22 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId, HM_MOTOR_ID } from "@/lib/client-context";
+import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 
 // Föreslår interna länkar för en artikel-text. Enkel keyword-matching.
 export async function POST(req: NextRequest) {
   const clientId = await getActiveClientId();
-  if (clientId !== HM_MOTOR_ID) return NextResponse.json([]);
+  const client = await getActiveClient();
   const body = await req.json();
   const text: string = (body.text || "").toLowerCase();
   const currentSlug: string | undefined = body.current_slug;
 
   const sb = supabaseServer();
-  const { data: posts } = await sb.from("hm_blog").select("title, slug, excerpt").eq("published", true);
-  const { data: vehicles } = await sb.from("hm_vehicles").select("title, slug, brand, model, category").eq("is_sold", false);
+  const { data: posts } = await sb.from("hm_blog").select("title, slug, excerpt").eq("client_id", clientId).eq("published", true);
 
-  type Suggestion = { type: "blog" | "vehicle"; title: string; href: string; matches: string[]; score: number };
+  const isAutomotive = client?.resource_module === "automotive";
+  const isArt = client?.resource_module === "art";
+
+  const { data: vehicles } = isAutomotive
+    ? await sb.from("hm_vehicles").select("title, slug, brand, model, category").eq("client_id", clientId).eq("is_sold", false)
+    : { data: [] as { title: string; slug: string; brand: string; model: string; category: string }[] };
+
+  const { data: works } = isArt
+    ? await sb.from("art_works").select("title, slug, technique, tags").eq("client_id", clientId).neq("status", "archived")
+    : { data: [] as { title: string; slug: string; technique: string; tags: string[] }[] };
+
+  type Suggestion = { type: "blog" | "vehicle" | "art"; title: string; href: string; matches: string[]; score: number };
   const suggestions: Suggestion[] = [];
 
   for (const p of posts || []) {
@@ -32,6 +42,13 @@ export async function POST(req: NextRequest) {
     const matches = tokens.filter((t) => text.includes(t));
     if (matches.length >= 2) {
       suggestions.push({ type: "vehicle", title: v.title, href: `/fordon/${v.slug}`, matches, score: matches.length });
+    }
+  }
+  for (const w of works || []) {
+    const tokens = [w.title, w.technique, ...(w.tags || [])].filter(Boolean).map((s) => String(s).toLowerCase());
+    const matches = tokens.filter((t) => text.includes(t));
+    if (matches.length >= 2) {
+      suggestions.push({ type: "art", title: w.title, href: `/verk/${w.slug}`, matches, score: matches.length });
     }
   }
 

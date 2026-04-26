@@ -11,29 +11,37 @@ export default function SidorDashboardPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newSlug, setNewSlug] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
+  }, []);
 
   const loadPages = useCallback(async () => {
+    if (!clientId) return;
     setLoading(true);
     const { data } = await supabase
       .from("hm_pages")
       .select("*")
+      .eq("client_id", clientId)
       .order("title", { ascending: true });
     setPages(data || []);
     setLoading(false);
-  }, []);
+  }, [clientId]);
 
   useEffect(() => {
     loadPages();
   }, [loadPages]);
 
   const createPage = async () => {
-    if (!newTitle || !newSlug) return;
+    if (!newTitle || !newSlug || !clientId) return;
     const slug = newSlug
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "-")
       .replace(/-+/g, "-");
 
     const { error } = await supabase.from("hm_pages").insert({
+      client_id: clientId,
       slug,
       title: newTitle,
       data: { content: [], root: { props: { title: newTitle } } },
@@ -53,7 +61,7 @@ export default function SidorDashboardPage() {
 
   const deletePage = async (id: string, slug: string) => {
     if (!confirm(`Ta bort sidan "/${slug}"? Detta kan inte ångras.`)) return;
-    await supabase.from("hm_pages").delete().eq("id", id);
+    await supabase.from("hm_pages").delete().eq("id", id).eq("client_id", clientId!);
     loadPages();
   };
 
@@ -61,7 +69,8 @@ export default function SidorDashboardPage() {
     await supabase
       .from("hm_pages")
       .update({ is_published: !page.is_published })
-      .eq("id", page.id);
+      .eq("id", page.id)
+      .eq("client_id", clientId!);
     loadPages();
   };
 

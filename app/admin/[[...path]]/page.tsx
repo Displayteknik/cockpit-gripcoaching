@@ -19,20 +19,29 @@ export default function AdminEditor() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newPageSlug, setNewPageSlug] = useState("");
   const [newPageTitle, setNewPageTitle] = useState("");
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
+  }, []);
 
   const loadPages = useCallback(async () => {
+    if (!clientId) return;
     const { data } = await supabase
       .from("hm_pages")
       .select("*")
+      .eq("client_id", clientId)
       .order("title", { ascending: true });
     setPages(data || []);
-  }, []);
+  }, [clientId]);
 
   const loadPage = useCallback(async (slug: string) => {
+    if (!clientId) return;
     setLoading(true);
     const { data } = await supabase
       .from("hm_pages")
       .select("*")
+      .eq("client_id", clientId)
       .eq("slug", slug)
       .single();
 
@@ -43,25 +52,27 @@ export default function AdminEditor() {
     }
     setCurrentSlug(slug);
     setLoading(false);
-  }, []);
+  }, [clientId]);
 
   useEffect(() => {
-    loadPages().then(() => loadPage("index"));
-  }, [loadPages, loadPage]);
+    if (clientId) loadPages().then(() => loadPage("index"));
+  }, [loadPages, loadPage, clientId]);
 
   const handlePublish = async (data: Data) => {
+    if (!clientId) return;
     const title =
       (data.root?.props as Record<string, string>)?.title || currentSlug;
 
     const { error } = await supabase.from("hm_pages").upsert(
       {
+        client_id: clientId,
         slug: currentSlug,
         title,
         data,
         is_published: true,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "slug" }
+      { onConflict: "client_id,slug" }
     );
 
     if (error) {
@@ -73,10 +84,10 @@ export default function AdminEditor() {
   };
 
   const handleCreatePage = async () => {
-    if (!newPageSlug || !newPageTitle) return;
+    if (!newPageSlug || !newPageTitle || !clientId) return;
     const slug = newPageSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
     const { error } = await supabase.from("hm_pages").insert({
-      slug, title: newPageTitle, data: emptyData, is_published: false,
+      client_id: clientId, slug, title: newPageTitle, data: emptyData, is_published: false,
     });
     if (error) { alert("Kunde inte skapa sida: " + error.message); return; }
     setNewPageSlug(""); setNewPageTitle(""); setShowNewForm(false);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId, logActivity, HM_MOTOR_ID } from "@/lib/client-context";
+import { getActiveClientId, logActivity } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -36,16 +36,14 @@ export async function POST(req: NextRequest) {
 
     const knowledge = await getKnowledge("blog-playbook", "conversion");
 
-    // Befintliga artiklar för internal linking
-    let existingCtx = "";
-    if (clientId === HM_MOTOR_ID) {
-      const { data: existing } = await sb
-        .from("hm_blog")
-        .select("title, slug, excerpt")
-        .eq("published", true)
-        .limit(50);
-      existingCtx = (existing || []).map((b) => `- "${b.title}" → /blogg/${b.slug} : ${b.excerpt || ""}`).join("\n");
-    }
+    // Befintliga artiklar för internal linking (per klient)
+    const { data: existing } = await sb
+      .from("hm_blog")
+      .select("title, slug, excerpt")
+      .eq("client_id", clientId)
+      .eq("published", true)
+      .limit(50);
+    const existingCtx = (existing || []).map((b) => `- "${b.title}" → /blogg/${b.slug} : ${b.excerpt || ""}`).join("\n");
 
     const outlineCtx = outlineHint ? `\n\nGODKÄND DISPOSITION (FÖLJ DENNA EXAKT):\n${JSON.stringify(outlineHint, null, 2)}\n` : "";
 
@@ -98,28 +96,28 @@ Skriv artikeln nu enligt dispositionen + reglerna.`;
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    // Endast HM Motor har hm_blog idag — andra klienter får artikeln tillbaka i UI
+    // Klientens namn för author-default
+    const { data: clientRow } = await sb.from("clients").select("name").eq("id", clientId).maybeSingle();
     let blogId: string | null = null;
-    if (clientId === HM_MOTOR_ID) {
-      const { data: blog, error } = await sb
-        .from("hm_blog")
-        .insert({
-          slug,
-          title: article.title,
-          content: article.content,
-          excerpt: article.excerpt,
-          author: "HM Motor",
-          published: false,
-          published_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (error) {
-        if (queueId) await sb.from("hm_blog_queue").update({ status: "queued", error: error.message }).eq("id", queueId);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      blogId = blog.id;
+    const { data: blog, error } = await sb
+      .from("hm_blog")
+      .insert({
+        client_id: clientId,
+        slug,
+        title: article.title,
+        content: article.content,
+        excerpt: article.excerpt,
+        author: clientRow?.name || "Redaktionen",
+        published: false,
+        published_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (error) {
+      if (queueId) await sb.from("hm_blog_queue").update({ status: "queued", error: error.message }).eq("id", queueId);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    blogId = blog.id;
 
     if (queueId) {
       await sb

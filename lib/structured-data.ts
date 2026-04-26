@@ -82,6 +82,50 @@ export function vehicleJsonLd(v: Vehicle, profile: Profile, settings: Settings) 
   };
 }
 
+interface ArtWorkLD {
+  title: string;
+  artist?: string | null;
+  year?: number | null;
+  technique?: string | null;
+  medium?: string | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  description?: string | null;
+  image_url?: string | null;
+  price?: number;
+  status?: string;
+  slug: string;
+}
+
+export function artworkJsonLd(w: ArtWorkLD, profile: Profile, settings: Settings) {
+  const url = (settings.site_url || "").replace(/\/$/, "");
+  const availability = w.status === "for_sale" ? "https://schema.org/InStock"
+    : w.status === "sold" ? "https://schema.org/SoldOut"
+    : w.status === "reserved" ? "https://schema.org/PreOrder"
+    : "https://schema.org/InStoreOnly";
+  return {
+    "@context": "https://schema.org",
+    "@type": "VisualArtwork",
+    name: w.title,
+    artist: w.artist ? { "@type": "Person", name: w.artist } : undefined,
+    dateCreated: w.year ? String(w.year) : undefined,
+    artMedium: w.technique || undefined,
+    artworkSurface: w.medium || undefined,
+    width: w.width_cm ? { "@type": "QuantitativeValue", value: w.width_cm, unitCode: "CMT" } : undefined,
+    height: w.height_cm ? { "@type": "QuantitativeValue", value: w.height_cm, unitCode: "CMT" } : undefined,
+    description: w.description || undefined,
+    image: w.image_url ? [w.image_url] : undefined,
+    url: url ? `${url}/verk/${w.slug}` : undefined,
+    offers: w.price && w.price > 0 ? {
+      "@type": "Offer",
+      price: w.price,
+      priceCurrency: "SEK",
+      availability,
+      seller: { "@type": "Person", name: w.artist || profile.company_name || settings.site_name },
+    } : undefined,
+  };
+}
+
 export function faqJsonLd(faq: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",

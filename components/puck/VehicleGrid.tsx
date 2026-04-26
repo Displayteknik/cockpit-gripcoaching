@@ -42,6 +42,7 @@ export function VehicleGrid({
       let query = supabase
         .from("hm_vehicles")
         .select("*")
+        .eq("client_id", "00000000-0000-0000-0000-000000000001")
         .eq("is_sold", false)
         .order("sort_order", { ascending: true });
 

@@ -35,16 +35,23 @@ export default function DashboardPage() {
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "images" | "specs">("info");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
+  }, []);
 
   const loadVehicles = useCallback(async () => {
+    if (!clientId) return;
     setLoading(true);
     const { data } = await supabase
       .from("hm_vehicles")
       .select("*")
+      .eq("client_id", clientId)
       .order("sort_order", { ascending: true });
     setVehicles(data || []);
     setLoading(false);
-  }, []);
+  }, [clientId]);
 
   useEffect(() => { loadVehicles(); }, [loadVehicles]);
 
@@ -145,11 +152,11 @@ export default function DashboardPage() {
   };
 
   const handleSave = async () => {
-    if (!editing) return;
+    if (!editing || !clientId) return;
     setSaving(true);
-    const payload = { ...editing };
+    const payload: Record<string, unknown> = { ...editing, client_id: clientId };
     if (!payload.slug && payload.title) {
-      payload.slug = payload.title.toLowerCase()
+      payload.slug = String(payload.title).toLowerCase()
         .replace(/[åä]/g, "a").replace(/ö/g, "o")
         .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     }
@@ -157,7 +164,7 @@ export default function DashboardPage() {
       const { error } = await supabase.from("hm_vehicles").insert(payload);
       if (error) alert("Fel: " + error.message);
     } else {
-      const { error } = await supabase.from("hm_vehicles").update(payload).eq("id", editing.id);
+      const { error } = await supabase.from("hm_vehicles").update(payload).eq("id", editing.id!).eq("client_id", clientId);
       if (error) alert("Fel: " + error.message);
     }
     setSaving(false);
@@ -167,17 +174,17 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Är du säker på att du vill ta bort detta fordon?")) return;
-    await supabase.from("hm_vehicles").delete().eq("id", id);
+    await supabase.from("hm_vehicles").delete().eq("id", id).eq("client_id", clientId!);
     loadVehicles();
   };
 
   const toggleFeatured = async (v: Vehicle) => {
-    await supabase.from("hm_vehicles").update({ is_featured: !v.is_featured }).eq("id", v.id);
+    await supabase.from("hm_vehicles").update({ is_featured: !v.is_featured }).eq("id", v.id).eq("client_id", clientId!);
     loadVehicles();
   };
 
   const toggleSold = async (v: Vehicle) => {
-    await supabase.from("hm_vehicles").update({ is_sold: !v.is_sold }).eq("id", v.id);
+    await supabase.from("hm_vehicles").update({ is_sold: !v.is_sold }).eq("id", v.id).eq("client_id", clientId!);
     loadVehicles();
   };
 
