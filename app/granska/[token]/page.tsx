@@ -21,6 +21,7 @@ interface SocialPost {
   cta: string;
   platform: string;
   format: string;
+  image_url?: string | null;
   slides?: { number: number; headline: string; body: string; image_hint: string }[];
 }
 
@@ -38,6 +39,10 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [editedCaption, setEditedCaption] = useState("");
+  const [editedHook, setEditedHook] = useState("");
+  const [editedHashtags, setEditedHashtags] = useState("");
+  const [editedCta, setEditedCta] = useState("");
+  const [editedSlides, setEditedSlides] = useState<{ number: number; headline: string; body: string; image_hint: string }[] | null>(null);
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<"approved" | "rejected" | null>(null);
@@ -48,7 +53,13 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
       if (!r.ok) setError(d.error);
       else {
         setData(d);
-        if (d.resource && "caption" in d.resource) setEditedCaption(d.resource.caption);
+        if (d.resource && "caption" in d.resource) {
+          setEditedCaption(d.resource.caption);
+          setEditedHook(d.resource.hook || "");
+          setEditedHashtags(d.resource.hashtags || "");
+          setEditedCta(d.resource.cta || "");
+          setEditedSlides(d.resource.slides ? [...d.resource.slides] : null);
+        }
       }
       setLoading(false);
     });
@@ -56,7 +67,13 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
 
   async function respond(action: "approve" | "reject" | "comment") {
     setSubmitting(true);
-    const edits = editing && data?.resource && "caption" in data.resource ? { caption: editedCaption } : null;
+    const edits = editing && data?.resource && "caption" in data.resource ? {
+      hook: editedHook,
+      caption: editedCaption,
+      hashtags: editedHashtags,
+      cta: editedCta,
+      slides: editedSlides,
+    } : null;
     const r = await fetch(`/api/share/${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -109,33 +126,52 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
           <div className="p-6 space-y-4">
             {isSocial && r && "caption" in r && (
               <>
-                <div className="bg-purple-50 border-l-4 border-purple-400 px-3 py-2 rounded">
-                  <div className="text-xs text-purple-700 font-medium mb-0.5">Hook (3 sek)</div>
-                  <div className="text-gray-900 font-medium">{r.hook}</div>
+                <div className="flex items-center justify-end -mt-2">
+                  <button onClick={() => setEditing(!editing)} className="text-xs text-blue-600 hover:underline flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50">
+                    <Pencil className="w-3 h-3" />
+                    {editing ? "Avsluta redigering" : "Redigera direkt"}
+                  </button>
                 </div>
 
-                {r.slides && r.slides.length > 0 && (
+                {r.image_url && (
+                  <img src={r.image_url} alt="" className="w-full rounded-lg border border-gray-200" />
+                )}
+
+                <div>
+                  <div className="text-xs text-purple-700 font-medium mb-1 uppercase tracking-wide">Hook (3 sek)</div>
+                  {editing ? (
+                    <input value={editedHook} onChange={(e) => setEditedHook(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                  ) : (
+                    <div className="bg-purple-50 border-l-4 border-purple-400 px-3 py-2 rounded text-gray-900 font-medium">{r.hook}</div>
+                  )}
+                </div>
+
+                {((editing && editedSlides) || (!editing && r.slides && r.slides.length > 0)) && (
                   <div className="space-y-2">
                     <div className="text-xs font-medium text-gray-700 uppercase tracking-wide">Slides</div>
-                    {r.slides.map((s) => (
+                    {(editing ? editedSlides! : r.slides!).map((s, i) => (
                       <div key={s.number} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                         <div className="text-xs text-gray-500">Slide {s.number}</div>
-                        <div className="font-bold text-gray-900 mt-1">{s.headline}</div>
-                        <div className="text-sm text-gray-700 mt-1">{s.body}</div>
-                        <div className="text-xs text-gray-500 italic mt-1">📷 {s.image_hint}</div>
+                        {editing ? (
+                          <>
+                            <input value={s.headline} onChange={(e) => { const next = [...editedSlides!]; next[i] = { ...next[i], headline: e.target.value }; setEditedSlides(next); }} className="w-full mt-1 px-2 py-1 rounded border border-blue-300 text-sm font-bold" />
+                            <textarea value={s.body} onChange={(e) => { const next = [...editedSlides!]; next[i] = { ...next[i], body: e.target.value }; setEditedSlides(next); }} rows={2} className="w-full mt-1 px-2 py-1 rounded border border-blue-300 text-xs" />
+                            <input value={s.image_hint} onChange={(e) => { const next = [...editedSlides!]; next[i] = { ...next[i], image_hint: e.target.value }; setEditedSlides(next); }} className="w-full mt-1 px-2 py-1 rounded border border-blue-200 text-[11px] italic text-gray-600" />
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-bold text-gray-900 mt-1">{s.headline}</div>
+                            <div className="text-sm text-gray-700 mt-1">{s.body}</div>
+                            <div className="text-xs text-gray-500 italic mt-1">📷 {s.image_hint}</div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide">Bildtext</div>
-                    <button onClick={() => setEditing(!editing)} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                      <Pencil className="w-3 h-3" />
-                      {editing ? "Avbryt redigering" : "Föreslå ändring"}
-                    </button>
-                  </div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bildtext</div>
                   {editing ? (
                     <textarea value={editedCaption} onChange={(e) => setEditedCaption(e.target.value)} rows={8} className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" />
                   ) : (
@@ -143,8 +179,30 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
                   )}
                 </div>
 
-                {r.hashtags && <div className="text-xs text-blue-600">{r.hashtags}</div>}
-                {r.cta && <div className="text-xs text-gray-500"><strong>CTA:</strong> {r.cta}</div>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hashtags</div>
+                    {editing ? (
+                      <input value={editedHashtags} onChange={(e) => setEditedHashtags(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm" />
+                    ) : (
+                      r.hashtags && <div className="text-xs text-blue-600">{r.hashtags}</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">CTA</div>
+                    {editing ? (
+                      <input value={editedCta} onChange={(e) => setEditedCta(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm" />
+                    ) : (
+                      r.cta && <div className="text-xs text-gray-700">{r.cta}</div>
+                    )}
+                  </div>
+                </div>
+
+                {editing && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+                    💡 Dina ändringar skickas som <strong>förslag</strong> till {data.client?.name} när du klickar "Skicka kommentar" eller "Godkänn".
+                  </div>
+                )}
               </>
             )}
 
@@ -184,7 +242,7 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
                 className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold transition-colors disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
-                Skicka kommentar
+                {editing ? "Skicka ändringar" : "Skicka kommentar"}
               </button>
             )}
             <button

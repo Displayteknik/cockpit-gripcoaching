@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, type Vehicle } from "@/lib/supabase";
-import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image } from "lucide-react";
+import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image as ImageIcon, Pencil, X, Wand2, Save } from "lucide-react";
 
 function Instagram({ className }: { className?: string }) {
   return (
@@ -24,7 +24,7 @@ function Facebook({ className }: { className?: string }) {
 
 type Platform = "instagram" | "facebook";
 
-interface Slide { number: number; headline: string; body: string; image_hint: string }
+interface Slide { number: number; headline: string; body: string; image_hint: string; image_url?: string }
 interface SocialPost {
   id: string;
   platform: Platform;
@@ -36,6 +36,9 @@ interface SocialPost {
   vehicle_id: string | null;
   status: string;
   slides: Slide[] | null;
+  image_url: string | null;
+  image_prompt: string | null;
+  image_engine: string | null;
   created_at: string;
 }
 
@@ -63,6 +66,11 @@ export default function SocialPage() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [edits, setEdits] = useState<Partial<SocialPost>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
+  const [imageStyle, setImageStyle] = useState<string>("cinematic");
 
   useEffect(() => {
     supabase
@@ -111,6 +119,57 @@ export default function SocialPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(p.id);
     setTimeout(() => setCopiedId(null), 1500);
+  }
+
+  function startEdit(p: SocialPost) {
+    setEditingId(p.id);
+    setEdits({ hook: p.hook, caption: p.caption, hashtags: p.hashtags, cta: p.cta, slides: p.slides ? [...p.slides] : null });
+  }
+
+  async function saveEdit(id: string) {
+    setSavingEdit(true);
+    try {
+      const r = await fetch("/api/social", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...edits }),
+      });
+      if (r.ok) {
+        setEditingId(null);
+        setEdits({});
+        loadPosts();
+      } else {
+        alert("Kunde inte spara: " + (await r.text()));
+      }
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  function updateSlide(idx: number, field: keyof Slide, value: string) {
+    if (!edits.slides) return;
+    const next = [...edits.slides];
+    next[idx] = { ...next[idx], [field]: value };
+    setEdits({ ...edits, slides: next });
+  }
+
+  async function generateImage(post_id: string) {
+    setGeneratingImageFor(post_id);
+    try {
+      const r = await fetch("/api/social/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ post_id, style: imageStyle, mode: "standalone" }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        alert("Fel: " + (d.error || "okänt"));
+      } else {
+        loadPosts();
+      }
+    } finally {
+      setGeneratingImageFor(null);
+    }
   }
 
   async function share(p: SocialPost) {
@@ -283,6 +342,21 @@ export default function SocialPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button
+                        onClick={() => generateImage(p.id)}
+                        disabled={generatingImageFor === p.id}
+                        className="p-1.5 hover:bg-purple-50 rounded-lg text-gray-500 hover:text-purple-600 transition-colors disabled:opacity-50"
+                        title="Generera bild med AI"
+                      >
+                        {generatingImageFor === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => editingId === p.id ? setEditingId(null) : startEdit(p)}
+                        className={`p-1.5 rounded-lg transition-colors ${editingId === p.id ? "bg-amber-50 text-amber-700" : "text-gray-500 hover:bg-gray-100 hover:text-amber-600"}`}
+                        title="Redigera"
+                      >
+                        {editingId === p.id ? <X className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+                      </button>
+                      <button
                         onClick={() => share(p)}
                         className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-500 hover:text-blue-600 transition-colors"
                         title="Dela för godkännande"
@@ -311,6 +385,77 @@ export default function SocialPage() {
                       </button>
                     </div>
                   </div>
+                  {p.image_url && editingId !== p.id && (
+                    <div className="mb-3 relative inline-block">
+                      <img src={p.image_url} alt="" className="rounded-lg max-w-xs max-h-64 border border-gray-200" />
+                      <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">{p.image_engine || "AI"}</span>
+                    </div>
+                  )}
+                  {editingId === p.id ? (
+                    <div className="space-y-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <div>
+                        <label className="text-xs font-bold text-amber-900 uppercase">Hook</label>
+                        <input
+                          value={edits.hook || ""}
+                          onChange={(e) => setEdits({ ...edits, hook: e.target.value })}
+                          className="w-full mt-1 px-2 py-1.5 rounded border border-amber-300 text-sm bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-amber-900 uppercase">Bildtext</label>
+                        <textarea
+                          value={edits.caption || ""}
+                          onChange={(e) => setEdits({ ...edits, caption: e.target.value })}
+                          rows={6}
+                          className="w-full mt-1 px-2 py-1.5 rounded border border-amber-300 text-sm bg-white font-body leading-relaxed"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs font-bold text-amber-900 uppercase">Hashtags</label>
+                          <input value={edits.hashtags || ""} onChange={(e) => setEdits({ ...edits, hashtags: e.target.value })} className="w-full mt-1 px-2 py-1.5 rounded border border-amber-300 text-sm bg-white" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-amber-900 uppercase">CTA</label>
+                          <input value={edits.cta || ""} onChange={(e) => setEdits({ ...edits, cta: e.target.value })} className="w-full mt-1 px-2 py-1.5 rounded border border-amber-300 text-sm bg-white" />
+                        </div>
+                      </div>
+                      {edits.slides && edits.slides.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-xs font-bold text-amber-900 uppercase">Slides</div>
+                          {edits.slides.map((s, i) => (
+                            <div key={i} className="bg-white rounded p-2 border border-amber-200">
+                              <div className="text-[10px] text-gray-500 mb-1">Slide {s.number}</div>
+                              <input value={s.headline} onChange={(e) => updateSlide(i, "headline", e.target.value)} placeholder="Rubrik" className="w-full px-2 py-1 rounded border border-gray-200 text-sm font-bold mb-1" />
+                              <textarea value={s.body} onChange={(e) => updateSlide(i, "body", e.target.value)} rows={2} placeholder="Brödtext" className="w-full px-2 py-1 rounded border border-gray-200 text-xs" />
+                              <input value={s.image_hint} onChange={(e) => updateSlide(i, "image_hint", e.target.value)} placeholder="Bildidé" className="w-full mt-1 px-2 py-1 rounded border border-gray-200 text-[11px] italic text-gray-600" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-2 justify-end">
+                        <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value)} className="px-2 py-1.5 rounded border border-amber-300 text-xs bg-white">
+                          <option value="cinematic">Cinematic mörk</option>
+                          <option value="editorial">Editorial</option>
+                          <option value="product">Produkt</option>
+                          <option value="nordic">Nordiskt natur</option>
+                          <option value="urban">Urban</option>
+                          <option value="minimal">Minimal</option>
+                          <option value="tech">Tech</option>
+                          <option value="lifestyle">Livsstil</option>
+                        </select>
+                        <button onClick={() => generateImage(p.id)} disabled={generatingImageFor === p.id} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-medium disabled:opacity-50">
+                          {generatingImageFor === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                          {p.image_url ? "Generera om bild" : "Generera bild"}
+                        </button>
+                        <button onClick={() => saveEdit(p.id)} disabled={savingEdit} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold disabled:opacity-50">
+                          {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                          Spara
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
                   {p.hook && (
                     <div className="mb-2 p-2 bg-purple-50 border-l-2 border-purple-400 rounded text-sm text-gray-800 font-medium">
                       🎣 {p.hook}
@@ -319,7 +464,7 @@ export default function SocialPage() {
                   {p.slides && p.slides.length > 0 && (
                     <details className="mb-2 bg-gray-50 rounded-lg overflow-hidden">
                       <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-1">
-                        <Image className="w-3.5 h-3.5" />
+                        <ImageIcon className="w-3.5 h-3.5" />
                         {p.slides.length} slides
                       </summary>
                       <div className="p-3 space-y-2 border-t border-gray-200">
@@ -339,6 +484,8 @@ export default function SocialPage() {
                   <pre className="whitespace-pre-wrap text-sm text-gray-800 font-body leading-relaxed">{p.caption}</pre>
                   {p.hashtags && <div className="mt-2 text-xs text-blue-600">{p.hashtags}</div>}
                   {p.cta && <div className="mt-2 text-xs text-gray-500"><strong>CTA:</strong> {p.cta}</div>}
+                    </>
+                  )}
                 </div>
               );
             })}
