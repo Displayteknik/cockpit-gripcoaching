@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, type Vehicle } from "@/lib/supabase";
-import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image as ImageIcon, Pencil, X, Wand2, Save, Eye } from "lucide-react";
+import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image as ImageIcon, Pencil, X, Wand2, Save, Eye, Calendar, Upload } from "lucide-react";
 import ImagePicker from "@/components/ImagePicker";
 import InstagramPreview from "@/components/InstagramPreview";
 
@@ -157,6 +157,36 @@ export default function SocialPage() {
 
   function openImagePicker(post: SocialPost, slideIndex?: number) {
     setImagePickerFor({ post, slideIndex });
+  }
+
+  async function publishNow(p: SocialPost) {
+    if (p.platform !== "instagram") { alert("Direct publish stöds bara för Instagram. För Facebook: kopiera och posta manuellt."); return; }
+    if (!confirm(`Publicera direkt på Instagram nu?\n\n${p.hook?.slice(0, 80) || ""}`)) return;
+    const r = await fetch("/api/instagram/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ post_id: p.id }),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      alert(`✓ Publicerat! Media-ID: ${d.ig_media_id}`);
+      loadPosts();
+    } else {
+      alert("Fel: " + (d.error || "okänt"));
+    }
+  }
+
+  async function scheduleQuick(p: SocialPost) {
+    const when = prompt("Datum & tid (YYYY-MM-DD HH:MM):", new Date(Date.now() + 86400000).toISOString().slice(0, 16).replace("T", " "));
+    if (!when) return;
+    const isoDate = new Date(when.replace(" ", "T")).toISOString();
+    const r = await fetch("/api/scheduler", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ post_id: p.id, scheduled_at: isoDate, platform: p.platform }),
+    });
+    if (r.ok) alert(`Schemalagt till ${new Date(isoDate).toLocaleString("sv-SE")}`);
+    else alert("Fel: " + (await r.text()));
   }
 
   async function share(p: SocialPost) {
@@ -384,6 +414,21 @@ export default function SocialPage() {
                         <ImageIcon className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => scheduleQuick(p)}
+                        className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-500 hover:text-blue-600 transition-colors"
+                        title="Schemalägg"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => publishNow(p)}
+                        disabled={!p.image_url}
+                        className="p-1.5 hover:bg-pink-50 rounded-lg text-gray-500 hover:text-pink-600 transition-colors disabled:opacity-30"
+                        title={p.image_url ? "Publicera direkt på Instagram" : "Behöver bild först"}
+                      >
+                        <Upload className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => editingId === p.id ? setEditingId(null) : startEdit(p)}
                         className={`p-1.5 rounded-lg transition-colors ${editingId === p.id ? "bg-amber-50 text-amber-700" : "text-gray-500 hover:bg-gray-100 hover:text-amber-600"}`}
                         title="Redigera"
@@ -489,7 +534,7 @@ export default function SocialPage() {
                       </div>
                     </div>
                   ) : (
-                    <>
+                  <div>
                   {p.hook && (
                     <div className="mb-2 p-2 bg-purple-50 border-l-2 border-purple-400 rounded text-sm text-gray-800 font-medium">
                       🎣 {p.hook}
@@ -518,7 +563,7 @@ export default function SocialPage() {
                   <pre className="whitespace-pre-wrap text-sm text-gray-800 font-body leading-relaxed">{p.caption}</pre>
                   {p.hashtags && <div className="mt-2 text-xs text-blue-600">{p.hashtags}</div>}
                   {p.cta && <div className="mt-2 text-xs text-gray-500"><strong>CTA:</strong> {p.cta}</div>}
-                    </>
+                  </div>
                   )}
                 </div>
               );

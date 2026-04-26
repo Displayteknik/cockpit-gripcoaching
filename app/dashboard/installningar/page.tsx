@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Save, Loader2, Check, Globe, Search, Zap, BarChart3, Lock, Copy, Info, ExternalLink } from "lucide-react";
 import GoogleConnect from "@/components/GoogleConnect";
+import InstagramConnect from "@/components/InstagramConnect";
 
 type Settings = Record<string, string>;
 
@@ -160,6 +161,21 @@ export default function InstallningarPage() {
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedAt ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
           {saving ? "Sparar..." : savedAt ? "Sparat" : "Spara"}
         </button>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-9 h-9 rounded-lg bg-pink-50 text-pink-600 border border-pink-100 flex items-center justify-center flex-shrink-0">
+            <Search className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-display font-bold text-gray-900">Instagram Graph API</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Direct publish, schemaläggning, analytics. Kräver IG Business + Facebook Page.</p>
+          </div>
+        </div>
+        <div className="ml-12">
+          <InstagramConnect />
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-5">
