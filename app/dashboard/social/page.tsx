@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { supabase, type Vehicle } from "@/lib/supabase";
-import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image as ImageIcon, Pencil, X, Wand2, Save } from "lucide-react";
+import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image as ImageIcon, Pencil, X, Wand2, Save, Eye } from "lucide-react";
+import ImagePicker from "@/components/ImagePicker";
+import InstagramPreview from "@/components/InstagramPreview";
 
 function Instagram({ className }: { className?: string }) {
   return (
@@ -69,8 +71,8 @@ export default function SocialPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [edits, setEdits] = useState<Partial<SocialPost>>({});
   const [savingEdit, setSavingEdit] = useState(false);
-  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
-  const [imageStyle, setImageStyle] = useState<string>("cinematic");
+  const [imagePickerFor, setImagePickerFor] = useState<{ post: SocialPost; slideIndex?: number } | null>(null);
+  const [previewFor, setPreviewFor] = useState<SocialPost | null>(null);
 
   useEffect(() => {
     supabase
@@ -153,23 +155,8 @@ export default function SocialPage() {
     setEdits({ ...edits, slides: next });
   }
 
-  async function generateImage(post_id: string) {
-    setGeneratingImageFor(post_id);
-    try {
-      const r = await fetch("/api/social/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ post_id, style: imageStyle, mode: "standalone" }),
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        alert("Fel: " + (d.error || "okänt"));
-      } else {
-        loadPosts();
-      }
-    } finally {
-      setGeneratingImageFor(null);
-    }
+  function openImagePicker(post: SocialPost, slideIndex?: number) {
+    setImagePickerFor({ post, slideIndex });
   }
 
   async function share(p: SocialPost) {
@@ -311,6 +298,47 @@ export default function SocialPage() {
         </div>
       </div>
 
+      {imagePickerFor && (
+        <ImagePicker
+          postId={imagePickerFor.post.id}
+          slideIndex={imagePickerFor.slideIndex}
+          contextText={
+            imagePickerFor.slideIndex != null && imagePickerFor.post.slides
+              ? `${imagePickerFor.post.slides[imagePickerFor.slideIndex].headline}: ${imagePickerFor.post.slides[imagePickerFor.slideIndex].body}`
+              : `${imagePickerFor.post.hook}\n${imagePickerFor.post.caption}`
+          }
+          currentImageUrl={
+            imagePickerFor.slideIndex != null && imagePickerFor.post.slides
+              ? imagePickerFor.post.slides[imagePickerFor.slideIndex]?.image_url
+              : imagePickerFor.post.image_url
+          }
+          onClose={() => setImagePickerFor(null)}
+          onSelected={() => {
+            setImagePickerFor(null);
+            loadPosts();
+          }}
+        />
+      )}
+
+      {previewFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60" onClick={() => setPreviewFor(null)} />
+          <div className="relative">
+            <button onClick={() => setPreviewFor(null)} className="absolute -top-10 right-0 text-white text-2xl">×</button>
+            <InstagramPreview
+              platform={previewFor.platform}
+              format={previewFor.format}
+              username="@klient"
+              hook={previewFor.hook || ""}
+              caption={previewFor.caption || ""}
+              hashtags={previewFor.hashtags || ""}
+              imageUrl={previewFor.image_url}
+              slides={previewFor.slides}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Posts list */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -342,12 +370,18 @@ export default function SocialPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => generateImage(p.id)}
-                        disabled={generatingImageFor === p.id}
-                        className="p-1.5 hover:bg-purple-50 rounded-lg text-gray-500 hover:text-purple-600 transition-colors disabled:opacity-50"
-                        title="Generera bild med AI"
+                        onClick={() => setPreviewFor(p)}
+                        className="p-1.5 hover:bg-pink-50 rounded-lg text-gray-500 hover:text-pink-600 transition-colors"
+                        title="Förhandsgranska som Instagram"
                       >
-                        {generatingImageFor === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openImagePicker(p)}
+                        className="p-1.5 hover:bg-purple-50 rounded-lg text-gray-500 hover:text-purple-600 transition-colors"
+                        title="Välj bild (AI / Stock / Upload)"
+                      >
+                        <ImageIcon className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => editingId === p.id ? setEditingId(null) : startEdit(p)}
@@ -386,9 +420,12 @@ export default function SocialPage() {
                     </div>
                   </div>
                   {p.image_url && editingId !== p.id && (
-                    <div className="mb-3 relative inline-block">
+                    <div className="mb-3 relative inline-block group/img">
                       <img src={p.image_url} alt="" className="rounded-lg max-w-xs max-h-64 border border-gray-200" />
-                      <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">{p.image_engine || "AI"}</span>
+                      <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">{p.image_engine || "Bild"}</span>
+                      <button onClick={() => openImagePicker(p)} className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-700 px-2 py-1 rounded text-xs font-medium opacity-0 group-hover/img:opacity-100 transition-opacity">
+                        Byt bild
+                      </button>
                     </div>
                   )}
                   {editingId === p.id ? (
@@ -425,7 +462,14 @@ export default function SocialPage() {
                           <div className="text-xs font-bold text-amber-900 uppercase">Slides</div>
                           {edits.slides.map((s, i) => (
                             <div key={i} className="bg-white rounded p-2 border border-amber-200">
-                              <div className="text-[10px] text-gray-500 mb-1">Slide {s.number}</div>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="text-[10px] text-gray-500">Slide {s.number}</div>
+                                <button onClick={() => openImagePicker(p, i)} className="text-xs text-purple-600 hover:bg-purple-50 px-2 py-0.5 rounded flex items-center gap-1">
+                                  <ImageIcon className="w-3 h-3" />
+                                  {s.image_url ? "Byt slide-bild" : "Lägg till bild"}
+                                </button>
+                              </div>
+                              {s.image_url && <img src={s.image_url} alt="" className="rounded mb-1 max-h-24" />}
                               <input value={s.headline} onChange={(e) => updateSlide(i, "headline", e.target.value)} placeholder="Rubrik" className="w-full px-2 py-1 rounded border border-gray-200 text-sm font-bold mb-1" />
                               <textarea value={s.body} onChange={(e) => updateSlide(i, "body", e.target.value)} rows={2} placeholder="Brödtext" className="w-full px-2 py-1 rounded border border-gray-200 text-xs" />
                               <input value={s.image_hint} onChange={(e) => updateSlide(i, "image_hint", e.target.value)} placeholder="Bildidé" className="w-full mt-1 px-2 py-1 rounded border border-gray-200 text-[11px] italic text-gray-600" />
@@ -434,19 +478,9 @@ export default function SocialPage() {
                         </div>
                       )}
                       <div className="flex gap-2 justify-end">
-                        <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value)} className="px-2 py-1.5 rounded border border-amber-300 text-xs bg-white">
-                          <option value="cinematic">Cinematic mörk</option>
-                          <option value="editorial">Editorial</option>
-                          <option value="product">Produkt</option>
-                          <option value="nordic">Nordiskt natur</option>
-                          <option value="urban">Urban</option>
-                          <option value="minimal">Minimal</option>
-                          <option value="tech">Tech</option>
-                          <option value="lifestyle">Livsstil</option>
-                        </select>
-                        <button onClick={() => generateImage(p.id)} disabled={generatingImageFor === p.id} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-medium disabled:opacity-50">
-                          {generatingImageFor === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                          {p.image_url ? "Generera om bild" : "Generera bild"}
+                        <button onClick={() => openImagePicker(p)} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-medium">
+                          <ImageIcon className="w-3 h-3" />
+                          {p.image_url ? "Byt huvudbild" : "Välj huvudbild"}
                         </button>
                         <button onClick={() => saveEdit(p.id)} disabled={savingEdit} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold disabled:opacity-50">
                           {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}

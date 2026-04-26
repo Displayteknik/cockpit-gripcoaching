@@ -20,8 +20,17 @@ export const IMAGE_STYLES = [
 
 export type ImageStyleId = typeof IMAGE_STYLES[number]["id"];
 
-async function craftImagePromptWithAI(contentText: string, niche: string, stylePrompt: string, mode: "overlay" | "standalone"): Promise<string> {
+export interface ImageFeedback { prompt: string; rating: 1 | -1; content_text?: string; image_style?: string }
+
+async function craftImagePromptWithAI(contentText: string, niche: string, stylePrompt: string, mode: "overlay" | "standalone", feedback?: ImageFeedback[]): Promise<string> {
   if (!GEMINI_KEY) return contentText;
+  let feedbackSection = "";
+  if (feedback?.length) {
+    const liked = feedback.filter((f) => f.rating === 1).slice(-3);
+    const disliked = feedback.filter((f) => f.rating === -1).slice(-3);
+    if (liked.length) feedbackSection += `\n\nPROMPTS USER LIKED (mirror style/subject approach):\n${liked.map((f) => `- "${f.prompt}"`).join("\n")}`;
+    if (disliked.length) feedbackSection += `\n\nPROMPTS USER DISLIKED (avoid this approach):\n${disliked.map((f) => `- "${f.prompt}"`).join("\n")}`;
+  }
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: "POST",
@@ -42,6 +51,7 @@ For "${niche || "business"}" — think about objects/setups/environments unique 
 
 ${mode === "overlay" ? "COLORS: Dark moody palette, large dark areas for white text overlay." : "COLORS: Rich vivid commercial photography quality."}
 NO text, words, letters, numbers in image.
+${feedbackSection}
 
 Write ONLY the prompt, 2-3 sentences, hyper-specific.` }] }],
         generationConfig: { maxOutputTokens: 400, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
@@ -98,12 +108,13 @@ export async function generateImageForPost(opts: {
   styleId?: ImageStyleId;
   mode?: "overlay" | "standalone";
   aspect?: "square" | "portrait" | "landscape";
+  feedback?: ImageFeedback[];
 }): Promise<{ success?: boolean; image?: string; error?: string; engine?: string; prompt?: string }> {
   const styleObj = IMAGE_STYLES.find((s) => s.id === opts.styleId) || IMAGE_STYLES[0];
   const mode = opts.mode || "standalone";
   const niche = opts.niche || "business";
 
-  const aiScene = await craftImagePromptWithAI(opts.contentText, niche, styleObj.prompt, mode);
+  const aiScene = await craftImagePromptWithAI(opts.contentText, niche, styleObj.prompt, mode, opts.feedback);
   const fullPrompt = `${aiScene}
 Style: ${styleObj.prompt}
 CRITICAL: Absolutely NO text, NO words, NO letters, NO numbers in the image.
