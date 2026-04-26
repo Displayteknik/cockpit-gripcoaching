@@ -54,6 +54,7 @@ export interface Exhibition {
   id: string;
   client_id: string;
   year: number;
+  year_label: string | null;
   title: string;
   venue: string | null;
   city: string | null;

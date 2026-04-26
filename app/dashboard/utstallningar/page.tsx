@@ -131,9 +131,11 @@ export default function UtstallningarPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {years.map((year) => (
+          {years.map((year) => {
+            const labelExample = grouped[year].find((it) => it.year_label)?.year_label;
+            return (
             <div key={year}>
-              <h2 className="font-display text-xl font-bold text-gray-900 mb-3">{year}</h2>
+              <h2 className="font-display text-xl font-bold text-gray-900 mb-3">{labelExample || year}</h2>
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
                 {grouped[year].map((it) => {
                   const statusOpt = STATUS_OPTIONS.find((s) => s.value === it.status);
@@ -172,7 +174,8 @@ export default function UtstallningarPage() {
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -188,10 +191,14 @@ export default function UtstallningarPage() {
             </div>
 
             <div className="overflow-y-auto flex-1 p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <Field label="År *">
                   <input type="number" value={editing.year || ""} onChange={(e) => setEditing({ ...editing, year: Number(e.target.value) })}
                     className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm" />
+                </Field>
+                <Field label="År-etikett (valfri)">
+                  <input type="text" value={editing.year_label || ""} onChange={(e) => setEditing({ ...editing, year_label: e.target.value || null })}
+                    placeholder="t.ex. 2020–2021" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm" />
                 </Field>
                 <Field label="Status">
                   <select value={editing.status || "past"} onChange={(e) => setEditing({ ...editing, status: e.target.value as Exhibition["status"] })}
