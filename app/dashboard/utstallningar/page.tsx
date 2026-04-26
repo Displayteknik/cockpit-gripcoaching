@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, type Exhibition } from "@/lib/supabase";
-import { Plus, Pencil, Trash2, X, Upload, Image as ImageIcon, Calendar, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Upload, Image as ImageIcon, Calendar, MapPin, Globe } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "upcoming", label: "Kommande", color: "bg-blue-100 text-blue-700" },
@@ -24,6 +24,17 @@ export default function UtstallningarPage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishMsg, setPublishMsg] = useState<string | null>(null);
+
+  const publishToSite = async () => {
+    setPublishing(true); setPublishMsg(null);
+    const r = await fetch("/api/darek/publish", { method: "POST" });
+    const j = await r.json();
+    setPublishing(false);
+    setPublishMsg(j.message || j.error);
+    setTimeout(() => setPublishMsg(null), 6000);
+  };
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
@@ -97,11 +108,20 @@ export default function UtstallningarPage() {
           <h1 className="font-display text-2xl font-bold text-gray-900">Utställningar</h1>
           <p className="text-sm text-gray-500 mt-1">{items.length} utställningar · {years.length} år</p>
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-4 py-2.5 rounded-lg text-sm font-semibold">
-          <Plus className="w-4 h-4" />
-          Ny utställning
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={publishToSite} disabled={publishing} className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">
+            <Globe className="w-4 h-4" />
+            {publishing ? "Publicerar..." : "Publicera till sajt"}
+          </button>
+          <button onClick={openNew} className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-4 py-2.5 rounded-lg text-sm font-semibold">
+            <Plus className="w-4 h-4" />
+            Ny utställning
+          </button>
+        </div>
       </div>
+      {publishMsg && (
+        <div className="mb-4 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">{publishMsg}</div>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-gray-400">Laddar...</div>

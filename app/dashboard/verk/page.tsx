@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, type ArtWork } from "@/lib/supabase";
 import {
-  Plus, Pencil, Trash2, Star, Search, X, Upload, Image as ImageIcon, Eye,
+  Plus, Pencil, Trash2, Star, Search, X, Upload, Image as ImageIcon, Eye, Globe,
 } from "lucide-react";
 
 const STATUS_OPTIONS = [
@@ -35,6 +35,17 @@ export default function VerkPage() {
   const [activeTab, setActiveTab] = useState<"info" | "images" | "details">("info");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishMsg, setPublishMsg] = useState<string | null>(null);
+
+  const publishToSite = async () => {
+    setPublishing(true); setPublishMsg(null);
+    const r = await fetch("/api/darek/publish", { method: "POST" });
+    const j = await r.json();
+    setPublishing(false);
+    setPublishMsg(j.message || j.error);
+    setTimeout(() => setPublishMsg(null), 6000);
+  };
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
@@ -166,11 +177,20 @@ export default function VerkPage() {
           <h1 className="font-display text-2xl font-bold text-gray-900">Verk</h1>
           <p className="text-sm text-gray-500 mt-1">{works.length} verk totalt · {filtered.length} visas</p>
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-          <Plus className="w-4 h-4" />
-          Nytt verk
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={publishToSite} disabled={publishing} className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
+            <Globe className="w-4 h-4" />
+            {publishing ? "Publicerar..." : "Publicera till sajt"}
+          </button>
+          <button onClick={openNew} className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+            <Plus className="w-4 h-4" />
+            Nytt verk
+          </button>
+        </div>
       </div>
+      {publishMsg && (
+        <div className="mb-4 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">{publishMsg}</div>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="relative flex-1 max-w-xs">
