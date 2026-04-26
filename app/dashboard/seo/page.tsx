@@ -56,10 +56,34 @@ export default function SEOPage() {
   const [showPaa, setShowPaa] = useState(false);
   const [showAiAudit, setShowAiAudit] = useState(false);
   const [gscRows, setGscRows] = useState<{ query: string; clicks: number; impressions: number; position: number }[]>([]);
+  const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; connection: { gsc_site: string | null } | null } | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetch("/api/seo/gsc-import").then((r) => r.ok ? r.json() : []).then(setGscRows).catch(() => {});
+    fetch("/api/google/status").then((r) => r.json()).then(setGoogleStatus).catch(() => {});
   }, []);
+
+  async function syncGsc(days: number) {
+    setSyncing(true);
+    try {
+      const r = await fetch("/api/google/gsc/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        alert(`Synkat ${d.rows} sökord från GSC (${d.period_start} → ${d.period_end})`);
+        const fresh = await fetch("/api/seo/gsc-import").then((r) => r.json());
+        setGscRows(fresh);
+      } else {
+        alert("Fel: " + (d.error || "okänt"));
+      }
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   useEffect(() => { reload(); }, []);
 
@@ -138,10 +162,21 @@ export default function SEOPage() {
             Synlighet i Google + AI-motorer (ChatGPT, Perplexity, Google AI). Helt gratis verktyg.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {googleStatus?.connected && googleStatus?.connection?.gsc_site ? (
+            <button onClick={() => syncGsc(28)} disabled={syncing} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+              {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshIcon />}
+              Synka GSC (28 dagar)
+            </button>
+          ) : (
+            <a href="/dashboard/installningar" className="flex items-center gap-2 bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-lg text-sm font-medium">
+              <ExternalLink className="w-4 h-4" />
+              Anslut Google
+            </a>
+          )}
           <button onClick={() => setShowGscImport(true)} className="flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-300 px-3 py-2 rounded-lg text-sm font-medium text-gray-700">
             <Upload className="w-4 h-4" />
-            Importera GSC-data
+            CSV-import
           </button>
           <button onClick={() => setShowPaa(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90">
             <HelpCircle className="w-4 h-4" />
@@ -391,6 +426,10 @@ export default function SEOPage() {
       </div>
     </div>
   );
+}
+
+function RefreshIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" /></svg>;
 }
 
 function GscImportModal({ onClose }: { onClose: () => void }) {
