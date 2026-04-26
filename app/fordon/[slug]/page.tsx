@@ -10,6 +10,8 @@ import { VehicleCard } from "@/components/ui/VehicleCard";
 import { notFound } from "next/navigation";
 import { Phone, ArrowLeft, CreditCard, MapPin } from "lucide-react";
 import type { Metadata } from "next";
+import { vehicleJsonLd, jsonLdScript } from "@/lib/structured-data";
+import { getActiveClientId } from "@/lib/client-context";
 
 export async function generateMetadata({
   params,
@@ -46,6 +48,15 @@ export default async function VehicleDetailPage({
 
   const v = vehicle as Vehicle;
   const specs = v.specs || {};
+
+  // JSON-LD Product per fordon
+  const clientId = await getActiveClientId();
+  const [{ data: profile }, { data: settingsRows }] = await Promise.all([
+    supabase.from("hm_brand_profile").select("company_name, location, founder_phone, founder_email").eq("client_id", clientId).maybeSingle(),
+    supabase.from("hm_settings").select("key, value").eq("client_id", clientId),
+  ]);
+  const settings = Object.fromEntries((settingsRows || []).map((s) => [s.key, s.value])) as Record<string, string>;
+  const productJsonLd = vehicleJsonLd(v as unknown as Parameters<typeof vehicleJsonLd>[0], profile || {}, settings);
 
   // Get related vehicles
   const { data: related } = await supabase

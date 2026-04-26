@@ -13,6 +13,10 @@ export interface Client {
   primary_color: string;
   resource_module: string;
   archived: boolean;
+  report_recipients?: string | null;
+  ig_handle?: string | null;
+  ig_account_id?: string | null;
+  ig_access_token?: string | null;
 }
 
 export async function getActiveClientId(): Promise<string> {
