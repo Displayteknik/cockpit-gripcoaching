@@ -28,12 +28,16 @@ interface Activity {
   created_at: string;
 }
 
+interface ActiveClient { id: string; name: string; industry: string | null; primary_color: string }
+
 export default function DashboardOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [client, setClient] = useState<ActiveClient | null>(null);
 
   useEffect(() => {
     fetch("/api/activity").then((r) => r.json()).then(setActivity).catch(() => {});
+    fetch("/api/clients/active").then((r) => r.json()).then(setClient).catch(() => {});
     (async () => {
       const [vAll, vSold, bPub, bDraft, sAll, sDraft, queue, leadsAll, leadsNew] = await Promise.all([
         supabase.from("hm_vehicles").select("id", { count: "exact", head: true }),
@@ -62,9 +66,15 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold text-gray-900">HM Motor — Säljmaskinen</h1>
-        <p className="text-gray-500 mt-1">Allt du behöver för att driva försäljningen — samlat.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Översikt · {new Date().toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" })}</div>
+          <h1 className="font-display text-3xl font-bold text-gray-900 flex items-center gap-3">
+            {client && <span className="w-3 h-3 rounded-full" style={{ background: client.primary_color }} />}
+            {client?.name || "Cockpit"}
+          </h1>
+          <p className="text-gray-500 mt-1">{client?.industry ? `${client.industry} · ` : ""}Allt du behöver för att driva klientens försäljning — samlat.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
