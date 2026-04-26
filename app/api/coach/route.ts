@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generate, type GeminiMessage } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
+import { getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ChatBody;
     const sb = supabaseServer();
+    const clientId = await getActiveClientId();
 
     const { data: vehicles } = await sb
       .from("hm_vehicles")
@@ -54,18 +56,47 @@ När du rekommenderar ett fordon: ge slug-länken "/fordon/[slug]" så kunden ka
       maxOutputTokens: 1000,
     });
 
-    // Enkel lead-detektion: om senaste user-meddelande innehåller telefonnummer → spara
+    // Lead-detektion + AI-scoring
     const lastUser = [...body.messages].reverse().find((m) => m.role === "user")?.content || "";
     const phoneMatch = lastUser.match(/0[\d\s-]{7,}/);
     if (phoneMatch || body.lead?.phone) {
-      await sb.from("hm_leads").insert({
+      // Gemini scorer leadet 1–10 baserat på konversationen
+      let score: number | null = null;
+      let score_reasoning: string | null = null;
+      try {
+        const { generateJSON } = await import("@/lib/gemini");
+        const conversationText = body.messages.map((m) => `${m.role === "user" ? "Kund" : "Coach"}: ${m.content}`).join("\n");
+        const result = await generateJSON<{ score: number; reasoning: string }>({
+          model: "gemini-2.5-flash",
+          systemInstruction: `Du bedömer hur köp-redo en lead är från en konversation. Skala 1–10:
+1–3 = bara nyfiken, ingen avsikt
+4–6 = intresserad men osäker, behöver tid
+7–8 = seriöst köpläge, bör ringas inom 24h
+9–10 = HET — vill köpa nu, ring direkt
+
+Returnera JSON: { "score": 1-10, "reasoning": "1–2 meningar varför" }`,
+          prompt: `Konversation:\n${conversationText}\n\nBedöm leadet.`,
+          temperature: 0.3,
+          maxOutputTokens: 500,
+        });
+        score = result.score;
+        score_reasoning = result.reasoning;
+      } catch { /* tyst */ }
+
+      const { data: leadRow } = await sb.from("hm_leads").insert({
+        client_id: clientId,
         name: body.lead?.name,
         phone: body.lead?.phone || phoneMatch?.[0],
         email: body.lead?.email,
         interest: body.lead?.interest || lastUser.slice(0, 200),
         source: "coach",
         conversation: body.messages,
-      });
+        score,
+        score_reasoning,
+      }).select().single();
+
+      const { logActivity } = await import("@/lib/client-context");
+      await logActivity(clientId, "lead_captured", `Nytt lead${score ? ` (score ${score}/10)` : ""}: ${body.lead?.phone || phoneMatch?.[0]}`, "/dashboard/fordon", { lead_id: leadRow?.id, score });
     }
 
     return NextResponse.json({ reply });

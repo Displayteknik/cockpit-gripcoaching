@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare } from "lucide-react";
+import { Car, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart } from "lucide-react";
 import ClientPicker from "@/components/ClientPicker";
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
   { href: "/dashboard/seo", label: "SEO", icon: TrendingUp },
   { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
   { href: "/dashboard/godkannande", label: "Godkännande", icon: MessageSquare },
+  { href: "/dashboard/rapport", label: "Rapport", icon: FileBarChart },
   { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
   { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
 ];

@@ -4,6 +4,7 @@ import "./globals.css";
 import CoachWidgetGate from "@/components/CoachWidgetGate";
 import VisitorTracker from "@/components/VisitorTracker";
 import StructuredData from "@/components/StructuredData";
+import ClarityScript from "@/components/ClarityScript";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-display",
@@ -41,6 +42,7 @@ export default function RootLayout({
     <html lang="sv" className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col font-body text-text-primary bg-white antialiased">
         <StructuredData type="localbusiness" />
+        <ClarityScript />
         {children}
         <VisitorTracker />
         <CoachWidgetGate />

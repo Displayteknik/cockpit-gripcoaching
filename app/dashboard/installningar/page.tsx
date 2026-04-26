@@ -76,11 +76,27 @@ const SECTIONS: SectionDef[] = [
     ],
   },
   {
-    title: "Analytics",
+    title: "Microsoft Clarity",
     icon: BarChart3,
-    description: "Inbyggd lättviktig tracker körs redan. Lägg ev. Plausible eller Umami för djupare data — gratis self-hosted.",
+    description: "Gratis heatmaps + session replays. Du SER vad besökare gör. Skapa konto på clarity.microsoft.com → kopiera Project ID hit.",
+    fields: [
+      { key: "clarity_id", label: "Clarity Project ID", hint: "10-tecken ID från clarity.microsoft.com (Settings → Setup → 'Tracking code').", placeholder: "abc123xyz0", link: { url: "https://clarity.microsoft.com/", label: "Öppna Clarity" } },
+    ],
+  },
+  {
+    title: "Analytics (övrigt)",
+    icon: BarChart3,
+    description: "Inbyggd lättviktig tracker körs redan. GA4 kopplas via Google-OAuth ovan.",
     fields: [
       { key: "plausible_domain", label: "Plausible-domän (valfritt)", hint: "Om du kör Plausible i parallell.", placeholder: "hmmotor.se" },
+    ],
+  },
+  {
+    title: "Email & rapporter",
+    icon: BarChart3,
+    description: "Resend används för att mejla godkännande-länkar och veckorapporter (3000 mail/månad gratis).",
+    fields: [
+      { key: "report_recipients_info", label: "Standard-mottagare för rapporter", hint: "Sätts på själva klienten (clients.report_recipients) — kommaseparerade emails. Veckorapport-fliken låter dig skriva in mottagare per gång.", placeholder: "(lagras på klient-nivå)" },
     ],
   },
   {

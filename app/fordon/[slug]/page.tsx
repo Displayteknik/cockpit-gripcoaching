@@ -58,6 +58,7 @@ export default async function VehicleDetailPage({
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(productJsonLd)} />
       <TopBar />
       <Navigation />
       <main className="flex-1">
