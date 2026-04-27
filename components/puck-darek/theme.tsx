@@ -278,6 +278,89 @@ export function Stats({ items, align = "left" }: StatsProps) {
 }
 
 // ════════════════════════════════════════════════════════════
+// NU PÅGÅR — banner med pågående utställning
+// ════════════════════════════════════════════════════════════
+export interface NuPagarProps {
+  enabled: boolean;
+  label: string;
+  title: string;
+  ctaText: string;
+  ctaHref: string;
+  meta: { key: string; val: string }[];
+}
+export function NuPagar({ enabled, label, title, ctaText, ctaHref, meta }: NuPagarProps) {
+  if (!enabled) return null;
+  return (
+    <StyleHost>
+      <div style={{ background: "linear-gradient(135deg, #1a1a1a, #0a0a0a)", borderTop: "1px solid rgba(201,169,110,0.2)", borderBottom: "1px solid rgba(201,169,110,0.2)", padding: "28px clamp(24px, 6vw, 80px)", display: "flex", alignItems: "center", gap: 48, fontFamily: "'Manrope', sans-serif", color: "#f5efe6", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#c9a96e", flexShrink: 0 }}></span>
+          <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", fontWeight: 500 }}>{label}</span>
+        </div>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, marginBottom: 8, color: "#f5efe6" }}>{title}</div>
+          <div style={{ display: "flex", gap: 24, fontSize: 12, color: "#8a8a8a", flexWrap: "wrap" }}>
+            {(meta || []).map((m, i) => <span key={i}><strong style={{ color: "#c9a96e", marginRight: 6 }}>{m.key}:</strong>{m.val}</span>)}
+          </div>
+        </div>
+        {ctaText && <a href={ctaHref || "#"} style={{ color: "#c9a96e", textDecoration: "none", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif" }}>{ctaText} →</a>}
+      </div>
+    </StyleHost>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// CONTACT — kontaktformulär luxury minimal
+// ════════════════════════════════════════════════════════════
+export interface ContactProps {
+  heading: string;
+  headingItalic: string;
+  subheading: string;
+  email: string;
+  phone: string;
+  address: string;
+  social: { label: string; href: string }[];
+}
+export function Contact({ heading, headingItalic, subheading, email, phone, address, social }: ContactProps) {
+  return (
+    <StyleHost>
+      <section style={{ background: "#0a0a0a", padding: "120px 24px", textAlign: "center", color: "#f5efe6" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.1, color: "#f5efe6", margin: 0 }}>
+            {heading}{headingItalic && <><br/><em style={{ fontStyle: "italic", color: "#c9a96e" }}>{headingItalic}</em></>}
+          </h2>
+          {subheading && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 20, color: "#a8a8a8", marginTop: 24 }}>{subheading}</p>}
+          {email && <a href={`mailto:${email}`} style={{ display: "block", fontSize: 22, color: "#c9a96e", marginTop: 40, textDecoration: "none", fontFamily: "'Cormorant Garamond', serif" }}>{email}</a>}
+          {phone && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 18, color: "#888", marginTop: 14 }}>{phone}</p>}
+          {address && <p style={{ fontSize: 11, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 8, fontFamily: "'Manrope', sans-serif" }}>{address}</p>}
+          {social && social.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 48 }}>
+              {social.map((s, i) => <a key={i} href={s.href} style={{ color: "#888", fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none", fontFamily: "'Manrope', sans-serif" }}>{s.label}</a>)}
+            </div>
+          )}
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// FOOTER — copyright + logo + plats
+// ════════════════════════════════════════════════════════════
+export interface FooterProps { copyright: string; logo: string; location: string; }
+export function Footer({ copyright, logo, location }: FooterProps) {
+  return (
+    <StyleHost>
+      <footer style={{ background: "#000", padding: "32px clamp(24px, 6vw, 80px)", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", flexWrap: "wrap", gap: 20 }}>
+        <span>{copyright}</span>
+        <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "#c9a96e", letterSpacing: "0.2em" }}>{logo}</span>
+        <span>{location}</span>
+      </footer>
+    </StyleHost>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // PORTFOLIO — utvalda verk i 3 rader (luxury minimal)
 // ════════════════════════════════════════════════════════════
 export interface PortfolioItem { image: string; alt: string; title: string; caption: string; category: string }

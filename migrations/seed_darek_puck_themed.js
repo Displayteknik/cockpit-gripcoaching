@@ -95,29 +95,63 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
     }
   }
 
-  // SHOP rubrik
+  // SHOP rubrik (verken auto-renderas på sajten från art_works)
   if (c.shop) {
-    blocks.push({ type: 'Section', props: { id: id('Section'), background: 'dark', paddingY: 'lg', align: 'center', maxWidth: 'wide' } });
-    blocks.push({ type: 'Label', props: { id: id('Label'), text: c.shop.sectionLabel || 'Galleri', align: 'center' } });
-    blocks.push({ type: 'Heading', props: { id: id('Heading'), text: c.shop.heading || 'Konst till salu', level: 'h2', size: '2xl', align: 'center', italic: false, color: 'cream' } });
-    if (c.shop.intro?.quote) blocks.push({ type: 'Text', props: { id: id('Text'), text: c.shop.intro.quote, size: 'lg', italic: true, align: 'center', color: 'muted' } });
+    blocks.push({ type: 'Label', props: { id: id('Label'), text: c.shop.sectionLabel || 'Galleri', align: 'left' } });
+    blocks.push({ type: 'Heading', props: { id: id('Heading'), text: c.shop.heading || 'Konst till salu', level: 'h2', size: '2xl', align: 'left', italic: false, color: 'cream' } });
+    if (c.shop.intro?.quote) blocks.push({ type: 'Text', props: { id: id('Text'), text: c.shop.intro.quote, size: 'lg', italic: true, align: 'left', color: 'muted' } });
   }
 
-  // EXHIBITIONS rubrik
+  // EXHIBITIONS rubrik (utställningarna auto-renderas från art_exhibitions)
   if (c.exhibitions) {
-    blocks.push({ type: 'Section', props: { id: id('Section'), background: 'darker', paddingY: 'lg', align: 'left', maxWidth: 'wide' } });
     blocks.push({ type: 'Label', props: { id: id('Label'), text: c.exhibitions.sectionLabel || 'CV', align: 'left' } });
     blocks.push({ type: 'Heading', props: { id: id('Heading'), text: c.exhibitions.heading || 'Utställningar', level: 'h2', size: '2xl', align: 'left', italic: false, color: 'cream' } });
   }
 
+  // NU PÅGÅR (om sektionen finns)
+  if (c.nuPagar?.enabled) {
+    blocks.push({
+      type: 'NuPagar',
+      props: {
+        id: id('NuPagar'),
+        enabled: true,
+        label: c.nuPagar.label || 'Nu pågår',
+        title: c.nuPagar.title || '',
+        ctaText: c.nuPagar.ctaLabel || 'Mer info',
+        ctaHref: c.nuPagar.ctaHref || c.nuPagar.href || '#',
+        meta: c.nuPagar.meta || [],
+      },
+    });
+  }
+
   // CONTACT
   if (c.contact) {
-    blocks.push({ type: 'Section', props: { id: id('Section'), background: 'dark', paddingY: 'lg', align: 'center', maxWidth: 'medium' } });
-    blocks.push({ type: 'Heading', props: { id: id('Heading'), text: (c.contact.heading || 'Kontakt').replace(/<[^>]+>/g, ' ').trim(), level: 'h2', size: '2xl', align: 'center', italic: false, color: 'cream' } });
-    if (c.contact.subheading) blocks.push({ type: 'Text', props: { id: id('Text'), text: c.contact.subheading, size: 'lg', italic: true, align: 'center', color: 'muted' } });
-    if (c.contact.email) blocks.push({ type: 'Heading', props: { id: id('Heading'), text: c.contact.email, level: 'h3', size: 'md', align: 'center', italic: false, color: 'gold' } });
-    if (c.contact.phone) blocks.push({ type: 'Text', props: { id: id('Text'), text: c.contact.phone, size: 'md', italic: true, align: 'center', color: 'muted' } });
-    if (c.contact.address) blocks.push({ type: 'Label', props: { id: id('Label'), text: c.contact.address, align: 'center' } });
+    blocks.push({
+      type: 'Contact',
+      props: {
+        id: id('Contact'),
+        heading: (c.contact.heading || '').split(/<br\s*\/?>/i)[0].replace(/<[^>]+>/g, ' ').trim() || 'Kontakt',
+        headingItalic: (c.contact.heading || '').split(/<br\s*\/?>/i)[1]?.replace(/<[^>]+>/g, ' ').trim() || '',
+        subheading: c.contact.subheading || '',
+        email: c.contact.email || '',
+        phone: c.contact.phone || '',
+        address: c.contact.address || '',
+        social: c.contact.social || [],
+      },
+    });
+  }
+
+  // FOOTER
+  if (c.footer) {
+    blocks.push({
+      type: 'Footer',
+      props: {
+        id: id('Footer'),
+        copyright: c.footer.copyright || '',
+        logo: c.footer.logo || 'DU',
+        location: c.footer.location || '',
+      },
+    });
   }
 
   const puck = { content: blocks, root: { props: { title: c.site?.title || 'Darek Uhrberg — Konstnär' } } };

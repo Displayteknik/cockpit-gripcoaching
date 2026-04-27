@@ -13,6 +13,9 @@ import {
   Stats, type StatsProps,
   Hero, type HeroProps,
   Portfolio, type PortfolioProps,
+  NuPagar, type NuPagarProps,
+  Contact, type ContactProps,
+  Footer, type FooterProps,
 } from "@/components/puck-darek/theme";
 
 const ce = (label: string) => ({ type: "text" as const, label, contentEditable: true } as any);
@@ -36,9 +39,12 @@ export const puckConfigDarek: Config<{
   TwoColumn: TwoColumnProps;
   Stats: StatsProps;
   Portfolio: PortfolioProps;
+  NuPagar: NuPagarProps;
+  Contact: ContactProps;
+  Footer: FooterProps;
 }> = {
   categories: {
-    sektioner: { title: "Sektioner", components: ["Hero", "Portfolio", "TwoColumn", "Section"] },
+    sektioner: { title: "Sektioner", components: ["Hero", "NuPagar", "Portfolio", "TwoColumn", "Contact", "Footer", "Section"] },
     text: { title: "Text & rubriker", components: ["Heading", "Label", "Text", "Button"] },
     media: { title: "Media", components: ["Image", "Stats", "Spacer"] },
   },
@@ -61,6 +67,47 @@ export const puckConfigDarek: Config<{
       },
       defaultProps: { label: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "Kreativ frihet utan begränsningar", ctaText: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", layout: "split" },
       render: Hero,
+    },
+    NuPagar: {
+      label: "Nu pågår-banner",
+      fields: {
+        enabled: { type: "radio", label: "Visa banner", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
+        label: ce("Etikett"),
+        title: ce("Titel"),
+        ctaText: ce("CTA-text"),
+        ctaHref: text("CTA-länk"),
+        meta: { type: "array", label: "Detaljer", arrayFields: { key: ce("Etikett"), val: ce("Värde") }, defaultItemProps: { key: "", val: "" } } as any,
+      },
+      defaultProps: { enabled: true, label: "Nu pågår", title: "", ctaText: "Mer info", ctaHref: "#", meta: [] },
+      render: NuPagar,
+    },
+    Contact: {
+      label: "Kontakt",
+      fields: {
+        heading: ce("Rubrik rad 1"),
+        headingItalic: ce("Italic rad 2 (valfri)"),
+        subheading: ce("Underrubrik"),
+        email: ce("E-post"),
+        phone: ce("Telefon"),
+        address: ce("Adress"),
+        social: {
+          type: "array", label: "Sociala länkar",
+          arrayFields: { label: ce("Etikett"), href: text("URL") },
+          defaultItemProps: { label: "Instagram", href: "https://instagram.com/" },
+        } as any,
+      },
+      defaultProps: { heading: "Låt oss", headingItalic: "prata konst", subheading: "Förfrågningar om verk, utställningar & ateljéebesök", email: "", phone: "", address: "", social: [] },
+      render: Contact,
+    },
+    Footer: {
+      label: "Footer",
+      fields: {
+        copyright: ce("Copyright"),
+        logo: ce("Logo (text)"),
+        location: ce("Plats"),
+      },
+      defaultProps: { copyright: "© 2026 Darek Uhrberg. Alla rättigheter förbehållna.", logo: "DU", location: "Sandarne, Sverige" },
+      render: Footer,
     },
     Portfolio: {
       label: "Portfolio (utvalda verk)",
