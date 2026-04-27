@@ -26,6 +26,12 @@ const STYLES = `
   /* NuPagar pulse */
   @keyframes dk-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
   .dk-pulse-dot { animation: dk-pulse 2s ease-in-out infinite; }
+  /* Hero slowZoom + frame + gradient overlay */
+  @keyframes dk-slow-zoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  .dk-hero-img-wrap { position: relative; overflow: hidden; border: 1px solid rgba(201,169,110,0.18); }
+  .dk-hero-img-wrap::before { content: ''; position: absolute; inset: 16px; border: 1px solid rgba(201,169,110,0.12); pointer-events: none; z-index: 2; }
+  .dk-hero-img-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, transparent 55%, rgba(10,10,10,0.65)); pointer-events: none; z-index: 1; }
+  .dk-hero-img { animation: dk-slow-zoom 24s ease-in-out infinite; }
 `;
 
 let injected = false;
@@ -463,8 +469,8 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
           {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 380 }}>{tagline}</p>}
           {ctaText && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline">{ctaText}</a>}
         </div>
-        <div style={{ minHeight: "85vh", overflow: "hidden", background: "#1a1a1a" }}>
-          {heroImage && <img src={heroImage} alt={heroAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        <div className="dk-hero-img-wrap" style={{ minHeight: "85vh", background: "#1a1a1a" }}>
+          {heroImage && <img className="dk-hero-img" src={heroImage} alt={heroAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
         </div>
       </section>
     </StyleHost>
