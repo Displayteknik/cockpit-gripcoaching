@@ -47,9 +47,11 @@ const STYLES = `
   .dk-scroll-text { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(245,239,230,0.5); font-family: 'Manrope', sans-serif; writing-mode: vertical-rl; transform: rotate(180deg); }
   /* Cinzel for exhibitions */
   .dk-cinzel { font-family: 'Cinzel', serif; letter-spacing: 0.4em; }
-  /* Reveal on scroll */
-  @keyframes dk-reveal { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-  .dk-reveal { animation: dk-reveal 0.8s ease-out both; }
+  /* Scroll-trigger reveal — endast fade-IN, inget försvinner ut */
+  .dk-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s ease-out, transform 0.9s ease-out; }
+  .dk-reveal.dk-visible { opacity: 1; transform: translateY(0); }
+  /* När JS inte kör — visa ALLT default (säkerhet mot att saker försvinner) */
+  .no-js .dk-reveal, html.no-dk-observer .dk-reveal { opacity: 1; transform: none; }
   /* Contact form corners */
   .dk-corner { position: absolute; width: 24px; height: 24px; border-color: var(--gold); border-style: solid; pointer-events: none; }
   .dk-corner-tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
@@ -438,7 +440,7 @@ export function Portfolio({ label, heading, headingItalic, filters, rows }: Port
     <StyleHost>
       <section style={{ background: "#0a0a0a", padding: "120px 24px" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 60, gap: 40, flexWrap: "wrap" }}>
+          <div className="dk-reveal" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 60, gap: 40, flexWrap: "wrap" }}>
             <div>
               {label && <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", marginBottom: 16, fontFamily: "'Manrope', sans-serif" }}>{label}</p>}
               <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.05, color: "#f5efe6", margin: 0 }}>
@@ -446,15 +448,15 @@ export function Portfolio({ label, heading, headingItalic, filters, rows }: Port
               </h2>
             </div>
             {filters && filters.length > 0 && (
-              <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {filters.map((f, i) => (
-                  <button key={i} style={{ background: "transparent", border: "none", borderBottom: i === 0 ? "1px solid #c9a96e" : "1px solid transparent", color: i === 0 ? "#c9a96e" : "#888", padding: "8px 0", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", cursor: "pointer" }}>{f.value}</button>
+                  <button key={i} style={{ background: i === 0 ? "rgba(201,169,110,0.08)" : "transparent", border: i === 0 ? "1px solid rgba(201,169,110,0.5)" : "1px solid #2a2a2a", color: i === 0 ? "#c9a96e" : "#888", padding: "12px 24px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", cursor: "pointer", transition: "all 0.3s" }}>{f.value}</button>
                 ))}
               </div>
             )}
           </div>
           {(rows || []).map((row, i) => (
-            <div key={i} style={{ display: "grid", gap: 24, marginBottom: 24, gridTemplateColumns: layoutMap[row.layout || "3equal"] }}>
+            <div key={i} className="dk-reveal" style={{ display: "grid", gap: 24, marginBottom: 24, gridTemplateColumns: layoutMap[row.layout || "3equal"] }}>
               {(row.items || []).map((it, j) => (
                 <div key={j} className="dk-portfolio-item" style={{ position: "relative", overflow: "hidden", aspectRatio: row.layout === "big-2small" && j === 0 ? "16/10" : "1", background: "#1a1a1a", cursor: "pointer" }}>
                   {it.image && <img src={it.image} alt={it.alt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
@@ -551,9 +553,9 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
   );
 }
 
-// Klient-side slideshow för editor-canvas
+// Klient-side: slideshow-rotation + scroll-reveal-observer
 if (typeof window !== "undefined") {
-  const tick = () => {
+  const setupSlideshow = () => {
     document.querySelectorAll('.dk-hero-img-wrap[data-slideshow="1"]').forEach((wrap) => {
       const slides = wrap.querySelectorAll('.dk-hero-slide');
       if (slides.length < 2) return;
@@ -568,5 +570,17 @@ if (typeof window !== "undefined") {
       }, 5000);
     });
   };
-  setInterval(tick, 1500);
+
+  const setupReveal = () => {
+    if (!("IntersectionObserver" in window)) {
+      document.documentElement.classList.add("no-dk-observer");
+      return;
+    }
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("dk-visible"); });
+    }, { threshold: 0.12, rootMargin: "0px 0px -50px 0px" });
+    document.querySelectorAll(".dk-reveal:not(.dk-visible)").forEach((el) => obs.observe(el));
+  };
+
+  setInterval(() => { setupSlideshow(); setupReveal(); }, 1500);
 }
