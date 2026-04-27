@@ -18,6 +18,12 @@ const STYLES = `
   .dk-btn-outline:hover { background: var(--gold); color: #0a0a0a; }
   .dk-btn-solid { background: var(--gold); color: #0a0a0a; border: 1px solid var(--gold); }
   .dk-btn-ghost { color: var(--gold); border: 1px solid transparent; }
+  /* btn-primary slide-in hover (matchar darekuhrberg.se) */
+  .dk-btn-outline { position: relative; overflow: hidden; transition: color 0.3s; padding: 14px 32px; font-size: 11px; gap: 12px; display: inline-flex; align-items: center; }
+  .dk-btn-outline::before { content: ''; position: absolute; inset: 0; background: var(--gold); transform: translateX(-100%); transition: transform 0.4s ease; z-index: 0; }
+  .dk-btn-outline:hover { color: #0a0a0a !important; }
+  .dk-btn-outline:hover::before { transform: translateX(0); }
+  .dk-btn-outline > * { position: relative; z-index: 1; }
   /* Portfolio hover-scale */
   .dk-portfolio-item img { transition: transform 0.6s ease; }
   .dk-portfolio-item:hover img { transform: scale(1.06); }
@@ -311,6 +317,26 @@ export function Stats({ items, align = "left" }: StatsProps) {
 }
 
 // ════════════════════════════════════════════════════════════
+// NAV — toppmeny (DAREK UHRBERG-logo + 5 länkar)
+// ════════════════════════════════════════════════════════════
+export interface NavProps {
+  logoText: string;
+  links: { label: string; href: string }[];
+}
+export function Nav({ logoText, links }: NavProps) {
+  return (
+    <StyleHost>
+      <nav style={{ background: "#0a0a0a", padding: "24px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1a1a1a", fontFamily: "'Manrope', sans-serif" }}>
+        <a href="/" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: 18, letterSpacing: "0.3em", color: "#f5efe6", textDecoration: "none" }}>{logoText}</a>
+        <div style={{ display: "flex", gap: 40, fontSize: 11, letterSpacing: "0.25em", textTransform: "uppercase", color: "#a8a8a8" }}>
+          {(links || []).map((l, i) => <a key={i} href={l.href} style={{ color: "inherit", textDecoration: "none", transition: "color 0.3s" }}>{l.label}</a>)}
+        </div>
+      </nav>
+    </StyleHost>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // NU PÅGÅR — banner med pågående utställning
 // ════════════════════════════════════════════════════════════
 export interface NuPagarProps {
@@ -515,9 +541,9 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
           {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 380 }}>{tagline}</p>}
           {ctaText && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline">{ctaText}</a>}
         </div>
-        <div className="dk-scroll-hint" style={{ left: "auto", right: 80 }}>
-          <span className="dk-scroll-text">Scrolla</span>
+        <div className="dk-scroll-hint" style={{ left: "50%", right: "auto", transform: "translateX(-50%)" }}>
           <span className="dk-scroll-line"></span>
+          <span className="dk-scroll-text">Scrolla</span>
         </div>
       </section>
     </StyleHost>

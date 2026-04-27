@@ -22,6 +22,18 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
 
   const blocks = [];
 
+  // NAV — toppmeny (matchar template.html nav)
+  if (c.site?.navLinks) {
+    blocks.push({
+      type: 'Nav',
+      props: {
+        id: id('Nav'),
+        logoText: c.site.navLogo || 'DAREK UHRBERG',
+        links: (c.site.navLinks || []).map(l => ({ label: l.label, href: l.href })),
+      },
+    });
+  }
+
   // HERO
   if (c.hero) {
     blocks.push({

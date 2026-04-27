@@ -17,6 +17,7 @@ import {
   NuPagar, type NuPagarProps,
   Contact, type ContactProps,
   Footer, type FooterProps,
+  Nav, type NavProps,
 } from "@/components/puck-darek/theme";
 
 const ce = (label: string) => ({ type: "text" as const, label, contentEditable: true } as any);
@@ -43,9 +44,10 @@ export const puckConfigDarek: Config<{
   NuPagar: NuPagarProps;
   Contact: ContactProps;
   Footer: FooterProps;
+  Nav: NavProps;
 }> = {
   categories: {
-    sektioner: { title: "Sektioner", components: ["Hero", "NuPagar", "Portfolio", "TwoColumn", "Contact", "Footer", "Section"] },
+    sektioner: { title: "Sektioner", components: ["Nav", "Hero", "NuPagar", "Portfolio", "TwoColumn", "Contact", "Footer", "Section"] },
     text: { title: "Text & rubriker", components: ["Heading", "Label", "Text", "Button"] },
     media: { title: "Media", components: ["Image", "Stats", "Spacer"] },
   },
@@ -74,6 +76,19 @@ export const puckConfigDarek: Config<{
       },
       defaultProps: { label: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "Kreativ frihet utan begränsningar", ctaText: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", slideshow: [], layout: "split" },
       render: Hero,
+    },
+    Nav: {
+      label: "Nav-meny (toppmeny)",
+      fields: {
+        logoText: ce("Logo-text"),
+        links: {
+          type: "array", label: "Länkar",
+          arrayFields: { label: ce("Etikett"), href: text("Anchor / URL") },
+          defaultItemProps: { label: "", href: "#" },
+        } as any,
+      },
+      defaultProps: { logoText: "DAREK UHRBERG", links: [{ label: "Verk", href: "#portfolio" }, { label: "Om", href: "#about" }, { label: "Konst till salu", href: "#shop" }, { label: "Utställningar", href: "#exhibitions" }, { label: "Kontakt", href: "#contact" }] },
+      render: Nav,
     },
     NuPagar: {
       label: "Nu pågår-banner",
