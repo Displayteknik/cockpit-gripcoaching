@@ -164,7 +164,10 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
   }
 
   const puck = { content: blocks, root: { props: { title: c.site?.title || 'Darek Uhrberg — Konstnär' } } };
-  const next = { ...c, puck_data: puck };
+  const pages = c.pages || {};
+  pages.index = puck;
+  const { puck_data, ...rest } = c;
+  const next = { ...rest, pages };
   await sql(`UPDATE darek_content SET content = '${JSON.stringify(next).replace(/'/g, "''")}'::jsonb WHERE id='live'`);
   console.log(`✔ Seedade ${blocks.length} Darek-stylade Puck-blocks`);
 })();

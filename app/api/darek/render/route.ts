@@ -8,11 +8,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // SSR Puck Data → HTML body. Public endpoint — Netlify build kallar denna.
-export async function GET() {
+// ?slug=index för specifik sida (default index)
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const slug = url.searchParams.get("slug") || "index";
   const sb = supabaseServer();
   const { data: row } = await sb.from("darek_content").select("content").eq("id", "live").maybeSingle();
   const content = (row?.content as Record<string, unknown>) || {};
-  const puckData = content.puck_data as Data | undefined;
+  const pages = (content.pages as Record<string, Data>) || {};
+  const puckData = (pages[slug] || (content.puck_data as Data | undefined)) as Data | undefined;
 
   if (!puckData || !puckData.content?.length) {
     return new NextResponse("EMPTY", { status: 200, headers: { "Content-Type": "text/plain", "X-Render-Status": "empty" } });
