@@ -461,6 +461,81 @@ export function Footer({ copyright, logo, location }: FooterProps) {
 }
 
 // ════════════════════════════════════════════════════════════
+// GALLERY SECTION — Konst till salu (label + heading + intro + filter-knappar)
+// Verken auto-renderas på publika sajten från art_works
+// ════════════════════════════════════════════════════════════
+export interface GallerySectionProps {
+  label: string;
+  heading: string;
+  introQuote: string;
+  introSub: string;
+  filters: { value: string }[];
+}
+export function GallerySection({ label, heading, introQuote, introSub, filters }: GallerySectionProps) {
+  return (
+    <StyleHost>
+      <section style={{ background: "#0a0a0a", padding: "120px 24px" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+            <span style={{ width: 48, height: 1, background: "#c9a96e" }}></span>
+            <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", fontFamily: "'Manrope', sans-serif", margin: 0 }}>{label}</p>
+          </div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.05, color: "#f5efe6", margin: "0 0 32px" }}>{heading}</h2>
+          {introQuote && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#f5efe6", margin: "0 0 12px", maxWidth: 720, lineHeight: 1.4 }}>{introQuote}</p>}
+          {introSub && <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 14, color: "#888", margin: "0 0 48px", maxWidth: 640, lineHeight: 1.6 }}>{introSub}</p>}
+          {filters && filters.length > 0 && (
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 48 }}>
+              {filters.map((f, i) => (
+                <button key={i} style={{ background: i === 0 ? "rgba(201,169,110,0.08)" : "transparent", border: i === 0 ? "1px solid rgba(201,169,110,0.5)" : "1px solid #2a2a2a", color: i === 0 ? "#c9a96e" : "#888", padding: "12px 24px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", cursor: "pointer", transition: "all 0.3s" }}>{f.value}</button>
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: 24, padding: 32, border: "1px dashed #2a2a2a", color: "#666", textAlign: "center", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif" }}>
+            ↓ Verken hämtas automatiskt från Verk-fliken på publicerad sajt
+          </div>
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// EXHIBITIONS SECTION — CV-rubrik med år-grupper (data auto från art_exhibitions)
+// ════════════════════════════════════════════════════════════
+export interface ExhibitionsSectionProps {
+  label: string;
+  heading: string;
+  previewYears: { year: string; sample: string }[];
+}
+export function ExhibitionsSection({ label, heading, previewYears }: ExhibitionsSectionProps) {
+  return (
+    <StyleHost>
+      <section style={{ background: "#0a0a0a", padding: "120px 24px" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+            <span style={{ width: 48, height: 1, background: "#c9a96e" }}></span>
+            <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", fontFamily: "'Manrope', sans-serif", margin: 0 }}>{label}</p>
+          </div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.05, color: "#f5efe6", margin: "0 0 64px" }}>{heading}</h2>
+          {(previewYears || []).map((y, i) => (
+            <div key={i} style={{ marginBottom: 48 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 32, paddingBottom: 16, borderBottom: "1px solid #2a2a2a" }}>
+                <span className="dk-cinzel" style={{ fontSize: 18, color: "#dfc08a", fontWeight: 500 }}>{y.year}</span>
+                <span style={{ flex: 1, height: 1, background: "rgba(201,169,110,0.15)" }}></span>
+              </div>
+              {y.sample && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 18, color: "#888", margin: 0 }}>{y.sample}</p>}
+            </div>
+          ))}
+          <div style={{ marginTop: 24, padding: 32, border: "1px dashed #2a2a2a", color: "#666", textAlign: "center", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif" }}>
+            ↓ Utställningarna hämtas automatiskt från Utställningar-fliken på publicerad sajt
+          </div>
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // PORTFOLIO — utvalda verk i 3 rader (luxury minimal)
 // ════════════════════════════════════════════════════════════
 export interface PortfolioItem { image: string; alt: string; title: string; caption: string; category: string }
@@ -562,7 +637,7 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
             {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 480 }}>{tagline}</p>}
             {String(ctaText || "").trim() && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline"><span>{ctaText}</span></a>}
           </div>
-          <script dangerouslySetInnerHTML={{ __html: SLIDESHOW_SCRIPT }} />
+{/* slideshow drivs av klient-script i window-listener nedan */}
         </section>
       </StyleHost>
     );
@@ -572,7 +647,7 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
       <section style={{ minHeight: "85vh", background: "#0a0a0a", color: "#f5efe6", display: "grid", gridTemplateColumns: "1.05fr 1fr", alignItems: "center", position: "relative" }}>
         <div className="dk-hero-img-wrap" data-slideshow={slides.length > 1 ? "1" : "0"} style={{ minHeight: "85vh", background: "#1a1a1a", position: "relative" }}>
           {renderSlides()}
-          {slides.length > 1 && <script dangerouslySetInnerHTML={{ __html: SLIDESHOW_SCRIPT }} />}
+{/* slideshow rotation drivs av klient-script i window-listener nedan */}
         </div>
         <div style={{ padding: "60px 80px" }}>
           {label && <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", marginBottom: 28, fontFamily: "'Manrope', sans-serif" }}>{label}</p>}

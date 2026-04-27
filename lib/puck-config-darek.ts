@@ -18,6 +18,8 @@ import {
   Contact, type ContactProps,
   Footer, type FooterProps,
   Nav, type NavProps,
+  GallerySection, type GallerySectionProps,
+  ExhibitionsSection, type ExhibitionsSectionProps,
 } from "@/components/puck-darek/theme";
 
 const ce = (label: string) => ({ type: "text" as const, label, contentEditable: true } as any);
@@ -45,9 +47,11 @@ export const puckConfigDarek: Config<{
   Contact: ContactProps;
   Footer: FooterProps;
   Nav: NavProps;
+  GallerySection: GallerySectionProps;
+  ExhibitionsSection: ExhibitionsSectionProps;
 }> = {
   categories: {
-    sektioner: { title: "Sektioner", components: ["Nav", "Hero", "NuPagar", "Portfolio", "TwoColumn", "Contact", "Footer", "Section"] },
+    sektioner: { title: "Sektioner", components: ["Nav", "Hero", "NuPagar", "Portfolio", "TwoColumn", "GallerySection", "ExhibitionsSection", "Contact", "Footer", "Section"] },
     text: { title: "Text & rubriker", components: ["Heading", "Label", "Text", "Button"] },
     media: { title: "Media", components: ["Image", "Stats", "Spacer"] },
   },
@@ -76,6 +80,28 @@ export const puckConfigDarek: Config<{
       },
       defaultProps: { label: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "Kreativ frihet utan begränsningar", ctaText: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", slideshow: [], layout: "split" },
       render: Hero,
+    },
+    GallerySection: {
+      label: "Galleri (Konst till salu)",
+      fields: {
+        label: ce("Etikett"),
+        heading: ce("Rubrik"),
+        introQuote: cea("Citat (italic)"),
+        introSub: cea("Underrubrik"),
+        filters: { type: "array", label: "Filter-knappar", arrayFields: { value: ce("Etikett") }, defaultItemProps: { value: "Alla verk" } } as any,
+      },
+      defaultProps: { label: "Galleri", heading: "Konst till salu", introQuote: "", introSub: "", filters: [{ value: "Alla verk" }, { value: "Tillgänglig" }, { value: "Akryl" }, { value: "Mixed Media" }, { value: "Ink" }, { value: "Serier" }] },
+      render: GallerySection,
+    },
+    ExhibitionsSection: {
+      label: "Utställningar (CV)",
+      fields: {
+        label: ce("Etikett"),
+        heading: ce("Rubrik"),
+        previewYears: { type: "array", label: "Förhandsvisning år (data hämtas live)", arrayFields: { year: ce("År"), sample: ce("Exempel-text") }, defaultItemProps: { year: "2026", sample: "" } } as any,
+      },
+      defaultProps: { label: "CV", heading: "Utställningar", previewYears: [{ year: "2026", sample: "" }, { year: "2025", sample: "" }, { year: "2024", sample: "" }] },
+      render: ExhibitionsSection,
     },
     Nav: {
       label: "Nav-meny (toppmeny)",
@@ -115,7 +141,7 @@ export const puckConfigDarek: Config<{
         showForm: { type: "radio", label: "Visa formulär", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
         formSubjects: {
           type: "array", label: "Formulär-ämnen",
-          arrayFields: { value: ce("Värde"), label: ce("Etikett") },
+          arrayFields: { value: text("Värde"), label: text("Etikett") },
           defaultItemProps: { value: "", label: "" },
         } as any,
         social: {

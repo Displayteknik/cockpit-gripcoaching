@@ -122,15 +122,31 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
 
   // SHOP rubrik (verken auto-renderas på sajten från art_works)
   if (c.shop) {
-    blocks.push({ type: 'Label', props: { id: id('Label'), text: c.shop.sectionLabel || 'Galleri', align: 'left' } });
-    blocks.push({ type: 'Heading', props: { id: id('Heading'), text: c.shop.heading || 'Konst till salu', level: 'h2', size: '2xl', align: 'left', italic: false, color: 'cream' } });
-    if (c.shop.intro?.quote) blocks.push({ type: 'Text', props: { id: id('Text'), text: c.shop.intro.quote, size: 'lg', italic: true, align: 'left', color: 'muted' } });
+    blocks.push({
+      type: 'GallerySection',
+      props: {
+        id: id('GallerySection'),
+        label: c.shop.sectionLabel || 'Galleri',
+        heading: c.shop.heading || 'Konst till salu',
+        introQuote: c.shop.intro?.quote || '',
+        introSub: c.shop.intro?.sub || '',
+        filters: (c.shop.filters || [{ value: 'alla', label: 'Alla verk' }, { value: 'tillganglig', label: 'Tillgänglig' }, { value: 'akryl', label: 'Akryl' }]).map(f => ({ value: f.label || f.value || f })),
+      },
+    });
   }
 
-  // EXHIBITIONS rubrik (utställningarna auto-renderas från art_exhibitions)
+  // EXHIBITIONS (utställningarna auto-renderas från art_exhibitions på sajten)
   if (c.exhibitions) {
-    blocks.push({ type: 'Label', props: { id: id('Label'), text: c.exhibitions.sectionLabel || 'CV', align: 'left' } });
-    blocks.push({ type: 'Heading', props: { id: id('Heading'), text: c.exhibitions.heading || 'Utställningar', level: 'h2', size: '2xl', align: 'left', italic: false, color: 'cream' } });
+    const years = (c.exhibitions.years || []).map(y => ({ year: y.label, sample: '' }));
+    blocks.push({
+      type: 'ExhibitionsSection',
+      props: {
+        id: id('ExhibitionsSection'),
+        label: c.exhibitions.sectionLabel || 'CV',
+        heading: c.exhibitions.heading || 'Utställningar',
+        previewYears: years.length ? years : [{ year: '2026', sample: '' }, { year: '2025', sample: '' }],
+      },
+    });
   }
 
   // CONTACT
