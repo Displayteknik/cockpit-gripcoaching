@@ -392,15 +392,16 @@ export function Contact({ heading, headingItalic, subheading, email, phone, addr
   const labelStyle: React.CSSProperties = { display: "block", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#c9a96e", fontFamily: "'Manrope', sans-serif" };
   return (
     <StyleHost>
-      <section style={{ background: "#0a0a0a", padding: "120px 24px", textAlign: "center", color: "#f5efe6" }}>
+      <section style={{ background: "#0a0a0a", padding: "120px 24px", textAlign: "center", color: "#f5efe6", position: "relative" }}>
+        <div className="dk-reveal" style={{ width: 12, height: 12, borderRadius: "50%", border: "1px solid #c9a96e", margin: "0 auto 32px", display: "block" }}></div>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <h2 className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.1, color: "#f5efe6", margin: 0 }}>
-            {heading}{headingItalic && <><br/><em style={{ fontStyle: "italic", color: "#dfc08a" }}>{headingItalic}</em></>}
+          <h2 className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(48px, 6vw, 72px)", lineHeight: 1.05, color: "#f5efe6", margin: 0 }}>
+            {heading}{headingItalic && <><br/><em style={{ fontStyle: "italic", color: "#dfc08a", fontWeight: 300 }}>{headingItalic}</em></>}
           </h2>
-          {subheading && <p className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 20, color: "#a8a8a8", marginTop: 24 }}>{subheading}</p>}
-          {email && <a className="dk-reveal" href={`mailto:${email}`} style={{ display: "inline-block", fontSize: 22, color: "#c9a96e", marginTop: 40, textDecoration: "none", borderBottom: "1px solid rgba(201,169,110,0.3)", paddingBottom: 4, fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.05em" }}>{email}</a>}
-          {phone && <p className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 19, color: "#a8a8a8", marginTop: 18 }}>{phone}</p>}
-          {address && <p className="dk-reveal" style={{ fontSize: 11, color: "#888", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 8, fontFamily: "'Manrope', sans-serif" }}>{address}</p>}
+          {subheading && <p className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 20, color: "#a8a8a8", marginTop: 32 }}>{subheading}</p>}
+          {email && <a className="dk-reveal" href={`mailto:${email}`} style={{ display: "inline-block", fontSize: 18, color: "#c9a96e", marginTop: 48, textDecoration: "none", borderBottom: "1px solid rgba(201,169,110,0.4)", paddingBottom: 6, fontFamily: "'Cinzel', serif", letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 400 }}>{email}</a>}
+          {phone && <p className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24 }}>{phone}</p>}
+          {address && <p className="dk-reveal" style={{ fontSize: 11, color: "#888", letterSpacing: "0.25em", textTransform: "uppercase", marginTop: 12, fontFamily: "'Manrope', sans-serif" }}>{address}</p>}
 
           {showForm && (
             <form className="dk-reveal" name="kontakt" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/tack.html" style={{ position: "relative", marginTop: 64, padding: 40, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,169,110,0.12)", textAlign: "left" }}>
