@@ -10,8 +10,6 @@ const dareKStyles = `
   .dk-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.25em; color: #c9a96e; }
   .dk-muted { color: #8a8a8a; }
   .dk-gold { color: #c9a96e; }
-  /* I editor — gör inre länkar/knappar transparenta för klick så Puck fångar selection */
-  [data-puck-component] a, [data-puck-component] button { pointer-events: none !important; }
 `;
 
 function Style() { return <style dangerouslySetInnerHTML={{ __html: dareKStyles }} />; }

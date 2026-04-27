@@ -41,15 +41,15 @@ export const puckConfigArt: Config<{
     Hero: {
       label: "Hero",
       fields: {
-        year: { type: "text", label: "Övre etikett" },
-        titleLine1: { type: "text", label: "Titel rad 1" },
-        titleLine2: { type: "text", label: "Titel rad 2 (italic)" },
-        tagline: { type: "text", label: "Tagline" },
-        ctaLabel: { type: "text", label: "Knapp-text" },
+        year: { type: "text", label: "Övre etikett", contentEditable: true } as any,
+        titleLine1: { type: "text", label: "Titel rad 1", contentEditable: true } as any,
+        titleLine2: { type: "text", label: "Titel rad 2 (italic)", contentEditable: true } as any,
+        tagline: { type: "text", label: "Tagline", contentEditable: true } as any,
+        ctaLabel: { type: "text", label: "Knapp-text", contentEditable: true } as any,
         ctaHref: { type: "text", label: "Knapp-länk" },
         heroImage: { type: "text", label: "Hero-bild URL" },
         heroAlt: { type: "text", label: "Bild alt-text" },
-        scrollHint: { type: "text", label: "Scroll-text" },
+        scrollHint: { type: "text", label: "Scroll-text", contentEditable: true } as any,
       },
       defaultProps: { year: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "", ctaLabel: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", scrollHint: "Scrolla" },
       render: Hero,
@@ -58,9 +58,9 @@ export const puckConfigArt: Config<{
       label: "Nu pågår-banner",
       fields: {
         enabled: { type: "radio", label: "Visa banner", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
-        label: { type: "text", label: "Etikett" },
-        title: { type: "text", label: "Titel" },
-        ctaLabel: { type: "text", label: "CTA-text" },
+        label: { type: "text", label: "Etikett", contentEditable: true } as any,
+        title: { type: "text", label: "Titel", contentEditable: true } as any,
+        ctaLabel: { type: "text", label: "CTA-text", contentEditable: true } as any,
         ctaHref: { type: "text", label: "CTA-länk" },
         meta: { ...kvList("Etikett", "Värde"), label: "Detaljer" },
       },
@@ -102,11 +102,11 @@ export const puckConfigArt: Config<{
     About: {
       label: "Om konstnären",
       fields: {
-        sectionLabel: { type: "text", label: "Etikett" },
-        titleHtml: { type: "text", label: "Rubrik (HTML — em + br tillåtna)" },
+        sectionLabel: { type: "text", label: "Etikett", contentEditable: true } as any,
+        titleHtml: { type: "text", label: "Rubrik (HTML — em + br tillåtna)", contentEditable: true } as any,
         portrait: { type: "text", label: "Porträtt URL" },
         portraitAlt: { type: "text", label: "Alt-text" },
-        portraitLabel: { type: "text", label: "Bildtext" },
+        portraitLabel: { type: "text", label: "Bildtext", contentEditable: true } as any,
         paragraphs: { ...stringList, label: "Stycken" } as any,
         stats: {
           type: "array",
@@ -124,10 +124,10 @@ export const puckConfigArt: Config<{
     GalleryHeading: {
       label: "Galleri-rubrik (verken auto)",
       fields: {
-        sectionLabel: { type: "text", label: "Etikett" },
-        heading: { type: "text", label: "Rubrik" },
-        introQuote: { type: "textarea", label: "Citat" },
-        introSub: { type: "textarea", label: "Underrubrik" },
+        sectionLabel: { type: "text", label: "Etikett", contentEditable: true } as any,
+        heading: { type: "text", label: "Rubrik", contentEditable: true } as any,
+        introQuote: { type: "textarea", label: "Citat", contentEditable: true } as any,
+        introSub: { type: "textarea", label: "Underrubrik", contentEditable: true } as any,
       },
       defaultProps: { sectionLabel: "Galleri", heading: "Konst till salu", introQuote: "", introSub: "" },
       render: GalleryHeading,
@@ -135,8 +135,8 @@ export const puckConfigArt: Config<{
     ExhibitionsHeading: {
       label: "Utställningar-rubrik",
       fields: {
-        sectionLabel: { type: "text", label: "Etikett" },
-        heading: { type: "text", label: "Rubrik" },
+        sectionLabel: { type: "text", label: "Etikett", contentEditable: true } as any,
+        heading: { type: "text", label: "Rubrik", contentEditable: true } as any,
       },
       defaultProps: { sectionLabel: "CV", heading: "Utställningar" },
       render: ExhibitionsHeading,
@@ -144,11 +144,11 @@ export const puckConfigArt: Config<{
     Contact: {
       label: "Kontakt",
       fields: {
-        heading: { type: "text", label: "Rubrik (HTML)" },
-        subheading: { type: "text", label: "Underrubrik" },
-        email: { type: "text", label: "E-post" },
-        phone: { type: "text", label: "Telefon" },
-        address: { type: "text", label: "Adress" },
+        heading: { type: "text", label: "Rubrik (HTML)", contentEditable: true } as any,
+        subheading: { type: "text", label: "Underrubrik", contentEditable: true } as any,
+        email: { type: "text", label: "E-post", contentEditable: true } as any,
+        phone: { type: "text", label: "Telefon", contentEditable: true } as any,
+        address: { type: "text", label: "Adress", contentEditable: true } as any,
         social: {
           type: "array",
           label: "Sociala länkar",
@@ -165,9 +165,9 @@ export const puckConfigArt: Config<{
     Footer: {
       label: "Footer",
       fields: {
-        copyright: { type: "text", label: "Copyright" },
-        logo: { type: "text", label: "Logo (text)" },
-        location: { type: "text", label: "Plats" },
+        copyright: { type: "text", label: "Copyright", contentEditable: true } as any,
+        logo: { type: "text", label: "Logo (text)", contentEditable: true } as any,
+        location: { type: "text", label: "Plats", contentEditable: true } as any,
       },
       defaultProps: { copyright: "", logo: "DU", location: "" },
       render: Footer,
