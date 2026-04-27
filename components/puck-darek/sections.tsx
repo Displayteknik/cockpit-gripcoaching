@@ -10,9 +10,16 @@ const dareKStyles = `
   .dk-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.25em; color: #c9a96e; }
   .dk-muted { color: #8a8a8a; }
   .dk-gold { color: #c9a96e; }
+  /* I editor — gör inre länkar/knappar transparenta för klick så Puck fångar selection */
+  [data-puck-component] a, [data-puck-component] button { pointer-events: none !important; }
 `;
 
 function Style() { return <style dangerouslySetInnerHTML={{ __html: dareKStyles }} />; }
+
+// Wrapper som ger Puck ETT root-element att placera overlay på
+function Block({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return <div style={{ position: "relative", ...style }}><Style />{children}</div>;
+}
 
 // ────────────────────────────────────────────────────────────────────
 // HERO
@@ -23,9 +30,9 @@ export interface HeroProps {
 }
 export function Hero({ year, titleLine1, titleLine2, tagline, ctaLabel, ctaHref, heroImage, heroAlt, scrollHint }: HeroProps) {
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
-      <section className="dk-section" style={{ padding: 0, minHeight: "85vh", position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center", overflow: "hidden" }}>
+      <section className="dk-section" style={{ padding: 0, minHeight: 480, position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center", overflow: "hidden" }}>
         <div style={{ padding: "60px 80px" }}>
           <p className="dk-label" style={{ marginBottom: 28 }}>{year}</p>
           <h1 className="dk-display" style={{ fontSize: "clamp(56px, 8vw, 110px)", margin: 0, color: "#f5efe6" }}>
@@ -34,12 +41,12 @@ export function Hero({ year, titleLine1, titleLine2, tagline, ctaLabel, ctaHref,
           <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 380 }}>{tagline}</p>
           <a href={ctaHref || "#"} style={{ display: "inline-block", padding: "16px 36px", border: "1px solid #c9a96e", color: "#c9a96e", textDecoration: "none", fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase" }}>{ctaLabel}</a>
         </div>
-        <div style={{ height: "85vh", overflow: "hidden", background: "#1a1a1a" }}>
+        <div style={{ minHeight: 480, overflow: "hidden", background: "#1a1a1a" }}>
           {heroImage && <img src={heroImage} alt={heroAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
         </div>
         {scrollHint && <div style={{ position: "absolute", bottom: 24, left: 80, fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "#666" }}>↓ {scrollHint}</div>}
       </section>
-    </>
+    </div>
   );
 }
 
@@ -50,7 +57,7 @@ export interface NuPagarProps { enabled: boolean; label: string; title: string; 
 export function NuPagar({ enabled, label, title, ctaLabel, ctaHref, meta }: NuPagarProps) {
   if (!enabled) return <div style={{ background: "#111", color: "#666", padding: 16, textAlign: "center", fontSize: 12 }}>(Nu pågår-banner avstängd — visas inte på sajten)</div>;
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
       <div style={{ background: "linear-gradient(135deg, #1a1a1a, #0a0a0a)", borderTop: "1px solid #c9a96e33", borderBottom: "1px solid #c9a96e33", padding: "28px 80px", display: "flex", alignItems: "center", gap: 48, fontFamily: "'Manrope', sans-serif", color: "#f5efe6" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -65,7 +72,7 @@ export function NuPagar({ enabled, label, title, ctaLabel, ctaHref, meta }: NuPa
         </div>
         <a href={ctaHref || "#"} style={{ color: "#c9a96e", textDecoration: "none", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase" }}>{ctaLabel} →</a>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -78,7 +85,7 @@ export interface PortfolioProps {
 }
 export function Portfolio({ filters, rows }: PortfolioProps) {
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
       <section className="dk-section">
         <div className="dk-container">
@@ -106,7 +113,7 @@ export function Portfolio({ filters, rows }: PortfolioProps) {
           ))}
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -119,7 +126,7 @@ export interface AboutProps {
 }
 export function About({ sectionLabel, titleHtml, portrait, portraitAlt, portraitLabel, paragraphs, stats }: AboutProps) {
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
       <section className="dk-section" style={{ background: "#0d0d0d" }}>
         <div className="dk-container" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 80, alignItems: "center" }}>
@@ -144,7 +151,7 @@ export function About({ sectionLabel, titleHtml, portrait, portraitAlt, portrait
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -154,7 +161,7 @@ export function About({ sectionLabel, titleHtml, portrait, portraitAlt, portrait
 export interface GalleryHeadingProps { sectionLabel: string; heading: string; introQuote: string; introSub: string; }
 export function GalleryHeading({ sectionLabel, heading, introQuote, introSub }: GalleryHeadingProps) {
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
       <section className="dk-section">
         <div className="dk-container">
@@ -167,7 +174,7 @@ export function GalleryHeading({ sectionLabel, heading, introQuote, introSub }: 
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -177,7 +184,7 @@ export function GalleryHeading({ sectionLabel, heading, introQuote, introSub }: 
 export interface ExhibitionsHeadingProps { sectionLabel: string; heading: string; }
 export function ExhibitionsHeading({ sectionLabel, heading }: ExhibitionsHeadingProps) {
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
       <section className="dk-section" style={{ background: "#0d0d0d" }}>
         <div className="dk-container">
@@ -188,7 +195,7 @@ export function ExhibitionsHeading({ sectionLabel, heading }: ExhibitionsHeading
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -201,7 +208,7 @@ export interface ContactProps {
 }
 export function Contact({ heading, subheading, email, phone, address, social }: ContactProps) {
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
       <section className="dk-section" style={{ textAlign: "center" }}>
         <div className="dk-container" style={{ maxWidth: 720 }}>
@@ -215,7 +222,7 @@ export function Contact({ heading, subheading, email, phone, address, social }: 
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -225,13 +232,13 @@ export function Contact({ heading, subheading, email, phone, address, social }: 
 export interface FooterProps { copyright: string; logo: string; location: string; }
 export function Footer({ copyright, logo, location }: FooterProps) {
   return (
-    <>
+    <div style={{ position: "relative" }}>
       <Style />
       <footer style={{ background: "#000", padding: "32px 80px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif" }}>
         <span>{copyright}</span>
         <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "#c9a96e", letterSpacing: "0.2em" }}>{logo}</span>
         <span>{location}</span>
       </footer>
-    </>
+    </div>
   );
 }
