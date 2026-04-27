@@ -278,6 +278,58 @@ export function Stats({ items, align = "left" }: StatsProps) {
 }
 
 // ════════════════════════════════════════════════════════════
+// PORTFOLIO — utvalda verk i 3 rader (luxury minimal)
+// ════════════════════════════════════════════════════════════
+export interface PortfolioItem { image: string; alt: string; title: string; caption: string; category: string }
+export interface PortfolioRow { layout: "big-2small" | "3equal" | "small-big-small"; items: PortfolioItem[] }
+export interface PortfolioProps {
+  label: string;
+  heading: string;
+  headingItalic: string;
+  filters: { value: string }[];
+  rows: PortfolioRow[];
+}
+export function Portfolio({ label, heading, headingItalic, filters, rows }: PortfolioProps) {
+  const layoutMap = { "big-2small": "2fr 1fr 1fr", "3equal": "1fr 1fr 1fr", "small-big-small": "1fr 2fr 1fr" } as const;
+  return (
+    <StyleHost>
+      <section style={{ background: "#0a0a0a", padding: "120px 24px" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 60, gap: 40, flexWrap: "wrap" }}>
+            <div>
+              {label && <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", marginBottom: 16, fontFamily: "'Manrope', sans-serif" }}>{label}</p>}
+              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.05, color: "#f5efe6", margin: 0 }}>
+                {heading}{headingItalic && <><br/><em style={{ color: "#c9a96e", fontStyle: "italic" }}>{headingItalic}</em></>}
+              </h2>
+            </div>
+            {filters && filters.length > 0 && (
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {filters.map((f, i) => (
+                  <button key={i} style={{ background: "transparent", border: "1px solid #2a2a2a", color: i === 0 ? "#c9a96e" : "#888", padding: "10px 20px", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", cursor: "pointer" }}>{f.value}</button>
+                ))}
+              </div>
+            )}
+          </div>
+          {(rows || []).map((row, i) => (
+            <div key={i} style={{ display: "grid", gap: 24, marginBottom: 24, gridTemplateColumns: layoutMap[row.layout || "3equal"] }}>
+              {(row.items || []).map((it, j) => (
+                <div key={j} style={{ position: "relative", overflow: "hidden", aspectRatio: row.layout === "big-2small" && j === 0 ? "16/10" : "1", background: "#1a1a1a", cursor: "pointer" }}>
+                  {it.image && <img src={it.image} alt={it.alt} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.6s ease" }} />}
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 55%, rgba(10,10,10,0.92))", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 24 }}>
+                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: 22, color: "#f5efe6", margin: 0, lineHeight: 1.2 }}>{it.title}</h3>
+                    {it.caption && <p style={{ fontSize: 11, color: "#c9a96e", margin: "6px 0 0", letterSpacing: "0.1em", fontFamily: "'Manrope', sans-serif" }}>{it.caption}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // HERO — full-bredd hero med titel, tagline, CTA, hero-bild
 // ════════════════════════════════════════════════════════════
 export interface HeroProps {

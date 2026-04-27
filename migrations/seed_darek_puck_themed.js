@@ -41,6 +41,31 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
     });
   }
 
+  // PORTFOLIO — utvalda verk i 3 rader (matchar template.html)
+  if (c.portfolio) {
+    const layoutMap = { 'gallery-row-1': 'big-2small', 'gallery-row-2': '3equal', 'gallery-row-3': 'small-big-small' };
+    blocks.push({
+      type: 'Portfolio',
+      props: {
+        id: id('Portfolio'),
+        label: 'Portfolio',
+        heading: 'Utvalda',
+        headingItalic: 'Verk',
+        filters: (c.portfolio.filters || []).map(v => ({ value: v })),
+        rows: (c.portfolio.rows || []).map(r => ({
+          layout: layoutMap[r.class] || '3equal',
+          items: (r.items || []).map(it => ({
+            image: it.image || '',
+            alt: it.alt || '',
+            title: it.title || '',
+            caption: it.caption || '',
+            category: it.category || '',
+          })),
+        })),
+      },
+    });
+  }
+
   // ABOUT — TwoColumn
   if (c.about) {
     blocks.push({

@@ -11,6 +11,7 @@ import {
   TwoColumn, type TwoColumnProps,
   Stats, type StatsProps,
   Hero, type HeroProps,
+  Portfolio, type PortfolioProps,
 } from "@/components/puck-darek/theme";
 
 const ce = (label: string) => ({ type: "text" as const, label, contentEditable: true } as any);
@@ -28,9 +29,10 @@ export const puckConfigDarek: Config<{
   Spacer: SpacerProps;
   TwoColumn: TwoColumnProps;
   Stats: StatsProps;
+  Portfolio: PortfolioProps;
 }> = {
   categories: {
-    sektioner: { title: "Sektioner", components: ["Hero", "TwoColumn", "Section"] },
+    sektioner: { title: "Sektioner", components: ["Hero", "Portfolio", "TwoColumn", "Section"] },
     text: { title: "Text & rubriker", components: ["Heading", "Label", "Text", "Button"] },
     media: { title: "Media", components: ["Image", "Stats", "Spacer"] },
   },
@@ -53,6 +55,52 @@ export const puckConfigDarek: Config<{
       },
       defaultProps: { label: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "Kreativ frihet utan begränsningar", ctaText: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", layout: "split" },
       render: Hero,
+    },
+    Portfolio: {
+      label: "Portfolio (utvalda verk)",
+      fields: {
+        label: ce("Etikett"),
+        heading: ce("Rubrik"),
+        headingItalic: ce("Italic-accent (rad 2)"),
+        filters: {
+          type: "array",
+          label: "Filter-knappar",
+          arrayFields: { value: ce("Etikett") },
+          defaultItemProps: { value: "Alla" },
+        } as any,
+        rows: {
+          type: "array",
+          label: "Rader",
+          arrayFields: {
+            layout: { type: "select", label: "Layout", options: [
+              { label: "Stor + 2 små", value: "big-2small" },
+              { label: "3 lika", value: "3equal" },
+              { label: "Liten + stor + liten", value: "small-big-small" },
+            ]},
+            items: {
+              type: "array",
+              label: "Verk",
+              arrayFields: {
+                image: text("Bild URL"),
+                alt: ce("Alt-text"),
+                title: ce("Titel"),
+                caption: ce("Caption (teknik · mått)"),
+                category: text("Kategori"),
+              },
+              defaultItemProps: { image: "", alt: "", title: "", caption: "", category: "" },
+            },
+          },
+          defaultItemProps: { layout: "3equal", items: [] },
+        } as any,
+      },
+      defaultProps: {
+        label: "Portfolio",
+        heading: "Utvalda",
+        headingItalic: "Verk",
+        filters: [{ value: "Alla" }, { value: "Akryl" }, { value: "Ink" }, { value: "Mixed Media" }],
+        rows: [],
+      },
+      render: Portfolio,
     },
     TwoColumn: {
       label: "Bild + text",
