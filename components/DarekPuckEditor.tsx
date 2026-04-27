@@ -25,12 +25,17 @@ export default function DarekPuckEditor() {
   }, []);
 
   const handlePublish = async (puckData: Data) => {
-    setSaving(true); setMsg(null);
+    setSaving(true); setMsg("Sparar...");
     const r = await fetch("/api/darek/puck", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(puckData) });
+    if (!r.ok) { setSaving(false); setMsg("Spar-fel: " + (await r.text())); return; }
+    setMsg("Sparat ✓ Triggar publicering...");
+    // Auto-trigga Netlify deploy efter sparning
+    const pub = await fetch("/api/darek/publish", { method: "POST" });
+    const pj = await pub.json();
     setSaving(false);
-    if (!r.ok) { setMsg("Spar-fel: " + (await r.text())); return; }
-    setMsg("Sparat ✓");
-    setTimeout(() => setMsg(null), 3000);
+    if (!pub.ok) { setMsg("Sparat men publicering misslyckades: " + pj.error); return; }
+    setMsg("✓ Sparat + bygget startat — darekuhrberg.se uppdateras om ~1 min");
+    setTimeout(() => setMsg(null), 12000);
   };
 
   const publishToSite = async () => {
