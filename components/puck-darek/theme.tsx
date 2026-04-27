@@ -502,24 +502,44 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
   }
   return (
     <StyleHost>
-      <section style={{ minHeight: "85vh", background: "#0a0a0a", color: "#f5efe6", display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center" }}>
-        <div style={{ padding: "60px 80px" }}>
-          {label && <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", marginBottom: 28, fontFamily: "'Manrope', sans-serif" }}>{label}</p>}
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(56px, 8vw, 110px)", lineHeight: 1.05, letterSpacing: "-0.01em", color: "#f5efe6", margin: 0 }}>
-            {titleLine1}{titleLine2 && <><br/><em style={{ color: "#c9a96e", fontStyle: "italic" }}>{titleLine2}</em></>}
-          </h1>
-          {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 380 }}>{tagline}</p>}
-          {ctaText && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline">{ctaText}</a>}
-        </div>
+      <section style={{ minHeight: "85vh", background: "#0a0a0a", color: "#f5efe6", display: "grid", gridTemplateColumns: "1.05fr 1fr", alignItems: "center", position: "relative" }}>
         <div className="dk-hero-img-wrap" data-slideshow={slides.length > 1 ? "1" : "0"} style={{ minHeight: "85vh", background: "#1a1a1a", position: "relative" }}>
           {renderSlides()}
           {slides.length > 1 && <script dangerouslySetInnerHTML={{ __html: SLIDESHOW_SCRIPT }} />}
         </div>
-        <div className="dk-scroll-hint">
+        <div style={{ padding: "60px 80px" }}>
+          {label && <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", marginBottom: 28, fontFamily: "'Manrope', sans-serif" }}>{label}</p>}
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(56px, 8vw, 110px)", lineHeight: 1.05, letterSpacing: "-0.01em", color: "#f5efe6", margin: 0 }}>
+            {titleLine1}{titleLine2 && <><br/><em style={{ color: "#dfc08a", fontStyle: "italic" }}>{titleLine2}</em></>}
+          </h1>
+          {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 380 }}>{tagline}</p>}
+          {ctaText && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline">{ctaText}</a>}
+        </div>
+        <div className="dk-scroll-hint" style={{ left: "auto", right: 80 }}>
           <span className="dk-scroll-text">Scrolla</span>
           <span className="dk-scroll-line"></span>
         </div>
       </section>
     </StyleHost>
   );
+}
+
+// Klient-side slideshow för editor-canvas
+if (typeof window !== "undefined") {
+  const tick = () => {
+    document.querySelectorAll('.dk-hero-img-wrap[data-slideshow="1"]').forEach((wrap) => {
+      const slides = wrap.querySelectorAll('.dk-hero-slide');
+      if (slides.length < 2) return;
+      const w = wrap as HTMLElement;
+      if ((w as any).__dkInit) return;
+      (w as any).__dkInit = true;
+      let i = 0;
+      setInterval(() => {
+        slides[i].classList.remove("active");
+        i = (i + 1) % slides.length;
+        slides[i].classList.add("active");
+      }, 5000);
+    });
+  };
+  setInterval(tick, 1500);
 }
