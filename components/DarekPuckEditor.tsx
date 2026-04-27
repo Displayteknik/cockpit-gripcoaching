@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { puckConfigArt } from "@/lib/puck-config-art";
+import { puckConfig } from "@/lib/puck-config";
 
 const emptyData: Data = { content: [], root: { props: { title: "Darek Uhrberg — Konstnär" } } };
 
@@ -60,7 +60,7 @@ export default function DarekPuckEditor() {
         </div>
       </div>
       <div className="flex-1 overflow-hidden relative">
-        <Puck config={puckConfigArt} data={data} onPublish={handlePublish} />
+        <Puck config={puckConfig} data={data} onPublish={handlePublish} />
         {saving && <div className="fixed top-16 right-6 bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg z-50">Sparar...</div>}
       </div>
     </div>
