@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Config } from "@puckeditor/core";
 import { ImageField } from "@/components/puck/fields/ImageField";
+import { puckConfig as hmConfig } from "@/lib/puck-config";
 import {
   Section, type SectionProps,
   Heading, type HeadingProps,
@@ -288,3 +289,30 @@ export const puckConfigDarek: Config<{
     defaultProps: { title: "Darek Uhrberg — Konstnär" },
   },
 };
+
+// MERGE: Lägg till HM Motors komponenter (granular + sektioner) som Darek också kan använda
+// Darek-komponenter behåller prioritet vid namnkonflikt
+const hmCategoriesArr = Object.entries(hmConfig.categories || {}).map(([key, cat]: [string, any]) => ({
+  key,
+  title: cat.title || key,
+  components: cat.components || [],
+}));
+const darekCategoryKeys = new Set(Object.keys(puckConfigDarek.categories || {}));
+
+for (const cat of hmCategoriesArr) {
+  // Filtrera bort komponenter som Darek redan har (Hero, Section, Heading, Text, Button, Image, Spacer)
+  const filtered = cat.components.filter((c: string) => !puckConfigDarek.components[c as keyof typeof puckConfigDarek.components]);
+  if (filtered.length === 0) continue;
+  const newKey = darekCategoryKeys.has(cat.key) ? `hm_${cat.key}` : cat.key;
+  (puckConfigDarek.categories as any)[newKey] = {
+    title: `HM ${cat.title}`,
+    components: filtered,
+  };
+}
+
+// Importera HM Motor-komponenters render + fields
+for (const [name, comp] of Object.entries(hmConfig.components)) {
+  if (!(puckConfigDarek.components as any)[name]) {
+    (puckConfigDarek.components as any)[name] = comp;
+  }
+}

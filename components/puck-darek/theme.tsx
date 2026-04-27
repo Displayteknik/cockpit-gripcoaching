@@ -289,7 +289,7 @@ export interface NuPagarProps {
   meta: { key: string; val: string }[];
 }
 export function NuPagar({ enabled, label, title, ctaText, ctaHref, meta }: NuPagarProps) {
-  if (!enabled) return null;
+  if (!enabled) return <div style={{ padding: 16, textAlign: "center", fontSize: 11, color: "#666", background: "#0a0a0a", letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif" }}>(Nu pågår-banner avstängd — visas inte på sajten)</div>;
   return (
     <StyleHost>
       <div style={{ background: "linear-gradient(135deg, #1a1a1a, #0a0a0a)", borderTop: "1px solid rgba(201,169,110,0.2)", borderBottom: "1px solid rgba(201,169,110,0.2)", padding: "28px clamp(24px, 6vw, 80px)", display: "flex", alignItems: "center", gap: 48, fontFamily: "'Manrope', sans-serif", color: "#f5efe6", flexWrap: "wrap" }}>
