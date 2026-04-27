@@ -36,6 +36,7 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
         ctaHref: c.hero.ctaHref || '#portfolio',
         heroImage: c.hero.heroImage || '',
         heroAlt: c.hero.heroAlt || '',
+        slideshow: (c.hero.slideshow || []).map(img => ({ image: img })),
         layout: 'split',
       },
     });

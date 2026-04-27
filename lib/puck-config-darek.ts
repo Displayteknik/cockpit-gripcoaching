@@ -59,14 +59,20 @@ export const puckConfigDarek: Config<{
         tagline: cea("Tagline"),
         ctaText: ce("Knapp-text"),
         ctaHref: text("Knapp-länk"),
-        heroImage: image("Hero-bild"),
+        heroImage: image("Hero-bild (statisk om ingen slideshow)"),
+        slideshow: {
+          type: "array",
+          label: "Slideshow-bilder (auto-rotation 5s)",
+          arrayFields: { image: image("Bild") } as any,
+          defaultItemProps: { image: "" },
+        } as any,
         heroAlt: text("Bild alt-text"),
         layout: { type: "select", label: "Layout", options: [
           { label: "Split (text + bild)", value: "split" },
           { label: "Full-bleed (bild över allt)", value: "fullbleed" },
         ]},
       },
-      defaultProps: { label: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "Kreativ frihet utan begränsningar", ctaText: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", layout: "split" },
+      defaultProps: { label: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "Kreativ frihet utan begränsningar", ctaText: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", slideshow: [], layout: "split" },
       render: Hero,
     },
     NuPagar: {

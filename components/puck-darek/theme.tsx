@@ -26,12 +26,13 @@ const STYLES = `
   /* NuPagar pulse */
   @keyframes dk-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
   .dk-pulse-dot { animation: dk-pulse 2s ease-in-out infinite; }
-  /* Hero slowZoom + frame + gradient overlay */
+  /* Hero slowZoom + frame + gradient overlay + slideshow */
   @keyframes dk-slow-zoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
   .dk-hero-img-wrap { position: relative; overflow: hidden; border: 1px solid rgba(201,169,110,0.18); }
   .dk-hero-img-wrap::before { content: ''; position: absolute; inset: 16px; border: 1px solid rgba(201,169,110,0.12); pointer-events: none; z-index: 2; }
   .dk-hero-img-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, transparent 55%, rgba(10,10,10,0.65)); pointer-events: none; z-index: 1; }
-  .dk-hero-img { animation: dk-slow-zoom 24s ease-in-out infinite; }
+  .dk-hero-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease-in-out; animation: dk-slow-zoom 24s ease-in-out infinite; }
+  .dk-hero-slide.active { opacity: 1; }
 `;
 
 let injected = false;
@@ -439,14 +440,37 @@ export interface HeroProps {
   ctaHref: string;
   heroImage: string;
   heroAlt: string;
+  slideshow: { image: string }[];
   layout: "split" | "fullbleed";
 }
-export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref, heroImage, heroAlt, layout = "split" }: HeroProps) {
+
+const SLIDESHOW_SCRIPT = `
+(function(){
+  var wraps = document.querySelectorAll('.dk-hero-img-wrap[data-slideshow="1"]');
+  wraps.forEach(function(w){
+    var slides = w.querySelectorAll('.dk-hero-slide');
+    if (slides.length < 2) return;
+    var i = 0;
+    setInterval(function(){
+      slides[i].classList.remove('active');
+      i = (i + 1) % slides.length;
+      slides[i].classList.add('active');
+    }, 5000);
+  });
+})();
+`;
+
+export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref, heroImage, heroAlt, slideshow, layout = "split" }: HeroProps) {
+  const slides = (slideshow && slideshow.length > 0 ? slideshow.map(s => s.image).filter(Boolean) : (heroImage ? [heroImage] : []));
+  const renderSlides = () => slides.map((src, i) => (
+    <img key={i} className={`dk-hero-slide ${i === 0 ? "active" : ""}`} src={src} alt={i === 0 ? heroAlt : ""} />
+  ));
   if (layout === "fullbleed") {
     return (
       <StyleHost>
-        <section style={{ position: "relative", minHeight: "70vh", display: "flex", alignItems: "center", color: "#f5efe6", backgroundImage: heroImage ? `linear-gradient(rgba(10,10,10,0.45), rgba(10,10,10,0.65)), url(${heroImage})` : undefined, backgroundSize: "cover", backgroundPosition: "center", background: heroImage ? undefined : "#0a0a0a" }}>
-          <div style={{ maxWidth: 1180, margin: "0 auto", padding: "80px 24px", width: "100%" }}>
+        <section className="dk-hero-img-wrap" data-slideshow={slides.length > 1 ? "1" : "0"} style={{ position: "relative", minHeight: "70vh", display: "flex", alignItems: "center", color: "#f5efe6", background: "#0a0a0a" }}>
+          {renderSlides()}
+          <div style={{ position: "relative", zIndex: 3, maxWidth: 1180, margin: "0 auto", padding: "80px 24px", width: "100%" }}>
             {label && <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", marginBottom: 28, fontFamily: "'Manrope', sans-serif" }}>{label}</p>}
             <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(56px, 8vw, 110px)", lineHeight: 1.05, letterSpacing: "-0.01em", color: "#f5efe6", margin: 0 }}>
               {titleLine1}{titleLine2 && <><br/><em style={{ color: "#c9a96e" }}>{titleLine2}</em></>}
@@ -454,6 +478,7 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
             {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 480 }}>{tagline}</p>}
             {ctaText && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline">{ctaText}</a>}
           </div>
+          <script dangerouslySetInnerHTML={{ __html: SLIDESHOW_SCRIPT }} />
         </section>
       </StyleHost>
     );
@@ -469,8 +494,9 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
           {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 380 }}>{tagline}</p>}
           {ctaText && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline">{ctaText}</a>}
         </div>
-        <div className="dk-hero-img-wrap" style={{ minHeight: "85vh", background: "#1a1a1a" }}>
-          {heroImage && <img className="dk-hero-img" src={heroImage} alt={heroAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        <div className="dk-hero-img-wrap" data-slideshow={slides.length > 1 ? "1" : "0"} style={{ minHeight: "85vh", background: "#1a1a1a", position: "relative" }}>
+          {renderSlides()}
+          {slides.length > 1 && <script dangerouslySetInnerHTML={{ __html: SLIDESHOW_SCRIPT }} />}
         </div>
       </section>
     </StyleHost>
