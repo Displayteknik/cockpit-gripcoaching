@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Config } from "@puckeditor/core";
+import { ImageField } from "@/components/puck/fields/ImageField";
 import {
   Section, type SectionProps,
   Heading, type HeadingProps,
@@ -17,6 +18,11 @@ import {
 const ce = (label: string) => ({ type: "text" as const, label, contentEditable: true } as any);
 const cea = (label: string) => ({ type: "textarea" as const, label, contentEditable: true } as any);
 const text = (label: string) => ({ type: "text" as const, label });
+const image = (label: string = "Bild") => ({
+  type: "custom" as const,
+  label,
+  render: ({ value, onChange }: any) => ImageField({ value: value || "", onChange, bucket: "darek-images" }),
+} as any);
 
 export const puckConfigDarek: Config<{
   Hero: HeroProps;
@@ -46,7 +52,7 @@ export const puckConfigDarek: Config<{
         tagline: cea("Tagline"),
         ctaText: ce("Knapp-text"),
         ctaHref: text("Knapp-länk"),
-        heroImage: text("Hero-bild URL"),
+        heroImage: image("Hero-bild"),
         heroAlt: text("Bild alt-text"),
         layout: { type: "select", label: "Layout", options: [
           { label: "Split (text + bild)", value: "split" },
@@ -81,7 +87,7 @@ export const puckConfigDarek: Config<{
               type: "array",
               label: "Verk",
               arrayFields: {
-                image: text("Bild URL"),
+                image: image("Verk-bild"),
                 alt: ce("Alt-text"),
                 title: ce("Titel"),
                 caption: ce("Caption (teknik · mått)"),
@@ -105,7 +111,7 @@ export const puckConfigDarek: Config<{
     TwoColumn: {
       label: "Bild + text",
       fields: {
-        image: text("Bild URL"),
+        image: image("Bild"),
         imageAlt: ce("Alt-text"),
         imagePosition: { type: "radio", label: "Bildplacering", options: [{ label: "Vänster", value: "left" }, { label: "Höger", value: "right" }] },
         label: ce("Etikett"),
@@ -127,7 +133,7 @@ export const puckConfigDarek: Config<{
           { label: "Genomskinlig", value: "transparent" },
           { label: "Bild", value: "image" },
         ]},
-        backgroundImage: text("Bakgrundsbild (om Bild)"),
+        backgroundImage: image("Bakgrundsbild (om Bild)"),
         paddingY: { type: "select", label: "Vertikal padding", options: [
           { label: "Liten", value: "sm" }, { label: "Mellan", value: "md" }, { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" }
         ]},
@@ -195,7 +201,7 @@ export const puckConfigDarek: Config<{
     Image: {
       label: "Bild",
       fields: {
-        src: text("URL"),
+        src: image("Bild"),
         alt: text("Alt-text"),
         caption: ce("Bildtext"),
         ratio: { type: "select", label: "Format", options: [

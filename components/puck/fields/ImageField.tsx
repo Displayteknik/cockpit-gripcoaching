@@ -15,9 +15,10 @@ interface PixabayHit {
 interface ImageFieldProps {
   value: string;
   onChange: (value: string) => void;
+  bucket?: string;
 }
 
-export function ImageField({ value, onChange }: ImageFieldProps) {
+export function ImageField({ value, onChange, bucket = "page-images" }: ImageFieldProps) {
   const [tab, setTab] = useState<"url" | "upload" | "search">("url");
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,13 +33,13 @@ export function ImageField({ value, onChange }: ImageFieldProps) {
     try {
       const ext = file.name.split(".").pop() || "jpg";
       const name = `editor/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from("page-images").upload(name, file, {
+      const { error } = await supabase.storage.from(bucket).upload(name, file, {
         cacheControl: "3600",
         upsert: false,
       });
 
       if (error) {
-        // Bucket might not exist — try vehicle-images as fallback
+        // Fallback — försök vehicle-images
         const { error: err2 } = await supabase.storage.from("vehicle-images").upload(name, file, {
           cacheControl: "3600",
           upsert: false,
@@ -50,13 +51,13 @@ export function ImageField({ value, onChange }: ImageFieldProps) {
         const { data: urlData } = supabase.storage.from("vehicle-images").getPublicUrl(name);
         onChange(urlData.publicUrl);
       } else {
-        const { data: urlData } = supabase.storage.from("page-images").getPublicUrl(name);
+        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(name);
         onChange(urlData.publicUrl);
       }
     } finally {
       setUploading(false);
     }
-  }, [onChange]);
+  }, [onChange, bucket]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
