@@ -5,10 +5,10 @@
 
 import React from "react";
 
-const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">`;
+const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">`;
 
 const STYLES = `
-  .dk-root { font-family: 'Manrope', system-ui, -apple-system, sans-serif; color: #f5efe6; --gold: #c9a96e; --gold-light: #d4ba80; --bg: #0a0a0a; --bg-alt: #0d0d0d; --muted: #8a8a8a; --line: #2a2a2a; }
+  .dk-root { font-family: 'Manrope', system-ui, -apple-system, sans-serif; color: #f5efe6; --gold: #c9a96e; --gold-light: #dfc08a; --bg: #080808; --near-black: #0f0f0f; --bg-alt: #0d0d0d; --muted: #8a8a8a; --line: #2a2a2a; }
   .dk-display { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 300; line-height: 1.05; letter-spacing: -0.01em; }
   .dk-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.25em; color: var(--gold); font-weight: 500; }
   .dk-italic { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
@@ -31,8 +31,22 @@ const STYLES = `
   .dk-hero-img-wrap { position: relative; overflow: hidden; border: 1px solid rgba(201,169,110,0.18); }
   .dk-hero-img-wrap::before { content: ''; position: absolute; inset: 16px; border: 1px solid rgba(201,169,110,0.12); pointer-events: none; z-index: 2; }
   .dk-hero-img-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, transparent 55%, rgba(10,10,10,0.65)); pointer-events: none; z-index: 1; }
-  .dk-hero-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease-in-out; animation: dk-slow-zoom 24s ease-in-out infinite; }
+  .dk-hero-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease-in-out; animation: dk-slow-zoom 12s ease-in-out infinite alternate; }
   .dk-hero-slide.active { opacity: 1; }
+  /* Scroll-hint */
+  @keyframes dk-scroll-line { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 50.01% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+  .dk-scroll-hint { position: absolute; bottom: 48px; left: 80px; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .dk-scroll-line { width: 1px; height: 60px; background: rgba(201,169,110,0.5); transform-origin: top; animation: dk-scroll-line 2.4s ease-in-out infinite; }
+  .dk-scroll-text { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(245,239,230,0.5); font-family: 'Manrope', sans-serif; writing-mode: vertical-rl; transform: rotate(180deg); }
+  /* Cinzel for exhibitions */
+  .dk-cinzel { font-family: 'Cinzel', serif; letter-spacing: 0.4em; }
+  /* Reveal on scroll */
+  @keyframes dk-reveal { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .dk-reveal { animation: dk-reveal 0.8s ease-out both; }
+  /* Contact form corners */
+  .dk-corner { position: absolute; width: 24px; height: 24px; border-color: var(--gold); border-style: solid; pointer-events: none; }
+  .dk-corner-tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
+  .dk-corner-bl { bottom: -1px; left: -1px; border-width: 0 0 1px 1px; }
 `;
 
 let injected = false;
@@ -246,9 +260,12 @@ export interface TwoColumnProps {
 }
 export function TwoColumn({ image, imageAlt, imagePosition = "left", label, heading, headingItalic, body, ctaText, ctaHref }: TwoColumnProps) {
   const imgEl = (
-    <div style={{ aspectRatio: "3/4", overflow: "hidden", border: "1px solid #2a2a2a" }}>
-      {image ? <img src={image} alt={imageAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : <div style={{ background: "#1a1a1a", height: "100%" }} />}
+    <div style={{ position: "relative", aspectRatio: "3/4" }}>
+      <div style={{ position: "absolute", top: -16, right: -16, bottom: 16, left: 16, border: "1px solid rgba(201,169,110,0.25)", pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", border: "1px solid #2a2a2a", zIndex: 1 }}>
+        {image ? <img src={image} alt={imageAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <div style={{ background: "#1a1a1a", height: "100%" }} />}
+      </div>
     </div>
   );
   const textEl = (
@@ -367,7 +384,7 @@ export interface FooterProps { copyright: string; logo: string; location: string
 export function Footer({ copyright, logo, location }: FooterProps) {
   return (
     <StyleHost>
-      <footer style={{ background: "#000", padding: "32px clamp(24px, 6vw, 80px)", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", flexWrap: "wrap", gap: 20 }}>
+      <footer style={{ background: "#0f0f0f", padding: "32px clamp(24px, 6vw, 80px)", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", flexWrap: "wrap", gap: 20 }}>
         <span>{copyright}</span>
         <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "#c9a96e", letterSpacing: "0.2em" }}>{logo}</span>
         <span>{location}</span>
@@ -402,9 +419,9 @@ export function Portfolio({ label, heading, headingItalic, filters, rows }: Port
               </h2>
             </div>
             {filters && filters.length > 0 && (
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
                 {filters.map((f, i) => (
-                  <button key={i} style={{ background: "transparent", border: "1px solid #2a2a2a", color: i === 0 ? "#c9a96e" : "#888", padding: "10px 20px", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", cursor: "pointer" }}>{f.value}</button>
+                  <button key={i} style={{ background: "transparent", border: "none", borderBottom: i === 0 ? "1px solid #c9a96e" : "1px solid transparent", color: i === 0 ? "#c9a96e" : "#888", padding: "8px 0", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "'Manrope', sans-serif", cursor: "pointer" }}>{f.value}</button>
                 ))}
               </div>
             )}
@@ -497,6 +514,10 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
         <div className="dk-hero-img-wrap" data-slideshow={slides.length > 1 ? "1" : "0"} style={{ minHeight: "85vh", background: "#1a1a1a", position: "relative" }}>
           {renderSlides()}
           {slides.length > 1 && <script dangerouslySetInnerHTML={{ __html: SLIDESHOW_SCRIPT }} />}
+        </div>
+        <div className="dk-scroll-hint">
+          <span className="dk-scroll-text">Scrolla</span>
+          <span className="dk-scroll-line"></span>
         </div>
       </section>
     </StyleHost>
