@@ -47,11 +47,10 @@ const STYLES = `
   .dk-scroll-text { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(245,239,230,0.5); font-family: 'Manrope', sans-serif; writing-mode: vertical-rl; transform: rotate(180deg); }
   /* Cinzel for exhibitions */
   .dk-cinzel { font-family: 'Cinzel', serif; letter-spacing: 0.4em; }
-  /* Scroll-trigger reveal — endast fade-IN, inget försvinner ut */
-  .dk-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s ease-out, transform 0.9s ease-out; }
+  /* Scroll-trigger reveal — alltid synligt som default. JS taggar med dk-prep för att gömma tillfälligt och fade-in. */
+  .dk-reveal { transition: opacity 0.9s ease-out, transform 0.9s ease-out; }
+  .dk-reveal.dk-prep { opacity: 0; transform: translateY(24px); }
   .dk-reveal.dk-visible { opacity: 1; transform: translateY(0); }
-  /* När JS inte kör — visa ALLT default (säkerhet mot att saker försvinner) */
-  .no-js .dk-reveal, html.no-dk-observer .dk-reveal { opacity: 1; transform: none; }
   /* Contact form corners */
   .dk-corner { position: absolute; width: 24px; height: 24px; border-color: var(--gold); border-style: solid; pointer-events: none; }
   .dk-corner-tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
@@ -610,16 +609,26 @@ if (typeof window !== "undefined") {
     });
   };
 
-  const setupReveal = () => {
-    if (!("IntersectionObserver" in window)) {
-      document.documentElement.classList.add("no-dk-observer");
-      return;
-    }
+  const setupReveal = (doc: Document) => {
+    if (!("IntersectionObserver" in window)) return;
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("dk-visible"); });
     }, { threshold: 0.12, rootMargin: "0px 0px -50px 0px" });
-    document.querySelectorAll(".dk-reveal:not(.dk-visible)").forEach((el) => obs.observe(el));
+    doc.querySelectorAll(".dk-reveal:not(.dk-prep):not(.dk-visible)").forEach((el) => {
+      // Bara aktivera reveal-animation på publik sajt (inte i Puck-editor-iframe)
+      const isInPuckEditor = !!doc.querySelector("[data-puck-component]");
+      if (isInPuckEditor) { el.classList.add("dk-visible"); return; }
+      el.classList.add("dk-prep");
+      obs.observe(el);
+    });
   };
 
-  setInterval(() => { setupSlideshow(); setupReveal(); }, 1500);
+  const tick = () => {
+    setupSlideshow();
+    setupReveal(document);
+    document.querySelectorAll("iframe").forEach((f) => {
+      try { if (f.contentDocument) setupReveal(f.contentDocument); } catch { /* cross-origin */ }
+    });
+  };
+  setInterval(tick, 1500);
 }
