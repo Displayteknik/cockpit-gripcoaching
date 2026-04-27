@@ -112,13 +112,19 @@ export const puckConfigDarek: Config<{
         email: ce("E-post"),
         phone: ce("Telefon"),
         address: ce("Adress"),
+        showForm: { type: "radio", label: "Visa formulär", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
+        formSubjects: {
+          type: "array", label: "Formulär-ämnen",
+          arrayFields: { value: ce("Värde"), label: ce("Etikett") },
+          defaultItemProps: { value: "", label: "" },
+        } as any,
         social: {
           type: "array", label: "Sociala länkar",
           arrayFields: { label: ce("Etikett"), href: text("URL") },
           defaultItemProps: { label: "Instagram", href: "https://instagram.com/" },
         } as any,
       },
-      defaultProps: { heading: "Låt oss", headingItalic: "prata konst", subheading: "Förfrågningar om verk, utställningar & ateljéebesök", email: "", phone: "", address: "", social: [] },
+      defaultProps: { heading: "Låt oss", headingItalic: "prata konst", subheading: "Förfrågningar om verk, utställningar & ateljéebesök", email: "", phone: "", address: "", showForm: true, formSubjects: [], social: [] },
       render: Contact,
     },
     Footer: {

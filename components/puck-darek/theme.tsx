@@ -381,23 +381,62 @@ export interface ContactProps {
   email: string;
   phone: string;
   address: string;
+  showForm: boolean;
+  formSubjects: { value: string; label: string }[];
   social: { label: string; href: string }[];
 }
-export function Contact({ heading, headingItalic, subheading, email, phone, address, social }: ContactProps) {
+export function Contact({ heading, headingItalic, subheading, email, phone, address, showForm = true, formSubjects, social }: ContactProps) {
+  const inputStyle: React.CSSProperties = {
+    width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(201,169,110,0.15)", color: "#f5efe6",
+    padding: "14px 16px", fontSize: 14, fontFamily: "'Manrope', sans-serif", outline: "none", marginTop: 8,
+  };
+  const labelStyle: React.CSSProperties = { display: "block", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#c9a96e", fontFamily: "'Manrope', sans-serif" };
   return (
     <StyleHost>
       <section style={{ background: "#0a0a0a", padding: "120px 24px", textAlign: "center", color: "#f5efe6" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.1, color: "#f5efe6", margin: 0 }}>
-            {heading}{headingItalic && <><br/><em style={{ fontStyle: "italic", color: "#c9a96e" }}>{headingItalic}</em></>}
+          <h2 className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1.1, color: "#f5efe6", margin: 0 }}>
+            {heading}{headingItalic && <><br/><em style={{ fontStyle: "italic", color: "#dfc08a" }}>{headingItalic}</em></>}
           </h2>
-          {subheading && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 20, color: "#a8a8a8", marginTop: 24 }}>{subheading}</p>}
-          {email && <a href={`mailto:${email}`} style={{ display: "block", fontSize: 22, color: "#c9a96e", marginTop: 40, textDecoration: "none", fontFamily: "'Cormorant Garamond', serif" }}>{email}</a>}
-          {phone && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 18, color: "#888", marginTop: 14 }}>{phone}</p>}
-          {address && <p style={{ fontSize: 11, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 8, fontFamily: "'Manrope', sans-serif" }}>{address}</p>}
+          {subheading && <p className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 20, color: "#a8a8a8", marginTop: 24 }}>{subheading}</p>}
+          {email && <a className="dk-reveal" href={`mailto:${email}`} style={{ display: "inline-block", fontSize: 22, color: "#c9a96e", marginTop: 40, textDecoration: "none", borderBottom: "1px solid rgba(201,169,110,0.3)", paddingBottom: 4, fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.05em" }}>{email}</a>}
+          {phone && <p className="dk-reveal" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 19, color: "#a8a8a8", marginTop: 18 }}>{phone}</p>}
+          {address && <p className="dk-reveal" style={{ fontSize: 11, color: "#888", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 8, fontFamily: "'Manrope', sans-serif" }}>{address}</p>}
+
+          {showForm && (
+            <form className="dk-reveal" name="kontakt" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/tack.html" style={{ position: "relative", marginTop: 64, padding: 40, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,169,110,0.12)", textAlign: "left" }}>
+              <span className="dk-corner dk-corner-tr"></span>
+              <span className="dk-corner dk-corner-bl"></span>
+              <input type="hidden" name="form-name" value="kontakt" />
+              <input type="hidden" name="bot-field" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+                <div>
+                  <label style={labelStyle} htmlFor="cf-name">Namn</label>
+                  <input id="cf-name" name="name" type="text" placeholder="Ditt namn" required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="cf-email">E-post</label>
+                  <input id="cf-email" name="email" type="email" placeholder="din@mail.se" required style={inputStyle} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={labelStyle} htmlFor="cf-subject">Ämne</label>
+                <select id="cf-subject" name="subject" style={inputStyle}>
+                  <option value="">Välj ämne...</option>
+                  {(formSubjects || []).map((o, i) => <option key={i} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <label style={labelStyle} htmlFor="cf-message">Meddelande</label>
+                <textarea id="cf-message" name="message" placeholder="Skriv ditt meddelande..." required rows={5} style={{ ...inputStyle, resize: "vertical" } as React.CSSProperties} />
+              </div>
+              <button type="submit" className="dk-btn dk-btn-outline" style={{ width: "100%", padding: "16px", justifyContent: "center", background: "transparent", color: "#c9a96e", border: "1px solid #c9a96e", fontFamily: "'Manrope', sans-serif", letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 11, cursor: "pointer" }}><span>Skicka meddelande</span></button>
+            </form>
+          )}
+
           {social && social.length > 0 && (
-            <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 48 }}>
-              {social.map((s, i) => <a key={i} href={s.href} style={{ color: "#888", fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none", fontFamily: "'Manrope', sans-serif" }}>{s.label}</a>)}
+            <div className="dk-reveal" style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 48 }}>
+              {social.map((s, i) => <a key={i} href={s.href} target="_blank" rel="noreferrer" style={{ color: "#888", fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none", fontFamily: "'Manrope', sans-serif", transition: "color 0.3s" }}>{s.label}</a>)}
             </div>
           )}
         </div>

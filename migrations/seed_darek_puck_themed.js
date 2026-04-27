@@ -145,6 +145,8 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
         email: c.contact.email || '',
         phone: c.contact.phone || '',
         address: c.contact.address || '',
+        showForm: true,
+        formSubjects: c.contact.formSubjects || [],
         social: c.contact.social || [],
       },
     });
