@@ -59,17 +59,9 @@ export default function DarekPuckEditor() {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden">
-        <Puck
-          config={puckConfigArt}
-          data={data}
-          onPublish={handlePublish}
-          overrides={{
-            puck: ({ children }: { children: React.ReactNode }) => (
-              <div style={{ height: "100%" }}>{children}{saving && <div className="fixed top-16 right-6 bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg">Sparar...</div>}</div>
-            ),
-          }}
-        />
+      <div className="flex-1 overflow-hidden relative">
+        <Puck config={puckConfigArt} data={data} onPublish={handlePublish} />
+        {saving && <div className="fixed top-16 right-6 bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg z-50">Sparar...</div>}
       </div>
     </div>
   );
