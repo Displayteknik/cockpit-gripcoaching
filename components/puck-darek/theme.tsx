@@ -282,7 +282,7 @@ export function TwoColumn({ image, imageAlt, imagePosition = "left", label, head
       {label && <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", marginBottom: 24, fontFamily: "'Manrope', sans-serif" }}>{label}</p>}
       {heading && <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontStyle: headingItalic ? "italic" : "normal", fontSize: "clamp(36px, 4vw, 56px)", color: "#f5efe6", margin: "0 0 32px", lineHeight: 1.05 }}>{heading}</h2>}
       {body && <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 16, lineHeight: 1.7, color: "#c8c0b3", whiteSpace: "pre-line", margin: "0 0 24px" }}>{body}</p>}
-      {ctaText?.trim() && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline"><span>{ctaText}</span></a>}
+      {String(ctaText || "").trim() && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline"><span>{ctaText}</span></a>}
     </div>
   );
   return (
@@ -561,7 +561,7 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
               {titleLine1}{titleLine2 && <><br/><em style={{ color: "#c9a96e" }}>{titleLine2}</em></>}
             </h1>
             {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 480 }}>{tagline}</p>}
-            {ctaText?.trim() && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline"><span>{ctaText}</span></a>}
+            {String(ctaText || "").trim() && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline"><span>{ctaText}</span></a>}
           </div>
           <script dangerouslySetInnerHTML={{ __html: SLIDESHOW_SCRIPT }} />
         </section>
@@ -581,7 +581,7 @@ export function Hero({ label, titleLine1, titleLine2, tagline, ctaText, ctaHref,
             {titleLine1}{titleLine2 && <><br/><em style={{ color: "#dfc08a", fontStyle: "italic" }}>{titleLine2}</em></>}
           </h1>
           {tagline && <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", fontSize: 22, color: "#a8a8a8", marginTop: 24, marginBottom: 40, maxWidth: 380 }}>{tagline}</p>}
-          {ctaText?.trim() && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline"><span>{ctaText}</span></a>}
+          {String(ctaText || "").trim() && <a href={ctaHref || "#"} className="dk-btn dk-btn-outline"><span>{ctaText}</span></a>}
         </div>
         <div className="dk-scroll-hint" style={{ left: "50%", right: "auto", transform: "translateX(-50%)" }}>
           <span className="dk-scroll-line"></span>
