@@ -4,15 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase, type PageData } from "@/lib/supabase";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, ExternalLink, Globe, GlobeLock } from "lucide-react";
-import DarekSectionEditor from "@/components/DarekSectionEditor";
-
 export default function SidorRouter() {
   const [resourceModule, setResourceModule] = useState<string | null>(null);
   useEffect(() => {
-    fetch("/api/clients/active").then((r) => r.json()).then((c) => setResourceModule(c?.resource_module || "automotive"));
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => {
+      const mod = c?.resource_module || "automotive";
+      if (mod === "art") { window.location.href = "/admin"; return; }
+      setResourceModule(mod);
+    });
   }, []);
   if (resourceModule === null) return <div className="text-center py-12 text-gray-400">Laddar...</div>;
-  if (resourceModule === "art") return <DarekSectionEditor />;
   return <SidorDashboardPage />;
 }
 
