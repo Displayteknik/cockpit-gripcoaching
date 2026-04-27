@@ -1,0 +1,189 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Config } from "@puckeditor/core";
+import {
+  Section, type SectionProps,
+  Heading, type HeadingProps,
+  Label, type LabelProps,
+  Text, type TextProps,
+  Button, type ButtonProps,
+  Image, type ImageProps,
+  Spacer, type SpacerProps,
+  TwoColumn, type TwoColumnProps,
+  Stats, type StatsProps,
+  Hero, type HeroProps,
+} from "@/components/puck-darek/theme";
+
+const ce = (label: string) => ({ type: "text" as const, label, contentEditable: true } as any);
+const cea = (label: string) => ({ type: "textarea" as const, label, contentEditable: true } as any);
+const text = (label: string) => ({ type: "text" as const, label });
+
+export const puckConfigDarek: Config<{
+  Hero: HeroProps;
+  Section: SectionProps;
+  Heading: HeadingProps;
+  Label: LabelProps;
+  Text: TextProps;
+  Button: ButtonProps;
+  Image: ImageProps;
+  Spacer: SpacerProps;
+  TwoColumn: TwoColumnProps;
+  Stats: StatsProps;
+}> = {
+  categories: {
+    sektioner: { title: "Sektioner", components: ["Hero", "TwoColumn", "Section"] },
+    text: { title: "Text & rubriker", components: ["Heading", "Label", "Text", "Button"] },
+    media: { title: "Media", components: ["Image", "Stats", "Spacer"] },
+  },
+  components: {
+    Hero: {
+      label: "Hero (förstaintryck)",
+      fields: {
+        label: ce("Övre etikett"),
+        titleLine1: ce("Titel rad 1"),
+        titleLine2: ce("Titel rad 2 (italic-accent)"),
+        tagline: cea("Tagline"),
+        ctaText: ce("Knapp-text"),
+        ctaHref: text("Knapp-länk"),
+        heroImage: text("Hero-bild URL"),
+        heroAlt: text("Bild alt-text"),
+        layout: { type: "select", label: "Layout", options: [
+          { label: "Split (text + bild)", value: "split" },
+          { label: "Full-bleed (bild över allt)", value: "fullbleed" },
+        ]},
+      },
+      defaultProps: { label: "Konstnär · Sandarne", titleLine1: "Darek", titleLine2: "Uhrberg", tagline: "Kreativ frihet utan begränsningar", ctaText: "Utforska verken", ctaHref: "#portfolio", heroImage: "", heroAlt: "", layout: "split" },
+      render: Hero,
+    },
+    TwoColumn: {
+      label: "Bild + text",
+      fields: {
+        image: text("Bild URL"),
+        imageAlt: ce("Alt-text"),
+        imagePosition: { type: "radio", label: "Bildplacering", options: [{ label: "Vänster", value: "left" }, { label: "Höger", value: "right" }] },
+        label: ce("Etikett"),
+        heading: ce("Rubrik"),
+        headingItalic: { type: "radio", label: "Italic-rubrik", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
+        body: cea("Brödtext"),
+        ctaText: ce("Knapp-text"),
+        ctaHref: text("Knapp-länk"),
+      },
+      defaultProps: { image: "", imageAlt: "", imagePosition: "left", label: "", heading: "Rubrik", headingItalic: false, body: "", ctaText: "", ctaHref: "" },
+      render: TwoColumn,
+    },
+    Section: {
+      label: "Sektion (container)",
+      fields: {
+        background: { type: "select", label: "Bakgrund", options: [
+          { label: "Svart", value: "dark" },
+          { label: "Mörkare", value: "darker" },
+          { label: "Genomskinlig", value: "transparent" },
+          { label: "Bild", value: "image" },
+        ]},
+        backgroundImage: text("Bakgrundsbild (om Bild)"),
+        paddingY: { type: "select", label: "Vertikal padding", options: [
+          { label: "Liten", value: "sm" }, { label: "Mellan", value: "md" }, { label: "Stor", value: "lg" }, { label: "Extra stor", value: "xl" }
+        ]},
+        align: { type: "radio", label: "Justera", options: [{ label: "Vänster", value: "left" }, { label: "Centrum", value: "center" }] },
+        maxWidth: { type: "select", label: "Bredd", options: [
+          { label: "Smal", value: "narrow" }, { label: "Mellan", value: "medium" }, { label: "Bred", value: "wide" }, { label: "Hela", value: "full" }
+        ]},
+      },
+      defaultProps: { background: "dark", paddingY: "md", align: "left", maxWidth: "wide" },
+      render: Section as any,
+    },
+    Heading: {
+      label: "Rubrik",
+      fields: {
+        text: ce("Text"),
+        level: { type: "select", label: "Nivå", options: [
+          { label: "H1", value: "h1" }, { label: "H2", value: "h2" }, { label: "H3", value: "h3" }, { label: "H4", value: "h4" }
+        ]},
+        size: { type: "select", label: "Storlek", options: [
+          { label: "S", value: "sm" }, { label: "M", value: "md" }, { label: "L", value: "lg" }, { label: "XL", value: "xl" }, { label: "2XL", value: "2xl" }, { label: "3XL (hero)", value: "3xl" }
+        ]},
+        align: { type: "radio", label: "Justera", options: [{ label: "V", value: "left" }, { label: "C", value: "center" }, { label: "H", value: "right" }] },
+        italic: { type: "radio", label: "Italic", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
+        color: { type: "select", label: "Färg", options: [{ label: "Cream", value: "cream" }, { label: "Guld", value: "gold" }, { label: "Muted", value: "muted" }] },
+      },
+      defaultProps: { text: "Rubrik", level: "h2", size: "lg", align: "left", italic: false, color: "cream" },
+      render: Heading,
+    },
+    Label: {
+      label: "Etikett (gold uppercase)",
+      fields: {
+        text: ce("Text"),
+        align: { type: "radio", label: "Justera", options: [{ label: "V", value: "left" }, { label: "C", value: "center" }, { label: "H", value: "right" }] },
+      },
+      defaultProps: { text: "Etikett", align: "left" },
+      render: Label,
+    },
+    Text: {
+      label: "Text",
+      fields: {
+        text: cea("Text"),
+        size: { type: "select", label: "Storlek", options: [{ label: "S", value: "sm" }, { label: "M", value: "md" }, { label: "L", value: "lg" }] },
+        italic: { type: "radio", label: "Italic (Cormorant)", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
+        align: { type: "radio", label: "Justera", options: [{ label: "V", value: "left" }, { label: "C", value: "center" }, { label: "H", value: "right" }] },
+        color: { type: "select", label: "Färg", options: [{ label: "Cream", value: "cream" }, { label: "Muted", value: "muted" }, { label: "Guld", value: "gold" }] },
+      },
+      defaultProps: { text: "Text...", size: "md", italic: false, align: "left", color: "cream" },
+      render: Text,
+    },
+    Button: {
+      label: "Knapp",
+      fields: {
+        text: ce("Text"),
+        href: text("Länk"),
+        variant: { type: "select", label: "Stil", options: [
+          { label: "Outline (gold border)", value: "outline" },
+          { label: "Solid (gold bg)", value: "solid" },
+          { label: "Ghost (text-only)", value: "ghost" },
+        ]},
+        align: { type: "radio", label: "Justera", options: [{ label: "V", value: "left" }, { label: "C", value: "center" }, { label: "H", value: "right" }] },
+      },
+      defaultProps: { text: "Klicka här", href: "#", variant: "outline", align: "left" },
+      render: Button,
+    },
+    Image: {
+      label: "Bild",
+      fields: {
+        src: text("URL"),
+        alt: text("Alt-text"),
+        caption: ce("Bildtext"),
+        ratio: { type: "select", label: "Format", options: [
+          { label: "Auto", value: "auto" }, { label: "Kvadrat", value: "square" }, { label: "Liggande 16:9", value: "landscape" }, { label: "Stående 3:4", value: "portrait" }
+        ]},
+        rounded: { type: "radio", label: "Rundade hörn", options: [{ label: "Ja", value: true }, { label: "Nej", value: false }] },
+      },
+      defaultProps: { src: "", alt: "", caption: "", ratio: "landscape", rounded: false },
+      render: Image,
+    },
+    Spacer: {
+      label: "Mellanrum",
+      fields: { height: { type: "number", label: "Höjd (px)" } },
+      defaultProps: { height: 40 },
+      render: Spacer,
+    },
+    Stats: {
+      label: "Statistik",
+      fields: {
+        items: {
+          type: "array",
+          label: "Siffror",
+          arrayFields: {
+            number: ce("Siffra"),
+            label: ce("Etikett"),
+          },
+          defaultItemProps: { number: "5+", label: "År aktiv" },
+        },
+        align: { type: "radio", label: "Justera", options: [{ label: "V", value: "left" }, { label: "C", value: "center" }] },
+      },
+      defaultProps: { items: [{ number: "5+", label: "År aktiv" }, { number: "20+", label: "Utställningar" }, { number: "3", label: "Tekniker" }], align: "left" },
+      render: Stats,
+    },
+  },
+  root: {
+    fields: { title: { type: "text", label: "Sidans titel" } },
+    defaultProps: { title: "Darek Uhrberg — Konstnär" },
+  },
+};

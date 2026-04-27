@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createElement } from "react";
 import { Render, type Data } from "@puckeditor/core";
-import { puckConfig } from "@/lib/puck-config";
+import { puckConfigDarek as puckConfig } from "@/lib/puck-config-darek";
 import { supabaseServer } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { puckConfig } from "@/lib/puck-config";
+import { puckConfigDarek as puckConfig } from "@/lib/puck-config-darek";
 
 const emptyData: Data = { content: [], root: { props: { title: "Darek Uhrberg — Konstnär" } } };
 
