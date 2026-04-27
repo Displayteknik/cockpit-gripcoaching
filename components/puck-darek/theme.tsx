@@ -18,6 +18,14 @@ const STYLES = `
   .dk-btn-outline:hover { background: var(--gold); color: #0a0a0a; }
   .dk-btn-solid { background: var(--gold); color: #0a0a0a; border: 1px solid var(--gold); }
   .dk-btn-ghost { color: var(--gold); border: 1px solid transparent; }
+  /* Portfolio hover-scale */
+  .dk-portfolio-item img { transition: transform 0.6s ease; }
+  .dk-portfolio-item:hover img { transform: scale(1.06); }
+  /* About DARE bakgrundselement */
+  .dk-about-bg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: clamp(180px, 25vw, 360px); color: transparent; -webkit-text-stroke: 1px rgba(201,169,110,0.06); text-stroke: 1px rgba(201,169,110,0.06); pointer-events: none; user-select: none; line-height: 1; letter-spacing: -0.05em; z-index: 0; }
+  /* NuPagar pulse */
+  @keyframes dk-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+  .dk-pulse-dot { animation: dk-pulse 2s ease-in-out infinite; }
 `;
 
 let injected = false;
@@ -246,8 +254,9 @@ export function TwoColumn({ image, imageAlt, imagePosition = "left", label, head
   );
   return (
     <StyleHost>
-      <section style={{ background: "#0d0d0d", padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 80, alignItems: "center" }}>
+      <section style={{ background: "#000", padding: "120px 24px", position: "relative", overflow: "hidden" }}>
+        <div className="dk-about-bg">DARE</div>
+        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 96, alignItems: "center", position: "relative", zIndex: 1 }}>
           {imagePosition === "left" ? <>{imgEl}{textEl}</> : <>{textEl}{imgEl}</>}
         </div>
       </section>
@@ -294,7 +303,7 @@ export function NuPagar({ enabled, label, title, ctaText, ctaHref, meta }: NuPag
     <StyleHost>
       <div style={{ background: "linear-gradient(135deg, #1a1a1a, #0a0a0a)", borderTop: "1px solid rgba(201,169,110,0.2)", borderBottom: "1px solid rgba(201,169,110,0.2)", padding: "28px clamp(24px, 6vw, 80px)", display: "flex", alignItems: "center", gap: 48, fontFamily: "'Manrope', sans-serif", color: "#f5efe6", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#c9a96e", flexShrink: 0 }}></span>
+          <span className="dk-pulse-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "#c9a96e", flexShrink: 0 }}></span>
           <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: "#c9a96e", fontWeight: 500 }}>{label}</span>
         </div>
         <div style={{ flex: 1, minWidth: 240 }}>
@@ -396,8 +405,8 @@ export function Portfolio({ label, heading, headingItalic, filters, rows }: Port
           {(rows || []).map((row, i) => (
             <div key={i} style={{ display: "grid", gap: 24, marginBottom: 24, gridTemplateColumns: layoutMap[row.layout || "3equal"] }}>
               {(row.items || []).map((it, j) => (
-                <div key={j} style={{ position: "relative", overflow: "hidden", aspectRatio: row.layout === "big-2small" && j === 0 ? "16/10" : "1", background: "#1a1a1a", cursor: "pointer" }}>
-                  {it.image && <img src={it.image} alt={it.alt} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.6s ease" }} />}
+                <div key={j} className="dk-portfolio-item" style={{ position: "relative", overflow: "hidden", aspectRatio: row.layout === "big-2small" && j === 0 ? "16/10" : "1", background: "#1a1a1a", cursor: "pointer" }}>
+                  {it.image && <img src={it.image} alt={it.alt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 55%, rgba(10,10,10,0.92))", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 24 }}>
                     <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: 22, color: "#f5efe6", margin: 0, lineHeight: 1.2 }}>{it.title}</h3>
                     {it.caption && <p style={{ fontSize: 11, color: "#c9a96e", margin: "6px 0 0", letterSpacing: "0.1em", fontFamily: "'Manrope', sans-serif" }}>{it.caption}</p>}

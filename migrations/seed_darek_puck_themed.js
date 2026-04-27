@@ -41,6 +41,22 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
     });
   }
 
+  // NU PÅGÅR (direkt efter Hero, matchar originalet)
+  if (c.nuPagar?.enabled) {
+    blocks.push({
+      type: 'NuPagar',
+      props: {
+        id: id('NuPagar'),
+        enabled: true,
+        label: c.nuPagar.label || 'Nu pågår',
+        title: c.nuPagar.title || '',
+        ctaText: c.nuPagar.ctaLabel || 'Mer info',
+        ctaHref: c.nuPagar.ctaHref || c.nuPagar.href || '#',
+        meta: c.nuPagar.meta || [],
+      },
+    });
+  }
+
   // PORTFOLIO — utvalda verk i 3 rader (matchar template.html)
   if (c.portfolio) {
     const layoutMap = { 'gallery-row-1': 'big-2small', 'gallery-row-2': '3equal', 'gallery-row-3': 'small-big-small' };
@@ -85,10 +101,6 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
     });
     if (c.about.stats && c.about.stats.length) {
       blocks.push({
-        type: 'Section',
-        props: { id: id('Section'), background: 'darker', paddingY: 'sm', align: 'center', maxWidth: 'wide' },
-      });
-      blocks.push({
         type: 'Stats',
         props: { id: id('Stats'), items: c.about.stats, align: 'center' },
       });
@@ -106,22 +118,6 @@ const id = (n) => `${n}-${Math.random().toString(36).slice(2, 10)}`;
   if (c.exhibitions) {
     blocks.push({ type: 'Label', props: { id: id('Label'), text: c.exhibitions.sectionLabel || 'CV', align: 'left' } });
     blocks.push({ type: 'Heading', props: { id: id('Heading'), text: c.exhibitions.heading || 'Utställningar', level: 'h2', size: '2xl', align: 'left', italic: false, color: 'cream' } });
-  }
-
-  // NU PÅGÅR (om sektionen finns)
-  if (c.nuPagar?.enabled) {
-    blocks.push({
-      type: 'NuPagar',
-      props: {
-        id: id('NuPagar'),
-        enabled: true,
-        label: c.nuPagar.label || 'Nu pågår',
-        title: c.nuPagar.title || '',
-        ctaText: c.nuPagar.ctaLabel || 'Mer info',
-        ctaHref: c.nuPagar.ctaHref || c.nuPagar.href || '#',
-        meta: c.nuPagar.meta || [],
-      },
-    });
   }
 
   // CONTACT
