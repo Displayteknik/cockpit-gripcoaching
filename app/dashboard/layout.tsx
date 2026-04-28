@@ -45,6 +45,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: FileText },
         { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
+        { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
       ],
     },
     {
