@@ -299,7 +299,7 @@ export default function SEOPage() {
           <input
             value={auditUrl}
             onChange={(e) => setAuditUrl(e.target.value)}
-            placeholder="https://hmmotor-next.vercel.app/blogg/atv-jamtland"
+            placeholder="https://din-sajt.se/blogg/exempel-artikel"
             className="flex-1 min-w-[280px] px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none"
           />
           <label className="flex items-center gap-2 text-xs text-gray-600 px-3">

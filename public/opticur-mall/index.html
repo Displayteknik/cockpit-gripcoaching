@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Opticur Content Creator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="html2canvas.min.js"></script>
+<script src="footer-data.js"></script>
+<style>
+/* ─── RESET & LAYOUT ─── */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#111;color:#eee;overflow:hidden;height:100vh}
+.app{display:flex;height:100vh}
+
+/* ─── SIDEBAR ─── */
+.sb{width:340px;min-width:340px;background:#1a1a1a;display:flex;flex-direction:column;border-right:2px solid #2a2a2a}
+.sb-head{padding:14px 16px 10px;border-bottom:1px solid #2a2a2a}
+.sb-head h1{font-size:18px;font-weight:800;color:#4caf50;letter-spacing:0.5px}
+.sb-head p{font-size:11px;color:#777;margin-top:2px}
+
+/* Mall-tabs */
+.tabs{display:flex;border-bottom:1px solid #2a2a2a;background:#151515}
+.tab{flex:1;padding:9px 4px;text-align:center;font-size:11px;font-weight:700;color:#888;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:#ccc;background:#1f1f1f}
+.tab.active{color:#4caf50;border-bottom-color:#4caf50;background:#1a1a1a}
+
+/* Format-knappar */
+.format-bar{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid #2a2a2a;background:#151515}
+.fmt-btn{flex:1;padding:6px;text-align:center;font-size:10px;font-weight:700;color:#888;background:#222;border:1px solid #333;border-radius:4px;cursor:pointer;transition:all .15s}
+.fmt-btn:hover{color:#ccc;border-color:#555}
+.fmt-btn.active{color:#4caf50;border-color:#4caf50;background:#1a2e1a}
+
+/* Controls area */
+.controls{flex:1;overflow-y:auto;padding:10px 12px}
+.controls::-webkit-scrollbar{width:6px}
+.controls::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+
+/* Group */
+.g{background:#222;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px;margin-bottom:6px}
+.g h3{font-size:11px;font-weight:700;color:#4caf50;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.g label{display:block;font-size:10px;font-weight:700;color:#999;margin:4px 0 1px}
+.g input[type=text],.g textarea,.g input[type=number],.g select{width:100%;padding:5px 7px;border:1px solid #333;border-radius:4px;font-size:12px;font-family:inherit;background:#2a2a2a;color:#eee;outline:none}
+.g input:focus,.g textarea:focus{border-color:#4caf50}
+.g textarea{resize:vertical;min-height:50px}
+.row{display:flex;gap:6px}.row>div{flex:1}
+
+/* Color swatches */
+.swatches{display:flex;gap:6px;margin:4px 0}
+.swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.swatch:hover{transform:scale(1.15)}
+.swatch.active{border-color:#fff;box-shadow:0 0 8px rgba(76,175,80,0.5)}
+
+/* Buttons */
+.btn{background:#2d7a3c;color:#fff;border:none;padding:11px 0;border-radius:6px;font-size:13px;font-weight:800;cursor:pointer;width:100%;letter-spacing:0.5px;margin-top:6px;transition:background .15s}
+.btn:hover{background:#236b23}
+.btn-outline{background:transparent;border:1px solid #4caf50;color:#4caf50}
+.btn-outline:hover{background:#1a2e1a}
+.sb-actions{padding:10px 12px;border-top:1px solid #2a2a2a}
+
+/* ─── PREVIEW ─── */
+.preview{flex:1;display:flex;align-items:center;justify-content:center;background:#0a0a0a;position:relative}
+.poster-wrap{display:inline-block;transform-origin:center center}
+
+/* ─── POSTER (the canvas) ─── */
+.poster{position:relative;overflow:hidden;background:#fff;font-family:'Lato','Inter',sans-serif}
+.poster .bg-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.poster .bg-overlay{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1}
+.poster .content{position:relative;z-index:2;width:100%;height:100%;display:flex;flex-direction:column}
+
+/* ─── TEMPLATE: PRODUKT (Canva-exakt, draggable layers) ─── */
+.tpl-produkt{width:100%;height:100%;position:relative;background:#f7f5f0;overflow:hidden}
+.tpl-produkt img.hero-img{position:absolute;top:0;left:0;width:100%;height:58%;object-fit:cover;object-position:center 20%}
+.tpl-produkt .photo-overlay{position:absolute;top:0;left:0;width:100%;height:58%;background:rgba(15,35,20,0.62);z-index:1}
+.tpl-produkt .gradient{position:absolute;top:32%;left:0;right:0;height:28%;background:linear-gradient(to bottom,transparent 0%,rgba(247,245,240,0.6) 50%,#f7f5f0 100%);z-index:2}
+.tpl-produkt .draggable{position:absolute;cursor:move;user-select:none;z-index:10}
+.tpl-produkt .draggable:hover{outline:2px dashed rgba(45,122,60,0.5);outline-offset:4px}
+.tpl-produkt .badge-tag{background:#c62828;color:#fff;font-size:16px;font-weight:900;padding:8px 20px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;display:inline-block}
+.tpl-produkt .quote-text{font-size:52px;font-weight:900;font-style:italic;color:#fff;line-height:1.15;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.4)}
+.tpl-produkt .product-pill{background:rgba(45,122,60,0.85);color:#fff;font-weight:700;font-size:18px;padding:12px 36px;border-radius:30px;display:inline-block;text-align:center}
+.tpl-produkt .body-text{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1.4;text-align:center}
+.tpl-produkt .body-highlight{font-size:20px;font-weight:800;color:#2d7a3c;text-align:center}
+.tpl-produkt .stats-row{display:flex;gap:8px;justify-content:center}
+.tpl-produkt .stat-pill{background:#2d7a3c;color:#fff;font-weight:700;font-size:13px;padding:7px 18px;border-radius:20px;white-space:nowrap}
+.tpl-produkt .cta-btn{background:#1a1a1a;color:#fff;font-size:22px;font-weight:900;padding:16px 56px;border-radius:12px;letter-spacing:0.5px;text-transform:uppercase;display:inline-block}
+.tpl-produkt .footer-img{position:absolute;bottom:0;left:0;width:100%}
+
+/* ─── TEMPLATE: TIPS ─── */
+.tpl-tips .top-accent{height:10px;background:#2d7a3c}
+.tpl-tips .hero{flex:1;display:flex;flex-direction:column;padding:50px 60px 30px}
+.tpl-tips .tag{display:inline-block;background:#2d7a3c;color:#fff;font-size:14px;font-weight:800;padding:6px 18px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;align-self:flex-start}
+.tpl-tips .headline{font-size:48px;font-weight:900;color:#1a1a1a;line-height:1.15;margin-bottom:24px}
+.tpl-tips .tip-body{font-size:22px;font-weight:600;color:#444;line-height:1.6;max-width:700px;flex:1}
+.tpl-tips .tip-number{font-size:140px;font-weight:900;color:rgba(45,122,60,0.08);position:absolute;right:40px;top:60px;line-height:1;z-index:0;font-family:'Inter',sans-serif}
+.tpl-tips .footer-bar{background:#f5f5f5;border-top:2px solid #e0e0e0;padding:16px 60px;display:flex;align-items:center;justify-content:space-between}
+.tpl-tips .logo-name{font-size:36px;font-weight:900;color:#1a6a18;letter-spacing:2px}
+.tpl-tips .logo-sub{font-size:13px;font-weight:700;color:#888;margin-left:10px;text-transform:uppercase;letter-spacing:1px}
+.tpl-tips .footer-info{font-size:14px;font-weight:700;color:#666;text-align:right;line-height:1.5}
+
+/* ─── TEMPLATE: ERBJUDANDE ─── */
+.tpl-erbjudande .content{background:#1a1a1a}
+.tpl-erbjudande .top-accent{height:10px;background:#2d7a3c}
+.tpl-erbjudande .hero{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:50px 60px 30px}
+.tpl-erbjudande .offer-tag{background:#2d7a3c;color:#fff;font-size:16px;font-weight:900;padding:8px 24px;border-radius:24px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px}
+.tpl-erbjudande .headline{font-size:52px;font-weight:900;color:#fff;line-height:1.12;margin-bottom:20px}
+.tpl-erbjudande .headline em{color:#4caf50;font-style:normal}
+.tpl-erbjudande .sub-text{font-size:22px;font-weight:600;color:#aaa;line-height:1.5;margin-bottom:30px;max-width:700px}
+.tpl-erbjudande .price-box{background:#2d7a3c;color:#fff;font-size:44px;font-weight:900;padding:18px 50px;border-radius:14px;margin-bottom:20px}
+.tpl-erbjudande .conditions{font-size:14px;color:#888;font-weight:600}
+.tpl-erbjudande .cta-btn{background:#fff;color:#1a1a1a;font-size:22px;font-weight:900;padding:16px 50px;border-radius:40px;margin-top:24px;letter-spacing:0.5px}
+.tpl-erbjudande .footer-bar{background:#111;border-top:2px solid #2a2a2a;padding:16px 60px;display:flex;align-items:center;justify-content:space-between}
+.tpl-erbjudande .logo-name{font-size:36px;font-weight:900;color:#4caf50;letter-spacing:2px}
+.tpl-erbjudande .logo-sub{font-size:13px;font-weight:700;color:#666;margin-left:10px;text-transform:uppercase;letter-spacing:1px}
+.tpl-erbjudande .footer-info{font-size:14px;font-weight:700;color:#666;text-align:right;line-height:1.5}
+
+/* ─── TEMPLATE: TESTIMONIAL ─── */
+.tpl-testimonial .top-accent{height:10px;background:#2d7a3c}
+.tpl-testimonial .hero{flex:1;display:flex;flex-direction:column;justify-content:center;padding:50px 60px 30px}
+.tpl-testimonial .stars{display:flex;gap:6px;margin-bottom:20px}
+.tpl-testimonial .star{width:32px;height:32px;color:#f0b429}
+.tpl-testimonial .quote-mark{font-size:100px;line-height:0.5;color:#2d7a3c;font-family:Georgia,serif;margin-bottom:10px}
+.tpl-testimonial .quote-text{font-size:38px;font-weight:700;color:#1a1a1a;line-height:1.35;font-style:italic;max-width:800px;margin-bottom:30px}
+.tpl-testimonial .author-row{display:flex;align-items:center;gap:14px}
+.tpl-testimonial .author-avatar{width:52px;height:52px;background:#2d7a3c;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:900}
+.tpl-testimonial .author-name{font-size:20px;font-weight:800;color:#1a1a1a}
+.tpl-testimonial .author-desc{font-size:15px;font-weight:600;color:#888}
+.tpl-testimonial .footer-bar{background:#f5f5f5;border-top:2px solid #e0e0e0;padding:16px 60px;display:flex;align-items:center;justify-content:space-between}
+.tpl-testimonial .logo-name{font-size:36px;font-weight:900;color:#1a6a18;letter-spacing:2px}
+.tpl-testimonial .logo-sub{font-size:13px;font-weight:700;color:#888;margin-left:10px;text-transform:uppercase;letter-spacing:1px}
+.tpl-testimonial .footer-info{font-size:14px;font-weight:700;color:#666;text-align:right;line-height:1.5}
+
+/* Hidden file input */
+#bgUpload{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sb">
+  <div class="sb-head">
+    <h1>Opticur Content Creator</h1>
+    <p>V&auml;lj mall, redigera, ladda ner som PNG.</p>
+  </div>
+
+  <!-- Mall-tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tpl="produkt">Produkt</div>
+    <div class="tab" data-tpl="tips">Tips</div>
+    <div class="tab" data-tpl="erbjudande">Erbjudande</div>
+    <div class="tab" data-tpl="testimonial">Citat</div>
+  </div>
+
+  <!-- Format -->
+  <div class="format-bar">
+    <div class="fmt-btn active" data-w="1080" data-h="1080">1080x1080</div>
+    <div class="fmt-btn" data-w="1080" data-h="1350">1080x1350</div>
+    <div class="fmt-btn" data-w="1080" data-h="1920">1080x1920</div>
+  </div>
+
+  <div class="controls">
+
+    <!-- Bakgrund -->
+    <div class="g">
+      <h3>Bakgrund</h3>
+      <label>F&auml;rg</label>
+      <div class="swatches">
+        <div class="swatch active" data-bg="#ffffff" style="background:#fff;border:1px solid #555"></div>
+        <div class="swatch" data-bg="#f7f5f0" style="background:#f7f5f0;border:1px solid #555"></div>
+        <div class="swatch" data-bg="#2d7a3c" style="background:#2d7a3c"></div>
+        <div class="swatch" data-bg="#1a1a1a" style="background:#1a1a1a;border:1px solid #555"></div>
+        <div class="swatch" data-bg="#e8f5e9" style="background:#e8f5e9;border:1px solid #555"></div>
+      </div>
+      <button class="btn btn-outline" style="margin-top:6px" onclick="document.getElementById('bgUpload').click()">Ladda upp bakgrundsbild</button>
+      <input type="file" id="bgUpload" accept="image/*" onchange="handleBgUpload(this)">
+      <button class="btn btn-outline" style="margin-top:4px;font-size:11px" onclick="removeBgImage()">Ta bort bild</button>
+    </div>
+
+    <!-- ═══ PRODUKT CONTROLS ═══ -->
+    <div class="tpl-controls" id="ctrl-produkt">
+      <div class="g"><h3>Badge</h3>
+        <div class="row"><div><input type="text" id="p-badge" value="NYHET" oninput="render()"></div><div style="max-width:70px"><label>Storlek</label><input type="number" id="p-bsz" value="16" min="10" max="28" step="1" oninput="render()"></div></div>
+      </div>
+      <div class="g"><h3>Citat</h3>
+        <textarea id="p-quote" rows="2" oninput="render()">&quot;Jag ser ju...
+men jag blir s&#229; tr&#246;tt.&quot;</textarea>
+        <div class="row"><div><label>Storlek</label><input type="number" id="p-qsz" value="64" min="28" max="90" step="2" oninput="render()"></div><div><label>Stil</label><select id="p-qstyle" onchange="render()"><option value="italic" selected>Kursiv</option><option value="normal">Normal</option></select></div></div>
+      </div>
+      <div class="g"><h3>Produktpill</h3>
+        <input type="text" id="p-pill" value="ZEISS ClearMind &#8212; Nu hos Opticur" oninput="render()">
+        <div class="row"><div style="max-width:70px"><label>Storlek</label><input type="number" id="p-psz" value="18" min="12" max="28" step="1" oninput="render()"></div></div>
+      </div>
+      <div class="g"><h3>Br&#246;dtext</h3>
+        <input type="text" id="p-body" value="Din hj&#228;rna kompenserar hela dagen." oninput="render()">
+        <label>Highlight-rad</label>
+        <input type="text" id="p-highlight" value="ClearMind l&#229;ter den vila." oninput="render()">
+        <div class="row"><div style="max-width:70px"><label>Storlek</label><input type="number" id="p-btsz" value="24" min="14" max="40" step="1" oninput="render()"></div><div style="max-width:70px"><label>Highlight</label><input type="number" id="p-hlsz" value="22" min="14" max="40" step="1" oninput="render()"></div></div>
+      </div>
+      <div class="g"><h3>Statistik (3 pills)</h3>
+        <div class="row"><div><label>1</label><input type="text" id="p-s1" value="96% upplever klar syn" oninput="render()"></div></div>
+        <div class="row"><div><label>2</label><input type="text" id="p-s2" value="76% b&#228;ttre koncentration" oninput="render()"></div></div>
+        <div class="row"><div><label>3</label><input type="text" id="p-s3" value="85% &#246;kad livskvalitet" oninput="render()"></div></div>
+        <div class="row"><div style="max-width:70px"><label>Storlek</label><input type="number" id="p-ssz" value="14" min="10" max="22" step="1" oninput="render()"></div></div>
+      </div>
+      <div class="g"><h3>CTA-knapp</h3>
+        <input type="text" id="p-cta" value="BOKA SYNUNDERS&#214;KNING" oninput="render()">
+        <div class="row"><div style="max-width:70px"><label>Storlek</label><input type="number" id="p-csz" value="22" min="14" max="36" step="1" oninput="render()"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ TIPS CONTROLS ═══ -->
+    <div class="tpl-controls" id="ctrl-tips" style="display:none">
+      <div class="g"><h3>Tagg</h3>
+        <input type="text" id="t-tag" value="TIPS" oninput="render()">
+      </div>
+      <div class="g"><h3>Rubrik</h3>
+        <input type="text" id="t-headline" value="3 tecken p&aring; att dina &ouml;gon beh&ouml;ver hj&auml;lp" oninput="render()">
+        <label>Storlek</label><input type="number" id="t-hsz" value="48" min="28" max="72" step="2" oninput="render()">
+      </div>
+      <div class="g"><h3>Brodtext</h3>
+        <textarea id="t-body" rows="5" oninput="render()">Huvudv&#228;rk efter sk&#228;rmarbete, suddig syn p&#229; kv&#228;llen, och tr&#246;tthet trots bra s&#246;mn kan alla vara tecken p&#229; binokul&#228;r synst&#246;rning.</textarea>
+      </div>
+      <div class="g"><h3>Nummer (dekorativt)</h3>
+        <input type="text" id="t-num" value="3" oninput="render()">
+      </div>
+    </div>
+
+    <!-- ═══ ERBJUDANDE CONTROLS ═══ -->
+    <div class="tpl-controls" id="ctrl-erbjudande" style="display:none">
+      <div class="g"><h3>Kampanjtag</h3>
+        <input type="text" id="e-tag" value="KAMPANJ" oninput="render()">
+      </div>
+      <div class="g"><h3>Rubrik</h3>
+        <input type="text" id="e-headline" value="Synunders&ouml;kning till specialpris" oninput="render()">
+        <label>Storlek</label><input type="number" id="e-hsz" value="52" min="28" max="72" step="2" oninput="render()">
+      </div>
+      <div class="g"><h3>Undertext</h3>
+        <textarea id="e-sub" rows="2" oninput="render()">Boka din tid innan 31 maj och f&#229; en komplett synunders&#246;kning.</textarea>
+      </div>
+      <div class="g"><h3>Pris / Erbjudande</h3>
+        <input type="text" id="e-price" value="495 kr" oninput="render()">
+      </div>
+      <div class="g"><h3>Villkor</h3>
+        <input type="text" id="e-cond" value="G&auml;ller t.o.m. 31 maj 2025" oninput="render()">
+      </div>
+      <div class="g"><h3>CTA-knapp</h3>
+        <input type="text" id="e-cta" value="BOKA NU" oninput="render()">
+      </div>
+    </div>
+
+    <!-- ═══ TESTIMONIAL CONTROLS ═══ -->
+    <div class="tpl-controls" id="ctrl-testimonial" style="display:none">
+      <div class="g"><h3>Citat</h3>
+        <textarea id="c-quote" rows="4" oninput="render()">Jag hade huvudv&#228;rk varje dag. Efter nya glasen fr&#229;n Opticur f&#246;rsvann den helt.</textarea>
+        <label>Storlek</label><input type="number" id="c-qsz" value="38" min="24" max="60" step="2" oninput="render()">
+      </div>
+      <div class="g"><h3>Person</h3>
+        <label>Namn</label><input type="text" id="c-name" value="Anna, 34" oninput="render()">
+        <label>Beskrivning</label><input type="text" id="c-desc" value="Kund sedan 2023" oninput="render()">
+        <label>Initialer</label><input type="text" id="c-init" value="A" oninput="render()">
+      </div>
+      <div class="g"><h3>Stjarnor</h3>
+        <div class="row">
+          <div><label>Antal (1-5)</label><input type="number" id="c-stars" value="5" min="1" max="5" oninput="render()"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Actions -->
+  <div class="sb-actions">
+    <button class="btn" onclick="downloadPng()">LADDA NER PNG</button>
+    <button class="btn" onclick="sendToCockpit()" style="background:#4caf50;color:white;margin-top:6px">SKICKA TILL COCKPIT</button>
+    <div id="sendStatus" style="font-size:11px;color:#4caf50;margin-top:4px;text-align:center;min-height:14px"></div>
+  </div>
+</div>
+
+<!-- ═══ PREVIEW AREA ═══ -->
+<div class="preview" id="previewArea">
+  <div class="poster-wrap" id="posterWrap">
+    <div class="poster" id="poster" style="width:1080px;height:1080px">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ─── STATE ─── */
+var state = {
+  tpl: 'produkt',
+  w: 1080,
+  h: 1080,
+  bg: '#ffffff',
+  bgImage: null,
+  positions: {}
+};
+
+/* ─── TABS ─── */
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    state.tpl = tab.dataset.tpl;
+    document.querySelectorAll('.tpl-controls').forEach(function(c) { c.style.display = 'none'; });
+    document.getElementById('ctrl-' + state.tpl).style.display = 'block';
+    render();
+  });
+});
+
+/* ─── FORMAT ─── */
+document.querySelectorAll('.fmt-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.fmt-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    state.w = parseInt(btn.dataset.w);
+    state.h = parseInt(btn.dataset.h);
+    var poster = document.getElementById('poster');
+    poster.style.width = state.w + 'px';
+    poster.style.height = state.h + 'px';
+    fitPoster();
+    render();
+  });
+});
+
+/* ─── SWATCHES ─── */
+document.querySelectorAll('.swatch').forEach(function(sw) {
+  sw.addEventListener('click', function() {
+    document.querySelectorAll('.swatch').forEach(function(s) { s.classList.remove('active'); });
+    sw.classList.add('active');
+    state.bg = sw.dataset.bg;
+    render();
+  });
+});
+
+/* ─── BG IMAGE ─── */
+function handleBgUpload(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    state.bgImage = e.target.result;
+    render();
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function removeBgImage() {
+  state.bgImage = null;
+  document.getElementById('bgUpload').value = '';
+  render();
+}
+
+/* ─── FIT POSTER ─── */
+function fitPoster() {
+  var area = document.getElementById('previewArea');
+  var aw = area.clientWidth - 40;
+  var ah = area.clientHeight - 40;
+  var scale = Math.min(aw / state.w, ah / state.h, 1);
+  var wrap = document.getElementById('posterWrap');
+  wrap.style.transform = 'scale(' + scale + ')';
+  wrap.style.transformOrigin = 'center center';
+  wrap.style.width = state.w + 'px';
+  wrap.style.height = state.h + 'px';
+}
+
+/* ─── HELPERS ─── */
+function v(id) { return document.getElementById(id).value; }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function nl2br(s) { return esc(s).replace(/\n/g, '<br>'); }
+
+function isDark(hex) {
+  var c = hex.replace('#','');
+  var r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  return (r*0.299 + g*0.587 + b*0.114) < 128;
+}
+
+/* ─── STAR SVG ─── */
+function starSvg() {
+  return '<svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+}
+
+/* ─── RENDER ─── */
+function render() {
+  var poster = document.getElementById('poster');
+  var bgStyle = state.bgImage
+    ? '<img class="bg-img" src="' + state.bgImage + '" /><div class="bg-overlay" style="background:rgba(255,255,255,0.85)"></div>'
+    : '';
+  var bgColor = state.bgImage ? 'transparent' : state.bg;
+  var dark = !state.bgImage && isDark(state.bg);
+
+  var html = '';
+
+  if (state.tpl === 'produkt') {
+    var heroSrc = state.bgImage || 'hero-photo.jpg';
+    var pos = state.positions || {};
+    var dp = function(id, defTop, defLeft) {
+      var p = pos[id] || {};
+      return 'top:' + (p.top != null ? p.top : defTop) + 'px;left:' + (p.left != null ? p.left : defLeft) + 'px;';
+    };
+    // Default positions scaled for 1080x1080
+    html = '<div class="tpl-produkt">'
+      + '<img class="hero-img" src="' + heroSrc + '" />'
+      + '<div class="photo-overlay"></div>'
+      + '<div class="gradient"></div>'
+      + (v('p-badge') ? '<div class="draggable" data-id="badge" style="' + dp('badge', 24, 28) + '"><span class="badge-tag" style="font-size:' + v('p-bsz') + 'px">' + esc(v('p-badge')) + '</span></div>' : '')
+      + '<div class="draggable" data-id="quote" style="' + dp('quote', 170, 80) + ';width:' + (state.w - 160) + 'px"><p class="quote-text" style="font-size:' + v('p-qsz') + 'px;font-style:' + v('p-qstyle') + '">' + nl2br(v('p-quote')) + '</p></div>'
+      + '<div class="draggable" data-id="pill" style="' + dp('pill', 380, Math.round(state.w/2 - 180)) + '"><span class="product-pill" style="font-size:' + v('p-psz') + 'px">' + esc(v('p-pill')) + '</span></div>'
+      + '<div class="draggable" data-id="body" style="' + dp('body', 500, 80) + ';width:' + (state.w - 160) + 'px"><p class="body-text" style="font-size:' + v('p-btsz') + 'px">' + esc(v('p-body')) + '</p><p class="body-highlight" style="font-size:' + v('p-hlsz') + 'px">' + esc(v('p-highlight')) + '</p></div>'
+      + '<div class="draggable" data-id="stats" style="' + dp('stats', 600, Math.round(state.w/2 - 260)) + '"><div class="stats-row">'
+      + (v('p-s1') ? '<span class="stat-pill" style="font-size:' + v('p-ssz') + 'px">' + esc(v('p-s1')) + '</span>' : '')
+      + (v('p-s2') ? '<span class="stat-pill" style="font-size:' + v('p-ssz') + 'px">' + esc(v('p-s2')) + '</span>' : '')
+      + (v('p-s3') ? '<span class="stat-pill" style="font-size:' + v('p-ssz') + 'px">' + esc(v('p-s3')) + '</span>' : '')
+      + '</div></div>'
+      + '<div class="draggable" data-id="cta" style="' + dp('cta', 670, Math.round(state.w/2 - 160)) + '"><span class="cta-btn" style="font-size:' + v('p-csz') + 'px">' + esc(v('p-cta')) + '</span></div>'
+      + '<img class="footer-img" src="' + (typeof FOOTER_IMG !== 'undefined' ? FOOTER_IMG : 'footer.png') + '" />'
+      + '</div>';
+  }
+
+  else if (state.tpl === 'tips') {
+    var textColor = dark ? '#fff' : '#1a1a1a';
+    var subColor = dark ? '#ccc' : '#444';
+    var footBg = dark ? '#111' : '#f5f5f5';
+    var footBorder = dark ? '#2a2a2a' : '#e0e0e0';
+    var logoColor = dark ? '#4caf50' : '#1a6a18';
+    var footText = dark ? '#888' : '#666';
+    var numColor = dark ? 'rgba(76,175,80,0.15)' : 'rgba(45,122,60,0.08)';
+    html = '<div class="tpl-tips" style="width:100%;height:100%;display:flex;flex-direction:column;background:' + bgColor + '">'
+      + bgStyle
+      + '<div class="content">'
+      + '<div class="top-accent"></div>'
+      + '<div class="hero" style="position:relative">'
+      + '<div class="tip-number" style="color:' + numColor + '">' + esc(v('t-num')) + '</div>'
+      + '<div class="tag">' + esc(v('t-tag')) + '</div>'
+      + '<p class="headline" style="font-size:' + v('t-hsz') + 'px;color:' + textColor + '">' + nl2br(v('t-headline')) + '</p>'
+      + '<p class="tip-body" style="color:' + subColor + '">' + nl2br(v('t-body')) + '</p>'
+      + '</div>'
+      + '<div class="footer-bar" style="background:' + footBg + ';border-top-color:' + footBorder + '">'
+      + '<div><span class="logo-name" style="color:' + logoColor + '">OPTICUR</span><span class="logo-sub" style="color:' + footText + '">Leg. optiker</span></div>'
+      + '<div class="footer-info" style="color:' + footText + '">Storgatan 44 \u00b7 H\u00f6gsby<br>Tel 0491-200 62</div>'
+      + '</div>'
+      + '</div></div>';
+  }
+
+  else if (state.tpl === 'erbjudande') {
+    html = '<div class="tpl-erbjudande" style="width:100%;height:100%;display:flex;flex-direction:column;background:' + bgColor + '">'
+      + bgStyle
+      + '<div class="content">'
+      + '<div class="top-accent"></div>'
+      + '<div class="hero">'
+      + '<div class="offer-tag">' + esc(v('e-tag')) + '</div>'
+      + '<p class="headline" style="font-size:' + v('e-hsz') + 'px">' + nl2br(v('e-headline')) + '</p>'
+      + '<p class="sub-text">' + nl2br(v('e-sub')) + '</p>'
+      + '<div class="price-box">' + esc(v('e-price')) + '</div>'
+      + '<p class="conditions">' + esc(v('e-cond')) + '</p>'
+      + '<div class="cta-btn">' + esc(v('e-cta')) + '</div>'
+      + '</div>'
+      + '<div class="footer-bar">'
+      + '<div><span class="logo-name">OPTICUR</span><span class="logo-sub">Leg. optiker</span></div>'
+      + '<div class="footer-info">Storgatan 44 \u00b7 H\u00f6gsby<br>Tel 0491-200 62</div>'
+      + '</div>'
+      + '</div></div>';
+  }
+
+  else if (state.tpl === 'testimonial') {
+    var textColor = dark ? '#fff' : '#1a1a1a';
+    var subColor = dark ? '#999' : '#888';
+    var footBg = dark ? '#111' : '#f5f5f5';
+    var footBorder = dark ? '#2a2a2a' : '#e0e0e0';
+    var logoColor = dark ? '#4caf50' : '#1a6a18';
+    var footText = dark ? '#888' : '#666';
+    var numStars = parseInt(v('c-stars')) || 5;
+    var starsHtml = '';
+    for (var i = 0; i < numStars; i++) starsHtml += '<span class="star">' + starSvg() + '</span>';
+
+    html = '<div class="tpl-testimonial" style="width:100%;height:100%;display:flex;flex-direction:column;background:' + bgColor + '">'
+      + bgStyle
+      + '<div class="content">'
+      + '<div class="top-accent"></div>'
+      + '<div class="hero">'
+      + '<div class="stars">' + starsHtml + '</div>'
+      + '<span class="quote-mark">\u201C</span>'
+      + '<p class="quote-text" style="font-size:' + v('c-qsz') + 'px;color:' + textColor + '">' + nl2br(v('c-quote')) + '</p>'
+      + '<div class="author-row">'
+      + '<div class="author-avatar">' + esc(v('c-init')) + '</div>'
+      + '<div>'
+      + '<p class="author-name" style="color:' + textColor + '">' + esc(v('c-name')) + '</p>'
+      + '<p class="author-desc" style="color:' + subColor + '">' + esc(v('c-desc')) + '</p>'
+      + '</div></div>'
+      + '</div>'
+      + '<div class="footer-bar" style="background:' + footBg + ';border-top-color:' + footBorder + '">'
+      + '<div><span class="logo-name" style="color:' + logoColor + '">OPTICUR</span><span class="logo-sub" style="color:' + footText + '">Leg. optiker</span></div>'
+      + '<div class="footer-info" style="color:' + footText + '">Storgatan 44 \u00b7 H\u00f6gsby<br>Tel 0491-200 62</div>'
+      + '</div>'
+      + '</div></div>';
+  }
+
+  poster.innerHTML = html;
+}
+
+/* ─── DRAG AND DROP ─── */
+(function() {
+  var dragEl = null, dragOffX = 0, dragOffY = 0, posterEl = null;
+
+  document.getElementById('poster').addEventListener('mousedown', function(e) {
+    var el = e.target.closest('.draggable');
+    if (!el) return;
+    e.preventDefault();
+    dragEl = el;
+    posterEl = document.getElementById('poster');
+    var posterRect = posterEl.getBoundingClientRect();
+    var elRect = el.getBoundingClientRect();
+    // Scale factor between display size and actual poster size
+    var scale = posterRect.width / state.w;
+    dragOffX = (e.clientX - elRect.left) / scale;
+    dragOffY = (e.clientY - elRect.top) / scale;
+    el.style.zIndex = 20;
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!dragEl || !posterEl) return;
+    e.preventDefault();
+    var posterRect = posterEl.getBoundingClientRect();
+    var scale = posterRect.width / state.w;
+    var newLeft = (e.clientX - posterRect.left) / scale - dragOffX;
+    var newTop = (e.clientY - posterRect.top) / scale - dragOffY;
+    dragEl.style.left = Math.round(newLeft) + 'px';
+    dragEl.style.top = Math.round(newTop) + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!dragEl) return;
+    var id = dragEl.dataset.id;
+    if (id) {
+      state.positions[id] = {
+        top: parseInt(dragEl.style.top),
+        left: parseInt(dragEl.style.left)
+      };
+    }
+    dragEl.style.zIndex = 10;
+    dragEl = null;
+    posterEl = null;
+  });
+})();
+
+/* ─── DOWNLOAD PNG ─── */
+function sendToCockpit() {
+  if (window.parent === window) {
+    alert('Den här funktionen fungerar bara när Bildstudion är öppnad i Cockpit.');
+    return;
+  }
+  var status = document.getElementById('sendStatus');
+  status.textContent = 'Genererar bild...';
+  var wrap = document.getElementById('posterWrap');
+  var poster = document.getElementById('poster');
+  var origT = wrap.style.transform;
+  var origW = wrap.style.width;
+  var origH = wrap.style.height;
+  wrap.style.transform = 'none';
+  wrap.style.width = state.w + 'px';
+  wrap.style.height = state.h + 'px';
+
+  html2canvas(poster, {
+    width: state.w,
+    height: state.h,
+    scale: 1,
+    useCORS: true,
+    backgroundColor: null
+  }).then(function(canvas) {
+    wrap.style.transform = origT;
+    wrap.style.width = origW;
+    wrap.style.height = origH;
+    canvas.toBlob(function(blob) {
+      if (!blob) {
+        status.textContent = 'Fel: kunde inte skapa bildfil';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function() {
+        status.textContent = 'Skickar till Cockpit...';
+        window.parent.postMessage({
+          type: 'opticur-mall-image',
+          dataUrl: reader.result,
+          template: state.tpl,
+          width: state.w,
+          height: state.h
+        }, '*');
+      };
+      reader.readAsDataURL(blob);
+    }, 'image/png');
+  }).catch(function(err) {
+    wrap.style.transform = origT;
+    wrap.style.width = origW;
+    wrap.style.height = origH;
+    status.textContent = 'Exportfel: ' + err.message;
+  });
+}
+
+window.addEventListener('message', function(ev) {
+  if (ev.data && ev.data.type === 'opticur-mall-image-saved') {
+    var status = document.getElementById('sendStatus');
+    if (status) status.textContent = '✓ Sparad i Cockpit — stäng eller skapa nästa';
+  }
+});
+
+function downloadPng() {
+  var wrap = document.getElementById('posterWrap');
+  var poster = document.getElementById('poster');
+  var origT = wrap.style.transform;
+  var origW = wrap.style.width;
+  var origH = wrap.style.height;
+  wrap.style.transform = 'none';
+  wrap.style.width = state.w + 'px';
+  wrap.style.height = state.h + 'px';
+
+  html2canvas(poster, {
+    width: state.w,
+    height: state.h,
+    scale: 1,
+    useCORS: true,
+    backgroundColor: null
+  }).then(function(canvas) {
+    wrap.style.transform = origT;
+    wrap.style.width = origW;
+    wrap.style.height = origH;
+    var a = document.createElement('a');
+    a.download = 'Opticur_' + state.tpl + '_' + state.w + 'x' + state.h + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }).catch(function(err) {
+    wrap.style.transform = origT;
+    wrap.style.width = origW;
+    wrap.style.height = origH;
+    alert('Exportfel: ' + err.message);
+  });
+}
+
+/* ─── INIT ─── */
+fitPoster();
+window.addEventListener('resize', fitPoster);
+render();
+</script>
+</body>
+</html>

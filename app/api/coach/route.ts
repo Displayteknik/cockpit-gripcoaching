@@ -3,6 +3,7 @@ import { generate, type GeminiMessage } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
+import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -48,8 +49,12 @@ export async function POST(req: NextRequest) {
     }
 
     const knowledge = await getKnowledge("company", "coach-instructions");
+    const fp = await getVoiceFingerprint(clientId).catch(() => null);
+    const voiceBlock = fp ? fingerprintToPromptBlock(fp) : "";
 
     const system = `${knowledge}
+
+${voiceBlock}
 
 ${inventoryBlock}`;
 

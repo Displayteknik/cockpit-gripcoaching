@@ -3,6 +3,7 @@ import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
+import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,6 +60,8 @@ export async function POST(req: NextRequest) {
     }
 
     const knowledge = await getKnowledge("viral-hooks", "conversion");
+    const fp = await getVoiceFingerprint(clientId).catch(() => null);
+    const voiceBlock = fp ? fingerprintToPromptBlock(fp) : "";
     const isCarousel = body.format === "carousel";
 
     const slideSchema = isCarousel
@@ -80,6 +83,8 @@ export async function POST(req: NextRequest) {
     const system = `Du är ${client?.name || "klientens"} egna content-producent. Du skriver konverterande inlägg för Instagram och Facebook på svenska.
 
 ${knowledge}
+
+${voiceBlock}
 
 FORMAT-INSTRUKTION: ${formatGuide}
 

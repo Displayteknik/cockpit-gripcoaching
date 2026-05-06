@@ -33,7 +33,10 @@ function buildNavSections(resourceModule: string): NavSection[] {
     {
       label: "Instagram & Social",
       items: [
-        { href: "/dashboard/social", label: "Skapa inlägg", icon: Sparkles },
+        { href: "/dashboard/skapa", label: "Skapa inlägg", icon: Sparkles },
+        { href: "/dashboard/veckoplan", label: "Veckoplan (7 inlägg)", icon: Calendar },
+        { href: "/dashboard/dm", label: "DM & Pipeline", icon: MessageSquare },
+        { href: "/dashboard/social", label: "Inlägg (klassisk)", icon: Sparkles },
         { href: "/dashboard/scheduler", label: "Schemalägga", icon: Calendar },
         { href: "/dashboard/analytics", label: "IG Analytics", icon: Activity },
       ],
@@ -53,6 +56,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
         { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
+        { href: "/dashboard/kund-access", label: "MySales Pro-access", icon: ExternalLink },
         ...resourceItems,
       ],
     },

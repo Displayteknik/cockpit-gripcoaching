@@ -53,7 +53,7 @@ export default function AnalysatorPage() {
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1 block">Instagram-handle</label>
             <div className="flex gap-2">
-              <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@hmmotor" onKeyDown={(e) => e.key === "Enter" && analyze()} className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none" />
+              <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@instagramnamn" onKeyDown={(e) => e.key === "Enter" && analyze()} className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none" />
               <button onClick={analyze} disabled={loading || !handle.trim()} className="flex items-center gap-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 Analysera

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle, Quote, Map, Users } from "lucide-react";
+import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle, Quote, Users, Award, ShoppingBag } from "lucide-react";
+import QualityMeter from "@/components/profile/QualityMeter";
+import KnowledgeBank from "@/components/profile/KnowledgeBank";
 
 interface Profile {
   company_name: string;
@@ -12,6 +14,7 @@ interface Profile {
   founder_email: string;
   brand_story: string;
   usp: string;
+  differentiators: string;
   tone_rules: string;
   icp_primary: string;
   icp_secondary: string;
@@ -19,6 +22,9 @@ interface Profile {
   customer_quotes: string;
   competitors: string;
   customer_journey: string;
+  services: string;
+  pricing_notes: string;
+  booking_url: string;
   dos: string;
   donts: string;
   hashtags_base: string;
@@ -28,9 +34,10 @@ interface Profile {
 const EMPTY: Profile = {
   company_name: "", tagline: "", location: "",
   founder_name: "", founder_phone: "", founder_email: "",
-  brand_story: "", usp: "", tone_rules: "",
+  brand_story: "", usp: "", differentiators: "", tone_rules: "",
   icp_primary: "", icp_secondary: "", pain_points: "",
   customer_quotes: "", competitors: "", customer_journey: "",
+  services: "", pricing_notes: "", booking_url: "",
   dos: "", donts: "", hashtags_base: "",
 };
 
@@ -42,10 +49,17 @@ export default function ProfilPage() {
   const [showIcpWizard, setShowIcpWizard] = useState(false);
   const [showToneWizard, setShowToneWizard] = useState(false);
   const [showVocExtractor, setShowVocExtractor] = useState(false);
+  const [qualityRefresh, setQualityRefresh] = useState(0);
 
   useEffect(() => {
     fetch("/api/profile").then((r) => r.json()).then((d) => {
-      if (d && !d.error) setProfile({ ...EMPTY, ...d });
+      if (d && !d.error) {
+        const clean: Record<string, unknown> = { ...d };
+        for (const k of Object.keys(EMPTY)) {
+          if (clean[k] == null) clean[k] = "";
+        }
+        setProfile({ ...EMPTY, ...clean } as Profile);
+      }
     });
   }, []);
 
@@ -60,8 +74,10 @@ export default function ProfilPage() {
       body: JSON.stringify(profile),
     });
     setSaving(false);
-    if (r.ok) setSavedAt(new Date());
-    else alert("Kunde inte spara.");
+    if (r.ok) {
+      setSavedAt(new Date());
+      setQualityRefresh((n) => n + 1);
+    } else alert("Kunde inte spara.");
   }
 
   async function assistField(field: keyof Profile) {
@@ -91,32 +107,28 @@ export default function ProfilPage() {
     }
   }
 
-  const completion = calcCompletion(profile);
-
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between">
+    <div className="max-w-4xl space-y-6">
+      <div className="flex items-start justify-between sticky top-0 bg-gray-50 -mx-4 px-4 py-3 z-10 border-b border-gray-200">
         <div>
           <h1 className="font-display text-2xl font-bold text-gray-900">Brand-profil</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Grunden för all AI-output. Generatorer och coach läser detta automatiskt.
+            Fundamentet för all AI-output. Generatorer och coach läser detta automatiskt.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-xs text-gray-400">Komplett</div>
-            <div className="text-lg font-bold text-gray-900">{completion}%</div>
-          </div>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-blue-dark disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedAt ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saving ? "Sparar..." : savedAt ? "Sparat" : "Spara"}
-          </button>
-        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-blue-dark disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedAt ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {saving ? "Sparar..." : savedAt ? "Sparat" : "Spara"}
+        </button>
       </div>
+
+      <QualityMeter refreshKey={qualityRefresh} />
+
+      <KnowledgeBank onChange={() => setQualityRefresh((n) => n + 1)} />
 
       <div className="flex gap-2 flex-wrap">
         <button
@@ -148,7 +160,7 @@ export default function ProfilPage() {
           <Field label="Tagline" value={profile.tagline} onChange={(v) => update("tagline", v)} />
         </Row>
         <Row>
-          <Field label="Plats" value={profile.location} onChange={(v) => update("location", v)} placeholder="Krokom, Jämtland" />
+          <Field label="Plats" value={profile.location} onChange={(v) => update("location", v)} placeholder="Stad, region" />
           <Field label="Grundare" value={profile.founder_name} onChange={(v) => update("founder_name", v)} />
         </Row>
         <Row>
@@ -175,6 +187,41 @@ export default function ProfilPage() {
           onAssist={() => assistField("usp")}
           assisting={assisting === "usp"}
           rows={4}
+        />
+      </Section>
+
+      <Section title="Differentiering" icon={Award}>
+        <TextArea
+          label="Tre saker bara ni kan säga"
+          hint="Den specifika auktoriteten — år av erfarenhet, certifieringar, lokal koppling, en metod ingen annan har. En per rad."
+          value={profile.differentiators}
+          onChange={(v) => update("differentiators", v)}
+          onAssist={() => assistField("differentiators")}
+          assisting={assisting === "differentiators"}
+          rows={5}
+        />
+      </Section>
+
+      <Section title="Erbjudande & CTA" icon={ShoppingBag}>
+        <TextArea
+          label="Tjänster / produkter"
+          hint="Vad ni faktiskt säljer. En per rad."
+          value={profile.services}
+          onChange={(v) => update("services", v)}
+          rows={4}
+        />
+        <TextArea
+          label="Prisnotiser (valfritt)"
+          hint="Om priser ska användas i inlägg — exakt som de ska skrivas."
+          value={profile.pricing_notes}
+          onChange={(v) => update("pricing_notes", v)}
+          rows={2}
+        />
+        <Field
+          label="Bokningslänk"
+          value={profile.booking_url}
+          onChange={(v) => update("booking_url", v)}
+          placeholder="https://bokadirekt.se/..."
         />
       </Section>
 
@@ -369,17 +416,6 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
   );
 }
 
-function calcCompletion(p: Profile): number {
-  const fields: (keyof Profile)[] = [
-    "company_name", "tagline", "location", "founder_name",
-    "brand_story", "usp", "tone_rules", "icp_primary",
-    "icp_secondary", "pain_points", "customer_quotes", "customer_journey",
-    "competitors", "dos", "donts", "hashtags_base",
-  ];
-  const filled = fields.filter((f) => (p[f] || "").toString().trim().length > 10).length;
-  return Math.round((filled / fields.length) * 100);
-}
-
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
@@ -402,7 +438,7 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <input
         type="text"
-        value={value}
+        value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none"
@@ -432,7 +468,7 @@ function TextArea({ label, hint, value, onChange, onAssist, assisting, rows = 4 
       </div>
       {hint && <div className="text-xs text-gray-400 mb-1">{hint}</div>}
       <textarea
-        value={value}
+        value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none font-body leading-relaxed"
@@ -563,7 +599,7 @@ function ToneWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: stri
         value={examples}
         onChange={(e) => setExamples(e.target.value)}
         rows={6}
-        placeholder='t.ex. "Tjena. Vi har hjälpt kunder i Krokom sedan 1990. Kom förbi så fixar vi det."'
+        placeholder='t.ex. "Hej! Jag har hjälpt mina kunder sedan 2010. Hör av dig så hittar vi en tid."'
         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none mb-3"
       />
       <div className="text-sm text-gray-600 mb-2">Ord/uttryck ni undviker?</div>

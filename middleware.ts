@@ -11,6 +11,12 @@ export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
   const path = req.nextUrl.pathname;
 
+  // Lokal utveckling — root → dashboard så testning fungerar
+  const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+  if (isLocalhost && path === "/") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
   if (COCKPIT_HOSTS.includes(host)) {
     // Tillåt: dashboard, admin, api, granska, /, statiska
     if (path === "/") {
