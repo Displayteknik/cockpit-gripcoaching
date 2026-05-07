@@ -347,11 +347,11 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
                   </div>
                   <div className="font-medium text-gray-900 text-sm">Ladda upp fil</div>
                   <div className="text-xs text-gray-500">
-                    {uploadFile ? `${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "PDF · Word (DOCX) · Ljud · Video · Zoom-inspelning"}
+                    {uploadFile ? `${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "PDF · Word · Ljud · Video · Zoom-inspelning · VTT/SRT"}
                   </div>
                   <input
                     type="file"
-                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,audio/*,video/*"
+                    accept=".pdf,.doc,.docx,.txt,.vtt,.srt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/vtt,audio/*,video/*"
                     className="hidden"
                     onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
                   />

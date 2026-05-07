@@ -127,15 +127,53 @@ async function extractDocxText(buf: Buffer): Promise<string> {
   return result.value || "";
 }
 
-function detectKind(mime: string): "audio" | "video" | "pdf" | "docx" | "doc" | "text" | "unknown" {
-  const m = mime.toLowerCase();
+function detectKind(mime: string, filename?: string | null): "audio" | "video" | "pdf" | "docx" | "doc" | "vtt" | "srt" | "text" | "unknown" {
+  const m = (mime || "").toLowerCase();
+  const fn = (filename || "").toLowerCase();
+  if (m === "text/vtt" || fn.endsWith(".vtt")) return "vtt";
+  if (m === "application/x-subrip" || fn.endsWith(".srt")) return "srt";
   if (m.startsWith("audio/")) return "audio";
   if (m.startsWith("video/")) return "video";
-  if (m === "application/pdf") return "pdf";
-  if (m === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
-  if (m === "application/msword") return "doc";
-  if (m.startsWith("text/")) return "text";
+  if (m === "application/pdf" || fn.endsWith(".pdf")) return "pdf";
+  if (m === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || fn.endsWith(".docx")) return "docx";
+  if (m === "application/msword" || fn.endsWith(".doc")) return "doc";
+  if (m.startsWith("text/") || fn.endsWith(".txt")) return "text";
   return "unknown";
+}
+
+/**
+ * Rensar WebVTT/SRT till ren dialog. Behåller talar-prefix om det finns.
+ * Tar bort: WEBVTT-header, cue-nummer, timestamps, tomma block.
+ */
+function cleanSubtitleText(raw: string): string {
+  const lines = raw.split(/\r?\n/);
+  const out: string[] = [];
+  let lastSpeaker = "";
+  for (const ln of lines) {
+    const t = ln.trim();
+    if (!t) continue;
+    if (t === "WEBVTT" || t.startsWith("WEBVTT")) continue;
+    if (/^\d+$/.test(t)) continue; // cue-nummer
+    if (/-->/.test(t)) continue; // timestamps
+    if (/^NOTE\b/i.test(t)) continue;
+    // Slå ihop konsekutiva rader från samma talare
+    const speakerMatch = t.match(/^([^:]{2,40}):\s*(.*)$/);
+    if (speakerMatch) {
+      const speaker = speakerMatch[1].trim();
+      const txt = speakerMatch[2].trim();
+      if (speaker === lastSpeaker && out.length > 0) {
+        out[out.length - 1] = out[out.length - 1] + " " + txt;
+      } else {
+        out.push(`${speaker}: ${txt}`);
+        lastSpeaker = speaker;
+      }
+    } else {
+      // Rad utan talar-prefix — fortsätt på senaste
+      if (out.length > 0) out[out.length - 1] = out[out.length - 1] + " " + t;
+      else out.push(t);
+    }
+  }
+  return out.join("\n\n").trim();
 }
 
 export async function POST(req: NextRequest) {
@@ -186,9 +224,12 @@ export async function POST(req: NextRequest) {
         const { data: dl, error: dlErr } = await sb.storage.from(bucket).download(storagePath);
         if (dlErr || !dl) return NextResponse.json({ error: "Kunde inte hämta fil från Storage: " + (dlErr?.message || "okänt fel") }, { status: 500 });
         const buf = Buffer.from(await dl.arrayBuffer());
-        const kind = detectKind(mimeType);
+        const kind = detectKind(mimeType, originalName);
 
-        if (kind === "docx") {
+        if (kind === "vtt" || kind === "srt") {
+          sourceType = "transcript";
+          transcript = cleanSubtitleText(buf.toString("utf8"));
+        } else if (kind === "docx") {
           sourceType = "document";
           transcript = await extractDocxText(buf);
           if (!transcript || transcript.trim().length < 50) {
