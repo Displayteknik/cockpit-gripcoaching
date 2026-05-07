@@ -20,8 +20,10 @@ interface Post {
   length: "short" | "medium" | "long" | null;
   idea_seed: string | null;
   notes: string | null;
+  posted_at: string | null;
   posted_url: string | null;
   scheduled_for: string | null;
+  metrics: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
