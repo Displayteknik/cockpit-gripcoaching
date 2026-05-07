@@ -171,6 +171,8 @@ body{font-family:'Inter',sans-serif;background:#111;color:#eee;overflow:hidden;h
         <div class="swatch" data-bg="#1a1a1a" style="background:#1a1a1a;border:1px solid #555"></div>
         <div class="swatch" data-bg="#e8f5e9" style="background:#e8f5e9;border:1px solid #555"></div>
       </div>
+      <button class="btn btn-outline" style="margin-top:6px" onclick="suggestBackgrounds()" id="btnSuggest">✨ Föreslå bilder (från Pexels)</button>
+      <div id="bgSuggestions" style="display:none;margin-top:8px"></div>
       <button class="btn btn-outline" style="margin-top:6px" onclick="document.getElementById('bgUpload').click()">Ladda upp bakgrundsbild</button>
       <input type="file" id="bgUpload" accept="image/*" onchange="handleBgUpload(this)">
       <button class="btn btn-outline" style="margin-top:4px;font-size:11px" onclick="removeBgImage()">Ta bort bild</button>
@@ -350,6 +352,69 @@ function removeBgImage() {
   state.bgImage = null;
   document.getElementById('bgUpload').value = '';
   render();
+}
+
+/* ─── PEXELS-FÖRSLAG (baserat på inläggets hook) ─── */
+function suggestBackgrounds() {
+  var btn = document.getElementById('btnSuggest');
+  var box = document.getElementById('bgSuggestions');
+  // Bygg sökterm från hook eller default Ingela-stil
+  var hook = document.getElementById('p-quote') ? document.getElementById('p-quote').value : '';
+  hook = (hook || '').replace(/[“”""'']/g, '').trim();
+  // Plocka bara meningsbärande ord
+  var stopwords = ['jag','du','han','hon','det','den','är','och','men','att','en','ett','på','av','för','i','till','som','med','så','om','har','inte','vi','ni','de','här','där','nu','då','vad','när','varför','hur','vill','kan','ska'];
+  var keywords = hook.toLowerCase().split(/\s+/).filter(function(w){
+    return w.length > 3 && stopwords.indexOf(w) === -1;
+  }).slice(0, 4).join(' ');
+  // Lägg till Ingela-stil-modifiers
+  var query = (keywords || 'optician portrait') + ' natural light candid woman';
+  btn.textContent = '⏳ Söker...';
+  btn.disabled = true;
+  box.style.display = 'block';
+  box.innerHTML = '<div style="font-size:11px;color:#888">Söker efter: ' + keywords + '</div>';
+  fetch('/api/social/stock', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic: query, count: 9 })
+  }).then(function(r){ return r.json(); }).then(function(d){
+    btn.textContent = '✨ Föreslå nya bilder';
+    btn.disabled = false;
+    var photos = d.photos || d.results || [];
+    if (!photos.length) {
+      box.innerHTML = '<div style="font-size:11px;color:#c66">Inga bilder hittades. Försök ladda upp egen istället.</div>';
+      return;
+    }
+    var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px">';
+    photos.slice(0, 9).forEach(function(p){
+      var preview = p.srcMedium || p.src || p.url || '';
+      var full = p.src || p.srcMedium || p.url || '';
+      if (!preview || !full) return;
+      html += '<button onclick="pickBg(' + JSON.stringify(full).replace(/"/g, '&quot;') + ')" style="border:1px solid #444;padding:0;cursor:pointer;background:#000;border-radius:4px;overflow:hidden;aspect-ratio:1/1" title="Klick för att använda"><img src="' + preview + '" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy"/></button>';
+    });
+    html += '</div><div style="font-size:10px;color:#888;margin-top:4px">Klick = sätt som bakgrund. Foten med logo/QR/ZEISS sitter kvar.</div>';
+    box.innerHTML = html;
+  }).catch(function(e){
+    btn.textContent = '✨ Föreslå bilder';
+    btn.disabled = false;
+    box.innerHTML = '<div style="font-size:11px;color:#c66">Fel: ' + (e.message || e) + '</div>';
+  });
+}
+
+function pickBg(url) {
+  // Hämta bilden som dataURL för att inkludera den vid html2canvas-export
+  // Annars blockerar CORS canvas-tainting.
+  fetch(url).then(function(r){ return r.blob(); }).then(function(b){
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      state.bgImage = e.target.result;
+      render();
+    };
+    reader.readAsDataURL(b);
+  }).catch(function() {
+    // Fallback: använd direkt URL — kan strula vid export
+    state.bgImage = url;
+    render();
+  });
 }
 
 /* ─── FIT POSTER ─── */
@@ -678,6 +743,16 @@ function downloadPng() {
 fitPoster();
 window.addEventListener('resize', fitPoster);
 render();
+
+// Auto-föreslå bilder direkt om hook prefyllts via URL — användaren slipper klicka
+(function autoSuggest() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('hook')) {
+      setTimeout(suggestBackgrounds, 500);
+    }
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>
