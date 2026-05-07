@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle, Quote, Users, Award, ShoppingBag } from "lucide-react";
 import QualityMeter from "@/components/profile/QualityMeter";
 import KnowledgeBank from "@/components/profile/KnowledgeBank";
+import IntakeAgent from "@/components/IntakeAgent";
 
 interface Profile {
   company_name: string;
@@ -49,6 +50,7 @@ export default function ProfilPage() {
   const [showIcpWizard, setShowIcpWizard] = useState(false);
   const [showToneWizard, setShowToneWizard] = useState(false);
   const [showVocExtractor, setShowVocExtractor] = useState(false);
+  const [showIntakeAgent, setShowIntakeAgent] = useState(false);
   const [qualityRefresh, setQualityRefresh] = useState(0);
 
   useEffect(() => {
@@ -127,6 +129,35 @@ export default function ProfilPage() {
       </div>
 
       <QualityMeter refreshKey={qualityRefresh} />
+
+      <button
+        onClick={() => setShowIntakeAgent(true)}
+        className="w-full text-left bg-gradient-to-r from-purple-600 via-purple-700 to-blue-700 hover:from-purple-700 hover:to-blue-800 text-white rounded-xl p-5 shadow-sm transition flex items-center gap-4"
+      >
+        <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <div className="font-display font-bold text-lg leading-tight">Intake-agenten</div>
+          <div className="text-sm opacity-90 mt-0.5">Mata in samtal, intervjuer eller ljud — agenten jämför med befintlig brand-data, ställer frågor när det behövs och föreslår uppdateringar du godkänner.</div>
+        </div>
+        <div className="flex-shrink-0 text-xs opacity-90 font-medium px-3 py-1.5 rounded-lg bg-white/15 hidden md:block">Öppna →</div>
+      </button>
+
+      <IntakeAgent
+        open={showIntakeAgent}
+        onClose={() => setShowIntakeAgent(false)}
+        onChanged={() => {
+          setQualityRefresh((n) => n + 1);
+          fetch("/api/profile").then((r) => r.json()).then((d) => {
+            if (d && !d.error) {
+              const clean: Record<string, unknown> = { ...d };
+              for (const k of Object.keys(EMPTY)) { if (clean[k] == null) clean[k] = ""; }
+              setProfile(clean as unknown as Profile);
+            }
+          });
+        }}
+      />
 
       <KnowledgeBank onChange={() => setQualityRefresh((n) => n + 1)} />
 
