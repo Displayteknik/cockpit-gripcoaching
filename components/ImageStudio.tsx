@@ -374,11 +374,11 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
                 <div className="px-4 py-2 bg-emerald-50 border-b border-emerald-200 flex items-start gap-2 flex-shrink-0">
                   <LayoutTemplate className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
                   <div className="text-xs text-emerald-900 flex-1">
-                    Opticurs egna mall-byggare — fot, QR & ZEISS inbyggt. Klicka <strong>"SKICKA TILL COCKPIT"</strong> nere till vänster så kopplas bilden direkt på inlägget.
+                    Opticurs egna mall-byggare — fot, QR & ZEISS inbyggt. Bildens citat hämtas automatiskt från inläggets hook. Klicka <strong>"SKICKA TILL COCKPIT"</strong> nere till vänster så kopplas bilden direkt på inlägget.
                   </div>
                 </div>
                 <iframe
-                  src="/opticur-mall/index.html"
+                  src={`/opticur-mall/index.html?postId=${encodeURIComponent(postId)}&hook=${encodeURIComponent(hook || "")}&cta=${encodeURIComponent(cta || "")}`}
                   className="flex-1 w-full border-0 bg-white"
                   title="Opticur Content Creator"
                 />

@@ -636,6 +636,28 @@ function downloadPng() {
   });
 }
 
+/* ─── PREFILL FRÅN URL-PARAMS (kopplad till inläggets hook/cta) ─── */
+(function prefillFromPost() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var hook = params.get('hook');
+    var cta = params.get('cta');
+    if (hook) {
+      var pq = document.getElementById('p-quote');
+      var cq = document.getElementById('c-quote');
+      // Wrap hooken i typografiska citattecken om den inte redan har dem
+      var quoted = hook.trim();
+      if (!/^["“”"]/.test(quoted)) quoted = '“' + quoted + '”';
+      if (pq) pq.value = quoted;
+      if (cq) cq.value = hook.trim();
+    }
+    if (cta) {
+      var pcta = document.getElementById('p-cta');
+      if (pcta) pcta.value = cta.trim().toUpperCase();
+    }
+  } catch (e) { /* tyst — fall tillbaka på default */ }
+})();
+
 /* ─── INIT ─── */
 fitPoster();
 window.addEventListener('resize', fitPoster);
