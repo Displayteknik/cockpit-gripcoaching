@@ -9,7 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getProfileAsMarkdown } from "@/lib/knowledge";
+import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 
@@ -63,8 +63,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!post) return NextResponse.json({ error: "Post saknas" }, { status: 404 });
 
     const profileMd = await getProfileAsMarkdown();
+    const imageSkills = await getKnowledge("image-generation", "image-anti-cliches", "image-by-industry");
 
     const system = `Du är en expert på bild-prompts för AI-bildmodeller (Imagen, FLUX, Nano Banana / Gemini 2.5 Flash Image).
+
+Du följer ALLA principer i image-generation playbook + anti-klyschor + per-bransch-guide nedan.
+
+${imageSkills}
+
+
 
 Du tar ett SVENSKT social-media-inlägg och bygger en ENGELSK bild-prompt som är optimerad för dessa modeller. Engelska för att modellerna förstår engelska bäst, OCH för att svenska tecken (å, ä, ö) renderas trasigt om de hamnar i text-overlay.
 
