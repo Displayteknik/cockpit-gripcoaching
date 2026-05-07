@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, X, Upload, FileText, Mic, RefreshCw, Check, Edit3, SkipForward, ChevronRight, Quote, AlertTriangle, Plus, ArrowLeft, Trash2, History } from "lucide-react";
+import { Sparkles, X, Upload, FileText, Mic, Video, FileType2, RefreshCw, Check, Edit3, SkipForward, ChevronRight, Quote, AlertTriangle, Plus, ArrowLeft, Trash2, History } from "lucide-react";
 
 type Step = "list" | "input" | "transcribing" | "analyzing" | "clarifying" | "reviewing" | "done";
 type ProposalDecision = "accepted" | "edited" | "skipped" | "pending";
@@ -88,7 +88,8 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
   const [transcript, setTranscript] = useState("");
   const [sourceLabel, setSourceLabel] = useState("");
   const [personName, setPersonName] = useState("");
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [editingProp, setEditingProp] = useState<{ id: string; value: string } | null>(null);
 
   const refreshSessions = async () => {
@@ -125,22 +126,60 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
 
   const startNew = () => {
     setStep("input");
-    setTranscript(""); setSourceLabel(""); setPersonName(""); setAudioFile(null);
+    setTranscript(""); setSourceLabel(""); setPersonName(""); setUploadFile(null); setUploadProgress(0);
     setActiveSession(null); setActiveSessionId(null); setProposals([]); setClarifications([]);
     setError(null); setResultSummary(null);
   };
 
+  async function uploadToStorage(file: File): Promise<{ storage_path: string; mime_type: string; bucket: string }> {
+    const r = await fetch("/api/intake/storage-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: file.name, mime_type: file.type || "application/octet-stream" }),
+    });
+    const j = await r.json();
+    if (j.error || !j.signed_url) throw new Error(j.error || "Kunde inte skapa upload-URL");
+
+    return new Promise<{ storage_path: string; mime_type: string; bucket: string }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", j.signed_url);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ storage_path: j.storage_path, mime_type: j.mime_type, bucket: j.bucket });
+        } else {
+          reject(new Error(`Storage-uppladdning misslyckades: ${xhr.status} ${xhr.responseText.slice(0, 200)}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Nätverksfel under uppladdning"));
+      xhr.send(file);
+    });
+  }
+
   const submitInput = async () => {
-    setBusy("uploading"); setError(null);
+    setBusy("uploading"); setError(null); setUploadProgress(0);
     try {
       let res: Response;
-      if (audioFile) {
+      if (uploadFile) {
         setStep("transcribing");
-        const fd = new FormData();
-        fd.append("file", audioFile);
-        if (sourceLabel) fd.append("source_label", sourceLabel);
-        if (personName) fd.append("person_name", personName);
-        res = await fetch("/api/intake/upload", { method: "POST", body: fd });
+        const { storage_path, mime_type, bucket } = await uploadToStorage(uploadFile);
+        res = await fetch("/api/intake/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source_type: "storage",
+            storage_path,
+            storage_bucket: bucket,
+            mime_type: mime_type || uploadFile.type || "application/octet-stream",
+            file_bytes: uploadFile.size,
+            source_label: sourceLabel,
+            person_name: personName,
+            original_name: uploadFile.name,
+          }),
+        });
       } else {
         if (transcript.trim().length < 100) { setError("Klistra in minst 100 tecken transkript"); setBusy(null); return; }
         res = await fetch("/api/intake/upload", {
@@ -295,18 +334,42 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
           {step === "input" && (
             <div className="p-5 space-y-4 max-w-2xl">
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setAudioFile(null)} className={`rounded-lg border p-4 text-left ${!audioFile ? "border-purple-500 bg-purple-50" : "border-gray-200"}`}>
+                <button onClick={() => setUploadFile(null)} className={`rounded-lg border p-4 text-left transition ${!uploadFile ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
                   <FileText className="w-5 h-5 mb-1.5 text-purple-600" />
                   <div className="font-medium text-gray-900 text-sm">Klistra in transkript</div>
-                  <div className="text-xs text-gray-500">Snabbast om du redan har transkript</div>
+                  <div className="text-xs text-gray-500">Snabbast om du redan har text</div>
                 </button>
-                <label className={`rounded-lg border p-4 text-left cursor-pointer ${audioFile ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
-                  <Mic className="w-5 h-5 mb-1.5 text-purple-600" />
-                  <div className="font-medium text-gray-900 text-sm">Ladda upp ljud</div>
-                  <div className="text-xs text-gray-500">{audioFile ? `${audioFile.name} (${(audioFile.size / 1024 / 1024).toFixed(1)} MB)` : "MP3/M4A max 20 MB"}</div>
-                  <input type="file" accept="audio/*,video/*" className="hidden" onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)} />
+                <label className={`rounded-lg border p-4 text-left cursor-pointer transition ${uploadFile ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
+                  <div className="flex gap-1.5 mb-1.5">
+                    <Mic className="w-5 h-5 text-purple-600" />
+                    <Video className="w-5 h-5 text-purple-600" />
+                    <FileType2 className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="font-medium text-gray-900 text-sm">Ladda upp fil</div>
+                  <div className="text-xs text-gray-500">
+                    {uploadFile ? `${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "PDF · Word (DOCX) · Ljud · Video · Zoom-inspelning"}
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,audio/*,video/*"
+                    className="hidden"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                  />
                 </label>
               </div>
+
+              {uploadFile && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5 text-xs text-purple-900">
+                  <div className="flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    <span className="font-medium">{uploadFile.name}</span>
+                    <span className="opacity-70">{(uploadFile.size / 1024 / 1024).toFixed(1)} MB · {uploadFile.type || "okänd typ"}</span>
+                  </div>
+                  {uploadFile.size > 18 * 1024 * 1024 && (
+                    <div className="mt-1 text-purple-700 text-[11px]">Stor fil — laddas via Gemini Files API. Kan ta 30-90 sek att processa.</div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">Etikett (vad är det?)</label>
@@ -317,7 +380,7 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
                 <input value={personName} onChange={(e) => setPersonName(e.target.value)} placeholder="ex: Carl-Fredrik Zetterman, Ingela" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
 
-              {!audioFile && (
+              {!uploadFile && (
                 <div>
                   <label className="text-xs font-medium text-gray-700 block mb-1">Transkript</label>
                   <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={12} placeholder="Klistra in transkriptet från Zoom, Otter, Whisper eller liknande här..." className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" />
@@ -327,7 +390,7 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
 
               <div className="flex gap-2">
                 <button onClick={() => setStep("list")} className="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-700">Avbryt</button>
-                <button onClick={submitInput} disabled={busy === "uploading" || (!audioFile && transcript.trim().length < 100)} className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm px-5 py-2 rounded-lg flex items-center gap-2">
+                <button onClick={submitInput} disabled={busy === "uploading" || (!uploadFile && transcript.trim().length < 100)} className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm px-5 py-2 rounded-lg flex items-center gap-2">
                   {busy === "uploading" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Mata agenten
                 </button>
               </div>
@@ -339,8 +402,21 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
               <div className="inline-flex w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 items-center justify-center mb-4 animate-pulse">
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
-              <h3 className="font-display font-bold text-gray-900 text-lg mb-1">{step === "transcribing" ? "Transkriberar ljud…" : "Agenten resonerar…"}</h3>
-              <p className="text-sm text-gray-600 max-w-md mx-auto">{step === "transcribing" ? "Gemini lyssnar igenom hela ljudet. ~30-90 sek per 5 min ljud." : "Läser transkriptet, jämför med brand-profil, pelare och voice-data, klassar varje insikt och citerar källan. ~30-60 sek."}</p>
+              <h3 className="font-display font-bold text-gray-900 text-lg mb-1">
+                {step === "transcribing" ? (uploadProgress > 0 && uploadProgress < 100 ? `Laddar upp till Storage… ${uploadProgress}%` : "Transkriberar / extraherar text…") : "Agenten resonerar…"}
+              </h3>
+              <p className="text-sm text-gray-600 max-w-md mx-auto">
+                {step === "transcribing"
+                  ? (uploadProgress > 0 && uploadProgress < 100
+                      ? "Filen laddas upp direkt till Supabase Storage."
+                      : "Gemini läser ljud/video/PDF eller mammoth extraherar Word-text. Stora filer (>18 MB) går via Files API och tar 30-90 sek extra.")
+                  : "Läser transkriptet, jämför med brand-profil, pelare och voice-data, klassar varje insikt och citerar källan. ~30-60 sek."}
+              </p>
+              {step === "transcribing" && uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="mt-4 max-w-sm mx-auto bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div className="bg-purple-600 h-full transition-all" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              )}
             </div>
           )}
 
