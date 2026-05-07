@@ -64,6 +64,32 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
   const [photos, setPhotos] = useState<Asset[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState(hook);
+  const [smartPromptMeta, setSmartPromptMeta] = useState<{ scene_description?: string; visual_style?: string; mood?: string } | null>(null);
+  const [smartLoading, setSmartLoading] = useState(false);
+
+  /**
+   * Bygg en kontextrik bild-prompt från postens hook + body + brand + voice.
+   * Auto-trigger när Nano Banana / Imagen-flik öppnas första gången.
+   */
+  async function buildSmartPrompt() {
+    if (smartLoading) return;
+    setSmartLoading(true);
+    try {
+      const r = await fetch(`/api/posts/${postId}/build-image-prompt`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hook, cta }) });
+      const d = await r.json();
+      if (d.english_prompt) {
+        setAiPrompt(d.english_prompt);
+        setSmartPromptMeta({ scene_description: d.scene_description, visual_style: d.visual_style, mood: d.mood });
+      }
+    } finally { setSmartLoading(false); }
+  }
+
+  useEffect(() => {
+    if ((tab === "nanobanana" || tab === "imagen") && aiPrompt === hook && !smartPromptMeta) {
+      buildSmartPrompt();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
   const [library, setLibrary] = useState<SavedPost[]>([]);
   const [pexelsResults, setPexelsResults] = useState<{ id: number; src: string; srcMedium: string; photographer: string; alt: string }[]>([]);
   const [pexelsQuery, setPexelsQuery] = useState("");
@@ -455,14 +481,14 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
             {tab === "nanobanana" && (
               <div className="space-y-3">
                 <div className="text-sm text-gray-600">
-                  Google Gemini 2.5 Flash Image — bra på svensk text-i-bild, snabb. Beskriv
-                  vad bilden ska visa.
+                  Google Gemini 2.5 Flash Image — snabb, bra på enkla scener. <strong>Lägg INTE svensk text i bilden</strong> — modeller renderar å/ä/ö trasigt.
                 </div>
+                <SmartPromptHeader meta={smartPromptMeta} loading={smartLoading} onRegenerate={buildSmartPrompt} />
                 <textarea
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-500"
+                  rows={5}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-500 font-mono"
                 />
                 <button
                   onClick={generateNanoBanana}
@@ -478,13 +504,14 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
             {tab === "imagen" && (
               <div className="space-y-3">
                 <div className="text-sm text-gray-600">
-                  Google Imagen 4.0 — mer fotorealistiska scener. Längre genereringstid (~15 sek).
+                  Google Imagen 4.0 — fotorealistisk, ~15 sek per bild. <strong>Lägg INTE svensk text i bilden</strong>.
                 </div>
+                <SmartPromptHeader meta={smartPromptMeta} loading={smartLoading} onRegenerate={buildSmartPrompt} />
                 <textarea
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-500"
+                  rows={5}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-500 font-mono"
                 />
                 <button
                   onClick={generateImagen}
@@ -628,6 +655,31 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SmartPromptHeader({ meta, loading, onRegenerate }: { meta: { scene_description?: string; visual_style?: string; mood?: string } | null; loading: boolean; onRegenerate: () => void }) {
+  if (loading) {
+    return (
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-900 flex items-center gap-2">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        Bygger smart prompt från hela inläggets kontext (hook + body + brand-profil + voice)...
+      </div>
+    );
+  }
+  if (!meta) return null;
+  return (
+    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-900 space-y-1.5">
+      <div className="flex justify-between items-start gap-2">
+        <span className="font-bold uppercase text-[10px] tracking-wider">Smart prompt aktiv</span>
+        <button onClick={onRegenerate} className="text-[10px] underline hover:no-underline text-emerald-700 hover:text-emerald-900">↻ Bygg ny</button>
+      </div>
+      {meta.scene_description && <div><strong>Scen:</strong> {meta.scene_description}</div>}
+      <div className="flex gap-3 text-[11px] opacity-80">
+        {meta.visual_style && <span><strong>Stil:</strong> {meta.visual_style}</span>}
+        {meta.mood && <span><strong>Mood:</strong> {meta.mood}</span>}
       </div>
     </div>
   );
