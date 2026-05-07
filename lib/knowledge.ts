@@ -127,6 +127,27 @@ export async function getProfileAsMarkdown(): Promise<string> {
       }
     } catch {}
 
+    // Vinnande exempel — Hakan/klient-godkända benchmark-inlägg
+    // (lägg dem TIDIGT i prompten så AI:n ser dem som målbild)
+    let winningBlock = "";
+    try {
+      const { data: wins } = await sb
+        .from("client_assets")
+        .select("title, body")
+        .eq("client_id", clientId)
+        .eq("category", "winning_example")
+        .eq("status", "active")
+        .order("voice_score", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (wins && wins.length > 0) {
+        const items = wins
+          .map((w) => `### Exempel: ${w.title}\n\n${(w.body ?? "").trim()}`)
+          .join("\n\n---\n\n");
+        winningBlock = `\n\n# ═══ VINNANDE EXEMPEL (kund/admin-godkända benchmarks — sikta hit i ton, struktur, ordval) ═══\n\n${items}`;
+      }
+    } catch {}
+
     // Voice fingerprint som inline-block (om finns) — delas av ALLA generatorer
     let voiceBlock = "";
     try {
@@ -147,7 +168,7 @@ export async function getProfileAsMarkdown(): Promise<string> {
       }
     } catch {}
 
-    return body ? `# ═══ brand-profile (live från dashboard) ═══\n\n${body}${voiceBlock}${customerVoiceBlock}${storyBlock}` : `${voiceBlock}${customerVoiceBlock}${storyBlock}`.trim();
+    return body ? `# ═══ brand-profile (live från dashboard) ═══\n\n${body}${voiceBlock}${customerVoiceBlock}${storyBlock}${winningBlock}` : `${voiceBlock}${customerVoiceBlock}${storyBlock}${winningBlock}`.trim();
   } catch {
     return "";
   }
