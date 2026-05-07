@@ -186,11 +186,29 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
       t = t.replace(/\n+\s*(?:#\S+\s*){2,}\s*$/g, "");
       return t.trim();
     };
+    /**
+     * Hård regex-fångare av "handla om"-förbjudna fraser. Om de smiter
+     * förbi promptens varning så ersätts de mekaniskt med en neutral
+     * formulering. Bättre torrt än "handlar om".
+     */
+    const HANDLA_OM_PATTERNS: { re: RegExp; replace: string }[] = [
+      { re: /\bdet handlar om\b/gi, replace: "det här är" },
+      { re: /\bdet handlade om\b/gi, replace: "det var" },
+      { re: /\bdet handlat om\b/gi, replace: "det varit" },
+      { re: /\bhandlar om\b/gi, replace: "är" },
+      { re: /\bhandlade om\b/gi, replace: "var" },
+      { re: /\bhandlat om\b/gi, replace: "varit" },
+    ];
+    const stripForbidden = (s: string): string => {
+      let t = s;
+      for (const p of HANDLA_OM_PATTERNS) t = t.replace(p.re, p.replace);
+      return t;
+    };
     const variants: Variant[] = parsed.variants.slice(0, 3).map((v, i) => ({
       tier: tiers[i] || "bronze",
-      hook: stripLabels(toStr(v.hook)),
-      body: stripHashtagBlock(stripLabels(toStr(v.body))),
-      cta: stripLabels(toStr(v.cta)),
+      hook: stripForbidden(stripLabels(toStr(v.hook))),
+      body: stripForbidden(stripHashtagBlock(stripLabels(toStr(v.body)))),
+      cta: stripForbidden(stripLabels(toStr(v.cta))),
       hashtags: Array.isArray(v.hashtags) ? v.hashtags.map((h) => String(h).replace(/^#/, "")) : [],
       hook_format: toStr(v.hook_format),
       notes: toStr(v.notes),
@@ -260,7 +278,8 @@ ${voiceBlock}
 ${winningBlock}
 
 ═══ KVALITETSKRAV ═══
-- ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "nästa nivå", "skalbar", "holistisk", "handlar om"
+- ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "nästa nivå", "skalbar", "holistisk"
+- ALDRIG någon form av "handla om" — varken "handlar om", "handlade om", "handlat om", "det handlar om", "det handlade om". INGA TEMPUS. Skriv om till konkret formulering: istället för "Det handlade om hennes samsyn" skriv "Det var hennes samsyn som var problemet" eller "Hennes samsyn var nyckeln" eller "Det visade sig vara samsynen".
 - Skriv som personen själv hade skrivit. Korta meningar. Talspråk OK om personens röst är talspråklig.
 - Hooken är ALLT — om hooken är generisk är inlägget värdelöst.
 - CTA ska vara EN sak att göra, ingen "boka, mejla, eller följ".

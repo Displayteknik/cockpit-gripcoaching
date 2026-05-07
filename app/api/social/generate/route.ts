@@ -89,7 +89,8 @@ ${voiceBlock}
 FORMAT-INSTRUKTION: ${formatGuide}
 
 HÅRDA REGLER:
-- Skriv ALDRIG AI-språk: "kraftfull", "handlar om", "nästa nivå", "banbrytande", "game-changer", "holistisk", "skalbar".
+- Skriv ALDRIG AI-språk: "kraftfull", "nästa nivå", "banbrytande", "game-changer", "holistisk", "skalbar".
+- ALDRIG någon form av "handla om" — varken "handlar om", "handlade om", "handlat om", "det handlar om", "det handlade om". INGA TEMPUS. Skriv om till konkret formulering.
 - Svenska tecken (å/ä/ö) ALLTID korrekta.
 - En CTA per inlägg.
 - Följ 3-sekundersregeln i hooken.
@@ -139,9 +140,21 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
       t = t.replace(/\n+\s*(?:#\S+\s*){2,}\s*$/g, "");
       return t.trim();
     };
-    post.hook = stripEmojiPrefix(stripLabels(post.hook));
-    post.caption = stripHashtagBlock(stripLabels(post.caption));
-    post.cta = stripLabels(post.cta);
+    // Hård fångare av "handla om" i alla tempus
+    const stripForbidden = (s: string): string => {
+      if (!s) return s;
+      let t = s;
+      t = t.replace(/\bdet handlar om\b/gi, "det här är");
+      t = t.replace(/\bdet handlade om\b/gi, "det var");
+      t = t.replace(/\bdet handlat om\b/gi, "det varit");
+      t = t.replace(/\bhandlar om\b/gi, "är");
+      t = t.replace(/\bhandlade om\b/gi, "var");
+      t = t.replace(/\bhandlat om\b/gi, "varit");
+      return t;
+    };
+    post.hook = stripForbidden(stripEmojiPrefix(stripLabels(post.hook)));
+    post.caption = stripForbidden(stripHashtagBlock(stripLabels(post.caption)));
+    post.cta = stripForbidden(stripLabels(post.cta));
     post.hashtags = stripLabels(post.hashtags);
 
     const { data: saved, error } = await sb
