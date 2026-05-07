@@ -156,9 +156,10 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
       return v == null ? "" : String(v);
     };
     /**
-     * Saneringsfilter: AI:n inkluderar ibland strukturella etiketter
-     * ("Hook:", "Body:", "CTA:", "Format note:", "Hashtags:") inne i fälten.
-     * Strippar bort dem så texten är ren copy-paste-kandidat.
+     * Saneringsfilter:
+     * - Strippar etiketter ("Hook:", "Body:", "CTA:", "Format note:", "Hashtags:")
+     * - Strippar emoji-prefix ("🎣 Trött på..." → "Trött på...")
+     * - Strippar hashtag-block i slutet av body
      */
     const stripLabels = (s: string): string => {
       let t = s.trim();
@@ -166,14 +167,29 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
       t = t.replace(/^\s*(?:HOOK|Hook|hook|BODY|Body|body|CAPTION|Caption|caption|CTA|Cta|cta|HASHTAGS?|Hashtags?|hashtags?|FORMAT[\s_]?NOTE?|Format[\s_]?Note?|format[\s_]?note?|NOTES?|Notes?|notes?|VARIANT|Variant|variant)\s*[:\-–—]\s*/i, "");
       // Ta bort etiketter på egen rad mitt i texten
       t = t.replace(/^\s*(?:HOOK|BODY|CAPTION|CTA|HASHTAGS|FORMAT[\s_]NOTE|NOTES)\s*[:\-–—].*$/gim, "");
+      // Ta bort emoji-prefix i början av hooken (🎣, 🚨, 💡 etc) — Ingela skriver inte så
+      t = t.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}]+\s*/u, "");
       // Komprimera flera blank-rader till max 2
       t = t.replace(/\n{3,}/g, "\n\n").trim();
       return t;
     };
+    /**
+     * Strippar bort hashtag-block från body. AI:n stoppar ibland in
+     * hashtags på sista raden av body — UI:t lägger till dem separat
+     * från hashtags-arrayen, vilket dubblerar dem.
+     */
+    const stripHashtagBlock = (s: string): string => {
+      let t = s.trim();
+      // Ta bort sista raden om den bara innehåller hashtags
+      t = t.replace(/\n+\s*(?:#\S+\s*){2,}\s*$/g, "");
+      // Och eventuellt en rad innan med samma mönster
+      t = t.replace(/\n+\s*(?:#\S+\s*){2,}\s*$/g, "");
+      return t.trim();
+    };
     const variants: Variant[] = parsed.variants.slice(0, 3).map((v, i) => ({
       tier: tiers[i] || "bronze",
       hook: stripLabels(toStr(v.hook)),
-      body: stripLabels(toStr(v.body)),
+      body: stripHashtagBlock(stripLabels(toStr(v.body))),
       cta: stripLabels(toStr(v.cta)),
       hashtags: Array.isArray(v.hashtags) ? v.hashtags.map((h) => String(h).replace(/^#/, "")) : [],
       hook_format: toStr(v.hook_format),
@@ -252,8 +268,8 @@ ${winningBlock}
 
 ═══ KRITISKT: TEXT-FORMAT ═══
 - Skriv ALDRIG strukturella etiketter inuti fält-värdena. Skriv ALDRIG "Hook:", "Body:", "Caption:", "CTA:", "Hashtags:", "Format note:" eller liknande prefix.
-- "hook"-fältet ska vara ENBART hook-texten — som den ska postas. Ingen rubrik, ingen förklaring.
-- "body"-fältet ska vara ENBART brödtexten som den ska klistras in på Instagram. Ingen rubrik före, ingen meta-info.
+- "hook"-fältet ska vara ENBART hook-texten — som den ska postas. Ingen rubrik, ingen förklaring. INGEN emoji-prefix (🎣, 🚨, 💡 etc) — varken i början eller slutet av hooken.
+- "body"-fältet ska vara ENBART brödtexten som den ska klistras in på Instagram. Ingen rubrik före, ingen meta-info. INGA hashtags i body — hashtags hör hemma i hashtags-arrayen.
 - "cta"-fältet ska vara ENBART en CTA-mening. Ingen prefix.
 - "hashtags"-arrayen är ENBART hashtags utan #-tecken (vi lägger till # själva).
 - Allt ska vara copy-paste-färdigt direkt utan att användaren behöver redigera bort etiketter.

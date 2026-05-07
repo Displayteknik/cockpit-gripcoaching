@@ -95,6 +95,8 @@ HÅRDA REGLER:
 - Följ 3-sekundersregeln i hooken.
 - Inte "i denna artikel" eller "vi kommer att" — skriv direkt.
 - Skriv ALDRIG strukturella etiketter ("Hook:", "Caption:", "CTA:", "Hashtags:", "Format note:") inuti fält-värdena. Varje fält ska vara ENBART det copy-paste-färdiga innehållet.
+- INGEN emoji-prefix på hook (🎣, 🚨, 💡 etc) — Ingela skriver inte med scroll-stop-emojis.
+- INGA hashtags i caption — hashtags hör endast hemma i hashtags-fältet. Aldrig dubbla.
 
 RETURNERA JSON:
 {
@@ -121,7 +123,7 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
       maxOutputTokens: isCarousel ? 4000 : 2000,
     });
 
-    // Sanera bort strukturella etiketter som AI:n ibland klistrar in
+    // Sanera bort strukturella etiketter, emoji-prefix och hashtag-läckage
     const stripLabels = (s: string | undefined): string => {
       if (!s) return "";
       let t = s.trim();
@@ -130,8 +132,15 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
       t = t.replace(/\n{3,}/g, "\n\n").trim();
       return t;
     };
-    post.hook = stripLabels(post.hook);
-    post.caption = stripLabels(post.caption);
+    const stripEmojiPrefix = (s: string): string => s.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}]+\s*/u, "").trim();
+    const stripHashtagBlock = (s: string): string => {
+      let t = s.trim();
+      t = t.replace(/\n+\s*(?:#\S+\s*){2,}\s*$/g, "");
+      t = t.replace(/\n+\s*(?:#\S+\s*){2,}\s*$/g, "");
+      return t.trim();
+    };
+    post.hook = stripEmojiPrefix(stripLabels(post.hook));
+    post.caption = stripHashtagBlock(stripLabels(post.caption));
     post.cta = stripLabels(post.cta);
     post.hashtags = stripLabels(post.hashtags);
 

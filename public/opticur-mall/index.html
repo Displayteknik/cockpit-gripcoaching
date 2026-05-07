@@ -642,14 +642,30 @@ function downloadPng() {
     var params = new URLSearchParams(window.location.search);
     var hook = params.get('hook');
     var cta = params.get('cta');
+    var postId = params.get('postId');
+
+    // Auto-clear bakgrund när nytt postId — annars ärver vi gammal bakgrundsbild
+    // mellan inlägg och alla bilder ser likadana ut.
+    if (postId) {
+      try {
+        var lastPostId = sessionStorage.getItem('opticur_mall_last_postId');
+        if (lastPostId !== postId) {
+          state.bgImage = null;
+          sessionStorage.setItem('opticur_mall_last_postId', postId);
+        }
+      } catch (e) {}
+    }
+
     if (hook) {
       var pq = document.getElementById('p-quote');
       var cq = document.getElementById('c-quote');
       // Wrap hooken i typografiska citattecken om den inte redan har dem
       var quoted = hook.trim();
+      // Strippa emoji-prefix om det smitit igenom
+      quoted = quoted.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]+\s*/u, '');
       if (!/^["“”"]/.test(quoted)) quoted = '“' + quoted + '”';
       if (pq) pq.value = quoted;
-      if (cq) cq.value = hook.trim();
+      if (cq) cq.value = hook.trim().replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]+\s*/u, '');
     }
     if (cta) {
       var pcta = document.getElementById('p-cta');
