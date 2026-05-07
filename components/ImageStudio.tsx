@@ -243,19 +243,24 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
     });
   }
 
+  const isFullBleed = tab === "opticurmall";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col">
+      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${isFullBleed ? "max-w-[95vw] h-[95vh]" : "max-w-5xl max-h-[92vh]"} overflow-hidden flex flex-col`}>
         <div className="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="font-display font-bold text-gray-900">Bildstudio</h3>
+          <h3 className="font-display font-bold text-gray-900">
+            Bildstudio
+            {isFullBleed && <span className="text-sm font-normal text-gray-500 ml-2">— Opticur-mall</span>}
+          </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-          <div className="md:w-72 border-r border-gray-200 p-3 space-y-1 overflow-y-auto flex-shrink-0">
+          <div className={`${isFullBleed ? "md:w-56" : "md:w-72"} border-r border-gray-200 p-3 space-y-1 overflow-y-auto flex-shrink-0`}>
             {isCarousel && (
               <button
                 onClick={() => {
@@ -317,7 +322,7 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
             })}
           </div>
 
-          <div className="flex-1 p-5 overflow-y-auto bg-gray-50">
+          <div className={`flex-1 ${isFullBleed ? "p-0" : "p-5 overflow-y-auto"} bg-gray-50 flex flex-col min-h-0`}>
             {tab === "carousel" && (
               <div className="space-y-3">
                 <div className="text-sm text-gray-600">
@@ -365,18 +370,16 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
             )}
 
             {tab === "opticurmall" && (
-              <div className="space-y-3 -m-5 h-full flex flex-col">
-                <div className="px-5 pt-3 pb-2 bg-emerald-50 border-b border-emerald-200 flex items-start gap-3">
-                  <LayoutTemplate className="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5" />
+              <div className="flex flex-col h-full w-full">
+                <div className="px-4 py-2 bg-emerald-50 border-b border-emerald-200 flex items-start gap-2 flex-shrink-0">
+                  <LayoutTemplate className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
                   <div className="text-xs text-emerald-900 flex-1">
-                    Opticurs egna mall-byggare — fot, QR-kod till bokadirekt, ZEISS-logga inbyggt.
-                    Skapa bilden här, ladda ner som PNG, sen <strong>"Ladda upp egen"</strong>-fliken
-                    här i Bildstudio för att koppla på inlägget.
+                    Opticurs egna mall-byggare — fot, QR & ZEISS inbyggt. Klicka <strong>"SKICKA TILL COCKPIT"</strong> nere till vänster så kopplas bilden direkt på inlägget.
                   </div>
                 </div>
                 <iframe
                   src="/opticur-mall/index.html"
-                  className="flex-1 w-full border-0 bg-white min-h-[500px]"
+                  className="flex-1 w-full border-0 bg-white"
                   title="Opticur Content Creator"
                 />
               </div>

@@ -4,6 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown } from "lucide-react";
+
+function LinkedinIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.42v1.56h.04c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zm1.78 13.02H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" />
+    </svg>
+  );
+}
 import ClientPicker from "@/components/ClientPicker";
 
 interface NavItem { href: string; label: string; icon: React.ComponentType<{ className?: string }> }
@@ -28,6 +36,12 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/profil", label: "Brand-profil", icon: Target },
         { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
         { href: "/dashboard/analysator", label: "Profil-analysator", icon: Search },
+      ],
+    },
+    {
+      label: "LinkedIn",
+      items: [
+        { href: "/dashboard/linkedin", label: "LinkedIn-motor", icon: LinkedinIcon },
       ],
     },
     {

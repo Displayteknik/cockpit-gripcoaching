@@ -123,6 +123,7 @@ export default function KonkurrenterPage() {
                   {c.audit_data?.seo_score && <ScoreBadge label="SEO" value={c.audit_data.seo_score} />}
                   {c.audit_data?.aeo_score && <ScoreBadge label="AEO" value={c.audit_data.aeo_score} />}
                   {c.audit_data?.pagespeed_mobile != null && <ScoreBadge label="📱" value={c.audit_data.pagespeed_mobile} />}
+                  {!c.url && <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">URL saknas</span>}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
                   {c.url && <a href={c.url} target="_blank" rel="noopener" className="hover:text-blue-600 flex items-center gap-1">{c.url} <ExternalLink className="w-3 h-3" /></a>}
@@ -130,11 +131,23 @@ export default function KonkurrenterPage() {
                   {c.last_audited && <span>Senast: {new Date(c.last_audited).toLocaleDateString("sv-SE")}</span>}
                 </div>
                 {c.notes && <div className="text-xs text-gray-500 mt-1">{c.notes}</div>}
+                {analyzing === c.id && (
+                  <div className="mt-2 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 flex items-center gap-2 text-xs text-purple-900">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+                    <span className="font-medium">AI analyserar konkurrenten...</span>
+                    <span className="text-purple-700/70">Kollar webbsida, SEO, IG, positionering — kan ta 20–40 sek.</span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                <button onClick={() => analyze(c)} disabled={analyzing === c.id || !c.url} className="flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50">
+                <button
+                  onClick={() => analyze(c)}
+                  disabled={analyzing === c.id || !c.url}
+                  title={!c.url ? "Lägg till URL för att kunna analysera" : "Analysera konkurrenten med AI"}
+                  className="flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {analyzing === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  Analysera
+                  {analyzing === c.id ? "Analyserar..." : "Analysera"}
                 </button>
                 {c.intel && (
                   <button onClick={() => setExpanded(expanded === c.id ? null : c.id)} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
