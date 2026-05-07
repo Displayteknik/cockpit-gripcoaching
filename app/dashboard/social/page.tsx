@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase, type Vehicle } from "@/lib/supabase";
 import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image as ImageIcon, Pencil, X, Wand2, Save, Eye, Calendar, Upload } from "lucide-react";
-import ImagePicker from "@/components/ImagePicker";
+import ImageStudio from "@/components/ImageStudio";
 import InstagramPreview from "@/components/InstagramPreview";
 
 function Instagram({ className }: { className?: string }) {
@@ -62,6 +62,8 @@ export default function SocialPage() {
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [format, setFormat] = useState("reel");
   const [vehicleId, setVehicleId] = useState<string>("");
+  const [resourceLabel, setResourceLabel] = useState<string>("fordon");
+  const [clientSlug, setClientSlug] = useState<string | undefined>(undefined);
   const [angle, setAngle] = useState("");
   const [extra, setExtra] = useState("");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -78,6 +80,8 @@ export default function SocialPage() {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => {
       const cid = c?.id;
       const mod = c?.resource_module;
+      setResourceLabel(mod === "art" ? "verk" : "fordon");
+      setClientSlug(c?.slug);
       if (cid && mod === "automotive") {
         supabase
           .from("hm_vehicles")
@@ -290,21 +294,23 @@ export default function SocialPage() {
             </select>
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Koppla fordon (valfritt)</label>
-            <select
-              value={vehicleId}
-              onChange={(e) => setVehicleId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none"
-            >
-              <option value="">— Allmänt inlägg —</option>
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.category.toUpperCase()} · {v.title}
-                </option>
-              ))}
-            </select>
-          </div>
+          {vehicles.length > 0 && (
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">Koppla {resourceLabel} (valfritt)</label>
+              <select
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none"
+              >
+                <option value="">— Allmänt inlägg —</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.category.toUpperCase()} · {v.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Vinkel (valfritt)</label>
@@ -349,21 +355,14 @@ export default function SocialPage() {
       </div>
 
       {imagePickerFor && (
-        <ImagePicker
+        <ImageStudio
           postId={imagePickerFor.post.id}
-          slideIndex={imagePickerFor.slideIndex}
-          contextText={
-            imagePickerFor.slideIndex != null && imagePickerFor.post.slides
-              ? `${imagePickerFor.post.slides[imagePickerFor.slideIndex].headline}: ${imagePickerFor.post.slides[imagePickerFor.slideIndex].body}`
-              : `${imagePickerFor.post.hook}\n${imagePickerFor.post.caption}`
-          }
-          currentImageUrl={
-            imagePickerFor.slideIndex != null && imagePickerFor.post.slides
-              ? imagePickerFor.post.slides[imagePickerFor.slideIndex]?.image_url
-              : imagePickerFor.post.image_url
-          }
+          hook={imagePickerFor.post.hook || ""}
+          cta={imagePickerFor.post.cta || ""}
+          clientSlug={clientSlug}
+          format={imagePickerFor.post.format}
           onClose={() => setImagePickerFor(null)}
-          onSelected={() => {
+          onImageSet={() => {
             setImagePickerFor(null);
             loadPosts();
           }}
@@ -430,6 +429,13 @@ export default function SocialPage() {
                         onClick={() => openImagePicker(p)}
                         className="p-1.5 hover:bg-purple-50 rounded-lg text-gray-500 hover:text-purple-600 transition-colors"
                         title="Välj bild (AI / Stock / Upload)"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openImagePicker(p)}
+                        className={`p-1.5 rounded-lg transition-colors ${p.image_url ? "text-emerald-600 hover:bg-emerald-50" : "text-purple-600 hover:bg-purple-50 ring-1 ring-purple-200"}`}
+                        title={p.image_url ? "Byt bild (öppnar bildstudio med inläggets hook)" : "Skapa bild (öppnar bildstudio med inläggets hook förfyllt)"}
                       >
                         <ImageIcon className="w-4 h-4" />
                       </button>
