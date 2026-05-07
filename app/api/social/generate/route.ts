@@ -94,6 +94,7 @@ HÅRDA REGLER:
 - En CTA per inlägg.
 - Följ 3-sekundersregeln i hooken.
 - Inte "i denna artikel" eller "vi kommer att" — skriv direkt.
+- Skriv ALDRIG strukturella etiketter ("Hook:", "Caption:", "CTA:", "Hashtags:", "Format note:") inuti fält-värdena. Varje fält ska vara ENBART det copy-paste-färdiga innehållet.
 
 RETURNERA JSON:
 {
@@ -119,6 +120,20 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
       temperature: 0.9,
       maxOutputTokens: isCarousel ? 4000 : 2000,
     });
+
+    // Sanera bort strukturella etiketter som AI:n ibland klistrar in
+    const stripLabels = (s: string | undefined): string => {
+      if (!s) return "";
+      let t = s.trim();
+      t = t.replace(/^\s*(?:HOOK|Hook|hook|BODY|Body|body|CAPTION|Caption|caption|CTA|Cta|cta|HASHTAGS?|Hashtags?|hashtags?|FORMAT[\s_]?NOTE?|Format[\s_]?Note?|format[\s_]?note?)\s*[:\-–—]\s*/i, "");
+      t = t.replace(/^\s*(?:HOOK|BODY|CAPTION|CTA|HASHTAGS|FORMAT[\s_]NOTE)\s*[:\-–—].*$/gim, "");
+      t = t.replace(/\n{3,}/g, "\n\n").trim();
+      return t;
+    };
+    post.hook = stripLabels(post.hook);
+    post.caption = stripLabels(post.caption);
+    post.cta = stripLabels(post.cta);
+    post.hashtags = stripLabels(post.hashtags);
 
     const { data: saved, error } = await sb
       .from("hm_social_posts")

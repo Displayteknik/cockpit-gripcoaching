@@ -155,11 +155,26 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
       if (v && typeof v === "object") return JSON.stringify(v);
       return v == null ? "" : String(v);
     };
+    /**
+     * Saneringsfilter: AI:n inkluderar ibland strukturella etiketter
+     * ("Hook:", "Body:", "CTA:", "Format note:", "Hashtags:") inne i fälten.
+     * Strippar bort dem så texten är ren copy-paste-kandidat.
+     */
+    const stripLabels = (s: string): string => {
+      let t = s.trim();
+      // Ta bort prefix-etikett om hela fältet börjar med det
+      t = t.replace(/^\s*(?:HOOK|Hook|hook|BODY|Body|body|CAPTION|Caption|caption|CTA|Cta|cta|HASHTAGS?|Hashtags?|hashtags?|FORMAT[\s_]?NOTE?|Format[\s_]?Note?|format[\s_]?note?|NOTES?|Notes?|notes?|VARIANT|Variant|variant)\s*[:\-–—]\s*/i, "");
+      // Ta bort etiketter på egen rad mitt i texten
+      t = t.replace(/^\s*(?:HOOK|BODY|CAPTION|CTA|HASHTAGS|FORMAT[\s_]NOTE|NOTES)\s*[:\-–—].*$/gim, "");
+      // Komprimera flera blank-rader till max 2
+      t = t.replace(/\n{3,}/g, "\n\n").trim();
+      return t;
+    };
     const variants: Variant[] = parsed.variants.slice(0, 3).map((v, i) => ({
       tier: tiers[i] || "bronze",
-      hook: toStr(v.hook),
-      body: toStr(v.body),
-      cta: toStr(v.cta),
+      hook: stripLabels(toStr(v.hook)),
+      body: stripLabels(toStr(v.body)),
+      cta: stripLabels(toStr(v.cta)),
       hashtags: Array.isArray(v.hashtags) ? v.hashtags.map((h) => String(h).replace(/^#/, "")) : [],
       hook_format: toStr(v.hook_format),
       notes: toStr(v.notes),
@@ -234,6 +249,14 @@ ${winningBlock}
 - Hooken är ALLT — om hooken är generisk är inlägget värdelöst.
 - CTA ska vara EN sak att göra, ingen "boka, mejla, eller följ".
 - Hashtags: 5-12 relevanta, blanda nischade och bredare. Inga dussinhashtags.
+
+═══ KRITISKT: TEXT-FORMAT ═══
+- Skriv ALDRIG strukturella etiketter inuti fält-värdena. Skriv ALDRIG "Hook:", "Body:", "Caption:", "CTA:", "Hashtags:", "Format note:" eller liknande prefix.
+- "hook"-fältet ska vara ENBART hook-texten — som den ska postas. Ingen rubrik, ingen förklaring.
+- "body"-fältet ska vara ENBART brödtexten som den ska klistras in på Instagram. Ingen rubrik före, ingen meta-info.
+- "cta"-fältet ska vara ENBART en CTA-mening. Ingen prefix.
+- "hashtags"-arrayen är ENBART hashtags utan #-tecken (vi lägger till # själva).
+- Allt ska vara copy-paste-färdigt direkt utan att användaren behöver redigera bort etiketter.
 
 ═══ OUTPUT-SCHEMA (JSON, exakt struktur) ═══
 {
