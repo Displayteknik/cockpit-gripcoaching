@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch, Upload, HelpCircle, Sparkles, BarChart3 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch, Upload, HelpCircle, Sparkles, BarChart3, Bot, ShieldCheck, Code2, RefreshCw, Target, ArrowRight } from "lucide-react";
 
 interface Analytics {
   visits_24h: number;
@@ -44,7 +46,20 @@ interface Audit {
   audited_at: string;
 }
 
+type TabKey = "oversikt" | "audit" | "ai-flode";
+
+const AI_FLOW = [
+  { step: "1", icon: Target, title: "Audit", desc: "Score 0-100 + topp-5 fixar med exakt plats.", id: "seo-technical-audit" },
+  { step: "2", icon: ShieldCheck, title: "E-E-A-T-grind", desc: "Kvalitetscheck innan publicering.", id: "eeat-gate" },
+  { step: "3", icon: Sparkles, title: "GEO/AEO", desc: "Skriv om för ChatGPT, Perplexity, Google AI.", id: "geo-aeo-optimizer" },
+  { step: "4", icon: Code2, title: "Schema", desc: "Generera JSON-LD strukturerad data.", id: "schema-generator" },
+  { step: "5", icon: RefreshCw, title: "Refresh", desc: "Granska gammalt innehåll, få åtgärdslista.", id: "refresh-recommender" },
+];
+
 export default function SEOPage() {
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams?.get("tab") as TabKey) || "oversikt";
+  const [tab, setTab] = useState<TabKey>(["oversikt", "audit", "ai-flode"].includes(initialTab) ? initialTab : "oversikt");
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [audits, setAudits] = useState<Audit[]>([]);
@@ -189,6 +204,31 @@ export default function SEOPage() {
         </div>
       </div>
 
+      {/* TABS */}
+      <div className="flex gap-1 border-b border-gray-200 -mt-2">
+        {([
+          { key: "oversikt", label: "Översikt", icon: BarChart3 },
+          { key: "audit", label: "Audit & sökord", icon: FileSearch },
+          { key: "ai-flode", label: "AI Sök-motor (GEO/AEO)", icon: Bot },
+        ] as const).map((t) => {
+          const Icon = t.icon;
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${active ? "border-emerald-600 text-emerald-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            >
+              <Icon className="w-4 h-4" />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* === FLIK: ÖVERSIKT === */}
+      {tab === "oversikt" && (
+      <>
       {/* KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat icon={Eye} color="blue" label="Besökare 24h" value={analytics?.visits_24h ?? "—"} />
@@ -225,6 +265,13 @@ export default function SEOPage() {
         </Card>
       </div>
 
+      </>
+      )}
+      {/* === SLUT FLIK: ÖVERSIKT === */}
+
+      {/* === FLIK: AUDIT & SÖKORD === */}
+      {tab === "audit" && (
+      <>
       {/* Keyword tracker */}
       <Card title="Sökords-tracker" subtitle="Lägg in dina målsökord. Kolla rank manuellt på Google → uppdatera position. AI-coachen rekommenderar redan ord baserat på lager.">
         <div className="grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_1fr_auto] gap-2 mb-4">
@@ -406,24 +453,73 @@ export default function SEOPage() {
         </Card>
       )}
 
-      {showGscImport && <GscImportModal onClose={() => { setShowGscImport(false); reload(); fetch("/api/seo/gsc-import").then((r) => r.json()).then(setGscRows); }} />}
-      {showPaa && <PaaModal onClose={() => setShowPaa(false)} />}
-      {showAiAudit && <AiAuditModal onClose={() => setShowAiAudit(false)} />}
+      </>
+      )}
+      {/* === SLUT FLIK: AUDIT & SÖKORD === */}
+
+      {/* === FLIK: AI SÖK-MOTOR === */}
+      {tab === "ai-flode" && (
+      <>
+      <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 rounded-2xl p-6">
+        <div className="flex items-start justify-between mb-1">
+          <div>
+            <h2 className="font-display font-bold text-gray-900 flex items-center gap-2">
+              <Bot className="w-5 h-5 text-teal-600" />
+              AI Sök-motor — flödet
+            </h2>
+            <p className="text-sm text-gray-600 mt-1 max-w-2xl">
+              Optimera för Google + AI-sökmotorer (ChatGPT, Perplexity, Google AI Overviews). Fem specialister i ordning — kör dem en gång per sida.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
+          {AI_FLOW.map((f) => {
+            const Icon = f.icon;
+            return (
+              <Link
+                key={f.step}
+                href={`/dashboard/specialister/${f.id}`}
+                className="group bg-white border border-gray-200 rounded-xl p-4 hover:border-teal-400 hover:shadow-sm transition"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-teal-700">{f.step}</span>
+                  <Icon className="w-4 h-4 text-teal-600" />
+                </div>
+                <div className="font-semibold text-gray-900 text-sm mb-1 group-hover:text-teal-700">
+                  {f.title}
+                </div>
+                <div className="text-xs text-gray-600 leading-snug">{f.desc}</div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-100 rounded-xl p-5">
         <h3 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-2">
           <Zap className="w-5 h-5 text-emerald-600" />
-          AEO snabbtips (Answer Engine Optimization)
+          Snabbtips för AI-synlighet
         </h3>
         <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-5">
-          <li>Skriv H2/H3 som <strong>frågor</strong>: &quot;Vilken ATV passar för jämtländsk skog?&quot;</li>
-          <li>Lägg <strong>FAQ-sektion</strong> i slutet av varje sida (3–5 frågor)</li>
-          <li>Använd <strong>Schema.org/JSON-LD</strong> — FAQPage, Product, LocalBusiness</li>
-          <li>Skriv <strong>direkta svar</strong> i första meningen efter varje fråga</li>
-          <li><strong>Punktlistor och tabeller</strong> citeras oftare av AI</li>
-          <li>Visa <strong>uppdaterad-datum</strong> på varje sida</li>
+          <li>Skriv H2/H3 som <strong>frågor</strong> läsaren faktiskt ställer</li>
+          <li>Lägg <strong>FAQ-sektion</strong> i slutet av varje sida (4–6 frågor)</li>
+          <li>Använd <strong>Schema.org/JSON-LD</strong> — FAQPage, Product, LocalBusiness, Article</li>
+          <li>Direkt svar i <strong>första meningen</strong> efter varje rubrik (citerbart)</li>
+          <li>Punktlistor och tabeller citeras oftare av AI</li>
+          <li>Visa <strong>uppdaterad-datum</strong> + författarens erfarenhet (E-E-A-T)</li>
         </ul>
+        <Link href="/dashboard/agents" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 mt-3">
+          Se score-trend och idé-bank
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
+      </>
+      )}
+      {/* === SLUT FLIK: AI SÖK-MOTOR === */}
+
+      {showGscImport && <GscImportModal onClose={() => { setShowGscImport(false); reload(); fetch("/api/seo/gsc-import").then((r) => r.json()).then(setGscRows); }} />}
+      {showPaa && <PaaModal onClose={() => setShowPaa(false)} />}
+      {showAiAudit && <AiAuditModal onClose={() => setShowAiAudit(false)} />}
     </div>
   );
 }

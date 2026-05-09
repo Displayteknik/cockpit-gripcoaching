@@ -60,8 +60,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
         { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: FileText },
-        { href: "/dashboard/seo", label: "SEO & AEO (audit)", icon: TrendingUp },
-        { href: "/dashboard/seo-aeo", label: "Sök-motorn (AI)", icon: Search },
+        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
         { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
       ],

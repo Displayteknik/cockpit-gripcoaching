@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
+import { getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const sb = supabaseServer();
+  const clientId = await getActiveClientId();
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
   const since1 = new Date(now - day).toISOString();
@@ -12,12 +14,12 @@ export async function GET() {
   const since30 = new Date(now - 30 * day).toISOString();
 
   const [c1, c7, c30, topPaths, topRefs, recent] = await Promise.all([
-    sb.from("hm_visits").select("id", { count: "exact", head: true }).gte("ts", since1),
-    sb.from("hm_visits").select("id", { count: "exact", head: true }).gte("ts", since7),
-    sb.from("hm_visits").select("id", { count: "exact", head: true }).gte("ts", since30),
-    sb.from("hm_visits").select("path").gte("ts", since30).limit(5000),
-    sb.from("hm_visits").select("referrer").gte("ts", since30).limit(5000).not("referrer", "is", null),
-    sb.from("hm_visits").select("path, ts, referrer").order("ts", { ascending: false }).limit(20),
+    sb.from("hm_visits").select("id", { count: "exact", head: true }).eq("client_id", clientId).gte("ts", since1),
+    sb.from("hm_visits").select("id", { count: "exact", head: true }).eq("client_id", clientId).gte("ts", since7),
+    sb.from("hm_visits").select("id", { count: "exact", head: true }).eq("client_id", clientId).gte("ts", since30),
+    sb.from("hm_visits").select("path").eq("client_id", clientId).gte("ts", since30).limit(5000),
+    sb.from("hm_visits").select("referrer").eq("client_id", clientId).gte("ts", since30).limit(5000).not("referrer", "is", null),
+    sb.from("hm_visits").select("path, ts, referrer").eq("client_id", clientId).order("ts", { ascending: false }).limit(20),
   ]);
 
   const counter = (arr: { [k: string]: string }[] | null, key: string) => {
