@@ -203,7 +203,44 @@ export async function listClientAssets(input: {
   };
 }
 
-// 7. Lista alla klienter
+// 7. Injicera pixel i HTML-filer (filsystem-write — anvands fran setup-agenten)
+export async function injectPixelInHtml(input: {
+  file_paths: string[];
+  pixel_url?: string;
+}): Promise<ToolResult> {
+  const fs = await import("node:fs/promises");
+  const SCRIPT = `<script src="${input.pixel_url ?? "https://cockpit.gripcoaching.se/pixel.js"}" async></script>`;
+  const results: Array<{ path: string; status: string }> = [];
+
+  for (const p of input.file_paths) {
+    try {
+      const html = await fs.readFile(p, "utf8");
+      if (html.includes("cockpit.gripcoaching.se/pixel.js")) {
+        results.push({ path: p, status: "redan" });
+        continue;
+      }
+      const re = /<\/head>/i;
+      if (!re.test(html)) {
+        results.push({ path: p, status: "ingen </head>-tagg" });
+        continue;
+      }
+      const newHtml = html.replace(re, `${SCRIPT}\n</head>`);
+      await fs.writeFile(p, newHtml, "utf8");
+      results.push({ path: p, status: "injicerad" });
+    } catch (e) {
+      results.push({ path: p, status: `fel: ${(e as Error).message}` });
+    }
+  }
+
+  const okCount = results.filter((r) => r.status === "injicerad").length;
+  return {
+    ok: true,
+    summary: `${okCount}/${input.file_paths.length} filer injicerade.`,
+    data: results,
+  };
+}
+
+// 8. Lista alla klienter
 export async function listClients(): Promise<ToolResult> {
   const sb = supabaseService();
   const { data, error } = await sb.from("clients").select("id, name, slug, public_url").order("name");
@@ -288,5 +325,18 @@ export const TOOLS = [
     description: "Listar alla klienter med id, namn, slug, URL. Anvands nar Hakan inte vet client_id.",
     input_schema: { type: "object", properties: {} },
     handler: () => listClients(),
+  },
+  {
+    name: "inject_pixel_in_html",
+    description: "Injicerar Cockpit-pixeln (https://cockpit.gripcoaching.se/pixel.js) i HTML-filer. Anvands for klient-sajter pa filsystemet (statiska HTML-projekt). Skippar filer dar pixeln redan finns.",
+    input_schema: {
+      type: "object",
+      properties: {
+        file_paths: { type: "array", items: { type: "string" }, description: "Absoluta paths till HTML-filer" },
+        pixel_url: { type: "string", description: "Override pixel-URL (default: cockpit-pixeln)" },
+      },
+      required: ["file_paths"],
+    },
+    handler: injectPixelInHtml,
   },
 ] as const;

@@ -47,6 +47,13 @@ export async function POST(req: NextRequest) {
       country,
       session_id: body.session_id?.slice(0, 100),
     };
+    if (typeof body.is_returning === "boolean") insertRow.is_returning = body.is_returning;
+    if (typeof body.page_load_ms === "number" && body.page_load_ms >= 0 && body.page_load_ms < 60000) {
+      insertRow.page_load_ms = Math.round(body.page_load_ms);
+    }
+    if (typeof body.screen_w === "number" && body.screen_w > 0 && body.screen_w < 10000) {
+      insertRow.screen_w = Math.round(body.screen_w);
+    }
 
     // 1. Explicit client_id fran pixel-body har hogst prio
     let resolvedClientId: string | null = null;
