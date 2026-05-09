@@ -217,7 +217,7 @@ export default function BloggMaskinPage() {
           <input
             value={newTopic}
             onChange={(e) => setNewTopic(e.target.value)}
-            placeholder="Ämne (t.ex. 'Släpvagnskörkort — vad gäller')"
+            placeholder="Ämne (t.ex. 'Vad kostar en LED-skärm?')"
             className="px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none"
           />
           <input
