@@ -11,6 +11,10 @@
     {
       "path": "/api/agents/night-iterate",
       "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/google/gsc/cron",
+      "schedule": "0 3 * * *"
     }
   ]
 }

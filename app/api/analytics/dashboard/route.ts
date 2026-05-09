@@ -14,13 +14,14 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - days * 86400000).toISOString();
   const sinceDate = since.slice(0, 10);
 
-  const [gsc, visits, keywords, audits, client, brand] = await Promise.all([
+  const [gsc, visits, keywords, audits, client, brand, gscMeta] = await Promise.all([
     sb.from("gsc_queries").select("query, page, clicks, impressions, ctr, position").eq("client_id", clientId).gte("period_start", sinceDate).limit(2000),
     sb.from("hm_visits").select("path, ts, referrer, is_returning, page_load_ms, screen_w").eq("client_id", clientId).gte("ts", since).limit(5000),
     sb.from("hm_seo_keywords").select("id, keyword, target_url, current_rank, best_rank, search_volume").eq("client_id", clientId),
     sb.from("hm_seo_audits").select("id, url, seo_score, aeo_score, audited_at").eq("client_id", clientId).order("audited_at", { ascending: false }).limit(10),
     sb.from("clients").select("name, public_url").eq("id", clientId).maybeSingle(),
     sb.from("hm_brand_profile").select("company_name").eq("client_id", clientId).maybeSingle(),
+    sb.from("gsc_queries").select("imported_at, period_start, period_end").eq("client_id", clientId).order("imported_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   type GscRow = { query: string; page: string | null; clicks: number; impressions: number; ctr: number | string; position: number | string };
@@ -126,9 +127,12 @@ export async function GET(req: NextRequest) {
   const returningCount = visitRows.filter((v) => v.is_returning === true).length;
   const mobileCount = visitRows.filter((v) => v.screen_w !== null && v.screen_w < 768).length;
 
+  const meta = gscMeta.data as { imported_at: string | null; period_start: string | null; period_end: string | null } | null;
+
   return NextResponse.json({
     period: { days, since: sinceDate, until: new Date().toISOString().slice(0, 10) },
     client: client.data,
+    gsc_last_sync: meta ? { imported_at: meta.imported_at, period_start: meta.period_start, period_end: meta.period_end } : null,
     kpi: {
       visits: visitRows.length,
       visits_returning: returningCount,

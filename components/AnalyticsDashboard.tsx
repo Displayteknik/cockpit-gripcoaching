@@ -9,6 +9,7 @@ type Period = 7 | 14 | 30 | 90;
 interface Dashboard {
   period: { days: number; since: string; until: string };
   client: { name: string; public_url: string | null } | null;
+  gsc_last_sync: { imported_at: string | null; period_start: string | null; period_end: string | null } | null;
   kpi: {
     visits: number;
     visits_returning: number;
@@ -137,14 +138,22 @@ export default function AnalyticsDashboard() {
           ))}
           <span className="text-xs text-gray-400 ml-3">{data.period.since} → {data.period.until}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {data.gsc_last_sync?.imported_at && (
+            <span className="text-xs text-gray-500 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              GSC: {formatRelative(data.gsc_last_sync.imported_at)}
+              <span className="text-gray-400 ml-1">(auto-synk dagligen 03:00)</span>
+            </span>
+          )}
           <button
             onClick={() => syncGsc(period)}
             disabled={syncing}
             className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50"
+            title="Tvinga manuell synk om du inte vill vänta till imorgon"
           >
             {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            Synka GSC ({period}d)
+            Synka nu
           </button>
         </div>
       </div>
@@ -491,6 +500,21 @@ function DashCard({ title, desc, url, color }: { title: string; desc: string; ur
       <div className="text-xs text-gray-600 mt-1">{desc}</div>
     </a>
   );
+}
+
+function formatRelative(ts: string): string {
+  try {
+    const ms = Date.now() - new Date(ts).getTime();
+    const min = Math.floor(ms / 60000);
+    if (min < 60) return `${min}m sedan`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h}h sedan`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `${d}d sedan`;
+    return new Date(ts).toLocaleDateString("sv-SE");
+  } catch {
+    return "okänt";
+  }
 }
 
 function Badge({ label, v }: { label: string; v: number }) {
