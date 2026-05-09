@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { Suspense, useEffect, useState, use } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Play, Copy, Check } from "lucide-react";
 
@@ -32,7 +33,16 @@ export default function SpecialistRunnerPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  return (
+    <Suspense fallback={<div className="text-sm text-gray-500 p-4">Laddar...</div>}>
+      <SpecialistRunnerInner params={params} />
+    </Suspense>
+  );
+}
+
+function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
   const [specialist, setSpecialist] = useState<Specialist | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [running, setRunning] = useState(false);
@@ -45,11 +55,20 @@ export default function SpecialistRunnerPage({
       .then((r) => r.json())
       .then((list: Specialist[]) => {
         const s = list.find((x) => x.id === id);
-        if (s) setSpecialist(s);
+        if (s) {
+          setSpecialist(s);
+          // Prefill fran query-params (t.ex. fran Quick wins-knapp)
+          const prefill: Record<string, string> = {};
+          for (const inp of s.inputs) {
+            const v = searchParams?.get(inp.key);
+            if (v) prefill[inp.key] = v;
+          }
+          if (Object.keys(prefill).length > 0) setValues(prefill);
+        }
         else setError("Specialist saknas");
       })
       .catch((e) => setError(e.message));
-  }, [id]);
+  }, [id, searchParams]);
 
   const onChange = (key: string, v: string) => setValues((p) => ({ ...p, [key]: v }));
 

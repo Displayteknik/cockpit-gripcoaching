@@ -9,7 +9,7 @@ type Period = 7 | 14 | 30 | 90;
 interface Dashboard {
   period: { days: number; since: string; until: string };
   client: { name: string; public_url: string | null } | null;
-  gsc_last_sync: { imported_at: string | null; period_start: string | null; period_end: string | null } | null;
+  gsc_last_sync: { imported_at: string | null; period_start: string | null; period_end: string | null; days: number | null } | null;
   kpi: {
     visits: number;
     visits_returning: number;
@@ -25,7 +25,7 @@ interface Dashboard {
   };
   position_distribution: { top3: number; top10: number; top20: number; beyond: number; top3Imp: number; top10Imp: number; top20Imp: number; beyondImp: number };
   brand_split: { brand: { clicks: number; impressions: number }; non_brand: { clicks: number; impressions: number } };
-  quick_wins: Array<{ query: string; clicks: number; impressions: number; avg_position: number | null; ctr: number }>;
+  quick_wins: Array<{ query: string; clicks: number; impressions: number; avg_position: number | null; ctr: number; page?: string | null }>;
   queries_top: Array<{ query: string; clicks: number; impressions: number; avg_position: number | null; ctr: number; page_count: number }>;
   queries_all_count: number;
   top_pages: Array<{ page: string; clicks: number; impressions: number; queryCount: number }>;
@@ -71,6 +71,15 @@ export default function AnalyticsDashboard() {
     load(period);
     fetch("/api/analytics/deep-audit").then((r) => r.json()).then((d) => setSavedReports(d.reports ?? [])).catch(() => {});
   }, [period]);
+
+  // Auto-synka GSC nar user byter period och datan inte matchar perioden
+  async function changePeriod(p: Period) {
+    setPeriod(p);
+    // Om GSC-data ar synkad for annan period — auto-synka
+    if (data?.gsc_last_sync?.days && data.gsc_last_sync.days !== p) {
+      await syncGsc(p);
+    }
+  }
 
   async function generateReport() {
     setGeneratingReport(true);
@@ -251,13 +260,20 @@ export default function AnalyticsDashboard() {
           {([7, 14, 30, 90] as Period[]).map((p) => (
             <button
               key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${period === p ? "bg-emerald-600 text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"}`}
+              onClick={() => changePeriod(p)}
+              disabled={syncing}
+              className={`px-3 py-1.5 text-sm rounded-lg font-medium transition disabled:opacity-50 ${period === p ? "bg-emerald-600 text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"}`}
             >
               {p === 7 ? "7d" : p === 14 ? "14d" : p === 30 ? "30d" : "90d"}
             </button>
           ))}
-          <span className="text-xs text-gray-400 ml-3">{data.period.since} → {data.period.until}</span>
+          {data.gsc_last_sync?.days && (
+            <span className={`text-xs ml-3 ${data.gsc_last_sync.days !== period ? "text-amber-700 font-medium" : "text-gray-500"}`}>
+              {data.gsc_last_sync.days !== period
+                ? `⚠️ Synkad data: ${data.gsc_last_sync.days}d. Klicka period igen så synkas ${period}d.`
+                : `GSC synkad: ${data.gsc_last_sync.days} dagar`}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {data.gsc_last_sync?.imported_at && (
@@ -332,34 +348,67 @@ export default function AnalyticsDashboard() {
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
           <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-600" />
-            Snabbaste vinsterna — sökord på position 4–15
+            Snabbaste vinsterna — {data.quick_wins.length} sökord på position 4–15
           </h3>
-          <p className="text-xs text-gray-600 mb-3">
-            Dessa sökord har hög synlighet men ligger precis utanför topp 3. En optimering här ger dig flest nya klick per arbetad timme.
+          <p className="text-xs text-gray-700 mb-3">
+            <strong>Vad detta är:</strong> sökord där du redan syns i Google men ligger precis utanför topp 3.
+            En optimerad sida som svarar bättre på frågan klättrar oftast 3–8 placeringar och ger 3–10x fler klick.
           </p>
+
+          <details className="mb-3 text-xs text-gray-700 bg-white rounded-lg p-3 border border-amber-200">
+            <summary className="cursor-pointer font-medium text-amber-900">📖 Så jobbar du med Quick wins (klicka)</summary>
+            <ol className="list-decimal pl-5 mt-2 space-y-1.5">
+              <li><strong>Välj 1 sökord per vecka</strong> — högst potential först (sortat så).</li>
+              <li><strong>Öppna sidan som rankar</strong> (URL-länken nedan). Läs igenom den med sökordet i åtanke.</li>
+              <li><strong>Klicka &quot;Optimera&quot;</strong> — det öppnar GEO/AEO-specialisten med sökord + sida ifyllt. AI:n skriver om sidan så att den svarar bättre på frågan.</li>
+              <li><strong>Klistra resultatet på sajten</strong>, publicera.</li>
+              <li><strong>Vänta 1–4 veckor</strong> — Google indexerar om. Position klättrar.</li>
+              <li><strong>Mät igen</strong> — kom tillbaka hit och se hur sökordet flyttat sig.</li>
+            </ol>
+            <div className="mt-2 pt-2 border-t border-amber-100">
+              <strong>Tröskelvärden:</strong> Position 4–10 = klättra till topp 3 (lättare). Position 11–15 = klättra till topp 10 först (medium). Visningar &gt; 100 = mer värt än visningar &lt; 50.
+            </div>
+          </details>
+
           <div className="overflow-x-auto bg-white rounded-lg">
             <table className="w-full text-sm">
               <thead className="bg-amber-50">
                 <tr className="text-left text-xs text-gray-700 border-b border-amber-200">
                   <th className="py-2 px-3 font-medium">Sökord</th>
-                  <th className="py-2 px-3 font-medium text-right">Position</th>
-                  <th className="py-2 px-3 font-medium text-right">Visningar</th>
-                  <th className="py-2 px-3 font-medium text-right">Klick</th>
-                  <th className="py-2 px-3 font-medium text-right">CTR</th>
+                  <th className="py-2 px-3 font-medium">Sida som rankar idag</th>
+                  <th className="py-2 px-3 font-medium text-right">Pos</th>
+                  <th className="py-2 px-3 font-medium text-right">Visn.</th>
+                  <th className="py-2 px-3 font-medium text-right">Klick nu</th>
                   <th className="py-2 px-3 font-medium text-right">Potential</th>
+                  <th className="py-2 px-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
                 {data.quick_wins.map((q, i) => {
-                  const potClicks = Math.round(q.impressions * 0.25); // Topp 3 har CTR ~20-30%
+                  const potClicks = Math.round(q.impressions * 0.25);
+                  const optimizeUrl = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(q.query)}${q.page ? `&nuvarande_text=${encodeURIComponent(`Sida som rankar idag: ${q.page}\nNuvarande position i Google: ${q.avg_position}\nVisningar: ${q.impressions}/månad\n\n[Klistra in nuvarande text från sidan här]`)}` : ""}`;
                   return (
                     <tr key={i} className="border-b border-amber-100 hover:bg-amber-50/50">
                       <td className="py-2 px-3 font-medium text-gray-900">{q.query}</td>
+                      <td className="py-2 px-3 text-xs">
+                        {q.page ? (
+                          <a href={q.page} target="_blank" rel="noopener" className="text-blue-600 hover:underline truncate inline-block max-w-[220px]">
+                            {q.page.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "") || "/"}
+                          </a>
+                        ) : <span className="text-gray-400">—</span>}
+                      </td>
                       <td className="py-2 px-3 text-right tabular-nums text-amber-700 font-semibold">{q.avg_position}</td>
                       <td className="py-2 px-3 text-right tabular-nums text-gray-700">{q.impressions.toLocaleString("sv-SE")}</td>
                       <td className="py-2 px-3 text-right tabular-nums text-gray-700">{q.clicks}</td>
-                      <td className="py-2 px-3 text-right tabular-nums text-gray-500">{q.ctr}%</td>
                       <td className="py-2 px-3 text-right tabular-nums text-emerald-700 font-bold">+{potClicks}/m</td>
+                      <td className="py-2 px-3 text-right">
+                        <Link
+                          href={optimizeUrl}
+                          className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded bg-amber-600 text-white hover:bg-amber-700"
+                        >
+                          <Sparkles className="w-3 h-3" /> Optimera
+                        </Link>
+                      </td>
                     </tr>
                   );
                 })}

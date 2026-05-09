@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   const sinceDate = since.slice(0, 10);
 
   const [gsc, visits, keywords, audits, client, brand, gscMeta] = await Promise.all([
-    sb.from("gsc_queries").select("query, page, clicks, impressions, ctr, position").eq("client_id", clientId).gte("period_start", sinceDate).limit(2000),
+    // GSC-data ar aggregerad per period_end (en rad per sokfras for hela perioden).
+    // Vi laser ALLTID senaste synken — period-valjaren i UI styr SYNK-perioden.
+    sb.from("gsc_queries").select("query, page, clicks, impressions, ctr, position, period_start, period_end").eq("client_id", clientId).limit(2000),
     sb.from("hm_visits").select("path, ts, referrer, is_returning, page_load_ms, screen_w").eq("client_id", clientId).gte("ts", since).limit(5000),
     sb.from("hm_seo_keywords").select("id, keyword, target_url, current_rank, best_rank, search_volume").eq("client_id", clientId),
     sb.from("hm_seo_audits").select("id, url, seo_score, aeo_score, audited_at").eq("client_id", clientId).order("audited_at", { ascending: false }).limit(10),
@@ -31,10 +33,10 @@ export async function GET(req: NextRequest) {
   const visitRows: VisitRow[] = (visits.data ?? []) as VisitRow[];
 
   // Aggregera per query (en sokfras kan ha flera page-rader)
-  const byQuery = new Map<string, { query: string; clicks: number; impressions: number; positionSum: number; positionN: number; pages: Set<string> }>();
+  const byQuery = new Map<string, { query: string; clicks: number; impressions: number; positionSum: number; positionN: number; pages: Map<string, number>; topPage: string | null }>();
   for (const r of gscRows) {
     const k = r.query;
-    if (!byQuery.has(k)) byQuery.set(k, { query: k, clicks: 0, impressions: 0, positionSum: 0, positionN: 0, pages: new Set() });
+    if (!byQuery.has(k)) byQuery.set(k, { query: k, clicks: 0, impressions: 0, positionSum: 0, positionN: 0, pages: new Map(), topPage: null });
     const e = byQuery.get(k)!;
     e.clicks += r.clicks;
     e.impressions += r.impressions;
@@ -43,16 +45,22 @@ export async function GET(req: NextRequest) {
       e.positionSum += pos * r.impressions;
       e.positionN += r.impressions;
     }
-    if (r.page) e.pages.add(r.page);
+    if (r.page) {
+      e.pages.set(r.page, (e.pages.get(r.page) || 0) + r.impressions);
+    }
   }
-  const queries = Array.from(byQuery.values()).map((e) => ({
-    query: e.query,
-    clicks: e.clicks,
-    impressions: e.impressions,
-    avg_position: e.positionN > 0 ? Math.round((e.positionSum / e.positionN) * 10) / 10 : null,
-    ctr: e.impressions > 0 ? Math.round((e.clicks / e.impressions) * 1000) / 10 : 0,
-    page_count: e.pages.size,
-  }));
+  const queries = Array.from(byQuery.values()).map((e) => {
+    const topPage = Array.from(e.pages.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    return {
+      query: e.query,
+      clicks: e.clicks,
+      impressions: e.impressions,
+      avg_position: e.positionN > 0 ? Math.round((e.positionSum / e.positionN) * 10) / 10 : null,
+      ctr: e.impressions > 0 ? Math.round((e.clicks / e.impressions) * 1000) / 10 : 0,
+      page_count: e.pages.size,
+      page: topPage,
+    };
+  });
 
   // Top pages
   const byPage = new Map<string, { page: string; clicks: number; impressions: number; queryCount: number }>();
@@ -128,11 +136,14 @@ export async function GET(req: NextRequest) {
   const mobileCount = visitRows.filter((v) => v.screen_w !== null && v.screen_w < 768).length;
 
   const meta = gscMeta.data as { imported_at: string | null; period_start: string | null; period_end: string | null } | null;
+  const gscDays = meta?.period_start && meta?.period_end
+    ? Math.round((new Date(meta.period_end).getTime() - new Date(meta.period_start).getTime()) / 86400000)
+    : null;
 
   return NextResponse.json({
     period: { days, since: sinceDate, until: new Date().toISOString().slice(0, 10) },
     client: client.data,
-    gsc_last_sync: meta ? { imported_at: meta.imported_at, period_start: meta.period_start, period_end: meta.period_end } : null,
+    gsc_last_sync: meta ? { imported_at: meta.imported_at, period_start: meta.period_start, period_end: meta.period_end, days: gscDays } : null,
     kpi: {
       visits: visitRows.length,
       visits_returning: returningCount,
