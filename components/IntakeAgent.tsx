@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Sparkles, X, Upload, FileText, Mic, Video, FileType2, RefreshCw, Check, Edit3, SkipForward, ChevronRight, Quote, AlertTriangle, Plus, ArrowLeft, Trash2, History } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Sparkles, X, Upload, FileText, Mic, Video, FileType2, RefreshCw, Check, Edit3, SkipForward, ChevronRight, Quote, AlertTriangle, Plus, ArrowLeft, Trash2, History, MicOff, Square } from "lucide-react";
 
 type Step = "list" | "input" | "transcribing" | "analyzing" | "clarifying" | "reviewing" | "done";
 type ProposalDecision = "accepted" | "edited" | "skipped" | "pending";
@@ -91,6 +91,83 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [editingProp, setEditingProp] = useState<{ id: string; value: string } | null>(null);
+
+  // Mic-recording
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [recordError, setRecordError] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordStreamRef = useRef<MediaStream | null>(null);
+
+  function pickMimeType(): string {
+    if (typeof MediaRecorder === "undefined") return "";
+    const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+    for (const t of types) {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return "";
+  }
+
+  async function startRecording() {
+    setRecordError(null);
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setRecordError("Webbläsaren stödjer inte mic-inspelning");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordStreamRef.current = stream;
+      const mime = pickMimeType();
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      recordChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recordChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(recordChunksRef.current, { type: mr.mimeType || "audio/webm" });
+        const ext = (mr.mimeType || "audio/webm").includes("mp4") ? "m4a" : (mr.mimeType || "audio/webm").includes("ogg") ? "ogg" : "webm";
+        const file = new File([blob], `intake-inspelning-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.${ext}`, { type: blob.type });
+        setUploadFile(file);
+        // Stäng mic
+        recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+        recordStreamRef.current = null;
+        if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+        setRecording(false);
+      };
+      mr.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordTimerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    } catch (e) {
+      setRecordError((e as Error).message || "Kunde inte starta mic");
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+  }
+
+  function cancelRecording() {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+    recordStreamRef.current = null;
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+    recordChunksRef.current = [];
+    setRecording(false);
+    setRecordSeconds(0);
+    setUploadFile(null);
+  }
+
+  // Stadning vid unmount
+  useEffect(() => () => {
+    if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+    recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+  }, []);
 
   const refreshSessions = async () => {
     const r = await fetch("/api/intake/sessions");
@@ -333,21 +410,51 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
 
           {step === "input" && (
             <div className="p-5 space-y-4 max-w-2xl">
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setUploadFile(null)} className={`rounded-lg border p-4 text-left transition ${!uploadFile ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button onClick={() => { setUploadFile(null); }} className={`rounded-lg border p-4 text-left transition ${!uploadFile && !recording ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
                   <FileText className="w-5 h-5 mb-1.5 text-purple-600" />
                   <div className="font-medium text-gray-900 text-sm">Klistra in transkript</div>
                   <div className="text-xs text-gray-500">Snabbast om du redan har text</div>
                 </button>
-                <label className={`rounded-lg border p-4 text-left cursor-pointer transition ${uploadFile ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
+
+                {recording ? (
+                  <div className="rounded-lg border border-red-400 bg-red-50 p-4 flex flex-col items-start gap-2">
+                    <div className="flex items-center gap-2 text-red-700">
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="font-medium text-sm">Spelar in...</span>
+                      <span className="text-xs tabular-nums text-red-700/70">{Math.floor(recordSeconds / 60)}:{String(recordSeconds % 60).padStart(2, "0")}</span>
+                    </div>
+                    <div className="flex gap-2 w-full">
+                      <button onClick={stopRecording} className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center justify-center gap-1.5">
+                        <Square className="w-3.5 h-3.5" /> Stopp & spara
+                      </button>
+                      <button onClick={cancelRecording} className="text-sm px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-100">
+                        <MicOff className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={startRecording}
+                    className={`rounded-lg border p-4 text-left transition ${uploadFile?.name?.includes("intake-inspelning") ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}
+                  >
+                    <Mic className="w-5 h-5 mb-1.5 text-purple-600" />
+                    <div className="font-medium text-gray-900 text-sm">Spela in nu</div>
+                    <div className="text-xs text-gray-500">
+                      {uploadFile?.name?.includes("intake-inspelning") ? `Klar (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "Prata direkt in i mic — agenten transkriberar"}
+                    </div>
+                  </button>
+                )}
+
+                <label className={`rounded-lg border p-4 text-left cursor-pointer transition ${uploadFile && !uploadFile.name.includes("intake-inspelning") ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
                   <div className="flex gap-1.5 mb-1.5">
-                    <Mic className="w-5 h-5 text-purple-600" />
+                    <Upload className="w-5 h-5 text-purple-600" />
                     <Video className="w-5 h-5 text-purple-600" />
                     <FileType2 className="w-5 h-5 text-purple-600" />
                   </div>
                   <div className="font-medium text-gray-900 text-sm">Ladda upp fil</div>
                   <div className="text-xs text-gray-500">
-                    {uploadFile ? `${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "PDF · Word · Ljud · Video · Zoom-inspelning · VTT/SRT"}
+                    {uploadFile && !uploadFile.name.includes("intake-inspelning") ? `${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "PDF · Word · Ljud · Video · Zoom · VTT/SRT"}
                   </div>
                   <input
                     type="file"
@@ -357,6 +464,10 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
                   />
                 </label>
               </div>
+
+              {recordError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs">{recordError}</div>
+              )}
 
               {uploadFile && (
                 <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5 text-xs text-purple-900">
