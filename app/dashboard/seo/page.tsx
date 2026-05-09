@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch, Upload, HelpCircle, Sparkles, BarChart3, Bot, ShieldCheck, Code2, RefreshCw, Target, ArrowRight } from "lucide-react";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 
 interface Analytics {
   visits_24h: number;
@@ -235,46 +236,7 @@ function SEOPageInner() {
       </div>
 
       {/* === FLIK: ÖVERSIKT === */}
-      {tab === "oversikt" && (
-      <>
-      {/* KPI strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat icon={Eye} color="blue" label="Besökare 24h" value={analytics?.visits_24h ?? "—"} />
-        <Stat icon={Eye} color="purple" label="Besökare 7d" value={analytics?.visits_7d ?? "—"} />
-        <Stat icon={Eye} color="emerald" label="Besökare 30d" value={analytics?.visits_30d ?? "—"} />
-        <Stat icon={Search} color="amber" label="Spårade sökord" value={keywords.length} />
-      </div>
-
-      {/* Top paths + referrers */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card title="Mest besökta sidor (30d)">
-          {!analytics?.top_paths.length ? <Empty text="Ingen data än — väntar på besökare" /> : (
-            <ul className="space-y-1">
-              {analytics.top_paths.map((p) => (
-                <li key={p.key} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-b-0">
-                  <span className="font-mono text-xs text-gray-700 truncate">{p.key}</span>
-                  <span className="text-gray-500 tabular-nums">{p.count}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        <Card title="Top referrers (30d)">
-          {!analytics?.top_referrers.length ? <Empty text="Ingen extern trafik än" /> : (
-            <ul className="space-y-1">
-              {analytics.top_referrers.map((r) => (
-                <li key={r.key} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-b-0">
-                  <span className="text-xs text-gray-700 truncate">{shortHost(r.key)}</span>
-                  <span className="text-gray-500 tabular-nums">{r.count}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-
-      </>
-      )}
+      {tab === "oversikt" && <AnalyticsDashboard />}
       {/* === SLUT FLIK: ÖVERSIKT === */}
 
       {/* === FLIK: AUDIT & SÖKORD === */}
