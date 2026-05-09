@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch, Upload, HelpCircle, Sparkles, BarChart3, Bot, ShieldCheck, Code2, RefreshCw, Target, ArrowRight } from "lucide-react";
@@ -57,6 +57,14 @@ const AI_FLOW = [
 ];
 
 export default function SEOPage() {
+  return (
+    <Suspense fallback={<div className="text-sm text-gray-500 p-4">Laddar...</div>}>
+      <SEOPageInner />
+    </Suspense>
+  );
+}
+
+function SEOPageInner() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams?.get("tab") as TabKey) || "oversikt";
   const [tab, setTab] = useState<TabKey>(["oversikt", "audit", "ai-flode"].includes(initialTab) ? initialTab : "oversikt");
