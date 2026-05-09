@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, Award, Target, Zap, ExternalLink, Loader2, RefreshCw, AlertCircle, Trophy, Info } from "lucide-react";
+import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, Award, Target, Zap, ExternalLink, Loader2, RefreshCw, AlertCircle, Trophy, Info, FileText, BookOpen, X, Copy, Check, Sparkles } from "lucide-react";
 
 type Period = 7 | 14 | 30 | 90;
 
@@ -44,6 +44,13 @@ export default function AnalyticsDashboard() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"clicks" | "impressions" | "position" | "ctr">("clicks");
   const [syncing, setSyncing] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [showHandbok, setShowHandbok] = useState(false);
+  const [savedReports, setSavedReports] = useState<Array<{ id: string; body: string; metadata: { url?: string; generated_at?: string }; created_at: string }>>([]);
+  const [copied, setCopied] = useState(false);
 
   async function load(p: Period) {
     setLoading(true);
@@ -62,7 +69,46 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     load(period);
+    fetch("/api/analytics/deep-audit").then((r) => r.json()).then((d) => setSavedReports(d.reports ?? [])).catch(() => {});
   }, [period]);
+
+  async function generateReport() {
+    setGeneratingReport(true);
+    setReportError(null);
+    setReportText(null);
+    setReportOpen(true);
+    try {
+      const r = await fetch("/api/analytics/deep-audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte generera");
+      setReportText(d.report);
+      const refresh = await fetch("/api/analytics/deep-audit").then((rr) => rr.json());
+      setSavedReports(refresh.reports ?? []);
+    } catch (e) {
+      setReportError((e as Error).message);
+    } finally {
+      setGeneratingReport(false);
+    }
+  }
+
+  function copyReport() {
+    if (!reportText) return;
+    navigator.clipboard.writeText(reportText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function downloadReport() {
+    if (!reportText) return;
+    const blob = new Blob([reportText], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `seo-aeo-rapport-${data?.client?.name?.toLowerCase().replace(/\s+/g, "-") ?? "klient"}-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function syncGsc(days: number) {
     setSyncing(true);
@@ -123,6 +169,81 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* HANDBOK + DJUPGRANSKNING */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <button
+          onClick={() => setShowHandbok((v) => !v)}
+          className="flex items-center gap-3 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 text-left hover:shadow-sm transition"
+        >
+          <div className="w-10 h-10 rounded-lg bg-white border border-blue-200 flex items-center justify-center flex-shrink-0">
+            <BookOpen className="w-5 h-5 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-gray-900">Handbok — så jobbar du med dashboarden</div>
+            <div className="text-xs text-gray-600 mt-0.5">7 rutiner som faktiskt ger fler kunder från sajten</div>
+          </div>
+        </button>
+        <button
+          onClick={generateReport}
+          disabled={generatingReport}
+          className="flex items-center gap-3 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4 text-left hover:shadow-sm transition disabled:opacity-50"
+        >
+          <div className="w-10 h-10 rounded-lg bg-white border border-purple-200 flex items-center justify-center flex-shrink-0">
+            {generatingReport ? <Loader2 className="w-5 h-5 text-purple-600 animate-spin" /> : <FileText className="w-5 h-5 text-purple-600" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-gray-900">{generatingReport ? "Granskar sajten..." : "Generera djupgranskning"}</div>
+            <div className="text-xs text-gray-600 mt-0.5">{generatingReport ? "60-90 sekunder" : "Full SEO/AEO-rapport: TL;DR + brister + sprintplan"}</div>
+          </div>
+        </button>
+      </div>
+
+      {showHandbok && (
+        <div className="bg-white border border-blue-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              Handbok — så jobbar du med dashboarden
+            </h3>
+            <button onClick={() => setShowHandbok(false)} className="text-gray-400 hover:text-gray-700"><X className="w-4 h-4" /></button>
+          </div>
+          <div className="space-y-3 text-sm text-gray-800">
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">📅 Varje dag (5 min)</div>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                <li>Öppna dashboarden → kolla om <strong>Quick wins</strong> har nya sökord. Det är där snabbaste klick-vinsterna finns.</li>
+                <li>Granska <strong>Idé-bank & trend</strong> i sidebaren — godkänn/avslå nattens utkast.</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">📅 Varje vecka (30 min)</div>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                <li>Filtrera sökords-tabellen på <em>"led skärm"</em>, <em>"digital skylt"</em> osv. — vilka klättrar? Vilka tappar?</li>
+                <li>Kolla <strong>Position-fördelning</strong>. Mål: flytta sökord från 11–20 till topp 10. Varje vecka.</li>
+                <li>Kör <strong>Refresh Recommender</strong>-specialisten på en gammal sida — uppdatera om den säger så.</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">📅 Varje månad (2 timmar)</div>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                <li>Kör <strong>Generera djupgranskning</strong>-knappen ovan — full rapport med konkreta åtgärder.</li>
+                <li>Plocka 3 quick-win-sökord → kör <strong>GEO/AEO-optimeraren</strong> på sidan som rankar för dem.</li>
+                <li>Skapa 1 ny sida som svarar på en topp-fråga från GSC ("vad kostar led skärm" osv.).</li>
+              </ul>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+              <div className="font-semibold text-gray-900 mb-1">🎯 Mål-tröskelvärden</div>
+              <ul className="text-xs text-gray-700 space-y-0.5">
+                <li>• <strong>CTR &lt; 1%</strong> = title/meta är oattraktiv → skriv om</li>
+                <li>• <strong>Position 4–15 + impressions &gt; 50</strong> = quick win → optimera sidan, klättra till topp 3</li>
+                <li>• <strong>Snitt-position &gt; 20</strong> = sajten ej topical authority än → bygg fler artiklar i ämnet</li>
+                <li>• <strong>Brand &gt; 70% av klick</strong> = beroende av varumärke → bygg icke-brand-sökord</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PERIOD-VALJARE + SYNC */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center gap-2">
@@ -414,6 +535,75 @@ export default function AnalyticsDashboard() {
           />
         </div>
       </div>
+
+      {/* SPARADE RAPPORTER */}
+      {savedReports.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-purple-600" />
+            Tidigare djupgranskningar ({savedReports.length})
+          </h3>
+          <div className="space-y-1.5">
+            {savedReports.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => { setReportText(r.body); setReportOpen(true); }}
+                className="w-full flex items-center justify-between text-sm border-b border-gray-50 py-2 hover:bg-gray-50/50 px-2 rounded text-left"
+              >
+                <span className="text-gray-700 truncate">
+                  {r.metadata?.url?.replace(/^https?:\/\/(www\.)?/, "") ?? "—"}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {new Date(r.created_at).toLocaleDateString("sv-SE")} · {new Date(r.created_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* RAPPORT-MODAL */}
+      {reportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => !generatingReport && setReportOpen(false)}>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-pink-50">
+              <h3 className="font-semibold flex items-center gap-2 text-gray-900">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                SEO/AEO-djupgranskning
+              </h3>
+              <div className="flex items-center gap-2">
+                {reportText && (
+                  <>
+                    <button onClick={copyReport} className="text-xs px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 flex items-center gap-1">
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? "Kopierat" : "Kopiera"}
+                    </button>
+                    <button onClick={downloadReport} className="text-xs px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50">
+                      Ladda ner .md
+                    </button>
+                  </>
+                )}
+                <button onClick={() => setReportOpen(false)} className="text-gray-400 hover:text-gray-700 p-1"><X className="w-5 h-5" /></button>
+              </div>
+            </div>
+            <div className="overflow-y-auto p-6">
+              {generatingReport && !reportText && (
+                <div className="flex flex-col items-center gap-3 py-12 text-gray-500">
+                  <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                  <div className="text-sm">Granskar {data.client?.public_url ?? "sajten"} — det tar 60-90 sekunder...</div>
+                  <div className="text-xs text-gray-400">Hämtar HTML, läser GSC-data, kör Claude Sonnet 4.5</div>
+                </div>
+              )}
+              {reportError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">{reportError}</div>
+              )}
+              {reportText && (
+                <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans leading-relaxed">{reportText}</pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SENASTE AUDITS */}
       {data.recent_audits.length > 0 && (
