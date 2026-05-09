@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -60,9 +60,22 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
         { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: FileText },
-        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
+        { href: "/dashboard/seo", label: "SEO & AEO (audit)", icon: TrendingUp },
+        { href: "/dashboard/seo-aeo", label: "Sök-motorn (AI)", icon: Search },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
         { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
+      ],
+    },
+    {
+      label: "Mejl-motor",
+      items: [
+        { href: "/dashboard/mejl", label: "Mejl-motor", icon: Mail },
+      ],
+    },
+    {
+      label: "Agent-loop",
+      items: [
+        { href: "/dashboard/agents", label: "Idé-bank & trend", icon: Bot },
       ],
     },
     {

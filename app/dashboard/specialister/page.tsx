@@ -18,6 +18,9 @@ const CATEGORY_LABEL: Record<string, string> = {
   content: "Content",
   sales: "Försäljning",
   ops: "Operations",
+  seo: "SEO/AEO/GEO",
+  email: "Mejl-motor",
+  outbound: "Outbound",
   general: "Övrigt",
 };
 
@@ -27,6 +30,9 @@ const CATEGORY_COLOR: Record<string, string> = {
   content: "bg-blue-50 text-blue-700 border-blue-200",
   sales: "bg-emerald-50 text-emerald-700 border-emerald-200",
   ops: "bg-amber-50 text-amber-700 border-amber-200",
+  seo: "bg-teal-50 text-teal-700 border-teal-200",
+  email: "bg-orange-50 text-orange-700 border-orange-200",
+  outbound: "bg-rose-50 text-rose-700 border-rose-200",
   general: "bg-gray-50 text-gray-700 border-gray-200",
 };
 

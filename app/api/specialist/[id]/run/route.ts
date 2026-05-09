@@ -3,9 +3,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getSpecialist, buildUserPrompt } from "@/lib/specialists";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
+import { iterateGenerate } from "@/lib/iterate";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 const MODEL = "claude-sonnet-4-5";
 
@@ -46,19 +47,49 @@ export async function POST(
 
     const clientId = await getActiveClientId();
     const userPrompt = buildUserPrompt(specialist, inputs);
+    const useIterate = specialist.iterate === true;
 
-    const anthropic = new Anthropic({ apiKey });
-    const msg = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4096,
-      system: specialist.systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    });
+    let text: string;
+    let tokens_in: number | null = null;
+    let tokens_out: number | null = null;
+    let voice_score: number | null = null;
+    let variant_count = 1;
 
-    const text = msg.content
-      .map((c) => (c.type === "text" ? c.text : ""))
-      .join("")
-      .trim();
+    if (useIterate) {
+      const targetLength =
+        specialist.target_length_min && specialist.target_length_max
+          ? { min: specialist.target_length_min, max: specialist.target_length_max }
+          : undefined;
+      const result = await iterateGenerate({
+        systemPrompt: specialist.systemPrompt,
+        userPrompt,
+        clientId,
+        model: MODEL,
+        maxTokens: 4096,
+        variants: specialist.variants ?? 3,
+        category: specialist.category,
+        targetLength,
+      });
+      text = result.output;
+      tokens_in = result.total_tokens_in;
+      tokens_out = result.total_tokens_out;
+      voice_score = result.score?.total ?? null;
+      variant_count = result.variant_count;
+    } else {
+      const anthropic = new Anthropic({ apiKey });
+      const msg = await anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 4096,
+        system: specialist.systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      text = msg.content
+        .map((c) => (c.type === "text" ? c.text : ""))
+        .join("")
+        .trim();
+      tokens_in = msg.usage?.input_tokens ?? null;
+      tokens_out = msg.usage?.output_tokens ?? null;
+    }
 
     const duration = Date.now() - t0;
 
@@ -70,8 +101,8 @@ export async function POST(
       inputs,
       output: text,
       model: MODEL,
-      tokens_in: msg.usage?.input_tokens ?? null,
-      tokens_out: msg.usage?.output_tokens ?? null,
+      tokens_in,
+      tokens_out,
       duration_ms: duration,
       status: "completed",
     });
@@ -79,17 +110,20 @@ export async function POST(
     await logActivity(
       clientId,
       "specialist_run",
-      `Körde specialist: ${specialist.name}`,
+      `Körde specialist: ${specialist.name}${useIterate ? ` (${variant_count} varianter, score ${voice_score ?? "-"})` : ""}`,
       `/dashboard/specialister/${specialist.id}`,
-      { specialist_id: specialist.id, tokens_out: msg.usage?.output_tokens ?? null }
+      { specialist_id: specialist.id, tokens_out, voice_score, variant_count }
     );
 
     return NextResponse.json({
       output: text,
       model: MODEL,
-      tokens_in: msg.usage?.input_tokens ?? null,
-      tokens_out: msg.usage?.output_tokens ?? null,
+      tokens_in,
+      tokens_out,
       duration_ms: duration,
+      voice_score,
+      variant_count,
+      iterated: useIterate,
     });
   } catch (e) {
     const message = (e as Error).message ?? "Okänt fel";

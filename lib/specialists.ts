@@ -18,6 +18,10 @@ export type SpecialistMeta = {
   target_app: "cockpit" | "mysales-coach" | "both";
   version: number;
   inputs: SpecialistInput[];
+  iterate?: boolean;          // generera N varianter, valj basta via voice-score
+  variants?: number;          // antal varianter (default 3)
+  target_length_min?: number; // ord
+  target_length_max?: number; // ord
 };
 
 export type Specialist = SpecialistMeta & {
@@ -44,6 +48,10 @@ export async function loadSpecialists(): Promise<Specialist[]> {
       target_app: (data.target_app as Specialist["target_app"]) ?? "both",
       version: data.version ?? 1,
       inputs: data.inputs ?? [],
+      iterate: data.iterate ?? false,
+      variants: data.variants ?? 3,
+      target_length_min: data.target_length_min,
+      target_length_max: data.target_length_max,
       systemPrompt: parsed.content.trim(),
     });
   }
