@@ -63,12 +63,15 @@ export async function GET(req: NextRequest) {
 
   const t0 = Date.now();
   const sb = supabaseServer();
+  const onlyClient = req.nextUrl.searchParams.get("client_id");
 
   // Hamta aktiva klienter med voice-fingerprint (har minst 5 source assets)
-  const { data: profiles } = await sb
+  let q = sb
     .from("client_voice_profile")
     .select("client_id, source_asset_count")
     .gte("source_asset_count", 5);
+  if (onlyClient) q = q.eq("client_id", onlyClient);
+  const { data: profiles } = await q;
 
   if (!profiles || profiles.length === 0) {
     return NextResponse.json({
