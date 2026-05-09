@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - days * 86400000).toISOString();
   const sinceDate = since.slice(0, 10);
 
-  const [gsc, visits, keywords, audits, client, brand, gscMeta] = await Promise.all([
+  const [gsc, visits, keywords, audits, client, brand, gscMeta, gscDaily] = await Promise.all([
     // GSC-data ar aggregerad per period_end (en rad per sokfras for hela perioden).
     // Vi laser ALLTID senaste synken — period-valjaren i UI styr SYNK-perioden.
     sb.from("gsc_queries").select("query, page, clicks, impressions, ctr, position, period_start, period_end").eq("client_id", clientId).limit(2000),
@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
     sb.from("clients").select("name, public_url").eq("id", clientId).maybeSingle(),
     sb.from("hm_brand_profile").select("company_name").eq("client_id", clientId).maybeSingle(),
     sb.from("gsc_queries").select("imported_at, period_start, period_end").eq("client_id", clientId).order("imported_at", { ascending: false }).limit(1).maybeSingle(),
+    // Per-dag GSC for tidsserie-graf (slicas av period-valjaren)
+    sb.from("gsc_queries_daily").select("date, clicks, impressions, ctr, position").eq("client_id", clientId).is("query", null).gte("date", sinceDate).order("date", { ascending: true }),
   ]);
 
   type GscRow = { query: string; page: string | null; clicks: number; impressions: number; ctr: number | string; position: number | string };
@@ -164,6 +166,13 @@ export async function GET(req: NextRequest) {
     queries_all_count: queries.length,
     top_pages: topPages,
     traffic_series: trafficSeries,
+    gsc_daily_series: ((gscDaily.data ?? []) as Array<{ date: string; clicks: number; impressions: number; ctr: number | string; position: number | string }>).map((r) => ({
+      date: r.date,
+      clicks: r.clicks,
+      impressions: r.impressions,
+      ctr: typeof r.ctr === "string" ? parseFloat(r.ctr) : r.ctr,
+      position: typeof r.position === "string" ? parseFloat(r.position) : r.position,
+    })),
     top_paths: topPaths,
     top_referrers: topReferrers,
     tracked_keywords: keywords.data ?? [],

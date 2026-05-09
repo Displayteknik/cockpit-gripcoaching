@@ -123,6 +123,56 @@ export async function queryGsc(clientId: string, siteUrl: string, days = 28, dim
   }));
 }
 
+// Per-dag GSC: hamtar dagsdata med date som primar dimension.
+// Anvands for att fylla gsc_queries_daily-tabellen.
+export interface GscDailyRow {
+  date: string;
+  query: string | null;
+  page: string | null;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+export async function queryGscDaily(
+  clientId: string,
+  siteUrl: string,
+  days = 90,
+  withQuery = false
+): Promise<GscDailyRow[]> {
+  const token = await getValidAccessToken(clientId);
+  const end = new Date();
+  const start = new Date(Date.now() - days * 86400000);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const dimensions = withQuery ? ["date", "query"] : ["date"];
+
+  const r = await fetch(
+    `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        startDate: fmt(start),
+        endDate: fmt(end),
+        dimensions,
+        rowLimit: 25000,
+      }),
+    }
+  );
+  if (!r.ok) throw new Error("GSC daily query: " + (await r.text()));
+  const data = await r.json();
+  return ((data.rows || []) as Array<{ keys: string[]; clicks: number; impressions: number; ctr: number; position: number }>).map((row) => ({
+    date: row.keys[0],
+    query: withQuery ? row.keys[1] ?? null : null,
+    page: null,
+    clicks: row.clicks,
+    impressions: row.impressions,
+    ctr: row.ctr,
+    position: row.position,
+  }));
+}
+
 export async function getUserInfo(accessToken: string): Promise<{ email: string }> {
   const r = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!r.ok) return { email: "" };

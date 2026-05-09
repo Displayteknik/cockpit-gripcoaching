@@ -15,6 +15,10 @@
     {
       "path": "/api/google/gsc/cron",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/reports/weekly-cron",
+      "schedule": "0 7 * * 1"
     }
   ]
 }

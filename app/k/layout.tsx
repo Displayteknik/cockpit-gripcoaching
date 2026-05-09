@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
-import { Sparkles, Calendar, Users, Target, Home, LogOut } from "lucide-react";
+import { Sparkles, Calendar, Users, Target, Home, LogOut, Lightbulb } from "lucide-react";
 
 interface Props {
   children: React.ReactNode;
@@ -32,6 +32,7 @@ export default async function CustomerLayout({ children }: Props) {
           <NavLink href="/k" icon={Home} label="Översikt" />
           <NavLink href="/k/profil" icon={Target} label="Min profil" />
           <NavLink href="/k/skapa" icon={Sparkles} label="Skapa inlägg" />
+          <NavLink href="/k/ideer" icon={Lightbulb} label="Idé-bank" />
           <NavLink href="/k/veckoplan" icon={Calendar} label="Veckoplan" />
           <NavLink href="/k/dm" icon={Users} label="DM & Pipeline" />
         </nav>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryGsc } from "@/lib/google";
+import { queryGsc, queryGscDaily } from "@/lib/google";
 import { supabaseServer } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, message: "Inga GSC-anslutna klienter", duration_ms: Date.now() - t0 });
   }
 
-  const results: Array<{ client_id: string; ok: boolean; rows?: number; error?: string }> = [];
+  const results: Array<{ client_id: string; ok: boolean; rows?: number; daily_rows?: number; error?: string }> = [];
 
   for (const conn of connections) {
     const clientId = (conn as { client_id: string }).client_id;
@@ -63,7 +63,38 @@ export async function GET(req: NextRequest) {
       await sb.from("gsc_queries").delete().eq("client_id", clientId).eq("period_end", period_end);
       if (rows.length) await sb.from("gsc_queries").insert(rows);
 
-      results.push({ client_id: clientId, ok: true, rows: rows.length });
+      // Per-dag sync (90d) for tidsserie-graf — gsc_queries_daily
+      let dailyRows = 0;
+      try {
+        const daily = await queryGscDaily(clientId, gscSite, 90, false);
+        const dailyInsert = daily.map((d) => ({
+          client_id: clientId,
+          date: d.date,
+          query: null,
+          page: null,
+          clicks: d.clicks,
+          impressions: d.impressions,
+          ctr: d.ctr,
+          position: d.position,
+        }));
+        // Upsert via delete-then-insert pa unique (client_id, date, query=null)
+        if (dailyInsert.length) {
+          const dates = dailyInsert.map((r) => r.date);
+          await sb
+            .from("gsc_queries_daily")
+            .delete()
+            .eq("client_id", clientId)
+            .is("query", null)
+            .in("date", dates);
+          await sb.from("gsc_queries_daily").insert(dailyInsert);
+          dailyRows = dailyInsert.length;
+        }
+      } catch (e) {
+        // Daily-fel ska inte stoppa hela syncen
+        console.warn("GSC daily-fel for", clientId, (e as Error).message);
+      }
+
+      results.push({ client_id: clientId, ok: true, rows: rows.length, daily_rows: dailyRows });
     } catch (e) {
       results.push({ client_id: clientId, ok: false, error: (e as Error).message });
     }
