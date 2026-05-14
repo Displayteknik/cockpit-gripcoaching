@@ -107,6 +107,24 @@ export default function SkapaPage() {
   const [error, setError] = useState<string | null>(null);
   const [voiceCount, setVoiceCount] = useState<number | null>(null);
   const [rebuilding, setRebuilding] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ topic: string; angle: string; why: string }[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  async function fetchSuggestions() {
+    setLoadingSuggestions(true);
+    setSuggestions([]);
+    try {
+      const r = await fetch("/api/social/topic-suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dayIndex }),
+      });
+      const d = await r.json();
+      if (Array.isArray(d?.suggestions)) setSuggestions(d.suggestions);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/profile/quality")
@@ -211,19 +229,62 @@ export default function SkapaPage() {
 
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Vad ska inlägget handla om?
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Vad ska inlägget handla om?
+            </label>
+            <button
+              type="button"
+              onClick={fetchSuggestions}
+              disabled={loadingSuggestions}
+              className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700 disabled:opacity-50"
+            >
+              {loadingSuggestions ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Genererar förslag…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Föreslå ämnen
+                </>
+              )}
+            </button>
+          </div>
           <div className="relative">
             <input
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="t.ex. Skärmtrötthet på jobbet, eller — En kund som äntligen sov en hel natt"
+              placeholder="Skriv ett ämne — eller klicka på 'Föreslå ämnen' ovanför"
               className="w-full px-3 py-2.5 pr-10 rounded-lg border border-gray-200 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none"
             />
             <SpeechToTextButton onResult={(t) => setTopic((p) => (p ? p + " " : "") + t)} />
           </div>
+
+          {suggestions.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-gray-500">
+                5 förslag för {dayIndex !== null ? DAYS[dayIndex] : "idag"} — klicka för att fylla i:
+              </p>
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setTopic(s.topic);
+                    setAngle(s.angle || "");
+                  }}
+                  className="w-full text-left p-3 rounded-lg border border-purple-100 bg-purple-50/50 hover:bg-purple-100/70 hover:border-purple-300 transition-colors"
+                >
+                  <div className="text-sm font-medium text-gray-900">{s.topic}</div>
+                  {s.angle && <div className="text-xs text-gray-600 mt-0.5">{s.angle}</div>}
+                  {s.why && <div className="text-xs text-purple-700 mt-1 italic">{s.why}</div>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -234,7 +295,7 @@ export default function SkapaPage() {
             type="text"
             value={angle}
             onChange={(e) => setAngle(e.target.value)}
-            placeholder="t.ex. Personlig — börja med en fråga"
+            placeholder="t.ex. Börja med en fråga / personlig story / risk-vinkel"
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-purple-500 outline-none"
           />
         </div>
