@@ -386,7 +386,9 @@ export default function HQPage() {
                 <a href={COACH_LINK("/quotes")} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs hover:bg-slate-700">Offerter</a>
                 <a href={COACH_LINK("/prospects")} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs hover:bg-slate-700">Prospekt</a>
                 <a href={COACH_LINK("/customers")} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs hover:bg-slate-700">Kunder</a>
+                <a href={COACH_LINK("/invoice")} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-lg bg-emerald-500 text-emerald-950 text-xs font-semibold hover:bg-emerald-400">📄 Skapa faktura (DOCX)</a>
               </div>
+              <p className="text-[11px] text-slate-500 mt-2">Faktura skapas som DOCX (Avtalsstil) — ladda upp till Spiris för bokföring.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
