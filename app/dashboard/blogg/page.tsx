@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, type BlogPost } from "@/lib/supabase";
 import { RichEditor } from "@/components/dashboard/RichEditor";
-import { Plus, Pencil, Trash2, Eye, EyeOff, X, Upload, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, X, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
 
 const emptyPost: Partial<BlogPost> = {
   title: "", slug: "", excerpt: "", content: "",
@@ -17,6 +17,7 @@ export default function BlogDashboardPage() {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
 
@@ -52,6 +53,35 @@ export default function BlogDashboardPage() {
     const { data } = supabase.storage.from("vehicle-images").getPublicUrl(name);
     setEditing((prev) => prev ? { ...prev, image_url: data.publicUrl } : prev);
     setUploading(false);
+  };
+
+  const generateCover = async () => {
+    if (!editing?.title && !editing?.excerpt) {
+      alert("Fyll i rubrik eller utdrag först — AI:n behöver något att jobba med.");
+      return;
+    }
+    setGeneratingCover(true);
+    try {
+      const res = await fetch("/api/blog/generate-cover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editing.title,
+          excerpt: editing.excerpt,
+          content: editing.content,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.image_url) {
+        alert("Kunde inte generera bild: " + (data.error || "okänt fel"));
+      } else {
+        setEditing((prev) => prev ? { ...prev, image_url: data.image_url } : prev);
+      }
+    } catch (err) {
+      alert("Bildgenerering misslyckades: " + (err as Error).message);
+    } finally {
+      setGeneratingCover(false);
+    }
   };
 
   const handleSave = async () => {
@@ -117,6 +147,11 @@ export default function BlogDashboardPage() {
               <img src={editing.image_url} alt="" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
                 <div className="flex gap-2">
+                  <button onClick={generateCover} disabled={generatingCover}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg flex items-center gap-1.5 disabled:opacity-60">
+                    <Sparkles className="w-4 h-4" />
+                    {generatingCover ? "Genererar..." : "Generera ny"}
+                  </button>
                   <button onClick={() => coverInputRef.current?.click()}
                     className="bg-white text-gray-800 px-3 py-2 rounded-lg text-sm font-medium shadow-lg">
                     Byt bild
@@ -129,16 +164,34 @@ export default function BlogDashboardPage() {
               </div>
             </div>
           ) : (
-            <div
-              className="border-2 border-dashed border-gray-300 rounded-xl aspect-[21/9] flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-brand-blue hover:bg-brand-blue/5 transition-colors"
-              onClick={() => coverInputRef.current?.click()}
-            >
-              {uploading ? (
-                <div className="w-6 h-6 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
+            <div className="border-2 border-dashed border-gray-300 rounded-xl aspect-[21/9] flex flex-col items-center justify-center gap-3 hover:border-brand-blue transition-colors">
+              {generatingCover || uploading ? (
+                <>
+                  <div className="w-6 h-6 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-gray-500">{generatingCover ? "AI skapar omslagsbild..." : "Laddar upp..."}</span>
+                </>
               ) : (
                 <>
                   <ImageIcon className="w-8 h-8 text-gray-400" />
-                  <span className="text-sm text-gray-500">Klicka för att lägga till omslagsbild</span>
+                  <span className="text-sm text-gray-500">Lägg till omslagsbild</span>
+                  <div className="flex gap-2 mt-1">
+                    <button
+                      type="button"
+                      onClick={generateCover}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Generera med AI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => coverInputRef.current?.click()}
+                      className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      Ladda upp egen
+                    </button>
+                  </div>
                 </>
               )}
             </div>
