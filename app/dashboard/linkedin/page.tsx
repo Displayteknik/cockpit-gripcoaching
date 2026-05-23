@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, Copy, Check, Trash2, Plus, RefreshCw, ExternalLink, Edit3, Save, X, Wand2, Layers, Lightbulb, FileText, Inbox, BookOpen, Upload, BarChart3 } from "lucide-react";
+import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
 
 type Tab = "pillars" | "ideas" | "writer" | "bank" | "history";
 
@@ -621,6 +622,7 @@ function EditModal({ post, onClose, onSave }: { post: Post; onClose: () => void;
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Inläggets text</label>
             <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={14} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" />
+            <VoiceCheckBadge text={`${hook}\n\n${body}`} surface="linkedin" className="mt-2" />
           </div>
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Hashtags</label>

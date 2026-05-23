@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, use } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Play, Copy, Check } from "lucide-react";
+import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
 
 type Input = {
   key: string;
@@ -202,6 +203,9 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
           <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans leading-relaxed">
             {result.output}
           </pre>
+          <div className="mt-3">
+            <VoiceCheckBadge text={result.output} surface="specialist" />
+          </div>
         </div>
       )}
     </div>

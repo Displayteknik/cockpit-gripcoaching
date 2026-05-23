@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import KnowledgeText from "@/components/KnowledgeText";
 import ImageStudio from "@/components/ImageStudio";
+import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
 
 type FourA = "analytical" | "aspirational" | "actionable" | "authentic";
 type Disc = "D" | "I" | "S" | "C";
@@ -1247,6 +1248,7 @@ function OwnPostReview() {
           placeholder="Resten av inlägget — story, värde, kontext..."
           className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-purple-500 outline-none font-body leading-relaxed"
         />
+        <VoiceCheckBadge text={`${hook}\n\n${body}`} surface="social" className="mt-2" />
       </div>
 
       <div>
