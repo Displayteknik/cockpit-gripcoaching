@@ -43,8 +43,8 @@ export function RichEditor({ content, onChange }: RichEditorProps) {
     editorProps: {
       attributes: {
         // WYSIWYG: editorn renderar med samma .blog-content-CSS som publika sajten.
-        // Förhindrar "text-klump i editorn"-misstaget (se tasks/lessons.md 2026-05-23).
-        class: "blog-content prose prose-base max-w-none focus:outline-none min-h-[400px] px-6 py-5",
+        // Tailwind prose-klasserna togs bort eftersom de overrider blog-content-typografin.
+        class: "blog-content max-w-none focus:outline-none min-h-[400px] px-6 py-5",
       },
     },
   });

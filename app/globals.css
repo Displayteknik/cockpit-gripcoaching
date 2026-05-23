@@ -76,35 +76,36 @@ html {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
-   Blog content typografi (.blog-content)
-   Stylar HTML från RichEditor: <h2>/<h3>, <p>, <ul>, <blockquote>,
-   <div class="callout">, <p class="lead">, <a class="cta-button">.
+   Blog content typografi (.blog-content.blog-content)
+   Stylar HTML från RichEditor + publika bloggsidan.
    Etablerad 2026-05-23 efter text-klump-buggen (se tasks/lessons.md).
+   VIKTIGT: Använder .blog-content.blog-content (doublad klass) för att slå
+   Tailwind v4 utility-layers. Vanliga regler ignoreras annars.
    ──────────────────────────────────────────────────────────────────────── */
 
-.blog-content {
+.blog-content.blog-content {
   font-size: 1.075rem;
   line-height: 1.75;
   color: var(--color-text-muted);
 }
 
-.blog-content > * + * {
+.blog-content.blog-content > * + * {
   margin-top: 1.1em;
 }
 
-.blog-content p.lead,
-.blog-content p:first-child {
+.blog-content.blog-content p.lead,
+.blog-content.blog-content p:first-child {
   font-size: 1.25rem;
   line-height: 1.6;
   color: var(--color-text-primary);
   font-weight: 400;
 }
-.blog-content p.lead strong,
-.blog-content p:first-child strong {
+.blog-content.blog-content p.lead strong,
+.blog-content.blog-content p:first-child strong {
   font-weight: 600;
 }
 
-.blog-content h2 {
+.blog-content.blog-content h2 {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--color-text-primary);
@@ -112,7 +113,7 @@ html {
   margin-bottom: 1rem;
   line-height: 1.25;
 }
-.blog-content h3 {
+.blog-content.blog-content h3 {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text-primary);
@@ -121,29 +122,29 @@ html {
   line-height: 1.3;
 }
 
-.blog-content ul {
+.blog-content.blog-content ul {
   list-style: none;
   padding-left: 0;
   margin: 1.25rem 0;
 }
-.blog-content ul li {
+.blog-content.blog-content ul li {
   padding: 0.5rem 0 0.5rem 0;
   margin: 0.25rem 0;
   line-height: 1.6;
 }
-.blog-content ol {
+.blog-content.blog-content ol {
   padding-left: 1.5rem;
 }
-.blog-content ol li {
+.blog-content.blog-content ol li {
   margin: 0.5rem 0;
 }
 
-.blog-content strong {
+.blog-content.blog-content strong {
   color: var(--color-text-primary);
   font-weight: 600;
 }
 
-.blog-content blockquote {
+.blog-content.blog-content blockquote {
   border-left: 4px solid var(--color-brand-blue);
   background: var(--color-surface-light);
   padding: 1.25rem 1.5rem;
@@ -152,12 +153,12 @@ html {
   font-style: italic;
   color: var(--color-text-primary);
 }
-.blog-content blockquote p {
+.blog-content.blog-content blockquote p {
   margin: 0;
   font-size: 1.125rem;
   line-height: 1.6;
 }
-.blog-content blockquote cite {
+.blog-content.blog-content blockquote cite {
   display: block;
   margin-top: 0.75rem;
   font-style: normal;
@@ -166,29 +167,29 @@ html {
   font-weight: 500;
 }
 
-.blog-content .callout {
+.blog-content.blog-content .callout {
   background: linear-gradient(135deg, #fffaf0 0%, #fef3e2 100%);
   border: 1px solid #f0c060;
   border-radius: 0.75rem;
   padding: 1.5rem 1.75rem;
   margin: 2.5rem 0;
 }
-.blog-content .callout h3 {
+.blog-content.blog-content .callout h3 {
   margin-top: 0;
   font-size: 1.25rem;
   color: var(--color-text-primary);
 }
-.blog-content .callout ul li {
+.blog-content.blog-content .callout ul li {
   padding: 0.25rem 0;
 }
-.blog-content .callout em {
+.blog-content.blog-content .callout em {
   display: block;
   margin-top: 0.75rem;
   color: var(--color-text-muted);
   font-size: 0.95rem;
 }
 
-.blog-content a.cta-button {
+.blog-content.blog-content a.cta-button {
   display: inline-block;
   background: var(--color-brand-blue);
   color: white;
@@ -199,11 +200,11 @@ html {
   margin: 1rem 0 0.5rem 0;
   transition: background 0.15s;
 }
-.blog-content a.cta-button:hover {
+.blog-content.blog-content a.cta-button:hover {
   background: var(--color-brand-blue-dark);
 }
 
-.blog-content a:not(.cta-button) {
+.blog-content.blog-content a:not(.cta-button) {
   color: var(--color-brand-blue);
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -212,8 +213,8 @@ html {
 
 /* Drop-cap för första bokstaven i lead-paragraph (optional flair) */
 @media (min-width: 768px) {
-  .blog-content > p.lead:first-of-type::first-letter,
-  .blog-content > p:first-child::first-letter {
+  .blog-content.blog-content > p.lead:first-of-type::first-letter,
+  .blog-content.blog-content > p:first-child::first-letter {
     font-family: var(--font-display, Georgia, serif);
     font-size: 3.5rem;
     font-weight: 700;
