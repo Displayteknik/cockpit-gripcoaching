@@ -42,7 +42,9 @@ export function RichEditor({ content, onChange }: RichEditorProps) {
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[300px] px-4 py-3",
+        // WYSIWYG: editorn renderar med samma .blog-content-CSS som publika sajten.
+        // Förhindrar "text-klump i editorn"-misstaget (se tasks/lessons.md 2026-05-23).
+        class: "blog-content prose prose-base max-w-none focus:outline-none min-h-[400px] px-6 py-5",
       },
     },
   });
