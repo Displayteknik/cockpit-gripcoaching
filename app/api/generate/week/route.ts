@@ -159,10 +159,23 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
       };
     });
 
+    // Auto voice-score varje dag — användaren ser score per inlägg.
+    let scoredDays = days;
+    try {
+      const { scoreText } = await import("@/lib/voice-enforce");
+      scoredDays = await Promise.all(days.map(async (d) => {
+        const full = [d.hook, d.body, d.cta].filter(Boolean).join("\n\n");
+        try {
+          const s = await scoreText(full, clientId, "social");
+          return { ...d, voice_score: s.total, voice_verdict: (s.total >= 70 ? "pass" : s.total >= 55 ? "warn" : "block") };
+        } catch { return d; }
+      }));
+    } catch {}
+
     return NextResponse.json({
       theme,
       voice_source_count: fp.source_asset_count,
-      days,
+      days: scoredDays,
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

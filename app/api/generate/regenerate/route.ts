@@ -67,13 +67,23 @@ Generera om enligt instruktionen. Returnera bara JSON.`;
       if (m) parsed = JSON.parse(m[0]);
     }
 
-    return NextResponse.json({
+    const output = {
       hook: parsed.hook || hook,
       body: parsed.body || postBody,
       cta: parsed.cta || cta,
       hashtags: parsed.hashtags || [],
       notes: parsed.notes || "",
-    });
+    };
+
+    let voice_score = null;
+    try {
+      const { scoreText } = await import("@/lib/voice-enforce");
+      const full = [output.hook, output.body, output.cta].filter(Boolean).join("\n\n");
+      const s = await scoreText(full, clientId, "social");
+      voice_score = { score: s.total, verdict: s.total >= 70 ? "pass" : s.total >= 55 ? "warn" : "block", issues: s.issues.slice(0, 5) };
+    } catch {}
+
+    return NextResponse.json({ ...output, voice_score });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

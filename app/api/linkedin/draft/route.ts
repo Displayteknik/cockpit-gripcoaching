@@ -165,7 +165,17 @@ Skriv inlägget nu. Returnera bara JSON.`;
     }
 
     await logActivity(clientId, "linkedin_draft", `Skrev LinkedIn-inlägg (${length}): ${draft.hook?.slice(0, 60)}`, "/dashboard/linkedin");
-    return NextResponse.json({ post: saved, draft });
+
+    // Auto voice-score — användaren ser scoren direkt i UI.
+    let voice_score = null;
+    try {
+      const { scoreText } = await import("@/lib/voice-enforce");
+      const full = [draft.hook, draft.body, draft.cta].filter(Boolean).join("\n\n");
+      const s = await scoreText(full, clientId, "linkedin");
+      voice_score = { score: s.total, verdict: s.total >= 70 ? "pass" : s.total >= 55 ? "warn" : "block", issues: s.issues.slice(0, 5) };
+    } catch {}
+
+    return NextResponse.json({ post: saved, draft, voice_score });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

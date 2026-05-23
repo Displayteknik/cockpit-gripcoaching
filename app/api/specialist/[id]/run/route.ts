@@ -89,6 +89,13 @@ export async function POST(
         .trim();
       tokens_in = msg.usage?.input_tokens ?? null;
       tokens_out = msg.usage?.output_tokens ?? null;
+      // Specialister utan iterate-flagga får ändå voice-score så användaren
+      // ser kvaliteten direkt.
+      try {
+        const { scoreText } = await import("@/lib/voice-enforce");
+        const s = await scoreText(text, clientId, "specialist");
+        voice_score = s.total;
+      } catch {}
     }
 
     const duration = Date.now() - t0;
