@@ -22,8 +22,98 @@ export type ImageStyleId = typeof IMAGE_STYLES[number]["id"];
 
 export interface ImageFeedback { prompt: string; rating: 1 | -1; content_text?: string; image_style?: string }
 
-async function craftImagePromptWithAI(contentText: string, niche: string, stylePrompt: string, mode: "overlay" | "standalone", feedback?: ImageFeedback[]): Promise<string> {
+/**
+ * Industri-medvetna visuella regler. Default-stilen "cinematic mörk" är fel för
+ * många branscher — vården, coaching, småföretagar-rådgivning behöver varma,
+ * hoppfulla bilder, inte dramatiska skuggor.
+ */
+interface IndustryRules {
+  styleHint: string;
+  bannedConcrete: string;
+  doConcrete: string;
+  paletteHint: string;
+  emotionalRegister: string;
+}
+
+function rulesForNiche(niche: string): IndustryRules {
+  const n = (niche || "").toLowerCase();
+
+  // Vård, optiker, terapi, hälsa, wellness
+  if (/optik|ögon|syn|vård|läkare|terapi|hälsa|wellness|kropp|psykolog|fysio/.test(n)) {
+    return {
+      styleHint: "Warm editorial healthcare photography. Soft natural window light. Real clinic or optician practice environment. Caring human moment.",
+      bannedConcrete: "NO extreme close-ups of isolated body parts (eyes, hands floating in darkness). NO horror or medical-thriller aesthetics. NO menacing shadows. NO clinical sterility. NO stock-photo fake smiles. NO darkness or moody noir.",
+      doConcrete: "Show a real moment in a real practice: a professional examining a patient warmly, a person trying on glasses in soft light, a calming consultation space with daylight. People should look hopeful and at ease.",
+      paletteHint: "Warm cream, soft beige, gentle amber, natural daylight. Avoid harsh contrast.",
+      emotionalRegister: "Hopeful, trustworthy, calm, human. Reader should think 'I'd feel safe here.'",
+    };
+  }
+
+  // Coaching, sälj, personlig utveckling, B2B-tjänster
+  if (/coach|sälj|personlig utveckling|leadership|ledarskap|consulting|rådgiv/.test(n)) {
+    return {
+      styleHint: "Authentic lifestyle photography of professional work. Real office or meeting room. Documentary feel, not posed.",
+      bannedConcrete: "NO generic businessman with arms crossed. NO suits-around-a-laptop stock shots. NO abstract handshakes. NO city skylines through windows.",
+      doConcrete: "Show a real moment: someone genuinely engaged in their work, a focused conversation, hands writing in a notebook, natural body language.",
+      paletteHint: "Warm neutrals, soft daylight, accents of brand color but never neon.",
+      emotionalRegister: "Confident, focused, real. Reader should think 'this person knows what they're doing.'",
+    };
+  }
+
+  // LED-skärmar, signage, displayteknik, hardware
+  if (/led|skärm|display|signage|skylt|hardware|elektronik/.test(n)) {
+    return {
+      styleHint: "Premium commercial product photography in a real installation context. Professional studio or actual venue.",
+      bannedConcrete: "NO abstract glowing pixels. NO generic CGI city lights. NO fake-looking renders.",
+      doConcrete: "Show real LED screens in real environments: shopfront at twilight, event venue with crowd, professional showroom installation.",
+      paletteHint: "Rich saturated colors with controlled contrast. Premium feel.",
+      emotionalRegister: "Premium, impressive, real. Reader should think 'this is high quality.'",
+    };
+  }
+
+  // Bil, fordon, mekanik
+  if (/bil|fordon|motor|mekanik|verkstad/.test(n)) {
+    return {
+      styleHint: "Premium automotive editorial photography. Real workshop or showroom. Detail-oriented.",
+      bannedConcrete: "NO generic car ads. NO empty roads. NO motion-blur driving shots.",
+      doConcrete: "Show real craft: hands on engine detail, polished surface reflection, mechanic at work in good light.",
+      paletteHint: "Deep blacks, chrome highlights, rich color depth.",
+      emotionalRegister: "Crafted, premium, expert.",
+    };
+  }
+
+  // Kreativ, konst, design
+  if (/konst|design|kreativ|art|illustrat/.test(n)) {
+    return {
+      styleHint: "Editorial art photography. Studio or gallery context. Texture and detail focus.",
+      bannedConcrete: "NO generic creative cliches (paint splatter, rainbow palettes). NO chaos.",
+      doConcrete: "Show real artistic process: brush touching canvas, sculpture detail, exhibition installation.",
+      paletteHint: "Refined palette, possibly monochromatic with accent. Lots of negative space.",
+      emotionalRegister: "Considered, refined, intentional.",
+    };
+  }
+
+  // Default — neutral premium
+  return {
+    styleHint: "Authentic commercial photography. Real environment, real moment.",
+    bannedConcrete: "NO generic stock imagery. NO abstract metaphors. NO empty offices.",
+    doConcrete: "Show a real subject the post discusses, in its real environment, with natural composition.",
+    paletteHint: "Refined palette matching brand. Natural light.",
+    emotionalRegister: "Professional, genuine, real.",
+  };
+}
+
+async function craftImagePromptWithAI(
+  contentText: string,
+  niche: string,
+  stylePrompt: string,
+  mode: "overlay" | "standalone",
+  feedback?: ImageFeedback[],
+  brandContext?: string,
+): Promise<string> {
   if (!GEMINI_KEY) return contentText;
+  const rules = rulesForNiche(niche);
+
   let feedbackSection = "";
   if (feedback?.length) {
     const liked = feedback.filter((f) => f.rating === 1).slice(-3);
@@ -31,30 +121,41 @@ async function craftImagePromptWithAI(contentText: string, niche: string, styleP
     if (liked.length) feedbackSection += `\n\nPROMPTS USER LIKED (mirror style/subject approach):\n${liked.map((f) => `- "${f.prompt}"`).join("\n")}`;
     if (disliked.length) feedbackSection += `\n\nPROMPTS USER DISLIKED (avoid this approach):\n${disliked.map((f) => `- "${f.prompt}"`).join("\n")}`;
   }
+
+  const brandSection = brandContext ? `\n\nBRAND VOICE & POSITIONING:\n${brandContext.slice(0, 1500)}` : "";
+
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `You are an elite visual content strategist. Write ONE image generation prompt (in English) for this post.
+        contents: [{ parts: [{ text: `You are an elite visual content strategist for a brand-aware content engine. Write ONE image generation prompt (in English) for this post.
 
-POST CONTENT: "${contentText}"
-BRAND/INDUSTRY: ${niche || "business"}
-VISUAL STYLE: ${stylePrompt}
-IMAGE MODE: ${mode === "standalone" ? "Hero image — must be visually striking and self-explanatory" : "Background for text overlay — needs dark/muted areas for white text"}
+POST CONTENT (use as topic input, NOT a literal scene to depict): "${contentText.slice(0, 1200)}"
+BRAND / INDUSTRY: ${niche || "business"}
+${brandSection}
 
-THE #1 RULE: Show the ACTUAL SUBJECT the post talks about. ONE clear hero subject, close/medium shot, dramatic angle.
+INDUSTRY-SPECIFIC VISUAL RULES (these OVERRIDE the generic style hint below):
+- Style hint: ${rules.styleHint}
+- Banned for this industry: ${rules.bannedConcrete}
+- What to show instead: ${rules.doConcrete}
+- Palette: ${rules.paletteHint}
+- Emotional register: ${rules.emotionalRegister}
 
-BANNED: Wide crowd shots, generic businessman portraits, abstract imagery, anonymous people, empty environments.
+Generic style baseline (apply only where it does not conflict with industry rules): ${stylePrompt}
 
-For "${niche || "business"}" — think about objects/setups/environments unique to this industry.
+IMAGE MODE: ${mode === "standalone" ? "Hero blog/social image — must be visually striking, self-explanatory, and tone-perfect for the brand." : "Background for text overlay — needs muted areas for white text but still on-brand."}
 
-${mode === "overlay" ? "COLORS: Dark moody palette, large dark areas for white text overlay." : "COLORS: Rich vivid commercial photography quality."}
-NO text, words, letters, numbers in image.
+CRITICAL RULES (NEVER VIOLATE):
+1. Match the EMOTIONAL TONE of the post. A hopeful post about solutions gets a hopeful image. A serious post about a problem still gets a dignified image, NEVER a creepy or menacing one.
+2. If the post is about a sensitive health/wellness topic, the image must build trust and hope — not depict the problem in a scary or dramatic way.
+3. NO text, words, letters, numbers in image.
+4. NO extreme dramatic dark close-ups of body parts unless the industry rules explicitly allow it.
+5. NEVER let the generic style baseline override the industry rules.
 ${feedbackSection}
 
-Write ONLY the prompt, 2-3 sentences, hyper-specific.` }] }],
-        generationConfig: { maxOutputTokens: 400, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
+Write ONLY the prompt, 3-4 sentences, hyper-specific about: subject, environment, lighting, mood, composition.` }] }],
+        generationConfig: { maxOutputTokens: 500, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
       }),
     });
     const data = await r.json();
@@ -63,7 +164,7 @@ Write ONLY the prompt, 2-3 sentences, hyper-specific.` }] }],
   } catch (e) {
     console.error("[images] craft prompt failed:", e);
   }
-  return `Professional commercial photograph of ${niche || "a business setup"} related to: ${contentText.slice(0, 100)}. ${stylePrompt}. Photorealistic, high detail, no text in image.`;
+  return `Professional commercial photograph for a ${niche || "business"} brand related to: ${contentText.slice(0, 100)}. ${rules.styleHint} ${rules.doConcrete}. Photorealistic, high detail, no text in image.`;
 }
 
 export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16" | "16:9" | "4:3" | "3:4" = "1:1"): Promise<{ success?: boolean; image?: string; error?: string }> {
@@ -102,6 +203,22 @@ export async function generateFlux(prompt: string, aspect: "square" | "portrait"
   }
 }
 
+/**
+ * Plocka standard-stil baserat på bransch. Default-stilen "cinematic mörk" är
+ * fel för vården/coaching/B2B-tjänster — vi vill ha "editorial" eller "lifestyle"
+ * där, inte dramatiska skuggor.
+ */
+function defaultStyleForNiche(niche: string): ImageStyleId {
+  const n = (niche || "").toLowerCase();
+  if (/optik|ögon|syn|vård|läkare|terapi|hälsa|wellness|psykolog|fysio/.test(n)) return "editorial";
+  if (/coach|sälj|personlig utveckling|leadership|ledarskap|consulting|rådgiv/.test(n)) return "lifestyle";
+  if (/led|skärm|display|signage|skylt|hardware|elektronik/.test(n)) return "product";
+  if (/konst|design|kreativ|art|illustrat/.test(n)) return "minimal";
+  if (/bil|fordon|motor|mekanik|verkstad/.test(n)) return "product";
+  if (/natur|skog|jämt|outdoor/.test(n)) return "nordic";
+  return "editorial";
+}
+
 export async function generateImageForPost(opts: {
   contentText: string;
   niche?: string;
@@ -109,17 +226,19 @@ export async function generateImageForPost(opts: {
   mode?: "overlay" | "standalone";
   aspect?: "square" | "portrait" | "landscape";
   feedback?: ImageFeedback[];
+  brandContext?: string;
 }): Promise<{ success?: boolean; image?: string; error?: string; engine?: string; prompt?: string }> {
-  const styleObj = IMAGE_STYLES.find((s) => s.id === opts.styleId) || IMAGE_STYLES[0];
-  const mode = opts.mode || "standalone";
   const niche = opts.niche || "business";
+  // Om ingen styleId angiven — välj smart baserat på bransch (INTE alltid "cinematic mörk")
+  const resolvedStyleId = opts.styleId || defaultStyleForNiche(niche);
+  const styleObj = IMAGE_STYLES.find((s) => s.id === resolvedStyleId) || IMAGE_STYLES[1];
+  const mode = opts.mode || "standalone";
 
-  const aiScene = await craftImagePromptWithAI(opts.contentText, niche, styleObj.prompt, mode, opts.feedback);
+  const aiScene = await craftImagePromptWithAI(opts.contentText, niche, styleObj.prompt, mode, opts.feedback, opts.brandContext);
   const fullPrompt = `${aiScene}
-Style: ${styleObj.prompt}
 CRITICAL: Absolutely NO text, NO words, NO letters, NO numbers in the image.
-Photorealistic. Cinematic lighting. 4K resolution feel.
-${mode === "overlay" ? "Dark tones suitable for white text overlay." : "Beautiful composition, sharp focus."}`;
+Photorealistic. Natural composition. 4K resolution feel.
+${mode === "overlay" ? "Muted tones suitable for white text overlay — but never depressing." : "Beautiful composition, sharp focus, on-brand emotional tone."}`;
 
   const result = FAL_KEY ? await generateFlux(fullPrompt, opts.aspect || "square") : await generateImagen(fullPrompt, opts.aspect === "portrait" ? "9:16" : opts.aspect === "landscape" ? "16:9" : "1:1");
   return { ...result, engine: FAL_KEY ? "FLUX" : "Imagen", prompt: fullPrompt };
