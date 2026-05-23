@@ -89,29 +89,15 @@ export default async function BlogPostPage({
             {post.title}
           </h1>
 
-          {/* Content */}
-          <div className="prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-brand-blue">
-            {post.content.split("\n").map((line: string, i: number) => {
-              if (line.startsWith("## "))
-                return (
-                  <h2 key={i} className="text-2xl mt-10 mb-4">
-                    {line.replace("## ", "")}
-                  </h2>
-                );
-              if (line.startsWith("### "))
-                return (
-                  <h3 key={i} className="text-xl mt-8 mb-3">
-                    {line.replace("### ", "")}
-                  </h3>
-                );
-              if (line.trim() === "") return <br key={i} />;
-              return (
-                <p key={i} className="mb-4 text-text-muted leading-relaxed">
-                  {line}
-                </p>
-              );
-            })}
-          </div>
+          {/*
+            Content — renderar HTML direkt (editorn sparar HTML från RichEditor).
+            Gammal markdown-split-rendering kastade <blockquote>/<ul>/<div>/<strong>.
+            Se tasks/lessons.md 2026-05-23 (text-klump-buggen).
+          */}
+          <div
+            className="blog-content prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-brand-blue"
+            dangerouslySetInnerHTML={{ __html: renderBlogContent(post.content) }}
+          />
 
           {/* Back */}
           <div className="mt-12 pt-8 border-t border-gray-100">
@@ -129,4 +115,27 @@ export default async function BlogPostPage({
       <MobileStickyButton />
     </>
   );
+}
+
+/**
+ * Renderar HTML från editorn. Fungerar både för:
+ * - Ny HTML-output från RichEditor (<p>/<h2>/<blockquote>/<ul>/<div class="callout">)
+ * - Gammal markdown-output (## rubrik, vanlig text)
+ */
+function renderBlogContent(content: string): string {
+  if (!content) return "";
+  if (/<(p|h[1-6]|ul|ol|blockquote|div|strong|em|a)[\s>]/i.test(content)) {
+    return content;
+  }
+  return content
+    .split(/\n\n+/)
+    .map((block) => {
+      const trimmed = block.trim();
+      if (!trimmed) return "";
+      if (trimmed.startsWith("## ")) return `<h2>${trimmed.slice(3)}</h2>`;
+      if (trimmed.startsWith("### ")) return `<h3>${trimmed.slice(4)}</h3>`;
+      if (trimmed.startsWith("> ")) return `<blockquote><p>${trimmed.slice(2)}</p></blockquote>`;
+      return `<p>${trimmed.replace(/\n/g, "<br/>")}</p>`;
+    })
+    .join("\n");
 }

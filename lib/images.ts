@@ -118,6 +118,45 @@ function rulesForNiche(niche: string): IndustryRules {
   };
 }
 
+/**
+ * Steg 1 i bild-prompten: identifiera ETT konkret visuellt nyckelkoncept från texten.
+ * Förhindrar generiska "warm healthcare scene"-bilder som inte kopplar till inlägget.
+ */
+async function extractVisualConcept(contentText: string, niche: string, rules: IndustryRules): Promise<string> {
+  if (!GEMINI_KEY) return "";
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `Read this blog/social post. Identify ONE concrete visual concept that connects directly to the post's specific topic — not a generic industry scene.
+
+POST: "${contentText.slice(0, 2000)}"
+INDUSTRY: ${niche}
+
+Industry visual rules:
+- Do: ${rules.doConcrete}
+- Avoid: ${rules.bannedConcrete}
+
+The concept should be:
+- A SPECIFIC moment, object, or scene from THIS post (not a generic industry shot)
+- Something a reader would immediately recognize as "yes, that's what this post is about"
+- Visual — not abstract
+
+Reply with ONE sentence describing the visual concept. Example: "A person sitting in an optician's chair, lifting newly fitted prism glasses for the first time, soft daylight, expression of quiet relief."
+
+ONE SENTENCE ONLY.` }] }],
+        generationConfig: { maxOutputTokens: 200, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    });
+    const data = await r.json();
+    const txt = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    return txt && txt.length > 10 ? txt : "";
+  } catch {
+    return "";
+  }
+}
+
 async function craftImagePromptWithAI(
   contentText: string,
   niche: string,
@@ -129,6 +168,12 @@ async function craftImagePromptWithAI(
   if (!GEMINI_KEY) return contentText;
   const rules = rulesForNiche(niche);
 
+  // Steg 1: extrahera ett specifikt visuellt nyckelkoncept från posten
+  const visualConcept = await extractVisualConcept(contentText, niche, rules);
+  const conceptSection = visualConcept
+    ? `\n\nKEY VISUAL CONCEPT EXTRACTED FROM THIS POST (anchor your scene to this — don't drift to a generic industry scene):\n"${visualConcept}"`
+    : "";
+
   let feedbackSection = "";
   if (feedback?.length) {
     const liked = feedback.filter((f) => f.rating === 1).slice(-3);
@@ -138,6 +183,7 @@ async function craftImagePromptWithAI(
   }
 
   const brandSection = brandContext ? `\n\nBRAND VOICE & POSITIONING:\n${brandContext.slice(0, 1500)}` : "";
+  const fullContext = conceptSection + brandSection;
 
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
@@ -148,7 +194,7 @@ async function craftImagePromptWithAI(
 
 POST CONTENT (use as topic input, NOT a literal scene to depict): "${contentText.slice(0, 1200)}"
 BRAND / INDUSTRY: ${niche || "business"}
-${brandSection}
+${fullContext}
 
 INDUSTRY-SPECIFIC VISUAL RULES (these OVERRIDE the generic style hint below):
 - Style hint: ${rules.styleHint}

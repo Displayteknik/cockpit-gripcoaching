@@ -3,7 +3,19 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, type BlogPost } from "@/lib/supabase";
 import { RichEditor } from "@/components/dashboard/RichEditor";
-import { Plus, Pencil, Trash2, Eye, EyeOff, X, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, X, Upload, Image as ImageIcon, Sparkles, ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
+
+interface VoiceCheckResult {
+  score: number;
+  verdict: "pass" | "warn" | "block";
+  hint: string;
+  issues: string[];
+  breakdown: { forbidden_word_hits: number; ai_cliche_hits: number; signature_phrase_hits: number; length_fit: number; winning_example_similarity: number };
+  signatures_available: string[];
+  pain_words_to_use: string[];
+  joy_words_to_use: string[];
+  winning_examples_count: number;
+}
 
 const emptyPost: Partial<BlogPost> = {
   title: "", slug: "", excerpt: "", content: "",
@@ -18,6 +30,8 @@ export default function BlogDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [generatingCover, setGeneratingCover] = useState(false);
+  const [voiceCheck, setVoiceCheck] = useState<VoiceCheckResult | null>(null);
+  const [voiceChecking, setVoiceChecking] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
 
@@ -84,8 +98,55 @@ export default function BlogDashboardPage() {
     }
   };
 
+  /**
+   * Voice-check körs ALLTID innan save. Pulls client_voice_profile + winning examples
+   * och scorear texten. Verdict block (<55) kräver explicit override.
+   * Se tasks/lessons.md 2026-05-23 (brand-voice-systemet måste användas).
+   */
+  const runVoiceCheck = async (): Promise<VoiceCheckResult | null> => {
+    if (!editing) return null;
+    setVoiceChecking(true);
+    try {
+      const res = await fetch("/api/blog/voice-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editing.title, content: editing.content, excerpt: editing.excerpt }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Voice-check fel: " + (data.error || "okänt"));
+        return null;
+      }
+      setVoiceCheck(data as VoiceCheckResult);
+      return data as VoiceCheckResult;
+    } catch (err) {
+      alert("Voice-check misslyckades: " + (err as Error).message);
+      return null;
+    } finally {
+      setVoiceChecking(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!editing || !clientId) return;
+
+    // Steg 1: ALLTID voice-check innan save (förhindrar regression — se lessons.md)
+    const check = await runVoiceCheck();
+    if (check) {
+      if (check.verdict === "block") {
+        const proceed = confirm(
+          `❌ VOICE-SCORE: ${check.score}/100\n\nDetta är INTE i klientens röst.\n\nProblem:\n• ${check.issues.slice(0, 5).join("\n• ")}\n\nVill du spara ändå?`
+        );
+        if (!proceed) return;
+      } else if (check.verdict === "warn") {
+        const proceed = confirm(
+          `⚠️ VOICE-SCORE: ${check.score}/100\n\nKan förbättras:\n• ${check.issues.slice(0, 5).join("\n• ")}\n\nSpara ändå?`
+        );
+        if (!proceed) return;
+      }
+    }
+
+    // Steg 2: save
     setSaving(true);
     const payload: Record<string, unknown> = { ...editing, client_id: clientId };
     if (!payload.slug && payload.title) {
@@ -103,6 +164,7 @@ export default function BlogDashboardPage() {
     }
     setSaving(false);
     setEditing(null);
+    setVoiceCheck(null);
     loadPosts();
   };
 
@@ -133,12 +195,79 @@ export default function BlogDashboardPage() {
                 className="rounded border-gray-300 text-brand-blue focus:ring-brand-blue" />
               Publicerad
             </label>
-            <button onClick={handleSave} disabled={saving || !editing.title}
+            <button onClick={runVoiceCheck} disabled={voiceChecking || !editing.content}
+              className="px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+              title="Kör voice-check mot klientens röst-profil">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              {voiceChecking ? "Checkar..." : "Voice-check"}
+            </button>
+            <button onClick={handleSave} disabled={saving || !editing.title || voiceChecking}
               className="px-5 py-2 bg-brand-blue hover:bg-brand-blue-dark text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50">
-              {saving ? "Sparar..." : isNew ? "Publicera" : "Spara"}
+              {saving ? "Sparar..." : voiceChecking ? "Voice-check..." : isNew ? "Publicera" : "Spara"}
             </button>
           </div>
         </div>
+
+        {/* Voice-check resultatpanel */}
+        {voiceCheck && (
+          <div className={`mb-6 rounded-xl border p-4 ${
+            voiceCheck.verdict === "pass" ? "bg-emerald-50 border-emerald-200" :
+            voiceCheck.verdict === "warn" ? "bg-amber-50 border-amber-200" :
+            "bg-rose-50 border-rose-200"
+          }`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                {voiceCheck.verdict === "pass" ? <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /> :
+                 voiceCheck.verdict === "warn" ? <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" /> :
+                 <ShieldAlert className="w-5 h-5 text-rose-600 mt-0.5 shrink-0" />}
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="font-bold text-base">{voiceCheck.score}/100</span>
+                    <span className="text-xs uppercase tracking-wider font-semibold opacity-75">
+                      {voiceCheck.verdict === "pass" ? "I klientens röst" : voiceCheck.verdict === "warn" ? "Kan förbättras" : "Inte i klientens röst"}
+                    </span>
+                  </div>
+                  {voiceCheck.hint && <p className="text-sm mt-1 opacity-80">{voiceCheck.hint}</p>}
+                </div>
+              </div>
+              <button onClick={() => setVoiceCheck(null)} className="text-xs opacity-60 hover:opacity-100">✕</button>
+            </div>
+
+            {voiceCheck.issues.length > 0 && (
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                {voiceCheck.issues.map((issue, i) => (
+                  <div key={i} className="opacity-80">• {issue}</div>
+                ))}
+              </div>
+            )}
+
+            {(voiceCheck.signatures_available.length > 0 || voiceCheck.pain_words_to_use.length > 0) && (
+              <div className="mt-3 pt-3 border-t border-current/10 text-xs space-y-1.5">
+                {voiceCheck.signatures_available.length > 0 && (
+                  <div>
+                    <strong>Hennes signaturer (väv in en):</strong>{" "}
+                    <span className="opacity-80">{voiceCheck.signatures_available.join(" · ")}</span>
+                  </div>
+                )}
+                {voiceCheck.pain_words_to_use.length > 0 && (
+                  <div>
+                    <strong>Pain words:</strong>{" "}
+                    <span className="opacity-80">{voiceCheck.pain_words_to_use.join(" · ")}</span>
+                  </div>
+                )}
+                {voiceCheck.joy_words_to_use.length > 0 && (
+                  <div>
+                    <strong>Joy words:</strong>{" "}
+                    <span className="opacity-80">{voiceCheck.joy_words_to_use.join(" · ")}</span>
+                  </div>
+                )}
+                {voiceCheck.winning_examples_count > 0 && (
+                  <div className="opacity-70">Jämförs mot {voiceCheck.winning_examples_count} winning examples.</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Cover image */}
         <div className="mb-6">
