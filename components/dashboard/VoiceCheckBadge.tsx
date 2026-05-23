@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles } from "lucide-react";
 
 /**
@@ -43,13 +43,17 @@ interface Props {
   className?: string;
 }
 
-export function VoiceCheckBadge({ text, surface, clientId, onScore, autoCheck = false, className = "" }: Props) {
+export function VoiceCheckBadge({ text, surface, clientId, onScore, autoCheck = true, className = "" }: Props) {
   const [score, setScore] = useState<VoiceScore | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCheckedText = useRef<string>("");
 
   const runCheck = useCallback(async () => {
     if (!text || text.trim().length < 10) return;
+    if (text === lastCheckedText.current) return;
+    lastCheckedText.current = text;
     setLoading(true);
     try {
       const res = await fetch("/api/text/voice-check", {
@@ -67,10 +71,14 @@ export function VoiceCheckBadge({ text, surface, clientId, onScore, autoCheck = 
     }
   }, [text, surface, clientId, onScore]);
 
-  // Auto-check med debounce
-  if (autoCheck && text && !loading) {
-    // Note: i en riktig impl. behöver useEffect + debounce, men för enkelhet låter vi knapp:n vara primär
-  }
+  // AUTO-check när text ändras (1.5s debounce). Default på — användaren ska
+  // ALDRIG behöva trycka knapp för att se voice-score. Se feedback_brand_voice_always_pull.md.
+  useEffect(() => {
+    if (!autoCheck) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { runCheck(); }, 1500);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [text, autoCheck, runCheck]);
 
   const verdictColor = !score ? "" :
     score.verdict === "pass" ? "bg-emerald-50 border-emerald-200 text-emerald-800" :

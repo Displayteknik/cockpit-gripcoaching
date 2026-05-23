@@ -128,7 +128,17 @@ Skriv artikeln nu enligt dispositionen + reglerna.`;
 
     await logActivity(clientId, "blog_generated", `Artikel: ${article.title}`, blogId ? `/blogg/${slug}` : undefined, { word_count: article.content.split(/\s+/).length });
 
-    return NextResponse.json({ blog_id: blogId, slug, article });
+    // Auto voice-score artikeln. Användaren ser scoren direkt i editorn utan
+    // att behöva trycka knapp. Se feedback_brand_voice_always_pull.md.
+    let voiceScore = null;
+    try {
+      const { scoreText } = await import("@/lib/voice-enforce");
+      const full = `${article.title}\n\n${article.excerpt || ""}\n\n${article.content}`;
+      const s = await scoreText(full, clientId, "blog");
+      voiceScore = { score: s.total, verdict: s.total >= 70 ? "pass" : s.total >= 55 ? "warn" : "block", issues: s.issues.slice(0, 5) };
+    } catch {}
+
+    return NextResponse.json({ blog_id: blogId, slug, article, voice_score: voiceScore });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
