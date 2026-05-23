@@ -129,7 +129,7 @@ async function extractVisualConcept(contentText: string, niche: string, rules: I
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `Read this blog/social post. Identify ONE concrete visual concept that connects directly to the post's specific topic — not a generic industry scene.
+        contents: [{ parts: [{ text: `Read this blog/social post. Identify ONE concrete visual concept for a HERO IMAGE that matches the post's TONE and CONCLUSION — not its problem-opening.
 
 POST: "${contentText.slice(0, 2000)}"
 INDUSTRY: ${niche}
@@ -137,13 +137,21 @@ INDUSTRY: ${niche}
 Industry visual rules:
 - Do: ${rules.doConcrete}
 - Avoid: ${rules.bannedConcrete}
+- Emotional register required: ${rules.emotionalRegister}
+
+CRITICAL RULES FOR PICKING THE CONCEPT:
+1. The hero image must show HOPE, SOLUTION, or POSITIVE OUTCOME — NEVER the suffering or dramatic problem the post opens with.
+2. If the post tells a "before → after" story, ALWAYS depict the AFTER (relief, solution, clarity), not the BEFORE (suffering, darkness, struggle).
+3. If the post references dramatic imagery in the opening (eye-patches, dark rooms, hospital scenes, distressed people), DO NOT depict that literally — those are narrative devices, not the message.
+4. The image should make a reader think "I want what this person has" — feel safe, hopeful, seen.
+5. Anchor on the SOLUTION the brand offers (a calming consultation, a person trying on glasses with relief, hands receiving care).
 
 The concept should be:
-- A SPECIFIC moment, object, or scene from THIS post (not a generic industry shot)
-- Something a reader would immediately recognize as "yes, that's what this post is about"
-- Visual — not abstract
+- A SPECIFIC moment showing the POSITIVE OUTCOME or solution moment
+- Tonally aligned with: ${rules.emotionalRegister}
+- Visual, concrete, immediately readable
 
-Reply with ONE sentence describing the visual concept. Example: "A person sitting in an optician's chair, lifting newly fitted prism glasses for the first time, soft daylight, expression of quiet relief."
+Reply with ONE sentence describing the visual concept. Example for a healthcare/optician post about hidden eye problems: "A woman in her 50s sitting comfortably in a bright optician's consultation room, smiling softly while trying on a new pair of glasses, warm afternoon light through large windows, expression of relief and clarity."
 
 ONE SENTENCE ONLY.` }] }],
         generationConfig: { maxOutputTokens: 200, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } },
