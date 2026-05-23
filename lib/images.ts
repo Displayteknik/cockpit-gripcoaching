@@ -1,5 +1,20 @@
 // Bildgenerering — Imagen 4.0 Fast (Google) primärt, FLUX (fal.ai) om FAL_KEY finns,
 // Pexels för stockfoton. Portad och anpassad från instagram-pro.
+//
+// ⚠️  REGEL (etablerad 2026-05-23 efter regression — se tasks/lessons.md):
+//
+//  1. ANVÄND ALDRIG `cinematic` som default-stil. Den ger dark moody noir som
+//     blir skräckbild för vården/coaching/B2B-tjänster.
+//  2. ALLA endpoints som anropar generateImageForPost() MÅSTE skicka
+//     `brandContext` (från `getProfileAsMarkdown()`). Utan brand-voice vet
+//     AI:n bara branschen, inte tonen.
+//  3. Vid onboardning av ny bransch — lägg till case i BÅDA:
+//     - defaultStyleForNiche()
+//     - rulesForNiche()
+//     Annars faller den nya branschen tillbaka på "editorial" default —
+//     funkar men är inte optimerat.
+//  4. När du lägger till ny stil — kolla rulesForNiche-listan så bannedConcrete
+//     fortfarande hindrar det vi vill undvika för respektive bransch.
 
 import { supabaseServer } from "./supabase-admin";
 
