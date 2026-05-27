@@ -33,6 +33,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       label: "HQ",
       items: [
         { href: "/dashboard/hq", label: "HQ — Allt på ett ställe", icon: Command },
+        { href: "/dashboard/mysales-kunder", label: "MySales pionjärer", icon: Users },
       ],
     },
     {
