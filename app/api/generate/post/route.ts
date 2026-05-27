@@ -216,13 +216,20 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
 
     // Auto voice-score varje variant (server-side). Användaren ska aldrig
     // behöva trycka "Granska språk" — se feedback_brand_voice_always_pull.md.
+    type ScoredVariant = Variant & {
+      voice_score?: number;
+      voice_verdict?: "pass" | "warn" | "block";
+      voice_issues?: string[];
+    };
     const { scoreText } = await import("@/lib/voice-enforce");
-    const scoredVariants = await Promise.all(
-      variants.map(async (v) => {
+    const scoredVariants: ScoredVariant[] = await Promise.all(
+      variants.map(async (v): Promise<ScoredVariant> => {
         const full = [v.hook, v.body, v.cta].filter(Boolean).join("\n\n");
         try {
           const score = await scoreText(full, clientId, "social");
-          return { ...v, voice_score: score.total, voice_verdict: score.total >= 70 ? "pass" : score.total >= 55 ? "warn" : "block", voice_issues: score.issues.slice(0, 5) };
+          const verdict: "pass" | "warn" | "block" =
+            score.total >= 70 ? "pass" : score.total >= 55 ? "warn" : "block";
+          return { ...v, voice_score: score.total, voice_verdict: verdict, voice_issues: score.issues.slice(0, 5) };
         } catch {
           return v;
         }
