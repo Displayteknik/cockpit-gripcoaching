@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Snowflake } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -17,7 +17,7 @@ import ClientPicker from "@/components/ClientPicker";
 interface NavItem { href: string; label: string; icon: React.ComponentType<{ className?: string }> }
 interface NavSection { label: string; items: NavItem[] }
 
-function buildNavSections(resourceModule: string, slug: string): NavSection[] {
+function buildNavSections(resourceModule: string): NavSection[] {
   const resourceItems: NavItem[] =
     resourceModule === "art"
       ? [
@@ -27,10 +27,6 @@ function buildNavSections(resourceModule: string, slug: string): NavSection[] {
       : resourceModule === "automotive"
       ? [{ href: "/dashboard/fordon", label: "Fordon", icon: Car }]
       : [];
-
-  if (slug === "scandinavian-haydays") {
-    resourceItems.push({ href: "/dashboard/haydays", label: "Hay Days-sajt", icon: Snowflake });
-  }
 
   return [
     {
@@ -113,19 +109,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [resourceModule, setResourceModule] = useState<string>("automotive");
-  const [slug, setSlug] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/clients/active")
       .then((r) => r.json())
-      .then((c) => {
-        if (c?.resource_module) setResourceModule(c.resource_module);
-        if (c?.slug) setSlug(c.slug);
-      })
+      .then((c) => { if (c?.resource_module) setResourceModule(c.resource_module); })
       .catch(() => {});
   }, []);
 
-  const navSections = buildNavSections(resourceModule, slug);
+  const navSections = buildNavSections(resourceModule);
 
   // Hitta aktiv sektion-label för mobile-titel
   const activeItem = navSections.flatMap((s) => s.items).find((i) => i.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(i.href));

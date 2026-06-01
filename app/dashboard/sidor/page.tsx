@@ -24,9 +24,10 @@ function SidorDashboardPage() {
   const [newSlug, setNewSlug] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => { setClientId(c?.id || null); setSlug(c?.slug || null); });
   }, []);
 
   const loadPages = useCallback(async () => {
@@ -103,6 +104,24 @@ function SidorDashboardPage() {
           Ny sida
         </button>
       </div>
+
+      {/* Extern, handgjord sajt (Hay Days) — redigeras via klick-på-sajten */}
+      {slug === "scandinavian-haydays" && (
+        <Link
+          href="/dashboard/haydays"
+          className="group flex items-center gap-4 bg-white rounded-xl border border-gray-200 hover:border-brand-blue hover:shadow-sm transition-all p-4 mb-6"
+        >
+          <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <Globe className="w-5 h-5 text-brand-blue" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-sm text-gray-900">Hay Days-sajten</div>
+            <div className="text-xs text-gray-500 truncate">scandinavian-haydays.netlify.app · klicka för att redigera direkt på sidan</div>
+          </div>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Live</span>
+          <Pencil className="w-4 h-4 text-gray-300 group-hover:text-brand-blue transition-colors" />
+        </Link>
+      )}
 
       {/* New page form */}
       {showNew && (
