@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Copy, Check, RefreshCw, ExternalLink, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { CUSTOMER_FEATURES } from "@/lib/customer-features";
 
 interface Access {
   token: string;
   enabled: boolean;
+  features: string[];
   name: string;
 }
 
@@ -14,13 +16,18 @@ export default function KundAccessPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [features, setFeatures] = useState<string[]>([]);
+  const [savedFeatures, setSavedFeatures] = useState(false);
 
   async function load() {
     setLoading(true);
     try {
       const r = await fetch("/api/clients/customer-access");
       const d = await r.json();
-      if (!d.error) setAccess(d);
+      if (!d.error) {
+        setAccess(d);
+        setFeatures(d.features || []);
+      }
     } finally {
       setLoading(false);
     }
@@ -29,6 +36,26 @@ export default function KundAccessPage() {
   useEffect(() => {
     load();
   }, []);
+
+  function toggleFeature(key: string) {
+    setFeatures((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  }
+
+  async function saveFeatures() {
+    setBusy(true);
+    setSavedFeatures(false);
+    await fetch("/api/clients/customer-access", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ features }),
+    });
+    await load();
+    setBusy(false);
+    setSavedFeatures(true);
+    setTimeout(() => setSavedFeatures(false), 2500);
+  }
+
+  const featuresDirty = access ? JSON.stringify([...features].sort()) !== JSON.stringify([...access.features].sort()) : false;
 
   async function toggle() {
     if (!access) return;
@@ -76,9 +103,9 @@ export default function KundAccessPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900">MySales Pro — kund-access</h1>
+        <h1 className="font-display text-2xl font-bold text-gray-900">Kund-access</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Ge {access.name} en personlig länk till sin egen vy där de själva kan skapa innehåll, hantera DMs och se sina inlägg.
+          Ge {access.name} en personlig länk till sin egen vy. Du väljer själv vilka moduler de får använda — t.ex. bara SEO &amp; AEO.
         </p>
       </div>
 
@@ -119,7 +146,52 @@ export default function KundAccessPage() {
 
         {access.enabled && (
           <>
-            <div>
+            <div className="border-t border-gray-100 pt-4">
+              <div className="text-xs uppercase font-medium text-gray-500 mb-2">Vad ska {access.name} komma åt?</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {CUSTOMER_FEATURES.map((f) => {
+                  const checked = features.includes(f.key);
+                  const Icon = f.icon;
+                  return (
+                    <label
+                      key={f.key}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
+                        checked ? "border-emerald-300 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleFeature(f.key)}
+                        className="mt-0.5 rounded"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 font-medium text-sm text-gray-900">
+                          <Icon className="w-4 h-4 text-gray-500" />
+                          {f.label}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">{f.description}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  onClick={saveFeatures}
+                  disabled={busy || !featuresDirty}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  Spara behörigheter
+                </button>
+                {savedFeatures && <span className="text-sm text-emerald-700">Sparat ✓</span>}
+                {featuresDirty && !savedFeatures && <span className="text-sm text-amber-600">Osparade ändringar</span>}
+                {features.length === 0 && <span className="text-xs text-gray-400">Inga moduler valda — kunden ser bara översikten.</span>}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-4">
               <div className="text-xs uppercase font-medium text-gray-500 mb-1">Personlig inloggningslänk</div>
               <div className="flex gap-2">
                 <input
@@ -171,7 +243,7 @@ export default function KundAccessPage() {
         <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
         <div>
           <div className="font-semibold mb-1">Vad ser kunden?</div>
-          Kunden ser bara sin egen brand-profil, sin generator, sina inlägg och sina DM-kontakter — aldrig
+          Kunden ser bara de moduler du bockat i ovan, och bara sin egen data — aldrig
           andra klienter, dina specialister eller dina inställningar.
         </div>
       </div>

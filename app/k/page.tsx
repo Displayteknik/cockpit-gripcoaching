@@ -1,19 +1,39 @@
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
 import { supabaseService } from "@/lib/supabase-admin";
-import { Sparkles, Calendar, Users, Target, Trophy, FileText, AlertTriangle } from "lucide-react";
+import { CUSTOMER_FEATURES } from "@/lib/customer-features";
+import { Sparkles, Calendar, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, Lightbulb } from "lucide-react";
+
+// Genväg-kort per modul — bara de kunden har access till visas.
+const ACTION_CARDS: Record<string, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; color: string }> = {
+  seo: { icon: TrendingUp, title: "SEO & AEO", desc: "Auditera din sajt och se hur du syns i Google + AI-sökmotorer", color: "from-emerald-600 to-teal-600" },
+  skapa: { icon: Sparkles, title: "Skapa ett inlägg", desc: "Tre varianter på 30 sekunder — du väljer vilken som passar bäst", color: "from-purple-600 to-blue-600" },
+  veckoplan: { icon: Calendar, title: "Planera hela veckan", desc: "Skriv ett tema och få sju färdiga inlägg enligt 4A-rytmen", color: "from-emerald-600 to-teal-600" },
+  profil: { icon: Target, title: "Min profil", desc: "Det som gör innehållet bra — uppdatera röst, bilder och kunder", color: "from-amber-600 to-orange-600" },
+  dm: { icon: Users, title: "DM & uppföljning", desc: "Håll koll på alla som DM:at — från kommentar till bokad kund", color: "from-blue-600 to-cyan-600" },
+  ideer: { icon: Lightbulb, title: "Idé-bank", desc: "Granska och godkänn AI-genererade utkast", color: "from-fuchsia-600 to-purple-600" },
+};
 
 export default async function CustomerHome() {
   const session = await getCustomerSession();
   if (!session) return null;
 
+  const has = (k: string) => session.features.includes(k);
+  const showSocialStats = has("skapa") || has("veckoplan") || has("dm");
+
   const sb = supabaseService();
 
-  // Hämta enkla räknare
+  // Hämta bara den statistik som är relevant för kundens moduler.
   const [postsRes, contactsRes, qualityRes] = await Promise.all([
-    sb.from("hm_social_posts").select("status", { count: "exact", head: false }).eq("client_id", session.client_id),
-    sb.from("cockpit_dm_contacts").select("stage", { count: "exact", head: false }).eq("client_id", session.client_id),
-    sb.from("hm_brand_profile").select("usp, icp_primary, tone_rules, customer_quotes, booking_url").eq("client_id", session.client_id).maybeSingle(),
+    showSocialStats
+      ? sb.from("hm_social_posts").select("status", { count: "exact", head: false }).eq("client_id", session.client_id)
+      : Promise.resolve({ data: null }),
+    showSocialStats
+      ? sb.from("cockpit_dm_contacts").select("stage", { count: "exact", head: false }).eq("client_id", session.client_id)
+      : Promise.resolve({ data: null }),
+    has("profil")
+      ? sb.from("hm_brand_profile").select("usp, icp_primary, tone_rules, customer_quotes, booking_url").eq("client_id", session.client_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const totalPosts = postsRes.data?.length || 0;
@@ -26,14 +46,20 @@ export default async function CustomerHome() {
   const profileFilled = ["usp", "icp_primary", "tone_rules", "customer_quotes", "booking_url"].filter(
     (k) => (profile as Record<string, unknown>)[k] && String((profile as Record<string, unknown>)[k]).length > 10
   ).length;
-  const profileOK = profileFilled >= 4;
+  const profileOK = !has("profil") || profileFilled >= 4;
+
+  // Kort i kataloges ordning, filtrerade på behörighet.
+  const cards = CUSTOMER_FEATURES.filter((f) => has(f.key) && ACTION_CARDS[f.key]).map((f) => ({
+    href: f.href,
+    ...ACTION_CARDS[f.key],
+  }));
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold text-gray-900">Välkommen tillbaka</h1>
         <p className="text-gray-500 mt-1">
-          Här skapar du, schemalägger och följer dina sociala-medie-inlägg.
+          Här är dina verktyg från {session.client_name}.
         </p>
       </div>
 
@@ -52,42 +78,19 @@ export default async function CustomerHome() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Inlägg totalt" value={totalPosts} icon={FileText} />
-        <StatCard label="Utkast" value={drafts} icon={Sparkles} color="text-amber-600" />
-        <StatCard label="Publicerade" value={published} icon={Trophy} color="text-emerald-600" />
-        <StatCard label="Kunder i pipeline" value={`${wonContacts}/${totalContacts}`} icon={Users} color="text-purple-600" />
-      </div>
+      {showSocialStats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard label="Inlägg totalt" value={totalPosts} icon={FileText} />
+          <StatCard label="Utkast" value={drafts} icon={Sparkles} color="text-amber-600" />
+          <StatCard label="Publicerade" value={published} icon={Trophy} color="text-emerald-600" />
+          <StatCard label="Kunder i pipeline" value={`${wonContacts}/${totalContacts}`} icon={Users} color="text-purple-600" />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ActionCard
-          href="/k/skapa"
-          icon={Sparkles}
-          title="Skapa ett inlägg"
-          desc="Tre varianter på 30 sekunder — du väljer vilken som passar bäst"
-          color="from-purple-600 to-blue-600"
-        />
-        <ActionCard
-          href="/k/veckoplan"
-          icon={Calendar}
-          title="Planera hela veckan"
-          desc="Skriv ett tema och få sju färdiga inlägg enligt 4A-rytmen"
-          color="from-emerald-600 to-teal-600"
-        />
-        <ActionCard
-          href="/k/profil"
-          icon={Target}
-          title="Min profil"
-          desc="Det som gör dina inlägg bra — uppdatera röst, bilder och kunder"
-          color="from-amber-600 to-orange-600"
-        />
-        <ActionCard
-          href="/k/dm"
-          icon={Users}
-          title="DM & uppföljning"
-          desc="Håll koll på alla som DM:at — från kommentar till bokad kund"
-          color="from-blue-600 to-cyan-600"
-        />
+        {cards.map((c) => (
+          <ActionCard key={c.href} href={c.href} icon={c.icon} title={c.title} desc={c.desc} color={c.color} />
+        ))}
       </div>
     </div>
   );

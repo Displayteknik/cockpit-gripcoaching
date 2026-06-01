@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
-import { Sparkles, Calendar, Users, Target, Home, LogOut, Lightbulb } from "lucide-react";
+import { CUSTOMER_FEATURES, OVERVIEW_NAV } from "@/lib/customer-features";
+import { LogOut } from "lucide-react";
 
 interface Props {
   children: React.ReactNode;
@@ -12,6 +13,12 @@ export default async function CustomerLayout({ children }: Props) {
   if (!session) {
     redirect("/k-utloggad");
   }
+
+  // Visa bara de moduler kunden har behörighet till (Översikt alltid).
+  const navItems = [
+    OVERVIEW_NAV,
+    ...CUSTOMER_FEATURES.filter((f) => session.features.includes(f.key)),
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -29,12 +36,9 @@ export default async function CustomerLayout({ children }: Props) {
         </div>
 
         <nav className="flex-1 py-4 space-y-1 px-3">
-          <NavLink href="/k" icon={Home} label="Översikt" />
-          <NavLink href="/k/profil" icon={Target} label="Min profil" />
-          <NavLink href="/k/skapa" icon={Sparkles} label="Skapa inlägg" />
-          <NavLink href="/k/ideer" icon={Lightbulb} label="Idé-bank" />
-          <NavLink href="/k/veckoplan" icon={Calendar} label="Veckoplan" />
-          <NavLink href="/k/dm" icon={Users} label="DM & Pipeline" />
+          {navItems.map((item) => (
+            <NavLink key={item.href} href={item.href} icon={item.icon} label={item.label} />
+          ))}
         </nav>
 
         <div className="p-4 border-t border-gray-200">

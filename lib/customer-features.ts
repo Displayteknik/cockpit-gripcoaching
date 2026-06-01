@@ -1,0 +1,74 @@
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp } from "lucide-react";
+
+// Katalog över moduler en kund kan få access till i portalen (/k).
+// EN källa: används av admin-väljaren (kund-access), portal-navet och serverside-spärren.
+//
+// "key" sparas i clients.customer_features (text[]). NULL i DB = alla moduler (bakåtkompat).
+// Översikten (/k) är alltid tillgänglig och listas inte här.
+export interface CustomerFeature {
+  key: string;
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+}
+
+export const CUSTOMER_FEATURES: CustomerFeature[] = [
+  {
+    key: "profil",
+    label: "Brand-profil",
+    href: "/k/profil",
+    icon: Target,
+    description: "Kunden ser och kompletterar sin egen röst, ICP, kund-citat och bilder.",
+  },
+  {
+    key: "seo",
+    label: "SEO & AEO",
+    href: "/k/seo",
+    icon: TrendingUp,
+    description: "Sid-audit (SEO + AEO-score), åtgärdslista och sökords-tracker för sin egen sajt.",
+  },
+  {
+    key: "skapa",
+    label: "Skapa inlägg",
+    href: "/k/skapa",
+    icon: Sparkles,
+    description: "Generera sociala inlägg i sin egen röst.",
+  },
+  {
+    key: "ideer",
+    label: "Idé-bank",
+    href: "/k/ideer",
+    icon: Lightbulb,
+    description: "Granska och godkänn AI-genererade utkast.",
+  },
+  {
+    key: "veckoplan",
+    label: "Veckoplan",
+    href: "/k/veckoplan",
+    icon: Calendar,
+    description: "Sju färdiga inlägg enligt 4A-rytmen.",
+  },
+  {
+    key: "dm",
+    label: "DM & Pipeline",
+    href: "/k/dm",
+    icon: Users,
+    description: "Håll koll på DM-kontakter från kommentar till bokad kund.",
+  },
+];
+
+export const ALL_FEATURE_KEYS = CUSTOMER_FEATURES.map((f) => f.key);
+
+export const OVERVIEW_NAV = { key: "__overview", label: "Översikt", href: "/k", icon: Home };
+
+export function featureByKey(key: string): CustomerFeature | undefined {
+  return CUSTOMER_FEATURES.find((f) => f.key === key);
+}
+
+// Normalisera värdet från DB: NULL/tom = alla moduler (bakåtkompat med befintliga kunder
+// som redan hade portal-access innan modul-styrning fanns).
+export function normalizeFeatures(raw: string[] | null | undefined): string[] {
+  if (!raw || raw.length === 0) return [...ALL_FEATURE_KEYS];
+  return raw.filter((k) => ALL_FEATURE_KEYS.includes(k));
+}

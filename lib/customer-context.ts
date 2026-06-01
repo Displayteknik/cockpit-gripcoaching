@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { supabaseService } from "./supabase-admin";
+import { normalizeFeatures } from "./customer-features";
 
 const TOKEN_COOKIE = "customer_token";
 const CLIENT_COOKIE = "customer_client_id";
@@ -9,6 +11,7 @@ export interface CustomerSession {
   client_name: string;
   client_slug: string;
   primary_color: string;
+  features: string[];
 }
 
 // Validera token mot DB och cacha-id i cookie
@@ -17,7 +20,7 @@ export async function resolveCustomerToken(token: string): Promise<CustomerSessi
   const sb = supabaseService();
   const { data } = await sb
     .from("clients")
-    .select("id, name, slug, primary_color, customer_access_enabled")
+    .select("id, name, slug, primary_color, customer_access_enabled, customer_features")
     .eq("customer_token", token)
     .maybeSingle();
   if (!data || !data.customer_access_enabled) return null;
@@ -26,6 +29,7 @@ export async function resolveCustomerToken(token: string): Promise<CustomerSessi
     client_name: data.name as string,
     client_slug: data.slug as string,
     primary_color: (data.primary_color as string) || "#1A6B3C",
+    features: normalizeFeatures(data.customer_features as string[] | null),
   };
 }
 
@@ -38,7 +42,7 @@ export async function getCustomerSession(): Promise<CustomerSession | null> {
   const sb = supabaseService();
   const { data } = await sb
     .from("clients")
-    .select("id, name, slug, primary_color, customer_access_enabled")
+    .select("id, name, slug, primary_color, customer_access_enabled, customer_features")
     .eq("id", clientId)
     .maybeSingle();
   if (!data || !data.customer_access_enabled) return null;
@@ -47,7 +51,18 @@ export async function getCustomerSession(): Promise<CustomerSession | null> {
     client_name: data.name as string,
     client_slug: data.slug as string,
     primary_color: (data.primary_color as string) || "#1A6B3C",
+    features: normalizeFeatures(data.customer_features as string[] | null),
   };
+}
+
+// Serverside-spärr för en portal-sida som kräver en viss modul.
+// Saknar kunden session → /k-utloggad. Saknar modul-behörighet → /k (översikt).
+// Returnerar sessionen så sidan kan använda den direkt.
+export async function requireCustomerFeature(featureKey: string): Promise<CustomerSession> {
+  const session = await getCustomerSession();
+  if (!session) redirect("/k-utloggad");
+  if (!session.features.includes(featureKey)) redirect("/k");
+  return session;
 }
 
 export async function setCustomerSession(token: string, clientId: string): Promise<void> {

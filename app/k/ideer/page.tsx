@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getCustomerSession } from "@/lib/customer-context";
+import { requireCustomerFeature } from "@/lib/customer-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { Lightbulb } from "lucide-react";
 import IdeasList from "./IdeasList";
@@ -7,8 +6,7 @@ import IdeasList from "./IdeasList";
 export const dynamic = "force-dynamic";
 
 export default async function CustomerIdeasPage() {
-  const session = await getCustomerSession();
-  if (!session) redirect("/k-utloggad");
+  const session = await requireCustomerFeature("ideer");
 
   const sb = supabaseService();
   const { data } = await sb
