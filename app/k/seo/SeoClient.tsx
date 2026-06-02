@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Zap, FileText } from "lucide-react";
+import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Zap, FileText, Download } from "lucide-react";
 
 interface Audit {
   id: string;
@@ -228,7 +228,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl }: { pri
                       {reportLoading[a.id] ? "Skriver rapport..." : "Förklara resultatet (rapport)"}
                     </button>
                   ) : (
-                    <ReportView report={reports[a.id]} primaryColor={primaryColor} />
+                    <ReportView report={reports[a.id]} primaryColor={primaryColor} clientName={clientName} url={a.url} auditedAt={a.audited_at} />
                   )}
 
                   {/* Tekniska detaljer */}
@@ -450,7 +450,93 @@ function AiAuditModal({ primaryColor, onClose }: { primaryColor: string; onClose
   );
 }
 
-function ReportView({ report, primaryColor }: { report: Report; primaryColor: string }) {
+function esc(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function printReport(report: Report, ctx: { clientName: string; url: string; auditedAt: string; primaryColor: string }) {
+  const { clientName, url, auditedAt, primaryColor } = ctx;
+  const sc = report.scorecard;
+  const order = { hög: 0, medel: 1, låg: 2 } as Record<string, number>;
+  const forb = [...(report.forbattringar || [])].sort((a, b) => (order[a.prioritet] ?? 9) - (order[b.prioritet] ?? 9));
+  const datum = (() => { try { return new Date(auditedAt).toLocaleDateString("sv-SE"); } catch { return ""; } })();
+
+  const scoreColor = (v?: number) => (v == null ? "#9ca3af" : v >= 80 ? "#059669" : v >= 60 ? "#d97706" : "#dc2626");
+  const cell = (label: string, o?: { poang: number; kommentar: string }) => `
+    <div class="cell">
+      <div class="cell-label">${esc(label)}</div>
+      <div class="cell-score" style="color:${scoreColor(o?.poang)}">${o?.poang ?? "—"}</div>
+      <div class="cell-comment">${esc(o?.kommentar)}</div>
+    </div>`;
+
+  const html = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
+<title>SEO & AEO-rapport – ${esc(clientName)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2937; margin: 0; padding: 32px; }
+  .top { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid ${primaryColor}; padding-bottom:14px; margin-bottom:20px; }
+  .brand { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:${primaryColor}; }
+  .client { font-size:22px; font-weight:800; margin-top:2px; }
+  .meta { font-size:11px; color:#6b7280; text-align:right; line-height:1.6; }
+  h1.betyg { font-size:19px; margin:0 0 6px; }
+  .summary { font-size:13px; color:#374151; line-height:1.6; margin:0 0 18px; }
+  .scorecard { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 22px; }
+  .cell { border:1px solid #e5e7eb; border-radius:8px; padding:10px; }
+  .cell-label { font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; }
+  .cell-score { font-size:26px; font-weight:800; }
+  .cell-comment { font-size:10px; color:#6b7280; line-height:1.4; }
+  h2 { font-size:14px; margin:20px 0 8px; padding-bottom:4px; border-bottom:1px solid #e5e7eb; }
+  .good { background:#ecfdf5; border:1px solid #d1fae5; border-radius:8px; padding:10px; margin-bottom:8px; }
+  .good .t { font-weight:700; font-size:13px; }
+  .good .w { font-size:11px; color:#4b5563; margin-top:2px; }
+  .item { border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-bottom:10px; page-break-inside:avoid; }
+  .item .h { display:flex; justify-content:space-between; gap:8px; }
+  .item .t { font-weight:700; font-size:13px; }
+  .badges span { font-size:9px; font-weight:800; text-transform:uppercase; padding:2px 7px; border-radius:999px; margin-left:4px; }
+  .b-hog{background:#fee2e2;color:#b91c1c;} .b-medel{background:#fef3c7;color:#b45309;} .b-lag{background:#f3f4f6;color:#6b7280;}
+  .e-stor{background:#d1fae5;color:#047857;} .e-medel{background:#dbeafe;color:#1d4ed8;} .e-liten{background:#f3f4f6;color:#9ca3af;}
+  .row { font-size:11px; color:#374151; margin-top:5px; } .row b { color:#111827; }
+  .ex { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:10px; background:#f9fafb; border:1px solid #f3f4f6; border-radius:6px; padding:8px; margin-top:6px; white-space:pre-wrap; }
+  .box { border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:${primaryColor}0D; margin-top:8px; }
+  ul { margin:6px 0; padding-left:18px; } li { font-size:11px; margin:2px 0; }
+  .foot { margin-top:26px; padding-top:10px; border-top:1px solid #e5e7eb; font-size:10px; color:#9ca3af; text-align:center; }
+  @media print { body { padding:0; } @page { margin:18mm; } }
+</style></head><body>
+  <div class="top">
+    <div><div class="brand">SEO &amp; AEO-rapport</div><div class="client">${esc(clientName)}</div></div>
+    <div class="meta">${esc(url)}<br>${esc(datum)}</div>
+  </div>
+  <h1 class="betyg">${esc(report.betyg)}</h1>
+  <p class="summary">${esc(report.sammanfattning)}</p>
+  ${sc ? `<div class="scorecard">${cell("Google (SEO)", sc.seo)}${cell("AI-sökmotorer (AEO)", sc.aeo)}${cell("Innehåll", sc.innehall)}${cell("Trovärdighet (E-E-A-T)", sc.eeat)}</div>` : ""}
+  ${report.styrkor?.length ? `<h2>Det här är bra</h2>${report.styrkor.map(s => `<div class="good"><div class="t">${esc(s.rubrik)}</div><div class="w">${esc(s.varfor)}</div></div>`).join("")}` : ""}
+  ${forb.length ? `<h2>Prioriterade åtgärder</h2>${forb.map((f, i) => `
+    <div class="item">
+      <div class="h"><div class="t">${i + 1}. ${esc(f.rubrik)}</div>
+        <div class="badges"><span class="b-${f.prioritet === "hög" ? "hog" : f.prioritet === "medel" ? "medel" : "lag"}">${esc(f.prioritet)} prio</span>${f.effekt ? `<span class="e-${f.effekt === "stor" ? "stor" : f.effekt === "medel" ? "medel" : "liten"}">${esc(f.effekt)} effekt</span>` : ""}</div>
+      </div>
+      <div class="row"><b>Varför:</b> ${esc(f.varfor)}</div>
+      <div class="row"><b>Så här:</b> ${esc(f.sa_har)}</div>
+      ${f.exempel && f.exempel.trim() ? `<div class="ex">${esc(f.exempel)}</div>` : ""}
+    </div>`).join("")}` : ""}
+  ${report.citerbarhet ? `<h2>Citerbarhet i AI-sökmotorer</h2><div class="box"><div class="t" style="font-weight:700;font-size:13px;">${esc(report.citerbarhet.omdome)}</div><div class="row">${esc(report.citerbarhet.motivering)}</div>${report.citerbarhet.forslag ? `<div class="row"><b>Gör så här:</b> ${esc(report.citerbarhet.forslag)}</div>` : ""}</div>` : ""}
+  ${report.eeat && (report.eeat.omdome || report.eeat.saknas?.length) ? `<h2>Trovärdighet (E-E-A-T)</h2>${report.eeat.omdome ? `<div class="row">${esc(report.eeat.omdome)}</div>` : ""}${report.eeat.saknas?.length ? `<ul>${report.eeat.saknas.map(s => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}` : ""}
+  <div class="foot">Genererad av Cockpit · ${esc(clientName)}</div>
+</body></html>`;
+
+  const w = window.open("", "_blank");
+  if (!w) { alert("Tillåt popup-fönster för att ladda ner rapporten."); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 400);
+}
+
+function ReportView({ report, primaryColor, clientName, url, auditedAt }: { report: Report; primaryColor: string; clientName: string; url: string; auditedAt: string }) {
   const order = { hög: 0, medel: 1, låg: 2 } as const;
   const prioColor: Record<string, string> = {
     hög: "bg-red-100 text-red-700",
@@ -471,8 +557,18 @@ function ReportView({ report, primaryColor }: { report: Report; primaryColor: st
     <div className="rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="p-5" style={{ background: `${primaryColor}0D` }}>
-        <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
-          Din SEO &amp; AEO-rapport
+        <div className="flex items-start justify-between gap-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
+            Din SEO &amp; AEO-rapport
+          </div>
+          <button
+            onClick={() => printReport(report, { clientName, url, auditedAt, primaryColor })}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 flex-shrink-0"
+            style={{ color: primaryColor, borderColor: `${primaryColor}40` }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Ladda ner som PDF
+          </button>
         </div>
         <div className="font-display font-bold text-gray-900 text-xl mt-0.5">{report.betyg}</div>
         <p className="text-sm text-gray-700 mt-1.5 leading-relaxed">{report.sammanfattning}</p>
