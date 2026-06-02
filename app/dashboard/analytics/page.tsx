@@ -1,30 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, RefreshCw, Loader2, Heart, MessageCircle, Bookmark, Share2, Eye, Users } from "lucide-react";
+import { TrendingUp, RefreshCw, Loader2, Heart, MessageCircle, Bookmark, Share2, Eye, Users, Globe, MousePointer, ExternalLink } from "lucide-react";
 import LineChart from "@/components/charts/LineChart";
 import BarChart from "@/components/charts/BarChart";
 
 interface Snapshot { id: string; followers: number; following: number; posts_count: number; snapshot_at: string }
 interface PostMetric { id: string; ig_media_id: string; likes: number; comments: number; saves: number; shares: number; reach: number; impressions: number; captured_at: string }
+interface SiteTraffic {
+  visits_24h: number;
+  visits_7d: number;
+  visits_30d: number;
+  top_paths: { key: string; count: number }[];
+  top_referrers: { key: string; count: number }[];
+  recent: { path: string | null; referrer: string | null; ts: string }[];
+}
 
 export default function AnalyticsPage() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [metrics, setMetrics] = useState<PostMetric[]>([]);
+  const [traffic, setTraffic] = useState<SiteTraffic | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [igConnected, setIgConnected] = useState(false);
 
   useEffect(() => { reload(); }, []);
 
   async function reload() {
-    const [s, m, ig] = await Promise.all([
+    const [s, m, ig, t] = await Promise.all([
       fetch("/api/analytics/snapshots").then((r) => r.ok ? r.json() : []),
       fetch("/api/analytics/metrics").then((r) => r.ok ? r.json() : []),
       fetch("/api/instagram/connect").then((r) => r.json()),
+      fetch("/api/seo/analytics").then((r) => r.ok ? r.json() : null),
     ]);
     setSnapshots(s);
     setMetrics(m);
     setIgConnected(ig.connected);
+    setTraffic(t);
   }
 
   async function sync() {
@@ -70,16 +81,95 @@ export default function AnalyticsPage() {
         <div>
           <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-purple-600" />
-            Instagram Analytics
+            Analytics
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Riktig data direkt från Instagram Graph API. Följare, engagement, räckvidd.
+            Sajttrafik (pixel) + Instagram (Graph API). Två datakällor, ett ställe.
           </p>
         </div>
         <button onClick={sync} disabled={syncing || !igConnected} className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">
           {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           Synka från Instagram
         </button>
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ SAJTTRAFIK (PIXEL) ━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-blue-600" />
+            <h2 className="font-display font-bold text-gray-900">Sajttrafik (pixel)</h2>
+          </div>
+          {traffic && traffic.visits_30d === 0 && (
+            <span className="text-[11px] text-gray-400">Inga besök än — pixeln väntar på trafik</span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <KPI icon={MousePointer} label="Besök 24h" value={traffic?.visits_24h ?? "—"} color="blue" />
+          <KPI icon={MousePointer} label="Besök 7d" value={traffic?.visits_7d ?? "—"} color="blue" />
+          <KPI icon={MousePointer} label="Besök 30d" value={traffic?.visits_30d ?? "—"} color="blue" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Mest besökta sidor</h3>
+            {!traffic || traffic.top_paths.length === 0 ? (
+              <p className="text-xs text-gray-400">Ingen data än</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {traffic.top_paths.slice(0, 5).map((p, i) => (
+                  <li key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700 truncate font-mono text-xs" title={p.key}>{p.key || "/"}</span>
+                    <span className="text-gray-500 font-semibold tabular-nums">{p.count}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Var trafiken kommer ifrån</h3>
+            {!traffic || traffic.top_referrers.length === 0 ? (
+              <p className="text-xs text-gray-400">Ingen data än — eller alla besök är direkt</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {traffic.top_referrers.slice(0, 5).map((r, i) => {
+                  const host = r.key.replace(/^https?:\/\//, "").split("/")[0];
+                  return (
+                    <li key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 truncate flex items-center gap-1.5" title={r.key}>
+                        <ExternalLink className="w-3 h-3 text-gray-400" />
+                        {host || r.key}
+                      </span>
+                      <span className="text-gray-500 font-semibold tabular-nums">{r.count}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {traffic && traffic.recent.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Senaste 10 besöken</h3>
+            <ul className="space-y-1 text-xs">
+              {traffic.recent.slice(0, 10).map((v, i) => (
+                <li key={i} className="flex items-center gap-2 text-gray-600">
+                  <span className="text-gray-400 tabular-nums w-16 shrink-0">{new Date(v.ts).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span className="font-mono truncate flex-1" title={v.path || ""}>{v.path || "/"}</span>
+                  {v.referrer && <span className="text-gray-400 truncate max-w-[120px]" title={v.referrer}>← {v.referrer.replace(/^https?:\/\//, "").split("/")[0]}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ INSTAGRAM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="flex items-center gap-2 pt-2">
+        <Eye className="w-4 h-4 text-pink-600" />
+        <h2 className="font-display font-bold text-gray-900 text-base">Instagram</h2>
       </div>
 
       {!igConnected && (
