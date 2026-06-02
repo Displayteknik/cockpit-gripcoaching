@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch, Upload, HelpCircle, Sparkles, BarChart3, Bot, ShieldCheck, Code2, RefreshCw, Target, ArrowRight } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import { SeoReportBlock } from "@/components/SeoReport";
 
 interface Analytics {
   visits_24h: number;
@@ -82,10 +83,12 @@ function SEOPageInner() {
   const [gscRows, setGscRows] = useState<{ query: string; clicks: number; impressions: number; position: number }[]>([]);
   const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; connection: { gsc_site: string | null } | null } | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [activeClient, setActiveClient] = useState<{ name: string; primary_color: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/seo/gsc-import").then((r) => r.ok ? r.json() : []).then(setGscRows).catch(() => {});
     fetch("/api/google/status").then((r) => r.json()).then(setGoogleStatus).catch(() => {});
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => { if (c) setActiveClient({ name: c.name, primary_color: c.primary_color || "#10B981" }); }).catch(() => {});
   }, []);
 
   async function syncGsc(days: number) {
@@ -346,6 +349,7 @@ function SEOPageInner() {
                   </div>
                 </summary>
                 <div className="px-4 py-3 border-t border-gray-200 bg-white space-y-3">
+                  <SeoReportBlock auditId={a.id} url={a.url} auditedAt={a.audited_at} clientName={activeClient?.name || "Klient"} primaryColor={activeClient?.primary_color || "#10B981"} />
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <Mini label="Title" value={a.title ? `${a.title.length} tecken` : "saknas"} ok={!!a.title && a.title.length >= 30 && a.title.length <= 60} />
                     <Mini label="Meta-desc" value={a.meta_description ? `${a.meta_description.length} tecken` : "saknas"} ok={!!a.meta_description && a.meta_description.length >= 120 && a.meta_description.length <= 160} />
