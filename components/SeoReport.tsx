@@ -26,7 +26,24 @@ export interface SeoReport {
   }[];
   citerbarhet?: { omdome: string; motivering: string; forslag: string };
   eeat?: { omdome: string; saknas: string[] };
+  teknik?: {
+    plattform: string;
+    indexerbar: boolean;
+    canonical: string | null;
+    canonical_kalla: string;
+    lighthouse_seo: number | null;
+    sitemap_urls: number | null;
+    cwv: { lcp: CwvCell | null; inp: CwvCell | null; cls: CwvCell | null } | null;
+    checkar: { label: string; pass: boolean; detail: string }[];
+  };
+  sokord?: { query: string; clicks: number; impressions: number; ctr: number | null; position: number | null }[];
 }
+
+type CwvCell = { value: number; category: string };
+const cwvColor = (c?: string) => (c === "good" ? "text-emerald-600" : c === "needs-improvement" ? "text-amber-600" : c === "poor" ? "text-red-600" : "text-gray-400");
+const cwvLcp = (v: number) => `${(v / 1000).toFixed(1)} s`;
+const cwvInp = (v: number) => `${Math.round(v)} ms`;
+const cwvCls = (v: number) => v.toFixed(2);
 
 export function SeoReportBlock({
   auditId,
@@ -138,6 +155,66 @@ function ReportView({
       )}
 
       <div className="p-5 space-y-5">
+        {report.teknik && (
+          <div>
+            <div className="text-sm font-semibold text-gray-900 mb-2">Teknik &amp; prestanda <span className="text-[10px] font-normal text-gray-400">(uppmätt)</span></div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              <span className={`text-xs px-2 py-1 rounded-lg border ${report.teknik.indexerbar ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"}`}>
+                {report.teknik.indexerbar ? "Indexerbar" : "EJ indexerbar"}
+              </span>
+              <span className="text-xs px-2 py-1 rounded-lg border bg-gray-50 border-gray-100 text-gray-600">Plattform: {report.teknik.plattform}</span>
+              {report.teknik.lighthouse_seo != null && <span className="text-xs px-2 py-1 rounded-lg border bg-gray-50 border-gray-100 text-gray-600">Lighthouse SEO: {report.teknik.lighthouse_seo}</span>}
+              <span className={`text-xs px-2 py-1 rounded-lg border ${report.teknik.canonical_kalla === "none" ? "bg-red-50 border-red-100 text-red-700" : "bg-gray-50 border-gray-100 text-gray-600"}`}>
+                Canonical: {report.teknik.canonical_kalla === "none" ? "saknas" : report.teknik.canonical_kalla === "payload" ? "renderad" : "ok"}
+              </span>
+              {report.teknik.sitemap_urls != null && <span className="text-xs px-2 py-1 rounded-lg border bg-gray-50 border-gray-100 text-gray-600">Sitemap: {report.teknik.sitemap_urls} URL:er</span>}
+            </div>
+            {report.teknik.cwv && (
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {([["LCP", report.teknik.cwv.lcp, cwvLcp], ["INP", report.teknik.cwv.inp, cwvInp], ["CLS", report.teknik.cwv.cls, cwvCls]] as const).map(([label, cell, fmt]) => (
+                  <div key={label} className="border border-gray-100 rounded-lg p-2 text-center">
+                    <div className="text-[10px] text-gray-500 uppercase">{label}</div>
+                    <div className={`text-lg font-bold tabular-nums ${cwvColor(cell?.category)}`}>{cell ? fmt(cell.value) : "—"}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {report.teknik.checkar?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {report.teknik.checkar.map((c, i) => (
+                  <span key={i} className={`text-[11px] px-2 py-0.5 rounded-full ${c.pass ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`} title={c.detail}>
+                    {c.pass ? "✓" : "✕"} {c.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {report.sokord && report.sokord.length > 0 && (
+          <div>
+            <div className="text-sm font-semibold text-gray-900 mb-2">Sökord i Google <span className="text-[10px] font-normal text-gray-400">(Search Console)</span></div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="text-gray-500 text-left border-b border-gray-100">
+                  <th className="py-1 pr-2 font-medium">Sökord</th><th className="py-1 px-2 font-medium text-right">Visn.</th><th className="py-1 px-2 font-medium text-right">Klick</th><th className="py-1 px-2 font-medium text-right">CTR</th><th className="py-1 pl-2 font-medium text-right">Pos.</th>
+                </tr></thead>
+                <tbody>
+                  {report.sokord.slice(0, 10).map((k, i) => (
+                    <tr key={i} className="border-b border-gray-50">
+                      <td className="py-1 pr-2 text-gray-800">{k.query}</td>
+                      <td className="py-1 px-2 text-right tabular-nums text-gray-600">{k.impressions}</td>
+                      <td className="py-1 px-2 text-right tabular-nums text-gray-600">{k.clicks}</td>
+                      <td className="py-1 px-2 text-right tabular-nums text-gray-600">{k.ctr != null ? (k.ctr * 100).toFixed(1) + "%" : "—"}</td>
+                      <td className="py-1 pl-2 text-right tabular-nums text-gray-600">{k.position != null ? k.position.toFixed(1) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {report.styrkor?.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700 mb-2">
@@ -284,6 +361,24 @@ function printReport(report: SeoReport, ctx: { clientName: string; url: string; 
   <h1 class="betyg">${esc(report.betyg)}</h1>
   <p class="summary">${esc(report.sammanfattning)}</p>
   ${sc ? `<div class="scorecard">${cell("Google (SEO)", sc.seo)}${cell("AI-sökmotorer (AEO)", sc.aeo)}${cell("Innehåll", sc.innehall)}${cell("Trovärdighet (E-E-A-T)", sc.eeat)}</div>` : ""}
+  ${report.teknik ? (() => {
+    const t = report.teknik!;
+    const cc = (c?: string) => (c === "good" ? "#059669" : c === "needs-improvement" ? "#d97706" : c === "poor" ? "#dc2626" : "#9ca3af");
+    const cwvHtml = t.cwv ? `<div class="scorecard" style="grid-template-columns:repeat(3,1fr);">
+      <div class="cell"><div class="cell-label">LCP</div><div class="cell-score" style="color:${cc(t.cwv.lcp?.category)}">${t.cwv.lcp ? (t.cwv.lcp.value / 1000).toFixed(1) + " s" : "—"}</div></div>
+      <div class="cell"><div class="cell-label">INP</div><div class="cell-score" style="color:${cc(t.cwv.inp?.category)}">${t.cwv.inp ? Math.round(t.cwv.inp.value) + " ms" : "—"}</div></div>
+      <div class="cell"><div class="cell-label">CLS</div><div class="cell-score" style="color:${cc(t.cwv.cls?.category)}">${t.cwv.cls ? t.cwv.cls.value.toFixed(2) : "—"}</div></div>
+    </div>` : "";
+    const checks = t.checkar?.length ? `<div style="margin-top:6px;">${t.checkar.map(c => `<span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin:2px;background:${c.pass ? "#ecfdf5" : "#fee2e2"};color:${c.pass ? "#047857" : "#b91c1c"};">${c.pass ? "✓" : "✕"} ${esc(c.label)}</span>`).join("")}</div>` : "";
+    return `<h2>Teknik &amp; prestanda (uppmätt)</h2>
+      <div class="row"><b>Indexerbar:</b> ${t.indexerbar ? "Ja" : "NEJ"} &nbsp;·&nbsp; <b>Plattform:</b> ${esc(t.plattform)} &nbsp;·&nbsp; <b>Canonical:</b> ${t.canonical_kalla === "none" ? "saknas" : t.canonical_kalla === "payload" ? "renderad" : "ok"}${t.lighthouse_seo != null ? ` &nbsp;·&nbsp; <b>Lighthouse SEO:</b> ${t.lighthouse_seo}` : ""}${t.sitemap_urls != null ? ` &nbsp;·&nbsp; <b>Sitemap:</b> ${t.sitemap_urls} URL:er` : ""}</div>
+      ${cwvHtml}${checks}`;
+  })() : ""}
+  ${report.sokord?.length ? `<h2>Sökord i Google (Search Console)</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <tr style="text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;"><th style="padding:3px 4px;">Sökord</th><th style="padding:3px 4px;text-align:right;">Visn.</th><th style="padding:3px 4px;text-align:right;">Klick</th><th style="padding:3px 4px;text-align:right;">CTR</th><th style="padding:3px 4px;text-align:right;">Pos.</th></tr>
+      ${report.sokord.slice(0, 10).map(k => `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:3px 4px;">${esc(k.query)}</td><td style="padding:3px 4px;text-align:right;">${k.impressions}</td><td style="padding:3px 4px;text-align:right;">${k.clicks}</td><td style="padding:3px 4px;text-align:right;">${k.ctr != null ? (k.ctr * 100).toFixed(1) + "%" : "—"}</td><td style="padding:3px 4px;text-align:right;">${k.position != null ? k.position.toFixed(1) : "—"}</td></tr>`).join("")}
+    </table>` : ""}
   ${report.styrkor?.length ? `<h2>Det här är bra</h2>${report.styrkor.map(s => `<div class="good"><div class="t">${esc(s.rubrik)}</div><div class="w">${esc(s.varfor)}</div></div>`).join("")}` : ""}
   ${forb.length ? `<h2>Prioriterade åtgärder</h2>${forb.map((f, i) => `
     <div class="item">

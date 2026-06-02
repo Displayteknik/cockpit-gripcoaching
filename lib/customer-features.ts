@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe } from "lucide-react";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
 // EN källa: används av admin-väljaren (kund-access), portal-navet och serverside-spärren.
@@ -27,6 +27,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     href: "/k/seo",
     icon: TrendingUp,
     description: "Sid-audit (SEO + AEO-score), åtgärdslista och sökords-tracker för sin egen sajt.",
+  },
+  {
+    key: "besokare",
+    label: "Besökare",
+    href: "/k/besokare",
+    icon: Globe,
+    description: "Besöksstatistik från spårningspixeln — besök, mest besökta sidor och trafikkällor. Ingen verktygskoppling krävs.",
   },
   {
     key: "skapa",
