@@ -2,80 +2,162 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { extractPageSignals } from "@/lib/seo-deep";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
-interface Report {
-  betyg: string; // kort omdöme i klartext
-  sammanfattning: string; // 2-3 meningar
-  poang_forklaring: string; // vad SEO- och AEO-poängen betyder
+interface DeepReport {
+  betyg: string;
+  sammanfattning: string;
+  scorecard: {
+    seo: { poang: number; kommentar: string };
+    aeo: { poang: number; kommentar: string };
+    innehall: { poang: number; kommentar: string };
+    eeat: { poang: number; kommentar: string };
+  };
   styrkor: { rubrik: string; varfor: string }[];
-  forbattringar: { rubrik: string; varfor: string; sa_har: string; prioritet: "hög" | "medel" | "låg" }[];
+  forbattringar: {
+    rubrik: string;
+    varfor: string;
+    sa_har: string;
+    exempel: string;
+    prioritet: "hög" | "medel" | "låg";
+    effekt: "stor" | "medel" | "liten";
+  }[];
+  citerbarhet: { omdome: string; motivering: string; forslag: string };
+  eeat: { omdome: string; saknas: string[] };
 }
 
 export async function POST(req: NextRequest) {
-  const { auditId } = await req.json();
-  if (!auditId) return NextResponse.json({ error: "auditId krävs" }, { status: 400 });
+  const { auditId, url: urlInput } = await req.json();
 
   const clientId = await getActiveClientId();
   const sb = supabaseServer();
-  const { data: a, error } = await sb
-    .from("hm_seo_audits")
-    .select("*")
-    .eq("id", auditId)
-    .eq("client_id", clientId) // scoping: bara egen audit
-    .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!a) return NextResponse.json({ error: "Hittade ingen audit" }, { status: 404 });
+  // Hämta URL + de deterministiska poängen (korrekta siffror) från auditen om den finns
+  let url = urlInput as string | undefined;
+  let seoScore: number | null = null;
+  let aeoScore: number | null = null;
+  let psMobile: number | null = null;
+  let psDesktop: number | null = null;
+
+  if (auditId) {
+    const { data: a } = await sb
+      .from("hm_seo_audits")
+      .select("url, seo_score, aeo_score, pagespeed_mobile, pagespeed_desktop")
+      .eq("id", auditId)
+      .eq("client_id", clientId)
+      .maybeSingle();
+    if (a) {
+      url = a.url as string;
+      seoScore = a.seo_score as number;
+      aeoScore = a.aeo_score as number;
+      psMobile = a.pagespeed_mobile as number | null;
+      psDesktop = a.pagespeed_desktop as number | null;
+    }
+  }
+
+  if (!url) return NextResponse.json({ error: "url eller auditId krävs" }, { status: 400 });
+
+  // Djup-extraktion av den FAKTISKA sidan
+  let signals;
+  try {
+    signals = await extractPageSignals(url);
+  } catch (e) {
+    return NextResponse.json({ error: "Kunde inte läsa sidan: " + (e as Error).message }, { status: 502 });
+  }
 
   const facts = {
-    url: a.url,
-    titel: a.title,
-    titel_langd: a.title?.length ?? 0,
-    meta_beskrivning: a.meta_description,
-    meta_langd: a.meta_description?.length ?? 0,
-    antal_ord: a.word_count,
-    har_schema: a.has_schema,
-    har_faq: a.has_faq,
-    har_og_taggar: a.has_og,
-    interna_lankar: a.internal_links,
-    bilder_utan_alt: a.images_no_alt,
-    seo_poang: a.seo_score,
-    aeo_poang: a.aeo_score,
-    pagespeed_mobil: a.pagespeed_mobile,
-    pagespeed_dator: a.pagespeed_desktop,
-    tekniska_anmarkningar: a.issues,
+    url,
+    seo_poang_uppmatt: seoScore,
+    aeo_poang_uppmatt: aeoScore,
+    pagespeed_mobil: psMobile,
+    pagespeed_dator: psDesktop,
+    titel: signals.title,
+    titel_langd: signals.titleLength,
+    meta_beskrivning: signals.metaDescription,
+    meta_langd: signals.metaLength,
+    canonical: signals.canonical,
+    sprak: signals.lang,
+    robots: signals.robots,
+    og_taggar: signals.ogTags,
+    schema_typer: signals.schemaTypes,
+    faq_pa_sidan: signals.faqs,
+    rubrik_hierarki: signals.headings,
+    antal_ord: signals.wordCount,
+    antal_stycken: signals.paragraphCount,
+    antal_listor: signals.listCount,
+    bilder: signals.images,
+    lankar: signals.links,
+    har_uppdaterat_datum: signals.hasUpdatedDate,
   };
 
-  const system = `Du skriver en kort, begriplig SEO/AEO-rapport till en företagare som INTE är tekniker.
-Förklara i klartext vad resultatet betyder, vad som är bra, vad som bör förbättras och VARFÖR det spelar roll för att synas i Google och i AI-sökmotorer (ChatGPT, Perplexity, Google AI).
+  const system = `Du är en senior SEO/AEO-konsult som skriver en proffsig, grundlig men begriplig analys till en företagare (ej tekniker).
 
-REGLER:
-- Skriv som en människa, kort och konkret. Inga svåra facktermer utan att förklara dem.
+ABSOLUTA REGLER OM FAKTA:
+- Använd ENDAST datan i FAKTA och SIDANS TEXT nedan. Hitta ALDRIG på siffror, schema-typer, rubriker eller påståenden.
+- När du föreslår en omskrivning: citera den FAKTISKA texten/rubriken ord för ord i "exempel" och visa din förbättrade version.
+- "seo_poang_uppmatt" och "aeo_poang_uppmatt" är uppmätta — återanvänd dem exakt i scorecard.seo.poang resp scorecard.aeo.poang. Hitta inte på egna.
+- Poäng för "innehall" och "eeat" sätter DU (0-100) baserat på den faktiska texten — motivera kort.
+
+SPRÅK & TON:
+- Svenska, klartext. Förklara facktermer kort. Svenska tecken (å ä ö) korrekt.
 - Förbjudna ord: kraftfull, banbrytande, game-changer, handlar om, nästa nivå, holistisk, skalbar.
-- Svenska tecken (å ä ö) korrekt.
-- Var ärlig men uppmuntrande. Prioritera de förbättringar som ger mest effekt först.
-- SEO-poäng = hur väl sidan funkar i vanliga Google. AEO-poäng = hur väl den syns i AI-sökmotorer.
+- Var konkret och ärlig. Prioritera det som ger störst effekt.
 
-Returnera JSON:
+VAD DU BEDÖMER PÅ DJUPET:
+- Innehållskvalitet: är texten konkret, specifik, trovärdig? Eller tunn/generisk?
+- E-E-A-T: syns erfarenhet (förstaperson, konkreta exempel), expertis, källor, förtroende?
+- Citerbarhet för AI-sökmotorer: ger sidan direkta, faktaspäckade svar som ChatGPT/Perplexity kan citera? Är rubriker formulerade som frågor? Finns tydliga definitioner?
+- Rubrikhierarki: logisk H1→H2→H3? Matchar rubrikerna vad folk söker?
+
+Returnera EXAKT denna JSON:
 {
-  "betyg": "ett kort omdöme i klartext, t.ex. 'Stabil grund i Google, men svår att hitta för AI-sökmotorer'",
-  "sammanfattning": "2-3 meningar om läget i stort",
-  "poang_forklaring": "1-2 meningar som förklarar vad just dessa SEO- och AEO-poäng innebär",
-  "styrkor": [{ "rubrik": "kort", "varfor": "varför det är bra, 1 mening" }],
-  "forbattringar": [{ "rubrik": "kort", "varfor": "varför det spelar roll, 1 mening", "sa_har": "konkret vad man gör", "prioritet": "hög|medel|låg" }]
-}`;
+  "betyg": "ett kort, träffande omdöme i klartext",
+  "sammanfattning": "3-4 meningar om läget i stort",
+  "scorecard": {
+    "seo": { "poang": <seo_poang_uppmatt>, "kommentar": "1 mening" },
+    "aeo": { "poang": <aeo_poang_uppmatt>, "kommentar": "1 mening" },
+    "innehall": { "poang": 0-100, "kommentar": "1 mening om innehållskvaliteten" },
+    "eeat": { "poang": 0-100, "kommentar": "1 mening om trovärdighet/erfarenhet" }
+  },
+  "styrkor": [{ "rubrik": "kort", "varfor": "varför det är bra, grundat i sidan" }],
+  "forbattringar": [{
+    "rubrik": "kort åtgärd",
+    "varfor": "varför det spelar roll för Google/AI",
+    "sa_har": "konkret vad man gör",
+    "exempel": "citera faktisk text + visa förbättrad version (eller '' om ej tillämpligt)",
+    "prioritet": "hög|medel|låg",
+    "effekt": "stor|medel|liten"
+  }],
+  "citerbarhet": { "omdome": "kort omdöme om hur citerbar sidan är för AI", "motivering": "1-2 meningar grundat i texten", "forslag": "1 konkret sak som gör sidan mer citerbar" },
+  "eeat": { "omdome": "kort omdöme", "saknas": ["det som saknas för högre trovärdighet"] }
+}
+
+Ge 3-6 styrkor och 3-7 förbättringar (viktigast först).`;
+
+  const prompt = `FAKTA (deterministiskt uppmätt — använd exakt):
+${JSON.stringify(facts, null, 2)}
+
+SIDANS TEXT (för innehålls- och E-E-A-T-bedömning):
+"""
+${signals.mainText}
+"""`;
 
   try {
-    const report = await generateJSON<Report>({
-      model: "gemini-2.5-flash",
+    const report = await generateJSON<DeepReport>({
+      model: "gemini-2.5-pro",
       systemInstruction: system,
-      prompt: `Här är resultatet av sid-auditen (JSON):\n\n${JSON.stringify(facts, null, 2)}`,
-      temperature: 0.6,
-      maxOutputTokens: 2500,
+      prompt,
+      temperature: 0.4,
+      maxOutputTokens: 8192,
     });
+    // Säkra att de uppmätta poängen alltid är korrekta (skriv över ev. AI-avvikelse)
+    if (report.scorecard) {
+      if (seoScore != null) report.scorecard.seo.poang = seoScore;
+      if (aeoScore != null) report.scorecard.aeo.poang = aeoScore;
+    }
     return NextResponse.json(report);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

@@ -47,9 +47,23 @@ interface ContentAudit {
 interface Report {
   betyg: string;
   sammanfattning: string;
-  poang_forklaring: string;
+  scorecard: {
+    seo: { poang: number; kommentar: string };
+    aeo: { poang: number; kommentar: string };
+    innehall: { poang: number; kommentar: string };
+    eeat: { poang: number; kommentar: string };
+  };
   styrkor: { rubrik: string; varfor: string }[];
-  forbattringar: { rubrik: string; varfor: string; sa_har: string; prioritet: "hög" | "medel" | "låg" }[];
+  forbattringar: {
+    rubrik: string;
+    varfor: string;
+    sa_har: string;
+    exempel?: string;
+    prioritet: "hög" | "medel" | "låg";
+    effekt?: "stor" | "medel" | "liten";
+  }[];
+  citerbarhet?: { omdome: string; motivering: string; forslag: string };
+  eeat?: { omdome: string; saknas: string[] };
 }
 
 export default function SeoClient({ primaryColor, clientName, publicUrl }: { primaryColor: string; clientName: string; publicUrl: string }) {
@@ -443,24 +457,39 @@ function ReportView({ report, primaryColor }: { report: Report; primaryColor: st
     medel: "bg-amber-100 text-amber-700",
     låg: "bg-gray-100 text-gray-600",
   };
+  const effektColor: Record<string, string> = {
+    stor: "bg-emerald-100 text-emerald-700",
+    medel: "bg-blue-100 text-blue-700",
+    liten: "bg-gray-100 text-gray-500",
+  };
   const forbattringar = [...(report.forbattringar || [])].sort(
     (a, b) => (order[a.prioritet] ?? 9) - (order[b.prioritet] ?? 9)
   );
+  const sc = report.scorecard;
 
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-4" style={{ background: `${primaryColor}0D` }}>
+      {/* Header */}
+      <div className="p-5" style={{ background: `${primaryColor}0D` }}>
         <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
-          Din rapport
+          Din SEO &amp; AEO-rapport
         </div>
-        <div className="font-display font-bold text-gray-900 text-lg mt-0.5">{report.betyg}</div>
-        <p className="text-sm text-gray-700 mt-1">{report.sammanfattning}</p>
-        {report.poang_forklaring && (
-          <p className="text-xs text-gray-500 mt-2">{report.poang_forklaring}</p>
-        )}
+        <div className="font-display font-bold text-gray-900 text-xl mt-0.5">{report.betyg}</div>
+        <p className="text-sm text-gray-700 mt-1.5 leading-relaxed">{report.sammanfattning}</p>
       </div>
 
-      <div className="p-4 space-y-4">
+      {/* Scorecard */}
+      {sc && (
+        <div className="grid grid-cols-2 md:grid-cols-4 border-b border-gray-100">
+          <ScoreCell label="Google (SEO)" v={sc.seo?.poang} comment={sc.seo?.kommentar} />
+          <ScoreCell label="AI-sökmotorer (AEO)" v={sc.aeo?.poang} comment={sc.aeo?.kommentar} />
+          <ScoreCell label="Innehåll" v={sc.innehall?.poang} comment={sc.innehall?.kommentar} />
+          <ScoreCell label="Trovärdighet (E-E-A-T)" v={sc.eeat?.poang} comment={sc.eeat?.kommentar} />
+        </div>
+      )}
+
+      <div className="p-5 space-y-5">
+        {/* Styrkor */}
         {report.styrkor?.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700 mb-2">
@@ -477,28 +506,72 @@ function ReportView({ report, primaryColor }: { report: Report; primaryColor: st
           </div>
         )}
 
+        {/* Förbättringar */}
         {forbattringar.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 mb-2">
-              <AlertCircle className="w-4 h-4" /> Det här bör du förbättra
+              <AlertCircle className="w-4 h-4" /> Prioriterade åtgärder
             </div>
-            <ol className="space-y-2">
+            <ol className="space-y-2.5">
               {forbattringar.map((f, i) => (
-                <li key={i} className="bg-white border border-gray-200 rounded-lg p-3">
-                  <div className="flex items-start justify-between gap-2">
+                <li key={i} className="bg-white border border-gray-200 rounded-lg p-3.5">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="text-sm font-semibold text-gray-900">{i + 1}. {f.rubrik}</div>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full flex-shrink-0 ${prioColor[f.prioritet] || prioColor["låg"]}`}>
-                      {f.prioritet}
-                    </span>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${prioColor[f.prioritet] || prioColor["låg"]}`}>{f.prioritet} prio</span>
+                      {f.effekt && <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${effektColor[f.effekt] || effektColor["liten"]}`}>{f.effekt} effekt</span>}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 mt-1"><strong className="text-gray-700">Varför:</strong> {f.varfor}</div>
+                  <div className="text-xs text-gray-600"><strong className="text-gray-700">Varför:</strong> {f.varfor}</div>
                   <div className="text-xs text-gray-800 mt-1"><strong className="text-gray-700">Så här:</strong> {f.sa_har}</div>
+                  {f.exempel && f.exempel.trim() && (
+                    <div className="mt-2 text-xs bg-gray-50 border border-gray-100 rounded p-2 text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">{f.exempel}</div>
+                  )}
                 </li>
               ))}
             </ol>
           </div>
         )}
+
+        {/* Citerbarhet för AI */}
+        {report.citerbarhet && (
+          <div className="rounded-lg border border-gray-200 p-3.5" style={{ background: `${primaryColor}08` }}>
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 mb-1">
+              <Sparkles className="w-4 h-4" style={{ color: primaryColor }} /> Citerbarhet i AI-sökmotorer
+            </div>
+            <div className="text-sm font-medium text-gray-800">{report.citerbarhet.omdome}</div>
+            <div className="text-xs text-gray-600 mt-1">{report.citerbarhet.motivering}</div>
+            {report.citerbarhet.forslag && (
+              <div className="text-xs text-gray-800 mt-1.5"><strong className="text-gray-700">Gör så här:</strong> {report.citerbarhet.forslag}</div>
+            )}
+          </div>
+        )}
+
+        {/* E-E-A-T saknas */}
+        {report.eeat && (report.eeat.omdome || (report.eeat.saknas?.length ?? 0) > 0) && (
+          <div>
+            <div className="text-sm font-semibold text-gray-900 mb-1">Trovärdighet (E-E-A-T)</div>
+            {report.eeat.omdome && <div className="text-xs text-gray-600 mb-1.5">{report.eeat.omdome}</div>}
+            {report.eeat.saknas?.length > 0 && (
+              <ul className="text-xs text-gray-700 list-disc pl-5 space-y-0.5">
+                {report.eeat.saknas.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+function ScoreCell({ label, v, comment }: { label: string; v?: number; comment?: string }) {
+  const val = typeof v === "number" ? v : null;
+  const color = val == null ? "text-gray-400" : val >= 80 ? "text-emerald-600" : val >= 60 ? "text-amber-600" : "text-red-600";
+  return (
+    <div className="p-3 border-r border-b border-gray-100 last:border-r-0">
+      <div className="text-[10px] text-gray-500 uppercase tracking-wide leading-tight">{label}</div>
+      <div className={`text-2xl font-bold tabular-nums ${color}`}>{val ?? "—"}</div>
+      {comment && <div className="text-[11px] text-gray-500 leading-snug mt-0.5">{comment}</div>}
     </div>
   );
 }
