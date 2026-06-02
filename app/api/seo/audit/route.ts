@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auditUrl, pageSpeed } from "@/lib/seo-audit";
+import { auditUrlRendered, pageSpeed } from "@/lib/seo-audit";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (!targetUrl) return NextResponse.json({ error: "url krävs" }, { status: 400 });
 
   const clientId = await resolveClientId();
-  const result = await auditUrl(targetUrl, targetUrl);
+  const result = await auditUrlRendered(targetUrl);
   if (!skipPageSpeed) {
     const ps = await pageSpeed(targetUrl);
     result.pagespeed_mobile = ps.mobile ?? undefined;

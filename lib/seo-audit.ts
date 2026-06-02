@@ -1,4 +1,5 @@
 // SEO + AEO audit-engine. Hämtar HTML, analyserar, returnerar score + issues.
+import { extractPageSignals, scoreSignals } from "./seo-deep";
 
 export interface AuditResult {
   url: string;
@@ -104,6 +105,37 @@ export async function auditUrl(url: string, baseUrl: string): Promise<AuditResul
     images_no_alt,
     seo_score: Math.max(0, seo),
     aeo_score: Math.max(0, aeo),
+    issues,
+  };
+}
+
+// Render-medveten audit (samma motor som rapporten) — fixar falska "saknas" på
+// client-side-renderade sajter (GHL). Använd denna istället för auditUrl().
+export async function auditUrlRendered(url: string): Promise<AuditResult> {
+  const s = await extractPageSignals(url);
+  const sc = scoreSignals(s);
+  const issues: AuditResult["issues"] = [];
+  for (const c of sc.checks) {
+    if (!c.pass) issues.push({ level: c.id === "indexerbar" ? "error" : "warn", field: c.id, message: `${c.label}: ${c.detail}` });
+  }
+  if (s.schemaTypes.length === 0) issues.push({ level: "warn", field: "schema", message: "Saknar strukturerad data (JSON-LD)" });
+  if (s.images.withoutAlt > 0) issues.push({ level: "warn", field: "images", message: `${s.images.withoutAlt} bild(er) utan alt-text` });
+  if (s.links.internal < 3) issues.push({ level: "info", field: "internal_links", message: `Bara ${s.links.internal} interna länkar` });
+  return {
+    url: s.url,
+    title: s.title,
+    meta_description: s.metaDescription,
+    h1: s.headings.find((h) => h.level === 1)?.text ?? null,
+    word_count: s.wordCount,
+    has_schema: s.schemaTypes.length > 0,
+    has_faq: s.schemaTypes.includes("FAQPage") || s.faqs.length > 0,
+    has_og: Object.keys(s.ogTags).length > 0,
+    internal_links: s.links.internal,
+    external_links: s.links.external,
+    images_total: s.images.total,
+    images_no_alt: s.images.withoutAlt,
+    seo_score: sc.seo,
+    aeo_score: sc.aeo,
     issues,
   };
 }
