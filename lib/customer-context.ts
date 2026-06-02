@@ -33,9 +33,19 @@ export async function resolveCustomerToken(token: string): Promise<CustomerSessi
   };
 }
 
-// Server-side: hämta aktuell kund-session från cookies
+// Server-side: hämta aktuell kund-session från cookies.
+// Primärt via den HttpOnly-skyddade token-cookien (överlever strikta webbläsare/tillägg
+// som nollar JS-läsbara cookies, och går inte att manipulera). Faller tillbaka på
+// den läsbara client_id-cookien för bakåtkompat.
 export async function getCustomerSession(): Promise<CustomerSession | null> {
   const c = await cookies();
+
+  const token = c.get(TOKEN_COOKIE)?.value;
+  if (token) {
+    const viaToken = await resolveCustomerToken(token);
+    if (viaToken) return viaToken;
+  }
+
   const clientId = c.get(CLIENT_COOKIE)?.value;
   if (!clientId) return null;
 
