@@ -151,7 +151,7 @@ const LH_SEO_AUDITS = [
 type LhAudit = { id: string; title: string; score: number | null; displayValue?: string };
 async function fetchLighthouse(url: string): Promise<{ seo: number | null; cwv: PageSignals["cwv"]; audits: LhAudit[] | null }> {
   try {
-    const key = process.env.PAGESPEED_API_KEY || process.env.GOOGLE_API_KEY;
+    const key = process.env.PAGESPEED_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
     const u =
       `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}` +
       `&strategy=mobile&category=seo${key ? `&key=${key}` : ""}`;
