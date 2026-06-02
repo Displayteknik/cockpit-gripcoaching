@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId, logActivity } from "@/lib/client-context";
+import { resolveClientId, logActivity } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const sb = supabaseServer();
   const { data, error } = await sb.from("hm_seo_keywords").select("*").eq("client_id", clientId).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -13,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const body = await req.json();
   const sb = supabaseServer();
   const rows = (Array.isArray(body) ? body : [body]).map((r) => ({ ...r, client_id: clientId }));
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const body = await req.json();
   const { id, ...rest } = body;
   const sb = supabaseServer();
@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id krävs" }, { status: 400 });
   const sb = supabaseServer();

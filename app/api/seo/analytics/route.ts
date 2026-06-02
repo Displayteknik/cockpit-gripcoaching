@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const sb = supabaseServer();
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
   const since1 = new Date(now - day).toISOString();

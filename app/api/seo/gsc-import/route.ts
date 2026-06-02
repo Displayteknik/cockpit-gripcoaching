@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 
 // Importerar CSV-export från Google Search Console (Performance → Export → CSV).
 // Format: Top queries.csv eller Pages.csv
 export async function POST(req: NextRequest) {
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const body = await req.json();
   const csv: string = body.csv;
   const period_start: string | undefined = body.period_start;
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const sb = supabaseServer();
   const { data } = await sb
     .from("gsc_queries")

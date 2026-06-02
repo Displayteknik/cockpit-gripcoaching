@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auditUrl, pageSpeed } from "@/lib/seo-audit";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const skipPageSpeed: boolean = body.skip_pagespeed ?? false;
   if (!targetUrl) return NextResponse.json({ error: "url krävs" }, { status: 400 });
 
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const result = await auditUrl(targetUrl, targetUrl);
   if (!skipPageSpeed) {
     const ps = await pageSpeed(targetUrl);
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   const sb = supabaseServer();
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const { data } = await sb
     .from("hm_seo_audits")
     .select("*")

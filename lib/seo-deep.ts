@@ -227,9 +227,10 @@ export function scoreSignals(s: PageSignals): {
   if (s.images.withoutAlt > 0) seo -= Math.min(8, s.images.withoutAlt);
   if (s.links.internal < 3) seo -= 4;
   if (s.sitemap && !s.sitemap.found) { seo -= 4; add("sitemap", "Sitemap finns", false, "hittades ej"); }
-  seo = Math.max(0, indexerbar ? seo : Math.min(seo, 25));
-  // Ankra mot Lighthouse SEO (renderad) om tillgänglig
+  // Ankra mot Lighthouse SEO (renderad) FÖRE grinden
   if (s.lighthouseSeo != null) seo = Math.round(0.5 * s.lighthouseSeo + 0.5 * seo);
+  // Indexerbarhet-grind SIST: en icke-indexerbar sida kan aldrig få hög teknik-poäng
+  seo = Math.max(0, indexerbar ? seo : Math.min(seo, 25));
 
   // AEO (citerbarhet)
   let aeo = 100;
@@ -340,7 +341,7 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
     robots,
     ogTags,
     schemaTypes: Array.from(schemaSet),
-    faqs: faqs.slice(0, 12),
+    faqs: Array.from(new Map(faqs.map((f) => [f.question, f])).values()).slice(0, 12),
     headings: headings.slice(0, 40),
     emptyHeadings,
     wordCount,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { extractPageSignals, scoreSignals, schemaRichEligibility } from "@/lib/seo-deep";
 
 export const runtime = "nodejs";
@@ -44,7 +44,7 @@ interface DeepReport {
 export async function POST(req: NextRequest) {
   const { auditId, url: urlInput } = await req.json();
 
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const sb = supabaseServer();
 
   // Hämta URL + de deterministiska poängen (korrekta siffror) från auditen om den finns
@@ -89,11 +89,18 @@ export async function POST(req: NextRequest) {
   // GSC: riktiga sökord/positioner för DENNA sida (ej gissade)
   let gscRows: { query: string; clicks: number; impressions: number; ctr: number | null; position: number | null }[] = [];
   try {
+    // Matcha sidan oavsett www/icke-www och avslutande slash (GSC-export varierar)
+    const pu = new URL(url);
+    const bareHost = pu.host.replace(/^www\./, "");
+    const paths = new Set([pu.pathname, pu.pathname.replace(/\/$/, "") || "/", pu.pathname.endsWith("/") ? pu.pathname : pu.pathname + "/"]);
+    const hosts = new Set([pu.host, bareHost, "www." + bareHost]);
+    const candidates: string[] = [];
+    for (const h of hosts) for (const p of paths) candidates.push(`${pu.protocol}//${h}${p}`);
     const { data } = await sb
       .from("gsc_queries")
       .select("query, clicks, impressions, ctr, position, page")
       .eq("client_id", clientId)
-      .eq("page", url)
+      .in("page", candidates)
       .order("impressions", { ascending: false })
       .limit(15);
     gscRows = (data as typeof gscRows) || [];

@@ -28,6 +28,20 @@ export async function getActiveClientId(): Promise<string> {
   }
 }
 
+// Resolva tenant för endpoints som nås av BÅDE admin-dashboarden och kund-portalen (/k).
+// Den HttpOnly-token-validerade kund-sessionen vinner ALLTID → ingen tenant-läcka via
+// den manipulerbara active_client_id-cookien. Admin (utan kund-session) faller tillbaka.
+export async function resolveClientId(): Promise<string> {
+  try {
+    const { getCustomerSession } = await import("./customer-context");
+    const cs = await getCustomerSession();
+    if (cs) return cs.client_id;
+  } catch {
+    /* ingen kund-session — admin-kontext */
+  }
+  return getActiveClientId();
+}
+
 export async function setActiveClientId(id: string): Promise<void> {
   const c = await cookies();
   c.set(COOKIE_NAME, id, {
