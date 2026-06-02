@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Zap } from "lucide-react";
+import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Zap, FileText } from "lucide-react";
 
 interface Audit {
   id: string;
@@ -44,6 +44,14 @@ interface ContentAudit {
   next_actions: string[];
 }
 
+interface Report {
+  betyg: string;
+  sammanfattning: string;
+  poang_forklaring: string;
+  styrkor: { rubrik: string; varfor: string }[];
+  forbattringar: { rubrik: string; varfor: string; sa_har: string; prioritet: "hög" | "medel" | "låg" }[];
+}
+
 export default function SeoClient({ primaryColor, clientName, publicUrl }: { primaryColor: string; clientName: string; publicUrl: string }) {
   const [audits, setAudits] = useState<Audit[]>([]);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
@@ -52,6 +60,24 @@ export default function SeoClient({ primaryColor, clientName, publicUrl }: { pri
   const [auditing, setAuditing] = useState(false);
   const [newKw, setNewKw] = useState({ keyword: "", target_url: "", intent: "informational", search_volume: "" });
   const [showAiAudit, setShowAiAudit] = useState(false);
+  const [reports, setReports] = useState<Record<string, Report>>({});
+  const [reportLoading, setReportLoading] = useState<Record<string, boolean>>({});
+
+  async function genReport(auditId: string) {
+    setReportLoading((p) => ({ ...p, [auditId]: true }));
+    try {
+      const r = await fetch("/api/seo/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ auditId }),
+      });
+      const d = await r.json();
+      if (r.ok) setReports((p) => ({ ...p, [auditId]: d }));
+      else alert("Kunde inte skapa rapport: " + (d.error || "okänt"));
+    } finally {
+      setReportLoading((p) => ({ ...p, [auditId]: false }));
+    }
+  }
 
   async function reload() {
     const [ad, kw] = await Promise.all([
@@ -176,6 +202,27 @@ export default function SeoClient({ primaryColor, clientName, publicUrl }: { pri
                   </div>
                 </summary>
                 <div className="px-4 py-3 border-t border-gray-200 bg-white space-y-3">
+                  {/* Klartext-rapport */}
+                  {!reports[a.id] ? (
+                    <button
+                      onClick={() => genReport(a.id)}
+                      disabled={reportLoading[a.id]}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                      style={{ background: primaryColor }}
+                    >
+                      {reportLoading[a.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                      {reportLoading[a.id] ? "Skriver rapport..." : "Förklara resultatet (rapport)"}
+                    </button>
+                  ) : (
+                    <ReportView report={reports[a.id]} primaryColor={primaryColor} />
+                  )}
+
+                  {/* Tekniska detaljer */}
+                  <details className="group">
+                    <summary className="cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-700 select-none">
+                      Tekniska detaljer
+                    </summary>
+                    <div className="mt-2 space-y-3">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <Mini label="Title" value={a.title ? `${a.title.length} tecken` : "saknas"} ok={!!a.title && a.title.length >= 30 && a.title.length <= 60} />
                     <Mini label="Meta-desc" value={a.meta_description ? `${a.meta_description.length} tecken` : "saknas"} ok={!!a.meta_description && a.meta_description.length >= 120 && a.meta_description.length <= 160} />
@@ -204,6 +251,8 @@ export default function SeoClient({ primaryColor, clientName, publicUrl }: { pri
                     </div>
                   )}
                   <div className="text-xs text-gray-400">Auditerad {new Date(a.audited_at).toLocaleString("sv-SE")}</div>
+                    </div>
+                  </details>
                 </div>
               </details>
             ))}
@@ -382,6 +431,73 @@ function AiAuditModal({ primaryColor, onClose }: { primaryColor: string; onClose
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ReportView({ report, primaryColor }: { report: Report; primaryColor: string }) {
+  const order = { hög: 0, medel: 1, låg: 2 } as const;
+  const prioColor: Record<string, string> = {
+    hög: "bg-red-100 text-red-700",
+    medel: "bg-amber-100 text-amber-700",
+    låg: "bg-gray-100 text-gray-600",
+  };
+  const forbattringar = [...(report.forbattringar || [])].sort(
+    (a, b) => (order[a.prioritet] ?? 9) - (order[b.prioritet] ?? 9)
+  );
+
+  return (
+    <div className="rounded-xl border border-gray-200 overflow-hidden">
+      <div className="p-4" style={{ background: `${primaryColor}0D` }}>
+        <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
+          Din rapport
+        </div>
+        <div className="font-display font-bold text-gray-900 text-lg mt-0.5">{report.betyg}</div>
+        <p className="text-sm text-gray-700 mt-1">{report.sammanfattning}</p>
+        {report.poang_forklaring && (
+          <p className="text-xs text-gray-500 mt-2">{report.poang_forklaring}</p>
+        )}
+      </div>
+
+      <div className="p-4 space-y-4">
+        {report.styrkor?.length > 0 && (
+          <div>
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700 mb-2">
+              <CheckCircle2 className="w-4 h-4" /> Det här är bra
+            </div>
+            <ul className="space-y-2">
+              {report.styrkor.map((s, i) => (
+                <li key={i} className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-900">{s.rubrik}</div>
+                  <div className="text-xs text-gray-600 mt-0.5">{s.varfor}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {forbattringar.length > 0 && (
+          <div>
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 mb-2">
+              <AlertCircle className="w-4 h-4" /> Det här bör du förbättra
+            </div>
+            <ol className="space-y-2">
+              {forbattringar.map((f, i) => (
+                <li key={i} className="bg-white border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-sm font-semibold text-gray-900">{i + 1}. {f.rubrik}</div>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full flex-shrink-0 ${prioColor[f.prioritet] || prioColor["låg"]}`}>
+                      {f.prioritet}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1"><strong className="text-gray-700">Varför:</strong> {f.varfor}</div>
+                  <div className="text-xs text-gray-800 mt-1"><strong className="text-gray-700">Så här:</strong> {f.sa_har}</div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </div>
     </div>
   );
