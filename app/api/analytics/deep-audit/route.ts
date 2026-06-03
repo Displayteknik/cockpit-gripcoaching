@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId, logActivity } from "@/lib/client-context";
+import { resolveClientId, logActivity } from "@/lib/client-context";
+import { extractPageSignals, scoreSignals, schemaRichEligibility } from "@/lib/seo-deep";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -109,15 +110,15 @@ Endast om det ar relevant for klienten]
 Säg vilket du vill ha först så bygger jag det.
 \`\`\`
 
-# Skrivregler
+# FAKTA-REGLER (bryt aldrig — annars blir rapporten värdelös)
 
-- **Konkret framfor allmant.** "Lagg till FAQ-schema med 8 fragor" slar "forbattra schema".
-- **Hog/Medel/Lag-prio** pa varje brist.
-- **Atgardsforslag inkluderar kod-snippets** dar det ar relevant (HTML, JSON-LD, robots.txt).
-- **Rakna timmar** for sprintar (var realistisk: en FAQ-sektion = 2h, schema-template = 1h).
-- **Inga AI-floskler.** "kraftfull", "banbrytande", "holistisk", "handlar om" — forbjudet.
-- **Svenska tecken korrekt** (a/a/o).
-- **Anvand klientens faktiska data** fran GSC, brand-profil och HTML-utdraget. Hitta inte pa siffror.
+- **Använd ENDAST datan i UPPMÄTT FAKTA + GSC + brand-profil nedan.** Hitta ALDRIG på siffror, priser, leveranstider, specs, trafikvärden eller schema-typer. Saknas en siffra → skriv "[DIN SIFFRA]".
+- **Säg ALDRIG att något "saknas" om FAKTA inte belägger det.** canonical/robots/sitemap/schema är redan UPPMÄTTA nedan — använd de värdena exakt. "canonical_kalla: payload" = canonical FINNS (renderas client-side), markera ✅ inte ❌.
+- **Plattformsbundna råd:** anpassa efter "plattform". På GoHighLevel finns INGEN .htaccess/nginx/robots-fil att redigera fritt och inga plugins — canonical/redirect/schema sköts i sidans Tracking Code. Föreslå aldrig plattforms-omöjliga åtgärder.
+- **Rich results 2026:** HowTo-rich-results är AVSKAFFADE och FAQ-rich-results visas bara för myndighet/hälsa. Lova ALDRIG FAQ/HowTo-stjärnor i Google (markup är ok för AI-läsbarhet — säg så, inte "Featured Snippet garanterat").
+- **Title/meta:** Google har ingen teckengräns; kapning sker på pixelbredd (~50-60 / ~150-160 tecken som tumregel). Flagga för långa som "kapas troligen", inte "fel". å/ä/ö = 1 tecken.
+- **Använd RIKTIG GSC-data** för CTR/position-påståenden. Säg aldrig "6000 visningar på X" om det inte står i GSC-datan.
+- Konkret framför allmänt. Hög/Medel/Låg-prio per brist. Realistiska timmar. Inga AI-floskler (kraftfull, banbrytande, holistisk, handlar om). Svenska tecken korrekt.
 
 # Vad du far i input
 
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
 
   const t0 = Date.now();
   const sb = supabaseServer();
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const body = (await req.json().catch(() => ({}))) as AuditInput;
 
   // Hamta klientdata
@@ -162,22 +163,42 @@ export async function POST(req: NextRequest) {
   const url = body.url || c.public_url;
   if (!url) return NextResponse.json({ error: "URL saknas — lagg till public_url i clients-tabellen" }, { status: 400 });
 
-  // Hamta HTML fran sajten
-  let html = "";
+  // Render-medveten extraktion (avkodar JS-payload → korrekt canonical/schema på GHL)
+  let signals;
   try {
-    const r = await fetch(url, { headers: { "User-Agent": "Cockpit-DeepAudit/1.0" } });
-    html = await r.text();
-    // Trimma till rimlig storlek (head + forsta 30000 tecken av body)
-    if (html.length > 60000) {
-      const headEnd = html.indexOf("</head>");
-      const head = headEnd > 0 ? html.slice(0, headEnd + 7) : html.slice(0, 15000);
-      const bodyStart = html.indexOf("<body");
-      const body = bodyStart > 0 ? html.slice(bodyStart, bodyStart + 30000) : html.slice(15000, 45000);
-      html = head + "\n<!-- ... -->\n" + body;
-    }
+    signals = await extractPageSignals(url);
   } catch (e) {
     return NextResponse.json({ error: `Kunde inte hamta sajten: ${(e as Error).message}` }, { status: 500 });
   }
+  const scored = scoreSignals(signals);
+  const schemaElig = schemaRichEligibility(signals.schemaTypes);
+  const uppmattFakta = {
+    plattform: signals.platform,
+    indexerbar: scored.indexerbar,
+    seo_poang: scored.seo,
+    aeo_poang: scored.aeo,
+    lighthouse_seo: signals.lighthouseSeo,
+    core_web_vitals: signals.cwv,
+    titel: signals.title,
+    titel_tecken: signals.titleLength,
+    meta_description: signals.metaDescription,
+    meta_tecken: signals.metaLength,
+    canonical: signals.canonical,
+    canonical_kalla: signals.canonicalSource,
+    robots_meta: signals.robots,
+    robots_txt: signals.robotsTxt,
+    sitemap: signals.sitemap,
+    og_taggar: Object.keys(signals.ogTags),
+    schema_typer: signals.schemaTypes,
+    schema_rich_result: schemaElig,
+    rubriker: signals.headings,
+    tomma_rubriker: signals.emptyHeadings,
+    antal_ord: signals.wordCount,
+    bilder: signals.images,
+    lankar: signals.links,
+    faq_pa_sidan: signals.faqs.length,
+    lighthouse_checkar: signals.lighthouseAudits,
+  };
 
   // Sammanfatta GSC-data kompakt
   const gscRows = (gsc.data ?? []) as RawGscRow[];
@@ -209,12 +230,17 @@ ${gscSummary}
 # Tidigare audits
 ${auditSummary}
 
-# HTML-utdrag
-\`\`\`html
-${html}
+# UPPMÄTT FAKTA (render-medvetet, deterministiskt — använd EXAKT, hitta inte på)
+\`\`\`json
+${JSON.stringify(uppmattFakta, null, 2)}
 \`\`\`
 
-Generera komplett rapport enligt mallen. Anvand klientens faktiska data. Inga floskler.`;
+# Sidans synliga text (för innehålls- och E-E-A-T-bedömning)
+"""
+${signals.mainText}
+"""
+
+Generera komplett rapport enligt mallen. Använd ENDAST datan ovan — canonical/robots/sitemap/schema är redan uppmätta, säg aldrig "saknas" om FAKTA visar att de finns. Inga påhittade siffror, inga floskler.`;
 
   try {
     const anthropic = new Anthropic({ apiKey });
@@ -265,7 +291,7 @@ Generera komplett rapport enligt mallen. Anvand klientens faktiska data. Inga fl
 // Lista sparade rapporter
 export async function GET() {
   const sb = supabaseServer();
-  const clientId = await getActiveClientId();
+  const clientId = await resolveClientId();
   const { data } = await sb
     .from("client_assets")
     .select("id, body, metadata, created_at")
