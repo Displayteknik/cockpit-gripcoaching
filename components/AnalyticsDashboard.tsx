@@ -119,7 +119,7 @@ export default function AnalyticsDashboard() {
     URL.revokeObjectURL(url);
   }
 
-  function downloadPdf() {
+  async function downloadPdf() {
     if (!reportText) return;
     const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const inline = (s: string) =>
@@ -160,29 +160,49 @@ export default function AnalyticsDashboard() {
       out += `<p>${buf.join("<br>")}</p>`;
     }
     const name = data?.client?.name ?? "Klient";
-    const html = `<!doctype html><html lang="sv"><head><meta charset="utf-8"><title>SEO & AEO-rapport – ${name}</title><style>
-      *{box-sizing:border-box}body{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937;margin:0;padding:32px;line-height:1.55;font-size:13px}
-      h1{font-size:22px;color:#1F3A5F;border-bottom:3px solid #1F3A5F;padding-bottom:8px;margin:28px 0 14px;page-break-before:always}
-      h1:first-of-type{page-break-before:avoid}
-      h2{font-size:17px;color:#2E5984;margin:22px 0 8px;border-bottom:1px solid #e5e7eb;padding-bottom:4px}
-      h3{font-size:14px;color:#374151;margin:16px 0 6px}h4{font-size:13px;color:#555;margin:12px 0 4px}
-      p{margin:6px 0}ul,ol{margin:6px 0;padding-left:22px}li{margin:3px 0}
-      table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px;page-break-inside:avoid}
-      th{background:#1F3A5F;color:#fff;text-align:left;padding:6px 8px;border:1px solid #ccc}
-      td{padding:6px 8px;border:1px solid #ddd;vertical-align:top}tr:nth-child(even) td{background:#f5f8fb}
-      code{font-family:ui-monospace,Consolas,monospace;background:#f1f1f1;padding:1px 4px;border-radius:3px;font-size:11px}
-      pre{background:#f4f4f4;border:1px solid #e5e7eb;border-radius:6px;padding:10px;overflow:auto;page-break-inside:avoid}
-      pre code{background:none;padding:0}hr{border:none;border-top:1px solid #e5e7eb;margin:16px 0}
-      blockquote{border-left:4px solid #2E5984;background:#f4f8fb;padding:8px 14px;margin:10px 0}
-      a{color:#2563eb;text-decoration:none}
-      @media print{body{padding:0}@page{margin:16mm}}
-    </style></head><body>${out}</body></html>`;
-    const w = window.open("", "_blank");
-    if (!w) { alert("Tillåt popup-fönster för att ladda ner PDF."); return; }
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 500);
+    const style = `
+      *{box-sizing:border-box}
+      .pdfroot{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937;padding:6px 8px;line-height:1.55;font-size:13px;width:760px;background:#fff}
+      .pdfroot h1{font-size:22px;color:#1F3A5F;border-bottom:3px solid #1F3A5F;padding-bottom:8px;margin:24px 0 14px;page-break-before:always}
+      .pdfroot h1:first-of-type{page-break-before:avoid;margin-top:0}
+      .pdfroot h2{font-size:17px;color:#2E5984;margin:22px 0 8px;border-bottom:1px solid #e5e7eb;padding-bottom:4px}
+      .pdfroot h3{font-size:14px;color:#374151;margin:16px 0 6px}.pdfroot h4{font-size:13px;color:#555;margin:12px 0 4px}
+      .pdfroot p{margin:6px 0}.pdfroot ul,.pdfroot ol{margin:6px 0;padding-left:22px}.pdfroot li{margin:3px 0}
+      .pdfroot table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px;page-break-inside:avoid}
+      .pdfroot th{background:#1F3A5F;color:#fff;text-align:left;padding:6px 8px;border:1px solid #ccc}
+      .pdfroot td{padding:6px 8px;border:1px solid #ddd;vertical-align:top}.pdfroot tr:nth-child(even) td{background:#f5f8fb}
+      .pdfroot code{font-family:ui-monospace,Consolas,monospace;background:#f1f1f1;padding:1px 4px;border-radius:3px;font-size:11px}
+      .pdfroot pre{background:#f4f4f4;border:1px solid #e5e7eb;border-radius:6px;padding:10px;white-space:pre-wrap;word-break:break-word;page-break-inside:avoid}
+      .pdfroot pre code{background:none;padding:0}.pdfroot hr{border:none;border-top:1px solid #e5e7eb;margin:16px 0}
+      .pdfroot blockquote{border-left:4px solid #2E5984;background:#f4f8fb;padding:8px 14px;margin:10px 0}
+      .pdfroot a{color:#2563eb;text-decoration:none}
+    `;
+    const container = document.createElement("div");
+    container.className = "pdfroot";
+    container.innerHTML = `<style>${style}</style>${out}`;
+    container.style.position = "fixed";
+    container.style.left = "-10000px";
+    container.style.top = "0";
+    document.body.appendChild(container);
+    const filename = `seo-aeo-rapport-${name.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.pdf`;
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      await html2pdf()
+        .set({
+          margin: [12, 10, 14, 10],
+          filename,
+          image: { type: "jpeg", quality: 0.96 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 800 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "legacy"], avoid: ["tr", "pre", "blockquote"] },
+        })
+        .from(container)
+        .save();
+    } catch (e) {
+      alert("Kunde inte skapa PDF: " + (e as Error).message);
+    } finally {
+      document.body.removeChild(container);
+    }
   }
 
   async function syncGsc(days: number) {
