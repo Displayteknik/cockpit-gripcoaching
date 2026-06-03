@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId, logActivity } from "@/lib/client-context";
-import { extractPageSignals, scoreSignals, schemaRichEligibility } from "@/lib/seo-deep";
+import { crawlSite } from "@/lib/seo-deep";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -123,11 +123,13 @@ Säg vilket du vill ha först så bygger jag det.
 # Vad du far i input
 
 - Klient-namn + URL
-- HTML-utdrag fran sajten (head + body)
+- UPPMÄTT FAKTA för HELA sajten: varje sida (från sitemap) med title/canonical/H1/schema/ord/poäng + tvärsides-aggregat (canonical-konsekvens, dubbletter, tunna sidor, internlänkning, alt-täckning)
+- Startsidans synliga text
 - Brand-profil
 - GSC-data (top sokord, position, klick, visningar)
 - Eventuella tidigare audits
-- Voice-fingerprint
+
+VIKTIGT: Du granskar HELA sajten, inte en sida. "pages"-listan är alla sidor som finns — föreslå aldrig att skapa sidor som redan finns där.
 
 # Output
 
@@ -163,42 +165,13 @@ export async function POST(req: NextRequest) {
   const url = body.url || c.public_url;
   if (!url) return NextResponse.json({ error: "URL saknas — lagg till public_url i clients-tabellen" }, { status: 400 });
 
-  // Render-medveten extraktion (avkodar JS-payload → korrekt canonical/schema på GHL)
-  let signals;
+  // Hel-sajt-crawl: alla sidor i sitemap, render-medvetet (avkodar JS-payload på GHL)
+  let site;
   try {
-    signals = await extractPageSignals(url);
+    site = await crawlSite(url, { maxPages: 25 });
   } catch (e) {
     return NextResponse.json({ error: `Kunde inte hamta sajten: ${(e as Error).message}` }, { status: 500 });
   }
-  const scored = scoreSignals(signals);
-  const schemaElig = schemaRichEligibility(signals.schemaTypes);
-  const uppmattFakta = {
-    plattform: signals.platform,
-    indexerbar: scored.indexerbar,
-    seo_poang: scored.seo,
-    aeo_poang: scored.aeo,
-    lighthouse_seo: signals.lighthouseSeo,
-    core_web_vitals: signals.cwv,
-    titel: signals.title,
-    titel_tecken: signals.titleLength,
-    meta_description: signals.metaDescription,
-    meta_tecken: signals.metaLength,
-    canonical: signals.canonical,
-    canonical_kalla: signals.canonicalSource,
-    robots_meta: signals.robots,
-    robots_txt: signals.robotsTxt,
-    sitemap: signals.sitemap,
-    og_taggar: Object.keys(signals.ogTags),
-    schema_typer: signals.schemaTypes,
-    schema_rich_result: schemaElig,
-    rubriker: signals.headings,
-    tomma_rubriker: signals.emptyHeadings,
-    antal_ord: signals.wordCount,
-    bilder: signals.images,
-    lankar: signals.links,
-    faq_pa_sidan: signals.faqs.length,
-    lighthouse_checkar: signals.lighthouseAudits,
-  };
 
   // Sammanfatta GSC-data kompakt
   const gscRows = (gsc.data ?? []) as RawGscRow[];
@@ -230,17 +203,22 @@ ${gscSummary}
 # Tidigare audits
 ${auditSummary}
 
-# UPPMÄTT FAKTA (render-medvetet, deterministiskt — använd EXAKT, hitta inte på)
+# UPPMÄTT FAKTA — HELA SAJTEN (render-medvetet, deterministiskt — använd EXAKT, hitta inte på)
+Alla sidor nedan är hämtade från sitemap och granskade. "pages" = varje sidas mätvärden. "crossPage" = tvärsides-analys.
 \`\`\`json
-${JSON.stringify(uppmattFakta, null, 2)}
+${JSON.stringify(site, null, 2)}
 \`\`\`
 
-# Sidans synliga text (för innehålls- och E-E-A-T-bedömning)
+# Startsidans synliga text (för innehålls- och E-E-A-T-bedömning)
 """
-${signals.mainText}
+${site.homepageText}
 """
 
-Generera komplett rapport enligt mallen. Använd ENDAST datan ovan — canonical/robots/sitemap/schema är redan uppmätta, säg aldrig "saknas" om FAKTA visar att de finns. Inga påhittade siffror, inga floskler.`;
+Generera komplett rapport enligt mallen, för HELA sajten. Regler:
+- "pages" är ALLA sidor som finns — föreslå ALDRIG att skapa en sida som redan finns i listan. Föreslå istället internlänkning, förstärkning eller sammanslagning.
+- Del 1 (baseline) = översiktstabell per sida (url, title-längd, canonical-källa, H1, schema, ord, seo/aeo-poäng).
+- Analysera HELHETEN: canonical-konsekvens (crossPage.canonicalInconsistent), dubbletter, tunna sidor, internlänkning mellan sidor (avgInternalLinks), alt-täckning.
+- canonical/robots/sitemap/schema är redan uppmätta — säg aldrig "saknas" om FAKTA visar att de finns. Inga påhittade siffror, inga floskler.`;
 
   try {
     const anthropic = new Anthropic({ apiKey });

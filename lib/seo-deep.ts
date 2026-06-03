@@ -246,7 +246,7 @@ export function scoreSignals(s: PageSignals): {
   return { seo, aeo, indexerbar, checks };
 }
 
-export async function extractPageSignals(url: string, opts?: { skipLighthouse?: boolean }): Promise<PageSignals> {
+export async function extractPageSignals(url: string, opts?: { skipLighthouse?: boolean; skipRobotsSitemap?: boolean }): Promise<PageSignals> {
   const res = await fetch(url, {
     headers: { "User-Agent": "Cockpit-SEO-DeepAudit/2.0" },
     signal: AbortSignal.timeout(20000),
@@ -320,7 +320,9 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
   const hasUpdatedDate = /datemodified|datepublished|uppdaterad|senast ändrad|published|updated/i.test(hay);
 
   const [{ robotsTxt, sitemap }, lh] = await Promise.all([
-    fetchRobotsAndSitemap(url),
+    opts?.skipRobotsSitemap
+      ? Promise.resolve({ robotsTxt: null as PageSignals["robotsTxt"], sitemap: null as PageSignals["sitemap"] })
+      : fetchRobotsAndSitemap(url),
     opts?.skipLighthouse ? Promise.resolve({ seo: null, cwv: null, audits: null }) : fetchLighthouse(url),
   ]);
 
@@ -358,5 +360,137 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
     lighthouseAudits: lh.audits,
     renderNote,
     mainText: text.slice(0, 12000),
+  };
+}
+
+// ───────────────────────── HEL-SAJT-CRAWL ─────────────────────────
+export interface SitePageSummary {
+  url: string;
+  title: string | null;
+  titleLength: number;
+  metaLength: number;
+  canonical: string | null;
+  canonicalSource: string;
+  h1: string | null;
+  h1Count: number;
+  emptyHeadings: number;
+  schemaTypes: string[];
+  wordCount: number;
+  imagesTotal: number;
+  imagesNoAlt: number;
+  internalLinks: number;
+  seo: number;
+  aeo: number;
+  indexerbar: boolean;
+}
+export interface SiteAudit {
+  root: string;
+  origin: string;
+  pageCount: number;
+  sitemapUrlCount: number;
+  platform: string;
+  robotsTxt: PageSignals["robotsTxt"];
+  homepageLighthouseSeo: number | null;
+  homepageCwv: PageSignals["cwv"];
+  homepageText: string;
+  pages: SitePageSummary[];
+  crossPage: {
+    canonicalDomains: string[];
+    canonicalInconsistent: boolean;
+    duplicateTitles: { title: string; urls: string[] }[];
+    thinPages: string[];
+    pagesMissingH1: string[];
+    pagesWithEmptyH1: string[];
+    totalImagesNoAlt: number;
+    avgInternalLinks: number;
+  };
+}
+
+async function fetchSitemapUrls(origin: string): Promise<string[]> {
+  const urls = new Set<string>();
+  try {
+    const r = await fetch(`${origin}/sitemap.xml`, { signal: AbortSignal.timeout(10000) });
+    if (r.ok) {
+      const xml = await r.text();
+      for (const m of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) urls.add(m[1].trim());
+    }
+  } catch { /* ignore */ }
+  return Array.from(urls);
+}
+
+// Granska HELA sajten: sid-lista från sitemap → render-medveten extraktion per sida
+// (Lighthouse körs bara på startsidan för fart) → tvärsides-aggregat.
+export async function crawlSite(rootUrl: string, opts?: { maxPages?: number }): Promise<SiteAudit> {
+  const origin = new URL(rootUrl).origin;
+  const maxPages = opts?.maxPages ?? 20;
+
+  // Sajtnivå (en gång): robots/sitemap + Lighthouse på startsidan
+  const [{ robotsTxt }, sitemapUrls, home] = await Promise.all([
+    fetchRobotsAndSitemap(rootUrl),
+    fetchSitemapUrls(origin),
+    extractPageSignals(rootUrl, { skipRobotsSitemap: true }).catch(() => null),
+  ]);
+
+  // Sid-lista: sitemap, annars bara startsidan. Säkerställ att startsidan är med.
+  let urls = sitemapUrls.length ? sitemapUrls.slice() : [rootUrl];
+  if (!urls.some((u) => u.replace(/\/$/, "") === rootUrl.replace(/\/$/, ""))) urls.unshift(rootUrl);
+  urls = urls.slice(0, maxPages);
+
+  const pages: SitePageSummary[] = [];
+  const toSummary = (s: PageSignals): SitePageSummary => {
+    const sc = scoreSignals(s);
+    const h1s = s.headings.filter((h) => h.level === 1);
+    return {
+      url: s.url, title: s.title, titleLength: s.titleLength, metaLength: s.metaLength,
+      canonical: s.canonical, canonicalSource: s.canonicalSource,
+      h1: h1s[0]?.text ?? null, h1Count: h1s.length, emptyHeadings: s.emptyHeadings,
+      schemaTypes: s.schemaTypes, wordCount: s.wordCount,
+      imagesTotal: s.images.total, imagesNoAlt: s.images.withoutAlt,
+      internalLinks: s.links.internal, seo: sc.seo, aeo: sc.aeo, indexerbar: sc.indexerbar,
+    };
+  };
+
+  // Återanvänd startsidans signaler om de redan hämtats
+  if (home) pages.push(toSummary(home));
+
+  const rest = urls.filter((u) => u.replace(/\/$/, "") !== rootUrl.replace(/\/$/, ""));
+  const CONCURRENCY = 4;
+  for (let i = 0; i < rest.length; i += CONCURRENCY) {
+    const batch = rest.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((u) => extractPageSignals(u, { skipLighthouse: true, skipRobotsSitemap: true }).then(toSummary).catch(() => null))
+    );
+    for (const r of results) if (r) pages.push(r);
+  }
+
+  // Tvärsides-aggregat
+  const canonicalDomains = Array.from(new Set(
+    pages.map((p) => { try { return p.canonical ? new URL(p.canonical).host : null; } catch { return null; } }).filter(Boolean) as string[]
+  ));
+  const titleMap = new Map<string, string[]>();
+  for (const p of pages) { if (p.title) { const k = p.title.trim().toLowerCase(); titleMap.set(k, [...(titleMap.get(k) || []), p.url]); } }
+  const duplicateTitles = Array.from(titleMap.entries()).filter(([, u]) => u.length > 1).map(([title, urls]) => ({ title, urls }));
+
+  return {
+    root: rootUrl,
+    origin,
+    pageCount: pages.length,
+    sitemapUrlCount: sitemapUrls.length,
+    platform: home?.platform ?? "okänd",
+    robotsTxt,
+    homepageLighthouseSeo: home?.lighthouseSeo ?? null,
+    homepageCwv: home?.cwv ?? null,
+    homepageText: home?.mainText.slice(0, 8000) ?? "",
+    pages,
+    crossPage: {
+      canonicalDomains,
+      canonicalInconsistent: canonicalDomains.length > 1,
+      duplicateTitles,
+      thinPages: pages.filter((p) => p.wordCount < 300).map((p) => p.url),
+      pagesMissingH1: pages.filter((p) => p.h1Count === 0).map((p) => p.url),
+      pagesWithEmptyH1: pages.filter((p) => p.emptyHeadings > 0).map((p) => p.url),
+      totalImagesNoAlt: pages.reduce((a, p) => a + p.imagesNoAlt, 0),
+      avgInternalLinks: pages.length ? Math.round(pages.reduce((a, p) => a + p.internalLinks, 0) / pages.length) : 0,
+    },
   };
 }
