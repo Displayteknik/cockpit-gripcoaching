@@ -41,11 +41,16 @@ const SYSTEM_PROMPT = `Du genererar en proffessionell SEO/AEO-djupgranskning pa 
 
 # Del 2 — Kritiska SEO-brister (klassisk Google)
 
-[5-8 punkter, var en med:
-- ## 2.X RUBRIK (HOG/MEDEL/LAG)
-- Beskrivning
-- Effekt
-- Atgard (konkret, gärna med kod om relevant)]
+[5-8 punkter. SORTERA efter effekt på leads/kunder — det som ger fler klick/leads FÖRST, ren hygien sist. Varje punkt EXAKT detta format, i klartext för en företagare (ej tekniker):
+
+## 2.X [Rubrik i klartext] — [GER LEADS | GER TRAFIK | HYGIEN]
+- **Vad det är:** problemet i en enda enkel mening (ingen jargong)
+- **Varför det spelar roll:** 1 mening
+- **Vad du vinner:** konkret effekt, helst i klick/leads (t.ex. "fler klick på trafik du redan har")
+- **Så här gör du:** numrerade steg i GHL — exakt var (Settings → ... ) och vad du klistrar/skriver
+- **Tid:** ~X min
+
+Förklara varje facksterm i 3–5 ord första gången den används (t.ex. "canonical (lappen som säger åt Google vilken adress som är den riktiga)").]
 
 ---
 
@@ -219,7 +224,8 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 - Del 1 (baseline) = översiktstabell per sida (url, title-längd, canonical-källa, H1, schema, ord, seo/aeo-poäng).
 - Analysera HELHETEN: canonical-konsekvens (crossPage.canonicalInconsistent), dubbletter, tunna sidor, internlänkning mellan sidor (avgInternalLinks), alt-täckning.
 - canonical/robots/sitemap/schema är redan uppmätta — säg aldrig "saknas" om FAKTA visar att de finns.
-- Är canonical inkonsekvent (crossPage.canonicalInconsistent): rekommendera att ensa till den variant som FLEST sidor + nav redan använder (välj inte godtyckligt www vs icke-www — kolla "pages"-listans canonical-värden och föreslå majoriteten).
+- DOMÄN-DUBBLETT: kolla "domainRedirect". Om redirectWorks=true (t.ex. www → icke-www 301 finns) → flagga ALDRIG "duplicerad sajt" som HÖG. Det är redan löst på serversidan. Nämn det då bara som klar/hygien. Bara om redirectWorks=false är domän-dubblett ett riktigt HÖG-problem.
+- Canonical-taggar som pekar på olika domänvarianter (crossPage.canonicalTagInconsistent) när redirect finns = LÅG hygien, inte HÖG. Rekommendera att ensa till primaryHost (domainRedirect.primaryHost), men säg att effekten är liten eftersom redirecten redan styr Google rätt.
 - Använd EXAKT datumet i # Klient → Datum nedan i rapportens rubrik. Hitta inte på årtal.
 - Inga påhittade siffror, inga floskler.`;
 

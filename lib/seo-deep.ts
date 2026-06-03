@@ -393,9 +393,11 @@ export interface SiteAudit {
   homepageLighthouseSeo: number | null;
   homepageCwv: PageSignals["cwv"];
   homepageText: string;
+  domainRedirect: { primaryHost: string; redirectWorks: boolean; note: string };
   pages: SitePageSummary[];
   crossPage: {
     canonicalDomains: string[];
+    canonicalTagInconsistent: boolean; // taggarna pekar på olika domänvarianter (hygien om redirect finns)
     canonicalInconsistent: boolean;
     duplicateTitles: { title: string; urls: string[] }[];
     thinPages: string[];
@@ -418,23 +420,64 @@ async function fetchSitemapUrls(origin: string): Promise<string[]> {
   return Array.from(urls);
 }
 
+// Detektera vilken domänvariant som är primär: redirectar www → icke-www (eller tvärtom)?
+// Förhindrar falsklarm "duplicerad sajt" när en 301 redan finns.
+async function detectDomainRedirect(rootUrl: string): Promise<{ primaryHost: string; redirectWorks: boolean; note: string }> {
+  const u = new URL(rootUrl);
+  const bare = u.host.replace(/^www\./, "");
+  const wwwHost = "www." + bare;
+  const probe = async (host: string) => {
+    try {
+      const r = await fetch(`${u.protocol}//${host}/`, { redirect: "manual", signal: AbortSignal.timeout(8000) });
+      let locHost = "";
+      const loc = r.headers.get("location");
+      if (loc) { try { locHost = new URL(loc, `${u.protocol}//${host}`).host; } catch { /* ignore */ } }
+      return { status: r.status, locHost };
+    } catch { return { status: 0, locHost: "" }; }
+  };
+  const [w, nw] = await Promise.all([probe(wwwHost), probe(bare)]);
+  if (w.status >= 300 && w.status < 400 && w.locHost === bare)
+    return { primaryHost: bare, redirectWorks: true, note: "www → icke-www (301) finns redan — ingen riktig dubblett" };
+  if (nw.status >= 300 && nw.status < 400 && nw.locHost === wwwHost)
+    return { primaryHost: wwwHost, redirectWorks: true, note: "icke-www → www (301) finns redan — ingen riktig dubblett" };
+  return { primaryHost: bare, redirectWorks: false, note: "INGEN domän-redirect detekterad — www och icke-www kan serva separat (riktig dubblett-risk)" };
+}
+
 // Granska HELA sajten: sid-lista från sitemap → render-medveten extraktion per sida
 // (Lighthouse körs bara på startsidan för fart) → tvärsides-aggregat.
 export async function crawlSite(rootUrl: string, opts?: { maxPages?: number }): Promise<SiteAudit> {
-  const origin = new URL(rootUrl).origin;
   const maxPages = opts?.maxPages ?? 20;
+  const proto = new URL(rootUrl).protocol;
+  const domainRedirect = await detectDomainRedirect(rootUrl);
+  const primaryRoot = `${proto}//${domainRedirect.primaryHost}/`;
+  const origin = `${proto}//${domainRedirect.primaryHost}`;
 
-  // Sajtnivå (en gång): robots/sitemap + Lighthouse på startsidan
+  // Normalisera alla URL:er till primär värd + utan trailing-slash → dedupe www/icke-www
+  const norm = (raw: string): string | null => {
+    try {
+      const x = new URL(raw, origin);
+      x.protocol = proto; x.host = domainRedirect.primaryHost; x.hash = ""; x.search = "";
+      let p = x.pathname.replace(/\/+$/, ""); if (p === "") p = "/";
+      x.pathname = p;
+      return x.toString();
+    } catch { return null; }
+  };
+  const rootNorm = norm(primaryRoot)!;
+
+  // Sajtnivå (en gång): robots/sitemap + Lighthouse på startsidan (primär variant)
   const [{ robotsTxt }, sitemapUrls, home] = await Promise.all([
-    fetchRobotsAndSitemap(rootUrl),
+    fetchRobotsAndSitemap(primaryRoot),
     fetchSitemapUrls(origin),
-    extractPageSignals(rootUrl, { skipRobotsSitemap: true }).catch(() => null),
+    extractPageSignals(primaryRoot, { skipRobotsSitemap: true }).catch(() => null),
   ]);
 
-  // Sid-lista: sitemap, annars bara startsidan. Säkerställ att startsidan är med.
-  let urls = sitemapUrls.length ? sitemapUrls.slice() : [rootUrl];
-  if (!urls.some((u) => u.replace(/\/$/, "") === rootUrl.replace(/\/$/, ""))) urls.unshift(rootUrl);
-  urls = urls.slice(0, maxPages);
+  // Sid-lista: normaliserad + dedupad (ingen www/icke-www-dubblett), startsidan först
+  const seen = new Set<string>();
+  const list: string[] = [];
+  for (const raw of [primaryRoot, ...sitemapUrls]) {
+    const n = norm(raw); if (!n || seen.has(n)) continue; seen.add(n); list.push(n);
+  }
+  const urls = list.slice(0, maxPages);
 
   const pages: SitePageSummary[] = [];
   const toSummary = (s: PageSignals): SitePageSummary => {
@@ -453,7 +496,7 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number }): 
   // Återanvänd startsidans signaler om de redan hämtats
   if (home) pages.push(toSummary(home));
 
-  const rest = urls.filter((u) => u.replace(/\/$/, "") !== rootUrl.replace(/\/$/, ""));
+  const rest = urls.filter((u) => u !== rootNorm);
   const CONCURRENCY = 4;
   for (let i = 0; i < rest.length; i += CONCURRENCY) {
     const batch = rest.slice(i, i + CONCURRENCY);
@@ -481,10 +524,13 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number }): 
     homepageLighthouseSeo: home?.lighthouseSeo ?? null,
     homepageCwv: home?.cwv ?? null,
     homepageText: home?.mainText.slice(0, 8000) ?? "",
+    domainRedirect,
     pages,
     crossPage: {
       canonicalDomains,
-      canonicalInconsistent: canonicalDomains.length > 1,
+      canonicalTagInconsistent: canonicalDomains.length > 1,
+      // ÄKTA duplicerings-problem = taggarna pekar olika OCH ingen domän-redirect finns
+      canonicalInconsistent: canonicalDomains.length > 1 && !domainRedirect.redirectWorks,
       duplicateTitles,
       thinPages: pages.filter((p) => p.wordCount < 300).map((p) => p.url),
       pagesMissingH1: pages.filter((p) => p.h1Count === 0).map((p) => p.url),
