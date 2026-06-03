@@ -119,6 +119,72 @@ export default function AnalyticsDashboard() {
     URL.revokeObjectURL(url);
   }
 
+  function downloadPdf() {
+    if (!reportText) return;
+    const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const inline = (s: string) =>
+      esc(s)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    const lines = reportText.replace(/\r/g, "").split("\n");
+    let out = "";
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (/^```/.test(line)) {
+        const buf: string[] = [];
+        i++;
+        while (i < lines.length && !/^```/.test(lines[i])) { buf.push(esc(lines[i])); i++; }
+        i++;
+        out += `<pre><code>${buf.join("\n")}</code></pre>`;
+        continue;
+      }
+      if (/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+        const head = line.split("|").slice(1, -1).map((c) => c.trim());
+        i += 2;
+        const rows: string[][] = [];
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { rows.push(lines[i].split("|").slice(1, -1).map((c) => c.trim())); i++; }
+        out += `<table><thead><tr>${head.map((h) => `<th>${inline(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+        continue;
+      }
+      const hm = line.match(/^(#{1,6})\s+(.*)$/);
+      if (hm) { out += `<h${hm[1].length}>${inline(hm[2])}</h${hm[1].length}>`; i++; continue; }
+      if (/^---+\s*$/.test(line)) { out += "<hr>"; i++; continue; }
+      if (/^>\s?/.test(line)) { const buf: string[] = []; while (i < lines.length && /^>\s?/.test(lines[i])) { buf.push(inline(lines[i].replace(/^>\s?/, ""))); i++; } out += `<blockquote>${buf.join("<br>")}</blockquote>`; continue; }
+      if (/^\s*[-*]\s+/.test(line)) { const buf: string[] = []; while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { buf.push(`<li>${inline(lines[i].replace(/^\s*[-*]\s+/, ""))}</li>`); i++; } out += `<ul>${buf.join("")}</ul>`; continue; }
+      if (/^\s*\d+\.\s+/.test(line)) { const buf: string[] = []; while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { buf.push(`<li>${inline(lines[i].replace(/^\s*\d+\.\s+/, ""))}</li>`); i++; } out += `<ol>${buf.join("")}</ol>`; continue; }
+      if (/^\s*$/.test(line)) { i++; continue; }
+      const buf: string[] = [];
+      while (i < lines.length && !/^\s*$/.test(lines[i]) && !/^(#{1,6}\s|```|>\s?|\s*[-*]\s+|\s*\d+\.\s+|\s*\|)/.test(lines[i])) { buf.push(inline(lines[i])); i++; }
+      out += `<p>${buf.join("<br>")}</p>`;
+    }
+    const name = data?.client?.name ?? "Klient";
+    const html = `<!doctype html><html lang="sv"><head><meta charset="utf-8"><title>SEO & AEO-rapport – ${name}</title><style>
+      *{box-sizing:border-box}body{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937;margin:0;padding:32px;line-height:1.55;font-size:13px}
+      h1{font-size:22px;color:#1F3A5F;border-bottom:3px solid #1F3A5F;padding-bottom:8px;margin:28px 0 14px;page-break-before:always}
+      h1:first-of-type{page-break-before:avoid}
+      h2{font-size:17px;color:#2E5984;margin:22px 0 8px;border-bottom:1px solid #e5e7eb;padding-bottom:4px}
+      h3{font-size:14px;color:#374151;margin:16px 0 6px}h4{font-size:13px;color:#555;margin:12px 0 4px}
+      p{margin:6px 0}ul,ol{margin:6px 0;padding-left:22px}li{margin:3px 0}
+      table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px;page-break-inside:avoid}
+      th{background:#1F3A5F;color:#fff;text-align:left;padding:6px 8px;border:1px solid #ccc}
+      td{padding:6px 8px;border:1px solid #ddd;vertical-align:top}tr:nth-child(even) td{background:#f5f8fb}
+      code{font-family:ui-monospace,Consolas,monospace;background:#f1f1f1;padding:1px 4px;border-radius:3px;font-size:11px}
+      pre{background:#f4f4f4;border:1px solid #e5e7eb;border-radius:6px;padding:10px;overflow:auto;page-break-inside:avoid}
+      pre code{background:none;padding:0}hr{border:none;border-top:1px solid #e5e7eb;margin:16px 0}
+      blockquote{border-left:4px solid #2E5984;background:#f4f8fb;padding:8px 14px;margin:10px 0}
+      a{color:#2563eb;text-decoration:none}
+      @media print{body{padding:0}@page{margin:16mm}}
+    </style></head><body>${out}</body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) { alert("Tillåt popup-fönster för att ladda ner PDF."); return; }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 500);
+  }
+
   async function syncGsc(days: number) {
     setSyncing(true);
     try {
@@ -627,8 +693,11 @@ export default function AnalyticsDashboard() {
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                       {copied ? "Kopierat" : "Kopiera"}
                     </button>
+                    <button onClick={downloadPdf} className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 text-white hover:bg-purple-700 font-medium">
+                      Ladda ner PDF
+                    </button>
                     <button onClick={downloadReport} className="text-xs px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50">
-                      Ladda ner .md
+                      .md
                     </button>
                   </>
                 )}

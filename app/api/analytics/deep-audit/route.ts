@@ -218,7 +218,10 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 - "pages" är ALLA sidor som finns — föreslå ALDRIG att skapa en sida som redan finns i listan. Föreslå istället internlänkning, förstärkning eller sammanslagning.
 - Del 1 (baseline) = översiktstabell per sida (url, title-längd, canonical-källa, H1, schema, ord, seo/aeo-poäng).
 - Analysera HELHETEN: canonical-konsekvens (crossPage.canonicalInconsistent), dubbletter, tunna sidor, internlänkning mellan sidor (avgInternalLinks), alt-täckning.
-- canonical/robots/sitemap/schema är redan uppmätta — säg aldrig "saknas" om FAKTA visar att de finns. Inga påhittade siffror, inga floskler.`;
+- canonical/robots/sitemap/schema är redan uppmätta — säg aldrig "saknas" om FAKTA visar att de finns.
+- Är canonical inkonsekvent (crossPage.canonicalInconsistent): rekommendera att ensa till den variant som FLEST sidor + nav redan använder (välj inte godtyckligt www vs icke-www — kolla "pages"-listans canonical-värden och föreslå majoriteten).
+- Använd EXAKT datumet i # Klient → Datum nedan i rapportens rubrik. Hitta inte på årtal.
+- Inga påhittade siffror, inga floskler.`;
 
   try {
     const anthropic = new Anthropic({ apiKey });
