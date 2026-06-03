@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
+import { extractPageSignals } from "@/lib/seo-deep";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -24,9 +25,9 @@ export async function POST(req: NextRequest) {
   let text = sample || "";
   if (!text && url) {
     try {
-      const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      const html = await r.text();
-      text = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 8000);
+      // Render-medveten textextraktion (avkodar JS-payload) — inte rå HTML
+      const signals = await extractPageSignals(url, { skipLighthouse: true });
+      text = signals.mainText.slice(0, 8000);
     } catch (e) {
       return NextResponse.json({ error: "Kunde inte hämta URL: " + (e as Error).message }, { status: 500 });
     }

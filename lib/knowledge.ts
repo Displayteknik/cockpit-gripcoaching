@@ -39,13 +39,14 @@ export async function getKnowledge(...names: string[]): Promise<string> {
 export async function getProfileAsMarkdown(): Promise<string> {
   try {
     const { createClient } = await import("@supabase/supabase-js");
-    const { getActiveClientId } = await import("./client-context");
+    const { resolveClientId } = await import("./client-context");
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { auth: { persistSession: false } }
     );
-    const clientId = await getActiveClientId();
+    // resolveClientId: kund-session (httpOnly-token) vinner → rätt klients brand i /k-kontext
+    const clientId = await resolveClientId();
     const { data } = await sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle();
     if (!data) return "";
 
