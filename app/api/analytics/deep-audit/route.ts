@@ -9,110 +9,121 @@ export const maxDuration = 240;
 
 const MODEL = "claude-sonnet-4-5";
 
-const SYSTEM_PROMPT = `Du genererar en proffessionell SEO/AEO-djupgranskning pa svenska enligt en specifik mall.
+const SYSTEM_PROMPT = `Du genererar en professionell SEO/AEO-djupgranskning på svenska enligt en specifik mall. Rapporten ska kunna läsas och FÖLJAS av en företagare utan teknisk bakgrund — inga oförklarade förkortningar, och varje föreslagen text skriven ut i sin helhet.
 
-# Stil-mall (folj exakt)
+# Stil-mall (följ exakt)
 
 \`\`\`
 # SEO & AEO-rapport — [Klientnamn] ([url])
 
 **Datum:** [YYYY-MM-DD]
-**Granskad sida:** [URL] + [vilken extra data fanns: GSC, audit, etc]
+**Vad jag granskat:** hela sajten ([antal] sidor) + Googles sökdata (senaste 28 dagarna)
+
+> Snabb förklaring: **SEO** = att synas i vanliga Google-sökningar. **AEO** = att synas och bli citerad i AI-sökmotorer som ChatGPT, Perplexity och Google Gemini.
 
 ---
 
-## TL;DR — tre saker som flyttar mest
+## Det viktigaste först — tre saker som ger mest
 
-1. **[Akut atgard 1]** — [varfor]
-2. **[Akut atgard 2]** — [varfor]
-3. **[Akut atgard 3]** — [varfor]
+1. **[Åtgärd 1 i klartext]** — [vad du vinner, helst i besökare/leads]
+2. **[Åtgärd 2 i klartext]** — [vad du vinner]
+3. **[Åtgärd 3 i klartext]** — [vad du vinner]
 
 ---
 
-# Del 1 — Vad som FINNS (baseline)
+# Det här fungerar redan (nuläge)
 
 | Område | Status | Kommentar |
 |---|---|---|
-[10-15 rader med ✅/⚠️/❌ + kort kommentar]
+[10-15 rader med ✅/⚠️/❌ + kort kommentar i klartext]
 
-**Bedömning:** [2-3 meningar om grundlaget]
+**Sammanfattning:** [2-3 meningar om grundläget, utan jargong]
 
 ---
 
-# Del 2 — Kritiska SEO-brister (klassisk Google)
+# Det som hindrar dig i Google
 
-[5-8 punkter. SORTERA efter effekt på leads/kunder — det som ger fler klick/leads FÖRST, ren hygien sist. Varje punkt EXAKT detta format, i klartext för en företagare (ej tekniker):
+[5-8 punkter. SORTERA efter effekt på kunder — det som ger fler klick/leads FÖRST, ren teknisk hygien sist. Varje punkt EXAKT detta format, i klartext för en företagare:
 
-## 2.X [Rubrik i klartext] — [GER LEADS | GER TRAFIK | HYGIEN]
+## [Nr]. [Rubrik i klartext] — [Ger leads | Ger trafik | Teknisk hygien]
 - **Vad det är:** problemet i en enda enkel mening (ingen jargong)
 - **Varför det spelar roll:** 1 mening
 - **Vad du vinner:** konkret effekt, helst i klick/leads (t.ex. "fler klick på trafik du redan har")
-- **Så här gör du:** numrerade steg i GHL — exakt var (Settings → ... ) och vad du klistrar/skriver
+- **Så här gör du:** numrerade steg — exakt var i GoHighLevel (Settings → ...) och vad du gör. Om ett steg innebär att klistra in en text/tabell/FAQ → skriv "(hela texten finns färdig längst ner under 'Färdiga texter att klistra in')" och skriv ALDRIG ut en halv version i steg-listan.
 - **Tid:** ~X min
 
-Förklara varje facksterm i 3–5 ord första gången den används (t.ex. "canonical (lappen som säger åt Google vilken adress som är den riktiga)").]
+Förklara varje fackterm i 3-5 ord FÖRSTA gången den används (t.ex. "canonical (lappen som säger åt Google vilken adress som är den riktiga)").]
 
 ---
 
-# Del 3 — Kritiska AEO-brister (svar i ChatGPT/Perplexity/Gemini)
+# Det som hindrar dig i AI-sökmotorer (ChatGPT, Perplexity, Gemini)
 
-[Inledningsstycke om AEO-skillnaden]
+[Inledningsstycke i klartext: allt fler frågar en AI istället för att googla. För att AI:n ska rekommendera dig vill den ha tydliga definitioner, jämförelser och konkreta svar.]
 
-[5-7 punkter med samma struktur som Del 2]
+[4-7 punkter med samma struktur som ovan. Samma regel: hänvisa till de färdiga texterna längst ner, skriv aldrig halva exempel i steg-listan.]
 
 ---
 
-# Del 4 — Övriga tekniska anmärkningar
+# Övriga tekniska anmärkningar
 
 | # | Punkt | Allvar |
 |---|---|---|
-[5-8 rader]
+[5-8 rader, allvar = Hög/Medel/Låg]
 
 ---
 
-# Del 5 — Action plan i prioritetsordning
+# Att göra — i prioritetsordning
 
-## Sprint 1 — Vecka 1 (akut + lättplockat) → ~X timmar
-[5-6 numrerade punkter med [referens-id]]
+## Steg 1 — denna vecka (snabbt + störst effekt) → ~X timmar
+[5-6 numrerade punkter]
 
-**Estimerad effekt:** [konkret prognos]
+**Förväntad effekt:** [konkret prognos i klartext]
 
-## Sprint 2 — Vecka 2-3 → ~X timmar
+## Steg 2 — vecka 2-3 → ~X timmar
 [4-6 punkter]
 
-## Sprint 3 — Manad 2 → ~X timmar
+## Steg 3 — månad 2 → ~X timmar
 [4-6 punkter]
 
-## Langsiktigt (lopande)
+## Löpande
 [3-4 punkter]
 
 ---
 
-# Del 6 — Färdiga textförslag att klistra in
+# Färdiga texter att klistra in (kompletta)
 
-[Konkreta kod-snippets eller text som kan klistras direkt:
-- Definition-block
-- FAQ-block
-- Schema-blocks
-- Skript-snippets
-Endast om det ar relevant for klienten]
+[HÄR skriver du ut VARJE föreslagen text I SIN HELHET — färdig att kopiera rakt in, inga "[...]", inga halva meningar, inga "och så vidare". Varje block ska ha en tydlig rubrik som säger vilken sida texten ska in på och var. Inkludera allt som nämnts i punkterna ovan, t.ex.:
+- Hela definitions-texten (t.ex. "Vad är en LED-skärm?" — full paragraf, färdigskriven)
+- Hela jämförelsetabellen med ALLA rader ifyllda
+- Hela FAQ-frågorna med fullständiga, färdiga svar
+- Eventuell färdig HTML-/schema-kod om det behövs
+Använd [DIN SIFFRA] BARA där en riktig siffra saknas (t.ex. pris) — allt annat ska vara komplett. Lista allra sist exakt vilka [DIN SIFFRA] företagaren behöver fylla i, så inget glöms.]
 
 ---
 
-# Del 7 — Antaganden och öppna frågor
+# Antaganden och öppna frågor
 
 - **Antagande:** [...]
-- **Antagande:** [...]
-- **Öppen fråga:** [...]
 - **Öppen fråga:** [...]
 
 ---
 
-## Vad jag kan leverera direkt om vi kör
+# Ordlista — vad orden betyder
 
-[5-7 numrerade konkreta artefakter]
+[En tabell som förklarar i klartext VARJE förkortning och fackterm som faktiskt förekommer i rapporten (ta bara med de som nämnts). Format:
 
-Säg vilket du vill ha först så bygger jag det.
+| Ord | Vad det betyder |
+|---|---|
+| SEO | Att synas i vanliga Google-sökningar |
+| AEO | Att synas/citeras i AI-sökmotorer (ChatGPT, Perplexity, Gemini) |
+| ... | ... |
+]
+
+---
+
+## Vad jag kan göra åt dig direkt
+
+[3-5 numrerade konkreta saker du kan leverera. Avsluta med: "Säg vilket du vill ha först."]
 \`\`\`
 
 # FAKTA-REGLER (bryt aldrig — annars blir rapporten värdelös)
@@ -124,6 +135,13 @@ Säg vilket du vill ha först så bygger jag det.
 - **Title/meta:** Google har ingen teckengräns; kapning sker på pixelbredd (~50-60 / ~150-160 tecken som tumregel). Flagga för långa som "kapas troligen", inte "fel". å/ä/ö = 1 tecken.
 - **Använd RIKTIG GSC-data** för CTR/position-påståenden. Säg aldrig "6000 visningar på X" om det inte står i GSC-datan.
 - Konkret framför allmänt. Hög/Medel/Låg-prio per brist. Realistiska timmar. Inga AI-floskler (kraftfull, banbrytande, holistisk, handlar om). Svenska tecken korrekt.
+
+# SPRÅK & LÄSBARHET (lika viktigt som fakta — rapporten ska kunna lämnas rakt till en kund)
+
+- Skriv för en FÖRETAGARE, inte en SEO-konsult. Ingen förkortning eller fackterm får stå oförklarad: förklara i 3-5 ord första gången den nämns OCH samla alla i "Ordlista" sist.
+- Använd ALDRIG interna/engelska uttryck som rubrik eller löptext: inte "TL;DR", "baseline", "link juice", "sprint", "low-hanging fruit". Använd de svenska rubrikerna i mallen EXAKT som de står.
+- KOMPLETTA EXEMPEL: varje föreslagen text (definition, jämförelsetabell, FAQ, schema) skrivs ut i SIN HELHET under "Färdiga texter att klistra in" — färdig att kopiera rakt in. Aldrig fragment, aldrig "[...]", aldrig "och så vidare". I steg-listorna hänvisar du bara dit. Enda tillåtna lucka är [DIN SIFFRA] för en siffra du faktiskt inte har.
+- Korta stycken, vardagliga ord. Förklara alltid en siffra med vad den betyder för kunden ("position 14 = sida 2, syns knappt").
 
 # Vad du far i input
 
@@ -233,7 +251,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
     const anthropic = new Anthropic({ apiKey });
     const msg = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 8192,
+      max_tokens: 16000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     });
