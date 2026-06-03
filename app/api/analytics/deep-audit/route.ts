@@ -19,7 +19,7 @@ const SYSTEM_PROMPT = `Du genererar en professionell SEO/AEO-djupgranskning på 
 **Datum:** [YYYY-MM-DD]
 **Vad jag granskat:** hela sajten ([antal] sidor) + Googles sökdata (senaste 28 dagarna)
 
-> Snabb förklaring: **SEO** = att synas i vanliga Google-sökningar. **AEO** = att synas och bli citerad i AI-sökmotorer som ChatGPT, Perplexity och Google Gemini.
+> Snabb förklaring: **SEO** = att synas i vanliga Google-sökningar. **AEO/GEO** = att synas, bli rekommenderad och citerad i AI-sökmotorer som ChatGPT, Perplexity och Google Gemini (AEO = bli svaret, GEO = bli källan AI:n återger).
 
 ---
 
@@ -56,11 +56,16 @@ Förklara varje fackterm i 3-5 ord FÖRSTA gången den används (t.ex. "canonica
 
 ---
 
-# Det som hindrar dig i AI-sökmotorer (ChatGPT, Perplexity, Gemini)
+# Det som hindrar dig i AI-sökmotorer (AEO/GEO — ChatGPT, Perplexity, Gemini)
 
-[Inledningsstycke i klartext: allt fler frågar en AI istället för att googla. För att AI:n ska rekommendera dig vill den ha tydliga definitioner, jämförelser och konkreta svar.]
+[Inledningsstycke i klartext: allt fler frågar en AI istället för att googla. För att AI:n ska rekommendera dig (AEO) och citera dig som källa (GEO) vill den ha tydliga definitioner, jämförelser, konkreta svar OCH innehåll som är lätt att citera.]
 
-[4-7 punkter med samma struktur som ovan. Samma regel: hänvisa till de färdiga texterna längst ner, skriv aldrig halva exempel i steg-listan.]
+[4-7 punkter med samma struktur som ovan. Samma regel: hänvisa till de färdiga texterna längst ner, skriv aldrig halva exempel i steg-listan. Kolla ALLTID de fyra GEO-hävstängerna (forskningsbelagda — det som mätbart får generativa AI-motorer att lyfta fram en källa) och flagga var de saknas + var de ska läggas in:
+1. **Konkreta siffror/statistik** i brödtexten (mått, antal, år i drift) — AI plockar hellre upp text med data
+2. **Citat** från klienten som expert eller från nöjda kunder (använd customer_quotes i brand-profilen om de finns)
+3. **Källhänvisningar / auktoritet** (egna mätvärden, referensprojekt, branschstandard)
+4. **Tydligt expertspråk** ("vi rekommenderar P2-P4 för skyltfönster") i stället för vaga påståenden
+Föreslå konkret var på sajten siffror/citat/expertspråk ska in — och lägg färdiga formuleringar under "Färdiga texter att klistra in".]
 
 ---
 
@@ -115,7 +120,8 @@ Använd [DIN SIFFRA] BARA där en riktig siffra saknas (t.ex. pris) — allt ann
 | Ord | Vad det betyder |
 |---|---|
 | SEO | Att synas i vanliga Google-sökningar |
-| AEO | Att synas/citeras i AI-sökmotorer (ChatGPT, Perplexity, Gemini) |
+| AEO | Att bli svaret i AI-sökmotorer (ChatGPT, Perplexity, Gemini) |
+| GEO | Att bli källan en AI citerar/återger i sitt genererade svar |
 | ... | ... |
 ]
 
