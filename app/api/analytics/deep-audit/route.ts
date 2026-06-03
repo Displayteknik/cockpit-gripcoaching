@@ -5,7 +5,7 @@ import { resolveClientId, logActivity } from "@/lib/client-context";
 import { crawlSite } from "@/lib/seo-deep";
 
 export const runtime = "nodejs";
-export const maxDuration = 240;
+export const maxDuration = 300;
 
 const MODEL = "claude-sonnet-4-5";
 
@@ -249,12 +249,14 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 
   try {
     const anthropic = new Anthropic({ apiKey });
-    const msg = await anthropic.messages.create({
+    // Streama — robust för långa rapporter (håller anslutningen vid liv, undviker timeout-fel)
+    const stream = anthropic.messages.stream({
       model: MODEL,
-      max_tokens: 16000,
+      max_tokens: 12000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     });
+    const msg = await stream.finalMessage();
 
     const text = msg.content
       .map((b) => (b.type === "text" ? b.text : ""))
