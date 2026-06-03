@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { supabaseServer } from "./supabase-admin";
 
 const COOKIE_NAME = "active_client_id";
@@ -29,15 +29,24 @@ export async function getActiveClientId(): Promise<string> {
 }
 
 // Resolva tenant för endpoints som nås av BÅDE admin-dashboarden och kund-portalen (/k).
-// Den HttpOnly-token-validerade kund-sessionen vinner ALLTID → ingen tenant-läcka via
-// den manipulerbara active_client_id-cookien. Admin (utan kund-session) faller tillbaka.
+// Diskriminator = vilken sida gjorde anropet (referer):
+//  - från kund-portalen (/k) → den HttpOnly-validerade kund-sessionen vinner (kund låst
+//    till sin egen data, kan ej escapa via active_client_id-cookien).
+//  - från admin (/dashboard) → admins valda aktiva klient, ÄVEN om en gammal kund-cookie
+//    ligger kvar i webbläsaren (t.ex. efter att admin förhandsgranskat en kunds portal).
 export async function resolveClientId(): Promise<string> {
   try {
-    const { getCustomerSession } = await import("./customer-context");
-    const cs = await getCustomerSession();
-    if (cs) return cs.client_id;
+    const h = await headers();
+    const referer = h.get("referer") || "";
+    let fromPortal = false;
+    try { fromPortal = /^\/k(\/|$)/.test(new URL(referer).pathname); } catch { /* ingen/ogiltig referer */ }
+    if (fromPortal) {
+      const { getCustomerSession } = await import("./customer-context");
+      const cs = await getCustomerSession();
+      if (cs) return cs.client_id;
+    }
   } catch {
-    /* ingen kund-session — admin-kontext */
+    /* admin-kontext */
   }
   return getActiveClientId();
 }
