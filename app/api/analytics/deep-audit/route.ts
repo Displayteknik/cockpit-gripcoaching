@@ -122,6 +122,8 @@ Använd [DIN SIFFRA] BARA där en riktig siffra saknas (t.ex. pris) — allt ann
 | SEO | Att synas i vanliga Google-sökningar |
 | AEO | Att bli svaret i AI-sökmotorer (ChatGPT, Perplexity, Gemini) |
 | GEO | Att bli källan en AI citerar/återger i sitt genererade svar |
+| Visning (impression) | Antal gånger din sida visades i sökresultatet — inte antal som sökte |
+| CTR | Klickfrekvens: andel som klickar av dem som ser dig (klick delat med visningar) |
 | ... | ... |
 ]
 
@@ -140,6 +142,8 @@ Använd [DIN SIFFRA] BARA där en riktig siffra saknas (t.ex. pris) — allt ann
 - **Rich results 2026:** HowTo-rich-results är AVSKAFFADE och FAQ-rich-results visas bara för myndighet/hälsa. Lova ALDRIG FAQ/HowTo-stjärnor i Google (markup är ok för AI-läsbarhet — säg så, inte "Featured Snippet garanterat").
 - **Title/meta:** Google har ingen teckengräns; kapning sker på pixelbredd (~50-60 / ~150-160 tecken som tumregel). Flagga för långa som "kapas troligen", inte "fel". å/ä/ö = 1 tecken.
 - **Använd RIKTIG GSC-data** för CTR/position-påståenden. Säg aldrig "6000 visningar på X" om det inte står i GSC-datan.
+- **VISNINGAR ≠ SÖKNINGAR:** "visningar" (impressions) = antal gånger klientens sida VISADES i sökresultatet — INTE antal personer som sökte (det totala antalet sökningar är ett större, okänt tal). Skriv aldrig "X sökningar" baserat på visningssiffran. Förklara skillnaden första gången: "visningar = antal gånger din sida visades, inte antal som sökte".
+- **CTR-LOGIK (håll matten konsekvent):** klick ≈ CTR% × visningar (4 % av 6000 visningar = 240 klick, inte 24 — blanda aldrig ihop). En sida på position >10 (sida 2) ger ~0 % CTR OAVSETT titel/innehåll, eftersom nästan ingen ser sida 2. Lova därför ALDRIG "X % CTR" som direkt effekt av bättre titel/text på en sida-2-sida. Rama in vinsten som RANKING-beroende: konkretare innehåll/relevans → klättra till sida 1 → DÅ omvandlas visningar till klick. CTR-lyft från titel gäller bara sidor som redan ligger på sida 1.
 - Konkret framför allmänt. Hög/Medel/Låg-prio per brist. Realistiska timmar. Inga AI-floskler (kraftfull, banbrytande, holistisk, handlar om). Svenska tecken korrekt.
 
 # SPRÅK & LÄSBARHET (lika viktigt som fakta — rapporten ska kunna lämnas rakt till en kund)

@@ -121,6 +121,10 @@ export default function AnalyticsDashboard() {
 
   async function downloadPdf() {
     if (!reportText) return;
+    // jsPDF:s inbyggda typsnitt klarar bara Latin-1 (WinAnsi). Pilar/emoji utanför det
+    // ger skräptecken OCH får hela raden att rendera bokstav-för-bokstav. Mappa kända + strip resten.
+    const GLYPH: Record<string, string> = { "→": "->", "←": "<-", "✅": "OK", "✔": "OK", "✓": "OK", "❌": "X", "✗": "X", "✘": "X", "⚠": "!" };
+    const safe = (s: string) => s.replace(/[←-⇿⌀-➿⬀-⯿️\u{1F000}-\u{1FAFF}]/gu, (m) => GLYPH[m] ?? "");
     const name = data?.client?.name ?? "Klient";
     const filename = `seo-aeo-rapport-${name.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.pdf`;
     try {
@@ -170,7 +174,7 @@ export default function AnalyticsDashboard() {
         y += lineH;
       };
 
-      const lines = reportText.replace(/\r/g, "").split("\n");
+      const lines = safe(reportText).replace(/\r/g, "").split("\n");
       let i = 0;
       while (i < lines.length) {
         const line = lines[i];
