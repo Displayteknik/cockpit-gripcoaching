@@ -106,6 +106,19 @@ Använd [DIN SIFFRA] BARA där en riktig siffra saknas (t.ex. pris) — allt ann
 
 ---
 
+# Innehållsplan — bloggrubriker som lyfter ditt toppord
+
+[Identifiera klientens STÖRSTA möjlighet i GSC-datan: sökordet med många visningar men få klick och position på sida 2 (pos 11-25) — det ordet och sidan som rankar för det = "pelarsidan". Föreslå sedan 8-10 färdiga bloggrubriker som bygger ett ämneskluster runt det ordet. Varje rubrik tar ett SMALARE long-tail-ord (lägre konkurrens, köpstarkare) och ska internlänka upp till pelarsidan. Det lär Google att klienten är expert på ämnet → pelarsidan klättrar.
+
+Blanda intentionstyper som i ett riktigt kluster: kostnad ("vad kostar X"), jämförelse ("X eller Y"), segment (klientens RIKTIGA målgrupper), teknik/guide. Sortera störst köp-/lead-potential först. Rubriker ska vara front-laddade med sökordet, konkreta, i klientens ton, inga floskler. Format som tabell:
+
+| # | Bloggrubrik (färdig att använda) | Målsökord | Intention | Internlänk till |
+|---|---|---|---|---|
+
+Avsluta med 2-3 rader om hur man maxar effekten: internlänka varje post till pelarsidan med ankartext = sökordet, länka även mellan posterna, publiceringstakt ~1/vecka. Hitta ALDRIG på sökvolym — bygg på GSC-datan och klientens segment.]
+
+---
+
 # Antaganden och öppna frågor
 
 - **Antagande:** [...]
@@ -262,7 +275,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
     // Streama — robust för långa rapporter (håller anslutningen vid liv, undviker timeout-fel)
     const stream = anthropic.messages.stream({
       model: MODEL,
-      max_tokens: 12000,
+      max_tokens: 14000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     });
