@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryGsc, queryGscDaily } from "@/lib/google";
+import { queryGsc, queryGscDaily, autoSelectGaProperty } from "@/lib/google";
 import { supabaseServer } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -96,6 +96,9 @@ export async function GET(req: NextRequest) {
         // Daily-fel ska inte stoppa hela syncen
         console.warn("GSC daily-fel for", clientId, (e as Error).message);
       }
+
+      // Självläk: koppla rätt GA4-property automatiskt om den saknas (matchar domän)
+      try { await autoSelectGaProperty(clientId); } catch {}
 
       results.push({ client_id: clientId, ok: true, rows: rows.length, daily_rows: dailyRows });
     } catch (e) {

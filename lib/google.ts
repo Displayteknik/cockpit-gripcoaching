@@ -76,6 +76,54 @@ export async function getValidAccessToken(clientId: string): Promise<string> {
   return fresh.access_token;
 }
 
+// Auto-koppla rätt GA4-property genom att matcha klientens domän mot property:ns web-datastream.
+// Körs best-effort (kastar aldrig). Returnerar property_id om vald/redan satt, annars null.
+async function saveGaProperty(sb: ReturnType<typeof supabaseServer>, clientId: string, propertyId: string) {
+  await sb.from("google_connections").update({ ga_property_id: propertyId, updated_at: new Date().toISOString() }).eq("client_id", clientId);
+}
+
+export async function autoSelectGaProperty(clientId: string): Promise<string | null> {
+  try {
+    const sb = supabaseServer();
+    const { data: conn } = await sb.from("google_connections").select("ga_property_id").eq("client_id", clientId).maybeSingle();
+    if (!conn) return null;
+    if (conn.ga_property_id) return conn.ga_property_id as string; // redan satt
+
+    const { data: client } = await sb.from("clients").select("public_url").eq("id", clientId).maybeSingle();
+    let targetHost: string | null = null;
+    try { if (client?.public_url) targetHost = new URL(client.public_url).hostname.replace(/^www\./, "").toLowerCase(); } catch {}
+
+    const token = await getValidAccessToken(clientId);
+    const sumRes = await fetch("https://analyticsadmin.googleapis.com/v1beta/accountSummaries", { headers: { Authorization: `Bearer ${token}` } });
+    if (!sumRes.ok) return null;
+    const sum = (await sumRes.json()) as { accountSummaries?: Array<{ propertySummaries?: Array<{ property: string }> }> };
+    const propIds: string[] = [];
+    for (const a of sum.accountSummaries || []) for (const p of a.propertySummaries || []) propIds.push(p.property.replace("properties/", ""));
+    if (propIds.length === 0) return null;
+
+    // 1. Matcha på domän via web-datastream (defaultUri)
+    if (targetHost) {
+      for (const pid of propIds) {
+        try {
+          const dsRes = await fetch(`https://analyticsadmin.googleapis.com/v1beta/properties/${pid}/dataStreams`, { headers: { Authorization: `Bearer ${token}` } });
+          if (!dsRes.ok) continue;
+          const ds = (await dsRes.json()) as { dataStreams?: Array<{ type?: string; webStreamData?: { defaultUri?: string } }> };
+          const match = (ds.dataStreams || []).some((s) => {
+            if (s.type !== "WEB_DATA_STREAM" || !s.webStreamData?.defaultUri) return false;
+            try { return new URL(s.webStreamData.defaultUri).hostname.replace(/^www\./, "").toLowerCase() === targetHost; } catch { return false; }
+          });
+          if (match) { await saveGaProperty(sb, clientId, pid); return pid; }
+        } catch {}
+      }
+    }
+    // 2. Fallback: exakt EN property → använd den (ingen tvetydighet)
+    if (propIds.length === 1) { await saveGaProperty(sb, clientId, propIds[0]); return propIds[0]; }
+    return null; // flera properties, ingen domän-match → kan ej avgöra säkert
+  } catch {
+    return null;
+  }
+}
+
 // Search Console API
 export async function listGscSites(clientId: string): Promise<{ siteUrl: string; permissionLevel: string }[]> {
   const token = await getValidAccessToken(clientId);
