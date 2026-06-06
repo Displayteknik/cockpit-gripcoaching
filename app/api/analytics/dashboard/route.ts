@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { autoSelectGaProperty } from "@/lib/google";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,8 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const sb = supabaseServer();
   const clientId = await getActiveClientId();
+  // Självkoppla GA4-property om Google är anslutet men ingen property vald (matchar domän, best-effort, en gång).
+  try { await autoSelectGaProperty(clientId); } catch {}
   const days = Math.max(1, Math.min(180, Number(req.nextUrl.searchParams.get("days") || 30)));
   const since = new Date(Date.now() - days * 86400000).toISOString();
   const sinceDate = since.slice(0, 10);
