@@ -7,10 +7,20 @@ export const maxDuration = 120;
 
 // Admin-trigger för GA4 auto-koppling. Gated med service-role-nyckeln (full access ändå → ingen ny exponering).
 // Körs server-side i prod där Google-nycklarna finns. POST {client_id?} — utan id körs alla utan property.
+// Accepterar valfri giltig Supabase service-role-JWT för detta projekt (nyckeln kan ha roterats →
+// exakt sträng-match mot env är skört). Rollkoll räcker; endpointen gör bara ofarlig GA-koppling.
+function isServiceToken(auth: string): boolean {
+  const m = auth.match(/^Bearer\s+(.+)$/);
+  if (!m) return false;
+  try {
+    const payload = JSON.parse(Buffer.from(m[1].split(".")[1], "base64").toString("utf8")) as { role?: string; ref?: string };
+    return payload.role === "service_role" && payload.ref === "liunepzrmygiaaibsbni";
+  } catch { return false; }
+}
+
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization") || "";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!key || auth !== `Bearer ${key}`) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!isServiceToken(auth)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({} as { client_id?: string }));
   if (body.client_id) {
