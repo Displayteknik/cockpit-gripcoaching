@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, Award, Target, Zap, ExternalLink, Loader2, RefreshCw, AlertCircle, Trophy, Info, FileText, BookOpen, X, Copy, Check, Sparkles, ChevronDown } from "lucide-react";
+import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, Award, Target, Zap, ExternalLink, Loader2, RefreshCw, AlertCircle, Trophy, Info, FileText, BookOpen, X, Copy, Check, Sparkles, ChevronDown, TrendingDown, LineChart } from "lucide-react";
 
 type Period = 7 | 14 | 30 | 90;
 
@@ -31,6 +31,7 @@ interface Dashboard {
   queries_all_count: number;
   top_pages: Array<{ page: string; clicks: number; impressions: number; queryCount: number }>;
   traffic_series: Array<{ date: string; visits: number }>;
+  gsc_daily_series?: Array<{ date: string; clicks: number; impressions: number; ctr: number; position: number }>;
   top_paths: Array<{ path: string; visits: number }>;
   top_referrers: Array<{ host: string; visits: number }>;
   tracked_keywords: Array<{ id: string; keyword: string; current_rank: number | null; best_rank: number | null }>;
@@ -478,6 +479,25 @@ export default function AnalyticsDashboard() {
         <KPI icon={Smartphone} color="pink" label="Mobil-andel" value={`${k.visits_mobile_pct}%`} sub="av besök" />
         <KPI icon={Gauge} color="teal" label="Sid-laddtid" value={k.avg_page_load_ms !== null ? `${k.avg_page_load_ms}ms` : "—"} sub="snitt" />
       </div>
+
+      {/* UTVECKLING OVER TID — TREND-GRAFER */}
+      {(data.gsc_daily_series?.length ?? 0) >= 2 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+            <LineChart className="w-4 h-4 text-indigo-600" />
+            Utveckling över tid
+          </h3>
+          <p className="text-xs text-gray-500 mb-4">Dag för dag från Google Search Console. Position: en stigande linje = du klättrar uppåt (lägre siffra = bättre).</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <TrendChart id="pos" label="Snittposition" color="#4f46e5" invert
+              data={(data.gsc_daily_series ?? []).filter((d) => d.position > 0).map((d) => ({ date: d.date, value: d.position }))} fmt={(v) => v.toFixed(1)} />
+            <TrendChart id="clk" label="Klick" color="#059669"
+              data={(data.gsc_daily_series ?? []).map((d) => ({ date: d.date, value: d.clicks }))} fmt={(v) => Math.round(v).toString()} />
+            <TrendChart id="imp" label="Visningar" color="#2563eb"
+              data={(data.gsc_daily_series ?? []).map((d) => ({ date: d.date, value: d.impressions }))} fmt={(v) => Math.round(v).toLocaleString("sv-SE")} />
+          </div>
+        </div>
+      )}
 
       {/* POSITION-FORDELNING + BRAND SPLIT */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -936,6 +956,59 @@ function BandKeywords({ queries }: { queries: Array<{ query: string; clicks: num
             })}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function TrendChart({ id, label, color, data, invert, fmt }: { id: string; label: string; color: string; data: Array<{ date: string; value: number }>; invert?: boolean; fmt: (v: number) => string }) {
+  const pts = data.filter((d) => Number.isFinite(d.value));
+  if (pts.length < 2) {
+    return (
+      <div>
+        <div className="text-xs font-medium text-gray-700 mb-1">{label}</div>
+        <div className="h-24 flex items-center justify-center text-[11px] text-gray-400 bg-gray-50 rounded-lg">För få datapunkter ännu</div>
+      </div>
+    );
+  }
+  const W = 300, H = 96, padT = 8, padB = 14, padX = 2;
+  const vals = pts.map((p) => p.value);
+  let min = Math.min(...vals), max = Math.max(...vals);
+  if (min === max) { min -= 1; max += 1; }
+  const span = max - min;
+  const xAt = (i: number) => padX + (i / (pts.length - 1)) * (W - padX * 2);
+  const yAt = (v: number) => { const t = (v - min) / span; const tt = invert ? t : 1 - t; return padT + tt * (H - padT - padB); };
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(p.value).toFixed(1)}`).join(" ");
+  const area = `${line} L${xAt(pts.length - 1).toFixed(1)},${(H - padB).toFixed(1)} L${xAt(0).toFixed(1)},${(H - padB).toFixed(1)} Z`;
+  const first = pts[0], last = pts[pts.length - 1];
+  const delta = last.value - first.value;
+  const improved = invert ? delta < 0 : delta > 0;
+  const flat = Math.abs(delta) < (invert ? 0.1 : 0.5);
+  const shortDate = (d: string) => { const p = d.slice(5).split("-"); return p.length === 2 ? `${parseInt(p[1], 10)}/${parseInt(p[0], 10)}` : d; };
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1">
+        <span className="text-xs font-medium text-gray-700">{label}</span>
+        <span className="text-sm font-bold text-gray-900 tabular-nums">{fmt(last.value)}</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88 }} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#grad-${id})`} />
+        <path d={line} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <circle cx={xAt(pts.length - 1)} cy={yAt(last.value)} r="2.6" fill={color} />
+      </svg>
+      <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400">
+        <span>{shortDate(first.date)}</span>
+        <span className={`flex items-center gap-0.5 font-medium ${flat ? "text-gray-400" : improved ? "text-emerald-600" : "text-red-500"}`}>
+          {!flat && (improved ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />)}
+          {flat ? "oförändrat" : improved ? "förbättras" : "försämras"}
+        </span>
+        <span>{shortDate(last.date)}</span>
       </div>
     </div>
   );
