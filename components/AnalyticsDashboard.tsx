@@ -450,13 +450,9 @@ export default function AnalyticsDashboard() {
               {p === 7 ? "7d" : p === 14 ? "14d" : p === 30 ? "30d" : "90d"}
             </button>
           ))}
-          {data.gsc_last_sync?.days && (
-            <span className={`text-xs ml-3 ${data.gsc_last_sync.days !== period ? "text-amber-700 font-medium" : "text-gray-500"}`}>
-              {data.gsc_last_sync.days !== period
-                ? `⚠️ Synkad data: ${data.gsc_last_sync.days}d. Klicka period igen så synkas ${period}d.`
-                : `GSC synkad: ${data.gsc_last_sync.days} dagar`}
-            </span>
-          )}
+          <span className="text-xs ml-3 text-gray-500">
+            Trafik (GA4) = vald period{data.gsc_last_sync?.days ? ` · Sök (GSC) = Googles ${data.gsc_last_sync.days}-dagarsfönster` : ""}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           {data.gsc_last_sync?.imported_at && (

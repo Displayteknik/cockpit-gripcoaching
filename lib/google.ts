@@ -84,9 +84,6 @@ async function saveGaProperty(sb: ReturnType<typeof supabaseServer>, clientId: s
 
 export async function autoSelectGaProperty(clientId: string): Promise<string | null> {
   const sb = supabaseServer();
-  const writeDiag = async (info: Record<string, unknown>) => {
-    try { await sb.from("client_assets").insert({ client_id: clientId, asset_type: "post", category: "ga_debug", body: JSON.stringify(info), status: "active" }); } catch {}
-  };
   try {
     const { data: conn } = await sb.from("google_connections").select("ga_property_id").eq("client_id", clientId).maybeSingle();
     if (!conn) return null;
@@ -97,15 +94,14 @@ export async function autoSelectGaProperty(clientId: string): Promise<string | n
     try { if (client?.public_url) targetHost = new URL(client.public_url).hostname.replace(/^www\./, "").toLowerCase(); } catch {}
 
     let token: string;
-    try { token = await getValidAccessToken(clientId); }
-    catch (e) { await writeDiag({ step: "token_error", error: (e as Error).message }); return null; }
+    try { token = await getValidAccessToken(clientId); } catch { return null; }
 
     const sumRes = await fetch("https://analyticsadmin.googleapis.com/v1beta/accountSummaries", { headers: { Authorization: `Bearer ${token}` } });
-    if (!sumRes.ok) { await writeDiag({ step: "accountSummaries_fail", status: sumRes.status, body: (await sumRes.text()).slice(0, 400) }); return null; }
+    if (!sumRes.ok) return null;
     const sum = (await sumRes.json()) as { accountSummaries?: Array<{ displayName?: string; propertySummaries?: Array<{ property: string; displayName?: string }> }> };
     const props: Array<{ id: string; name: string }> = [];
     for (const a of sum.accountSummaries || []) for (const p of a.propertySummaries || []) props.push({ id: p.property.replace("properties/", ""), name: p.displayName || "" });
-    if (props.length === 0) { await writeDiag({ step: "no_properties", targetHost }); return null; }
+    if (props.length === 0) return null;
 
     // 1. Samla ALLA properties vars web-datastream matchar klientens domän
     const matches: string[] = [];
@@ -125,7 +121,7 @@ export async function autoSelectGaProperty(clientId: string): Promise<string | n
     }
 
     const candidates = matches.length > 0 ? matches : (props.length === 1 ? [props[0].id] : []);
-    if (candidates.length === 0) { await writeDiag({ step: "no_match", targetHost, properties: props }); return null; }
+    if (candidates.length === 0) return null;
     if (candidates.length === 1) { await saveGaProperty(sb, clientId, candidates[0]); return candidates[0]; }
 
     // 2. Flera kandidater (t.ex. flera GA4-properties för samma domän) → välj den med MEST sessioner (28d).
@@ -144,8 +140,7 @@ export async function autoSelectGaProperty(clientId: string): Promise<string | n
     }
     await saveGaProperty(sb, clientId, best);
     return best;
-  } catch (e) {
-    await writeDiag({ step: "exception", error: (e as Error).message });
+  } catch {
     return null;
   }
 }
