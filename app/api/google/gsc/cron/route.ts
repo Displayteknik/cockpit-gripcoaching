@@ -59,9 +59,12 @@ export async function GET(req: NextRequest) {
         period_end,
       }));
 
-      // Rensa duplicates for samma period_end
-      await sb.from("gsc_queries").delete().eq("client_id", clientId).eq("period_end", period_end);
-      if (rows.length) await sb.from("gsc_queries").insert(rows);
+      // ERSÄTT hela klientens sökords-mätning (se sync/route.ts) — bara senaste mätningen används.
+      // Radera ALLT för klienten och infoga den nya, annars staplas överlappande 28d-perioder.
+      if (rows.length) {
+        await sb.from("gsc_queries").delete().eq("client_id", clientId);
+        await sb.from("gsc_queries").insert(rows);
+      }
 
       // Per-dag sync (90d) for tidsserie-graf — gsc_queries_daily
       let dailyRows = 0;

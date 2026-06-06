@@ -43,9 +43,14 @@ export async function POST(req: NextRequest) {
       period_end,
     }));
 
-    // Rensa tidigare period_end-rader för samma period (för att undvika duplikater)
-    await sb.from("gsc_queries").delete().eq("client_id", clientId).eq("period_end", period_end);
-    if (rows.length) await sb.from("gsc_queries").insert(rows);
+    // ERSÄTT hela klientens sökords-mätning — vi använder ALLTID bara senaste mätningen.
+    // GSC ger en rullande 28-dagars-period; sparar vi varje synk staplas överlappande mätningar
+    // och alla siffror flerdubblas. Radera ALLT för klienten, infoga den nya. (Historik för grafer
+    // ligger i gsc_queries_daily, som dedupar per datum.) Guard: radera bara om vi har nya rader.
+    if (rows.length) {
+      await sb.from("gsc_queries").delete().eq("client_id", clientId);
+      await sb.from("gsc_queries").insert(rows);
+    }
 
     await logActivity(clientId, "gsc_synced", `GSC synkad: ${rows.length} sökord (${days} dagar)`, "/dashboard/seo");
     return NextResponse.json({ ok: true, rows: rows.length, period_start, period_end });

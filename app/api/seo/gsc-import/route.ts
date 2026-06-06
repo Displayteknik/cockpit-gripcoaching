@@ -46,6 +46,9 @@ export async function POST(req: NextRequest) {
   if (!rows.length) return NextResponse.json({ error: "Inga rader hittades" }, { status: 400 });
 
   const sb = supabaseServer();
+  // ERSÄTT klientens sökords-mätning (samma princip som GSC-synken) — annars staplas importer
+  // ovanpå tidigare data och alla siffror flerdubblas. Vi använder ändå bara senaste mätningen.
+  await sb.from("gsc_queries").delete().eq("client_id", clientId);
   const { error } = await sb.from("gsc_queries").insert(rows);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
