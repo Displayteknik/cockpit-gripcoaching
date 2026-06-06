@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, Award, Target, Zap, ExternalLink, Loader2, RefreshCw, AlertCircle, Trophy, Info, FileText, BookOpen, X, Copy, Check, Sparkles } from "lucide-react";
+import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, Award, Target, Zap, ExternalLink, Loader2, RefreshCw, AlertCircle, Trophy, Info, FileText, BookOpen, X, Copy, Check, Sparkles, ChevronDown } from "lucide-react";
 
 type Period = 7 | 14 | 30 | 90;
 
@@ -24,6 +24,7 @@ interface Dashboard {
     audits: number;
   };
   position_distribution: { top3: number; top10: number; top20: number; beyond: number; top3Imp: number; top10Imp: number; top20Imp: number; beyondImp: number };
+  position_distribution_queries?: Record<"top3" | "top10" | "top20" | "beyond", Array<{ query: string; clicks: number; impressions: number; avg_position: number | null; ctr: number; page?: string | null }>>;
   brand_split: { brand: { clicks: number; impressions: number }; non_brand: { clicks: number; impressions: number } };
   quick_wins: Array<{ query: string; clicks: number; impressions: number; avg_position: number | null; ctr: number; page?: string | null }>;
   queries_top: Array<{ query: string; clicks: number; impressions: number; avg_position: number | null; ctr: number; page_count: number }>;
@@ -51,6 +52,7 @@ export default function AnalyticsDashboard() {
   const [showHandbok, setShowHandbok] = useState(false);
   const [savedReports, setSavedReports] = useState<Array<{ id: string; body: string; metadata: { url?: string; generated_at?: string }; created_at: string }>>([]);
   const [copied, setCopied] = useState(false);
+  const [openBand, setOpenBand] = useState<"top3" | "top10" | "top20" | "beyond" | null>(null);
 
   async function load(p: Period) {
     setLoading(true);
@@ -484,15 +486,26 @@ export default function AnalyticsDashboard() {
             <Target className="w-4 h-4 text-emerald-600" />
             Var rankar du? — sökords-fördelning
           </h3>
-          <div className="space-y-2">
-            <PosBar label="Topp 3" count={pd.top3} imp={pd.top3Imp} total={totalKeywords} color="bg-emerald-500" />
-            <PosBar label="Topp 4–10" count={pd.top10} imp={pd.top10Imp} total={totalKeywords} color="bg-blue-500" />
-            <PosBar label="11–20" count={pd.top20} imp={pd.top20Imp} total={totalKeywords} color="bg-amber-500" />
-            <PosBar label="21+" count={pd.beyond} imp={pd.beyondImp} total={totalKeywords} color="bg-gray-400" />
+          <div className="space-y-1">
+            {([
+              { band: "top3" as const, label: "Topp 3", count: pd.top3, imp: pd.top3Imp, color: "bg-emerald-500" },
+              { band: "top10" as const, label: "Topp 4–10", count: pd.top10, imp: pd.top10Imp, color: "bg-blue-500" },
+              { band: "top20" as const, label: "11–20", count: pd.top20, imp: pd.top20Imp, color: "bg-amber-500" },
+              { band: "beyond" as const, label: "21+", count: pd.beyond, imp: pd.beyondImp, color: "bg-gray-400" },
+            ]).map((b) => (
+              <div key={b.band}>
+                <PosBar label={b.label} count={b.count} imp={b.imp} total={totalKeywords} color={b.color}
+                  active={openBand === b.band}
+                  onClick={() => setOpenBand(openBand === b.band ? null : b.band)} />
+                {openBand === b.band && (
+                  <BandKeywords queries={data.position_distribution_queries?.[b.band] ?? []} />
+                )}
+              </div>
+            ))}
           </div>
           <div className="text-xs text-gray-500 mt-3 flex items-center gap-1">
             <Info className="w-3 h-3" />
-            Sökord på position 4–15 är där snabbaste vinsterna finns.
+            Klicka på ett band för att se sökorden. Position 4–15 = snabbaste vinsterna.
           </div>
         </div>
 
@@ -872,16 +885,57 @@ function KPI({ icon: Icon, color, label, value, sub }: { icon: React.ComponentTy
   );
 }
 
-function PosBar({ label, count, imp, total, color }: { label: string; count: number; imp: number; total: number; color: string }) {
+function PosBar({ label, count, imp, total, color, active, onClick }: { label: string; count: number; imp: number; total: number; color: string; active?: boolean; onClick?: () => void }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
-    <div>
+    <button type="button" onClick={onClick} className={`w-full text-left rounded-lg px-2 py-1.5 -mx-2 transition-colors ${active ? "bg-gray-50 ring-1 ring-gray-200" : "hover:bg-gray-50"} ${count > 0 ? "cursor-pointer" : "cursor-default"}`}>
       <div className="flex items-center justify-between text-xs mb-1">
-        <span className="font-medium text-gray-700">{label}</span>
+        <span className="font-medium text-gray-700 flex items-center gap-1">
+          <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${active ? "rotate-180" : ""}`} />
+          {label}
+        </span>
         <span className="text-gray-500"><strong className="text-gray-900">{count}</strong> sökord · {imp.toLocaleString("sv-SE")} visn.</span>
       </div>
       <div className="h-2 bg-gray-100 rounded overflow-hidden">
         <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+    </button>
+  );
+}
+
+function BandKeywords({ queries }: { queries: Array<{ query: string; clicks: number; impressions: number; avg_position: number | null; ctr: number; page?: string | null }> }) {
+  if (queries.length === 0) return <div className="mt-2 mb-1 text-xs text-gray-400 px-1">Inga sökord i detta band.</div>;
+  return (
+    <div className="mt-2 mb-2 border border-gray-100 rounded-lg bg-gray-50/50 p-2">
+      <div className="text-[11px] text-gray-500 mb-1 px-1">{queries.length} sökord — störst möjlighet (flest visningar) först</div>
+      <div className="max-h-64 overflow-y-auto">
+        <table className="w-full text-xs">
+          <thead className="text-gray-400 sticky top-0 bg-gray-50">
+            <tr>
+              <th className="text-left font-medium py-1 px-1">Sökord</th>
+              <th className="text-right font-medium px-1">Pos</th>
+              <th className="text-right font-medium px-1">Visn.</th>
+              <th className="text-right font-medium px-1">Klick</th>
+              <th className="px-1" />
+            </tr>
+          </thead>
+          <tbody>
+            {queries.map((q, i) => {
+              const optimizeUrl = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(q.query)}${q.page ? `&nuvarande_text=${encodeURIComponent(`Sida som rankar idag: ${q.page}\nNuvarande position i Google: ${q.avg_position}\nVisningar: ${q.impressions}/månad\n\n[Klistra in nuvarande text från sidan här]`)}` : ""}`;
+              return (
+                <tr key={i} className="border-t border-gray-100 hover:bg-white">
+                  <td className="py-1.5 px-1 text-gray-800">{q.query}</td>
+                  <td className="py-1.5 px-1 text-right tabular-nums text-gray-600">{q.avg_position ?? "—"}</td>
+                  <td className="py-1.5 px-1 text-right tabular-nums text-gray-600">{q.impressions.toLocaleString("sv-SE")}</td>
+                  <td className="py-1.5 px-1 text-right tabular-nums text-gray-600">{q.clicks}</td>
+                  <td className="py-1.5 px-1 text-right">
+                    <a href={optimizeUrl} className="text-purple-600 hover:text-purple-800 font-medium whitespace-nowrap">Optimera</a>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

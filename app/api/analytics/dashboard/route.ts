@@ -86,6 +86,17 @@ export async function GET(req: NextRequest) {
     else { positionBuckets.beyond++; positionBuckets.beyondImp += q.impressions; }
   }
 
+  // Sökord per band — för klickbar drill-down i dashboarden (störst möjlighet = flest visningar först)
+  const distQueries: Record<"top3" | "top10" | "top20" | "beyond", typeof queries> = { top3: [], top10: [], top20: [], beyond: [] };
+  for (const q of queries) {
+    if (q.avg_position === null) continue;
+    const band = q.avg_position <= 3 ? "top3" : q.avg_position <= 10 ? "top10" : q.avg_position <= 20 ? "top20" : "beyond";
+    distQueries[band].push(q);
+  }
+  (Object.keys(distQueries) as Array<keyof typeof distQueries>).forEach((k) => {
+    distQueries[k] = distQueries[k].sort((a, b) => b.impressions - a.impressions).slice(0, 100);
+  });
+
   // Quick wins: position 4-15 OCH impressions >= 30 — dessa kan klattra till topp 3 lattast
   const quickWins = queries
     .filter((q) => q.avg_position !== null && q.avg_position >= 4 && q.avg_position <= 15 && q.impressions >= 30)
@@ -160,6 +171,7 @@ export async function GET(req: NextRequest) {
       audits: (audits.data ?? []).length,
     },
     position_distribution: positionBuckets,
+    position_distribution_queries: distQueries,
     brand_split: { brand: { clicks: brandClicks, impressions: brandImp }, non_brand: { clicks: nonBrandClicks, impressions: nonBrandImp } },
     quick_wins: quickWins,
     queries_top: queries.sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0, 50),
