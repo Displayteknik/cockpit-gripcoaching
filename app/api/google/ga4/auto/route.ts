@@ -71,5 +71,20 @@ export async function POST(req: NextRequest) {
   diag.webStreams = streams;
 
   const picked = await autoSelectGaProperty(clientId);
+  if (picked) {
+    const runReport = async (dimension: string, limit = 25) => {
+      try {
+        const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${picked}:runReport`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ dateRanges: [{ startDate: "28daysAgo", endDate: "today" }], dimensions: [{ name: dimension }], metrics: [{ name: "sessions" }], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit }),
+        });
+        if (!r.ok) return [];
+        const j = (await r.json()) as { rows?: Array<{ dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }> };
+        return (j.rows || []).map((row) => ({ key: row.dimensionValues?.[0]?.value || "", sessions: Number(row.metricValues?.[0]?.value || 0) }));
+      } catch { return []; }
+    };
+    diag.channels = await runReport("sessionDefaultChannelGroup", 20);
+    diag.topSources = await runReport("sessionSource", 25);
+  }
   return NextResponse.json({ picked, diag });
 }
