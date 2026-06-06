@@ -83,8 +83,11 @@ async function saveGaProperty(sb: ReturnType<typeof supabaseServer>, clientId: s
 }
 
 export async function autoSelectGaProperty(clientId: string): Promise<string | null> {
+  const sb = supabaseServer();
+  const writeDiag = async (info: Record<string, unknown>) => {
+    try { await sb.from("client_assets").insert({ client_id: clientId, asset_type: "post", category: "ga_debug", body: JSON.stringify(info), status: "active" }); } catch {}
+  };
   try {
-    const sb = supabaseServer();
     const { data: conn } = await sb.from("google_connections").select("ga_property_id").eq("client_id", clientId).maybeSingle();
     if (!conn) return null;
     if (conn.ga_property_id) return conn.ga_property_id as string; // redan satt
@@ -93,33 +96,40 @@ export async function autoSelectGaProperty(clientId: string): Promise<string | n
     let targetHost: string | null = null;
     try { if (client?.public_url) targetHost = new URL(client.public_url).hostname.replace(/^www\./, "").toLowerCase(); } catch {}
 
-    const token = await getValidAccessToken(clientId);
+    let token: string;
+    try { token = await getValidAccessToken(clientId); }
+    catch (e) { await writeDiag({ step: "token_error", error: (e as Error).message }); return null; }
+
     const sumRes = await fetch("https://analyticsadmin.googleapis.com/v1beta/accountSummaries", { headers: { Authorization: `Bearer ${token}` } });
-    if (!sumRes.ok) return null;
-    const sum = (await sumRes.json()) as { accountSummaries?: Array<{ propertySummaries?: Array<{ property: string }> }> };
-    const propIds: string[] = [];
-    for (const a of sum.accountSummaries || []) for (const p of a.propertySummaries || []) propIds.push(p.property.replace("properties/", ""));
-    if (propIds.length === 0) return null;
+    if (!sumRes.ok) { await writeDiag({ step: "accountSummaries_fail", status: sumRes.status, body: (await sumRes.text()).slice(0, 400) }); return null; }
+    const sum = (await sumRes.json()) as { accountSummaries?: Array<{ displayName?: string; propertySummaries?: Array<{ property: string; displayName?: string }> }> };
+    const props: Array<{ id: string; name: string }> = [];
+    for (const a of sum.accountSummaries || []) for (const p of a.propertySummaries || []) props.push({ id: p.property.replace("properties/", ""), name: p.displayName || "" });
+    if (props.length === 0) { await writeDiag({ step: "no_properties", targetHost }); return null; }
 
     // 1. Matcha på domän via web-datastream (defaultUri)
+    const domainsSeen: string[] = [];
     if (targetHost) {
-      for (const pid of propIds) {
+      for (const p of props) {
         try {
-          const dsRes = await fetch(`https://analyticsadmin.googleapis.com/v1beta/properties/${pid}/dataStreams`, { headers: { Authorization: `Bearer ${token}` } });
+          const dsRes = await fetch(`https://analyticsadmin.googleapis.com/v1beta/properties/${p.id}/dataStreams`, { headers: { Authorization: `Bearer ${token}` } });
           if (!dsRes.ok) continue;
           const ds = (await dsRes.json()) as { dataStreams?: Array<{ type?: string; webStreamData?: { defaultUri?: string } }> };
-          const match = (ds.dataStreams || []).some((s) => {
-            if (s.type !== "WEB_DATA_STREAM" || !s.webStreamData?.defaultUri) return false;
-            try { return new URL(s.webStreamData.defaultUri).hostname.replace(/^www\./, "").toLowerCase() === targetHost; } catch { return false; }
-          });
-          if (match) { await saveGaProperty(sb, clientId, pid); return pid; }
+          for (const s of ds.dataStreams || []) {
+            if (s.type !== "WEB_DATA_STREAM" || !s.webStreamData?.defaultUri) continue;
+            let h = ""; try { h = new URL(s.webStreamData.defaultUri).hostname.replace(/^www\./, "").toLowerCase(); } catch {}
+            domainsSeen.push(`${p.id}=${h}`);
+            if (h && h === targetHost) { await saveGaProperty(sb, clientId, p.id); await writeDiag({ step: "matched", picked: p.id, name: p.name, targetHost, domainsSeen }); return p.id; }
+          }
         } catch {}
       }
     }
     // 2. Fallback: exakt EN property → använd den (ingen tvetydighet)
-    if (propIds.length === 1) { await saveGaProperty(sb, clientId, propIds[0]); return propIds[0]; }
+    if (props.length === 1) { await saveGaProperty(sb, clientId, props[0].id); await writeDiag({ step: "fallback_single", picked: props[0].id, name: props[0].name, targetHost, domainsSeen }); return props[0].id; }
+    await writeDiag({ step: "no_match", targetHost, properties: props, domainsSeen });
     return null; // flera properties, ingen domän-match → kan ej avgöra säkert
-  } catch {
+  } catch (e) {
+    await writeDiag({ step: "exception", error: (e as Error).message });
     return null;
   }
 }
