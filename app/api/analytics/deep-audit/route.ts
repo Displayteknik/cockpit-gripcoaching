@@ -185,7 +185,7 @@ interface AuditInput {
   url?: string;
 }
 
-interface RawGscRow { query: string; clicks: number; impressions: number; position: number | string }
+interface RawGscRow { query: string; clicks: number; impressions: number; position: number | string; period_start?: string | null }
 interface RawProfile { company_name: string | null; tagline: string | null; tone_rules: string | null }
 
 export async function POST(req: NextRequest) {
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
   const [client, profile, gsc, audits] = await Promise.all([
     sb.from("clients").select("name, slug, public_url").eq("id", clientId).maybeSingle(),
     sb.from("hm_brand_profile").select("company_name, tagline, usp, icp_primary, services, tone_rules, customer_quotes, dos, donts").eq("client_id", clientId).maybeSingle(),
-    sb.from("gsc_queries").select("query, clicks, impressions, position").eq("client_id", clientId).order("impressions", { ascending: false }).limit(40),
+    sb.from("gsc_queries").select("query, clicks, impressions, position, period_start").eq("client_id", clientId).order("period_start", { ascending: false }).limit(500),
     sb.from("hm_seo_audits").select("url, seo_score, aeo_score, issues, has_schema, has_faq, has_og, word_count, meta_description, title").eq("client_id", clientId).order("audited_at", { ascending: false }).limit(3),
   ]);
 
@@ -219,8 +219,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Kunde inte hamta sajten: ${(e as Error).message}` }, { status: 500 });
   }
 
-  // Sammanfatta GSC-data kompakt
-  const gscRows = (gsc.data ?? []) as RawGscRow[];
+  // Sammanfatta GSC-data kompakt. KRITISKT: gsc_queries har flera ÖVERLAPPANDE rullande 28-dagars-mätningar
+  // (en per synk). Använd BARA den senaste (max period_start) — annars summeras visningar och blir flerdubblade.
+  const gscAll = (gsc.data ?? []) as RawGscRow[];
+  const latestPeriod = gscAll[0]?.period_start ?? null;
+  const gscRows = (latestPeriod ? gscAll.filter((r) => r.period_start === latestPeriod) : gscAll)
+    .sort((a, b) => b.impressions - a.impressions);
   const gscSummary = gscRows.length === 0
     ? "Ingen GSC-data tillganglig."
     : gscRows.slice(0, 25).map((r) => `${r.query} | ${r.clicks} klick / ${r.impressions} visn / pos ${Number(r.position).toFixed(1)}`).join("\n");

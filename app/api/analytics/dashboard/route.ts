@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const [gsc, visits, keywords, audits, client, brand, gscMeta, gscDaily] = await Promise.all([
     // GSC-data ar aggregerad per period_end (en rad per sokfras for hela perioden).
     // Vi laser ALLTID senaste synken — period-valjaren i UI styr SYNK-perioden.
-    sb.from("gsc_queries").select("query, page, clicks, impressions, ctr, position, period_start, period_end").eq("client_id", clientId).limit(2000),
+    sb.from("gsc_queries").select("query, page, clicks, impressions, ctr, position, period_start, period_end").eq("client_id", clientId).order("period_start", { ascending: false }).limit(2000),
     sb.from("hm_visits").select("path, ts, referrer, is_returning, page_load_ms, screen_w").eq("client_id", clientId).gte("ts", since).limit(5000),
     sb.from("hm_seo_keywords").select("id, keyword, target_url, current_rank, best_rank, search_volume").eq("client_id", clientId),
     sb.from("hm_seo_audits").select("id, url, seo_score, aeo_score, audited_at").eq("client_id", clientId).order("audited_at", { ascending: false }).limit(10),
@@ -28,10 +28,14 @@ export async function GET(req: NextRequest) {
     sb.from("gsc_queries_daily").select("date, clicks, impressions, ctr, position").eq("client_id", clientId).is("query", null).gte("date", sinceDate).order("date", { ascending: true }),
   ]);
 
-  type GscRow = { query: string; page: string | null; clicks: number; impressions: number; ctr: number | string; position: number | string };
+  type GscRow = { query: string; page: string | null; clicks: number; impressions: number; ctr: number | string; position: number | string; period_start?: string | null };
   type VisitRow = { path: string; ts: string; referrer: string | null; is_returning: boolean | null; page_load_ms: number | null; screen_w: number | null };
 
-  const gscRows: GscRow[] = (gsc.data ?? []) as GscRow[];
+  // KRITISKT: gsc_queries innehåller flera ÖVERLAPPANDE rullande 28-dagars-mätningar (en per synk).
+  // Summerar vi alla blir varje siffra multiplicerad. Använd BARA den senaste mätningen (max period_start).
+  const gscRowsAll: GscRow[] = (gsc.data ?? []) as GscRow[];
+  const latestPeriod = gscRowsAll[0]?.period_start ?? null;
+  const gscRows: GscRow[] = latestPeriod ? gscRowsAll.filter((r) => r.period_start === latestPeriod) : gscRowsAll;
   const visitRows: VisitRow[] = (visits.data ?? []) as VisitRow[];
 
   // Aggregera per query (en sokfras kan ha flera page-rader)
