@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     // GSC-data ar aggregerad per period_end (en rad per sokfras for hela perioden).
     // Vi laser ALLTID senaste synken — period-valjaren i UI styr SYNK-perioden.
     sb.from("gsc_queries").select("query, page, clicks, impressions, ctr, position, period_start, period_end").eq("client_id", clientId).order("period_start", { ascending: false }).limit(2000),
-    sb.from("hm_visits").select("path, ts, referrer, is_returning, page_load_ms, screen_w").eq("client_id", clientId).gte("ts", since).limit(5000),
+    sb.from("hm_visits").select("path, ts, referrer, is_returning, page_load_ms, screen_w, session_id").eq("client_id", clientId).gte("ts", since).limit(5000),
     sb.from("hm_seo_keywords").select("id, keyword, target_url, current_rank, best_rank, search_volume").eq("client_id", clientId),
     sb.from("hm_seo_audits").select("id, url, seo_score, aeo_score, audited_at").eq("client_id", clientId).order("audited_at", { ascending: false }).limit(10),
     sb.from("clients").select("name, public_url").eq("id", clientId).maybeSingle(),
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   ]);
 
   type GscRow = { query: string; page: string | null; clicks: number; impressions: number; ctr: number | string; position: number | string; period_start?: string | null };
-  type VisitRow = { path: string; ts: string; referrer: string | null; is_returning: boolean | null; page_load_ms: number | null; screen_w: number | null };
+  type VisitRow = { path: string; ts: string; referrer: string | null; is_returning: boolean | null; page_load_ms: number | null; screen_w: number | null; session_id: string | null };
 
   // KRITISKT: gsc_queries innehåller flera ÖVERLAPPANDE rullande 28-dagars-mätningar (en per synk).
   // Summerar vi alla blir varje siffra multiplicerad. Använd BARA den senaste mätningen (max period_start).
@@ -117,13 +117,23 @@ export async function GET(req: NextRequest) {
   const nonBrandClicks = queries.reduce((s, q) => s + q.clicks, 0) - brandClicks;
   const nonBrandImp = queries.reduce((s, q) => s + q.impressions, 0) - brandImp;
 
-  // Trafik over tid (per dag)
-  const trafficByDay = new Map<string, number>();
+  // Sessioner vs sidvisningar. En person som klickar runt på flera sidor delar SAMMA session_id
+  // (pixeln sparar det i sessionStorage) → ska räknas som ETT besök, inte flera. session_id=null → unikt per rad.
+  const sessionSet = new Set<string>();
+  let anonRows = 0;
+  for (const v of visitRows) { if (v.session_id) sessionSet.add(v.session_id); else anonRows++; }
+  const sessionCount = sessionSet.size + anonRows;
+  const pageviewCount = visitRows.length;
+
+  // Trafik over tid (per dag) — distinkta sessioner per dag
+  const trafficByDay = new Map<string, Set<string>>();
+  let anonSeq = 0;
   for (const v of visitRows) {
     const d = v.ts.slice(0, 10);
-    trafficByDay.set(d, (trafficByDay.get(d) || 0) + 1);
+    if (!trafficByDay.has(d)) trafficByDay.set(d, new Set());
+    trafficByDay.get(d)!.add(v.session_id || `anon-${anonSeq++}`);
   }
-  const trafficSeries = Array.from(trafficByDay.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([d, c]) => ({ date: d, visits: c }));
+  const trafficSeries = Array.from(trafficByDay.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([d, set]) => ({ date: d, visits: set.size }));
 
   // Top paths fran egen pixel
   const byPath = new Map<string, number>();
@@ -162,7 +172,8 @@ export async function GET(req: NextRequest) {
     client: client.data,
     gsc_last_sync: meta ? { imported_at: meta.imported_at, period_start: meta.period_start, period_end: meta.period_end, days: gscDays } : null,
     kpi: {
-      visits: visitRows.length,
+      visits: sessionCount,
+      pageviews: pageviewCount,
       visits_returning: returningCount,
       visits_mobile_pct: visitRows.length > 0 ? Math.round((mobileCount / visitRows.length) * 100) : 0,
       avg_page_load_ms: avgPageLoad,

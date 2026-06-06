@@ -12,6 +12,7 @@ interface Dashboard {
   gsc_last_sync: { imported_at: string | null; period_start: string | null; period_end: string | null; days: number | null } | null;
   kpi: {
     visits: number;
+    pageviews?: number;
     visits_returning: number;
     visits_mobile_pct: number;
     avg_page_load_ms: number | null;
@@ -475,7 +476,7 @@ export default function AnalyticsDashboard() {
         <KPI icon={MousePointerClick} color="emerald" label="Klick (Google)" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} />
         <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
         <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
-        <KPI icon={TrendingUp} color="purple" label="Besökare (sajt)" value={k.visits} sub={k.visits_returning > 0 ? `${k.visits_returning} återkomm.` : ""} />
+        <KPI icon={TrendingUp} color="purple" label="Besök (sessioner)" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : (k.visits_returning > 0 ? `${k.visits_returning} återkomm.` : "")} />
         <KPI icon={Smartphone} color="pink" label="Mobil-andel" value={`${k.visits_mobile_pct}%`} sub="av besök" />
         <KPI icon={Gauge} color="teal" label="Sid-laddtid" value={k.avg_page_load_ms !== null ? `${k.avg_page_load_ms}ms` : "—"} sub="snitt" />
       </div>
@@ -547,6 +548,61 @@ export default function AnalyticsDashboard() {
           )}
         </div>
       </div>
+
+      {/* SOKNINGAR SOM GAV KLICK */}
+      {data.queries_top.some((q) => q.clicks > 0) && (() => {
+        const brandName = (data.client?.name || "").toLowerCase().trim();
+        const clicked = data.queries_top.filter((q) => q.clicks > 0).sort((a, b) => b.clicks - a.clicks);
+        const newCust = clicked.filter((q) => !(brandName && q.query.toLowerCase().includes(brandName))).reduce((s, q) => s + q.clicks, 0);
+        const brandCust = clicked.reduce((s, q) => s + q.clicks, 0) - newCust;
+        return (
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+              <MousePointerClick className="w-4 h-4 text-emerald-600" />
+              Vad folk sökte när de klickade
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              De exakta sökningarna som gav klick (senaste mätningen). <span className="text-blue-700 font-medium">Brand</span> = de kände redan till ert namn. <span className="text-emerald-700 font-medium">Ny kund</span> = kall upptäckt via det ni säljer.
+            </p>
+            <div className="flex gap-3 mb-3 text-xs">
+              <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800"><strong>{brandCust}</strong> klick från brand-sök</span>
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800"><strong>{newCust}</strong> klick från nya kunder</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                    <th className="py-2 px-2 font-medium">Sökning</th>
+                    <th className="py-2 px-2 font-medium">Typ</th>
+                    <th className="py-2 px-2 font-medium text-right">Klick</th>
+                    <th className="py-2 px-2 font-medium text-right">Visn.</th>
+                    <th className="py-2 px-2 font-medium text-right">Pos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clicked.map((q, i) => {
+                    const brand = brandName && q.query.toLowerCase().includes(brandName);
+                    return (
+                      <tr key={i} className="border-b border-gray-50">
+                        <td className="py-2 px-2 text-gray-900 font-medium">{q.query}</td>
+                        <td className="py-2 px-2">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${brand ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>{brand ? "Brand" : "Ny kund"}</span>
+                        </td>
+                        <td className="py-2 px-2 text-right tabular-nums font-semibold text-gray-900">{q.clicks}</td>
+                        <td className="py-2 px-2 text-right tabular-nums text-gray-600">{q.impressions.toLocaleString("sv-SE")}</td>
+                        <td className="py-2 px-2 text-right tabular-nums text-gray-600">{q.avg_position ?? "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-3 text-xs text-gray-700 bg-amber-50 border border-amber-100 rounded-lg p-3">
+              <strong>Vad du behöver göra:</strong> är de flesta klicken &quot;Brand&quot; betyder det att kunderna redan kände ert namn — väg upp det med fler <strong>nya</strong> kunder genom &quot;Snabbaste vinsterna&quot; nedan (sökord du syns på men ligger på sida 2). Klättrar de till sida 1 blir visningar till klick.
+            </div>
+          </div>
+        );
+      })()}
 
       {/* QUICK WINS */}
       {data.quick_wins.length > 0 && (
