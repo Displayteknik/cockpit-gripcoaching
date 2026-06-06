@@ -33,6 +33,13 @@ interface Dashboard {
   top_pages: Array<{ page: string; clicks: number; impressions: number; queryCount: number }>;
   traffic_series: Array<{ date: string; visits: number }>;
   gsc_daily_series?: Array<{ date: string; clicks: number; impressions: number; ctr: number; position: number }>;
+  ga4?: {
+    property_id: string;
+    sessions: number; users: number; newUsers: number; engagedSessions: number; engagementRate: number; avgSessionSec: number; pageviews: number;
+    channels: Array<{ channel: string; sessions: number }>;
+    ai: { sessions: number; sources: Array<{ source: string; sessions: number }> };
+    daily: Array<{ date: string; sessions: number }>;
+  } | null;
   top_paths: Array<{ path: string; visits: number }>;
   top_referrers: Array<{ host: string; visits: number }>;
   tracked_keywords: Array<{ id: string; keyword: string; current_rank: number | null; best_rank: number | null }>;
@@ -471,15 +478,83 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* KPI-RAD */}
+      {/* KPI-RAD — GA4 (auktoritativ trafik) leder när det är kopplat, annars GSC + pixel */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KPI icon={MousePointerClick} color="emerald" label="Klick (Google)" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} />
-        <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
-        <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
-        <KPI icon={TrendingUp} color="purple" label="Besök (sessioner)" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : (k.visits_returning > 0 ? `${k.visits_returning} återkomm.` : "")} />
-        <KPI icon={Smartphone} color="pink" label="Mobil-andel" value={`${k.visits_mobile_pct}%`} sub="av besök" />
-        <KPI icon={Gauge} color="teal" label="Sid-laddtid" value={k.avg_page_load_ms !== null ? `${k.avg_page_load_ms}ms` : "—"} sub="snitt" />
+        {data.ga4 ? (
+          <>
+            <KPI icon={TrendingUp} color="purple" label="Besök (GA4)" value={data.ga4.sessions} sub={`${data.ga4.users.toLocaleString("sv-SE")} användare`} />
+            <KPI icon={Search} color="emerald" label="Från Google-sök" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}% · pos ${k.gsc_avg_position ?? "—"}`} />
+            <KPI icon={Sparkles} color="purple" label="AI-besök" value={data.ga4.ai.sessions} sub="ChatGPT, Copilot m.fl." />
+            <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
+            <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
+            <KPI icon={Zap} color="teal" label="Engagemang" value={`${data.ga4.engagementRate}%`} sub={`${Math.floor(data.ga4.avgSessionSec / 60)}m ${data.ga4.avgSessionSec % 60}s snitt`} />
+          </>
+        ) : (
+          <>
+            <KPI icon={MousePointerClick} color="emerald" label="Klick (Google)" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} />
+            <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
+            <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
+            <KPI icon={TrendingUp} color="purple" label="Besök (pixel)" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : ""} />
+            <KPI icon={Smartphone} color="pink" label="Mobil-andel" value={`${k.visits_mobile_pct}%`} sub="av besök" />
+            <KPI icon={Gauge} color="teal" label="Sid-laddtid" value={k.avg_page_load_ms !== null ? `${k.avg_page_load_ms}ms` : "—"} sub="snitt" />
+          </>
+        )}
       </div>
+
+      {/* VAR KOMMER BESÖKARNA IFRÅN (GA4) + AI-SYNLIGHET */}
+      {data.ga4 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+              <Repeat className="w-4 h-4 text-indigo-600" />
+              Var kommer besökarna ifrån
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">Googles egna kanaler (GA4) — samma siffror som i din Google Analytics. Totalt {data.ga4.sessions.toLocaleString("sv-SE")} besök.</p>
+            <div className="space-y-2">
+              {data.ga4.channels.map((c) => {
+                const pct = data.ga4!.sessions > 0 ? Math.round((c.sessions / data.ga4!.sessions) * 100) : 0;
+                return (
+                  <div key={c.channel}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-medium text-gray-700">{channelSv(c.channel)}</span>
+                      <span className="text-gray-500"><strong className="text-gray-900">{c.sessions}</strong> · {pct}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded overflow-hidden">
+                      <div className="h-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-200 rounded-xl p-5">
+            <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-violet-600" />
+              AI-synlighet
+            </h3>
+            <p className="text-xs text-gray-600 mb-3">Besök från AI-sökmotorer (ChatGPT, Copilot, Perplexity, Gemini). 2026 växer den här kanalen snabbt — det är här AEO/GEO-arbetet lönar sig.</p>
+            <div className="flex items-baseline gap-2 mb-3">
+              <span className="text-3xl font-bold text-violet-700">{data.ga4.ai.sessions}</span>
+              <span className="text-sm text-gray-600">AI-besök ({data.period.days} dagar)</span>
+            </div>
+            {data.ga4.ai.sources.length > 0 ? (
+              <div className="space-y-1">
+                {data.ga4.ai.sources.map((s) => (
+                  <div key={s.source} className="flex items-center justify-between text-xs bg-white/70 rounded-lg px-3 py-1.5">
+                    <span className="font-medium text-gray-800">{s.source}</span>
+                    <span className="tabular-nums text-gray-600">{s.sessions} besök</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-gray-600 bg-white/70 rounded-lg p-3">
+                Inga AI-besök ännu. Kör djupgranskningens AEO/GEO-åtgärder (definitioner, jämförelsetabeller, konkreta siffror) så börjar AI-motorerna citera dig.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* UTVECKLING OVER TID — TREND-GRAFER */}
       {(data.gsc_daily_series?.length ?? 0) >= 2 && (
@@ -488,8 +563,12 @@ export default function AnalyticsDashboard() {
             <LineChart className="w-4 h-4 text-indigo-600" />
             Utveckling över tid
           </h3>
-          <p className="text-xs text-gray-500 mb-4">Dag för dag från Google Search Console. Position: en stigande linje = du klättrar uppåt (lägre siffra = bättre).</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <p className="text-xs text-gray-500 mb-4">Dag för dag. Besök = GA4. Sök = Google Search Console. Position: en stigande linje = du klättrar uppåt (lägre siffra = bättre).</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {data.ga4 && data.ga4.daily.length >= 2 && (
+              <TrendChart id="ga4sess" label="Besök (GA4)" color="#7c3aed"
+                data={data.ga4.daily.map((d) => ({ date: d.date, value: d.sessions }))} fmt={(v) => Math.round(v).toLocaleString("sv-SE")} />
+            )}
             <TrendChart id="pos" label="Snittposition" color="#4f46e5" invert
               data={(data.gsc_daily_series ?? []).filter((d) => d.position > 0).map((d) => ({ date: d.date, value: d.position }))} fmt={(v) => v.toFixed(1)} />
             <TrendChart id="clk" label="Klick" color="#059669"
@@ -1068,6 +1147,18 @@ function TrendChart({ id, label, color, data, invert, fmt }: { id: string; label
       </div>
     </div>
   );
+}
+
+function channelSv(ch: string): string {
+  const map: Record<string, string> = {
+    "Direct": "Direkt", "Organic Search": "Organisk sök", "Paid Search": "Betald sök",
+    "Display": "Display", "Paid Social": "Betald social", "Organic Social": "Social",
+    "Email": "Mejl", "Affiliates": "Affiliate", "Referral": "Hänvisning",
+    "Organic Video": "Video", "Paid Video": "Betald video", "Organic Shopping": "Shopping",
+    "Paid Shopping": "Betald shopping", "Unassigned": "Okänd", "Cross-network": "Cross-network",
+    "Audio": "Audio", "SMS": "SMS", "Mobile Push Notifications": "Push",
+  };
+  return map[ch] || ch;
 }
 
 function BrandRow({ label, clicks, imp, color }: { label: string; clicks: number; imp: number; color: string }) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { autoSelectGaProperty } from "@/lib/google";
+import { getGa4Summary } from "@/lib/ga4";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
   // Självkoppla GA4-property om Google är anslutet men ingen property vald (matchar domän, best-effort, en gång).
   try { await autoSelectGaProperty(clientId); } catch {}
   const days = Math.max(1, Math.min(180, Number(req.nextUrl.searchParams.get("days") || 30)));
+  // GA4 = auktoritativ trafik/kanal/AI-data. Körs parallellt, awaitas före retur. null om ej kopplat.
+  const ga4Promise = getGa4Summary(clientId, days).catch(() => null);
   const since = new Date(Date.now() - days * 86400000).toISOString();
   const sinceDate = since.slice(0, 10);
 
@@ -170,6 +173,8 @@ export async function GET(req: NextRequest) {
     ? Math.round((new Date(meta.period_end).getTime() - new Date(meta.period_start).getTime()) / 86400000)
     : null;
 
+  const ga4 = await ga4Promise;
+
   return NextResponse.json({
     period: { days, since: sinceDate, until: new Date().toISOString().slice(0, 10) },
     client: client.data,
@@ -207,5 +212,6 @@ export async function GET(req: NextRequest) {
     top_referrers: topReferrers,
     tracked_keywords: keywords.data ?? [],
     recent_audits: audits.data ?? [],
+    ga4,
   });
 }
