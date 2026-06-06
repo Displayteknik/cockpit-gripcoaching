@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
   diag.propertyCount = props.length;
   diag.properties = props;
 
-  // Web-stream-domäner per property
-  const streams: Array<{ property: string; name: string; domain: string }> = [];
+  // Web-stream-domäner + sessioner (28d) per property → så vi ser vilken som faktiskt är live
+  const streams: Array<{ property: string; name: string; domain: string; host: string; sessions: number }> = [];
   for (const p of props) {
     try {
       const dsRes = await fetch(`https://analyticsadmin.googleapis.com/v1beta/properties/${p.id}/dataStreams`, { headers: { Authorization: `Bearer ${token}` } });
@@ -55,7 +55,15 @@ export async function POST(req: NextRequest) {
       for (const s of ds.dataStreams || []) {
         if (s.type === "WEB_DATA_STREAM" && s.webStreamData?.defaultUri) {
           let h = ""; try { h = new URL(s.webStreamData.defaultUri).hostname.replace(/^www\./, "").toLowerCase(); } catch {}
-          streams.push({ property: p.id, name: p.name, domain: s.webStreamData.defaultUri + (h ? ` (${h})` : "") });
+          let sessions = 0;
+          try {
+            const rep = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${p.id}:runReport`, {
+              method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ dateRanges: [{ startDate: "28daysAgo", endDate: "today" }], metrics: [{ name: "sessions" }] }),
+            });
+            if (rep.ok) { const j = (await rep.json()) as { rows?: Array<{ metricValues?: Array<{ value?: string }> }> }; sessions = Number(j.rows?.[0]?.metricValues?.[0]?.value || 0); }
+          } catch {}
+          streams.push({ property: p.id, name: p.name, domain: s.webStreamData.defaultUri, host: h, sessions });
         }
       }
     } catch {}

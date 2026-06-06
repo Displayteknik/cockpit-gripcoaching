@@ -107,8 +107,8 @@ export async function autoSelectGaProperty(clientId: string): Promise<string | n
     for (const a of sum.accountSummaries || []) for (const p of a.propertySummaries || []) props.push({ id: p.property.replace("properties/", ""), name: p.displayName || "" });
     if (props.length === 0) { await writeDiag({ step: "no_properties", targetHost }); return null; }
 
-    // 1. Matcha på domän via web-datastream (defaultUri)
-    const domainsSeen: string[] = [];
+    // 1. Samla ALLA properties vars web-datastream matchar klientens domän
+    const matches: string[] = [];
     if (targetHost) {
       for (const p of props) {
         try {
@@ -118,16 +118,32 @@ export async function autoSelectGaProperty(clientId: string): Promise<string | n
           for (const s of ds.dataStreams || []) {
             if (s.type !== "WEB_DATA_STREAM" || !s.webStreamData?.defaultUri) continue;
             let h = ""; try { h = new URL(s.webStreamData.defaultUri).hostname.replace(/^www\./, "").toLowerCase(); } catch {}
-            domainsSeen.push(`${p.id}=${h}`);
-            if (h && h === targetHost) { await saveGaProperty(sb, clientId, p.id); await writeDiag({ step: "matched", picked: p.id, name: p.name, targetHost, domainsSeen }); return p.id; }
+            if (h && h === targetHost && !matches.includes(p.id)) matches.push(p.id);
           }
         } catch {}
       }
     }
-    // 2. Fallback: exakt EN property → använd den (ingen tvetydighet)
-    if (props.length === 1) { await saveGaProperty(sb, clientId, props[0].id); await writeDiag({ step: "fallback_single", picked: props[0].id, name: props[0].name, targetHost, domainsSeen }); return props[0].id; }
-    await writeDiag({ step: "no_match", targetHost, properties: props, domainsSeen });
-    return null; // flera properties, ingen domän-match → kan ej avgöra säkert
+
+    const candidates = matches.length > 0 ? matches : (props.length === 1 ? [props[0].id] : []);
+    if (candidates.length === 0) { await writeDiag({ step: "no_match", targetHost, properties: props }); return null; }
+    if (candidates.length === 1) { await saveGaProperty(sb, clientId, candidates[0]); return candidates[0]; }
+
+    // 2. Flera kandidater (t.ex. flera GA4-properties för samma domän) → välj den med MEST sessioner (28d).
+    //    Den tomma test-propertyn väljs aldrig framför den som faktiskt samlar data.
+    let best = candidates[0]; let bestSessions = -1;
+    for (const pid of candidates) {
+      try {
+        const rep = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${pid}:runReport`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ dateRanges: [{ startDate: "28daysAgo", endDate: "today" }], metrics: [{ name: "sessions" }] }),
+        });
+        let sessions = 0;
+        if (rep.ok) { const j = (await rep.json()) as { rows?: Array<{ metricValues?: Array<{ value?: string }> }> }; sessions = Number(j.rows?.[0]?.metricValues?.[0]?.value || 0); }
+        if (sessions > bestSessions) { bestSessions = sessions; best = pid; }
+      } catch {}
+    }
+    await saveGaProperty(sb, clientId, best);
+    return best;
   } catch (e) {
     await writeDiag({ step: "exception", error: (e as Error).message });
     return null;
