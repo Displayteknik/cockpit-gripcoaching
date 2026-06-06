@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, ExternalLink, Check, X, RefreshCw, Globe, AlertCircle } from "lucide-react";
+import { Loader2, ExternalLink, Check, X, RefreshCw, Globe, AlertCircle, BarChart3 } from "lucide-react";
 
 interface GscSite { siteUrl: string; permissionLevel: string }
 interface Connection { email: string; gsc_site: string | null; ga_property_id: string | null; created_at: string; updated_at: string }
@@ -11,6 +11,8 @@ export default function GoogleConnect() {
   const [status, setStatus] = useState<Status | null>(null);
   const [sites, setSites] = useState<GscSite[]>([]);
   const [loadingSites, setLoadingSites] = useState(false);
+  const [gaProps, setGaProps] = useState<Array<{ id: string; name: string; account: string }>>([]);
+  const [loadingGa, setLoadingGa] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
 
   useEffect(() => { reload(); checkUrlParams(); }, []);
@@ -46,6 +48,23 @@ export default function GoogleConnect() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ site }),
+    });
+    reload();
+  }
+
+  async function loadGaProps() {
+    setLoadingGa(true);
+    const r = await fetch("/api/google/ga4/properties");
+    if (r.ok) setGaProps(await r.json());
+    else alert("Fel: " + (await r.text()));
+    setLoadingGa(false);
+  }
+
+  async function selectGaProp(id: string) {
+    await fetch("/api/google/ga4/select", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ property_id: id }),
     });
     reload();
   }
@@ -133,6 +152,49 @@ export default function GoogleConnect() {
                 <div className="flex items-center justify-between">
                   <span className="font-medium truncate">{s.siteUrl}</span>
                   <span className="text-xs text-gray-500 ml-2">{s.permissionLevel}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* GA4-PROPERTY VAL — saknades tidigare, därför kom ingen GA-data */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-orange-600" />
+            Google Analytics 4-property
+          </label>
+          <button onClick={loadGaProps} disabled={loadingGa} className="text-xs text-orange-600 hover:bg-orange-50 px-2 py-1 rounded flex items-center gap-1">
+            {loadingGa ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            {gaProps.length === 0 ? "Hämta properties" : "Uppdatera"}
+          </button>
+        </div>
+        {status.connection?.ga_property_id ? (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-sm text-orange-900 mb-2">
+            ✓ Aktiv: <strong>properties/{status.connection.ga_property_id}</strong>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-900 mb-2">
+            Ingen GA4-property vald än — klicka &quot;Hämta properties&quot; och välj din. Då börjar Cockpit visa Googles egna besöks- och kanaldata.
+          </div>
+        )}
+        {gaProps.length > 0 && (
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {gaProps.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => selectGaProp(p.id)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                  status.connection?.ga_property_id === p.id
+                    ? "bg-orange-50 border-orange-300 text-orange-900"
+                    : "bg-white border-gray-200 hover:border-orange-200"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium truncate">{p.name}</span>
+                  <span className="text-xs text-gray-500 ml-2">{p.account} · {p.id}</span>
                 </div>
               </button>
             ))}
