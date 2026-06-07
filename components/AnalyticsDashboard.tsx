@@ -6,6 +6,15 @@ import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, 
 
 type Period = 7 | 14 | 30 | 90;
 
+// Statiska Tailwind-klasser för "Att göra idag"-rutans accentfärger (måste vara hela strängar för att byggas).
+const ACTION_ACCENT = {
+  amber: { chip: "bg-amber-100 text-amber-700", btn: "bg-amber-600 hover:bg-amber-700" },
+  blue: { chip: "bg-blue-100 text-blue-700", btn: "bg-blue-600 hover:bg-blue-700" },
+  purple: { chip: "bg-purple-100 text-purple-700", btn: "bg-purple-600 hover:bg-purple-700" },
+  violet: { chip: "bg-violet-100 text-violet-700", btn: "bg-violet-600 hover:bg-violet-700" },
+  rose: { chip: "bg-rose-100 text-rose-700", btn: "bg-rose-600 hover:bg-rose-700" },
+} as const;
+
 interface Dashboard {
   period: { days: number; since: string; until: string };
   client: { name: string; public_url: string | null } | null;
@@ -359,8 +368,84 @@ export default function AnalyticsDashboard() {
     ? (() => { try { return new URL(data.client.public_url).hostname; } catch { return ""; } })()
     : "";
 
+  // "Att göra idag" — syntetiserar 1-3 prioriterade åtgärder ur klientens EGEN data.
+  // Prioordning: snabbaste vinsten > sida-2-sökord > brand-beroende > AI-synlighet > svag CTR.
+  type Action = { icon: typeof Trophy; accent: keyof typeof ACTION_ACCENT; title: string; detail: string; href?: string; report?: boolean; cta?: string };
+  const actions: Action[] = [];
+
+  const qw0 = data.quick_wins[0];
+  if (qw0) {
+    const pot = Math.round(qw0.impressions * 0.25);
+    const href = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(qw0.query)}${qw0.page ? `&nuvarande_text=${encodeURIComponent(`Sida som rankar idag: ${qw0.page}\nNuvarande position i Google: ${qw0.avg_position}\nVisningar: ${qw0.impressions}/månad\n\n[Klistra in nuvarande text från sidan här]`)}` : ""}`;
+    actions.push({ icon: Trophy, accent: "amber", title: `Optimera "${qw0.query}" — snabbaste vinsten`, detail: `Position ${qw0.avg_position}, ${qw0.impressions.toLocaleString("sv-SE")} visningar. Klättrar den till topp 3 ≈ +${pot} klick/mån.`, href, cta: "Optimera nu" });
+  }
+
+  if (pd.top20 > 0) {
+    actions.push({ icon: Target, accent: "blue", title: `${pd.top20} sökord ligger på sida 2 (position 11–20)`, detail: `De är närmast att lyfta till sida 1. Öppna bandet "11–20" i "Var rankar du?" nedan för att se exakt vilka.` });
+  }
+
+  const bClicks = data.brand_split.brand.clicks;
+  const totClicks = bClicks + data.brand_split.non_brand.clicks;
+  if (totClicks >= 5 && bClicks / totClicks > 0.7) {
+    actions.push({ icon: Repeat, accent: "purple", title: `${Math.round((bClicks / totClicks) * 100)}% av klicken kommer från ert eget namn`, detail: `Ni hittas mest av folk som redan känner till er. Skapa innehåll för det ni säljer (icke-brand-sökord) för att nå nya kunder.` });
+  }
+
+  if (data.ga4 && data.ga4.ai.sessions === 0) {
+    actions.push({ icon: Sparkles, accent: "violet", title: `Inga besök från AI-sökmotorer än`, detail: `ChatGPT, Copilot och Perplexity citerar dig inte. Kör djupgranskningens AEO/GEO-åtgärder: definitioner, jämförelsetabeller och konkreta siffror.`, report: true, cta: "Generera djupgranskning" });
+  }
+
+  const ctrLow = data.queries_top.find((q) => q.avg_position !== null && q.avg_position <= 10 && q.impressions >= 50 && q.ctr < 1);
+  if (ctrLow) {
+    actions.push({ icon: AlertCircle, accent: "rose", title: `"${ctrLow.query}" syns högt men får få klick`, detail: `Position ${ctrLow.avg_position}, ${ctrLow.impressions.toLocaleString("sv-SE")} visningar men bara ${ctrLow.ctr}% CTR. Skriv en mer lockande sidtitel och meta-beskrivning.` });
+  }
+
+  const todoActions = actions.slice(0, 3);
+
   return (
     <div className="space-y-6">
+      {/* ATT GÖRA IDAG — syntetiserade prioriteringar ur klientens egen data */}
+      <div className="bg-gradient-to-br from-slate-50 to-emerald-50/40 border border-emerald-200 rounded-xl p-5">
+        <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-emerald-600" />
+          Att göra idag
+        </h3>
+        <p className="text-xs text-gray-500 mb-4">De 1–3 åtgärder som ger mest effekt just nu — uträknade ur din egen data.</p>
+        {todoActions.length === 0 ? (
+          <div className="flex items-start gap-2 text-sm text-gray-600 bg-white border border-gray-100 rounded-lg p-3">
+            <Check className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+            <span>Inga akuta åtgärder i datan. Kör månadsrutinen i <button onClick={() => setShowHandbok(true)} className="text-emerald-700 font-medium hover:underline">Handboken</button> eller en <button onClick={generateReport} className="text-emerald-700 font-medium hover:underline">djupgranskning</button>.</span>
+          </div>
+        ) : (
+          <ol className="space-y-2">
+            {todoActions.map((a, i) => {
+              const c = ACTION_ACCENT[a.accent];
+              const Icon = a.icon;
+              return (
+                <li key={i} className="flex items-start gap-3 bg-white border border-gray-100 rounded-lg p-3">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${c.chip}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900">{i + 1}. {a.title}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">{a.detail}</div>
+                  </div>
+                  {a.href && (
+                    <Link href={a.href} className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg text-white flex-shrink-0 ${c.btn}`}>
+                      <Sparkles className="w-3 h-3" /> {a.cta}
+                    </Link>
+                  )}
+                  {a.report && (
+                    <button onClick={generateReport} disabled={generatingReport} className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg text-white flex-shrink-0 disabled:opacity-50 ${c.btn}`}>
+                      <FileText className="w-3 h-3" /> {a.cta}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </div>
+
       {/* HANDBOK + DJUPGRANSKNING */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <button

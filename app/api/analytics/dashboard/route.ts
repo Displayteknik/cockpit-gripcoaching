@@ -197,7 +197,9 @@ export async function GET(req: NextRequest) {
     position_distribution_queries: distQueries,
     brand_split: { brand: { clicks: brandClicks, impressions: brandImp }, non_brand: { clicks: nonBrandClicks, impressions: nonBrandImp } },
     quick_wins: quickWins,
-    queries_top: queries.sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0, 50),
+    // Hela sökords-uppsättningen (cap 500) så tabellens sök/sortering blir ärlig — annars
+    // sorterade frontend bara topp-50-efter-klick och missade höga visningar utanför listan.
+    queries_top: queries.sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0, 500),
     queries_all_count: queries.length,
     top_pages: topPages,
     traffic_series: trafficSeries,
