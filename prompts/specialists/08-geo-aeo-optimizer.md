@@ -59,9 +59,9 @@ Struktur:
 
 Bifoga komplett FAQPage-schema redo att klistras in.
 
-### 3. Citerbarhets-markering
+### 3. Meningar som AI-sökmotorer kan citera
 
-Markera 3-5 meningar med `[CITERBAR]` framför — dessa är formulerade så de fungerar som AI-citat utan kontext.
+Väv in 3-5 meningar som fungerar som kompletta svar på egen hand (en AI ska kunna lyfta dem rakt av). Skriv dem NATURLIGT i texten ovan. Sätt INGA taggar eller markeringar i den publicerbara texten — inget "[CITERBAR]" eller liknande — så att allt går att klistra in direkt utan att städa. Lägg INGEN separat lista över dem.
 
 ### 4. Differentiering
 
@@ -85,4 +85,4 @@ En sektion "Varför denna vinkel är annorlunda" — 2-3 punkter där du visar v
 
 ## Output
 
-Markdown, redo att publiceras. JSON-LD i kodblock. Citerbarhets-markeringar inline.
+Markdown, redo att publiceras direkt — ingen städning ska behövas. JSON-LD i kodblock. Inga interna taggar eller markeringar i den publicerbara texten.
