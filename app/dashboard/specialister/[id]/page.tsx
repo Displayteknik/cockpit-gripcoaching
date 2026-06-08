@@ -50,25 +50,60 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
   const [result, setResult] = useState<RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/specialist")
-      .then((r) => r.json())
-      .then((list: Specialist[]) => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list: Specialist[] = await fetch("/api/specialist").then((r) => r.json());
         const s = list.find((x) => x.id === id);
-        if (s) {
-          setSpecialist(s);
-          // Prefill fran query-params (t.ex. fran Quick wins-knapp)
-          const prefill: Record<string, string> = {};
-          for (const inp of s.inputs) {
-            const v = searchParams?.get(inp.key);
-            if (v) prefill[inp.key] = v;
-          }
-          if (Object.keys(prefill).length > 0) setValues(prefill);
+        if (!s) { if (!cancelled) setError("Specialist saknas"); return; }
+        if (cancelled) return;
+        setSpecialist(s);
+
+        // 1. Prefill fran query-params (t.ex. amne fran "Att gora idag" / Quick wins)
+        const prefill: Record<string, string> = {};
+        for (const inp of s.inputs) {
+          const v = searchParams?.get(inp.key);
+          if (v) prefill[inp.key] = v;
         }
-        else setError("Specialist saknas");
-      })
-      .catch((e) => setError(e.message));
+
+        // 2. Brand-profilen fyller aterkommande falt (lasare/bransch/USP) som inte redan satts.
+        //    En sanningskalla — anvandaren ska inte skriva samma info varje gang.
+        try {
+          const brandRes = await fetch("/api/brand/prefill").then((r) => r.json());
+          const brand: Record<string, string> = brandRes?.prefill ?? {};
+          for (const inp of s.inputs) {
+            if (!prefill[inp.key] && brand[inp.key]) prefill[inp.key] = brand[inp.key];
+          }
+        } catch {}
+
+        if (!cancelled && Object.keys(prefill).length > 0) {
+          setValues((prev) => ({ ...prev, ...prefill }));
+        }
+
+        // 3. Sidtext lases in AUTOMATISKT om sid_url finns + specialisten har nuvarande_text.
+        //    Ingen knapp — verktyget gor det sjalvt.
+        const sidUrl = searchParams?.get("sid_url");
+        const hasNuvarande = s.inputs.some((i) => i.key === "nuvarande_text");
+        if (sidUrl && hasNuvarande) {
+          setPageLoading(true);
+          try {
+            const res = await fetch(`/api/seo/page-text?url=${encodeURIComponent(sidUrl)}`);
+            const d = await res.json();
+            if (!cancelled && res.ok && d.text) {
+              setValues((prev) => ({ ...prev, nuvarande_text: `Sida: ${d.url}\n\n${d.text}` }));
+            }
+          } catch {} finally {
+            if (!cancelled) setPageLoading(false);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [id, searchParams]);
 
   const onChange = (key: string, v: string) => setValues((p) => ({ ...p, [key]: v }));
@@ -119,6 +154,13 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
           {error}
+        </div>
+      )}
+
+      {pageLoading && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-3 text-sm flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Läser in sidans text automatiskt...
         </div>
       )}
 

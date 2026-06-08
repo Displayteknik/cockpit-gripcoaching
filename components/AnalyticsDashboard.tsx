@@ -376,7 +376,8 @@ export default function AnalyticsDashboard() {
   const qw0 = data.quick_wins[0];
   if (qw0) {
     const pot = Math.round(qw0.impressions * 0.25);
-    const href = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(qw0.query)}${qw0.page ? `&nuvarande_text=${encodeURIComponent(`Sida som rankar idag: ${qw0.page}\nNuvarande position i Google: ${qw0.avg_position}\nVisningar: ${qw0.impressions}/månad\n\n[Klistra in nuvarande text från sidan här]`)}` : ""}`;
+    // sid_url → optimeraren läser in sidans text automatiskt (ingen manuell inklistring).
+    const href = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(qw0.query)}${qw0.page ? `&sid_url=${encodeURIComponent(qw0.page)}` : ""}`;
     actions.push({ icon: Trophy, accent: "amber", title: `Optimera "${qw0.query}" — snabbaste vinsten`, detail: `Position ${qw0.avg_position}, ${qw0.impressions.toLocaleString("sv-SE")} visningar. Klättrar den till topp 3 ≈ +${pot} klick/mån.`, href, cta: "Optimera nu" });
   }
 
@@ -807,7 +808,8 @@ export default function AnalyticsDashboard() {
               <tbody>
                 {data.quick_wins.map((q, i) => {
                   const potClicks = Math.round(q.impressions * 0.25);
-                  const optimizeUrl = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(q.query)}${q.page ? `&nuvarande_text=${encodeURIComponent(`Sida som rankar idag: ${q.page}\nNuvarande position i Google: ${q.avg_position}\nVisningar: ${q.impressions}/månad\n\n[Klistra in nuvarande text från sidan här]`)}` : ""}`;
+                  // sid_url → optimeraren läser in sidans text automatiskt (ingen manuell inklistring).
+                  const optimizeUrl = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(q.query)}${q.page ? `&sid_url=${encodeURIComponent(q.page)}` : ""}`;
                   return (
                     <tr key={i} className="border-b border-amber-100 hover:bg-amber-50/50">
                       <td className="py-2 px-3 font-medium text-gray-900">{q.query}</td>
