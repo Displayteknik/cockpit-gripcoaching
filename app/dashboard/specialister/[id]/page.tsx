@@ -86,11 +86,12 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
         // 3. Sidtext lases in AUTOMATISKT om sid_url finns + specialisten har nuvarande_text.
         //    Ingen knapp — verktyget gor det sjalvt.
         const sidUrl = searchParams?.get("sid_url");
+        const amneParam = searchParams?.get("amne") || "";
         const hasNuvarande = s.inputs.some((i) => i.key === "nuvarande_text");
         if (sidUrl && hasNuvarande) {
           setPageLoading(true);
           try {
-            const res = await fetch(`/api/seo/page-text?url=${encodeURIComponent(sidUrl)}`);
+            const res = await fetch(`/api/seo/page-text?url=${encodeURIComponent(sidUrl)}${amneParam ? `&amne=${encodeURIComponent(amneParam)}` : ""}`);
             const d = await res.json();
             if (!cancelled && res.ok && d.text) {
               setValues((prev) => ({ ...prev, nuvarande_text: `Sida: ${d.url}\n\n${d.text}` }));
