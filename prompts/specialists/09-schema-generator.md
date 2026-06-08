@@ -82,4 +82,4 @@ Numrera steg. Varje steg har `@type: HowToStep` med `name` + `text`.
 
 ## Output
 
-Ett kodblock, färdigt att klistra in — med `<script type="application/ld+json"> ... </script>`-taggen runt (utan den fungerar inte koden). Säg tydligt vart det klistras in (i GoHighLevel: Custom Code / Head). Ingen teknisk jargong utan förklaring.
+Ett kodblock, färdigt att klistra in — med `<script type="application/ld+json"> ... </script>`-taggen runt (utan den fungerar inte koden). Säg tydligt vart det klistras in: i fältet för kod i sidans head — t.ex. "Custom Code / Head" i GoHighLevel, ett HTML-block eller head-plugin i WordPress, eller `<head>` på en egen sajt. Ingen teknisk jargong utan förklaring.

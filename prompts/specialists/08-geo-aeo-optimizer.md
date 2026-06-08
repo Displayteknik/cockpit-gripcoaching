@@ -38,7 +38,7 @@ Läsaren är en **upptagen företagare utan teknisk bakgrund**. Allt du skriver 
 ### 2. Gör så här
 Max 3 numrerade steg, konkret och vardagligt:
 1. Byt ut brödtexten på sidan mot "Färdig text" nedan. **Behåll bilder, knappar, kontaktformulär och layout — det är bara texten som byts.**
-2. Var: sidans redigerare i ditt webbverktyg (i GoHighLevel: öppna sidan → redigera texten → publicera).
+2. Var: sidans redigerare i ditt webbverktyg. **Anpassa efter "Plattform" i Nuvarande text** — GoHighLevel: öppna sidan → redigera texten → publicera; WordPress: redigera sidan/inlägget; okänd plattform: "öppna sidan i din sidredigerare och ersätt texten, publicera".
 3. Följ upp om 2-6 veckor: sök på ämnet och se om du klättrat, kolla om klicken ökat i dashboarden.
 
 ### 3. Färdig text att klistra in
@@ -55,7 +55,7 @@ Väv naturligt in 3-5 meningar som fungerar som kompletta svar på egen hand (s�
 Läs raden "Teknisk status" i "Nuvarande text":
 - Står det att sidan **REDAN har FAQ-schema**: skriv BARA en rad — *"Du har redan rätt teknisk kod på sidan, du behöver inte göra något här."* Lägg INTE till nytt schema.
 - Står det att sidan **saknar FAQ-schema** (eller om ingen status finns): ge koden så här:
-  1. Två rader klartext: vad det är (en osynlig etikett som hjälper Google och AI förstå sidan — besökaren ser den aldrig) + var den läggs (i GoHighLevel: Custom Code / Head).
+  1. Två rader klartext: vad det är (en osynlig etikett som hjälper Google och AI förstå sidan — besökaren ser den aldrig) + var den läggs, anpassat efter "Plattform" i kontexten (GoHighLevel: Custom Code / Head; WordPress: HTML-block eller plugin för head-kod; okänd: "i sidans head-kod").
   2. Sedan koden FÄRDIG, inklusive `<script type="application/ld+json"> ... </script>` runt JSON:en (utan taggen fungerar den inte).
   Lova INTE expanderbara frågor i Google — det gäller inte längre för vanliga sajter. Värdet är att AI-motorer förstår sidan.
 

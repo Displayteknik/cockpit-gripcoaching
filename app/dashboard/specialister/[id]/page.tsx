@@ -94,10 +94,13 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
             const res = await fetch(`/api/seo/page-text?url=${encodeURIComponent(sidUrl)}${amneParam ? `&amne=${encodeURIComponent(amneParam)}` : ""}`);
             const d = await res.json();
             if (!cancelled && res.ok && d.text) {
-              // Teknisk status så optimeraren inte föreslår kod du redan har.
-              const status = d.has_faq_schema
-                ? "Teknisk status: sidan har REDAN FAQ-schema — föreslå INGET nytt schema."
-                : "Teknisk status: sidan saknar FAQ-schema.";
+              // Teknisk status så optimeraren anpassar sig (plattform + befintligt schema).
+              const status = [
+                d.platform ? `Plattform: ${d.platform}` : "",
+                d.has_faq_schema
+                  ? "Teknisk status: sidan har REDAN FAQ-schema — föreslå INGET nytt schema."
+                  : "Teknisk status: sidan saknar FAQ-schema.",
+              ].filter(Boolean).join("\n");
               setValues((prev) => ({ ...prev, nuvarande_text: `Sida: ${d.url}\n${status}\n\n${d.text}` }));
             }
           } catch {} finally {
