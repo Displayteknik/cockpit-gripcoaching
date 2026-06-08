@@ -5,6 +5,28 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Play, Copy, Check } from "lucide-react";
 import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
+import MarkdownView from "@/components/MarkdownView";
+
+// Delar upp svaret i guide / texten-att-klistra-in / resten, så texten kan visas i en egen kopiera-ruta.
+function splitOutput(md: string): { before: string; paste: string; after: string } | null {
+  const lines = md.split("\n");
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^#{1,3}\s+.*färdig text/i.test(lines[i])) { start = i; break; }
+  }
+  if (start === -1) return null;
+  let end = lines.length;
+  for (let j = start + 1; j < lines.length; j++) {
+    if (/^#{1,3}\s+/.test(lines[j])) { end = j; break; }
+  }
+  const paste = lines.slice(start + 1, end).join("\n").trim();
+  if (!paste) return null;
+  return {
+    before: lines.slice(0, start).join("\n").trim(),
+    paste,
+    after: lines.slice(end).join("\n").trim(),
+  };
+}
 
 type Input = {
   key: string;
@@ -50,6 +72,7 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
   const [result, setResult] = useState<RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pasteCopied, setPasteCopied] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
 
   useEffect(() => {
@@ -142,6 +165,12 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
     await navigator.clipboard.writeText(result.output);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const copyPaste = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setPasteCopied(true);
+    setTimeout(() => setPasteCopied(false), 1500);
   };
 
   return (
@@ -250,9 +279,30 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
               )}
             </button>
           </div>
-          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans leading-relaxed">
-            {result.output}
-          </pre>
+          {(() => {
+            const parts = splitOutput(result.output);
+            if (!parts) return <MarkdownView>{result.output}</MarkdownView>;
+            return (
+              <>
+                {parts.before && <MarkdownView>{parts.before}</MarkdownView>}
+                <div className="mt-4 border-2 border-emerald-300 rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between bg-emerald-50 px-4 py-2.5 border-b border-emerald-200">
+                    <span className="text-sm font-semibold text-emerald-900">📋 Texten du klistrar in på sidan</span>
+                    <button
+                      onClick={() => copyPaste(parts.paste)}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      {pasteCopied ? <><Check className="w-3 h-3" /> Kopierat</> : <><Copy className="w-3 h-3" /> Kopiera text</>}
+                    </button>
+                  </div>
+                  <div className="p-4 max-h-[520px] overflow-y-auto bg-white">
+                    <MarkdownView>{parts.paste}</MarkdownView>
+                  </div>
+                </div>
+                {parts.after && <div className="mt-4"><MarkdownView>{parts.after}</MarkdownView></div>}
+              </>
+            );
+          })()}
           <div className="mt-3">
             <VoiceCheckBadge text={result.output} surface="specialist" />
           </div>
