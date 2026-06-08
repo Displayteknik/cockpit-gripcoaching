@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { getSpecialist, buildUserPrompt } from "@/lib/specialists";
+import { getSpecialist, buildUserPrompt, SPECIALIST_GUARDRAILS } from "@/lib/specialists";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { iterateGenerate } from "@/lib/iterate";
@@ -80,7 +80,7 @@ export async function POST(
       const msg = await anthropic.messages.create({
         model: MODEL,
         max_tokens: 4096,
-        system: specialist.systemPrompt,
+        system: specialist.systemPrompt + SPECIALIST_GUARDRAILS,
         messages: [{ role: "user", content: userPrompt }],
       });
       text = msg.content

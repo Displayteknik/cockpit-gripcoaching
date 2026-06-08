@@ -6,6 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { scoreOutput, fetchWinningExamples, type VoiceScore } from "./voice-score";
 import { getVoiceFingerprint, type VoiceFingerprint } from "./voice-fingerprint";
 import { supabaseService } from "./supabase-admin";
+import { SPECIALIST_GUARDRAILS } from "./specialists";
 
 export interface IterateOptions {
   systemPrompt: string;
@@ -66,9 +67,7 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
       fullSystem += `\nExempel ${i + 1}:\n${w}\n`;
     });
   }
-  fullSystem += "\n\n=== FORBJUDNA AI-FLOSKLER (anvand ALDRIG) ===\nkraftfull, banbrytande, holistisk, skalbar, handlar om, nasta niva, synergier, ekosystem, transformativ, navigera utmaningarna. Skriv som manniska, inte som AI.";
-  fullSystem += "\n\n=== FAKTA & PRISER (HARD REGEL) ===\nHitta ALDRIG pa siffror, procent, svarstider eller kundantal. Anvand bara siffror som finns i inputs eller brand-profilen.\nPRISER: ange ALDRIG priser eller prisintervall pa eget bevag och bygg ALDRIG pristabeller med gissade belopp. Priser ar ett affarsbeslut som anvandaren satter. Saknas pris: utelamna det helt eller skriv en tydlig platshallare som [ANGE PRIS] / [DIN SIFFRA]. Gissa aldrig.";
-  fullSystem += "\n\n=== KLARSPRAK (HARD REGEL) ===\nSkriv sa en foretagare forstar direkt. Forutsatt ALDRIG att lasaren kan en forkortning eller fackterm - forklara den forsta gangen, eller anvand ett svenskt ord i stallet. Skriv 'Kort sammanfattning', ALDRIG 'TL;DR'. Galler sarskilt termer som CTR, GEO, AEO, CMS, schema, canonical, citerbar, nits/cd per m2.";
+  fullSystem += SPECIALIST_GUARDRAILS;
 
   // Generera N varianter parallellt
   const calls = Array.from({ length: variants }, () =>
