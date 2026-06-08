@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { autoSelectGaProperty } from "@/lib/google";
 import { getGa4Summary } from "@/lib/ga4";
+import { urlHost, fetchSitemapPages, bestPageForKeyword, samePagePath } from "@/lib/page-match";
 
 export const runtime = "nodejs";
 
@@ -175,6 +176,36 @@ export async function GET(req: NextRequest) {
 
   const ga4 = await ga4Promise;
 
+  // ÅTERKOMMANDE PROBLEM: sökord som rankar på FEL sida (kannibalisering).
+  // Jämför varje meningsfullt sökords rankande sida mot den sida vars adress passar bäst.
+  // Gruppera per rätt sida + visa bara mönster (>=2 sökord) så vi städar roten, inte symptom.
+  type IssueKw = { query: string; page: string; position: number | null; impressions: number };
+  let recurringIssues: Array<{ ideal_page: string; count: number; impressions: number; keywords: IssueKw[] }> = [];
+  try {
+    const clientHost = urlHost((client.data as { public_url?: string } | null)?.public_url || "");
+    const locs = clientHost ? await fetchSitemapPages(clientHost) : [];
+    if (locs.length > 1) {
+      const groups = new Map<string, IssueKw[]>();
+      for (const q of queries) {
+        if (!q.page || q.impressions < 20 || q.avg_position === null) continue;
+        const ideal = bestPageForKeyword(locs, q.query, q.page);
+        if (samePagePath(ideal, q.page)) continue; // rankar redan på rätt sida
+        if (!groups.has(ideal)) groups.set(ideal, []);
+        groups.get(ideal)!.push({ query: q.query, page: q.page, position: q.avg_position, impressions: q.impressions });
+      }
+      recurringIssues = Array.from(groups.entries())
+        .filter(([, kws]) => kws.length >= 2)
+        .map(([ideal, kws]) => ({
+          ideal_page: ideal,
+          count: kws.length,
+          impressions: kws.reduce((s, k) => s + k.impressions, 0),
+          keywords: kws.sort((a, b) => b.impressions - a.impressions).slice(0, 10),
+        }))
+        .sort((a, b) => b.impressions - a.impressions)
+        .slice(0, 6);
+    }
+  } catch {}
+
   return NextResponse.json({
     period: { days, since: sinceDate, until: new Date().toISOString().slice(0, 10) },
     client: client.data,
@@ -215,5 +246,6 @@ export async function GET(req: NextRequest) {
     tracked_keywords: keywords.data ?? [],
     recent_audits: audits.data ?? [],
     ga4,
+    recurring_issues: recurringIssues,
   });
 }

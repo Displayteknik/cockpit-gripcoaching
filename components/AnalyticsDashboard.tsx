@@ -6,6 +6,9 @@ import { Eye, Search, TrendingUp, MousePointerClick, Gauge, Smartphone, Repeat, 
 
 type Period = 7 | 14 | 30 | 90;
 
+// Visar bara sökvägen ur en URL (t.ex. "/utomhus-skarmar") — lättare att läsa än hela adressen.
+const prettyPath = (u: string) => { try { return new URL(u).pathname.replace(/\/$/, "") || "/"; } catch { return u; } };
+
 // Statiska Tailwind-klasser för "Att göra idag"-rutans accentfärger (måste vara hela strängar för att byggas).
 const ACTION_ACCENT = {
   amber: { chip: "bg-amber-100 text-amber-700", btn: "bg-amber-600 hover:bg-amber-700" },
@@ -49,6 +52,7 @@ interface Dashboard {
     ai: { sessions: number; sources: Array<{ source: string; sessions: number }> };
     daily: Array<{ date: string; sessions: number }>;
   } | null;
+  recurring_issues?: Array<{ ideal_page: string; count: number; impressions: number; keywords: Array<{ query: string; page: string; position: number | null; impressions: number }> }>;
   top_paths: Array<{ path: string; visits: number }>;
   top_referrers: Array<{ host: string; visits: number }>;
   tracked_keywords: Array<{ id: string; keyword: string; current_rank: number | null; best_rank: number | null }>;
@@ -764,6 +768,52 @@ export default function AnalyticsDashboard() {
           </div>
         );
       })()}
+
+      {/* ÅTERKOMMANDE PROBLEM — fel sida rankar (kannibalisering), grupperat per rätt sida */}
+      {(data.recurring_issues?.length ?? 0) > 0 && (
+        <div className="bg-gradient-to-br from-rose-50 to-orange-50 border border-rose-200 rounded-xl p-5">
+          <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600" />
+            Återkommande problem: Google rankar fel sida
+          </h3>
+          <p className="text-xs text-gray-700 mb-4">
+            Flera sökord rankar på en sida som inte handlar om dem — då konkurrerar dina egna sidor ut varandra och ingen når topp 3. Fixa rätt sida en gång, så lyfts alla orden samtidigt. Det ger fler klick och fler kunder.
+          </p>
+          <div className="space-y-3">
+            {data.recurring_issues!.map((g, i) => {
+              const idealPath = prettyPath(g.ideal_page);
+              const top = g.keywords[0];
+              const optimizeUrl = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(top.query)}&sid_url=${encodeURIComponent(g.ideal_page)}&pos=${top.position ?? ""}&imp=${top.impressions}&clk=0`;
+              return (
+                <div key={i} className="bg-white border border-rose-100 rounded-lg p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-900">
+                        {g.count} sökord borde ligga på <span className="text-rose-700">{idealPath}</span>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">Rankar idag på fel sida:</div>
+                      <ul className="text-xs text-gray-700 mt-1.5 space-y-1">
+                        {g.keywords.slice(0, 5).map((k, j) => (
+                          <li key={j} className="flex items-center justify-between gap-2">
+                            <span className="truncate"><strong className="text-gray-900">{k.query}</strong> → {prettyPath(k.page)}</span>
+                            <span className="tabular-nums text-gray-400 flex-shrink-0">plats {k.position} · {k.impressions} visn.</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="text-xs text-gray-700 mt-2 bg-rose-50 rounded-lg p-2">
+                        <strong>Fix:</strong> stärk <strong>{idealPath}</strong> och länka till den från andra sidor med sökordet som länktext — då tar den över orden från fel sida.
+                      </div>
+                    </div>
+                    <Link href={optimizeUrl} className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 flex-shrink-0">
+                      <Sparkles className="w-3 h-3" /> Optimera rätt sida
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* QUICK WINS */}
       {data.quick_wins.length > 0 && (
