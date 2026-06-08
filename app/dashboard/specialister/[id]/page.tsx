@@ -3,9 +3,10 @@
 import { Suspense, useEffect, useState, use } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Play, Copy, Check } from "lucide-react";
+import { ArrowLeft, Loader2, Play, Copy, Check, Download } from "lucide-react";
 import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
 import MarkdownView from "@/components/MarkdownView";
+import { downloadMarkdownPdf } from "@/lib/markdown-pdf";
 
 // Gör om markdown till ren text för inklistring i visuella byggare (GHL m.fl.) —
 // så inga #, ** eller länk-syntax följer med och stör typsnitt/färg.
@@ -297,20 +298,28 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
             <div className="text-xs text-gray-500">
               {result.model} · {result.tokens_out} tokens out · {(result.duration_ms / 1000).toFixed(1)}s
             </div>
-            <button
-              onClick={copy}
-              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 border border-gray-200 rounded-md hover:bg-gray-50"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3 h-3 text-emerald-600" /> Kopierat
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3 h-3" /> Kopiera
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => downloadMarkdownPdf(result.output, `sid-optimering-${(specialist?.name || "specialist").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${new Date().toISOString().slice(0, 10)}.pdf`)}
+                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 border border-gray-200 rounded-md hover:bg-gray-50"
+              >
+                <Download className="w-3 h-3" /> PDF
+              </button>
+              <button
+                onClick={copy}
+                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 border border-gray-200 rounded-md hover:bg-gray-50"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-600" /> Kopierat
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" /> Kopiera allt
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           {(() => {
             const parts = splitOutput(result.output);
