@@ -77,12 +77,14 @@ export async function POST(
       variant_count = result.variant_count;
     } else {
       const anthropic = new Anthropic({ apiKey });
-      const msg = await anthropic.messages.create({
+      // Streama (finalMessage) — håller anslutningen vid liv vid lång generering så
+      // Vercel inte timear och returnerar icke-JSON. Samma beprövade recept som djupgranskningen.
+      const msg = await anthropic.messages.stream({
         model: MODEL,
         max_tokens: 4096,
         system: specialist.systemPrompt + SPECIALIST_GUARDRAILS,
         messages: [{ role: "user", content: userPrompt }],
-      });
+      }).finalMessage();
       text = msg.content
         .map((c) => (c.type === "text" ? c.text : ""))
         .join("")

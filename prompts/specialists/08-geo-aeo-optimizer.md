@@ -1,14 +1,11 @@
 ---
 id: geo-aeo-optimizer
-name: Sid-optimerare (Google, AI & fler kunder)
+name: Sid-optimerare (Google & AI)
 category: seo
 model: claude-sonnet-4-5
 target_app: both
-version: 2
-iterate: true
-variants: 3
-target_length_min: 400
-target_length_max: 1400
+version: 3
+iterate: false
 inputs:
   - { key: amne, label: "Ämne / fråga sidan ska svara på", type: textarea, required: true }
   - { key: nuvarande_text, label: "Nuvarande text (om finns)", type: textarea, required: false }
