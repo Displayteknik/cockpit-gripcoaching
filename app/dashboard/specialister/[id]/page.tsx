@@ -137,15 +137,19 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
             const res = await fetch(`/api/seo/page-text?url=${encodeURIComponent(sidUrl)}${amneParam ? `&amne=${encodeURIComponent(amneParam)}` : ""}`);
             const d = await res.json();
             if (!cancelled && res.ok && d.text) {
-              // Teknisk status så optimeraren anpassar sig (plattform + befintligt schema).
+              // Status så optimeraren respekterar det som REDAN finns (plattform, schema, FAQ, rubriker).
+              const faqs: string[] = Array.isArray(d.existing_faqs) ? d.existing_faqs : [];
+              const heads: string[] = Array.isArray(d.existing_headings) ? d.existing_headings : [];
               const status = [
                 d.platform ? `Plattform: ${d.platform}` : "",
                 d.has_faq_schema
                   ? "Teknisk status: sidan har REDAN FAQ-schema — föreslå INGET nytt schema."
                   : "Teknisk status: sidan saknar FAQ-schema.",
+                faqs.length ? `Sidan har REDAN dessa FAQ-frågor (föreslå INTE en ny FAQ-sektion som om den saknas — förbättra/komplettera bara, lägg bara till frågor som verkligen saknas):\n- ${faqs.join("\n- ")}` : "",
+                heads.length ? `Sidan har redan dessa rubriker (bygg vidare på dem, dubblera inte):\n- ${heads.join("\n- ")}` : "",
               ].filter(Boolean).join("\n");
-              // Kapa till ~4000 tecken — räcker som kontext, håller prompten snabb (undviker timeout).
-              const pageText = String(d.text || "").slice(0, 4000);
+              // Streaming klarar längre input → ge mer av sidan (8000 tecken) så befintligt innehåll syns.
+              const pageText = String(d.text || "").slice(0, 8000);
               setValues((prev) => ({ ...prev, nuvarande_text: `Sida: ${d.url}\n${status}\n\n${pageText}` }));
             }
           } catch {} finally {

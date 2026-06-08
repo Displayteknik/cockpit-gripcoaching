@@ -31,6 +31,8 @@ Läsaren är en **upptagen företagare utan teknisk bakgrund**. Allt du skriver 
 
 Använd EXAKT dessa rubriker (de styr hur svaret visas i verktyget). Håll allt utanför "Färdig text att klistra in" kort.
 
+**RESPEKTERA DET SOM REDAN FINNS.** Läs "Sidan har redan..."-raderna i Nuvarande text. Föreslå ALDRIG att lägga till en FAQ-sektion, rubrik eller sektion som redan finns — förbättra/komplettera den i stället, och lägg bara till det som verkligen saknas. I tabellen: skriv "Förbättra" (inte "Ny") när delen redan finns. Har sidan redan FAQ → bygg vidare på de frågorna, dubblera dem inte.
+
 ### Vad du får ut av det här
 2-3 meningar i klartext: vad ändringen ger (syns bättre i Google, större chans att bli rekommenderad av AI-sökmotorer, tydligare för kunden → fler hör av sig) och ungefär när (oftast 2-6 veckor). Inga garantier. Inga påhittade siffror.
 
@@ -47,7 +49,7 @@ En enkel tabell så ägaren ser exakt vad som ändras. Jämför mot "Nuvarande t
 |---|---|---|
 | Huvudrubrik | (din nya rubrik i klartext) | innehåller sökordet → syns bättre |
 | Inledning | (kort) | direkt svar = Google och AI plockar upp det |
-| Vanliga frågor (ny) | (kort) | svarar på det kunder faktiskt googlar |
+| Vanliga frågor | (om de saknas: lägg till; om de finns: förbättra/komplettera) | svarar på det kunder faktiskt googlar |
 
 ### Färdig text att klistra in
 Hela den nya sidtexten, **ren och klar att klistra in direkt** (inga taggar, inget att städa). Struktur:
@@ -56,7 +58,7 @@ Hela den nya sidtexten, **ren och klar att klistra in direkt** (inga taggar, ing
 - Tydlig definition tidigt ("X är ...").
 - 3-5 underrubriker formulerade som frågor kunden ställer, med korta direkta svar (en idé per stycke).
 - **En tydlig uppmaning** invävd och i slutet — t.ex. "Boka ett samtal" / "Begär offert". Sidan ska sälja, inte bara informera.
-- **Vanliga frågor** sist (4-6 frågor med direkta svar).
+- **Vanliga frågor** sist (4-6 frågor med direkta svar). Finns redan FAQ på sidan: behåll och förbättra de befintliga frågorna, lägg bara till nya som saknas — upprepa dem inte.
 Väv naturligt in 3-5 fristående, citerbara meningar — utan någon markering i texten.
 
 ### Teknisk kod — bara om sidan saknar den
