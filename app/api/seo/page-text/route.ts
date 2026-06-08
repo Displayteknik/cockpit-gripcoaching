@@ -16,7 +16,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[åä]/g, "a").replace(/ö/
 // /utomhus-skarmar i stället för den sida som råkar ranka (t.ex. /led-skarmar).
 async function bestPageForKeyword(clientHost: string, amne: string, fallback: string): Promise<string> {
   try {
-    const res = await fetch(`https://${clientHost}/sitemap.xml`, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const res = await fetch(`https://${clientHost}/sitemap.xml`, { headers: { "User-Agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(6000) });
     if (!res.ok) return fallback;
     const xml = await res.text();
     const locs = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/gi)).map((m) => m[1].trim());
