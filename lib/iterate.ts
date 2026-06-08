@@ -67,6 +67,7 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
     });
   }
   fullSystem += "\n\n=== FORBJUDNA AI-FLOSKLER (anvand ALDRIG) ===\nkraftfull, banbrytande, holistisk, skalbar, handlar om, nasta niva, synergier, ekosystem, transformativ, navigera utmaningarna. Skriv som manniska, inte som AI.";
+  fullSystem += "\n\n=== FAKTA & PRISER (HARD REGEL) ===\nHitta ALDRIG pa siffror, procent, svarstider eller kundantal. Anvand bara siffror som finns i inputs eller brand-profilen.\nPRISER: ange ALDRIG priser eller prisintervall pa eget bevag och bygg ALDRIG pristabeller med gissade belopp. Priser ar ett affarsbeslut som anvandaren satter. Saknas pris: utelamna det helt eller skriv en tydlig platshallare som [ANGE PRIS] / [DIN SIFFRA]. Gissa aldrig.";
 
   // Generera N varianter parallellt
   const calls = Array.from({ length: variants }, () =>

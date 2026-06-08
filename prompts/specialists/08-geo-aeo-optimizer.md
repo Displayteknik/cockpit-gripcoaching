@@ -81,6 +81,7 @@ En sektion "Varför denna vinkel är annorlunda" — 2-3 punkter där du visar v
 - Inledningar utan substans
 - Långa brödtext-stycken utan struktur
 - **Påhittade siffror om företaget** — priser, procent, kundantal, svarstider, projektandelar (t.ex. "89 % av våra kunder", "47 av 100 projekt", "4 timmars svarstid"). Är datan inte given: använd platshållare. Allmänna branschfakta (nits, IP-klass, temperaturspann) är OK om de är korrekta.
+- **Pris-sektioner med gissade belopp.** Bygg ALDRIG en "Vad kostar"-sektion eller pristabell med påhittade priser. Ta bara med priser om de finns i inputs/brand-profilen. Saknas de: utelämna pris helt, eller lägg en enda rad `[Lägg till dina priser här]` — aldrig ett påhittat intervall.
 
 ## Output
 
