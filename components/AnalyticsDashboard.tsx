@@ -376,8 +376,8 @@ export default function AnalyticsDashboard() {
   const qw0 = data.quick_wins[0];
   if (qw0) {
     const pot = Math.round(qw0.impressions * 0.25);
-    // sid_url → optimeraren läser in sidans text automatiskt (ingen manuell inklistring).
-    const href = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(qw0.query)}${qw0.page ? `&sid_url=${encodeURIComponent(qw0.page)}` : ""}`;
+    // sid_url → optimeraren läser sidan själv; pos/imp/clk → optimeraren förankras i FYNDET (klättra/få fler klick).
+    const href = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(qw0.query)}${qw0.page ? `&sid_url=${encodeURIComponent(qw0.page)}` : ""}&pos=${qw0.avg_position ?? ""}&imp=${qw0.impressions}&clk=${qw0.clicks}`;
     actions.push({ icon: Trophy, accent: "amber", title: `Optimera "${qw0.query}" — snabbaste vinsten`, detail: `Position ${qw0.avg_position}, ${qw0.impressions.toLocaleString("sv-SE")} visningar. Klättrar den till topp 3 ≈ +${pot} klick/mån.`, href, cta: "Optimera nu" });
   }
 
@@ -808,8 +808,8 @@ export default function AnalyticsDashboard() {
               <tbody>
                 {data.quick_wins.map((q, i) => {
                   const potClicks = Math.round(q.impressions * 0.25);
-                  // sid_url → optimeraren läser in sidans text automatiskt (ingen manuell inklistring).
-                  const optimizeUrl = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(q.query)}${q.page ? `&sid_url=${encodeURIComponent(q.page)}` : ""}`;
+                  // sid_url → optimeraren läser sidan; pos/imp/clk → förankrar optimeraren i fyndet.
+                  const optimizeUrl = `/dashboard/specialister/geo-aeo-optimizer?amne=${encodeURIComponent(q.query)}${q.page ? `&sid_url=${encodeURIComponent(q.page)}` : ""}&pos=${q.avg_position ?? ""}&imp=${q.impressions}&clk=${q.clicks}`;
                   return (
                     <tr key={i} className="border-b border-amber-100 hover:bg-amber-50/50">
                       <td className="py-2 px-3 font-medium text-gray-900">{q.query}</td>

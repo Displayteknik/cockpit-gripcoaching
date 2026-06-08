@@ -131,6 +131,13 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
         //    Ingen knapp — verktyget gor det sjalvt.
         const sidUrl = searchParams?.get("sid_url");
         const amneParam = searchParams?.get("amne") || "";
+        // Fyndet från dashboarden (position/visningar/klick) → optimeraren ska säkerställa exakt detta.
+        const pos = searchParams?.get("pos");
+        const imp = searchParams?.get("imp");
+        const clk = searchParams?.get("clk");
+        const goalLine = (pos || imp)
+          ? `Mål från analysen: sökordet "${amneParam}" rankar på position ${pos || "?"} med ${imp || "?"} visningar/månad men ${clk && clk !== "0" ? clk : "få"} klick. Uppgift: förbättra sidan så den klättrar mot topp 3 för sökordet och vänder fler visningar till klick och kunder.`
+          : "";
         const hasNuvarande = s.inputs.some((i) => i.key === "nuvarande_text");
         if (sidUrl && hasNuvarande) {
           setPageLoading(true);
@@ -151,11 +158,15 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
               ].filter(Boolean).join("\n");
               // Streaming klarar längre input → ge mer av sidan (8000 tecken) så befintligt innehåll syns.
               const pageText = String(d.text || "").slice(0, 8000);
-              setValues((prev) => ({ ...prev, nuvarande_text: `Sida: ${d.url}\n${status}\n\n${pageText}` }));
+              setValues((prev) => ({ ...prev, nuvarande_text: `${goalLine ? goalLine + "\n\n" : ""}Sida: ${d.url}\n${status}\n\n${pageText}` }));
             }
           } catch {} finally {
             if (!cancelled) setPageLoading(false);
           }
+        }
+        // Säkerställ att målet från analysen finns med även om sidan inte kunde läsas.
+        if (goalLine && hasNuvarande && !cancelled) {
+          setValues((prev) => (prev.nuvarande_text ? prev : { ...prev, nuvarande_text: goalLine }));
         }
       } catch (e) {
         if (!cancelled) setError((e as Error).message);
