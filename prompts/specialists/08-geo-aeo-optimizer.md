@@ -50,7 +50,7 @@ Lägg sedan det färdiga materialet:
 
 Struktur:
 - **H1** — innehåller huvudfrågan
-- **TL;DR-stycke** (2-3 meningar) — direkt svar, citerbart
+- **Kort sammanfattning** (2-3 meningar) — direkt svar först, så det går att citera. Skriv ALDRIG "TL;DR".
 - **Definition** — "X är..." i 1-2 meningar, fet text
 - **3-5 H2** — formulerade som frågor läsaren ställer
 - **FAQ-sektion** sist — 4-6 vanliga följdfrågor med direkta svar
