@@ -7,6 +7,24 @@ import { ArrowLeft, Loader2, Play, Copy, Check } from "lucide-react";
 import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
 import MarkdownView from "@/components/MarkdownView";
 
+// Gör om markdown till ren text för inklistring i visuella byggare (GHL m.fl.) —
+// så inga #, ** eller länk-syntax följer med och stör typsnitt/färg.
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/```[\s\S]*?```/g, "")            // kodblock bort (hör ej till sidtexten)
+    .replace(/^#{1,6}\s+/gm, "")               // rubriker → ren rad
+    .replace(/\*\*([^*]+)\*\*/g, "$1")         // fet
+    .replace(/\*([^*]+)\*/g, "$1")             // kursiv
+    .replace(/`([^`]+)`/g, "$1")               // inline-kod
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")   // länkar → bara text
+    .replace(/^\s*[-*]\s+/gm, "• ")            // punktlistor
+    .replace(/^\s*\d+\.\s+/gm, (m) => m.trim() + " ") // numrerade listor behåller siffran
+    .replace(/^\s*\|.*\|\s*$/gm, "")           // ev. tabellrader bort
+    .replace(/^-{3,}\s*$/gm, "")               // avdelare bort
+    .replace(/\n{3,}/g, "\n\n")                // städa blankrader
+    .trim();
+}
+
 // Delar upp svaret i guide / texten-att-klistra-in / resten, så texten kan visas i en egen kopiera-ruta.
 function splitOutput(md: string): { before: string; paste: string; after: string } | null {
   const lines = md.split("\n");
@@ -298,7 +316,7 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
                   <div className="flex items-center justify-between bg-emerald-50 px-4 py-2.5 border-b border-emerald-200">
                     <span className="text-sm font-semibold text-emerald-900">📋 Texten du klistrar in på sidan</span>
                     <button
-                      onClick={() => copyPaste(parts.paste)}
+                      onClick={() => copyPaste(stripMarkdown(parts.paste))}
                       className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
                     >
                       {pasteCopied ? <><Check className="w-3 h-3" /> Kopierat</> : <><Copy className="w-3 h-3" /> Kopiera text</>}
