@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
       word_count: signals.wordCount,
       text: signals.mainText,
       matched: url !== rawUrl, // true = vi bytte till en bättre matchande sida
+      schema_types: signals.schemaTypes,
+      has_faq_schema: signals.schemaTypes.includes("FAQPage"), // → optimeraren slipper kasta ut dubbelt schema
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message || "Kunde inte läsa sidan" }, { status: 500 });
