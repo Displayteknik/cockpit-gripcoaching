@@ -6,7 +6,7 @@ import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { iterateGenerate } from "@/lib/iterate";
 
 export const runtime = "nodejs";
-export const maxDuration = 90;
+export const maxDuration = 300;
 
 const MODEL = "claude-sonnet-4-5";
 

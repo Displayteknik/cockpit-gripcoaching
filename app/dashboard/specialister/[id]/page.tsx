@@ -124,7 +124,9 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
                   ? "Teknisk status: sidan har REDAN FAQ-schema — föreslå INGET nytt schema."
                   : "Teknisk status: sidan saknar FAQ-schema.",
               ].filter(Boolean).join("\n");
-              setValues((prev) => ({ ...prev, nuvarande_text: `Sida: ${d.url}\n${status}\n\n${d.text}` }));
+              // Kapa till ~4000 tecken — räcker som kontext, håller prompten snabb (undviker timeout).
+              const pageText = String(d.text || "").slice(0, 4000);
+              setValues((prev) => ({ ...prev, nuvarande_text: `Sida: ${d.url}\n${status}\n\n${pageText}` }));
             }
           } catch {} finally {
             if (!cancelled) setPageLoading(false);
@@ -150,7 +152,14 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inputs: values }),
       });
-      const data = await res.json();
+      const raw = await res.text();
+      let data: RunResult & { error?: string };
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        // Vercel returnerar text (ej JSON) vid timeout → visa begripligt fel.
+        throw new Error("Genereringen tog för lång tid eller avbröts. Försök igen — eller korta ned 'Nuvarande text'.");
+      }
       if (!res.ok) throw new Error(data?.error ?? "Fel vid körning");
       setResult(data);
     } catch (e) {
