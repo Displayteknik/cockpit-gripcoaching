@@ -33,11 +33,13 @@ function splitOutput(md: string): { before: string; paste: string; after: string
     if (/^#{1,3}\s+.*färdig text/i.test(lines[i])) { start = i; break; }
   }
   if (start === -1) return null;
+  // Sidtexten har EGNA rubriker (# Utomhusskärmar...) → vi får INTE klippa vid första rubrik.
+  // Klipp först vid "Teknisk kod"-sektionen (den enda guide-delen efter sidtexten), annars dokumentets slut.
   let end = lines.length;
   for (let j = start + 1; j < lines.length; j++) {
-    if (/^#{1,3}\s+/.test(lines[j])) { end = j; break; }
+    if (/^#{1,3}\s+.*teknisk kod/i.test(lines[j])) { end = j; break; }
   }
-  const paste = lines.slice(start + 1, end).join("\n").trim();
+  const paste = lines.slice(start + 1, end).join("\n").replace(/^-{3,}\s*$/gm, "").trim();
   if (!paste) return null;
   return {
     before: lines.slice(0, start).join("\n").trim(),
