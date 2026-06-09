@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
   const syncBytbil = async () => {
     const ok = confirm(
-      "Synka från Bytbil?\n\nBytbil blir källan: bilarna där hämtas in, och fordon som INTE finns på Bytbil (t.ex. äldre manuellt inlagda) döljs (markeras sålda, raderas inte).\n\nFortsätt?"
+      "Synka från Bytbil?\n\nBilarna på Bytbil hämtas och uppdateras. Manuellt inlagda fordon rörs INTE. Bytbil-bilar som sålts döljs automatiskt.\n\nFortsätt?"
     );
     if (!ok) return;
     setSyncing(true);

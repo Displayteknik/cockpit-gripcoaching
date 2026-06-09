@@ -14,6 +14,10 @@ const BYTBIL_FEEDS: Record<string, string> = {
     "https://hmmotor.accesspaket.bytbilcms.com/wp-json/accesspackage/v1/cars",
 };
 
+// Bytbil-synkade rader får slug som slutar på "-<bytbil-id>" (minst 7 siffror).
+// Allt annat = manuellt inlagt och rörs ALDRIG av synken.
+const BYTBIL_SLUG = /-\d{7,}$/;
+
 export async function POST(req: NextRequest) {
   // Admin-only (manuell synk från dashboarden).
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -29,6 +33,9 @@ export async function POST(req: NextRequest) {
   }
 
   const dryRun = req.nextUrl.searchParams.get("dryRun") === "1";
+  // Engångs-städning: dölj gamla MANUELLA dubbletter (innan Bytbil tog över).
+  // Används bara vid första övergången — vanlig synk rör aldrig manuella rader.
+  const hideLegacyManual = req.nextUrl.searchParams.get("hideLegacyManual") === "1";
   const syncedAt = new Date().toISOString();
   const sb = supabaseServer();
 
@@ -48,7 +55,7 @@ export async function POST(req: NextRequest) {
     .eq("client_id", clientId);
   const bySlug = new Map((existing || []).map((v) => [v.slug, v]));
 
-  let created = 0, updated = 0, soldMarked = 0;
+  let created = 0, updated = 0, soldMarked = 0, legacyHidden = 0;
   const errors: string[] = [];
 
   for (const m of mapped) {
@@ -69,15 +76,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Spegling: Bytbil är källan. Allt för klienten som INTE finns i feeden döljs
-  // (markeras sålt) — det täcker både gamla manuella dubbletter och bilar som sålts
-  // på Bytbil. Inget raderas → fullt reversibelt.
   if (!dryRun) {
     for (const v of existing || []) {
-      if (!feedSlugs.has(v.slug) && !v.is_sold) {
+      if (v.is_sold) continue;
+      const isBytbil = BYTBIL_SLUG.test(v.slug);
+      if (isBytbil && !feedSlugs.has(v.slug)) {
+        // Bytbil-bil som lämnat feeden = såld på Bytbil → dölj.
         const { error } = await sb.from("hm_vehicles").update({ is_sold: true }).eq("id", v.id);
         if (!error) soldMarked++;
+      } else if (hideLegacyManual && !isBytbil) {
+        // Engångs: gammal manuell dubblett → dölj. Inget raderas (reversibelt).
+        const { error } = await sb.from("hm_vehicles").update({ is_sold: true }).eq("id", v.id);
+        if (!error) legacyHidden++;
       }
+      // Övriga manuella rader (utan flagga) lämnas helt orörda.
     }
   }
 
@@ -88,6 +100,7 @@ export async function POST(req: NextRequest) {
     created,
     updated,
     soldMarked,
+    legacyHidden,
     syncedAt,
     ...(errors.length ? { errors: errors.slice(0, 5) } : {}),
   });
