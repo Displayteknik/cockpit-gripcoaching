@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const c = await cookies();
   c.set(ADMIN_COOKIE, token, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production", // localhost kör http → annars sätts ingen cookie
     sameSite: "lax",
     maxAge: ADMIN_TTL_SECONDS,
     path: "/",
