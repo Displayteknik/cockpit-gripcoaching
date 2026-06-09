@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("all");
+  const [filterStatus, setFilterStatus] = useState<"active" | "sold" | "all">("active");
   const [editing, setEditing] = useState<(Partial<Vehicle> & { gallery?: string[] }) | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -99,7 +100,12 @@ export default function DashboardPage() {
     setSyncing(false);
   };
 
+  const activeCount = vehicles.filter((v) => !v.is_sold).length;
+  const soldCount = vehicles.filter((v) => v.is_sold).length;
+
   const filtered = vehicles.filter((v) => {
+    if (filterStatus === "active" && v.is_sold) return false;
+    if (filterStatus === "sold" && !v.is_sold) return false;
     if (filterCat !== "all" && v.category !== filterCat) return false;
     if (search) {
       const s = search.toLowerCase();
@@ -240,7 +246,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold text-gray-900">Fordon</h1>
-          <p className="text-sm text-gray-500 mt-1">{vehicles.length} fordon totalt &middot; {filtered.length} visas</p>
+          <p className="text-sm text-gray-500 mt-1">{activeCount} till salu &middot; {soldCount} sålda &middot; {filtered.length} visas</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={syncBytbil} disabled={syncing}
@@ -261,6 +267,18 @@ export default function DashboardPage() {
           {syncMsg.text}
         </div>
       )}
+
+      {/* Status-filter */}
+      <div className="flex gap-1 mb-4">
+        {([["active", `Till salu (${activeCount})`], ["sold", `Sålda (${soldCount})`], ["all", `Alla (${vehicles.length})`]] as const).map(([val, label]) => (
+          <button key={val} onClick={() => setFilterStatus(val)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              filterStatus === val ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+            }`}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
