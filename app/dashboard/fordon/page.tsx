@@ -58,22 +58,39 @@ export default function DashboardPage() {
   useEffect(() => { loadVehicles(); }, [loadVehicles]);
 
   const syncBytbil = async () => {
-    const ok = confirm(
-      "Synka från Bytbil?\n\nBilarna på Bytbil hämtas och uppdateras. Manuellt inlagda fordon rörs INTE. Bytbil-bilar som sålts döljs automatiskt.\n\nFortsätt?"
-    );
-    if (!ok) return;
     setSyncing(true);
     setSyncMsg(null);
     try {
-      const r = await fetch("/api/fordon/sync-bytbil", { method: "POST" });
+      // 1) Förhandsvisning — skriver inget.
+      const pre = await fetch("/api/fordon/sync-bytbil?dryRun=1", { method: "POST" });
+      const p = await pre.json();
+      if (!pre.ok) { setSyncMsg({ ok: false, text: p.error || "Synk misslyckades" }); setSyncing(false); return; }
+
+      // 2) Informerad bekräftelse.
+      let url = "/api/fordon/sync-bytbil";
+      if (p.legacyManualCount > 0) {
+        const hide = confirm(
+          `Synka från Bytbil?\n\n• ${p.created} nya bilar hämtas in\n• ${p.updated} befintliga uppdateras (endast pris — utvald, bilder och text bevaras)\n\nDu har ${p.legacyManualCount} äldre manuellt inlagda fordon som är samma bilar (dubbletter).\n\nOK = synka OCH dölj dessa ${p.legacyManualCount} (ångerbart, raderas inte).\nAvbryt = gör inget.`
+        );
+        if (!hide) { setSyncing(false); return; }
+        url += "?hideLegacyManual=1";
+      } else {
+        const ok = confirm(
+          `Synka från Bytbil?\n\n• ${p.created} nya\n• ${p.updated} uppdateras (endast pris — dina redigeringar bevaras)\n\nManuella fordon rörs inte.`
+        );
+        if (!ok) { setSyncing(false); return; }
+      }
+
+      // 3) Skarp synk.
+      const r = await fetch(url, { method: "POST" });
       const d = await r.json();
       if (!r.ok) {
         setSyncMsg({ ok: false, text: d.error || "Synk misslyckades" });
       } else {
-        setSyncMsg({
-          ok: true,
-          text: `Klart — ${d.created} nya, ${d.updated} uppdaterade${d.soldMarked ? `, ${d.soldMarked} markerade sålda` : ""} (${d.total} på Bytbil).`,
-        });
+        const parts = [`${d.created} nya`, `${d.updated} uppdaterade`];
+        if (d.soldMarked) parts.push(`${d.soldMarked} sålda dolda`);
+        if (d.legacyHidden) parts.push(`${d.legacyHidden} gamla dubbletter dolda`);
+        setSyncMsg({ ok: true, text: `Klart — ${parts.join(", ")}.` });
         await loadVehicles();
       }
     } catch (e) {
