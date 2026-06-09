@@ -34,11 +34,16 @@ export default function ClientPicker() {
   }
 
   async function switchTo(id: string) {
-    await fetch("/api/clients/switch", {
+    const r = await fetch("/api/clients/switch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ client_id: id }),
     });
+    if (!r.ok) {
+      const msg = await r.text().catch(() => "");
+      alert("Kunde inte växla klient: " + (msg || r.status));
+      return;
+    }
     setOpen(false);
     router.refresh();
     // Hård reload för att klient-kontext ska gälla överallt
