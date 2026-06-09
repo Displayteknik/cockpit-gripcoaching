@@ -68,12 +68,18 @@ ${voiceBlock}
 - ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "nästa nivå", "skalbar", "holistisk".
 - ALDRIG någon form av "handla om".
 - Använd bilens RIKTIGA fakta nedan. Hitta ALDRIG på data (hästkrafter, utrustning, skick) som inte står.
-- Hooken stoppar scrollen. Brödtext lyfter 2-3 konkreta säljpunkter (årsmodell, miltal, bränsle, utrustning) + pris.
+- Hooken stoppar scrollen.
+- BRÖDTEXTEN SKA VARA LUFTIG OCH SCANNBAR — aldrig en textklump. Struktur:
+  1) 2-3 korta säljande rader (radbryt mellan meningar, en tanke per rad).
+  2) Blankrad, sedan en kort SPEC-LISTA — en rad per fakta, varje rad inleds med passande emoji:
+     📅 Årsmodell · 🛣️ Miltal · ⛽ Bränsle · ⚙️ Växellåda · 🎨 Färg · 💰 Pris. Ta bara med de fakta som finns nedan.
+  3) Blankrad, sedan EN kort avslutande rad.
+- Använd riktiga radbrytningar (\\n) rikligt. Korta rader. Luftigt. Sparsamt med emoji — bara i spec-listan, inte i löptext.
 - CTA = EN sak (t.ex. "Boka provkörning" eller "Hör av dig"). Inte flera.
 - Hashtags: 6-10, blanda bilnischat + lokalt (Krokom/Jämtland/Östersund) + märke. Utan #-tecken.
 
 ═══ OUTPUT (JSON, exakt) ═══
-{ "hook": "kort hook utan emoji-prefix", "body": "100-180 ord caption, inga hashtags, inga etiketter", "cta": "en mening", "hashtags": ["bil", "krokom"] }`;
+{ "hook": "kort hook utan emoji-prefix", "body": "Luftig caption med radbrytningar:\\nKort intro-rad.\\nEn rad till.\\n\\n📅 Årsmodell: 2019\\n🛣️ Miltal: 9 000 mil\\n⛽ Bränsle: Bensin\\n💰 Pris: 119 900 kr\\n\\nAvslutande rad.", "cta": "en mening", "hashtags": ["bil", "krokom"] }`;
 
     const userPrompt = `FORDON ATT SÄLJA:
 Rubrik: ${v.title}
