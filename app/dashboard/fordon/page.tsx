@@ -5,7 +5,7 @@ import { supabase, type Vehicle } from "@/lib/supabase";
 import { formatPrice } from "@/lib/utils";
 import {
   Plus, Pencil, Trash2, Star, Search, X, Upload, Image as ImageIcon,
-  GripVertical, ChevronDown, Eye,
+  GripVertical, ChevronDown, Eye, RefreshCw, Loader2,
 } from "lucide-react";
 
 const CATEGORIES = [
@@ -36,6 +36,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"info" | "images" | "specs">("info");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
@@ -54,6 +56,31 @@ export default function DashboardPage() {
   }, [clientId]);
 
   useEffect(() => { loadVehicles(); }, [loadVehicles]);
+
+  const syncBytbil = async () => {
+    const ok = confirm(
+      "Synka från Bytbil?\n\nBytbil blir källan: bilarna där hämtas in, och fordon som INTE finns på Bytbil (t.ex. äldre manuellt inlagda) döljs (markeras sålda, raderas inte).\n\nFortsätt?"
+    );
+    if (!ok) return;
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const r = await fetch("/api/fordon/sync-bytbil", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) {
+        setSyncMsg({ ok: false, text: d.error || "Synk misslyckades" });
+      } else {
+        setSyncMsg({
+          ok: true,
+          text: `Klart — ${d.created} nya, ${d.updated} uppdaterade${d.soldMarked ? `, ${d.soldMarked} markerade sålda` : ""} (${d.total} på Bytbil).`,
+        });
+        await loadVehicles();
+      }
+    } catch (e) {
+      setSyncMsg({ ok: false, text: (e as Error).message });
+    }
+    setSyncing(false);
+  };
 
   const filtered = vehicles.filter((v) => {
     if (filterCat !== "all" && v.category !== filterCat) return false;
@@ -198,11 +225,25 @@ export default function DashboardPage() {
           <h1 className="font-display text-2xl font-bold text-gray-900">Fordon</h1>
           <p className="text-sm text-gray-500 mt-1">{vehicles.length} fordon totalt &middot; {filtered.length} visas</p>
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-          <Plus className="w-4 h-4" />
-          Nytt fordon
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={syncBytbil} disabled={syncing}
+            className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            title="Hämta bilarna från Bytbil och uppdatera listan">
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {syncing ? "Synkar..." : "Synka från Bytbil"}
+          </button>
+          <button onClick={openNew} className="flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+            <Plus className="w-4 h-4" />
+            Nytt fordon
+          </button>
+        </div>
       </div>
+
+      {syncMsg && (
+        <div className={`mb-4 text-sm rounded-lg px-4 py-2.5 border ${syncMsg.ok ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"}`}>
+          {syncMsg.text}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
