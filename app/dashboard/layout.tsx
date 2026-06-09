@@ -54,6 +54,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
     {
       label: "Instagram & Social",
       items: [
+        ...(resourceModule === "automotive" ? [{ href: "/dashboard/fordon-inlagg", label: "Fordonsinlägg", icon: Car }] : []),
         { href: "/dashboard/skapa", label: "Skapa inlägg", icon: Sparkles },
         { href: "/dashboard/veckoplan", label: "Veckoplan (7 inlägg)", icon: Calendar },
         { href: "/dashboard/dm", label: "DM & Pipeline", icon: MessageSquare },
