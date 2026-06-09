@@ -1,15 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminSession, ADMIN_COOKIE } from "@/lib/admin-auth";
 
-// Multi-host routing:
+// Multi-host routing + admin-grind.
 // - cockpit.gripcoaching.se     → cockpit-app (/dashboard, /admin, /api, /granska, /api/track)
 //   blockerar HM Motors publika sajt på denna domän
 // - hmmotor-next.vercel.app     → standard (publika HM Motor + dashboard)
 // - hmmotor.se (framtid)        → bara publika HM Motor
 const COCKPIT_HOSTS = ["cockpit.gripcoaching.se"];
 
-export function middleware(req: NextRequest) {
+// Adminytan (sid-navigering). Skyddas av HMAC-signerad admin_session-cookie.
+// OBS: detta skyddar sidor — route handlers/Server Actions måste härdas separat
+// (se Next-docs: proxy täcker inte Server Functions). Det är steg 2.
+function isAdminArea(path: string): boolean {
+  return (
+    path === "/dashboard" ||
+    path.startsWith("/dashboard/") ||
+    path === "/admin" ||
+    path.startsWith("/admin/")
+  );
+}
+
+export async function proxy(req: NextRequest) {
   const host = req.headers.get("host") || "";
   const path = req.nextUrl.pathname;
+
+  // Admin-grind: kräver giltig signerad session för /dashboard + /admin.
+  if (isAdminArea(path)) {
+    const secret = process.env.ADMIN_SESSION_SECRET;
+    const token = req.cookies.get(ADMIN_COOKIE)?.value;
+    const ok = secret ? await verifyAdminSession(token, secret) : false;
+    if (!ok) {
+      const url = new URL("/logga-in", req.url);
+      url.searchParams.set("from", path);
+      return NextResponse.redirect(url);
+    }
+  }
 
   // Lokal utveckling — root → dashboard så testning fungerar
   const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
