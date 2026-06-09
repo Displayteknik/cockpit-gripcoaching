@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId } from "@/lib/client-context";
+import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { verifyAdminSession, ADMIN_COOKIE } from "@/lib/admin-auth";
 import { fetchBytbilCars, mapCarToVehicle } from "@/lib/bytbil";
 
@@ -51,12 +51,12 @@ export async function POST(req: NextRequest) {
 
   const { data: existing } = await sb
     .from("hm_vehicles")
-    .select("id, slug, is_sold")
+    .select("id, slug, is_sold, title, price")
     .eq("client_id", clientId);
 
   // Indexera befintliga Bytbil-rader på Bytbil-id (ur slug-suffix). Rader utan id-suffix
   // = manuellt inlagda → räknas som legacy och rörs aldrig av den vanliga synken.
-  const existingById = new Map<string, { id: string; slug: string; is_sold: boolean }>();
+  const existingById = new Map<string, { id: string; slug: string; is_sold: boolean; title: string; price: number }>();
   let legacyManualCount = 0;
   for (const v of existing || []) {
     const bid = bytbilIdOf(v.slug);
@@ -88,11 +88,17 @@ export async function POST(req: NextRequest) {
   }
 
   if (!dryRun) {
-    // Bytbil-bil som lämnat feeden = såld/borttagen på Bytbil → dölj.
+    // Bytbil-bil som lämnat feeden = såld/borttagen på Bytbil → dölj + logga sälj.
     for (const [bid, v] of existingById) {
       if (!feedIds.has(bid) && !v.is_sold) {
         const { error } = await sb.from("hm_vehicles").update({ is_sold: true }).eq("id", v.id);
-        if (!error) soldMarked++;
+        if (!error) {
+          soldMarked++;
+          await logActivity(clientId, "vehicle_sold", v.title || "Fordon", "/dashboard/fordon", {
+            price: v.price ?? null,
+            via: "bytbil",
+          });
+        }
       }
     }
     // Engångs: dölj gamla manuella dubbletter (bara när användaren godkänt det).

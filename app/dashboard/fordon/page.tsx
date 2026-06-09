@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [salesStats, setSalesStats] = useState<{ month: number; year: number; total: number } | null>(null);
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
@@ -57,6 +58,15 @@ export default function DashboardPage() {
   }, [clientId]);
 
   useEffect(() => { loadVehicles(); }, [loadVehicles]);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const r = await fetch("/api/fordon/sales-stats");
+      if (r.ok) setSalesStats(await r.json());
+    } catch { /* tyst */ }
+  }, []);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
 
   const syncBytbil = async () => {
     setSyncing(true);
@@ -93,6 +103,7 @@ export default function DashboardPage() {
         if (d.legacyHidden) parts.push(`${d.legacyHidden} gamla dubbletter dolda`);
         setSyncMsg({ ok: true, text: `Klart — ${parts.join(", ")}.` });
         await loadVehicles();
+        loadStats();
       }
     } catch (e) {
       setSyncMsg({ ok: false, text: (e as Error).message });
@@ -234,8 +245,13 @@ export default function DashboardPage() {
   };
 
   const toggleSold = async (v: Vehicle) => {
-    await supabase.from("hm_vehicles").update({ is_sold: !v.is_sold }).eq("id", v.id).eq("client_id", clientId!);
+    await fetch("/api/fordon/mark-sold", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: v.id, sold: !v.is_sold }),
+    });
     loadVehicles();
+    loadStats();
   };
 
   const allImages = editing ? [editing.image_url, ...(editing.gallery || [])].filter(Boolean) as string[] : [];
@@ -265,6 +281,16 @@ export default function DashboardPage() {
       {syncMsg && (
         <div className={`mb-4 text-sm rounded-lg px-4 py-2.5 border ${syncMsg.ok ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"}`}>
           {syncMsg.text}
+        </div>
+      )}
+
+      {salesStats && (
+        <div className="mb-4 flex flex-wrap items-center gap-5 bg-white border border-gray-200 rounded-xl px-5 py-3">
+          <span className="text-sm font-semibold text-gray-700">Sålda fordon</span>
+          <div className="flex items-baseline gap-1.5"><span className="text-xl font-bold text-gray-900">{salesStats.month}</span><span className="text-xs text-gray-500">denna månad</span></div>
+          <div className="flex items-baseline gap-1.5"><span className="text-xl font-bold text-gray-900">{salesStats.year}</span><span className="text-xs text-gray-500">i år</span></div>
+          <div className="flex items-baseline gap-1.5"><span className="text-xl font-bold text-gray-900">{salesStats.total}</span><span className="text-xs text-gray-500">totalt</span></div>
+          <span className="text-xs text-gray-400 ml-auto">Räknas när en bil lämnar Bytbil eller markeras &quot;Sälj&quot;</span>
         </div>
       )}
 
