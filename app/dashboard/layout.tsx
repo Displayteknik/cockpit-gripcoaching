@@ -14,7 +14,7 @@ function LinkedinIcon({ className }: { className?: string }) {
 }
 import ClientPicker from "@/components/ClientPicker";
 
-interface NavItem { href: string; label: string; icon: React.ComponentType<{ className?: string }> }
+interface NavItem { href: string; label: string; icon: React.ComponentType<{ className?: string }>; match?: string[] }
 interface NavSection { label: string; items: NavItem[] }
 
 function buildNavSections(resourceModule: string): NavSection[] {
@@ -52,15 +52,14 @@ function buildNavSections(resourceModule: string): NavSection[] {
       ],
     },
     {
-      label: "Instagram & Social",
+      label: "Inlägg & Social",
       items: [
-        ...(resourceModule === "automotive" ? [{ href: "/dashboard/fordon-inlagg", label: "Fordonsinlägg", icon: Car }] : []),
-        { href: "/dashboard/skapa", label: "Skapa inlägg", icon: Sparkles },
-        { href: "/dashboard/veckoplan", label: "Veckoplan (7 inlägg)", icon: Calendar },
-        { href: "/dashboard/dm", label: "DM & Pipeline", icon: MessageSquare },
-        { href: "/dashboard/social", label: "Inlägg (klassisk)", icon: Sparkles },
-        { href: "/dashboard/scheduler", label: "Schemalägga", icon: Calendar },
-        { href: "/dashboard/analytics", label: "IG Analytics", icon: Activity },
+        {
+          href: "/dashboard/skapa",
+          label: "Inlägg",
+          icon: Sparkles,
+          match: ["/dashboard/skapa", "/dashboard/veckoplan", "/dashboard/fordon-inlagg", "/dashboard/scheduler", "/dashboard/dm", "/dashboard/analytics", "/dashboard/social"],
+        },
       ],
     },
     {
@@ -120,8 +119,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navSections = buildNavSections(resourceModule);
 
+  const itemActive = (i: NavItem): boolean => {
+    if (i.match) return i.match.some((m) => pathname === m || pathname.startsWith(m + "/"));
+    return i.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(i.href);
+  };
+
   // Hitta aktiv sektion-label för mobile-titel
-  const activeItem = navSections.flatMap((s) => s.items).find((i) => i.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(i.href));
+  const activeItem = navSections.flatMap((s) => s.items).find(itemActive);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -148,7 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">{section.label}</div>
               <div className="space-y-0.5">
                 {section.items.map((item) => {
-                  const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
+                  const isActive = itemActive(item);
                   return (
                     <Link
                       key={item.href}

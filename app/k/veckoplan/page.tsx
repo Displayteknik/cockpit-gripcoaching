@@ -1,6 +1,6 @@
 // Kund-yta för Veckoplan — serverside-spärr på modulen "veckoplan".
 import { requireCustomerFeature } from "@/lib/customer-context";
-import VeckoplanPage from "@/app/dashboard/veckoplan/page";
+import VeckoplanPage from "@/app/dashboard/(inlagg)/veckoplan/page";
 
 export const dynamic = "force-dynamic";
 
