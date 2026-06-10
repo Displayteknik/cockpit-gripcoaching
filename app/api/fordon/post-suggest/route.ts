@@ -68,7 +68,11 @@ ${voiceBlock}
 - ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "nästa nivå", "skalbar", "holistisk".
 - ALDRIG någon form av "handla om".
 - Använd bilens RIKTIGA fakta nedan. Hitta ALDRIG på data (hästkrafter, utrustning, skick) som inte står.
-- Hooken stoppar scrollen.
+- VISA, säg inte. Påstå ALDRIG att bilen eller ni är "ärlig", "genomgången", "perfekt", "fantastisk" eller liknande självberöm — det känns ihåligt. Bevisa förtroende med FAKTA: servad enligt bok, besiktad (datum), svensksåld, antal ägare.
+- FÖRBJUDNA tomma fraser: "redo för allt", "perfekt bil", "allt du behöver", "en pärla", "ärlig bil". Var konkret istället.
+- Lyft de 3-4 VASSASTE konkreta säljpunkterna ur utrustning/beskrivning — t.ex. nyss besiktad, sommar- OCH vinterhjul på fälg ingår, sätesvärme fram+bak, adaptiv farthållare/säkerhet (Euro NCAP), svensksåld, motorvärmare med tidur. Välj de som faktiskt finns.
+- Variera avslutet mellan inlägg — återanvänd INTE samma slutmening (t.ex. inte alltid "så jobbar vi i Krokom").
+- Hooken stoppar scrollen och är specifik för just denna bil (inte utbytbar mot vilken bil som helst).
 - BRÖDTEXTEN SKA VARA LUFTIG OCH SCANNBAR — aldrig en textklump. Struktur:
   1) 2-3 korta säljande rader (radbryt mellan meningar, en tanke per rad).
   2) Blankrad, sedan en kort SPEC-LISTA — en rad per fakta, varje rad inleds med passande emoji:
