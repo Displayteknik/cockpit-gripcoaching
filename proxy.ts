@@ -54,7 +54,11 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Skicka med sökvägen så root-layouten kan grinda bort HM Motor-globaler
+  // (schema, Clarity, spårning, widget) på gripcoaching-ytor som /ikigai.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", path);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {

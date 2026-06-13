@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import CoachWidgetGate from "@/components/CoachWidgetGate";
 import VisitorTracker from "@/components/VisitorTracker";
 import StructuredData from "@/components/StructuredData";
 import ClarityScript from "@/components/ClarityScript";
+
+// Gripcoaching-ytor som INTE får ärva HM Motors schema/analys/widget/spårning.
+function isHmMotorSurface(path: string): boolean {
+  return !path.startsWith("/ikigai");
+}
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-display",
@@ -33,19 +39,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const path = (await headers()).get("x-pathname") || "";
+  const hm = isHmMotorSurface(path);
   return (
     <html lang="sv" className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col font-body text-text-primary bg-white antialiased">
-        <StructuredData type="localbusiness" />
-        <ClarityScript />
+        {hm && <StructuredData type="localbusiness" />}
+        {hm && <ClarityScript />}
         {children}
-        <VisitorTracker />
-        <CoachWidgetGate />
+        {hm && <VisitorTracker />}
+        {hm && <CoachWidgetGate />}
       </body>
     </html>
   );
