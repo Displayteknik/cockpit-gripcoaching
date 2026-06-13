@@ -74,7 +74,7 @@ const CONF_BADGE: Record<string, string> = {
   low: "bg-gray-50 text-gray-600",
 };
 
-export default function IntakeAgent({ open, onClose, onChanged }: { open: boolean; onClose: () => void; onChanged: () => void }) {
+export default function IntakeAgent({ open, onClose, onChanged, initialSessionId }: { open: boolean; onClose: () => void; onChanged: () => void; initialSessionId?: string | null }) {
   const [step, setStep] = useState<Step>("list");
   const [sessions, setSessions] = useState<IntakeSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -197,9 +197,11 @@ export default function IntakeAgent({ open, onClose, onChanged }: { open: boolea
   useEffect(() => {
     if (open) {
       refreshSessions();
-      if (step === "list") setStep("list");
+      // Deep-link: öppna agenten direkt på en specifik session (t.ex. från Ikigai-motorn)
+      if (initialSessionId) loadSession(initialSessionId);
+      else if (step === "list") setStep("list");
     }
-  }, [open]);
+  }, [open, initialSessionId]);
 
   const startNew = () => {
     setStep("input");

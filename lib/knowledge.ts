@@ -175,6 +175,19 @@ export async function getProfileAsMarkdown(): Promise<string> {
   }
 }
 
+// Som getKnowledge men UTAN klient-brand-profil — för publika ytor (t.ex. Ikigai-leadmagnet)
+// där innehållet ska handla om besökaren, inte om en inloggad klient.
+export async function getStaticKnowledge(...names: string[]): Promise<string> {
+  const all = await loadAll();
+  return names
+    .map((n) => {
+      const c = all.get(n);
+      return c ? `# ═══ ${n} ═══\n\n${c}` : "";
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 export async function getAllKnowledge(): Promise<string> {
   const all = await loadAll();
   return Array.from(all.entries())

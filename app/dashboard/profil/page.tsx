@@ -51,7 +51,17 @@ export default function ProfilPage() {
   const [showToneWizard, setShowToneWizard] = useState(false);
   const [showVocExtractor, setShowVocExtractor] = useState(false);
   const [showIntakeAgent, setShowIntakeAgent] = useState(false);
+  const [intakeSessionId, setIntakeSessionId] = useState<string | null>(null);
   const [qualityRefresh, setQualityRefresh] = useState(0);
+
+  // Deep-link från Ikigai-motorn: /dashboard/profil?intake=<session_id> öppnar granska-vyn direkt.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("intake");
+    if (p) {
+      setIntakeSessionId(p === "open" ? null : p);
+      setShowIntakeAgent(true);
+    }
+  }, []);
 
   useEffect(() => {
     fetch("/api/profile").then((r) => r.json()).then((d) => {
@@ -146,6 +156,7 @@ export default function ProfilPage() {
 
       <IntakeAgent
         open={showIntakeAgent}
+        initialSessionId={intakeSessionId}
         onClose={() => setShowIntakeAgent(false)}
         onChanged={() => {
           setQualityRefresh((n) => n + 1);

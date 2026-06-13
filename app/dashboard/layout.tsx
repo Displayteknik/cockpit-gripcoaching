@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -43,6 +43,12 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/profil", label: "Brand-profil", icon: Target },
         { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
         { href: "/dashboard/analysator", label: "Profil-analysator", icon: Search },
+      ],
+    },
+    {
+      label: "Coaching",
+      items: [
+        { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass },
       ],
     },
     {

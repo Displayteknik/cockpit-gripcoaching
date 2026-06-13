@@ -1,7 +1,9 @@
 // Delad markdown→PDF-renderare (jsPDF vektor). Används av djupgranskningen och sid-optimeraren.
 // jsPDF inbyggd helvetica = bara Latin-1 → safe() mappar pilar/emoji och strippar övriga symboler,
 // men bevarar general punctuation (•–—…"") som WinAnsi klarar.
-export async function downloadMarkdownPdf(reportText: string, filename: string): Promise<void> {
+export interface PdfHeaderImage { dataUrl: string; aspect: number; /* width/height */ }
+
+export async function downloadMarkdownPdf(reportText: string, filename: string, opts?: { headerImage?: PdfHeaderImage }): Promise<void> {
   const GLYPH: Record<string, string> = { "→": "->", "←": "<-", "✅": "OK", "✔": "OK", "✓": "OK", "❌": "X", "✗": "X", "✘": "X", "⚠": "!" };
   const safe = (s: string) => s.replace(/[←-⇿⌀-➿⬀-⯿️\u{1F000}-\u{1FAFF}]/gu, (m) => GLYPH[m] ?? "");
   try {
@@ -12,6 +14,15 @@ export async function downloadMarkdownPdf(reportText: string, filename: string):
     const contentW = pageW - mL - mR;
     let y = mT;
     let firstHeading = true;
+
+    // Valfri header-bild (t.ex. Ikigai-diagrammet) överst på sida 1.
+    if (opts?.headerImage?.dataUrl) {
+      const imgW = Math.min(130, contentW);
+      const imgH = imgW / (opts.headerImage.aspect || 1.07);
+      const imgX = mL + (contentW - imgW) / 2;
+      // JPEG (inte PNG) → ingen alfamask + DCT-komprimering = liten fil i stället för rå RGB.
+      try { doc.addImage(opts.headerImage.dataUrl, "JPEG", imgX, y, imgW, imgH, undefined, "FAST"); y += imgH + 4; } catch { /* hoppa över om bild ej kan ritas */ }
+    }
     const DARK: [number, number, number] = [31, 58, 95];
     const MID: [number, number, number] = [46, 89, 132];
     const TEXT: [number, number, number] = [31, 41, 55];
