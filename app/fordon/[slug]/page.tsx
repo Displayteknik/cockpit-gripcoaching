@@ -11,6 +11,8 @@ import { notFound } from "next/navigation";
 import { Phone, ArrowLeft, CreditCard, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import { vehicleJsonLd, jsonLdScript } from "@/lib/structured-data";
+import { CONTACT } from "@/lib/contact";
+import { LeadForm } from "@/components/ui/LeadForm";
 
 export async function generateMetadata({
   params,
@@ -150,7 +152,7 @@ export default async function VehicleDetailPage({
                 {/* Quick actions */}
                 <div className="flex flex-wrap gap-3 mb-8">
                   <a
-                    href="tel:+46640-10350"
+                    href={CONTACT.phoneHref}
                     className="inline-flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-light text-white px-6 py-3 rounded-lg font-semibold transition-all"
                   >
                     <Phone className="w-5 h-5" />
@@ -200,6 +202,19 @@ export default async function VehicleDetailPage({
             </div>
           </section>
         )}
+
+        {/* Intresseanmälan */}
+        <section className="py-12 md:py-16 bg-surface-light">
+          <div className="max-w-[640px] mx-auto px-4">
+            <LeadForm
+              source="fordon"
+              interest={v.category}
+              vehicleSlug={v.slug}
+              vehicleTitle={v.title}
+              heading={`Intresserad av ${v.title}?`}
+            />
+          </div>
+        </section>
 
         {/* Location */}
         <section className="py-8 bg-surface-light">

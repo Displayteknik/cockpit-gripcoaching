@@ -1,4 +1,5 @@
 import { Phone, Mail } from "lucide-react";
+import { CONTACT } from "@/lib/contact";
 
 export interface CTASectionProps {
   title: string;
@@ -39,7 +40,7 @@ export function CTASection({
         <div className="flex flex-wrap justify-center gap-4">
           {showPhone && (
             <a
-              href="tel:+46640-10350"
+              href={CONTACT.phoneHref}
               className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:translate-y-[-1px] ${
                 variant === "light"
                   ? "bg-brand-blue text-white hover:bg-brand-blue-dark"
@@ -47,12 +48,12 @@ export function CTASection({
               }`}
             >
               <Phone className="w-5 h-5" />
-              Ring 0640-103 50
+              Ring {CONTACT.phoneDisplay}
             </a>
           )}
           {showEmail && (
             <a
-              href="mailto:info@krokomsporten.se"
+              href={CONTACT.emailHref}
               className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:translate-y-[-1px] ${
                 variant === "light"
                   ? "border-2 border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white"

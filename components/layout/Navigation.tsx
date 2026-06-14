@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
+import { CONTACT } from "@/lib/contact";
 
 const mainLinks = [
   { href: "/fordon?kategori=car", label: "Bilar" },
@@ -93,7 +94,7 @@ export function Navigation() {
         {/* CTA + hamburger */}
         <div className="flex items-center gap-3">
           <a
-            href="tel:+46703218232"
+            href={CONTACT.phoneHref}
             className="hidden md:flex items-center gap-2.5 bg-brand-blue hover:bg-brand-blue-dark text-white px-6 py-3 rounded-full text-[15px] font-semibold transition-all hover:shadow-lg shadow-brand-blue/20"
           >
             <Phone className="w-4 h-4" />
@@ -124,11 +125,11 @@ export function Navigation() {
               </Link>
             ))}
             <a
-              href="tel:+46640-10350"
+              href={CONTACT.phoneHref}
               className="flex items-center justify-center gap-2 bg-brand-blue text-white px-4 py-3 rounded-lg font-semibold mt-3"
             >
               <Phone className="w-5 h-5" />
-              Ring Håkan — 0640-103 50
+              Ring Håkan — {CONTACT.phoneDisplay}
             </a>
           </div>
         </div>

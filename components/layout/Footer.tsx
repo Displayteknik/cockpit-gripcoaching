@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
+import { CONTACT } from "@/lib/contact";
 
 export function Footer() {
   return (
@@ -99,20 +100,20 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="tel:+46640-10350"
+                  href={CONTACT.phoneHref}
                   className="flex items-center gap-3 text-sm text-text-light hover:text-white transition-colors"
                 >
                   <Phone className="w-4 h-4 text-brand-gold flex-shrink-0" />
-                  0640-103 50
+                  {CONTACT.phoneDisplay}
                 </a>
               </li>
               <li>
                 <a
-                  href="mailto:info@krokomsporten.se"
+                  href={CONTACT.emailHref}
                   className="flex items-center gap-3 text-sm text-text-light hover:text-white transition-colors"
                 >
                   <Mail className="w-4 h-4 text-brand-gold flex-shrink-0" />
-                  info@krokomsporten.se
+                  {CONTACT.emailDisplay}
                 </a>
               </li>
               <li className="flex items-center gap-3 text-sm text-text-light">
