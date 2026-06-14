@@ -67,18 +67,23 @@ export async function POST(req: NextRequest) {
     // 2) DB-lagring = best effort (för dashboard). Får ALDRIG fälla requesten.
     try {
       const sb = supabaseServer();
+      // Befintlig hm_leads-tabell: name, phone, email, interest, source, status, notes, client_id.
+      // Meddelande + fordon läggs i notes (inga egna kolumner finns).
+      const notes = [
+        message,
+        vehicleTitle ? `Fordon: ${vehicleTitle}${vehicleSlug ? ` (/fordon/${vehicleSlug})` : ""}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
       await sb.from("hm_leads").insert({
         client_id: HM_MOTOR_CLIENT_ID,
         name,
         email: email || null,
         phone: phone || null,
-        message: message || null,
-        interest: interest || null,
-        vehicle_slug: vehicleSlug || null,
-        vehicle_title: vehicleTitle || null,
+        interest: interest || (vehicleTitle ? "fordon" : null),
         source,
         status: "new",
-        user_agent: (req.headers.get("user-agent") || "").slice(0, 300),
+        notes: notes || null,
       });
       await sb.from("client_activity").insert({
         client_id: HM_MOTOR_CLIENT_ID,
