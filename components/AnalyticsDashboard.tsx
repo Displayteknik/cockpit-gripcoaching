@@ -113,21 +113,38 @@ export default function AnalyticsDashboard() {
     try {
       const r = await fetch("/api/analytics/deep-audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const raw = await r.text();
-      let d: { error?: string; report?: string } = {};
+      let d: { error?: string; status?: string; asset_id?: string } = {};
       try {
         d = raw ? JSON.parse(raw) : {};
       } catch {
-        // Icke-JSON-svar = nästan alltid timeout/504 (Vercel dödar funktioner > 60 s på Hobby-planen)
         throw new Error(
           r.status === 504 || /timed out|timeout|an error occurred/i.test(raw)
-            ? "Djupgranskningen hann inte klart inom serverns tidsgräns (60 s). Sajten har många sidor — be om att höja gränsen (Vercel Pro) eller köra den i bakgrunden."
+            ? "Servern svarade inte i tid när granskningen skulle startas. Försök igen."
             : `Servern svarade oväntat (status ${r.status}).`,
         );
       }
-      if (!r.ok) throw new Error(d.error || `Kunde inte generera (status ${r.status})`);
-      setReportText(d.report ?? null);
-      const refresh = await fetch("/api/analytics/deep-audit").then((rr) => rr.json());
-      setSavedReports(refresh.reports ?? []);
+      if (!r.ok || d.error) throw new Error(d.error || `Kunde inte starta granskningen (status ${r.status})`);
+
+      // Granskningen körs i bakgrunden (Batch-API, full kvalitet, ingen 60s-gräns). Polla tills klar.
+      const assetId = d.asset_id;
+      const startedAt = Date.now();
+      const MAX_WAIT_MS = 30 * 60 * 1000; // 30 min
+      while (Date.now() - startedAt < MAX_WAIT_MS) {
+        await new Promise((res) => setTimeout(res, 15000));
+        const refresh = await fetch("/api/analytics/deep-audit")
+          .then((rr) => rr.json())
+          .catch(() => ({ reports: [] }));
+        const reports = refresh.reports ?? [];
+        setSavedReports(reports);
+        const list = reports as Array<{ id: string; body: string }>;
+        const done = assetId ? list.find((x) => x.id === assetId) : list[0];
+        if (done && done.body) {
+          setReportText(done.body);
+          setGeneratingReport(false);
+          return;
+        }
+      }
+      throw new Error("Granskningen tar ovanligt lång tid. Den fortsätter i bakgrunden och dyker upp i listan över sparade rapporter när den är klar.");
     } catch (e) {
       setReportError((e as Error).message);
     } finally {

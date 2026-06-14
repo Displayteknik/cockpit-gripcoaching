@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId, logActivity } from "@/lib/client-context";
 import { crawlSite } from "@/lib/seo-deep";
@@ -274,65 +273,139 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 - Använd EXAKT datumet i # Klient → Datum nedan i rapportens rubrik. Hitta inte på årtal.
 - Inga påhittade siffror, inga floskler.`;
 
+  // Asynkron generering via Batch-API — full Sonnet-rapport utan att slå i Vercels 60s-gräns.
+  // POST submittar batchen (<5s) och returnerar direkt; GET finaliserar när batchen är klar.
   try {
-    const anthropic = new Anthropic({ apiKey });
-    // Streama — robust för långa rapporter (håller anslutningen vid liv, undviker timeout-fel)
-    const stream = anthropic.messages.stream({
-      model: MODEL,
-      max_tokens: 14000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+    const batchRes = await fetch("https://api.anthropic.com/v1/messages/batches", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        requests: [
+          {
+            custom_id: "audit",
+            params: {
+              model: MODEL,
+              max_tokens: 14000,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: "user", content: userPrompt }],
+            },
+          },
+        ],
+      }),
     });
-    const msg = await stream.finalMessage();
+    if (!batchRes.ok) {
+      return NextResponse.json({ error: `Kunde inte starta granskningen: ${await batchRes.text()}` }, { status: 500 });
+    }
+    const batch = (await batchRes.json()) as { id: string };
 
-    const text = msg.content
-      .map((b) => (b.type === "text" ? b.text : ""))
-      .join("")
-      .trim();
-
-    // Spara i client_assets sa den finns kvar
+    // Platshållare — finaliseras av GET när batchen är klar
     const { data: saved } = await sb.from("client_assets").insert({
       client_id: clientId,
       asset_type: "post",
       category: "deep_audit_report",
       subcategory: "seo_aeo",
-      body: text,
-      status: "active",
+      body: "",
+      status: "generating",
       metadata: {
         url,
-        generated_at: new Date().toISOString(),
+        batch_id: batch.id,
+        started_at: new Date().toISOString(),
         gsc_rows: gscRows.length,
-        tokens_in: msg.usage?.input_tokens ?? null,
-        tokens_out: msg.usage?.output_tokens ?? null,
       },
     }).select("id").maybeSingle();
 
-    await logActivity(clientId, "deep_audit", `Djupgranskning genererad for ${url}`, "/dashboard/seo");
+    await logActivity(clientId, "deep_audit", `Djupgranskning startad for ${url}`, "/dashboard/seo");
 
     return NextResponse.json({
       ok: true,
-      report: text,
+      status: "processing",
       asset_id: saved?.id ?? null,
+      batch_id: batch.id,
       duration_ms: Date.now() - t0,
-      tokens_in: msg.usage?.input_tokens ?? null,
-      tokens_out: msg.usage?.output_tokens ?? null,
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message, duration_ms: Date.now() - t0 }, { status: 500 });
   }
 }
 
-// Lista sparade rapporter
+// Lista sparade rapporter + finalisera ev. pågående batch-jobb
 export async function GET() {
   const sb = supabaseServer();
   const clientId = await resolveClientId();
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  // 1) Kolla pågående batch-jobb och spara klara rapporter
+  if (apiKey) {
+    const { data: pending } = await sb
+      .from("client_assets")
+      .select("id, metadata")
+      .eq("client_id", clientId)
+      .eq("category", "deep_audit_report")
+      .eq("status", "generating")
+      .limit(5);
+
+    for (const row of (pending ?? []) as Array<{ id: string; metadata: { batch_id?: string } | null }>) {
+      const batchId = row.metadata?.batch_id;
+      if (!batchId) continue;
+      try {
+        const statusRes = await fetch(`https://api.anthropic.com/v1/messages/batches/${batchId}`, {
+          headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+        });
+        if (!statusRes.ok) continue;
+        const batch = (await statusRes.json()) as { processing_status: string; results_url: string | null };
+        if (batch.processing_status !== "ended" || !batch.results_url) continue;
+
+        const resultsRes = await fetch(batch.results_url, {
+          headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+        });
+        const jsonl = await resultsRes.text();
+        const firstLine = jsonl.split("\n").find((l) => l.trim());
+        let text = "";
+        let failed = !firstLine;
+        if (firstLine) {
+          const parsed = JSON.parse(firstLine) as {
+            result: { type: string; message?: { content: Array<{ type: string; text?: string }> } };
+          };
+          if (parsed.result.type === "succeeded" && parsed.result.message) {
+            text = parsed.result.message.content
+              .map((b) => (b.type === "text" ? b.text ?? "" : ""))
+              .join("")
+              .trim();
+          } else {
+            failed = true;
+          }
+        }
+        await sb
+          .from("client_assets")
+          .update({
+            body: text,
+            status: failed ? "failed" : "active",
+            metadata: { ...(row.metadata ?? {}), generated_at: new Date().toISOString() },
+          })
+          .eq("id", row.id);
+      } catch {
+        /* försök igen vid nästa poll */
+      }
+    }
+  }
+
+  // 2) Returnera klara rapporter + lista över pågående
   const { data } = await sb
     .from("client_assets")
-    .select("id, body, metadata, created_at")
+    .select("id, body, metadata, created_at, status")
     .eq("client_id", clientId)
     .eq("category", "deep_audit_report")
-    .eq("status", "active")
+    .in("status", ["active", "generating"])
     .order("created_at", { ascending: false })
     .limit(10);
-  return NextResponse.json({ reports: data ?? [] });
+
+  const rows = (data ?? []) as Array<{ id: string; status: string }>;
+  return NextResponse.json({
+    reports: rows.filter((r) => r.status === "active"),
+    generating: rows.filter((r) => r.status === "generating").map((r) => r.id),
+  });
 }
