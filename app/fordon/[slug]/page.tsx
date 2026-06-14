@@ -221,7 +221,7 @@ export default async function VehicleDetailPage({
           <div className="max-w-[1140px] mx-auto px-4 flex items-center justify-center gap-3 text-text-muted">
             <MapPin className="w-5 h-5 text-brand-blue" />
             <span>
-              Finns hos HM Motor, Krokomsporten 13, 835 95 Krokom
+              Finns hos HM Motor, {CONTACT.addressFull}
             </span>
           </div>
         </section>

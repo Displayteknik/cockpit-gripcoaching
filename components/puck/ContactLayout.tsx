@@ -11,7 +11,7 @@ export interface ContactLayoutProps {
 
 export function ContactLayout({ showMap = true, mapEmbedUrl }: ContactLayoutProps) {
   const defaultMapUrl =
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1714.5!2d14.5!3d63.3!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zKrokomsporten+MTM!5e0!3m2!1ssv!2sse";
+    "https://maps.google.com/maps?q=Rydells+v%C3%A4g+9d%2C+835+32+Krokom&output=embed";
 
   const cards = [
     { icon: MapPin, title: "Besöksadress", content: `${CONTACT.address1}\n${CONTACT.address2}` },
@@ -20,7 +20,7 @@ export function ContactLayout({ showMap = true, mapEmbedUrl }: ContactLayoutProp
     {
       icon: Clock,
       title: "Öppettider",
-      content: "Måndag–Fredag: 08:00–17:00\nLördag: Efter avtal\nSöndag: Stängt",
+      content: CONTACT.hoursLines.join("\n"),
     },
   ] as const;
 

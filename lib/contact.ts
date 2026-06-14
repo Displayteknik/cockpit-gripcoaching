@@ -1,15 +1,21 @@
 // Enda källa till HM Motors kontaktuppgifter.
-// Importera HÄRIFRÅN i alla komponenter — hårdkoda ALDRIG telefon/mejl någon annanstans.
+// Importera HÄRIFRÅN i alla komponenter — hårdkoda ALDRIG telefon/mejl/adress någon annanstans.
 export const CONTACT = {
   company: "HM Motor",
-  phoneDisplay: "070-321 82 32",
-  phoneHref: "tel:+46703218232",
+  phoneDisplay: "0640-62758",
+  phoneHref: "tel:+4664062758",
   emailDisplay: "info@hmmotor.se",
   emailHref: "mailto:info@hmmotor.se",
-  address1: "Krokomsporten 13",
-  address2: "835 95 Krokom",
-  addressFull: "Krokomsporten 13, 835 95 Krokom",
-  hoursShort: "Mån–Fre 08–17",
+  address1: "Rydells väg 9d",
+  address2: "835 32 Krokom",
+  addressFull: "Rydells väg 9d, 835 32 Krokom",
+  hoursShort: "Mån–Tor 08–17 · Fre 08–16",
+  hoursLines: [
+    "Måndag–Torsdag: 08:00–17:00",
+    "Fredag: 08:00–16:00",
+    "Lördag: Efter avtal",
+    "Söndag: Stängt",
+  ],
 } as const;
 
 // Vart lead-notiser skickas. hakan@gripcoaching.se = kopia i början (lätt att ta bort).

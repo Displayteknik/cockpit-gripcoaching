@@ -73,7 +73,7 @@ const defaultHomepage: Data = {
             label: "Erbjudande",
             title: "Finansiering från 0% ränta",
             text: "Just nu erbjuder vi räntefri finansiering på utvalda fyrhjulingar via Wasa Kredit.",
-            linkUrl: "tel:+46703218232",
+            linkUrl: "tel:+4664062758",
             linkText: "Ring Håkan för detaljer",
           },
           {
@@ -92,7 +92,7 @@ const defaultHomepage: Data = {
         id: "tradein-1",
         text: "Vi tar inbyten på alla märken",
         ctaText: "Ring Håkan för kostnadsfri värdering",
-        ctaUrl: "tel:+46703218232",
+        ctaUrl: "tel:+4664062758",
       },
     },
     {
@@ -174,11 +174,11 @@ const defaultHomepage: Data = {
           },
           {
             question: "Kan jag byta in min gamla bil?",
-            answer: "Absolut. Ring Håkan på 070-321 82 32 för en kostnadsfri värdering av ditt fordon. Vi tar emot alla märken.",
+            answer: "Absolut. Ring Håkan på 0640-62758 för en kostnadsfri värdering av ditt fordon. Vi tar emot alla märken.",
           },
           {
             question: "Var ligger ni?",
-            answer: "Krokomsporten 13, 835 32 Krokom. Mitt i Jämtlands handelscentrum med gott om parkering. Öppet mån–tor 08–17, fre 08–16.",
+            answer: "Rydells väg 9d, 835 32 Krokom. Gott om parkering precis utanför. Öppet mån–tor 08–17, fre 08–16.",
           },
           {
             question: "Vilka märken har ni?",
@@ -192,7 +192,7 @@ const defaultHomepage: Data = {
       props: {
         id: "cta-1",
         title: "Redo att hitta ditt nästa fordon?",
-        subtitle: "Ring Håkan direkt eller kom förbi Krokomsporten. Vi finns här för dig.",
+        subtitle: "Ring Håkan direkt eller kom förbi oss i Krokom. Vi finns här för dig.",
         showPhone: true,
         showEmail: true,
         variant: "blue",

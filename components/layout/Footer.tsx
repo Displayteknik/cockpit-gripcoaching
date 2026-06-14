@@ -93,9 +93,9 @@ export function Footer() {
               <li className="flex items-start gap-3 text-sm">
                 <MapPin className="w-4 h-4 mt-0.5 text-brand-gold flex-shrink-0" />
                 <span className="text-text-light">
-                  Krokomsporten 13
+                  {CONTACT.address1}
                   <br />
-                  835 95 Krokom
+                  {CONTACT.address2}
                 </span>
               </li>
               <li>
@@ -118,7 +118,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3 text-sm text-text-light">
                 <Clock className="w-4 h-4 text-brand-gold flex-shrink-0" />
-                Mån–Fre 08–17
+                {CONTACT.hoursShort}
               </li>
             </ul>
           </div>
