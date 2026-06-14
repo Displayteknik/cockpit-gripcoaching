@@ -112,9 +112,20 @@ export default function AnalyticsDashboard() {
     setReportOpen(true);
     try {
       const r = await fetch("/api/analytics/deep-audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "Kunde inte generera");
-      setReportText(d.report);
+      const raw = await r.text();
+      let d: { error?: string; report?: string } = {};
+      try {
+        d = raw ? JSON.parse(raw) : {};
+      } catch {
+        // Icke-JSON-svar = nästan alltid timeout/504 (Vercel dödar funktioner > 60 s på Hobby-planen)
+        throw new Error(
+          r.status === 504 || /timed out|timeout|an error occurred/i.test(raw)
+            ? "Djupgranskningen hann inte klart inom serverns tidsgräns (60 s). Sajten har många sidor — be om att höja gränsen (Vercel Pro) eller köra den i bakgrunden."
+            : `Servern svarade oväntat (status ${r.status}).`,
+        );
+      }
+      if (!r.ok) throw new Error(d.error || `Kunde inte generera (status ${r.status})`);
+      setReportText(d.report ?? null);
       const refresh = await fetch("/api/analytics/deep-audit").then((rr) => rr.json());
       setSavedReports(refresh.reports ?? []);
     } catch (e) {

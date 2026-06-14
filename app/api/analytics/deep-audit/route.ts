@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
   // Hel-sajt-crawl: alla sidor i sitemap, render-medvetet (avkodar JS-payload på GHL)
   let site;
   try {
-    site = await crawlSite(url, { maxPages: 25 });
+    site = await crawlSite(url, { maxPages: 12 });
   } catch (e) {
     return NextResponse.json({ error: `Kunde inte hamta sajten: ${(e as Error).message}` }, { status: 500 });
   }
