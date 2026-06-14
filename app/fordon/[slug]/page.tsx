@@ -10,7 +10,7 @@ import { VehicleCard } from "@/components/ui/VehicleCard";
 import { notFound } from "next/navigation";
 import { Phone, ArrowLeft, CreditCard, MapPin } from "lucide-react";
 import type { Metadata } from "next";
-import { vehicleJsonLd, jsonLdScript } from "@/lib/structured-data";
+import { vehicleJsonLd, faqJsonLd, breadcrumbJsonLd, jsonLdScript } from "@/lib/structured-data";
 import { CONTACT } from "@/lib/contact";
 import { LeadForm } from "@/components/ui/LeadForm";
 
@@ -54,6 +54,13 @@ export default async function VehicleDetailPage({
 
   const v = vehicle as Vehicle;
   const specs = v.specs || {};
+  const utrustning = (specs["Utrustning"] || specs["utrustning"] || "").trim();
+  const faq = [
+    { question: `Kan jag provköra ${v.title}?`, answer: `Ja, boka gärna en provkörning. Ring Håkan på ${CONTACT.phoneDisplay} eller skicka en intresseanmälan här på sidan så bokar vi en tid som passar dig.` },
+    { question: "Erbjuder ni finansiering?", answer: "Ja, vi hjälper dig med finansiering via Wasa Kredit och Ecster så att du kan dela upp betalningen. Hör av dig så räknar vi kostnadsfritt på ett upplägg som passar." },
+    { question: "Tar ni inbyte?", answer: "Ja, vi tar inbyten på alla märken och ger dig en kostnadsfri värdering av din nuvarande bil." },
+    { question: "Var finns bilen och hur köper jag den?", answer: `Bilen finns hos oss på ${CONTACT.addressFull}. Du möter alltid Håkan direkt — ingen telefonväxel, inga mellanhänder. Ring ${CONTACT.phoneDisplay} eller kom förbi.` },
+  ];
 
   // JSON-LD Product per fordon
   const [{ data: profile }, { data: settingsRows }] = await Promise.all([
@@ -76,6 +83,8 @@ export default async function VehicleDetailPage({
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(productJsonLd)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(faqJsonLd(faq))} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(breadcrumbJsonLd([{ name: "Hem", url: settings.site_url || "https://hmmotor.se" }, { name: "Fordon", url: `${settings.site_url || "https://hmmotor.se"}/fordon` }, { name: v.title, url: `${settings.site_url || "https://hmmotor.se"}/fordon/${v.slug}` }]))} />
       <TopBar />
       <Navigation />
       <main className="flex-1">
@@ -104,7 +113,7 @@ export default async function VehicleDetailPage({
               <span className="text-white">{v.title}</span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
               {/* Image */}
               <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-surface-darker">
                 {v.image_url ? (
@@ -171,17 +180,17 @@ export default async function VehicleDetailPage({
                     <h3 className="font-display font-semibold text-white mb-4">
                       Specifikationer
                     </h3>
-                    <dl className="grid grid-cols-2 gap-3">
-                      {Object.entries(specs).map(([key, value]) => (
-                        <div key={key}>
-                          <dt className="text-xs text-gray-500 uppercase tracking-wider">
-                            {key}
-                          </dt>
-                          <dd className="text-sm text-white font-medium">
-                            {value}
-                          </dd>
-                        </div>
-                      ))}
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
+                      {Object.entries(specs)
+                        .filter(([key]) => key.toLowerCase() !== "utrustning")
+                        .map(([key, value]) => (
+                          <div key={key}>
+                            <dt className="text-xs text-gray-500 uppercase tracking-wider">
+                              {key}
+                            </dt>
+                            <dd className="text-sm text-white font-medium">{value}</dd>
+                          </div>
+                        ))}
                     </dl>
                   </div>
                 )}
@@ -189,6 +198,27 @@ export default async function VehicleDetailPage({
             </div>
           </div>
         </section>
+
+        {/* Utrustning */}
+        {utrustning && (
+          <section className="py-10 md:py-14 bg-surface-light">
+            <div className="max-w-[1140px] mx-auto px-4">
+              <h2 className="font-display text-2xl font-bold text-text-primary mb-6">
+                Utrustning
+              </h2>
+              <ul className="flex flex-wrap gap-2">
+                {utrustning.split(",").map((item, i) => (
+                  <li
+                    key={i}
+                    className="bg-white border border-gray-200 text-text-muted text-sm px-3 py-1.5 rounded-full"
+                  >
+                    {item.trim()}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
 
         {/* Description */}
         {v.description && (
@@ -203,6 +233,25 @@ export default async function VehicleDetailPage({
             </div>
           </section>
         )}
+
+        {/* Vanliga frågor */}
+        <section className="py-12 md:py-16">
+          <div className="max-w-[800px] mx-auto px-4">
+            <h2 className="font-display text-2xl font-bold text-text-primary mb-8">
+              Vanliga frågor
+            </h2>
+            <div className="space-y-6">
+              {faq.map((f, i) => (
+                <div key={i}>
+                  <h3 className="font-display font-semibold text-text-primary mb-2">
+                    {f.question}
+                  </h3>
+                  <p className="text-text-muted">{f.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* Intresseanmälan */}
         <section className="py-12 md:py-16 bg-surface-light">
