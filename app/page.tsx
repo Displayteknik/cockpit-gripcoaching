@@ -5,6 +5,11 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { MobileStickyButton } from "@/components/layout/MobileStickyButton";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 // Default homepage data if no page is saved yet
 const defaultHomepage: Data = {

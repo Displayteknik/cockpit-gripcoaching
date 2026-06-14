@@ -25,6 +25,7 @@ export async function generateMetadata({
   return {
     title: post?.title || "Blogg",
     description: post?.excerpt || "",
+    alternates: { canonical: `/blogg/${slug}` },
   };
 }
 

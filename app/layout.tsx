@@ -26,12 +26,12 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Cockpit GripCoaching",
-    template: "%s | Cockpit",
+    default: "HM Motor Krokom — CF Moto, begagnade bilar & fyrhjulingar i Jämtland",
+    template: "%s | HM Motor Krokom",
   },
   description:
     "HM Motor i Krokom — auktoriserad CF Moto-återförsäljare. Begagnade bilar, fyrhjulingar, UTV, mopeder och trädgårdsmaskiner. 35+ års erfarenhet.",
-  metadataBase: new URL("https://hmmotor-krokom.vercel.app"),
+  metadataBase: new URL("https://hmmotor.se"),
   openGraph: {
     type: "website",
     locale: "sv_SE",

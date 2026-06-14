@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Blogg",
   description: "Tips, nyheter och historier från HM Motor i Krokom.",
+  alternates: { canonical: "/blogg" },
 };
 
 export default async function BlogPage() {

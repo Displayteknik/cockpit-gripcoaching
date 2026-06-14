@@ -31,6 +31,7 @@ export async function generateMetadata({
   return {
     title: vehicle?.title || "Fordon",
     description: vehicle?.description?.slice(0, 160) || "",
+    alternates: { canonical: `/fordon/${slug}` },
   };
 }
 
