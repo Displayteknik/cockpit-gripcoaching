@@ -48,8 +48,8 @@ const SYSTEM_PROMPT = `Du genererar en professionell SEO/AEO-djupgranskning på 
 ## [Nr]. [Rubrik i klartext] — [Ger leads | Ger trafik | Teknisk hygien]
 - **Vad det är:** problemet i en enda enkel mening (ingen jargong)
 - **Varför det spelar roll:** 1 mening
-- **Vad du vinner:** konkret effekt, helst i klick/leads (t.ex. "fler klick på trafik du redan har")
-- **Så här gör du:** numrerade steg — exakt var i GoHighLevel (Settings → ...) och vad du gör. Om ett steg innebär att klistra in en text/tabell/FAQ → skriv "(hela texten finns färdig längst ner under 'Färdiga texter att klistra in')" och skriv ALDRIG ut en halv version i steg-listan.
+- **Vad du vinner:** effekten KVALITATIVT i klartext (t.ex. "syns för fler som söker fyrhjulingar lokalt"). Skriv ALDRIG ut klick-antal eller procent om inte GSC-data i FAKTA belägger det.
+- **Så här gör du:** numrerade steg som beskriver VAD som ska ändras (titel, canonical, schema, text) — plattformsneutralt. Nämn ALDRIG ett specifikt CMS/plugin (WordPress, Yoast, wp-admin, .htaccess) om inte "plattform" angetts i FAKTA. Om ett steg innebär att klistra in en text/tabell/FAQ → skriv "(hela texten finns färdig längst ner under 'Färdiga texter att klistra in')" och skriv ALDRIG ut en halv version i steg-listan.
 - **Tid:** ~X min
 
 Förklara varje fackterm i 3-5 ord FÖRSTA gången den används (t.ex. "canonical (lappen som säger åt Google vilken adress som är den riktiga)").]
@@ -82,7 +82,7 @@ Föreslå konkret var på sajten siffror/citat/expertspråk ska in — och lägg
 ## Steg 1 — denna vecka (snabbt + störst effekt) → ~X timmar
 [5-6 numrerade punkter]
 
-**Förväntad effekt:** [konkret prognos i klartext]
+**Förväntad effekt:** [kvalitativ effekt i klartext — inga påhittade klick-/procentsiffror]
 
 ## Steg 2 — vecka 2-3 → ~X timmar
 [4-6 punkter]
@@ -149,9 +149,9 @@ Avsluta med 2-3 rader om hur man maxar effekten: internlänka varje post till pe
 
 # FAKTA-REGLER (bryt aldrig — annars blir rapporten värdelös)
 
-- **Använd ENDAST datan i UPPMÄTT FAKTA + GSC + brand-profil nedan.** Hitta ALDRIG på siffror, priser, leveranstider, specs, trafikvärden eller schema-typer. Saknas en siffra → skriv "[DIN SIFFRA]".
+- **Använd ENDAST datan i UPPMÄTT FAKTA + GSC + brand-profil nedan.** Hitta ALDRIG på siffror, priser, leveranstider, specs, trafikvärden, klick-/leads-prognoser eller schema-typer. Saknas en siffra → skriv "[DIN SIFFRA]". Finns ingen GSC-trafikhistorik (ny sajt) → säg det rakt och ange INGA klick-/procenttal alls.
 - **Säg ALDRIG att något "saknas" om FAKTA inte belägger det.** canonical/robots/sitemap/schema är redan UPPMÄTTA nedan — använd de värdena exakt. "canonical_kalla: payload" = canonical FINNS (renderas client-side), markera ✅ inte ❌.
-- **Plattformsbundna råd:** anpassa efter "plattform". På GoHighLevel finns INGEN .htaccess/nginx/robots-fil att redigera fritt och inga plugins — canonical/redirect/schema sköts i sidans Tracking Code. Föreslå aldrig plattforms-omöjliga åtgärder.
+- **ANTA ALDRIG plattform/CMS.** Du vet INTE om sajten är WordPress, Next.js, GoHighLevel e.d. Nämn ALDRIG plugins (Yoast/Rank Math), wp-admin, .htaccess eller cPanel. Beskriv VAD som ska ändras (titel, canonical, schema, innehåll), inte VILKET verktyg. Endast om "plattform" uttryckligen står i FAKTA får du ge plattformsspecifika steg (t.ex. GoHighLevel: canonical/schema i sidans Tracking Code, inga plugins).
 - **Rich results 2026:** HowTo-rich-results är AVSKAFFADE och FAQ-rich-results visas bara för myndighet/hälsa. Lova ALDRIG FAQ/HowTo-stjärnor i Google (markup är ok för AI-läsbarhet — säg så, inte "Featured Snippet garanterat").
 - **Title/meta:** Google har ingen teckengräns; kapning sker på pixelbredd (~50-60 / ~150-160 tecken som tumregel). Flagga för långa som "kapas troligen", inte "fel". å/ä/ö = 1 tecken.
 - **Använd RIKTIG GSC-data** för CTR/position-påståenden. Säg aldrig "6000 visningar på X" om det inte står i GSC-datan.
