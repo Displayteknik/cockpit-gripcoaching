@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import type { Metadata } from "next";
+import { articleJsonLd, breadcrumbJsonLd, jsonLdScript } from "@/lib/structured-data";
 
 export async function generateMetadata({
   params,
@@ -35,15 +36,24 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const HM = "00000000-0000-0000-0000-000000000001";
 
-  const { data: post } = await supabase
-    .from("hm_blog")
-    .select("*")
-    .eq("client_id", "00000000-0000-0000-0000-000000000001")
-    .eq("slug", slug)
-    .single();
+  const [{ data: post }, { data: profile }, { data: settingsRows }] = await Promise.all([
+    supabase.from("hm_blog").select("*").eq("client_id", HM).eq("slug", slug).single(),
+    supabase.from("hm_brand_profile").select("company_name").eq("client_id", HM).maybeSingle(),
+    supabase.from("hm_settings").select("key, value").eq("client_id", HM),
+  ]);
 
   if (!post) notFound();
+
+  const settings = Object.fromEntries((settingsRows || []).map((s) => [s.key, s.value])) as Record<string, string>;
+  const siteUrl = settings.site_url || "https://hmmotor.se";
+  const articleLd = articleJsonLd(post, profile || {}, settings);
+  const crumbLd = breadcrumbJsonLd([
+    { name: "Hem", url: siteUrl },
+    { name: "Blogg", url: `${siteUrl}/blogg` },
+    { name: post.title, url: `${siteUrl}/blogg/${slug}` },
+  ]);
 
   const date = new Date(post.published_at).toLocaleDateString("sv-SE", {
     year: "numeric",
@@ -53,6 +63,8 @@ export default async function BlogPostPage({
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(articleLd)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(crumbLd)} />
       <TopBar />
       <Navigation />
       <main className="flex-1">
