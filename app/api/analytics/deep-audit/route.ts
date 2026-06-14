@@ -256,7 +256,7 @@ ${auditSummary}
 # UPPMÄTT FAKTA — HELA SAJTEN (render-medvetet, deterministiskt — använd EXAKT, hitta inte på)
 Alla sidor nedan är hämtade från sitemap och granskade. "pages" = varje sidas mätvärden. "crossPage" = tvärsides-analys.
 \`\`\`json
-${JSON.stringify(site, null, 2)}
+${JSON.stringify(site)}
 \`\`\`
 
 # Startsidans synliga text (för innehålls- och E-E-A-T-bedömning)
@@ -279,7 +279,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
     // Streama — robust för långa rapporter (håller anslutningen vid liv, undviker timeout-fel)
     const stream = anthropic.messages.stream({
       model: MODEL,
-      max_tokens: 14000,
+      max_tokens: 6000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     });
