@@ -20,3 +20,7 @@ export const CONTACT = {
 
 // Vart lead-notiser skickas. hakan@gripcoaching.se = kopia i början (lätt att ta bort).
 export const LEAD_RECIPIENTS: string[] = ["info@hmmotor.se", "hakan@gripcoaching.se"];
+
+// Avsändare för lead-mejl. MÅSTE vara verifierad domän hos Resend (mysales.se),
+// annars vägrar Resend skicka till andra än kontots egen adress. (onboarding@resend.dev funkar EJ.)
+export const LEAD_FROM = "HM Motor <noreply@mysales.se>";

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { sendEmail } from "@/lib/email";
-import { LEAD_RECIPIENTS } from "@/lib/contact";
+import { LEAD_RECIPIENTS, LEAD_FROM } from "@/lib/contact";
 import { HM_MOTOR_CLIENT_ID } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
     // 1) Mejl = primär leverans (går alltid, även om DB-tabellen inte finns än)
     const mail = await sendEmail({
       to: LEAD_RECIPIENTS,
+      from: LEAD_FROM,
       subject,
       html,
       reply_to: email || undefined,
