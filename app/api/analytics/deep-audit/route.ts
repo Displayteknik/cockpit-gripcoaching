@@ -7,7 +7,7 @@ import { crawlSite } from "@/lib/seo-deep";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "claude-sonnet-4-5";
 
 const SYSTEM_PROMPT = `Du genererar en professionell SEO/AEO-djupgranskning på svenska enligt en specifik mall. Rapporten ska kunna läsas och FÖLJAS av en företagare utan teknisk bakgrund — inga oförklarade förkortningar, och varje föreslagen text skriven ut i sin helhet.
 
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
   // Hel-sajt-crawl: alla sidor i sitemap, render-medvetet (avkodar JS-payload på GHL)
   let site;
   try {
-    site = await crawlSite(url, { maxPages: 8 });
+    site = await crawlSite(url, { maxPages: 25 });
   } catch (e) {
     return NextResponse.json({ error: `Kunde inte hamta sajten: ${(e as Error).message}` }, { status: 500 });
   }
@@ -279,7 +279,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
     // Streama — robust för långa rapporter (håller anslutningen vid liv, undviker timeout-fel)
     const stream = anthropic.messages.stream({
       model: MODEL,
-      max_tokens: 5000,
+      max_tokens: 14000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     });
