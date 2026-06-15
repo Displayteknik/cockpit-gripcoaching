@@ -56,14 +56,37 @@ export async function POST(req: NextRequest) {
   </div>
 </div></body></html>`;
 
+    // Plain-text-spegling av mejlet (multipart sänker spam-poäng hos strikta filter, t.ex. Oderland).
+    const text = [
+      `${vehicleTitle ? "Intresseanmälan" : "Ny förfrågan"} via hmmotor.se`,
+      "",
+      `Namn: ${name}`,
+      email ? `E-post: ${email}` : "",
+      phone ? `Telefon: ${phone}` : "",
+      interest ? `Intresse: ${interest}` : "",
+      vehicleTitle ? `Fordon: ${vehicleTitle}${vehicleSlug ? ` (https://hmmotor.se/fordon/${vehicleSlug})` : ""}` : "",
+      `Källa: ${source}`,
+      message ? `\nMeddelande:\n${message}` : "",
+      "",
+      "Svara direkt på detta mejl för att nå kunden.",
+    ]
+      .filter((l) => l !== "")
+      .join("\n");
+
     // 1) Mejl = primär leverans (går alltid, även om DB-tabellen inte finns än)
     const mail = await sendEmail({
       to: LEAD_RECIPIENTS,
       from: LEAD_FROM,
       subject,
       html,
+      text,
       reply_to: email || undefined,
     });
+
+    // Synliggör leveransfel — annars är vi blinda när ett filter sväljer mejlet.
+    if (!mail.sent) {
+      console.error("[lead] Mejl gick INTE iväg:", mail.reason, "— leadet sparas ändå i DB.");
+    }
 
     // 2) DB-lagring = best effort (för dashboard). Får ALDRIG fälla requesten.
     try {

@@ -5,6 +5,7 @@ interface SendOptions {
   to: string | string[];
   subject: string;
   html: string;
+  text?: string;
   from?: string;
   reply_to?: string;
 }
@@ -22,6 +23,8 @@ export async function sendEmail(opts: SendOptions): Promise<{ sent: boolean; id?
         to: Array.isArray(opts.to) ? opts.to : [opts.to],
         subject: opts.subject,
         html: opts.html,
+        // Plain-text-del (multipart) sänker spam-poäng hos strikta filter (t.ex. Oderland).
+        ...(opts.text ? { text: opts.text } : {}),
         reply_to: opts.reply_to,
       }),
     });
