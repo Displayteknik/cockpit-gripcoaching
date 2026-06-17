@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { supabase, type Vehicle } from "@/lib/supabase";
 import { formatPrice } from "@/lib/utils";
+import { parseStock, stockFlag, STOCK_TONE_CLASSES } from "@/lib/stock";
 import { TopBar } from "@/components/layout/TopBar";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
@@ -145,6 +146,16 @@ export default async function VehicleDetailPage({
                       {v.brand}
                     </span>
                   )}
+                  {(() => {
+                    const stock = !v.is_sold ? parseStock(v.badge_type) : null;
+                    const flag = stock ? stockFlag(stock) : null;
+                    return flag ? (
+                      <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${STOCK_TONE_CLASSES[flag.tone]}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/90" />
+                        {flag.label}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
 
                 <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">

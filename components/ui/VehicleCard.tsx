@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
+import { parseStock, stockFlag, STOCK_TONE_CLASSES } from "@/lib/stock";
 import type { Vehicle } from "@/lib/supabase";
 
 interface VehicleCardProps {
@@ -12,6 +13,8 @@ interface VehicleCardProps {
 export function VehicleCard({ vehicle }: VehicleCardProps) {
   const specs = vehicle.specs || {};
   const topSpecs = Object.entries(specs).slice(0, 3);
+  const stock = parseStock(vehicle.badge_type);
+  const flag = stock ? stockFlag(stock) : null;
 
   return (
     <Link
@@ -40,6 +43,14 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
         {vehicle.badge && (
           <span className="absolute top-3 left-3 bg-brand-gold text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
             {vehicle.badge}
+          </span>
+        )}
+
+        {/* Lagerstatus-flagga (sätts av ägaren) */}
+        {flag && !vehicle.is_sold && (
+          <span className={`absolute top-3 right-3 flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full shadow-sm ${STOCK_TONE_CLASSES[flag.tone]}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-white/90" />
+            {flag.label}
           </span>
         )}
 

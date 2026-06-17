@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, type Vehicle } from "@/lib/supabase";
 import { formatPrice } from "@/lib/utils";
+import { parseStock, encodeStock, STOCK_OPTIONS, type StockStatus } from "@/lib/stock";
 import {
   Plus, Pencil, Trash2, Star, Search, X, Upload, Image as ImageIcon,
   GripVertical, ChevronDown, Eye, RefreshCw, Loader2,
@@ -532,6 +533,40 @@ export default function DashboardPage() {
                           className="rounded border-gray-300 text-red-500 focus:ring-red-500" />
                         Såld
                       </label>
+                    </div>
+                  </div>
+
+                  {/* Lagerflagga — visas för kunder på kort + detaljsida (bra för fyrhjulingar). */}
+                  <div className="grid grid-cols-3 gap-4 rounded-lg bg-emerald-50/60 border border-emerald-100 p-4">
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Lagerflagga (visas för kunder)</label>
+                      <select
+                        value={parseStock(editing.badge_type)?.status || ""}
+                        onChange={(e) => {
+                          const status = e.target.value as StockStatus | "";
+                          const count = parseStock(editing.badge_type)?.count ?? null;
+                          setEditing({ ...editing, badge_type: encodeStock(status, count) });
+                        }}
+                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none"
+                      >
+                        {STOCK_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Antal i lager</label>
+                      <input
+                        type="number" min={0}
+                        value={parseStock(editing.badge_type)?.count ?? ""}
+                        disabled={parseStock(editing.badge_type)?.status !== "in"}
+                        onChange={(e) => {
+                          const n = e.target.value ? Number(e.target.value) : null;
+                          setEditing({ ...editing, badge_type: encodeStock("in", n) });
+                        }}
+                        placeholder="t.ex. 3"
+                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none disabled:opacity-50 disabled:bg-gray-50"
+                      />
                     </div>
                   </div>
                 </div>

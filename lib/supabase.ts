@@ -20,6 +20,7 @@ export interface Vehicle {
   price: number;
   price_label: string;
   badge: string | null;
+  badge_type: string | null;
   is_featured: boolean;
   is_sold: boolean;
   sort_order: number;
