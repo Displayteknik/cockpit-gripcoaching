@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
@@ -6,6 +7,18 @@ import { LogOut } from "lucide-react";
 
 interface Props {
   children: React.ReactNode;
+}
+
+// Flik-titel brandad mot kunden själv — inte ärvd publik HM Motor-titel.
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getCustomerSession();
+  return {
+    title: {
+      absolute: session?.client_name
+        ? `${session.client_name} · MySales Pro`
+        : "Kundportal · MySales Pro",
+    },
+  };
 }
 
 export default async function CustomerLayout({ children }: Props) {

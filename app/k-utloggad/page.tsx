@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: { absolute: "Utloggad · MySales Pro" },
+  robots: { index: false, follow: false },
+};
+
 export default function LoggedOut() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
