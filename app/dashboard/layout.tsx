@@ -133,6 +133,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Hitta aktiv sektion-label för mobile-titel
   const activeItem = navSections.flatMap((s) => s.items).find(itemActive);
 
+  // Sätt browser-flikens titel (admin-yta ärver annars publika HM Motor-titeln)
+  useEffect(() => {
+    document.title = activeItem?.label
+      ? `${activeItem.label} · Cockpit — GripCoaching`
+      : "Cockpit — GripCoaching";
+  }, [activeItem?.label]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
