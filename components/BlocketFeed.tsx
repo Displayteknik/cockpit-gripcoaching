@@ -14,9 +14,16 @@ const BUILD_URL = BASE_URL + "app/mu-plugins/triggerfish-bytbil-accesspaket/fron
 // Default = ingen postId → hela feeden (/cars, CORS-öppen). Widgeten har egna filter.
 export function BlocketFeed({ postId }: { postId?: number }) {
   useEffect(() => {
+    // Blockets widget läser dessa som GLOBALER (window.*). Originalsnutten deklarerar
+    // dem på toppnivå i en inline-<script>; här sätter vi dem explicit på window
+    // INNAN widget-scripten laddas — annars fastnar filtren på "Laddar...".
+    const w = window as unknown as Record<string, unknown>;
+    w.baseUrl = BASE_URL;
+    w.restUrl = REST_URL;
+    w.buildUrl = BUILD_URL;
     // Sätt bara postId om den uttryckligen angetts (annars visas hela lagret).
     if (postId && postId > 0) {
-      (window as unknown as { postId?: number }).postId = postId;
+      w.postId = postId;
     }
 
     const getJSON = (url: string, cb: (json: { entrypoints: Record<string, string> }) => void) => {
