@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"info" | "images" | "specs">("info");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [hasFeed, setHasFeed] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [salesStats, setSalesStats] = useState<{ month: number; year: number; total: number } | null>(null);
@@ -44,6 +45,15 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => setClientId(c?.id || null));
   }, []);
+
+  // Visa "Synka"-knappen bara för klienter som har en Bytbil-feed (idag HM Motor).
+  useEffect(() => {
+    if (!clientId) return;
+    fetch("/api/fordon/sync-bytbil")
+      .then((r) => r.json())
+      .then((d) => setHasFeed(!!d?.hasFeed))
+      .catch(() => setHasFeed(false));
+  }, [clientId]);
 
   const loadVehicles = useCallback(async () => {
     if (!clientId) return;
@@ -265,12 +275,14 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500 mt-1">{activeCount} till salu &middot; {soldCount} sålda &middot; {filtered.length} visas</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={syncBytbil} disabled={syncing}
-            className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-            title="Hämta bilarna från Bytbil och uppdatera listan">
-            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            {syncing ? "Synkar..." : "Synka från Bytbil"}
-          </button>
+          {hasFeed && (
+            <button onClick={syncBytbil} disabled={syncing}
+              className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+              title="Hämta bilarna från Bytbil och uppdatera listan">
+              {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {syncing ? "Synkar..." : "Synka från Bytbil"}
+            </button>
+          )}
           <button onClick={openNew} className="flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
             <Plus className="w-4 h-4" />
             Nytt fordon

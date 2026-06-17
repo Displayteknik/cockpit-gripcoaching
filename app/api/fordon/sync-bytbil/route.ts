@@ -7,6 +7,13 @@ import { BYTBIL_FEEDS, syncBytbilForClient } from "@/lib/bytbil";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+// Talar om ifall aktiv klient har en Bytbil-feed → dashboarden visar "Synka"-knappen
+// bara för klienter där synken faktiskt gäller (idag HM Motor).
+export async function GET() {
+  const clientId = await getActiveClientId();
+  return NextResponse.json({ hasFeed: !!BYTBIL_FEEDS[clientId] });
+}
+
 export async function POST(req: NextRequest) {
   // Admin-only (manuell synk från dashboarden).
   const secret = process.env.ADMIN_SESSION_SECRET;
