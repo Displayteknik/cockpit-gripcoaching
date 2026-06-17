@@ -3,6 +3,15 @@
 // HM Motor: https://hmmotor.accesspaket.bytbilcms.com/...
 // Designat för multi: feed-URL lagras per klient (clients.bytbil_feed_url), inte hårdkodat.
 
+import { supabaseServer } from "./supabase-admin";
+import { logActivity } from "./client-context";
+
+// Bytbil-feed per klient. v1: HM Motor. Multi: flytta till clients.bytbil_feed_url.
+export const BYTBIL_FEEDS: Record<string, string> = {
+  "00000000-0000-0000-0000-000000000001":
+    "https://hmmotor.accesspaket.bytbilcms.com/wp-json/accesspackage/v1/cars",
+};
+
 export interface BytbilImageFormat { url: string; name: string; width: number; height: number }
 export interface BytbilImage { sortOrder: number; imageFormats: BytbilImageFormat[] }
 export interface BytbilCar {
@@ -137,4 +146,110 @@ export async function fetchBytbilCars(feedUrl: string): Promise<BytbilCar[]> {
   const json = await res.json();
   const arr = Array.isArray(json) ? json : (json.cars || json.data || json.items || []);
   return arr as BytbilCar[];
+}
+
+// Bytbil-synkade rader får slug som slutar på "-<bytbil-id>" (minst 7 siffror).
+// Allt annat = manuellt inlagt och rörs ALDRIG av synken.
+const bytbilIdOf = (slug: string): string | null => slug.match(/-(\d{7,})$/)?.[1] || null;
+
+export interface SyncResult {
+  ok: boolean;
+  dryRun: boolean;
+  total: number;
+  created: number;
+  updated: number;
+  soldMarked: number;
+  legacyHidden: number;
+  legacyManualCount: number;
+  syncedAt: string;
+  errors?: string[];
+}
+
+// Kärn-synk: körs av både admin-knappen (med cookie/aktiv klient) och cron-rutten (per client_id).
+// EDIT-BEVARANDE: befintlig Bytbil-bil uppdaterar bara pris; utvald/bilder/text/rubrik består.
+// Manuellt inlagda rader (slug utan id-suffix) rörs aldrig.
+export async function syncBytbilForClient(
+  clientId: string,
+  feedUrl: string,
+  opts?: { dryRun?: boolean; hideLegacyManual?: boolean }
+): Promise<SyncResult> {
+  const dryRun = !!opts?.dryRun;
+  const hideLegacyManual = !!opts?.hideLegacyManual;
+  const syncedAt = new Date().toISOString();
+  const sb = supabaseServer();
+
+  const cars = await fetchBytbilCars(feedUrl);
+  const mapped = cars.map((c, i) => ({ ...mapCarToVehicle(c, clientId, syncedAt), sort_order: i }));
+  const feedIds = new Set(mapped.map((m) => m.bytbil_id));
+
+  const { data: existing } = await sb
+    .from("hm_vehicles")
+    .select("id, slug, is_sold, title, price")
+    .eq("client_id", clientId);
+
+  const existingById = new Map<string, { id: string; slug: string; is_sold: boolean; title: string; price: number }>();
+  let legacyManualCount = 0;
+  for (const v of existing || []) {
+    const bid = bytbilIdOf(v.slug);
+    if (bid) existingById.set(bid, v);
+    else if (!v.is_sold) legacyManualCount++;
+  }
+
+  let created = 0, updated = 0, soldMarked = 0, legacyHidden = 0;
+  const errors: string[] = [];
+
+  for (const m of mapped) {
+    const ex = existingById.get(m.bytbil_id);
+    if (dryRun) { ex ? updated++ : created++; continue; }
+    if (ex) {
+      const { error } = await sb.from("hm_vehicles").update({ price: m.price }).eq("id", ex.id);
+      error ? errors.push(`${m.slug}: ${error.message}`) : updated++;
+    } else {
+      const row = {
+        client_id: m.client_id, slug: m.slug, title: m.title, brand: m.brand, model: m.model,
+        category: m.category, image_url: m.image_url, gallery: m.gallery, description: m.description,
+        specs: m.specs, price: m.price, price_label: m.price_label, is_sold: false, sort_order: m.sort_order,
+      };
+      const { error } = await sb.from("hm_vehicles").insert(row);
+      error ? errors.push(`${m.slug}: ${error.message}`) : created++;
+    }
+  }
+
+  if (!dryRun) {
+    // Bytbil-bil som lämnat feeden = såld/borttagen på Bytbil → dölj + logga sälj.
+    for (const [bid, v] of existingById) {
+      if (!feedIds.has(bid) && !v.is_sold) {
+        const { error } = await sb.from("hm_vehicles").update({ is_sold: true }).eq("id", v.id);
+        if (!error) {
+          soldMarked++;
+          await logActivity(clientId, "vehicle_sold", v.title || "Fordon", "/dashboard/fordon", {
+            price: v.price ?? null,
+            via: "bytbil",
+          });
+        }
+      }
+    }
+    // Engångs: dölj gamla manuella dubbletter (bara när användaren godkänt det).
+    if (hideLegacyManual) {
+      for (const v of existing || []) {
+        if (!bytbilIdOf(v.slug) && !v.is_sold) {
+          const { error } = await sb.from("hm_vehicles").update({ is_sold: true }).eq("id", v.id);
+          if (!error) legacyHidden++;
+        }
+      }
+    }
+  }
+
+  return {
+    ok: errors.length === 0,
+    dryRun,
+    total: mapped.length,
+    created,
+    updated,
+    soldMarked,
+    legacyHidden,
+    legacyManualCount,
+    syncedAt,
+    ...(errors.length ? { errors: errors.slice(0, 5) } : {}),
+  };
 }

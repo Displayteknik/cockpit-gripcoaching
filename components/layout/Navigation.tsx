@@ -17,7 +17,6 @@ const mainLinks = [
 const moreLinks = [
   { href: "/fordon?kategori=slapvagn", label: "Släpvagnar" },
   { href: "/fordon?kategori=tradgard", label: "Trädgård" },
-  { href: "/lager", label: "Hela lagret" },
   { href: "/blogg", label: "Blogg" },
 ];
 
