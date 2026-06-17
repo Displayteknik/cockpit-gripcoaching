@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
-import { getActiveClientId, logActivity } from "@/lib/client-context";
+import { getActiveClientId } from "@/lib/client-context";
 import { generateIkigai, buildInputBlock, ALLOWED_BRAND_FIELDS, type IkigaiInputs } from "@/lib/ikigai";
 
 export const runtime = "nodejs";
@@ -89,12 +89,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    await logActivity(
-      clientId,
-      "ikigai_done",
-      `Ikigai för ${personLabel} — ${proposalsCount} brand-förslag att granska`,
-      "/dashboard/ikigai",
-    );
+    // Ikigai är ett coaching/personligt verktyg och loggas medvetet INTE i klientens
+    // affärs-aktivitetsflöde (annars syns t.ex. "Ikigai för Håkan Grip" på en bilhandlares
+    // översikt om man råkar köra det med fel klient aktiv). Resultatet finns i ikigai_sessions.
 
     return NextResponse.json({
       ikigai_session_id: ikigaiRow?.id ?? null,
