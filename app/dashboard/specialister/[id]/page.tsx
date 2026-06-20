@@ -153,6 +153,9 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
                 d.has_faq_schema
                   ? "Teknisk status: sidan har REDAN FAQ-schema — föreslå INGET nytt schema."
                   : "Teknisk status: sidan saknar FAQ-schema.",
+                d.has_price === false
+                  ? "Prisinfo på sidan: saknas — AI-motorer favoriserar sidor med synligt pris, rekommendera ett startpris/prisspann (platshållare för beloppet)."
+                  : "",
                 faqs.length ? `Sidan har REDAN dessa FAQ-frågor (föreslå INTE en ny FAQ-sektion som om den saknas — förbättra/komplettera bara, lägg bara till frågor som verkligen saknas):\n- ${faqs.join("\n- ")}` : "",
                 heads.length ? `Sidan har redan dessa rubriker (bygg vidare på dem, dubblera inte):\n- ${heads.join("\n- ")}` : "",
               ].filter(Boolean).join("\n");

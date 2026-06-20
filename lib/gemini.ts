@@ -60,6 +60,47 @@ export async function generate(opts: GenerateOptions): Promise<string> {
   return out;
 }
 
+export interface GroundedResult {
+  text: string;
+  sources: { title: string; uri: string }[];
+}
+
+// Gemini med Google Search-grounding = LIVE webb-svar + källor. Används för AI-synlighetstest
+// (kollar om en klient nämns i AI-svar idag), inte träningsminne.
+export async function groundedGenerate(
+  prompt: string,
+  opts?: { model?: GeminiModel; temperature?: number; maxOutputTokens?: number }
+): Promise<GroundedResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY saknas i env");
+  const model = opts?.model ?? "gemini-2.5-flash";
+  const body = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    tools: [{ google_search: {} }],
+    generationConfig: {
+      temperature: opts?.temperature ?? 0.3,
+      maxOutputTokens: opts?.maxOutputTokens ?? 1500,
+      thinkingConfig: { thinkingBudget: 0 },
+    },
+  };
+  const res = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(45000),
+  });
+  if (!res.ok) throw new Error(`Gemini grounded ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  const cand = data?.candidates?.[0] ?? {};
+  const text = ((cand.content?.parts ?? []) as { text?: string }[]).map((p) => p.text ?? "").join("").trim();
+  const chunks = (cand.groundingMetadata?.groundingChunks ?? []) as { web?: { title?: string; uri?: string } }[];
+  const seen = new Set<string>();
+  const sources = chunks
+    .map((c) => ({ title: c.web?.title ?? "", uri: c.web?.uri ?? "" }))
+    .filter((s) => s.uri && s.title && !seen.has(s.title) && seen.add(s.title));
+  return { text, sources };
+}
+
 export async function generateJSON<T = unknown>(opts: GenerateOptions): Promise<T> {
   const raw = await generate({ ...opts, jsonMode: true });
   try {

@@ -75,6 +75,25 @@ export default function AnalyticsDashboard() {
   const [savedReports, setSavedReports] = useState<Array<{ id: string; body: string; metadata: { url?: string; generated_at?: string }; created_at: string }>>([]);
   const [copied, setCopied] = useState(false);
   const [openBand, setOpenBand] = useState<"top3" | "top10" | "top20" | "beyond" | null>(null);
+  const [aiTest, setAiTest] = useState<{ client_name: string; summary: { mentioned: number; total: number }; results: Array<{ question: string; mentioned: boolean; competitors: string[]; answer_excerpt: string; sources: { title: string; uri: string }[]; error?: string }> } | null>(null);
+  const [aiTesting, setAiTesting] = useState(false);
+  const [aiTestErr, setAiTestErr] = useState<string | null>(null);
+
+  async function runAiVisibility() {
+    setAiTesting(true); setAiTestErr(null); setAiTest(null);
+    try {
+      const r = await fetch("/api/seo/ai-visibility", { method: "POST" });
+      const raw = await r.text();
+      let d;
+      try { d = JSON.parse(raw); } catch { throw new Error("Testet tog för lång tid — försök igen."); }
+      if (!r.ok) throw new Error(d.error || "Kunde inte köra testet");
+      setAiTest(d);
+    } catch (e) {
+      setAiTestErr((e as Error).message);
+    } finally {
+      setAiTesting(false);
+    }
+  }
 
   async function load(p: Period) {
     setLoading(true);
@@ -669,6 +688,53 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
       )}
+
+      {/* AI-SYNLIGHETSTEST (AEO-grader) — frågar en AI med live webbsökning om du nämns */}
+      <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-200 rounded-xl p-5">
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-violet-600" />
+            Syns du i AI-svar? (AEO-test)
+          </h3>
+          <button
+            onClick={runAiVisibility}
+            disabled={aiTesting}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 flex-shrink-0"
+          >
+            {aiTesting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Testar...</> : <><Sparkles className="w-3.5 h-3.5" /> Kör test</>}
+          </button>
+        </div>
+        <p className="text-xs text-gray-600 mb-3">
+          Vi frågar en AI (med live webbsökning) det dina kunder faktiskt skulle fråga – och visar om du nämns, och vilka konkurrenter som nämns i stället.{aiTesting ? " Tar ~30–60 sekunder." : ""}
+        </p>
+        {aiTestErr && <div className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg p-2">{aiTestErr}</div>}
+        {aiTest && (
+          <div className="space-y-3">
+            <div className={`text-sm font-semibold ${aiTest.summary.mentioned > 0 ? "text-emerald-700" : "text-rose-700"}`}>
+              Du nämndes i {aiTest.summary.mentioned} av {aiTest.summary.total} AI-svar.
+            </div>
+            {aiTest.results.map((r, i) => (
+              <div key={i} className="bg-white border border-violet-100 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-800 mb-1.5">{r.question}</div>
+                <div className="mb-1.5">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${r.mentioned ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                    {r.mentioned ? "Du nämns ✓" : "Du nämns inte"}
+                  </span>
+                </div>
+                {r.competitors.length > 0 && (
+                  <div className="text-xs text-gray-600"><strong className="text-gray-800">Nämns i stället:</strong> {r.competitors.join(", ")}</div>
+                )}
+                {r.sources.length > 0 && (
+                  <div className="text-[11px] text-gray-400 mt-1 truncate">Källor: {r.sources.map((s) => s.title).join(" · ")}</div>
+                )}
+              </div>
+            ))}
+            <p className="text-xs text-gray-500">
+              Nämns du inte? Stärk sidan (sid-optimeraren), bygg jämförelse- och pris-innehåll, och syns på sajter AI tränar på (LinkedIn, branschmedia).
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* UTVECKLING OVER TID — TREND-GRAFER */}
       {(data.gsc_daily_series?.length ?? 0) >= 2 && (

@@ -74,6 +74,7 @@ Om "Nuvarande text" innehåller lite eller ingen text: ge här hela sidtexten f�
 ## FAKTA — hitta ALDRIG på
 - Använd specifika siffror, procent, svarstider eller resultat ENDAST om de finns i inputs/brand-profilen. Saknas en siffra: skriv `[DIN SIFFRA]`. Uppfinn aldrig statistik om företaget.
 - **Priser:** ange ALDRIG priser eller prisintervall på eget bevåg, bygg ALDRIG pristabeller med gissade belopp. Priser är ett affärsbeslut. Saknas pris: utelämna det, eller skriv `[Lägg till dina priser här]`.
+- **AEO-faktor — synligt pris:** AI-sökmotorer (ChatGPT, Perplexity, Googles AI-svar) föredrar och citerar oftare sidor med tydligt pris. Står det "Prisinfo på sidan: saknas" i Nuvarande text → ta MED en förbättring (🟡 Bör): "Lägg ett startpris eller prisspann, t.ex. 'från [ANGE PRIS] kr', så favoriserar AI-motorerna sidan." Ägaren fyller själv i beloppet — du gissar det aldrig.
 - Allmänna branschfakta (t.ex. mått, klassningar) är OK om de är korrekta — men markera osäkra som `[verifiera]`.
 
 ## Förbjudet

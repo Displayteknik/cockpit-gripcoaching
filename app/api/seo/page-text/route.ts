@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
       has_faq_schema: signals.schemaTypes.includes("FAQPage"), // → optimeraren slipper kasta ut dubbelt schema
       existing_faqs: signals.faqs.map((f) => f.question).slice(0, 20), // → föreslå inte FAQ som redan finns
       existing_headings: signals.headings.map((h) => h.text).filter(Boolean).slice(0, 30), // → bygg på befintliga sektioner
+      has_price: /\d[\d\s]{1,}\s*kr\b|\bpris(er|et|lista)?\b|\bkostar\b/i.test(signals.mainText || ""), // → AEO: AI-motorer favoriserar synligt pris
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message || "Kunde inte läsa sidan" }, { status: 500 });
