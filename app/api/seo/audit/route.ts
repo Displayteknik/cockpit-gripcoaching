@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auditUrlRendered, pageSpeed } from "@/lib/seo-audit";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const body = await req.json();
   const targetUrl: string = body.url;
   const skipPageSpeed: boolean = body.skip_pagespeed ?? false;
@@ -46,6 +49,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseServer();
   const clientId = await resolveClientId();
   const { data } = await sb

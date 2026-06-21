@@ -20,6 +20,55 @@ function isAdminArea(path: string): boolean {
   );
 }
 
+// ── /api-grind ──────────────────────────────────────────────────────────────
+// Default: ALLA /api-rutter kräver admin-session (fail-closed). Undantagen nedan.
+const pfx = (path: string, p: string) => path === p || path.startsWith(p + "/");
+
+// Avsiktligt publika (självskyddande/scopade — verifierat i granskning).
+function isPublicApi(path: string): boolean {
+  if (path === "/api/admin/login") return true;            // själva inloggningen
+  if (path === "/api/google/callback") return true;        // OAuth-retur (Google, ingen cookie)
+  if (path === "/api/ikigai/public") return true;          // publik lead-magnet
+  if (pfx(path, "/api/track")) return true;                // spårningspixel
+  if (pfx(path, "/api/lead")) return true;                 // publikt lead-formulär
+  if (pfx(path, "/api/indexnow")) return true;             // IndexNow-ping
+  if (path.startsWith("/api/share/")) return true;         // publik kund-godkännandelänk (token i path)
+  return false;                                            // OBS: /api/share (skapa) = admin
+}
+
+// Cron-rutter: Vercel Cron autentiserar via CRON_SECRET INNE i routen (fail-closed efter steg 3).
+// proxy:n får inte blockera dem (de har ingen admin-cookie).
+const CRON_PATHS = new Set([
+  "/api/agents/night-iterate",
+  "/api/blog/cron",
+  "/api/fordon/sync-cron",
+  "/api/google/gsc/cron",
+  "/api/instagram/publish-internal",
+  "/api/reports/weekly-cron",
+  "/api/scheduler/cron",
+]);
+
+// Rutter som BÅDE admin och kundportalen (/k) använder. Grindas i routen med
+// requireAdminOrCustomer() (admin- ELLER kund-session). proxy:n släpper igenom.
+function isCustomerServedApi(path: string): boolean {
+  if (path.startsWith("/api/customer/")) return true;
+  return (
+    path === "/api/seo/analytics" ||
+    path === "/api/seo/audit" ||
+    path === "/api/seo/content-audit" ||
+    path === "/api/seo/keywords"
+  );
+}
+
+// True om routen ska admin-grindas av proxy:n.
+function isGuardedApi(path: string): boolean {
+  if (!path.startsWith("/api/")) return false;
+  if (isPublicApi(path)) return false;
+  if (CRON_PATHS.has(path)) return false;
+  if (isCustomerServedApi(path)) return false;
+  return true;
+}
+
 export async function proxy(req: NextRequest) {
   const host = req.headers.get("host") || "";
   const path = req.nextUrl.pathname;
@@ -33,6 +82,17 @@ export async function proxy(req: NextRequest) {
       const url = new URL("/logga-in", req.url);
       url.searchParams.set("from", path);
       return NextResponse.redirect(url);
+    }
+  }
+
+  // API-grind: alla /api-rutter kräver admin-session UTOM publika/cron/kund-betjänade
+  // (se isGuardedApi). Detta är "steg 2" — route handlers täcks inte av sid-grinden ovan.
+  if (isGuardedApi(path)) {
+    const secret = process.env.ADMIN_SESSION_SECRET;
+    const token = req.cookies.get(ADMIN_COOKIE)?.value;
+    const ok = secret ? await verifyAdminSession(token, secret) : false;
+    if (!ok) {
+      return NextResponse.json({ error: "ej inloggad" }, { status: 401 });
     }
   }
 

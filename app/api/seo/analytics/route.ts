@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseServer();
   const clientId = await resolveClientId();
   const now = Date.now();

@@ -4,6 +4,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, verifyAdminSession } from "./admin-auth";
+import { getCustomerSession } from "./customer-context";
 
 // True om aktuell request bär en giltig admin-session-cookie.
 export async function isAdmin(): Promise<boolean> {
@@ -19,5 +20,14 @@ export async function isAdmin(): Promise<boolean> {
 // Returnerar 401-respons om ej admin, annars null (fortsätt).
 export async function requireAdmin(): Promise<NextResponse | null> {
   if (await isAdmin()) return null;
+  return NextResponse.json({ error: "ej inloggad" }, { status: 401 });
+}
+
+// För rutter som BÅDE admin-dashboarden och kundportalen (/k) anropar (delade SEO-rutter).
+// Tillåt giltig admin-session ELLER giltig kund-session. Tenant-scopas redan via
+// resolveClientId (referer-medveten). proxy:n släpper igenom dessa → grinden sker här.
+export async function requireAdminOrCustomer(): Promise<NextResponse | null> {
+  if (await isAdmin()) return null;
+  if (await getCustomerSession()) return null;
   return NextResponse.json({ error: "ej inloggad" }, { status: 401 });
 }

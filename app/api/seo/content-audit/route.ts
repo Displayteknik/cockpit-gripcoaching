@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { extractPageSignals } from "@/lib/seo-deep";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -18,6 +19,8 @@ interface ContentAudit {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const body = await req.json();
   const url: string = body.url;
   const sample: string | undefined = body.text;

@@ -54,7 +54,7 @@ export async function resolveClientId(): Promise<string> {
 export async function setActiveClientId(id: string): Promise<void> {
   const c = await cookies();
   c.set(COOKIE_NAME, id, {
-    httpOnly: false,
+    httpOnly: true, // server-only; läses aldrig client-side (verifierat) → ej manipulerbar i JS
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365,
     path: "/",
