@@ -4,6 +4,7 @@ import { getKnowledge } from "@/lib/knowledge";
 import { auditUrl, pageSpeed } from "@/lib/seo-audit";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { assertSafePublicUrl } from "@/lib/safe-url";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -23,6 +24,13 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { competitor_id, url } = body;
   if (!url) return NextResponse.json({ error: "url krävs" }, { status: 400 });
+
+  // SSRF-skydd: blockera interna/privata adresser (publika konkurrent-URL:er OK).
+  try {
+    await assertSafePublicUrl(url);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+  }
 
   const sb = supabaseServer();
 

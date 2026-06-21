@@ -3,6 +3,7 @@ import { auditUrlRendered, pageSpeed } from "@/lib/seo-audit";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { assertSafePublicUrl } from "@/lib/safe-url";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -14,6 +15,13 @@ export async function POST(req: NextRequest) {
   const targetUrl: string = body.url;
   const skipPageSpeed: boolean = body.skip_pagespeed ?? false;
   if (!targetUrl) return NextResponse.json({ error: "url krävs" }, { status: 400 });
+
+  // SSRF-skydd: blockera interna/privata adresser.
+  try {
+    await assertSafePublicUrl(targetUrl);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+  }
 
   const clientId = await resolveClientId();
   const result = await auditUrlRendered(targetUrl);

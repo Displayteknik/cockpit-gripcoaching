@@ -17,6 +17,7 @@
 //     fortfarande hindrar det vi vill undvika för respektive bransch.
 
 import { supabaseServer } from "./supabase-admin";
+import { assertSafePublicUrl } from "./safe-url";
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const FAL_KEY = process.env.FAL_KEY || "";
@@ -320,6 +321,7 @@ export async function ensurePublicImageUrl(imageData: string): Promise<{ url?: s
 
   if (imageData.startsWith("http://") || imageData.startsWith("https://")) {
     try {
+      await assertSafePublicUrl(imageData); // SSRF-skydd: ingen intern/privat adress
       const response = await fetch(imageData);
       if (!response.ok) return { error: "Kunde inte ladda ner bild" };
       const ct = response.headers.get("content-type") || "image/png";

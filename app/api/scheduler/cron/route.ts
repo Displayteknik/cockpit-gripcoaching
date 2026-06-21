@@ -7,7 +7,7 @@ export const maxDuration = 300;
 // Vercel Cron körs var 5:e minut. Hämtar alla schemalagda som ska publiceras nu.
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const sb = supabaseServer();
