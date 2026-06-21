@@ -1,0 +1,23 @@
+// Admin-grind för API-route-handlers. proxy.ts grindar bara SIDOR (/dashboard, /admin) —
+// route handlers under /api måste grindas separat. Delad helper så alla admin-routes
+// använder exakt samma kontroll (HMAC-session från admin-auth.ts).
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { ADMIN_COOKIE, verifyAdminSession } from "./admin-auth";
+
+// True om aktuell request bär en giltig admin-session-cookie.
+export async function isAdmin(): Promise<boolean> {
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret) return false; // fail-closed: ingen secret satt → ingen admin
+  const token = (await cookies()).get(ADMIN_COOKIE)?.value;
+  return verifyAdminSession(token, secret);
+}
+
+// Använd överst i en admin-route:
+//   const denied = await requireAdmin();
+//   if (denied) return denied;
+// Returnerar 401-respons om ej admin, annars null (fortsätt).
+export async function requireAdmin(): Promise<NextResponse | null> {
+  if (await isAdmin()) return null;
+  return NextResponse.json({ error: "ej inloggad" }, { status: 401 });
+}

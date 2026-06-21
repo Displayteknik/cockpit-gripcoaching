@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setActiveClientId } from "@/lib/client-context";
 import { getCustomerSession, clearCustomerSession } from "@/lib/customer-context";
+import { requireAdmin } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  // Klientväxling är en admin-handling (ClientPicker finns bara i /dashboard).
+  // Klientväxling är en admin-handling → kräver giltig admin-session.
+  // (Referer är INTE auth; admin-grinden är den riktiga grinden. Referer-logiken
+  // nedan finns kvar bara som diskriminator för att städa stale kund-cookie.)
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   // Diskriminator = referer, samma referer-medvetna mönster som resolveClientId:
   //  - anrop från kundportalen (/k) → en kund försöker flytta admin-kontexten →
   //    ALDRIG tillåtet (annars kringgås tenant-isoleringen).

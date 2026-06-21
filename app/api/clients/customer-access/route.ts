@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { normalizeFeatures, ALL_FEATURE_KEYS } from "@/lib/customer-features";
+import { requireAdmin } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 // GET /api/clients/customer-access — hämta token + status + moduler för aktiv klient
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
     const sb = supabaseService();
@@ -29,6 +32,8 @@ export async function GET() {
 
 // PATCH — slå på/av access eller rotera token
 export async function PATCH(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
     const body = await req.json();

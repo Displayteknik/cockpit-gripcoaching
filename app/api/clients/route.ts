@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
+import { requireAdmin } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
+// Explicit allowlist — ALDRIG select("*"). clients innehåller hemligheter
+// (customer_token, customer_pin, ig_access_token, ghl_api_key, ghl_webhook_url)
+// som tidigare läckte rått till webbläsaren via ClientPicker.
+const CLIENT_PUBLIC_COLUMNS =
+  "id, slug, name, industry, public_url, primary_color, resource_module, archived, created_at, updated_at, report_recipients, ig_handle, ig_account_id, fb_page_id, customer_access_enabled, customer_features";
+
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const sb = supabaseServer();
   const { data, error } = await sb
     .from("clients")
-    .select("*")
+    .select(CLIENT_PUBLIC_COLUMNS)
     .eq("archived", false)
     .order("created_at", { ascending: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -16,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const body = await req.json();
   const sb = supabaseServer();
   const slug = String(body.slug || body.name || "").toLowerCase().replace(/[åä]/g, "a").replace(/ö/g, "o").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -40,6 +53,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const body = await req.json();
   const { id, ...rest } = body;
   const sb = supabaseServer();
