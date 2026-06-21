@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { Check, X, MessageSquare, Loader2, Pencil, Send } from "lucide-react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 interface ShareLink {
   id: string;
@@ -48,10 +49,9 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
   const [done, setDone] = useState<"approved" | "rejected" | null>(null);
 
   useEffect(() => {
-    fetch(`/api/share/${token}`).then(async (r) => {
-      const d = await r.json();
-      if (!r.ok) setError(d.error);
-      else {
+    (async () => {
+      try {
+        const d = await fetchJson<{ link: ShareLink; client: { name: string; primary_color: string } | null; resource: SocialPost | BlogPost | null }>(`/api/share/${token}`);
         setData(d);
         if (d.resource && "caption" in d.resource) {
           setEditedCaption(d.resource.caption);
@@ -60,9 +60,12 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
           setEditedCta(d.resource.cta || "");
           setEditedSlides(d.resource.slides ? [...d.resource.slides] : null);
         }
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setLoading(false); // körs alltid → kunden ser aldrig en evig snurra
       }
-      setLoading(false);
-    });
+    })();
   }, [token]);
 
   async function respond(action: "approve" | "reject" | "comment") {
@@ -74,14 +77,19 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
       cta: editedCta,
       slides: editedSlides,
     } : null;
-    const r = await fetch(`/api/share/${token}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, comment, edits }),
-    });
-    setSubmitting(false);
-    if (r.ok && (action === "approve" || action === "reject")) setDone(action === "approve" ? "approved" : "rejected");
-    else if (r.ok && action === "comment") alert("Kommentar skickad.");
+    try {
+      await fetchJson(`/api/share/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, comment, edits }),
+      });
+      if (action === "approve" || action === "reject") setDone(action === "approve" ? "approved" : "rejected");
+      else if (action === "comment") alert("Kommentar skickad.");
+    } catch (e) {
+      alert("Kunde inte skicka: " + (e as Error).message);
+    } finally {
+      setSubmitting(false); // körs alltid → knappen fastnar aldrig
+    }
   }
 
   if (loading) return <Center><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></Center>;

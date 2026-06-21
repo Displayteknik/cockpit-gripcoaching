@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, Loader2, ExternalLink, Users, Hash, Image as ImageIcon, AlertCircle, ThumbsUp, ThumbsDown, Lightbulb, Zap } from "lucide-react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 interface Snapshot { followers?: number; following?: number; posts?: number; bio?: string; full_name?: string; verified?: boolean }
 interface Analysis {
@@ -25,15 +26,18 @@ export default function AnalysatorPage() {
     if (!handle.trim()) return;
     setLoading(true);
     setResult(null);
-    const r = await fetch("/api/profile-analyzer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ handle, recent_posts_text: recent }),
-    });
-    const d = await r.json();
-    setLoading(false);
-    if (r.ok) setResult(d);
-    else alert("Fel: " + (d.error || "okänt"));
+    try {
+      const d = await fetchJson<{ snapshot: Snapshot; analysis: Analysis }>("/api/profile-analyzer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ handle, recent_posts_text: recent }),
+      });
+      setResult(d);
+    } catch (e) {
+      alert("Fel: " + (e as Error).message);
+    } finally {
+      setLoading(false); // körs alltid → snurran fastnar aldrig
+    }
   }
 
   return (

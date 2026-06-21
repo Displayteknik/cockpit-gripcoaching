@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Gauge, Zap, AlertCircle, CheckCircle2, FileSearch, Upload, HelpCircle, Sparkles, BarChart3, Bot, ShieldCheck, Code2, RefreshCw, Target, ArrowRight } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import { SeoReportBlock } from "@/components/SeoReport";
+import { fetchJson } from "@/lib/safe-fetch";
 
 interface Analytics {
   visits_24h: number;
@@ -115,10 +116,11 @@ function SEOPageInner() {
   useEffect(() => { reload(); }, []);
 
   async function reload() {
+    // Varje hämtning failar oberoende → en seg/trasig del blankar inte hela sidan.
     const [a, k, ad] = await Promise.all([
-      fetch("/api/seo/analytics").then((r) => r.json()),
-      fetch("/api/seo/keywords").then((r) => r.json()),
-      fetch("/api/seo/audit").then((r) => r.json()),
+      fetchJson<Analytics>("/api/seo/analytics").catch(() => null),
+      fetchJson<Keyword[]>("/api/seo/keywords").catch(() => []),
+      fetchJson<Audit[]>("/api/seo/audit").catch(() => []),
     ]);
     setAnalytics(a);
     setKeywords(k);
