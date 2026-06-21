@@ -75,7 +75,7 @@ export default function AnalyticsDashboard() {
   const [savedReports, setSavedReports] = useState<Array<{ id: string; body: string; metadata: { url?: string; generated_at?: string }; created_at: string }>>([]);
   const [copied, setCopied] = useState(false);
   const [openBand, setOpenBand] = useState<"top3" | "top10" | "top20" | "beyond" | null>(null);
-  const [aiTest, setAiTest] = useState<{ client_name: string; summary: { mentioned: number; total: number }; results: Array<{ question: string; mentioned: boolean; competitors: string[]; answer_excerpt: string; sources: { title: string; uri: string }[]; error?: string }> } | null>(null);
+  const [aiTest, setAiTest] = useState<{ client_name: string; summary: { mentioned: number; total: number }; results: Array<{ question: string; mentioned: boolean; competitors: string[]; answer_excerpt: string; sources: { title: string; uri: string }[]; error?: string }>; recommendations?: Array<{ title: string; why: string; how: string }> } | null>(null);
   const [aiTesting, setAiTesting] = useState(false);
   const [aiTestErr, setAiTestErr] = useState<string | null>(null);
 
@@ -729,9 +729,24 @@ export default function AnalyticsDashboard() {
                 )}
               </div>
             ))}
-            <p className="text-xs text-gray-500">
-              Nämns du inte? Stärk sidan (sid-optimeraren), bygg jämförelse- och pris-innehåll, och syns på sajter AI tränar på (LinkedIn, branschmedia).
-            </p>
+            {(aiTest.recommendations?.length ?? 0) > 0 ? (
+              <div className="bg-white border border-violet-100 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-900 mb-2">Så här börjar du synas i AI-svaren</div>
+                <ol className="space-y-2.5">
+                  {aiTest.recommendations!.map((rec, i) => (
+                    <li key={i} className="text-xs">
+                      <div className="font-semibold text-gray-900">{i + 1}. {rec.title}</div>
+                      {rec.why && <div className="text-gray-600 mt-0.5"><strong>Varför:</strong> {rec.why}</div>}
+                      {rec.how && <div className="text-gray-600 mt-0.5"><strong>Så här gör du:</strong> {rec.how}</div>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Nämns du inte? Stärk sidan (sid-optimeraren), bygg jämförelse- och pris-innehåll, och syns på sajter AI tränar på (LinkedIn, branschmedia).
+              </p>
+            )}
           </div>
         )}
       </div>
