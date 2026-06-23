@@ -37,6 +37,9 @@ export const metadata: Metadata = {
     locale: "sv_SE",
     siteName: "HM Motor Krokom",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default async function RootLayout({
