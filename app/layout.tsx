@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   description:
     "HM Motor i Krokom — auktoriserad CF Moto-återförsäljare. Begagnade bilar, fyrhjulingar, UTV, mopeder och trädgårdsmaskiner. 35+ års erfarenhet.",
-  metadataBase: new URL("https://hmmotor.se"),
+  metadataBase: new URL("https://www.hmmotor.se"),
   openGraph: {
     type: "website",
     locale: "sv_SE",
