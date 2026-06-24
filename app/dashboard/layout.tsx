@@ -118,6 +118,7 @@ function buildScopedNavSections(): NavSection[] {
       label: "Min sajt",
       items: [
         { href: "/dashboard/fordon", label: "Fordon", icon: Car },
+        { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
       ],
     },
   ];
@@ -204,12 +205,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="px-3 pb-4 mt-auto border-t border-gray-100 pt-3 space-y-1">
-          {!scoped && (
-            <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
-              <ExternalLink className="w-3.5 h-3.5" />
-              Sideditor (Puck)
-            </Link>
-          )}
+          <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+            <ExternalLink className="w-3.5 h-3.5" />
+            Sideditor (Puck)
+          </Link>
           <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
             <ExternalLink className="w-3.5 h-3.5" />
             Visa publik sajt

@@ -88,7 +88,12 @@ export async function proxy(req: NextRequest) {
     // pinnad server-side, detta håller även UI:t låst till deras egen yta.
     const scope = secret ? await getSessionScope(token, secret) : null;
     if (scope) {
-      const allowed = path === "/dashboard/fordon" || path.startsWith("/dashboard/fordon/");
+      // Scopad klient får: Fordon, Sidor (sidlista) och Puck-editorn (/admin) —
+      // allt pinnat till deras egen tenant. Övriga moduler → tillbaka till Fordon.
+      const allowed =
+        path === "/dashboard/fordon" || path.startsWith("/dashboard/fordon/") ||
+        path === "/dashboard/sidor" || path.startsWith("/dashboard/sidor/") ||
+        path === "/admin" || path.startsWith("/admin/");
       if (!allowed) {
         return NextResponse.redirect(new URL("/dashboard/fordon", req.url));
       }
