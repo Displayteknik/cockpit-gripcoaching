@@ -64,6 +64,19 @@ export default function ClientPicker() {
     await switchTo(created.id);
   }
 
+  // Scopad/enklient-session (t.ex. HM Motor) ser bara sin egen klient → ingen växlare.
+  if (active && clients.length < 2) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200">
+        <span className="w-2.5 h-2.5 rounded-full" style={{ background: active.primary_color || "#94a3b8" }} />
+        <div className="text-left">
+          <div className="text-sm font-semibold text-gray-900 leading-tight">{active.name}</div>
+          {active.industry && <div className="text-[10px] text-gray-500 leading-tight">{active.industry}</div>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <button

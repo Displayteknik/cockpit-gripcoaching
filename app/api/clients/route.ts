@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -16,11 +16,15 @@ export async function GET() {
   if (denied) return denied;
 
   const sb = supabaseServer();
-  const { data, error } = await sb
+  let q = sb
     .from("clients")
     .select(CLIENT_PUBLIC_COLUMNS)
     .eq("archived", false)
     .order("created_at", { ascending: true });
+  // Klient-scopad session ser bara sin egen klient (ingen lista över andra tenants).
+  const scope = await getAdminScope();
+  if (scope) q = q.eq("id", scope);
+  const { data, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }

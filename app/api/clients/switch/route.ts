@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setActiveClientId } from "@/lib/client-context";
 import { getCustomerSession, clearCustomerSession } from "@/lib/customer-context";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -11,6 +11,11 @@ export async function POST(req: NextRequest) {
   // nedan finns kvar bara som diskriminator för att städa stale kund-cookie.)
   const denied = await requireAdmin();
   if (denied) return denied;
+
+  // Klient-scopad session (t.ex. HM Motor) får ALDRIG byta klient.
+  if (await getAdminScope()) {
+    return NextResponse.json({ error: "Din inloggning är låst till en klient" }, { status: 403 });
+  }
 
   // Diskriminator = referer, samma referer-medvetna mönster som resolveClientId:
   //  - anrop från kundportalen (/k) → en kund försöker flytta admin-kontexten →

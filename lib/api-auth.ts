@@ -3,7 +3,7 @@
 // använder exakt samma kontroll (HMAC-session från admin-auth.ts).
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { ADMIN_COOKIE, verifyAdminSession } from "./admin-auth";
+import { ADMIN_COOKIE, verifyAdminSession, getSessionScope } from "./admin-auth";
 import { getCustomerSession } from "./customer-context";
 
 // True om aktuell request bär en giltig admin-session-cookie.
@@ -12,6 +12,15 @@ export async function isAdmin(): Promise<boolean> {
   if (!secret) return false; // fail-closed: ingen secret satt → ingen admin
   const token = (await cookies()).get(ADMIN_COOKIE)?.value;
   return verifyAdminSession(token, secret);
+}
+
+// Klient-id som sessionen är LÅST till (t.ex. HM Motor), eller null för full admin.
+// Routes använder detta för att neka klientväxling och filtrera klientlistor.
+export async function getAdminScope(): Promise<string | null> {
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret) return null;
+  const token = (await cookies()).get(ADMIN_COOKIE)?.value;
+  return getSessionScope(token, secret);
 }
 
 // Använd överst i en admin-route:

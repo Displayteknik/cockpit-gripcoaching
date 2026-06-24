@@ -34,10 +34,13 @@ function constTimeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-// Signerad session-token: "<exp>.<hmac(exp)>" där exp = unix-sekunder.
-export async function createAdminSession(secret: string): Promise<string> {
+// Signerad session-token: "<payload>.<hmac(payload)>".
+//  - Full admin:        payload = "<exp>"                 (unix-sekunder)
+//  - Klient-scopad:     payload = "<exp>~<client_id>"     (låst till en klient, t.ex. HM Motor)
+// Signaturen täcker hela payloaden → scope går inte att förfalska eller ändra.
+export async function createAdminSession(secret: string, scope?: string): Promise<string> {
   const exp = Math.floor(Date.now() / 1000) + ADMIN_TTL_SECONDS;
-  const payload = String(exp);
+  const payload = scope ? `${exp}~${scope}` : String(exp);
   return `${payload}.${await hmac(payload, secret)}`;
 }
 
@@ -49,8 +52,18 @@ export async function verifyAdminSession(value: string | undefined, secret: stri
   const sig = value.slice(dot + 1);
   const expected = await hmac(payload, secret);
   if (!constTimeEqual(sig, expected)) return false;
-  const exp = Number(payload);
+  const exp = Number(payload.split("~")[0]); // exp ligger före ev. ~scope
   return Number.isFinite(exp) && exp * 1000 > Date.now();
+}
+
+// Läser klient-scopet ur en VERIFIERAD session. null = full admin (ingen scope).
+// Returnerar bara scope om signaturen + giltighetstiden stämmer.
+export async function getSessionScope(value: string | undefined, secret: string): Promise<string | null> {
+  if (!(await verifyAdminSession(value, secret))) return null;
+  const v = value as string;
+  const payload = v.slice(0, v.lastIndexOf("."));
+  const tilde = payload.indexOf("~");
+  return tilde >= 0 ? payload.slice(tilde + 1) : null;
 }
 
 // Konstant-tid lösenordskoll via SHA-256 (döljer även längdskillnad).

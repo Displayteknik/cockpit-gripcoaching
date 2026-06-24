@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession, ADMIN_COOKIE } from "@/lib/admin-auth";
+import { verifyAdminSession, getSessionScope, ADMIN_COOKIE } from "@/lib/admin-auth";
 
 // Multi-host routing + admin-grind.
 // - cockpit.gripcoaching.se     → cockpit-app (/dashboard, /admin, /api, /granska, /api/track)
@@ -82,6 +82,16 @@ export async function proxy(req: NextRequest) {
       const url = new URL("/logga-in", req.url);
       url.searchParams.set("from", path);
       return NextResponse.redirect(url);
+    }
+    // Klient-scopad session (t.ex. HM Motor): bara fordons-sidorna. Allt annat
+    // (HQ, andra moduler, Puck-editorn) → tillbaka till Fordon. Datan är redan
+    // pinnad server-side, detta håller även UI:t låst till deras egen yta.
+    const scope = secret ? await getSessionScope(token, secret) : null;
+    if (scope) {
+      const allowed = path === "/dashboard/fordon" || path.startsWith("/dashboard/fordon/");
+      if (!allowed) {
+        return NextResponse.redirect(new URL("/dashboard/fordon", req.url));
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { supabaseServer } from "./supabase-admin";
+import { ADMIN_COOKIE, getSessionScope } from "./admin-auth";
 
 const COOKIE_NAME = "active_client_id";
 const DEFAULT_CLIENT_ID = "00000000-0000-0000-0000-000000000001"; // HM Motor
@@ -22,6 +23,14 @@ export interface Client {
 export async function getActiveClientId(): Promise<string> {
   try {
     const c = await cookies();
+    // Klient-scopad session (t.ex. HM Motor-login) pinnas till sin klient och
+    // ignorerar active_client_id-cookien helt → kan aldrig nå annan tenants data.
+    const secret = process.env.ADMIN_SESSION_SECRET;
+    const token = c.get(ADMIN_COOKIE)?.value;
+    if (secret && token) {
+      const scope = await getSessionScope(token, secret);
+      if (scope) return scope;
+    }
     return c.get(COOKIE_NAME)?.value || DEFAULT_CLIENT_ID;
   } catch {
     return DEFAULT_CLIENT_ID;
