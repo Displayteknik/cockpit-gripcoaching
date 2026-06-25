@@ -1,18 +1,7 @@
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
 import { supabaseService } from "@/lib/supabase-admin";
-import { CUSTOMER_FEATURES } from "@/lib/customer-features";
-import { Sparkles, Calendar, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, Lightbulb } from "lucide-react";
-
-// Genväg-kort per modul — bara de kunden har access till visas.
-const ACTION_CARDS: Record<string, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; color: string }> = {
-  seo: { icon: TrendingUp, title: "SEO & AEO", desc: "Auditera din sajt och se hur du syns i Google + AI-sökmotorer", color: "from-emerald-600 to-teal-600" },
-  skapa: { icon: Sparkles, title: "Skapa ett inlägg", desc: "Tre varianter på 30 sekunder — du väljer vilken som passar bäst", color: "from-purple-600 to-blue-600" },
-  veckoplan: { icon: Calendar, title: "Planera hela veckan", desc: "Skriv ett tema och få sju färdiga inlägg enligt 4A-rytmen", color: "from-emerald-600 to-teal-600" },
-  profil: { icon: Target, title: "Min profil", desc: "Det som gör innehållet bra — uppdatera röst, bilder och kunder", color: "from-amber-600 to-orange-600" },
-  dm: { icon: Users, title: "DM & uppföljning", desc: "Håll koll på alla som DM:at — från kommentar till bokad kund", color: "from-blue-600 to-cyan-600" },
-  ideer: { icon: Lightbulb, title: "Idé-bank", desc: "Granska och godkänn AI-genererade utkast", color: "from-fuchsia-600 to-purple-600" },
-};
+import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight } from "lucide-react";
 
 export default async function CustomerHome() {
   const session = await getCustomerSession();
@@ -20,47 +9,56 @@ export default async function CustomerHome() {
 
   const has = (k: string) => session.features.includes(k);
   const showSocialStats = has("skapa") || has("veckoplan") || has("dm");
+  const showSeo = has("seo");
 
   const sb = supabaseService();
+  const cid = session.client_id;
 
   // Hämta bara den statistik som är relevant för kundens moduler.
-  const [postsRes, contactsRes, qualityRes] = await Promise.all([
+  const [postsRes, contactsRes, qualityRes, seoAuditRes, seoKwRes] = await Promise.all([
     showSocialStats
-      ? sb.from("hm_social_posts").select("status", { count: "exact", head: false }).eq("client_id", session.client_id)
+      ? sb.from("hm_social_posts").select("status").eq("client_id", cid)
       : Promise.resolve({ data: null }),
     showSocialStats
-      ? sb.from("cockpit_dm_contacts").select("stage", { count: "exact", head: false }).eq("client_id", session.client_id)
+      ? sb.from("cockpit_dm_contacts").select("stage").eq("client_id", cid)
       : Promise.resolve({ data: null }),
     has("profil")
-      ? sb.from("hm_brand_profile").select("usp, icp_primary, tone_rules, customer_quotes, booking_url").eq("client_id", session.client_id).maybeSingle()
+      ? sb.from("hm_brand_profile").select("usp, icp_primary, tone_rules, customer_quotes, booking_url").eq("client_id", cid).maybeSingle()
+      : Promise.resolve({ data: null }),
+    showSeo
+      ? sb.from("hm_seo_audits").select("seo_score, aeo_score, url, audited_at").eq("client_id", cid).order("audited_at", { ascending: false }).limit(1).maybeSingle()
+      : Promise.resolve({ data: null }),
+    showSeo
+      ? sb.from("hm_seo_keywords").select("current_rank").eq("client_id", cid)
       : Promise.resolve({ data: null }),
   ]);
 
-  const totalPosts = postsRes.data?.length || 0;
-  const drafts = postsRes.data?.filter((p) => p.status === "draft").length || 0;
-  const published = postsRes.data?.filter((p) => p.status === "published").length || 0;
-  const totalContacts = contactsRes.data?.length || 0;
-  const wonContacts = contactsRes.data?.filter((c) => c.stage === "won").length || 0;
+  const posts = (postsRes.data as { status: string }[] | null) || [];
+  const totalPosts = posts.length;
+  const drafts = posts.filter((p) => p.status === "draft").length;
+  const published = posts.filter((p) => p.status === "published").length;
+  const contacts = (contactsRes.data as { stage: string }[] | null) || [];
+  const totalContacts = contacts.length;
+  const wonContacts = contacts.filter((c) => c.stage === "won").length;
 
-  const profile = qualityRes.data || {};
+  const profile = (qualityRes.data || {}) as Record<string, unknown>;
   const profileFilled = ["usp", "icp_primary", "tone_rules", "customer_quotes", "booking_url"].filter(
-    (k) => (profile as Record<string, unknown>)[k] && String((profile as Record<string, unknown>)[k]).length > 10
+    (k) => profile[k] && String(profile[k]).length > 10
   ).length;
   const profileOK = !has("profil") || profileFilled >= 4;
 
-  // Kort i kataloges ordning, filtrerade på behörighet.
-  const cards = CUSTOMER_FEATURES.filter((f) => has(f.key) && ACTION_CARDS[f.key]).map((f) => ({
-    href: f.href,
-    ...ACTION_CARDS[f.key],
-  }));
+  const audit = seoAuditRes.data as { seo_score?: number; aeo_score?: number; url?: string; audited_at?: string } | null;
+  const kws = ((seoKwRes.data as { current_rank: number | null }[] | null) || []);
+  const kwCount = kws.length;
+  const top10 = kws.filter((k) => k.current_rank != null && k.current_rank <= 10).length;
+
+  const auditDate = audit?.audited_at ? new Date(audit.audited_at).toLocaleDateString("sv-SE", { day: "numeric", month: "short", year: "numeric" }) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="font-display text-3xl font-bold text-gray-900">Välkommen tillbaka</h1>
-        <p className="text-gray-500 mt-1">
-          Här är dina verktyg från {session.client_name}.
-        </p>
+        <p className="text-gray-500 mt-1">Här är läget för {session.client_name}.</p>
       </div>
 
       {!profileOK && (
@@ -70,57 +68,91 @@ export default async function CustomerHome() {
             <div className="font-semibold text-amber-900 text-sm">Din profil behöver kompletteras</div>
             <div className="text-sm text-amber-800 mt-1">
               Ju mer din profil är ifylld, desto bättre blir AI:n på att skriva i din röst.{" "}
-              <Link href="/k/profil" className="underline font-medium">
-                Komplettera nu →
-              </Link>
+              <Link href="/k/profil" className="underline font-medium">Komplettera nu →</Link>
             </div>
           </div>
         </div>
       )}
 
-      {showSocialStats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Inlägg totalt" value={totalPosts} icon={FileText} />
-          <StatCard label="Utkast" value={drafts} icon={Sparkles} color="text-amber-600" />
-          <StatCard label="Publicerade" value={published} icon={Trophy} color="text-emerald-600" />
-          <StatCard label="Kunder i pipeline" value={`${wonContacts}/${totalContacts}`} icon={Users} color="text-purple-600" />
-        </div>
+      {/* SEO — din synlighet i sök */}
+      {showSeo && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-bold text-gray-900 text-lg">Din synlighet i sök</h2>
+            <Link
+              href="/k/seo"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm transition-opacity hover:opacity-90"
+              style={{ background: session.primary_color }}
+            >
+              Öppna SEO & AEO <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <ScoreStat label="Google (SEO)" value={audit?.seo_score} color={session.primary_color} />
+            <ScoreStat label="AI-sökmotorer" value={audit?.aeo_score} color={session.primary_color} />
+            <StatCard label="Sökord du följer" value={kwCount} icon={Target} accent="purple" />
+            <StatCard label="Topp 10 på Google" value={top10} icon={Trophy} accent="amber" />
+          </div>
+          <p className="text-xs text-gray-400">
+            {auditDate ? `Senaste analys ${auditDate}${audit?.url ? " · " + audit.url.replace(/^https?:\/\//, "") : ""}` : "Du har inte kört någon analys än — gör din första på SEO-sidan."}
+          </p>
+        </section>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {cards.map((c) => (
-          <ActionCard key={c.href} href={c.href} icon={c.icon} title={c.title} desc={c.desc} color={c.color} />
-        ))}
-      </div>
+      {/* Social-statistik */}
+      {showSocialStats && (
+        <section className="space-y-3">
+          <h2 className="font-display font-bold text-gray-900 text-lg">Ditt innehåll</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Inlägg totalt" value={totalPosts} icon={FileText} />
+            <StatCard label="Utkast" value={drafts} icon={Sparkles} accent="amber" />
+            <StatCard label="Publicerade" value={published} icon={Trophy} accent="emerald" />
+            <StatCard label="Kunder i pipeline" value={`${wonContacts}/${totalContacts}`} icon={Users} accent="purple" />
+          </div>
+        </section>
+      )}
     </div>
   );
 }
 
-function StatCard({ label, value, icon: Icon, color = "text-gray-700" }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; color?: string }) {
+const ACCENTS: Record<string, string> = {
+  gray: "bg-gray-100 text-gray-600",
+  amber: "bg-amber-100 text-amber-600",
+  emerald: "bg-emerald-100 text-emerald-600",
+  purple: "bg-purple-100 text-purple-600",
+  blue: "bg-blue-100 text-blue-600",
+};
+
+function StatCard({ label, value, icon: Icon, accent = "gray" }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; accent?: keyof typeof ACCENTS | string }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={`w-4 h-4 ${color}`} />
-        <span className="text-xs text-gray-500 uppercase font-medium">{label}</span>
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+      <div className="flex items-center gap-2.5 mb-3">
+        <span className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${ACCENTS[accent] || ACCENTS.gray}`}>
+          <Icon className="w-[18px] h-[18px]" />
+        </span>
+        <span className="text-xs text-gray-500 uppercase font-medium tracking-wide leading-tight">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-gray-900">{value}</div>
+      <div className="text-3xl font-bold text-gray-900 tabular-nums">{value}</div>
     </div>
   );
 }
 
-function ActionCard({ href, icon: Icon, title, desc, color }: { href: string; icon: React.ComponentType<{ className?: string }>; title: string; desc: string; color: string }) {
+// SEO/AEO-poäng (0–100) med färg efter hur bra det är.
+function ScoreStat({ label, value, color }: { label: string; value?: number; color: string }) {
+  const has = typeof value === "number";
+  const tone = !has ? "#9ca3af" : value! >= 80 ? "#059669" : value! >= 60 ? "#d97706" : "#dc2626";
   return (
-    <Link
-      href={href}
-      className="block bg-white border border-gray-200 hover:border-gray-300 rounded-xl p-5 transition-all hover:shadow-md group"
-    >
-      <div className="flex items-center gap-3 mb-2">
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="font-display font-bold text-gray-900 group-hover:text-purple-700">{title}</div>
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+      <div className="flex items-center gap-2.5 mb-3">
+        <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}1a` }}>
+          <TrendingUp className="w-[18px] h-[18px]" style={{ color }} />
+        </span>
+        <span className="text-xs text-gray-500 uppercase font-medium tracking-wide leading-tight">{label}</span>
       </div>
-      <div className="text-sm text-gray-600">{desc}</div>
-    </Link>
+      <div className="flex items-baseline gap-1">
+        <span className="text-3xl font-bold tabular-nums" style={{ color: tone }}>{has ? value : "—"}</span>
+        {has && <span className="text-sm text-gray-400 font-medium">/100</span>}
+      </div>
+    </div>
   );
 }

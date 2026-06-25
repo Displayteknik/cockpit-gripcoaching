@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Zap } from "lucide-react";
+import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Lightbulb } from "lucide-react";
 import { SeoReportBlock } from "@/components/SeoReport";
 
 interface Audit {
@@ -400,7 +400,9 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       {/* AEO-tips */}
       <div className="rounded-xl p-5 border" style={{ background: `${primaryColor}08`, borderColor: `${primaryColor}25` }}>
         <h3 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-2">
-          <Zap className="w-5 h-5" style={{ color: primaryColor }} />
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+            <Lightbulb className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+          </span>
           Så syns du i AI-sökmotorer
         </h3>
         <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-5">
