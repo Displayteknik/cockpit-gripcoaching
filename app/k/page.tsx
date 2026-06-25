@@ -88,8 +88,8 @@ export default async function CustomerHome() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <ScoreStat label="Google (SEO)" value={audit?.seo_score} color={session.primary_color} />
-            <ScoreStat label="AI-sökmotorer" value={audit?.aeo_score} color={session.primary_color} />
+            <ScoreStat label="Google (SEO)" value={audit?.seo_score} />
+            <ScoreStat label="AI-sökmotorer" value={audit?.aeo_score} />
             <StatCard label="Sökord du följer" value={kwCount} icon={Target} accent="purple" />
             <StatCard label="Topp 10 på Google" value={top10} icon={Trophy} accent="amber" />
           </div>
@@ -138,14 +138,15 @@ function StatCard({ label, value, icon: Icon, accent = "gray" }: { label: string
 }
 
 // SEO/AEO-poäng (0–100) med färg efter hur bra det är.
-function ScoreStat({ label, value, color }: { label: string; value?: number; color: string }) {
+function ScoreStat({ label, value }: { label: string; value?: number }) {
   const has = typeof value === "number";
   const tone = !has ? "#9ca3af" : value! >= 80 ? "#059669" : value! >= 60 ? "#d97706" : "#dc2626";
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
       <div className="flex items-center gap-2.5 mb-3">
-        <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}1a` }}>
-          <TrendingUp className="w-[18px] h-[18px]" style={{ color }} />
+        {/* Brickan färgas efter poängen (grön=bra) så det viktigaste talet poppar. */}
+        <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${tone}1a` }}>
+          <TrendingUp className="w-[18px] h-[18px]" style={{ color: tone }} />
         </span>
         <span className="text-xs text-gray-500 uppercase font-medium tracking-wide leading-tight">{label}</span>
       </div>
