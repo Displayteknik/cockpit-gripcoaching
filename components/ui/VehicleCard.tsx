@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
@@ -15,6 +16,10 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
   const topSpecs = Object.entries(specs).slice(0, 3);
   const stock = parseStock(vehicle.badge_type);
   const flag = stock ? stockFlag(stock) : null;
+  // Visa märkesplatshållaren om bilden saknas ELLER laddar trasigt (404) — annars
+  // visar webbläsaren en grå ruta med alt-texten, vilket ser oproffsigt ut.
+  const [imgBroken, setImgBroken] = useState(false);
+  const showImage = !!vehicle.image_url && !imgBroken;
 
   return (
     <Link
@@ -23,20 +28,17 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     >
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-surface-light">
-        {vehicle.image_url ? (
+        {showImage ? (
           <Image
             src={vehicle.image_url}
             alt={vehicle.title}
             fill
             className="object-contain group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={() => setImgBroken(true)}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-text-light">
-            <svg className="w-16 h-16 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
+          <VehiclePlaceholder title={vehicle.title} />
         )}
 
         {/* Badge */}
@@ -103,5 +105,21 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
         </div>
       </div>
     </Link>
+  );
+}
+
+// Premium platshållare när foto saknas/är trasigt — märkt och avsiktlig, aldrig en grå ruta.
+function VehiclePlaceholder({ title }: { title: string }) {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-50 via-white to-brand-blue/5">
+      <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(circle_at_1px_1px,_currentColor_1px,_transparent_0)] [background-size:16px_16px] text-brand-blue" />
+      <div className="relative w-16 h-16 rounded-2xl bg-white shadow-sm border border-brand-blue/10 flex items-center justify-center">
+        <svg className="w-8 h-8 text-brand-blue/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5a2 2 0 011.9-1.4h10.2A2 2 0 0119 8l2 5m-18 0v4a1 1 0 001 1h1a1 1 0 001-1v-1h12v1a1 1 0 001 1h1a1 1 0 001-1v-4m-18 0h18M6.5 16.5h.01M17.5 16.5h.01" />
+        </svg>
+      </div>
+      <span className="relative text-xs font-medium text-text-light tracking-wide">Foto kommer snart</span>
+      <span className="sr-only">{title}</span>
+    </div>
   );
 }

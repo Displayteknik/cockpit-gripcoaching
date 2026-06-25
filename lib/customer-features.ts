@@ -30,10 +30,10 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
   },
   {
     key: "besokare",
-    label: "Besökare",
+    label: "Statistik",
     href: "/k/besokare",
     icon: Globe,
-    description: "Besöksstatistik från spårningspixeln — besök, mest besökta sidor och trafikkällor. Ingen verktygskoppling krävs.",
+    description: "Komplett dashboard — besök, kanaler, AI-synlighet, Google-sök, sökord och trender. Fylls automatiskt från pixeln + Google-koppling.",
   },
   {
     key: "skapa",

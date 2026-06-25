@@ -14,8 +14,16 @@ export default function GoogleConnect() {
   const [gaProps, setGaProps] = useState<Array<{ id: string; name: string; account: string }>>([]);
   const [loadingGa, setLoadingGa] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
+  const [activeClient, setActiveClient] = useState<{ name: string; primary_color: string } | null>(null);
 
-  useEffect(() => { reload(); checkUrlParams(); }, []);
+  useEffect(() => { reload(); checkUrlParams(); loadActiveClient(); }, []);
+
+  async function loadActiveClient() {
+    try {
+      const r = await fetch("/api/clients/active");
+      if (r.ok) { const c = await r.json(); if (c?.name) setActiveClient({ name: c.name, primary_color: c.primary_color || "#3B82F6" }); }
+    } catch { /* tyst — banner döljs bara */ }
+  }
 
   function checkUrlParams() {
     const url = new URL(window.location.href);
@@ -98,9 +106,10 @@ export default function GoogleConnect() {
   if (!status.connected) {
     return (
       <div className="space-y-3">
+        <ActiveClientBanner client={activeClient} mode="connect" />
         <a href="/api/google/auth" className="inline-flex items-center gap-2 bg-white border border-gray-300 hover:border-blue-400 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 transition-colors">
           <GoogleIcon />
-          Anslut Google för denna klient
+          Anslut Google{activeClient ? ` för ${activeClient.name}` : " för denna klient"}
         </a>
         <button onClick={() => setShowSetup(!showSetup)} className="block text-xs text-gray-500 underline">{showSetup ? "Dölj" : "Visa"} setup-instruktioner</button>
         {showSetup && <SetupSteps />}
@@ -110,6 +119,7 @@ export default function GoogleConnect() {
 
   return (
     <div className="space-y-3">
+      <ActiveClientBanner client={activeClient} mode="connected" />
       <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600" />
@@ -201,6 +211,23 @@ export default function GoogleConnect() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Visar tydligt VILKEN klient Google kopplas/är kopplat för — så data aldrig hamnar på fel kund.
+function ActiveClientBanner({ client, mode }: { client: { name: string; primary_color: string } | null; mode: "connect" | "connected" }) {
+  if (!client) return null;
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+      <span className="w-6 h-6 rounded-md flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: client.primary_color }}>
+        {client.name.trim().charAt(0).toUpperCase()}
+      </span>
+      <span className="text-gray-600">
+        {mode === "connect" ? "Du kopplar Google för" : "Gäller klienten"}{" "}
+        <strong className="text-gray-900">{client.name}</strong>
+        {mode === "connect" && <span className="text-gray-400"> — byt klient i väljaren uppe till vänster om det är fel.</span>}
+      </span>
     </div>
   );
 }

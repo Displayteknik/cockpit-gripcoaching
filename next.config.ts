@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "cfmoto.se",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cfmoto.se",
+      },
+      {
+        protocol: "https",
         hostname: "images.unsplash.com",
       },
       {

@@ -3,14 +3,14 @@
 // customer-cookien (satt av /k/[token]). Datan kommer från spårningspixeln.
 import { requireCustomerFeature } from "@/lib/customer-context";
 import { generateTrackingPixel } from "@/lib/setup-tools";
-import BesokareClient from "./BesokareClient";
+import CustomerAnalytics from "@/components/CustomerAnalytics";
 
 export const dynamic = "force-dynamic";
 
 export default async function KBesokare() {
   const session = await requireCustomerFeature("besokare");
-  // Spårnings-snutten kunden lägger i sin sajt-kod — det som får siffrorna att börja flöda.
+  // Spårnings-snutten kunden lägger i sin sajt-kod — visas i tomt läge tills data flödar.
   const pixel = await generateTrackingPixel({ client_id: session.client_id });
   const snippet = pixel.ok ? (pixel.data as { snippet: string }).snippet : "";
-  return <BesokareClient primaryColor={session.primary_color} clientName={session.client_name} snippet={snippet} />;
+  return <CustomerAnalytics primaryColor={session.primary_color} clientName={session.client_name} snippet={snippet} />;
 }

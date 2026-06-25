@@ -52,6 +52,7 @@ const CRON_PATHS = new Set([
 // requireAdminOrCustomer() (admin- ELLER kund-session). proxy:n släpper igenom.
 function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/customer/")) return true;
+  if (path.startsWith("/api/k/")) return true;   // kund-portalens egna endpoints (grindas i routen via kund-session)
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||
