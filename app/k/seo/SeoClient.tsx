@@ -53,6 +53,10 @@ export default function SeoClient({ primaryColor, clientName, publicUrl }: { pri
   const [auditing, setAuditing] = useState(false);
   const [newKw, setNewKw] = useState({ keyword: "", target_url: "", intent: "informational", search_volume: "" });
   const [showAiAudit, setShowAiAudit] = useState(false);
+  const [ideas, setIdeas] = useState<{ groups: { title: string; note: string; keywords: { keyword: string; why: string; intent: string }[] }[] } | null>(null);
+  const [ideasLoading, setIdeasLoading] = useState(false);
+  const [focus, setFocus] = useState("");
+  const [addedKw, setAddedKw] = useState<Set<string>>(new Set());
 
   async function reload() {
     const [ad, kw] = await Promise.all([
@@ -98,6 +102,37 @@ export default function SeoClient({ primaryColor, clientName, publicUrl }: { pri
       }),
     });
     setNewKw({ keyword: "", target_url: "", intent: "informational", search_volume: "" });
+    reload();
+  }
+
+  async function generateIdeas() {
+    setIdeasLoading(true);
+    setIdeas(null);
+    try {
+      const r = await fetch("/api/seo/keyword-ideas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ focus }),
+      });
+      const raw = await r.text();
+      let d: { groups?: { title: string; note: string; keywords: { keyword: string; why: string; intent: string }[] }[]; error?: string };
+      try { d = JSON.parse(raw); } catch { throw new Error("Det tog för lång tid. Försök igen om en stund."); }
+      if (!r.ok) throw new Error(d?.error || "Kunde inte föreslå sökord.");
+      setIdeas({ groups: d.groups || [] });
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setIdeasLoading(false);
+    }
+  }
+
+  async function addSuggested(keyword: string, intent: string) {
+    setAddedKw((s) => new Set(s).add(keyword));
+    await fetch("/api/seo/keywords", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keyword, intent, target_url: null, search_volume: null }),
+    });
     reload();
   }
 
@@ -234,6 +269,63 @@ export default function SeoClient({ primaryColor, clientName, publicUrl }: { pri
           <Sparkles className="w-4 h-4" />
           Granska en text
         </button>
+      </Card>
+
+      {/* Sökords-förslag — föreslår VAD man ska ranka på */}
+      <Card title="Vad ska du ranka på?" subtitle="Vet du inte vilka sökord du ska synas på? Vi läser din verksamhet och föreslår sökord som dina kunder faktiskt söker på. Lägg till dem i trackern med ett klick.">
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <input
+            value={focus}
+            onChange={(e) => setFocus(e.target.value)}
+            placeholder="Något särskilt du vill synas för? (valfritt)"
+            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400"
+          />
+          <button
+            onClick={generateIdeas}
+            disabled={ideasLoading}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+            style={{ background: primaryColor }}
+          >
+            {ideasLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {ideasLoading ? "Tar fram förslag…" : "Föreslå sökord"}
+          </button>
+        </div>
+
+        {ideas && ideas.groups.length === 0 && (
+          <Empty text="Inga förslag den här gången — fyll i fältet ovan och försök igen." />
+        )}
+
+        {ideas && ideas.groups.length > 0 && (
+          <div className="space-y-4">
+            {ideas.groups.map((g, gi) => (
+              <div key={gi}>
+                <div className="font-semibold text-gray-900 text-sm">{g.title}</div>
+                {g.note && <div className="text-xs text-gray-500 mb-2">{g.note}</div>}
+                <div className="space-y-1.5">
+                  {g.keywords.map((k, ki) => {
+                    const added = addedKw.has(k.keyword);
+                    return (
+                      <div key={ki} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 text-sm">{k.keyword}</div>
+                          {k.why && <div className="text-xs text-gray-500">{k.why}</div>}
+                        </div>
+                        <button
+                          onClick={() => addSuggested(k.keyword, k.intent)}
+                          disabled={added}
+                          className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap disabled:opacity-60"
+                          style={added ? { background: "#ecfdf5", color: "#059669" } : { background: `${primaryColor}15`, color: primaryColor }}
+                        >
+                          {added ? <><CheckCircle2 className="w-3.5 h-3.5" /> Tillagd</> : <><Plus className="w-3.5 h-3.5" /> Lägg till</>}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Sökords-tracker */}
