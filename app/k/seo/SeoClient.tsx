@@ -332,18 +332,21 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
 
       {/* Sökords-tracker */}
       <Card title="Sökords-tracker" subtitle="Lägg in dina viktigaste sökord. Sök på Google, se var du ligger och skriv in din position — så ser du utvecklingen över tid.">
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_1fr_auto] gap-2 mb-4">
-          <input value={newKw.keyword} onChange={(e) => setNewKw({ ...newKw, keyword: e.target.value })} placeholder="Sökord" className="px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400" />
-          <input value={newKw.target_url} onChange={(e) => setNewKw({ ...newKw, target_url: e.target.value })} placeholder="Mål-URL (valfritt)" className="px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400" />
-          <select value={newKw.intent} onChange={(e) => setNewKw({ ...newKw, intent: e.target.value })} className="px-3 py-2 rounded-lg border border-gray-200 text-sm">
-            <option value="informational">Info</option>
-            <option value="transactional">Köp</option>
-            <option value="navigational">Navigering</option>
-            <option value="commercial">Jämför</option>
-          </select>
-          <input type="number" value={newKw.search_volume} onChange={(e) => setNewKw({ ...newKw, search_volume: e.target.value })} placeholder="Volym/mån" className="px-3 py-2 rounded-lg border border-gray-200 text-sm" />
-          <button onClick={addKeyword} disabled={!newKw.keyword.trim()} className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50" style={{ background: primaryColor }}>
-            <Plus className="w-4 h-4" />
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <input
+            value={newKw.keyword}
+            onChange={(e) => setNewKw({ ...newKw, keyword: e.target.value })}
+            onKeyDown={(e) => { if (e.key === "Enter") addKeyword(); }}
+            placeholder="Skriv ett sökord du vill följa, t.ex. ledarskapsutbildning"
+            className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+          />
+          <button
+            onClick={addKeyword}
+            disabled={!newKw.keyword.trim()}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-40 transition-opacity shadow-sm"
+            style={{ background: primaryColor }}
+          >
+            <Plus className="w-4 h-4" /> Lägg till
           </button>
         </div>
         {keywords.length === 0 ? <Empty text="Lägg till ditt första sökord ovan." /> : (
@@ -502,10 +505,10 @@ function ScoreBox({ label, v }: { label: string; v: number }) {
 
 function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <h2 className="font-display font-bold text-gray-900">{title}</h2>
-      {subtitle && <p className="text-xs text-gray-500 mt-0.5 mb-3">{subtitle}</p>}
-      <div className={subtitle ? "" : "mt-3"}>{children}</div>
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+      <h2 className="font-display font-bold text-gray-900 text-lg leading-tight">{title}</h2>
+      {subtitle && <p className="text-sm text-gray-500 mt-1 mb-4 leading-relaxed">{subtitle}</p>}
+      <div className={subtitle ? "" : "mt-4"}>{children}</div>
     </div>
   );
 }
