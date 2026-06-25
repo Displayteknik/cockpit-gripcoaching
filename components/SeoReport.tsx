@@ -128,7 +128,7 @@ function ReportView({
       {/* Header */}
       <div className="p-5" style={{ background: `${primaryColor}0D` }}>
         <div className="flex items-start justify-between gap-3">
-          <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
+          <div className="text-xs font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
             SEO &amp; AEO-rapport
           </div>
           <button
@@ -157,7 +157,7 @@ function ReportView({
       <div className="p-5 space-y-5">
         {report.teknik && (
           <div>
-            <div className="text-sm font-semibold text-gray-900 mb-2">Teknik &amp; prestanda <span className="text-[10px] font-normal text-gray-400">(uppmätt)</span></div>
+            <div className="text-sm font-semibold text-gray-900 mb-2">Teknik &amp; prestanda <span className="text-xs font-normal text-gray-400">(uppmätt)</span></div>
             <div className="flex flex-wrap gap-2 mb-2">
               <span className={`text-xs px-2 py-1 rounded-lg border ${report.teknik.indexerbar ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"}`}>
                 {report.teknik.indexerbar ? "Indexerbar" : "EJ indexerbar"}
@@ -173,7 +173,7 @@ function ReportView({
               <div className="grid grid-cols-3 gap-2 mb-2">
                 {([["LCP", report.teknik.cwv.lcp, cwvLcp], ["INP", report.teknik.cwv.inp, cwvInp], ["CLS", report.teknik.cwv.cls, cwvCls]] as const).map(([label, cell, fmt]) => (
                   <div key={label} className="border border-gray-100 rounded-lg p-2 text-center">
-                    <div className="text-[10px] text-gray-500 uppercase">{label}</div>
+                    <div className="text-xs text-gray-500 uppercase">{label}</div>
                     <div className={`text-lg font-bold tabular-nums ${cwvColor(cell?.category)}`}>{cell ? fmt(cell.value) : "—"}</div>
                   </div>
                 ))}
@@ -193,11 +193,11 @@ function ReportView({
 
         {report.sokord && report.sokord.length > 0 && (
           <div>
-            <div className="text-sm font-semibold text-gray-900 mb-2">Sökord i Google <span className="text-[10px] font-normal text-gray-400">(Search Console)</span></div>
+            <div className="text-sm font-semibold text-gray-900 mb-2">Sökord i Google <span className="text-xs font-normal text-gray-400">(Search Console)</span></div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead><tr className="text-gray-500 text-left border-b border-gray-100">
-                  <th className="py-1 pr-2 font-medium">Sökord</th><th className="py-1 px-2 font-medium text-right">Visn.</th><th className="py-1 px-2 font-medium text-right">Klick</th><th className="py-1 px-2 font-medium text-right">CTR</th><th className="py-1 pl-2 font-medium text-right">Pos.</th>
+                  <th className="py-1 pr-2 font-medium">Sökord</th><th className="py-1 px-2 font-medium text-right">Visn.</th><th className="py-1 px-2 font-medium text-right">Klick</th><th className="py-1 px-2 font-medium text-right" title="Andel som klickar av de som ser dig">Klick-%</th><th className="py-1 pl-2 font-medium text-right">Pos.</th>
                 </tr></thead>
                 <tbody>
                   {report.sokord.slice(0, 10).map((k, i) => (
@@ -242,8 +242,8 @@ function ReportView({
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="text-sm font-semibold text-gray-900">{i + 1}. {f.rubrik}</div>
                     <div className="flex gap-1 flex-shrink-0">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${prioColor[f.prioritet] || prioColor["låg"]}`}>{f.prioritet} prio</span>
-                      {f.effekt && <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${effektColor[f.effekt] || effektColor["liten"]}`}>{f.effekt} effekt</span>}
+                      <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full ${prioColor[f.prioritet] || prioColor["låg"]}`}>{f.prioritet} prio</span>
+                      {f.effekt && <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full ${effektColor[f.effekt] || effektColor["liten"]}`}>{f.effekt} effekt</span>}
                     </div>
                   </div>
                   <div className="text-xs text-gray-600"><strong className="text-gray-700">Varför:</strong> {f.varfor}</div>
@@ -291,7 +291,7 @@ function ScoreCell({ label, v, comment }: { label: string; v?: number; comment?:
   const color = val == null ? "text-gray-400" : val >= 80 ? "text-emerald-600" : val >= 60 ? "text-amber-600" : "text-red-600";
   return (
     <div className="p-3 border-r border-b border-gray-100 last:border-r-0">
-      <div className="text-[10px] text-gray-500 uppercase tracking-wide leading-tight">{label}</div>
+      <div className="text-xs text-gray-500 uppercase tracking-wide leading-tight">{label}</div>
       <div className={`text-2xl font-bold tabular-nums ${color}`}>{val ?? "—"}</div>
       {comment && <div className="text-[11px] text-gray-500 leading-snug mt-0.5">{comment}</div>}
     </div>

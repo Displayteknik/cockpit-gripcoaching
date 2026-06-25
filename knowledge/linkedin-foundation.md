@@ -58,7 +58,7 @@ Mappa varje inlägg till en port. Tidigt i resan: KNOW + LIKE. Senare: TRUST + T
 
 ## 8. Hooks som funkar
 
-Sju kraftfulla öppningar:
+Sju starka öppningar:
 
 1. **Den kontraintuitiva sanningen:** "Alla säger X. Det är fel. Här är varför..."
 2. **Misstaget jag ser:** "Det vanligaste misstaget jag ser [målgrupp] göra med [ämne] är..."

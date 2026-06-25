@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
+import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { hasKeywordIdeas } from "@/lib/feature-flags";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -19,6 +21,12 @@ interface KeywordIdeas {
 export async function POST(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
+
+  // Funktionen rullas ut en kund i taget (just nu bara Ledarskapskultur).
+  const clientId = await resolveClientId();
+  if (!hasKeywordIdeas(clientId)) {
+    return NextResponse.json({ error: "Funktionen är inte aktiverad." }, { status: 403 });
+  }
 
   const focus: string = (await req.json().catch(() => ({})))?.focus || "";
   const profile = await getProfileAsMarkdown();

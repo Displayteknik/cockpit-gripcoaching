@@ -3,6 +3,7 @@
 // client_id via customer-cookien (satt av /k/[token]).
 import { requireCustomerFeature } from "@/lib/customer-context";
 import { supabaseService } from "@/lib/supabase-admin";
+import { hasKeywordIdeas } from "@/lib/feature-flags";
 import SeoClient from "./SeoClient";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function KSeo() {
       primaryColor={session.primary_color}
       clientName={session.client_name}
       publicUrl={(data?.public_url as string) || ""}
+      showKeywordIdeas={hasKeywordIdeas(session.client_id)}
     />
   );
 }

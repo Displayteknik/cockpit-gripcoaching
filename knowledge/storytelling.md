@@ -129,7 +129,7 @@ PRINCIPEN: Hjärnan värderar inte saker absolut — den värderar RELATIVT. 10 
 KONTRAST-TEKNIKER FÖR INSTAGRAM:
 
 1. BEFORE/AFTER (Visuell kontrast)
-Visa "innan" och "efter" sida vid sida. Mest kraftfullt med VERKLIGA bilder/screenshots.
+Visa "innan" och "efter" sida vid sida. Starkast med VERKLIGA bilder/screenshots.
 Användning: Carousels, split-screen Reels, first-slide/last-slide.
 
 2. TIDSKONTRAST (Temporal kontrast)
@@ -146,7 +146,7 @@ Siffror gör kontrasten MÄTBAR och trovärdig.
 
 5. KÄNSLOKONTRAST (Emotionell kontrast)
 "Jag hatade att öppna Instagram. Nu är det min största inkomstkälla."
-Två motstridiga känslor om SAMMA sak = kraftfull kontrast.
+Två motstridiga känslor om SAMMA sak = stark kontrast.
 
 ORDNING SPELAR ROLL:
 ALLTID negativ → positiv. Aldrig tvärtom.

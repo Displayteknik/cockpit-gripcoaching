@@ -146,9 +146,10 @@ export default function InstallningarPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("/api/settings").then((r) => r.json()).then((d) => {
-      if (d && !d.error) setSettings(d);
-    });
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((d) => { if (d && !d.error) setSettings(d); })
+      .catch(() => {}); // tyst — sidan visar tomma fält istället för att krascha
   }, []);
 
   function update(key: string, value: string) {
