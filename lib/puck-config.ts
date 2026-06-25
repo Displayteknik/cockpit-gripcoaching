@@ -10,6 +10,8 @@ import { FAQ } from "@/components/puck/FAQ";
 import { CTASection } from "@/components/puck/CTASection";
 import { WhySection } from "@/components/puck/WhySection";
 import { JustNuCards } from "@/components/puck/JustNuCards";
+import { FeaturedDeals } from "@/components/puck/FeaturedDeals";
+import { DeluxeHighlight } from "@/components/puck/DeluxeHighlight";
 import { QuickCategories } from "@/components/puck/QuickCategories";
 import { Spotlight } from "@/components/puck/Spotlight";
 import { PartnerLogos } from "@/components/puck/PartnerLogos";
@@ -129,7 +131,7 @@ export const puckConfig: Config = addDesignFields({
     },
     sections: {
       title: "Färdiga sektioner",
-      components: ["Hero", "PageHeader", "Spotlight", "FAQ", "CTASection", "WhySection", "JustNuCards", "QuickCategories", "PartnerLogos", "Timeline", "ValuesGrid", "ContactLayout", "TradeInStrip", "RichText"],
+      components: ["Hero", "PageHeader", "Spotlight", "DeluxeHighlight", "FeaturedDeals", "FAQ", "CTASection", "WhySection", "JustNuCards", "QuickCategories", "PartnerLogos", "Timeline", "ValuesGrid", "ContactLayout", "TradeInStrip", "RichText"],
     },
     data: {
       title: "Dynamiskt innehåll",
@@ -366,6 +368,72 @@ export const puckConfig: Config = addDesignFields({
         cards: [],
       },
       render: JustNuCards as any,
+    },
+
+    FeaturedDeals: {
+      label: "Fynd just nu (Blocket)",
+
+      fields: {
+        title: { type: "text", label: "Rubrik", contentEditable: true },
+        subtitle: { type: "textarea", label: "Underrubrik", contentEditable: true },
+        items: {
+          type: "array",
+          label: "Objekt",
+          arrayFields: {
+            image: imageFieldDef("Bild"),
+            title: { type: "text", label: "Titel" },
+            price: { type: "text", label: "Pris (t.ex. 3 800 kr)" },
+            condition: { type: "text", label: "Skick-etikett (t.ex. Nyskick)" },
+            text: { type: "textarea", label: "Kort text" },
+            blocketUrl: { type: "text", label: "Blocket-länk" },
+          },
+        },
+      },
+      defaultProps: {
+        title: "Begagnade fynd just nu",
+        subtitle: "Handplockade maskiner till bra pris. Klicka för annonsen på Blocket.",
+        items: [],
+      },
+      render: FeaturedDeals as any,
+    },
+
+    DeluxeHighlight: {
+      label: "Highlight deluxe (ett objekt)",
+
+      fields: {
+        badge: { type: "text", label: "Etikett (t.ex. Utvalt just nu)", contentEditable: true },
+        title: { type: "text", label: "Titel", contentEditable: true },
+        condition: { type: "text", label: "Skick-etikett (t.ex. Nyskick)" },
+        price: { type: "text", label: "Pris (t.ex. 3 800 kr)" },
+        image: imageFieldDef("Bild"),
+        text: { type: "textarea", label: "Beskrivning", contentEditable: true },
+        highlights: {
+          type: "array",
+          label: "Punkter (kort)",
+          arrayFields: { text: { type: "text", label: "Punkt" } },
+        },
+        blocketUrl: { type: "text", label: "Blocket-länk" },
+        ctaText: { type: "text", label: "Knapptext" },
+        phone: { type: "text", label: "Telefon (valfri, för Ring-knapp)" },
+      },
+      defaultProps: {
+        badge: "Utvalt just nu",
+        title: "solo by AL-KO 4212 P-A",
+        condition: "Nyskick",
+        price: "3 800 kr",
+        image: "",
+        text: "Prisvärd lättviktare. 42 cm klippbredd och stark AL-KO Pro 125-motor med OHV — ideal för gräsytor upp till 800 m².",
+        highlights: [
+          { text: "42 cm klippbredd" },
+          { text: "65 l uppsamlare" },
+          { text: "7 klipphöjder (2,5–7 cm)" },
+          { text: "Engineered in Germany" },
+        ],
+        blocketUrl: "https://www.blocket.se/recommerce/forsale/item/23355617",
+        ctaText: "Se annonsen på Blocket",
+        phone: "0640-62758",
+      },
+      render: DeluxeHighlight as any,
     },
 
     QuickCategories: {
