@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Check, Plus, Loader2, X, Building2 } from "lucide-react";
 
@@ -23,6 +23,19 @@ export default function ClientPicker() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => { reload(); }, []);
+
+  // Direktlänk: ?kund=<slug> (eller ?client=<id>) väljer klienten automatiskt.
+  // Körs en gång när listan laddats. Switch-API:t är admin-grindat → säkert.
+  const deepLinkRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkRef.current || clients.length === 0) return;
+    deepLinkRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const want = params.get("kund") || params.get("client");
+    if (!want) return;
+    const target = clients.find((c) => c.slug === want || c.id === want);
+    if (target && target.id !== active?.id) switchTo(target.id);
+  }, [clients, active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function reload() {
     const [list, current] = await Promise.all([
