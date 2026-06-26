@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -205,19 +205,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-        {/* Byrå-genvägar — döljs i den låsta klient-vyn (HM Motor sköter sidor via "Sidor" i menyn). */}
-        {!scoped && (
-          <div className="px-3 pb-4 mt-auto border-t border-gray-100 pt-3 space-y-1">
-            <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
-              <ExternalLink className="w-3.5 h-3.5" />
-              Sideditor (Puck)
-            </Link>
-            <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
-              <ExternalLink className="w-3.5 h-3.5" />
-              Visa publik sajt
-            </Link>
-          </div>
-        )}
+        {/* Sidfot: byrå-genvägar (döljs i låst klientvy) + utloggning (alltid synlig) */}
+        <div className="px-3 pb-4 mt-auto border-t border-gray-100 pt-3 space-y-1">
+          {!scoped && (
+            <>
+              <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+                <ExternalLink className="w-3.5 h-3.5" />
+                Sideditor (Puck)
+              </Link>
+              <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+                <ExternalLink className="w-3.5 h-3.5" />
+                Visa publik sajt
+              </Link>
+            </>
+          )}
+          <form action="/api/admin/logout" method="post">
+            <button type="submit" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+              <LogOut className="w-3.5 h-3.5" />
+              Logga ut
+            </button>
+          </form>
+        </div>
       </aside>
 
       {/* Mobile overlay */}
