@@ -14,20 +14,25 @@ export async function POST(req: NextRequest) {
   }
 
   let password = "";
+  let username = "";
   try {
-    ({ password } = await req.json());
+    ({ password, username = "" } = await req.json());
   } catch {
     return NextResponse.json({ error: "Ogiltig förfrågan" }, { status: 400 });
   }
 
-  // Full admin → ingen scope. HM Motor-lösenord → session låst till HM Motor.
+  const user = (username || "").trim().toLowerCase();
+
+  // Full admin (byrå) → lösenord, inget användarnamn.
+  // HM Motor → användarnamn "HMMotor" + HM Motor-lösenord (tomt användarnamn accepteras
+  // också så ingen låses ute). Sessionen blir låst till HM Motor.
   let scope: string | null = null;
-  if (await passwordMatches(password, expected)) {
+  if (!user && (await passwordMatches(password, expected))) {
     scope = null;
-  } else if (hmExpected && (await passwordMatches(password, hmExpected))) {
+  } else if (hmExpected && (user === "hmmotor" || user === "") && (await passwordMatches(password, hmExpected))) {
     scope = HM_MOTOR_ID;
   } else {
-    return NextResponse.json({ error: "Fel lösenord" }, { status: 401 });
+    return NextResponse.json({ error: "Fel användarnamn eller lösenord" }, { status: 401 });
   }
 
   const token = await createAdminSession(secret, scope || undefined);

@@ -8,6 +8,7 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const from = params.get("from") || "/dashboard";
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,7 +20,7 @@ function LoginForm() {
     const r = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ username, password }),
     });
     if (!r.ok) {
       const msg = await r.json().catch(() => ({}));
@@ -48,14 +49,24 @@ function LoginForm() {
           <h1 className="text-lg font-display font-bold text-gray-900 mb-1 flex items-center gap-2">
             <Lock className="w-4 h-4 text-gray-400" /> Logga in
           </h1>
-          <p className="text-sm text-gray-500 mb-4">Adminytan är skyddad. Ange lösenordet för att fortsätta.</p>
+          <p className="text-sm text-gray-500 mb-4">Skyddad yta. Ange dina uppgifter för att fortsätta.</p>
+
+          <label className="text-sm font-medium text-gray-700 mb-1 block">Användarnamn</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoFocus
+            autoComplete="username"
+            placeholder="t.ex. HMMotor (lämna tomt som byrå-admin)"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none mb-3"
+          />
 
           <label className="text-sm font-medium text-gray-700 mb-1 block">Lösenord</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoFocus
             autoComplete="current-password"
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
           />

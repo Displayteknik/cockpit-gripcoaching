@@ -119,6 +119,7 @@ function buildScopedNavSections(): NavSection[] {
       items: [
         { href: "/dashboard/fordon", label: "Fordon", icon: Car },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
+        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
       ],
     },
   ];

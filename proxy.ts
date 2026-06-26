@@ -95,6 +95,8 @@ export async function proxy(req: NextRequest) {
       const allowed =
         path === "/dashboard/fordon" || path.startsWith("/dashboard/fordon/") ||
         path === "/dashboard/sidor" || path.startsWith("/dashboard/sidor/") ||
+        path === "/dashboard/seo" || path.startsWith("/dashboard/seo/") ||
+        path === "/dashboard/specialister" || path.startsWith("/dashboard/specialister/") ||
         path === "/admin" || path.startsWith("/admin/");
       if (!allowed) {
         return NextResponse.redirect(new URL("/dashboard/fordon", req.url));
