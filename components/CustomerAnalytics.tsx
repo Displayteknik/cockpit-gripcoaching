@@ -145,28 +145,40 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
 
       {!empty && (
         <>
-          {/* KPI-RAD */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {hasGa4 ? (
-              <>
-                <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={data.ga4!.sessions} sub={`${data.ga4!.users.toLocaleString("sv-SE")} personer`} />
-                <KPI icon={Search} accent="emerald" label="Från Google-sök" value={k.gsc_clicks} sub={`plats ${k.gsc_avg_position ?? "—"} i snitt`} />
-                <KPI icon={Sparkles} accent="violet" label="Från AI-sök" value={data.ga4!.ai.sessions} sub="ChatGPT m.fl." />
-                <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
-                <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
-                <KPI icon={Zap} accent="teal" label="Engagemang" value={`${data.ga4!.engagementRate}%`} sub={`${Math.floor(data.ga4!.avgSessionSec / 60)}m ${data.ga4!.avgSessionSec % 60}s i snitt`} />
-              </>
-            ) : (
-              <>
-                <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : ""} />
-                <KPI icon={MousePointerClick} accent="emerald" label="Klick från Google" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} />
-                <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
-                <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
-                <KPI icon={Smartphone} accent="pink" label="Mobil-andel" value={`${k.visits_mobile_pct}%`} sub="av besöken" />
-                <KPI icon={Gauge} accent="teal" label="Sidladdning" value={k.avg_page_load_ms !== null ? `${k.avg_page_load_ms}ms` : "—"} sub="snitt" />
-              </>
-            )}
-          </div>
+          {/* KPI-RAD — anpassad efter vilken data som faktiskt finns (inga tomma nollor) */}
+          {hasGa4 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={data.ga4!.sessions} sub={`${data.ga4!.users.toLocaleString("sv-SE")} personer`} />
+              <KPI icon={Search} accent="emerald" label="Från Google-sök" value={k.gsc_clicks} sub={`plats ${k.gsc_avg_position ?? "—"} i snitt`} />
+              <KPI icon={Sparkles} accent="violet" label="Från AI-sök" value={data.ga4!.ai.sessions} sub="ChatGPT m.fl." />
+              <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
+              <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
+              <KPI icon={Zap} accent="teal" label="Engagemang" value={`${data.ga4!.engagementRate}%`} sub={`${Math.floor(data.ga4!.avgSessionSec / 60)}m ${data.ga4!.avgSessionSec % 60}s i snitt`} />
+            </div>
+          ) : hasGsc ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : ""} />
+              <KPI icon={MousePointerClick} accent="emerald" label="Klick från Google" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} />
+              <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
+              <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub="senaste 30 dagarna" />
+                <KPI icon={Eye} accent="blue" label="Sidvisningar" value={k.pageviews ?? k.visits} sub="totalt" />
+                <KPI icon={Repeat} accent="purple" label="Återkommande" value={k.visits_returning} sub="kom tillbaka" />
+              </div>
+              <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+                  <Search className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+                </span>
+                <div className="text-sm text-gray-600">
+                  <strong className="text-gray-900">Google-sökstatistik kopplas på.</strong> Så snart kopplingen är klar fylls sökord, klick och placeringar i här automatiskt. Besöksdatan nedan mäts redan via pixeln på din sajt.
+                </div>
+              </div>
+            </>
+          )}
 
           {/* ATT FOKUSERA PÅ */}
           {topInsights.length > 0 && (
