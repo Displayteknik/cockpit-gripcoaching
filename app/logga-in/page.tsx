@@ -22,14 +22,15 @@ function LoginForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
+    const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      const msg = await r.json().catch(() => ({}));
-      setError(msg.error || "Inloggning misslyckades");
+      setError(data.error || "Inloggning misslyckades");
       setLoading(false);
       return;
     }
-    // Hård navigering så proxy ser den nya cookien direkt
-    window.location.href = from.startsWith("/") ? from : "/dashboard";
+    // Hård navigering så proxy/portal ser den nya cookien direkt.
+    // Kund-login returnerar redirect (/k); admin använder ?from eller dashboard.
+    window.location.href = data.redirect || (from.startsWith("/") ? from : "/dashboard");
   }
 
   return (
