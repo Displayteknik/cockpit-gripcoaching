@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Lightbulb } from "lucide-react";
 import { SeoReportBlock } from "@/components/SeoReport";
+import { FunctionGuide } from "@/components/FunctionGuide";
 
 interface Audit {
   id: string;
@@ -172,7 +173,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </div>
 
       {/* Sid-audit */}
-      <Card title="Sid-analys (teknisk SEO + AEO)" subtitle="Klistra in en URL. Vi analyserar sidans uppbyggnad (titel, struktur, schema, laddtid) och ger en poäng + åtgärdslista. OBS: poängen mäter hur välbyggd sidan är — INTE hur högt den rankar i Google.">
+      <Card title="Sid-analys (teknisk SEO + AEO)" subtitle="Klistra in en URL. Vi analyserar sidans uppbyggnad (titel, struktur, schema, laddtid) och ger en poäng + åtgärdslista. OBS: poängen mäter hur välbyggd sidan är — INTE hur högt den rankar i Google."
+        guide={<FunctionGuide primaryColor={primaryColor} title="Sid-analys (teknisk SEO + AEO)"
+          what="Granskar en enskild sida och ger en teknisk poäng (0–100) för både vanlig Google-sök (SEO) och AI-sökmotorer (AEO), plus en lista på vad som kan förbättras."
+          how="Klistra in sidans adress. Vi hämtar sidan, läser dess uppbyggnad (sidtitel, rubriker, text, schema, bilder) och kör Googles PageSpeed. Poängen säger hur välbyggd sidan är — inte hur högt den rankar (det ser du under Statistik)."
+          tips={["Kör en sida i taget — börja med din viktigaste.", "Följ åtgärdslistan uppifrån; de översta ger mest effekt.", "Hög poäng = tekniskt redo. Ranking byggs sen med innehåll och tid."]} />}>
         <div className="flex gap-2 mb-4 flex-wrap">
           <input
             value={auditUrl}
@@ -261,7 +266,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </Card>
 
       {/* AI-granskning */}
-      <Card title="AI-granskning av text" subtitle="Klistra in en text eller URL — AI:n bedömer kvalitet, ton, AI-känsla och om texten leder till handling. Hård men ärlig.">
+      <Card title="AI-granskning av text" subtitle="Klistra in en text eller URL — AI:n bedömer kvalitet, ton, AI-känsla och om texten leder till handling. Hård men ärlig."
+        guide={<FunctionGuide primaryColor={primaryColor} title="AI-granskning av text"
+          what="Låter en AI läsa din text och ge en ärlig bedömning: är den välskriven, har den rätt ton, känns den AI-genererad, och får den läsaren att göra något (boka, höra av sig)?"
+          how="Klistra in texten eller en sidadress. AI:n läser och poängsätter, pekar ut svaga formuleringar och 'AI-klyschor', och föreslår hur du skriver om dem. Den är medvetet hård för att höja kvaliteten."
+          tips={["Använd den innan du publicerar ny text.", "Fokusera på det den flaggar som AI-känsla och svaga avslut.", "Skriv om i din egen röst — kör igen och jämför."]} />}>
         <button
           onClick={() => setShowAiAudit(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
@@ -274,7 +283,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
 
       {/* Sökords-förslag — föreslår VAD man ska ranka på. Påslaget per klient. */}
       {showKeywordIdeas && (
-      <Card title="Vad ska du ranka på?" subtitle="Vet du inte vilka sökord du ska synas på? Vi läser din verksamhet och föreslår sökord som dina kunder faktiskt söker på. Lägg till dem i trackern med ett klick.">
+      <Card title="Vad ska du ranka på?" subtitle="Vet du inte vilka sökord du ska synas på? Vi läser din verksamhet och föreslår sökord som dina kunder faktiskt söker på. Lägg till dem i trackern med ett klick."
+        guide={<FunctionGuide primaryColor={primaryColor} title="Vad ska du ranka på?"
+          what="Föreslår sökord du borde synas på i Google — korta, vassa ord som dina kunder faktiskt skriver, grupperade efter köp, jämför och info."
+          how="Den läser din Brand-profil (vad du erbjuder, dina kunder, din röst) och låter AI:n föreslå relevanta sökord. Du kan också skriva något särskilt du vill synas för. Varje förslag lägger du till i Sökords-trackern med ett klick."
+          tips={["Ju mer ifylld din Brand-profil är, desto bättre förslag.", "Fyll i fältet om du vill styra mot ett visst tema.", "Lägg till de mest relevanta i trackern och följ dem över tid."]} />}>
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <input
             value={focus}
@@ -332,7 +345,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       )}
 
       {/* Sökords-tracker */}
-      <Card title="Sökords-tracker" subtitle="Lägg in dina viktigaste sökord. Sök på Google, se var du ligger och skriv in din position — så ser du utvecklingen över tid.">
+      <Card title="Sökords-tracker" subtitle="Lägg in dina viktigaste sökord. Sök på Google, se var du ligger och skriv in din position — så ser du utvecklingen över tid."
+        guide={<FunctionGuide primaryColor={primaryColor} title="Sökords-tracker"
+          what="Din egen bevakningslista över de sökord du vill ranka på, så du kan följa hur dina placeringar i Google utvecklas över tid."
+          how="Skriv in ett sökord och lägg till det. Sök på ordet i Google (inkognito för rättvist resultat), se vilken plats du ligger på och skriv in siffran. Uppdatera då och då — så ser du om du klättrar."
+          tips={["Lägg till de viktigaste orden från 'Vad ska du ranka på?'.", "Sök i inkognitoläge så resultatet inte påverkas av din historik.", "Uppdatera positionerna ungefär en gång i månaden."]} />}>
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <input
             value={newKw.keyword}
@@ -506,10 +523,12 @@ function ScoreBox({ label, v }: { label: string; v: number }) {
   return <div className={`rounded-lg p-2 text-center ${c}`}><div className="text-xl font-bold tabular-nums">{v}</div><div className="text-xs opacity-70">{label}</div></div>;
 }
 
-function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Card({ title, subtitle, children, guide }: { title: string; subtitle?: string; children: React.ReactNode; guide?: React.ReactNode }) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <h2 className="font-display font-bold text-gray-900 text-lg leading-tight">{title}</h2>
+      <h2 className="font-display font-bold text-gray-900 text-lg leading-tight flex items-center gap-1.5">
+        {title}{guide}
+      </h2>
       {subtitle && <p className="text-sm text-gray-500 mt-1 mb-4 leading-relaxed">{subtitle}</p>}
       <div className={subtitle ? "" : "mt-4"}>{children}</div>
     </div>
