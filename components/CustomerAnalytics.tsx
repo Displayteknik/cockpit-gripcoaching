@@ -98,15 +98,25 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
       }
     });
 
-  // "Att fokusera på" — läsbara prioriteringar ur kundens egen data (ingen admin-action).
+  // "Att fokusera på" — konkreta förbättringstips ur kundens egen data. Täcker även
+  // tidiga sajter (syns men lågt, få klick) så det ALLTID finns ett nästa steg.
   const insights: { icon: typeof Trophy; accent: string; title: string; detail: string }[] = [];
   const qw0 = data.quick_wins[0];
-  if (qw0) insights.push({ icon: Trophy, accent: "amber", title: `"${qw0.query}" är din snabbaste möjlighet`, detail: `Du syns redan på plats ${qw0.avg_position} i Google för det här (${qw0.impressions.toLocaleString("sv-SE")} visningar). Lyfts sidan till topp 3 ger det ungefär ${Math.round(qw0.impressions * 0.25)} fler besök i månaden.` });
-  if (pd.top20 > 0) insights.push({ icon: Target, accent: "blue", title: `${pd.top20} sökord ligger på sida 2 i Google`, detail: `De är närmast att nå sida 1. Öppna "Var rankar du" nedan och titta på bandet 11–20 för att se exakt vilka.` });
+  const totImp = k.gsc_impressions, totClk = k.gsc_clicks, avgPos = k.gsc_avg_position, kwCount = k.gsc_keyword_count;
+  // Närmaste riktiga klättrings-möjlighet: lägst placering men utanför topp 3 (inte redan etta).
+  const bestKw = data.queries_top.filter((q) => q.avg_position != null && q.avg_position > 3).sort((a, b) => (a.avg_position! - b.avg_position!))[0];
+
+  if (qw0) insights.push({ icon: Trophy, accent: "amber", title: `"${qw0.query}" är din snabbaste möjlighet`, detail: `Du syns redan på plats ${qw0.avg_position} (${qw0.impressions.toLocaleString("sv-SE")} visningar). Lyfts sidan till topp 3 ger det ungefär ${Math.round(qw0.impressions * 0.25)} fler besök i månaden.` });
+  if (pd.top20 > 0) insights.push({ icon: Target, accent: "blue", title: `${pd.top20} sökord ligger på sida 2 i Google`, detail: `De är närmast att nå sida 1. Öppna "Var rankar du på Google" nedan och titta på bandet 11–20.` });
+  if (totImp > 0 && totClk === 0) insights.push({ icon: MousePointerClick, accent: "pink", title: "Du syns i Google men får inga klick än", detail: "Din sajt visas i sökresultaten men ingen har klickat. Skriv mer lockande sidtitlar och beskrivningar — och jobba dig uppåt i placering — så blir visningar till besök." });
+  if (avgPos !== null && avgPos > 15 && bestKw) insights.push({ icon: TrendingUp, accent: "blue", title: `Du ligger lågt i Google (snitt plats ${avgPos})`, detail: `Du syns men långt ner. Innehåll som svarar tydligare på frågan lyfter dig uppåt. Närmast toppen: "${bestKw.query}" (plats ${bestKw.avg_position}).` });
+  if (kwCount > 0 && kwCount < 20) insights.push({ icon: Search, accent: "emerald", title: `Du syns på ${kwCount} sökord`, detail: `Fler sidor och inlägg om dina ämnen ger fler vägar in. Klicka "Vad ska du ranka på?" på SEO & AEO-sidan för förslag.` });
   const bClicks = data.brand_split.brand.clicks;
   const totClicks = bClicks + data.brand_split.non_brand.clicks;
-  if (totClicks >= 5 && bClicks / totClicks > 0.7) insights.push({ icon: Repeat, accent: "purple", title: `${Math.round((bClicks / totClicks) * 100)}% av klicken kommer från ditt eget namn`, detail: `Du hittas mest av folk som redan känner till dig. För att nå nya kunder behövs mer innehåll om det du erbjuder — inte bara ditt namn.` });
-  if (hasGa4 && data.ga4!.ai.sessions === 0) insights.push({ icon: Sparkles, accent: "violet", title: "Inga besök från AI-sökmotorer än", detail: "ChatGPT, Copilot och Perplexity skickar inga besök ännu. Tydliga svar, jämförelser och konkreta siffror på sajten gör att de börjar tipsa om dig." });
+  if (totClicks >= 5 && bClicks / totClicks > 0.7) insights.push({ icon: Repeat, accent: "purple", title: `${Math.round((bClicks / totClicks) * 100)}% av klicken kommer från ditt eget namn`, detail: `Du hittas mest av folk som redan känner till dig. Mer innehåll om det du erbjuder når nya kunder.` });
+  if (hasGa4 && data.ga4!.ai.sessions === 0) insights.push({ icon: Sparkles, accent: "violet", title: "Inga besök från AI-sökmotorer än", detail: "ChatGPT, Copilot och Perplexity skickar inga besök ännu. Tydliga svar, jämförelser och konkreta siffror gör att de börjar tipsa om dig." });
+  // Säkerställ alltid minst ett konkret nästa steg.
+  if (insights.length === 0) insights.push({ icon: Sparkles, accent: "emerald", title: "Fyll i din Brand-profil", detail: "Ju mer ifylld din profil är (din röst, ditt erbjudande, dina kunder), desto skarpare blir sökords-förslagen och allt AI skapar åt dig." });
   const topInsights = insights.slice(0, 3);
 
   return (
