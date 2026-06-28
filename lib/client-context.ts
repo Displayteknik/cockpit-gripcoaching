@@ -1,6 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { supabaseServer } from "./supabase-admin";
-import { ADMIN_COOKIE, getSessionScope } from "./admin-auth";
+import { ADMIN_COOKIE, getSessionScope, verifyAdminSession } from "./admin-auth";
 
 const COOKIE_NAME = "active_client_id";
 const DEFAULT_CLIENT_ID = "00000000-0000-0000-0000-000000000001"; // HM Motor
@@ -23,14 +23,27 @@ export interface Client {
 export async function getActiveClientId(): Promise<string> {
   try {
     const c = await cookies();
-    // Klient-scopad session (t.ex. HM Motor-login) pinnas till sin klient och
-    // ignorerar active_client_id-cookien helt → kan aldrig nå annan tenants data.
     const secret = process.env.ADMIN_SESSION_SECRET;
-    const token = c.get(ADMIN_COOKIE)?.value;
-    if (secret && token) {
-      const scope = await getSessionScope(token, secret);
+    const adminToken = c.get(ADMIN_COOKIE)?.value;
+
+    // 1. Giltig admin-session vinner. Klient-scopad admin (t.ex. HM Motor) pinnas till
+    //    sin klient; full admin styr via active_client_id-cookien (server-only, ej manipulerbar).
+    if (secret && adminToken && (await verifyAdminSession(adminToken, secret))) {
+      const scope = await getSessionScope(adminToken, secret);
       if (scope) return scope;
+      return c.get(COOKIE_NAME)?.value || DEFAULT_CLIENT_ID;
     }
+
+    // 2. Ingen admin men en giltig kund-session → HÅRT låst till kundens EGEN klient.
+    //    active_client_id-cookien ignoreras helt → ett underkonto kan ALDRIG välja/nå
+    //    en annan tenant, oavsett manipulerade cookies eller strippad referer.
+    if (c.get("customer_token")?.value) {
+      const { getCustomerSession } = await import("./customer-context");
+      const cs = await getCustomerSession();
+      if (cs) return cs.client_id;
+    }
+
+    // 3. Varken admin eller kund (publik/ogiltig kontext) → default.
     return c.get(COOKIE_NAME)?.value || DEFAULT_CLIENT_ID;
   } catch {
     return DEFAULT_CLIENT_ID;

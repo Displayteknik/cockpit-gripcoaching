@@ -34,35 +34,15 @@ export async function resolveCustomerToken(token: string): Promise<CustomerSessi
 }
 
 // Server-side: hämta aktuell kund-session från cookies.
-// Primärt via den HttpOnly-skyddade token-cookien (överlever strikta webbläsare/tillägg
-// som nollar JS-läsbara cookies, och går inte att manipulera). Faller tillbaka på
-// den läsbara client_id-cookien för bakåtkompat.
+// ENDAST via den HttpOnly-skyddade token-cookien — den går inte att läsa eller manipulera
+// från webbläsaren. Den läsbara client_id-cookien används ALDRIG som auth (ett underkonto
+// ska aldrig kunna byta tenant genom att skriva om en cookie). Token sätts vid varje
+// inloggning (CUSTOMER_LOGINS + /k/[token]), så ingen riktig användare påverkas.
 export async function getCustomerSession(): Promise<CustomerSession | null> {
   const c = await cookies();
-
   const token = c.get(TOKEN_COOKIE)?.value;
-  if (token) {
-    const viaToken = await resolveCustomerToken(token);
-    if (viaToken) return viaToken;
-  }
-
-  const clientId = c.get(CLIENT_COOKIE)?.value;
-  if (!clientId) return null;
-
-  const sb = supabaseService();
-  const { data } = await sb
-    .from("clients")
-    .select("id, name, slug, primary_color, customer_access_enabled, customer_features")
-    .eq("id", clientId)
-    .maybeSingle();
-  if (!data || !data.customer_access_enabled) return null;
-  return {
-    client_id: data.id as string,
-    client_name: data.name as string,
-    client_slug: data.slug as string,
-    primary_color: (data.primary_color as string) || "#1A6B3C",
-    features: normalizeFeatures(data.customer_features as string[] | null),
-  };
+  if (!token) return null;
+  return resolveCustomerToken(token);
 }
 
 // Serverside-spärr för en portal-sida som kräver en viss modul.

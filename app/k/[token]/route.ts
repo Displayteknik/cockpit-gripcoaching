@@ -27,11 +27,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     maxAge: 60 * 60 * 24 * 30,
     path: "/",
   });
-  res.cookies.set("active_client_id", session.client_id, {
-    httpOnly: false,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
+  // OBS: sätter INTE active_client_id här. Kund-scoping går via den HttpOnly-validerade
+  // kund-sessionen (getActiveClientId/resolveClientId är kund-medvetna). En skrivbar
+  // active_client_id-cookie skulle annars låta ett underkonto peka om sig till annan tenant.
   return res;
 }
