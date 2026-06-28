@@ -615,21 +615,21 @@ export default function AnalyticsDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {data.ga4 ? (
           <>
-            <KPI icon={TrendingUp} color="purple" label="Besök (GA4)" value={data.ga4.sessions} sub={`${data.ga4.users.toLocaleString("sv-SE")} användare`} />
-            <KPI icon={Search} color="emerald" label="Från Google-sök" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}% · pos ${k.gsc_avg_position ?? "—"}`} />
-            <KPI icon={Sparkles} color="purple" label="AI-besök" value={data.ga4.ai.sessions} sub="ChatGPT, Copilot m.fl." />
-            <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
-            <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
-            <KPI icon={Zap} color="teal" label="Engagemang" value={`${data.ga4.engagementRate}%`} sub={`${Math.floor(data.ga4.avgSessionSec / 60)}m ${data.ga4.avgSessionSec % 60}s snitt`} />
+            <KPI icon={TrendingUp} color="purple" label="Besök (GA4)" value={data.ga4.sessions} sub={`${data.ga4.users.toLocaleString("sv-SE")} användare`} hint="Antal besök på sajten under perioden, från Google Analytics." />
+            <KPI icon={Search} color="emerald" label="Från Google-sök" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}% · pos ${k.gsc_avg_position ?? "—"}`} hint="Klick till sajten från Googles sökresultat. CTR = andel som klickade av de som såg dig." />
+            <KPI icon={Sparkles} color="purple" label="AI-besök" value={data.ga4.ai.sessions} sub="ChatGPT, Copilot m.fl." hint="Besök från AI-sökmotorer (ChatGPT, Copilot, Perplexity, Gemini)." />
+            <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" hint="Genomsnittlig placering i Google. Lägre = högre upp. Plats 1–10 = sida 1." />
+            <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} hint="Hur många gånger sajten visats i Googles sökresultat, och på hur många sökord." />
+            <KPI icon={Zap} color="teal" label="Engagemang" value={`${data.ga4.engagementRate}%`} sub={`${Math.floor(data.ga4.avgSessionSec / 60)}m ${data.ga4.avgSessionSec % 60}s snitt`} hint="Andel besök där någon faktiskt läste/klickade — inte bara stängde direkt." />
           </>
         ) : (
           <>
-            <KPI icon={MousePointerClick} color="emerald" label="Klick (Google)" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} />
-            <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
-            <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
-            <KPI icon={TrendingUp} color="purple" label="Besök (pixel)" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : ""} />
-            <KPI icon={Smartphone} color="pink" label="Mobil-andel" value={`${k.visits_mobile_pct}%`} sub="av besök" />
-            <KPI icon={Gauge} color="teal" label="Sid-laddtid" value={k.avg_page_load_ms !== null ? `${k.avg_page_load_ms}ms` : "—"} sub="snitt" />
+            <KPI icon={MousePointerClick} color="emerald" label="Klick (Google)" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} hint="Klick till sajten från Googles sökresultat. CTR = andel som klickade av de som såg dig." />
+            <KPI icon={Eye} color="blue" label="Visningar (Google)" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} hint="Hur många gånger sajten visats i Googles sökresultat, och på hur många sökord." />
+            <KPI icon={Award} color="amber" label="Snitt-position" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" hint="Genomsnittlig placering i Google. Lägre = högre upp. Plats 1–10 = sida 1." />
+            <KPI icon={TrendingUp} color="purple" label="Besök (pixel)" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : ""} hint="Antal besök på sajten, mätt med spårningspixeln." />
+            <KPI icon={Smartphone} color="pink" label="Mobil-andel" value={`${k.visits_mobile_pct}%`} sub="av besök" hint="Andel av besöken som sker från mobil." />
+            <KPI icon={Gauge} color="teal" label="Sid-laddtid" value={k.avg_page_load_ms !== null ? `${k.avg_page_load_ms}ms` : "—"} sub="snitt" hint="Genomsnittlig laddtid för sidan. Lägre = snabbare = bättre." />
           </>
         )}
       </div>
@@ -1261,7 +1261,19 @@ export default function AnalyticsDashboard() {
   );
 }
 
-function KPI({ icon: Icon, color, label, value, sub }: { icon: React.ComponentType<{ className?: string }>; color: string; label: string; value: number | string; sub?: string }) {
+// Liten bok-ikon med förklaring (hover/peka) — "vad betyder det här?".
+export function Hint({ text }: { text: string }) {
+  return (
+    <span className="relative inline-flex group/hint align-middle ml-1" title={text}>
+      <BookOpen className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+      <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 rounded-lg bg-gray-900 text-white text-xs leading-relaxed px-3 py-2 opacity-0 group-hover/hint:opacity-100 transition-opacity z-30 shadow-lg font-normal normal-case tracking-normal text-left">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+function KPI({ icon: Icon, color, label, value, sub, hint }: { icon: React.ComponentType<{ className?: string }>; color: string; label: string; value: number | string; sub?: string; hint?: string }) {
   const colors: Record<string, string> = {
     emerald: "text-emerald-700 bg-emerald-50 border-emerald-200",
     blue: "text-blue-700 bg-blue-50 border-blue-200",
@@ -1276,7 +1288,7 @@ function KPI({ icon: Icon, color, label, value, sub }: { icon: React.ComponentTy
         <Icon className="w-3.5 h-3.5" />
       </div>
       <div className="text-xl font-bold text-gray-900 tabular-nums leading-tight">{typeof value === "number" ? value.toLocaleString("sv-SE") : value}</div>
-      <div className="text-[11px] text-gray-500 mt-0.5">{label}</div>
+      <div className="text-[11px] text-gray-500 mt-0.5">{label}{hint && <Hint text={hint} />}</div>
       {sub && <div className="text-[10px] text-gray-400 mt-0.5">{sub}</div>}
     </div>
   );

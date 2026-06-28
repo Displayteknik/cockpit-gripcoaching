@@ -152,8 +152,8 @@ export default async function CustomerHome() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <ScoreStat label="Teknisk SEO" value={audit?.seo_score} hint="Hur välbyggd sidan är tekniskt (titel, rubriker, schema, laddtid). Säger INTE hur högt du rankar — din riktiga placering ser du under Statistik." />
             <ScoreStat label="Teknisk AEO" value={audit?.aeo_score} hint="Hur väl sidan är förberedd för AI-svar (tydliga svar, FAQ, struktur). Inte ett mått på trafik." />
-            <StatCard label="Sökord du följer" value={kwCount} icon={Target} accent="purple" />
-            <StatCard label="Topp 10 på Google" value={top10} icon={Trophy} accent="amber" />
+            <StatCard label="Sökord du följer" value={kwCount} icon={Target} accent="purple" hint="Antal sökord du själv lagt till i din bevakningslista. (Sökord du faktiskt syns på i Google ser du under Statistik.)" />
+            <StatCard label="Topp 10 på Google" value={top10} icon={Trophy} accent="amber" hint="Hur många av dina bevakade sökord som ligger på Googles första sida (plats 1–10)." />
           </div>
           <p className="text-xs text-gray-400">
             Poängen mäter sidans tekniska kvalitet — din faktiska synlighet (placering, klick, visningar) ser du under <strong>Statistik</strong>.
@@ -196,10 +196,10 @@ export default async function CustomerHome() {
         <section className="space-y-3">
           <h2 className="font-display font-bold text-gray-900 text-lg">Ditt innehåll</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Inlägg totalt" value={totalPosts} icon={FileText} />
-            <StatCard label="Utkast" value={drafts} icon={Sparkles} accent="amber" />
-            <StatCard label="Publicerade" value={published} icon={Trophy} accent="emerald" />
-            <StatCard label="Kunder i pipeline" value={`${wonContacts}/${totalContacts}`} icon={Users} accent="purple" />
+            <StatCard label="Inlägg totalt" value={totalPosts} icon={FileText} hint="Alla sociala inlägg du skapat i verktyget (utkast + publicerade)." />
+            <StatCard label="Utkast" value={drafts} icon={Sparkles} accent="amber" hint="Inlägg som är skapade men inte publicerade än." />
+            <StatCard label="Publicerade" value={published} icon={Trophy} accent="emerald" hint="Inlägg som har publicerats." />
+            <StatCard label="Kunder i pipeline" value={`${wonContacts}/${totalContacts}`} icon={Users} accent="purple" hint="Vunna kunder av totalt antal kontakter i din DM-pipeline." />
           </div>
         </section>
       )}
@@ -215,14 +215,17 @@ const ACCENTS: Record<string, string> = {
   blue: "bg-blue-100 text-blue-600",
 };
 
-function StatCard({ label, value, icon: Icon, accent = "gray" }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; accent?: keyof typeof ACCENTS | string }) {
+function StatCard({ label, value, icon: Icon, accent = "gray", hint }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; accent?: keyof typeof ACCENTS | string; hint?: string }) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center gap-2.5 mb-3">
         <span className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${ACCENTS[accent] || ACCENTS.gray}`}>
           <Icon className="w-[18px] h-[18px]" />
         </span>
-        <span className="text-xs text-gray-500 font-medium leading-tight">{label}</span>
+        <span className="text-xs text-gray-500 font-medium leading-tight flex items-center gap-1">
+          {label}
+          {hint && <span title={hint} className="cursor-help"><BookOpen className="w-3 h-3 text-gray-300 flex-shrink-0" /></span>}
+        </span>
       </div>
       <div className="text-3xl font-bold text-gray-900 tabular-nums">{value}</div>
     </div>
