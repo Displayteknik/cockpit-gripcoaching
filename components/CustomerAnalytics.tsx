@@ -187,9 +187,9 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub="senaste 30 dagarna" />
-                <KPI icon={Eye} accent="blue" label="Sidvisningar" value={k.pageviews ?? k.visits} sub="totalt" />
-                <KPI icon={Repeat} accent="purple" label="Återkommande" value={k.visits_returning} sub="kom tillbaka" />
+                <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub="senaste 30 dagarna" hint="Antal besök på din sajt under perioden (mätt via spårningspixeln)." />
+                <KPI icon={Eye} accent="blue" label="Sidvisningar" value={k.pageviews ?? k.visits} sub="totalt" hint="Hur många sidor som visats totalt — en besökare kan titta på flera sidor." />
+                <KPI icon={Repeat} accent="purple" label="Återkommande" value={k.visits_returning} sub="kom tillbaka" hint="Besökare som varit inne hos dig tidigare och kommit tillbaka." />
               </div>
               <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
                 <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
@@ -271,7 +271,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {/* UTVECKLING ÖVER TID */}
           {((data.gsc_daily_series?.length ?? 0) >= 2 || (data.ga4 && data.ga4.daily.length >= 2)) && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-              <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><LineChart className="w-4 h-4 text-indigo-600" /> Utveckling över tid</h2>
+              <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><LineChart className="w-4 h-4 text-indigo-600" /> Utveckling över tid<Hint text="Hur dina siffror rör sig dag för dag. För 'Plats i Google' gäller att linjen uppåt betyder att du klättrar (lägre placering är bättre)." /></h2>
               <p className="text-xs text-gray-500 mb-4">Dag för dag. För plats gäller: linjen uppåt = du klättrar (lägre siffra är bättre).</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 {data.ga4 && data.ga4.daily.length >= 2 && (
@@ -388,7 +388,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {/* SIDOR SOM RANKAR BÄST */}
           {data.top_pages.length > 0 && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-              <h2 className="font-display font-bold text-gray-900 mb-3">Sidor som syns bäst i Google</h2>
+              <h2 className="font-display font-bold text-gray-900 mb-3">Sidor som syns bäst i Google<Hint text="Vilka av dina sidor som får flest visningar och klick från Google-sök. Hjälper dig se vilket innehåll som drar — och var det är värt att lägga krut." /></h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-100">
@@ -416,7 +416,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                  <h2 className="font-display font-bold text-gray-900 mb-4">Mest besökta sidor</h2>
+                  <h2 className="font-display font-bold text-gray-900 mb-4">Mest besökta sidor<Hint text="De sidor på din sajt som fått flest besök, mätt via spårningspixeln. Visar var dina besökare faktiskt landar." /></h2>
                   <ul className="space-y-3">
                     {data.top_paths.slice(0, 8).map((p, i) => (
                       <li key={i}>
@@ -430,7 +430,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
                   </ul>
                 </div>
                 <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                  <h2 className="font-display font-bold text-gray-900 mb-4">Var trafiken kommer ifrån</h2>
+                  <h2 className="font-display font-bold text-gray-900 mb-4">Var trafiken kommer ifrån<Hint text="Vilka sajter dina besökare kom från (länkar, sociala medier, andra sidor). 'Direkt' betyder att de skrev in din adress eller hade dig sparad." /></h2>
                   {data.top_referrers.length === 0 ? <p className="text-sm text-gray-400 py-4">Mest direkta besök än så länge — folk skriver in din adress eller har dig sparad.</p> : (
                     <ul className="space-y-3">
                       {data.top_referrers.slice(0, 8).map((r, i) => (
@@ -453,7 +453,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {hasGsc && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2"><Search className="w-4 h-4 text-emerald-600" /> Alla dina sökord ({data.queries_all_count})</h2>
+                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2"><Search className="w-4 h-4 text-emerald-600" /> Alla dina sökord ({data.queries_all_count})<Hint text="Alla sökord folk faktiskt sökte på i Google och då fick se din sajt — hämtat direkt från Google Search Console. Klick = antal som klickade in, Visningar = hur ofta du visades, CTR = andel som klickade, Plats = din snittplacering (lägre = bättre). Skiljer sig från Sökords-trackern på SEO & AEO-sidan, där du själv lägger till ord att följa." /></h2>
                 <div className="flex items-center gap-2">
                   <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök i listan…" className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none w-48" />
                   <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white">
