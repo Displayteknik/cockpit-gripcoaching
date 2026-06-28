@@ -1248,8 +1248,8 @@ export default function AnalyticsDashboard() {
               <div key={a.id} className="flex items-center justify-between text-sm border-b border-gray-50 py-2">
                 <span className="text-blue-600 truncate max-w-md">{a.url.replace(/^https?:\/\//, "")}</span>
                 <div className="flex items-center gap-2">
-                  <Badge label="SEO" v={a.seo_score} />
-                  <Badge label="AEO" v={a.aeo_score} />
+                  <Badge label="Teknisk SEO" v={a.seo_score} />
+                  <Badge label="Teknisk AEO" v={a.aeo_score} />
                   <span className="text-xs text-gray-400">{new Date(a.audited_at).toLocaleDateString("sv-SE")}</span>
                 </div>
               </div>

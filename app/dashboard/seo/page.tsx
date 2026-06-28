@@ -344,8 +344,8 @@ function SEOPageInner() {
                     <div className="text-xs text-gray-500 truncate">{a.url}</div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <ScoreBadge label="SEO" value={a.seo_score} />
-                    <ScoreBadge label="AEO" value={a.aeo_score} />
+                    <ScoreBadge label="Teknisk SEO" value={a.seo_score} />
+                    <ScoreBadge label="Teknisk AEO" value={a.aeo_score} />
                     {a.pagespeed_mobile != null && <ScoreBadge label="📱" value={a.pagespeed_mobile} />}
                     {a.pagespeed_desktop != null && <ScoreBadge label="💻" value={a.pagespeed_desktop} />}
                   </div>
