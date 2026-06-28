@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { extractPageSignals, scoreSignals, schemaRichEligibility } from "@/lib/seo-deep";
 
 export const runtime = "nodejs";
@@ -42,6 +43,8 @@ interface DeepReport {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const { auditId, url: urlInput } = await req.json();
 
   const clientId = await resolveClientId();
