@@ -42,11 +42,14 @@ export async function POST(req: NextRequest) {
 
 Du får företagets profil nedan. Föreslå sökord som RIKTIGA svenska kunder faktiskt söker på när de letar efter det företaget erbjuder — inte interna facktermer.
 
-VIKTIGT:
+VIKTIGT — SÖKORDEN SKA VARA KORTA:
+- Korta, vassa sökord — oftast 1–3 ord, max 4. Så som folk FAKTISKT skriver i Google.
+  BRA: "ledarutveckling", "ny som chef", "konflikthantering", "UGL kurs", "ledarskapsutbildning stockholm".
+  UNDVIK fullständiga meningar och frågor i huvudgrupperna.
+  DÅLIGT: "hur hanterar man konflikter i en grupp", "känner mig ensam som chef".
 - Skriv i KLARSPRÅK. Inga förkortningar (AEO, SERP, CTR) och ingen jargong.
 - Tänk på hur en vanlig kund formulerar sig, inte hur branschen pratar.
-- Variera mellan korta sökord och längre, mer specifika fraser.
-- Ta med lokala varianter om orten är känd.
+- Ta med lokala varianter om orten är känd (t.ex. "+ stockholm").
 - Hitta ALDRIG på siffror om sökvolym.
 
 FÖRETAGETS PROFIL:
@@ -66,11 +69,12 @@ RETURNERA JSON (svenska):
   ]
 }
 
-Skapa 3 grupper:
-1. "Redo att köpa / boka" — kunder i beslutsläge.
-2. "Jämför och funderar" — kunder som väger alternativ.
-3. "Söker svar / lär sig" — kunder tidigt i resan (bra för att bygga förtroende).
-Ge 4–7 sökord per grupp.`;
+Skapa 4 grupper:
+1. "Redo att köpa / boka" — kunder i beslutsläge. KORTA sökord (1–3 ord).
+2. "Jämför och funderar" — kunder som väger alternativ. KORTA sökord (1–3 ord).
+3. "Söker svar / lär sig" — kunder tidigt i resan. KORTA sökord (1–3 ord), t.ex. "ny chef tips", "konflikthantering".
+4. "Frågor folk ställer (för AI-sök)" — HÄR (och bara här) får du använda hela frågor/meningar, t.ex. "hur leder man tidigare kollegor". Max 3–4 stycken.
+Ge 5–7 sökord i grupp 1–3, max 3–4 frågor i grupp 4.`;
 
   try {
     const result = await generateJSON<KeywordIdeas>({
