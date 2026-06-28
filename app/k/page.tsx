@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
 import { supabaseService } from "@/lib/supabase-admin";
-import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight, Eye, Search, Bot } from "lucide-react";
+import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight, Eye, Search, Bot, BookOpen } from "lucide-react";
 
 export default async function CustomerHome() {
   const session = await getCustomerSession();
@@ -78,13 +78,14 @@ export default async function CustomerHome() {
   const todayRaw = new Date().toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
   const today = todayRaw.charAt(0).toUpperCase() + todayRaw.slice(1);
 
-  // Snabb-chips i hero: leder med kundens viktigaste siffror.
+  // Snabb-chips i hero: leder med RIKTIG data (besök/sökord). Tekniska poäng sist
+  // och tydligt märkta "Teknisk" så de inte läses som synlighet/ranking.
   const chips: { icon: React.ComponentType<{ className?: string }>; label: string }[] = [];
-  if (showSeo && typeof audit?.seo_score === "number") chips.push({ icon: Search, label: `Google ${audit.seo_score}/100` });
-  if (showSeo && typeof audit?.aeo_score === "number") chips.push({ icon: Bot, label: `AI-sök ${audit.aeo_score}/100` });
   if (showVisitors) chips.push({ icon: Eye, label: `${visits30.toLocaleString("sv-SE")} besök / 30 dgr` });
-  if (showSeo) chips.push({ icon: Target, label: `${kwCount} sökord följs` });
+  if (showSeo && kwCount > 0) chips.push({ icon: Target, label: `${kwCount} sökord följs` });
   if (showSocialStats) chips.push({ icon: FileText, label: `${published} publicerade` });
+  if (showSeo && typeof audit?.seo_score === "number") chips.push({ icon: Search, label: `Teknisk SEO ${audit.seo_score}` });
+  if (showSeo && typeof audit?.aeo_score === "number") chips.push({ icon: Bot, label: `Teknisk AEO ${audit.aeo_score}` });
 
   return (
     <div className="space-y-8">
@@ -139,7 +140,7 @@ export default async function CustomerHome() {
       {showSeo && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display font-bold text-gray-900 text-lg">Din synlighet i sök</h2>
+            <h2 className="font-display font-bold text-gray-900 text-lg">Din SEO &amp; AEO</h2>
             <Link
               href="/k/seo"
               className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm transition-opacity hover:opacity-90"
@@ -149,13 +150,14 @@ export default async function CustomerHome() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <ScoreStat label="Google (SEO)" value={audit?.seo_score} />
-            <ScoreStat label="AI-sökmotorer" value={audit?.aeo_score} />
+            <ScoreStat label="Teknisk SEO" value={audit?.seo_score} hint="Hur välbyggd sidan är tekniskt (titel, rubriker, schema, laddtid). Säger INTE hur högt du rankar — din riktiga placering ser du under Statistik." />
+            <ScoreStat label="Teknisk AEO" value={audit?.aeo_score} hint="Hur väl sidan är förberedd för AI-svar (tydliga svar, FAQ, struktur). Inte ett mått på trafik." />
             <StatCard label="Sökord du följer" value={kwCount} icon={Target} accent="purple" />
             <StatCard label="Topp 10 på Google" value={top10} icon={Trophy} accent="amber" />
           </div>
           <p className="text-xs text-gray-400">
-            {auditDate ? `Senaste analys ${auditDate}${audit?.url ? " · " + audit.url.replace(/^https?:\/\//, "") : ""}` : "Du har inte kört någon analys än — gör din första på SEO-sidan."}
+            Poängen mäter sidans tekniska kvalitet — din faktiska synlighet (placering, klick, visningar) ser du under <strong>Statistik</strong>.
+            {auditDate ? ` Senaste analys ${auditDate}.` : " Du har inte kört någon analys än — gör din första på SEO-sidan."}
           </p>
         </section>
       )}
@@ -220,15 +222,15 @@ function StatCard({ label, value, icon: Icon, accent = "gray" }: { label: string
         <span className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${ACCENTS[accent] || ACCENTS.gray}`}>
           <Icon className="w-[18px] h-[18px]" />
         </span>
-        <span className="text-xs text-gray-500 uppercase font-medium tracking-wide leading-tight">{label}</span>
+        <span className="text-xs text-gray-500 font-medium leading-tight">{label}</span>
       </div>
       <div className="text-3xl font-bold text-gray-900 tabular-nums">{value}</div>
     </div>
   );
 }
 
-// SEO/AEO-poäng (0–100) med färg efter hur bra det är.
-function ScoreStat({ label, value }: { label: string; value?: number }) {
+// Teknisk SEO/AEO-poäng (0–100) — mäter sidans uppbyggnad, INTE ranking.
+function ScoreStat({ label, value, hint }: { label: string; value?: number; hint?: string }) {
   const has = typeof value === "number";
   const tone = !has ? "#9ca3af" : value! >= 80 ? "#059669" : value! >= 60 ? "#d97706" : "#dc2626";
   return (
@@ -238,7 +240,10 @@ function ScoreStat({ label, value }: { label: string; value?: number }) {
         <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${tone}1a` }}>
           <TrendingUp className="w-[18px] h-[18px]" style={{ color: tone }} />
         </span>
-        <span className="text-xs text-gray-500 uppercase font-medium tracking-wide leading-tight">{label}</span>
+        <span className="text-xs text-gray-500 font-medium leading-tight flex items-center gap-1">
+          {label}
+          {hint && <span title={hint} className="cursor-help"><BookOpen className="w-3 h-3 text-gray-300 flex-shrink-0" /></span>}
+        </span>
       </div>
       <div className="flex items-baseline gap-1">
         <span className="text-3xl font-bold tabular-nums" style={{ color: tone }}>{has ? value : "—"}</span>

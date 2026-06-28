@@ -165,13 +165,14 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           Syns du i Google + AI-sökmotorer?
         </h1>
         <p className="text-gray-600 text-sm mt-1 max-w-2xl">
-          Auditera dina sidor och se hur väl de presterar både i Google (SEO) och i AI-sökmotorer som
-          ChatGPT, Perplexity och Google AI Overviews (AEO). Få konkreta förbättringar.
+          Analysera dina sidor och se hur välbyggda de är för Google och AI-sökmotorer som
+          ChatGPT, Perplexity och Google AI Overviews. Få konkreta förbättringar. Din faktiska
+          synlighet (placering, klick) ser du under Statistik.
         </p>
       </div>
 
       {/* Sid-audit */}
-      <Card title="Sid-audit (SEO + AEO)" subtitle="Klistra in en URL från din sajt. Vi hämtar sidan, analyserar den och kör Google PageSpeed. Du får en SEO-score och en AEO-score med åtgärdslista.">
+      <Card title="Sid-analys (teknisk SEO + AEO)" subtitle="Klistra in en URL. Vi analyserar sidans uppbyggnad (titel, struktur, schema, laddtid) och ger en poäng + åtgärdslista. OBS: poängen mäter hur välbyggd sidan är — INTE hur högt den rankar i Google.">
         <div className="flex gap-2 mb-4 flex-wrap">
           <input
             value={auditUrl}
@@ -206,8 +207,8 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                     <div className="text-xs text-gray-500 truncate">{a.url}</div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <ScoreBadge label="SEO" value={a.seo_score} />
-                    <ScoreBadge label="AEO" value={a.aeo_score} />
+                    <ScoreBadge label="Teknisk SEO" value={a.seo_score} />
+                    <ScoreBadge label="Teknisk AEO" value={a.aeo_score} />
                     {a.pagespeed_mobile != null && <ScoreBadge label="📱" value={a.pagespeed_mobile} />}
                   </div>
                 </summary>
