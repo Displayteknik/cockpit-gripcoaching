@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
 import { supabaseService } from "@/lib/supabase-admin";
-import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight, Eye, Search, Bot, BookOpen } from "lucide-react";
+import { buildDashboardData } from "@/lib/dashboard-data";
+import { computeFocusInsights, type FocusIcon, type FocusInsight } from "@/lib/dashboard-insights";
+import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight, Eye, Search, Bot, BookOpen, Zap, MousePointerClick, Repeat } from "lucide-react";
+
+// Token → ikon för "Att göra nu" (delad insikts-motor).
+const FOCUS_ICON: Record<FocusIcon, React.ComponentType<{ className?: string }>> = {
+  trophy: Trophy, target: Target, clicks: MousePointerClick, trend: TrendingUp,
+  search: Search, repeat: Repeat, sparkles: Sparkles,
+};
 
 export default async function CustomerHome() {
   const session = await getCustomerSession();
@@ -74,6 +82,16 @@ export default async function CustomerHome() {
     return visitTimes.filter((t) => t >= s && t < s + day).length;
   });
 
+  // "Att göra nu" — samma insikts-motor som Statistik, men först på översikten så
+  // kunden direkt ser vad han ska göra härnäst. Bara om SEO/besökar-data finns.
+  let focusInsights: FocusInsight[] = [];
+  if (showSeo || showVisitors) {
+    try {
+      const dash = await buildDashboardData(cid, 30);
+      focusInsights = computeFocusInsights(dash).slice(0, 3);
+    } catch {}
+  }
+
   // Dagens datum till hero-bandet (stor bokstav).
   const todayRaw = new Date().toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
   const today = todayRaw.charAt(0).toUpperCase() + todayRaw.slice(1);
@@ -122,6 +140,40 @@ export default async function CustomerHome() {
           )}
         </div>
       </div>
+
+      {/* ATT GÖRA NU — det första kunden ser: 1–3 konkreta nästa steg ur egen data */}
+      {focusInsights.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
+              <Zap className="w-5 h-5" style={{ color: primary }} /> Att göra nu
+            </h2>
+            {showVisitors && (
+              <Link
+                href="/k/besokare"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm transition-opacity hover:opacity-90"
+                style={{ background: primary }}
+              >
+                Se mer i Statistik <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {focusInsights.map((a, i) => {
+              const Icon = FOCUS_ICON[a.icon];
+              return (
+                <div key={i} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                  <span className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${ACCENTS[a.accent] || ACCENTS.gray}`}>
+                    <Icon className="w-[18px] h-[18px]" />
+                  </span>
+                  <div className="text-sm font-semibold text-gray-900">{a.title}</div>
+                  <div className="text-xs text-gray-600 mt-1 leading-relaxed">{a.detail}</div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {!profileOK && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
@@ -213,6 +265,8 @@ const ACCENTS: Record<string, string> = {
   emerald: "bg-emerald-100 text-emerald-600",
   purple: "bg-purple-100 text-purple-600",
   blue: "bg-blue-100 text-blue-600",
+  pink: "bg-pink-100 text-pink-600",
+  violet: "bg-violet-100 text-violet-600",
 };
 
 function StatCard({ label, value, icon: Icon, accent = "gray", hint }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; accent?: keyof typeof ACCENTS | string; hint?: string }) {
