@@ -28,7 +28,7 @@ export default async function CustomerLayout({ children }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
+      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
             <div
