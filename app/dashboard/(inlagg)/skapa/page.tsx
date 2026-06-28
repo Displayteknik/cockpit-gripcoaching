@@ -511,9 +511,9 @@ function VoiceStatus({
       <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-start gap-3">
         <Mic className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <div className="font-semibold text-rose-900 text-sm">Voice fingerprint saknas</div>
+          <div className="font-semibold text-rose-900 text-sm">AI:n saknar exempel på din röst</div>
           <div className="text-sm text-rose-700 mt-1">
-            AI:n har inga exempel på kundens röst — innehåll blir generiskt. Lägg till minst 5
+            Utan exempel blir innehållet generiskt. Lägg till minst 5
             egna inlägg eller en ljudinspelning på{" "}
             <a href="/dashboard/profil" className="font-medium underline">
               Brand-profil

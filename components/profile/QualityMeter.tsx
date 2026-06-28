@@ -59,11 +59,10 @@ export default function QualityMeter({ refreshKey }: { refreshKey?: number }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-display font-bold text-gray-900 text-lg">
-            Datakvalitet — fundamentet för bra innehåll
+            Hur komplett är din profil?
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            AI:n kan bara producera så bra som datan ni matar in. Alla fem ska bli gröna innan
-            generatorn producerar i full kvalitet.
+            AI:n blir bara så bra som det du fyller i. När alla fem är gröna skapas texterna i full kvalitet.
           </p>
         </div>
         <div className="flex items-center gap-3">

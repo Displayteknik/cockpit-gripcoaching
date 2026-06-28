@@ -123,9 +123,9 @@ export default function ProfilPage() {
     <div className="max-w-4xl space-y-6">
       <div className="flex items-start justify-between sticky top-0 bg-gray-50 -mx-4 px-4 py-3 z-10 border-b border-gray-200">
         <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900">Brand-profil</h1>
+          <h1 className="font-display text-2xl font-bold text-gray-900">Din profil</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Fundamentet för all AI-output. Generatorer och coach läser detta automatiskt.
+            Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du — och desto bättre förslag får du.
           </p>
         </div>
         <button
@@ -148,8 +148,8 @@ export default function ProfilPage() {
           <Sparkles className="w-6 h-6" />
         </div>
         <div className="flex-1">
-          <div className="font-display font-bold text-lg leading-tight">Intake-agenten</div>
-          <div className="text-sm opacity-90 mt-0.5">Mata in samtal, intervjuer eller ljud — agenten jämför med befintlig brand-data, ställer frågor när det behövs och föreslår uppdateringar du godkänner.</div>
+          <div className="font-display font-bold text-lg leading-tight">Fyll i från ett samtal</div>
+          <div className="text-sm opacity-90 mt-0.5">Spela in eller klistra in ett samtal, en intervju eller ljud. AI:n jämför med din profil, frågar bara när något är oklart och föreslår uppdateringar som du godkänner.</div>
         </div>
         <div className="flex-shrink-0 text-xs opacity-90 font-medium px-3 py-1.5 rounded-lg bg-white/15 hidden md:block">Öppna →</div>
       </button>
@@ -178,21 +178,21 @@ export default function ProfilPage() {
           className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
         >
           <Wand2 className="w-4 h-4" />
-          ICP-wizard
+          Hitta din målgrupp
         </button>
         <button
           onClick={() => setShowToneWizard(true)}
           className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
         >
           <MessageSquare className="w-4 h-4" />
-          Ton-wizard
+          Hitta din ton
         </button>
         <button
           onClick={() => setShowVocExtractor(true)}
           className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
         >
           <Quote className="w-4 h-4" />
-          Voice-of-Customer
+          Kundernas egna ord
         </button>
       </div>
 
@@ -222,8 +222,8 @@ export default function ProfilPage() {
           rows={6}
         />
         <TextArea
-          label="USP — det som skiljer er"
-          hint="Vad konkurrenterna INTE har / gör."
+          label="Det som gör dig unik"
+          hint="Det konkurrenterna inte har eller gör — varför någon väljer just dig."
           value={profile.usp}
           onChange={(v) => update("usp", v)}
           onAssist={() => assistField("usp")}
@@ -234,8 +234,8 @@ export default function ProfilPage() {
 
       <Section title="Differentiering" icon={Award}>
         <TextArea
-          label="Tre saker bara ni kan säga"
-          hint="Den specifika auktoriteten — år av erfarenhet, certifieringar, lokal koppling, en metod ingen annan har. En per rad."
+          label="Tre saker bara du kan säga"
+          hint="Det som ger dig tyngd — år av erfarenhet, certifieringar, lokal koppling, en metod ingen annan har. En per rad."
           value={profile.differentiators}
           onChange={(v) => update("differentiators", v)}
           onAssist={() => assistField("differentiators")}
@@ -247,7 +247,7 @@ export default function ProfilPage() {
       <Section title="Erbjudande & CTA" icon={ShoppingBag}>
         <TextArea
           label="Tjänster / produkter"
-          hint="Vad ni faktiskt säljer. En per rad."
+          hint="Vad du faktiskt säljer. En per rad."
           value={profile.services}
           onChange={(v) => update("services", v)}
           rows={4}
@@ -269,8 +269,8 @@ export default function ProfilPage() {
 
       <Section title="Målgrupp" icon={Target}>
         <TextArea
-          label="Primär ICP"
-          hint="Ditt bästa segment — demografi, geografi, smärtpunkter, köpbeteende, triggers."
+          label="Din viktigaste målgrupp"
+          hint="Dina bästa kunder — vilka de är, var de finns, vad de oroar sig för, hur de köper och vad som får dem att höra av sig."
           value={profile.icp_primary}
           onChange={(v) => update("icp_primary", v)}
           onAssist={() => assistField("icp_primary")}
@@ -278,8 +278,8 @@ export default function ProfilPage() {
           rows={6}
         />
         <TextArea
-          label="Sekundär ICP"
-          hint="Mindre men viktig målgrupp."
+          label="Mindre målgrupp (men viktig)"
+          hint="En grupp som är mindre men ändå värd att prata till."
           value={profile.icp_secondary}
           onChange={(v) => update("icp_secondary", v)}
           onAssist={() => assistField("icp_secondary")}
@@ -297,10 +297,10 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Voice of Customer" icon={Quote}>
+      <Section title="Kundernas egna ord" icon={Quote}>
         <TextArea
           label="Kundord & recensioner"
-          hint="Klistra in riktiga kundrecensioner, mejl, samtalsanteckningar. AI:n extraherar språkmönster som matchar kundens egen ton."
+          hint="Klistra in riktiga recensioner, mejl och samtalsanteckningar från dina kunder. AI:n plockar ut deras sätt att prata så texterna känns igen."
           value={profile.customer_quotes}
           onChange={(v) => update("customer_quotes", v)}
           rows={6}
@@ -319,7 +319,7 @@ export default function ProfilPage() {
       <Section title="Konkurrenter" icon={Users}>
         <TextArea
           label="Konkurrent-översikt"
-          hint="Vilka är 3–5 huvudkonkurrenter? Vad gör de bra/dåligt? Detaljerad spaning gör du i Konkurrenter-fliken."
+          hint="Vilka är dina 3–5 främsta konkurrenter? Vad gör de bra och vad gör de dåligt?"
           value={profile.competitors}
           onChange={(v) => update("competitors", v)}
           onAssist={() => assistField("competitors")}
@@ -331,7 +331,7 @@ export default function ProfilPage() {
       <Section title="Ton & språk" icon={MessageSquare}>
         <TextArea
           label="Tonregler"
-          hint="Hur ni låter när ni är som bäst. Konkreta regler med GÖR / GÖR INTE."
+          hint="Hur du låter när du är som bäst. Konkreta regler med GÖR / GÖR INTE."
           value={profile.tone_rules}
           onChange={(v) => update("tone_rules", v)}
           onAssist={() => assistField("tone_rules")}
@@ -433,9 +433,9 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
   }
 
   return (
-    <Modal onClose={onClose} title="Voice of Customer — extrahera språkmönster">
+    <Modal onClose={onClose} title="Kundernas egna ord">
       <div className="text-sm text-gray-600 mb-3">
-        Klistra in 3–10 verkliga kundord (recensioner, mejl, chat-meddelanden, samtalsanteckningar). AI:n extraherar exakta fraser, smärtord och stilen — och bygger in dem i tonreglerna.
+        Klistra in 3–10 verkliga citat från dina kunder (recensioner, mejl, chatt, samtalsanteckningar). AI:n plockar ut exakta fraser, vad de oroar sig för och hur de uttrycker sig — och väver in det i dina tonregler.
       </div>
       <textarea
         value={quotes}
@@ -534,11 +534,11 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
   });
 
   const questions = [
-    { key: "industry", label: "Bransch?", placeholder: "t.ex. bilhandel, coaching, frisör" },
-    { key: "offer", label: "Vad säljer ni — kort?", placeholder: "t.ex. begagnade bilar, ATV, släp" },
+    { key: "industry", label: "Bransch?", placeholder: "t.ex. coaching, redovisning, bygg, frisör" },
+    { key: "offer", label: "Vad säljer du — kort?", placeholder: "t.ex. ledarskapsutbildning, takläggning, behandlingar" },
     { key: "current_buyers", label: "Vem köper mest idag?", placeholder: "ålder, kön, plats, yrke" },
-    { key: "dream_buyers", label: "Vem skulle ni gärna sälja MER till?", placeholder: "dröm-kunden" },
-    { key: "price_range", label: "Prisklass?", placeholder: "t.ex. 50–300 tkr" },
+    { key: "dream_buyers", label: "Vem vill du gärna sälja MER till?", placeholder: "dröm-kunden" },
+    { key: "price_range", label: "Prisklass?", placeholder: "t.ex. 1 000–10 000 kr" },
     { key: "extra", label: "Något annat viktigt? (valfritt)", placeholder: "säsong, lokal kontext..." },
   ] as const;
 
@@ -566,7 +566,7 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
   const isLast = step === questions.length - 1;
 
   return (
-    <Modal onClose={onClose} title="ICP-wizard">
+    <Modal onClose={onClose} title="Hitta din målgrupp">
       <div className="mb-4 flex items-center gap-2">
         {questions.map((_, i) => (
           <div key={i} className={`h-1 flex-1 rounded ${i <= step ? "bg-purple-600" : "bg-gray-200"}`} />
@@ -596,7 +596,7 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
             className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-            Bygg ICP
+            Skapa målgrupp
           </button>
         ) : (
           <button
@@ -635,7 +635,7 @@ function ToneWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: stri
   return (
     <Modal onClose={onClose} title="Ton-wizard">
       <div className="text-sm text-gray-600 mb-3">
-        Klistra in 2–5 exempelmeningar som låter exakt som företaget ska låta.
+        Klistra in 2–5 exempelmeningar som låter exakt som du vill låta.
       </div>
       <textarea
         value={examples}
@@ -644,7 +644,7 @@ function ToneWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: stri
         placeholder='t.ex. "Hej! Jag har hjälpt mina kunder sedan 2010. Hör av dig så hittar vi en tid."'
         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none mb-3"
       />
-      <div className="text-sm text-gray-600 mb-2">Ord/uttryck ni undviker?</div>
+      <div className="text-sm text-gray-600 mb-2">Ord/uttryck du undviker?</div>
       <textarea
         value={avoid}
         onChange={(e) => setAvoid(e.target.value)}

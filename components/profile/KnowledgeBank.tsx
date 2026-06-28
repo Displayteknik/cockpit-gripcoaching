@@ -39,12 +39,12 @@ interface Asset {
 }
 
 const TABS: { key: AssetType; label: string; icon: React.ComponentType<{ className?: string }>; hint: string; minRecommended: number }[] = [
-  { key: "post", label: "Egna inlägg", icon: FileText, hint: "Klistra in 5–10 av kundens egna inlägg. AI:n imiterar deras röst.", minRecommended: 5 },
+  { key: "post", label: "Egna inlägg", icon: FileText, hint: "Klistra in 5–10 av dina egna inlägg. AI:n imiterar din röst.", minRecommended: 5 },
   { key: "photo", label: "Foton", icon: ImageIcon, hint: "Person, lokal, process, kunder. Slår alla stockfoton.", minRecommended: 5 },
-  { key: "audio", label: "Ljud", icon: Mic, hint: "Inspelningar där kunden pratar. Transkriberas automatiskt.", minRecommended: 1 },
-  { key: "video", label: "Video", icon: Video, hint: "Korta klipp där personen är i bild. Transkriberas automatiskt.", minRecommended: 1 },
-  { key: "testimonial", label: "Vittnesmål", icon: Quote, hint: "Riktiga citat från kunder med namn eller initialer.", minRecommended: 3 },
-  { key: "link", label: "Länkar", icon: LinkIcon, hint: "Podcast, artikel, YouTube — där kunden uttalar sig.", minRecommended: 0 },
+  { key: "audio", label: "Ljud", icon: Mic, hint: "Inspelningar där du pratar. Skrivs av automatiskt.", minRecommended: 1 },
+  { key: "video", label: "Video", icon: Video, hint: "Korta klipp där du är i bild. Skrivs av automatiskt.", minRecommended: 1 },
+  { key: "testimonial", label: "Vittnesmål", icon: Quote, hint: "Riktiga citat från dina kunder med namn eller initialer.", minRecommended: 3 },
+  { key: "link", label: "Länkar", icon: LinkIcon, hint: "Podcast, artikel, YouTube — där du uttalar dig.", minRecommended: 0 },
 ];
 
 export default function KnowledgeBank({ onChange }: { onChange?: () => void }) {
@@ -87,11 +87,11 @@ export default function KnowledgeBank({ onChange }: { onChange?: () => void }) {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="font-display font-bold text-gray-900 text-lg">
-              Kunskapsbank — kundens råmaterial
+              Kunskapsbank — ditt råmaterial
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Allt som matas in här används av generatorn och Coach för att skriva i exakt
-              kundens röst — sparas på klienten och stannar där.
+              Allt du lägger in här används när AI:n skriver, så att texterna låter exakt som
+              du — sparas på ditt konto och stannar där.
             </p>
           </div>
           {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
@@ -245,7 +245,7 @@ function TestimonialEditor({ onCreated }: { onCreated: () => void }) {
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder="Beskrivning, t.ex. 'kund Krokom, 45'"
+          placeholder="Beskrivning, t.ex. 'kund i Stockholm, 45'"
           className="px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-amber-500"
         />
       </div>

@@ -42,20 +42,20 @@ interface Clarification {
 
 const TARGET_LABEL: Record<string, string> = {
   brand_profile: "Brand-profil",
-  pillar: "Content-pelare",
-  customer_voice: "Customer Voice",
+  pillar: "Innehållstema",
+  customer_voice: "Kundröst",
   signature_phrase: "Signaturfras",
   forbidden_word: "Förbjudet ord",
   pain_word: "Smärt-ord",
   joy_word: "Glädje-ord",
   tone_rule: "Ton-regel",
   post_idea: "Post-idé",
-  differentiator: "Differentiator",
+  differentiator: "Det som skiljer dig",
   service: "Tjänst",
-  icp_primary: "ICP primary",
-  icp_secondary: "ICP secondary",
-  catchphrase: "Catchphrase",
-  framework: "Framework",
+  icp_primary: "Viktigaste målgrupp",
+  icp_secondary: "Mindre målgrupp",
+  catchphrase: "Slagord",
+  framework: "Metod/modell",
   objection: "Invändning",
   transformation_case: "Transformations-case",
 };
@@ -365,26 +365,26 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                 <button onClick={startNew} className="bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-xl p-5 text-left hover:opacity-95 transition shadow-sm">
                   <Plus className="w-6 h-6 mb-2" />
                   <div className="font-display font-bold text-lg mb-0.5">Mata in nytt material</div>
-                  <div className="text-sm opacity-90">Klistra in transkript eller dra-och-släpp ljudfil</div>
+                  <div className="text-sm opacity-90">Klistra in text eller dra-och-släpp en ljudfil</div>
                 </button>
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
                   <Sparkles className="w-6 h-6 text-amber-700 mb-2" />
                   <div className="font-display font-bold text-amber-900 mb-1">Vad agenten gör</div>
                   <ul className="text-xs text-amber-900 space-y-1">
-                    <li>• Läser materialet och jämför med befintlig brand-data</li>
-                    <li>• Klassar förslag som bekräftar/tillägg/uppdatering/motsägelse</li>
-                    <li>• Citerar exakt rad för varje förslag (audit trail)</li>
-                    <li>• Ställer bara frågor när det finns genuin osäkerhet</li>
+                    <li>• Läser materialet och jämför med din profil</li>
+                    <li>• Sorterar förslagen som bekräftar / tillägg / uppdatering / motsägelse</li>
+                    <li>• Visar exakt vilken rad varje förslag bygger på</li>
+                    <li>• Ställer bara frågor när något är genuint oklart</li>
                   </ul>
                 </div>
               </div>
 
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-display font-bold text-gray-900 flex items-center gap-2"><History className="w-4 h-4" /> Tidigare intakes ({sessions.length})</h3>
+                <h3 className="font-display font-bold text-gray-900 flex items-center gap-2"><History className="w-4 h-4" /> Tidigare inmatningar ({sessions.length})</h3>
                 <button onClick={refreshSessions} className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> Uppdatera</button>
               </div>
               {sessions.length === 0 ? (
-                <p className="text-sm text-gray-500">Inga tidigare intakes.</p>
+                <p className="text-sm text-gray-500">Inga tidigare inmatningar.</p>
               ) : (
                 <div className="space-y-2">
                   {sessions.map((s) => (
@@ -415,7 +415,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <button onClick={() => { setUploadFile(null); }} className={`rounded-lg border p-4 text-left transition ${!uploadFile && !recording ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}>
                   <FileText className="w-5 h-5 mb-1.5 text-purple-600" />
-                  <div className="font-medium text-gray-900 text-sm">Klistra in transkript</div>
+                  <div className="font-medium text-gray-900 text-sm">Klistra in text</div>
                   <div className="text-xs text-gray-500">Snabbast om du redan har text</div>
                 </button>
 
@@ -443,7 +443,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                     <Mic className="w-5 h-5 mb-1.5 text-purple-600" />
                     <div className="font-medium text-gray-900 text-sm">Spela in nu</div>
                     <div className="text-xs text-gray-500">
-                      {uploadFile?.name?.includes("intake-inspelning") ? `Klar (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "Prata direkt in i mic — agenten transkriberar"}
+                      {uploadFile?.name?.includes("intake-inspelning") ? `Klar (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "Prata rakt in i mikrofonen — AI:n skriver av"}
                     </div>
                   </button>
                 )}
@@ -479,7 +479,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                     <span className="opacity-70">{(uploadFile.size / 1024 / 1024).toFixed(1)} MB · {uploadFile.type || "okänd typ"}</span>
                   </div>
                   {uploadFile.size > 18 * 1024 * 1024 && (
-                    <div className="mt-1 text-purple-700 text-[11px]">Stor fil — laddas via Gemini Files API. Kan ta 30-90 sek att processa.</div>
+                    <div className="mt-1 text-purple-700 text-[11px]">Stor fil — kan ta 30–90 sek att läsa in.</div>
                   )}
                 </div>
               )}
@@ -496,7 +496,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
               {!uploadFile && (
                 <div>
                   <label className="text-xs font-medium text-gray-700 block mb-1">Transkript</label>
-                  <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={12} placeholder="Klistra in transkriptet från Zoom, Otter, Whisper eller liknande här..." className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" />
+                  <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={12} placeholder="Klistra in texten från ett samtal (t.ex. Zoom, Teams eller en avskrift) här..." className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" />
                   <p className="text-xs text-gray-500 mt-1">{transcript.length.toLocaleString("sv-SE")} tecken (minst 100 krävs)</p>
                 </div>
               )}
@@ -516,14 +516,14 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <h3 className="font-display font-bold text-gray-900 text-lg mb-1">
-                {step === "transcribing" ? (uploadProgress > 0 && uploadProgress < 100 ? `Laddar upp till Storage… ${uploadProgress}%` : "Transkriberar / extraherar text…") : "Agenten resonerar…"}
+                {step === "transcribing" ? (uploadProgress > 0 && uploadProgress < 100 ? `Laddar upp… ${uploadProgress}%` : "Läser och skriver av…") : "AI:n tänker…"}
               </h3>
               <p className="text-sm text-gray-600 max-w-md mx-auto">
                 {step === "transcribing"
                   ? (uploadProgress > 0 && uploadProgress < 100
-                      ? "Filen laddas upp direkt till Supabase Storage."
-                      : "Gemini läser ljud/video/PDF eller mammoth extraherar Word-text. Stora filer (>18 MB) går via Files API och tar 30-90 sek extra.")
-                  : "Läser transkriptet, jämför med brand-profil, pelare och voice-data, klassar varje insikt och citerar källan. ~30-60 sek."}
+                      ? "Filen laddas upp säkert."
+                      : "AI:n läser ljud, video, PDF eller Word-text. Stora filer (över 18 MB) tar 30–90 sek extra.")
+                  : "Läser texten, jämför med din profil, sorterar varje insikt och visar var den kommer ifrån. ~30–60 sek."}
               </p>
               {step === "transcribing" && uploadProgress > 0 && uploadProgress < 100 && (
                 <div className="mt-4 max-w-sm mx-auto bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -618,7 +618,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
               <div className="inline-flex w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 items-center justify-center mb-4">
                 <Check className="w-7 h-7 text-white" />
               </div>
-              <h3 className="font-display font-bold text-gray-900 text-xl mb-1">Klart — agenten har uppdaterat brand-datan</h3>
+              <h3 className="font-display font-bold text-gray-900 text-xl mb-1">Klart — din profil är uppdaterad</h3>
               <div className="text-sm text-gray-600 mt-4 grid grid-cols-2 md:grid-cols-3 gap-3 max-w-lg mx-auto">
                 {Object.entries(resultSummary).map(([k, v]) => (
                   <div key={k} className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
