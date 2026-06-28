@@ -4,8 +4,20 @@ import { useEffect, useState } from "react";
 import {
   Eye, Search, TrendingUp, TrendingDown, MousePointerClick, Gauge, Smartphone,
   Repeat, Award, Target, Zap, Loader2, AlertCircle, Trophy, Info, Sparkles,
-  ChevronDown, LineChart, Globe, Code2, Copy, Check, ExternalLink,
+  ChevronDown, LineChart, Globe, Code2, Copy, Check, ExternalLink, BookOpen,
 } from "lucide-react";
+
+// Liten bok-ikon med förklaring (hover/peka) — "vad betyder det här?".
+function Hint({ text }: { text: string }) {
+  return (
+    <span className="relative inline-flex group/hint align-middle ml-1.5" title={text}>
+      <BookOpen className="w-3.5 h-3.5 text-gray-300 hover:text-gray-500 cursor-help" />
+      <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 rounded-lg bg-gray-900 text-white text-xs leading-relaxed px-3 py-2 opacity-0 group-hover/hint:opacity-100 transition-opacity z-30 shadow-lg font-normal normal-case tracking-normal text-left">
+        {text}
+      </span>
+    </span>
+  );
+}
 
 type Period = 7 | 14 | 30 | 90;
 
@@ -148,19 +160,19 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {/* KPI-RAD — anpassad efter vilken data som faktiskt finns (inga tomma nollor) */}
           {hasGa4 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={data.ga4!.sessions} sub={`${data.ga4!.users.toLocaleString("sv-SE")} personer`} />
-              <KPI icon={Search} accent="emerald" label="Från Google-sök" value={k.gsc_clicks} sub={`plats ${k.gsc_avg_position ?? "—"} i snitt`} />
-              <KPI icon={Sparkles} accent="violet" label="Från AI-sök" value={data.ga4!.ai.sessions} sub="ChatGPT m.fl." />
-              <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
-              <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
-              <KPI icon={Zap} accent="teal" label="Engagemang" value={`${data.ga4!.engagementRate}%`} sub={`${Math.floor(data.ga4!.avgSessionSec / 60)}m ${data.ga4!.avgSessionSec % 60}s i snitt`} />
+              <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={data.ga4!.sessions} sub={`${data.ga4!.users.toLocaleString("sv-SE")} personer`} hint="Antal besök på din sajt under perioden (från Google Analytics)." />
+              <KPI icon={Search} accent="emerald" label="Från Google-sök" value={k.gsc_clicks} sub={`plats ${k.gsc_avg_position ?? "—"} i snitt`} hint="Besök som kom via en sökning på Google." />
+              <KPI icon={Sparkles} accent="violet" label="Från AI-sök" value={data.ga4!.ai.sessions} sub="ChatGPT m.fl." hint="Besök från AI-tjänster som ChatGPT, Copilot och Perplexity." />
+              <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} hint="Hur många gånger din sajt visats i Googles sökresultat." />
+              <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" hint="Din genomsnittliga placering i Google. Lägre siffra = högre upp = bättre. Plats 1–10 = sida 1." />
+              <KPI icon={Zap} accent="teal" label="Engagemang" value={`${data.ga4!.engagementRate}%`} sub={`${Math.floor(data.ga4!.avgSessionSec / 60)}m ${data.ga4!.avgSessionSec % 60}s i snitt`} hint="Andel besök där någon faktiskt läste eller klickade — inte bara stängde direkt." />
             </div>
           ) : hasGsc ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : ""} />
-              <KPI icon={MousePointerClick} accent="emerald" label="Klick från Google" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} />
-              <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} />
-              <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" />
+              <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub={k.pageviews != null ? `${k.pageviews.toLocaleString("sv-SE")} sidvisningar` : ""} hint="Antal besök på din sajt (från mätpixeln på sidan)." />
+              <KPI icon={MousePointerClick} accent="emerald" label="Klick från Google" value={k.gsc_clicks} sub={`CTR ${k.gsc_ctr}%`} hint="Hur många som klickat in på din sajt från Googles sökresultat. CTR = andel som klickade av de som såg dig." />
+              <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} hint="Hur många gånger din sajt visats i Googles sökresultat, och på hur många olika sökord." />
+              <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" hint="Din genomsnittliga placering i Google. Lägre siffra = högre upp = bättre. Plats 1–10 = sida 1." />
             </div>
           ) : (
             <>
@@ -184,7 +196,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {topInsights.length > 0 && (
             <section className="space-y-3">
               <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
-                <Zap className="w-5 h-5" style={{ color: primaryColor }} /> Att fokusera på
+                <Zap className="w-5 h-5" style={{ color: primaryColor }} /> Att fokusera på<Hint text="De viktigaste sakerna att jobba med just nu — uträknat ur din egen data." />
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {topInsights.map((a, i) => {
@@ -205,7 +217,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {hasGa4 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Repeat className="w-4 h-4 text-indigo-600" /> Var kommer besökarna ifrån</h2>
+                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Repeat className="w-4 h-4 text-indigo-600" /> Var kommer besökarna ifrån<Hint text="Hur dina besökare hittade dig: direkt, via Google, sociala medier, länkar m.m." /></h2>
                 <p className="text-xs text-gray-500 mb-4">Totalt {data.ga4!.sessions.toLocaleString("sv-SE")} besök under perioden.</p>
                 <div className="space-y-2.5">
                   {data.ga4!.channels.map((c) => {
@@ -224,7 +236,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
               </div>
 
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-violet-600" /> Syns du i AI-sök?</h2>
+                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-violet-600" /> Syns du i AI-sök?<Hint text="Besök från AI-tjänster (ChatGPT, Copilot, Perplexity). En kanal som växer snabbt 2026." /></h2>
                 <p className="text-xs text-gray-500 mb-3">Besök från ChatGPT, Copilot, Perplexity och Gemini. En kanal som växer snabbt.</p>
                 <div className="flex items-baseline gap-2 mb-3">
                   <span className="text-4xl font-bold font-display tabular-nums text-violet-700">{data.ga4!.ai.sessions}</span>
@@ -266,7 +278,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {hasGsc && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-3"><Target className="w-4 h-4 text-emerald-600" /> Var rankar du på Google</h2>
+                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-3"><Target className="w-4 h-4 text-emerald-600" /> Var rankar du på Google<Hint text="Hur dina sökord fördelar sig på Googles placeringar. Topp 3 = sida 1 högst upp. Sida 2 (11–20) är närmast att lyfta till sida 1." /></h2>
                 <div className="space-y-1">
                   {([
                     { band: "top3" as const, label: "Topp 3", count: pd.top3, imp: pd.top3Imp, color: "bg-emerald-500" },
@@ -284,7 +296,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
               </div>
 
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-3"><Repeat className="w-4 h-4 text-purple-600" /> Ditt namn vs nya kunder</h2>
+                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-3"><Repeat className="w-4 h-4 text-purple-600" /> Ditt namn vs nya kunder<Hint text="Söker folk på ditt namn (kände redan till dig) eller på det du erbjuder (nya kunder)? Mycket 'nya kunder' = du växer." /></h2>
                 {(data.brand_split.brand.impressions + data.brand_split.non_brand.impressions) > 0 ? (
                   <div className="space-y-3">
                     <BrandRow label="Nya kunder (sökte på det du erbjuder)" clicks={data.brand_split.non_brand.clicks} imp={data.brand_split.non_brand.impressions} color="text-emerald-700" />
@@ -302,7 +314,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
             const maxClicks = Math.max(...rows.map((q) => q.clicks), 1);
             return (
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><MousePointerClick className="w-4 h-4 text-emerald-600" /> Vad folk sökte när de hittade dig</h2>
+                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><MousePointerClick className="w-4 h-4 text-emerald-600" /> Vad folk sökte när de hittade dig<Hint text="De exakta orden folk skrev i Google innan de såg/klickade på din sajt." /></h2>
                 <p className="text-xs text-gray-500 mb-4">De exakta orden folk skrev i Google innan de klickade in på din sajt.</p>
                 <div className="space-y-3">
                   {rows.map((q, i) => (
@@ -334,7 +346,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {/* SNABBASTE VINSTERNA — premium kort-rutnät */}
           {data.quick_wins.length > 0 && (
             <div className="bg-gradient-to-br from-amber-50/60 to-white border border-amber-100 rounded-2xl p-6 shadow-sm">
-              <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Trophy className="w-4 h-4 text-amber-600" /> Dina snabbaste möjligheter</h2>
+              <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Trophy className="w-4 h-4 text-amber-600" /> Dina snabbaste möjligheter<Hint text="Sökord där du redan syns men ligger precis utanför topp 3. Lyfts sidan klättrar du oftast flera placeringar — störst effekt för minst jobb." /></h2>
               <p className="text-xs text-gray-500 mb-4">Sökord där du redan syns men ligger precis utanför topp 3. Lyfts sidan klättrar du oftast flera placeringar.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {data.quick_wins.slice(0, 9).map((q, i) => (
@@ -478,14 +490,14 @@ const ACCENTS: Record<string, string> = {
   pink: "bg-pink-100 text-pink-600", teal: "bg-teal-100 text-teal-600",
 };
 
-function KPI({ icon: Icon, label, value, sub, accent, primary }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number | string; sub?: string; accent?: string; primary?: string }) {
+function KPI({ icon: Icon, label, value, sub, accent, primary, hint }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number | string; sub?: string; accent?: string; primary?: string; hint?: string }) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
       <span className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={primary ? { background: `${primary}1a`, color: primary } : undefined}>
         {primary ? <Icon className="w-[18px] h-[18px]" /> : <span className={`w-9 h-9 -m-0 rounded-xl flex items-center justify-center ${ACCENTS[accent || "gray"]}`}><Icon className="w-[18px] h-[18px]" /></span>}
       </span>
       <div className="text-2xl font-bold font-display text-gray-900 tabular-nums leading-tight">{typeof value === "number" ? value.toLocaleString("sv-SE") : value}</div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+      <div className="text-xs text-gray-500 mt-0.5 flex items-center">{label}{hint && <Hint text={hint} />}</div>
       {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
     </div>
   );
