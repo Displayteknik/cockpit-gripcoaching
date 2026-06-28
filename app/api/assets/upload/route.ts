@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 import {
   validateUpload,
@@ -14,6 +15,8 @@ export const maxDuration = 60;
 // POST /api/assets/upload — multipart/form-data
 // Fält: file, category?, title?, person_name?, person_label?
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generate, generateJSON } from "@/lib/gemini";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +18,8 @@ interface AssistBody {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const body = (await req.json()) as AssistBody;
 

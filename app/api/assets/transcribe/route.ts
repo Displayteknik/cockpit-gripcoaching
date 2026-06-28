@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
 
@@ -9,6 +10,8 @@ export const maxDuration = 300;
 // POST /api/assets/transcribe { id }
 // Hämtar audio/video-asset, transkriberar via Gemini och uppdaterar body.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
     const { id } = await req.json();

@@ -53,6 +53,12 @@ const CRON_PATHS = new Set([
 function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/customer/")) return true;
   if (path.startsWith("/api/k/")) return true;   // kund-portalens egna endpoints (grindas i routen via kund-session)
+  // Brand-profil-modulen (profil + kunskapsbank + intake-agent) — kunden fyller i sin egen
+  // profil i /k/profil. Varje route grindas med requireAdminOrCustomer + tenant-låses via
+  // getActiveClientId (kund når bara sin egen klient).
+  if (path.startsWith("/api/profile")) return true;
+  if (path.startsWith("/api/assets")) return true;
+  if (path.startsWith("/api/intake/")) return true;
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||

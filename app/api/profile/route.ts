@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const clientId = await getActiveClientId();
   const sb = supabaseServer();
   let { data, error } = await sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle();
@@ -19,6 +22,8 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const clientId = await getActiveClientId();
   const body = await req.json();
   delete body.id;

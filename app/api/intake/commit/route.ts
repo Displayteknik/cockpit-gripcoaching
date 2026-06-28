@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -44,6 +45,8 @@ function uniqueArray(existing: string[] | null | undefined, addition: string): s
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const { session_id }: CommitBody = await req.json();
   if (!session_id) return NextResponse.json({ error: "session_id krävs" }, { status: 400 });
 

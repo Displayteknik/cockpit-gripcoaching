@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 import { countAssetsByType } from "@/lib/assets";
 
@@ -30,6 +31,8 @@ function has(s: unknown, min = 10): boolean {
 }
 
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
     const sb = supabaseService();
@@ -72,8 +75,8 @@ export async function GET() {
     // ========== 2. ICP ==========
     {
       const checks = [
-        { ok: has(p.icp_primary, 50), label: "Primär ICP" },
-        { ok: has(p.icp_secondary, 30), label: "Sekundär ICP" },
+        { ok: has(p.icp_primary, 50), label: "Din viktigaste målgrupp" },
+        { ok: has(p.icp_secondary, 30), label: "Mindre målgrupp" },
         { ok: has(p.pain_points, 50), label: "Smärtpunkter" },
         { ok: has(p.customer_quotes, 80), label: "Riktiga kundord" },
       ];
@@ -81,22 +84,22 @@ export async function GET() {
       const score = Math.round((filled / checks.length) * 100);
       dims.push({
         key: "icp",
-        label: "ICP — vem skriver vi för",
+        label: "Målgrupp — vem du skriver för",
         status: filled >= 4 ? "green" : filled >= 2 ? "yellow" : "red",
         score,
         filled,
         total: checks.length,
         missing: checks.filter((c) => !c.ok).map((c) => c.label),
-        hint: "Utan tydlig ICP blir innehållet generiskt. Kör ICP-wizarden om primär saknas.",
+        hint: "Utan tydlig målgrupp blir innehållet generiskt. Kör \"Hitta din målgrupp\" om den saknas.",
       });
     }
 
     // ========== 3. AUKTORITET ==========
     {
       const checks = [
-        { ok: has(p.usp, 40), label: "USP" },
-        { ok: has(p.brand_story, 100), label: "Brand story" },
-        { ok: has(p.differentiators, 30), label: "Differentiatorer (3 saker bara ni kan säga)" },
+        { ok: has(p.usp, 40), label: "Det som gör dig unik" },
+        { ok: has(p.brand_story, 100), label: "Berättelsen" },
+        { ok: has(p.differentiators, 30), label: "Tre saker bara du kan säga" },
       ];
       const filled = checks.filter((c) => c.ok).length;
       const score = Math.round((filled / checks.length) * 100);
@@ -108,7 +111,7 @@ export async function GET() {
         filled,
         total: checks.length,
         missing: checks.filter((c) => !c.ok).map((c) => c.label),
-        hint: "Tre saker bara ni kan säga är hjärtat i alla bra inlägg. Skriv ned dem.",
+        hint: "Tre saker bara du kan säga är hjärtat i alla bra inlägg. Skriv ned dem.",
       });
     }
 

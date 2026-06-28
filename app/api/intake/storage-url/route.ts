@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,8 @@ const BUCKET = "client-assets";
  * POST { filename, mime_type } → { signed_url, storage_path, token, bucket }
  */
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const sb = supabaseServer();
     const clientId = await getActiveClientId();
