@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Lightbulb } from "lucide-react";
+import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Lightbulb, Bot } from "lucide-react";
 import { SeoReportBlock } from "@/components/SeoReport";
 import { FunctionGuide } from "@/components/FunctionGuide";
 
@@ -45,6 +45,16 @@ interface ContentAudit {
   strengths: string[];
   next_actions: string[];
 }
+
+// Orienterande flöde överst på sidan — vad som görs för din synlighet och VEM som gör vad.
+// Ärligt: "Du gör" = kunden själv här på sidan, "Vi gör" = byrån hjälper till.
+const FLOW: { n: number; who: "du" | "vi" | "duvi"; title: string; desc: string }[] = [
+  { n: 1, who: "du", title: "Analysera sidan", desc: "Kör en sid-analys och se hur välbyggd sidan är — plus de viktigaste fixarna." },
+  { n: 2, who: "du", title: "Kvalitetskolla texten", desc: "Granska texten innan du publicerar: ton, AI-känsla och om den får läsaren att höra av sig." },
+  { n: 3, who: "duvi", title: "Skriv för AI-sök", desc: "Anpassa sidan så ChatGPT, Perplexity och Google AI citerar dig. Följ tipsen nedan — eller hör av dig så hjälper vi till." },
+  { n: 4, who: "vi", title: "Teknik på plats", desc: "Vi lägger in det som gör att sökmotorerna förstår exakt vad sidan handlar om." },
+  { n: 5, who: "du", title: "Fräscha upp", desc: "Granska gammalt innehåll med jämna mellanrum och uppdatera det som hänt sen sist." },
+];
 
 export default function SeoClient({ primaryColor, clientName, publicUrl, showKeywordIdeas = false }: { primaryColor: string; clientName: string; publicUrl: string; showKeywordIdeas?: boolean }) {
   const [audits, setAudits] = useState<Audit[]>([]);
@@ -170,6 +180,31 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           ChatGPT, Perplexity och Google AI Overviews. Få konkreta förbättringar. Din faktiska
           synlighet (placering, klick) ser du under Statistik.
         </p>
+      </div>
+
+      {/* FLÖDET — orienterande överblick: vad som görs för din synlighet och vem som gör vad */}
+      <div className="rounded-2xl border p-5" style={{ background: `${primaryColor}08`, borderColor: `${primaryColor}20` }}>
+        <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+            <Bot className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+          </span>
+          Så jobbar vi med din synlighet
+        </h2>
+        <p className="text-sm text-gray-600 mt-1 mb-4 max-w-2xl">
+          Fem steg som gör att du syns bättre i både Google och AI-sökmotorer. En del sköter du själv här på sidan, resten hjälper vi till med.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {FLOW.map((s) => (
+            <div key={s.n} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-lg font-bold font-display tabular-nums" style={{ color: primaryColor }}>{s.n}</span>
+                <WhoBadge who={s.who} primaryColor={primaryColor} />
+              </div>
+              <div className="font-semibold text-gray-900 text-sm leading-tight">{s.title}</div>
+              <div className="text-xs text-gray-500 mt-1 leading-relaxed">{s.desc}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Sid-audit */}
@@ -537,6 +572,13 @@ function Card({ title, subtitle, children, guide }: { title: string; subtitle?: 
 
 function Empty({ text }: { text: string }) {
   return <div className="text-center text-sm text-gray-400 py-6">{text}</div>;
+}
+
+// Liten etikett som ärligt visar vem som gör steget: kunden själv eller byrån (eller båda).
+function WhoBadge({ who, primaryColor }: { who: "du" | "vi" | "duvi"; primaryColor: string }) {
+  if (who === "du") return <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${primaryColor}15`, color: primaryColor }}>Du gör</span>;
+  if (who === "vi") return <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Vi gör</span>;
+  return <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Du &amp; vi</span>;
 }
 
 function ScoreBadge({ label, value }: { label: string; value: number }) {
