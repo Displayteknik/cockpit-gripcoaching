@@ -63,7 +63,7 @@ function isCustomerServedApi(path: string): boolean {
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||
     path === "/api/seo/content-audit" ||
-    path === "/api/seo/keywords" ||
+    path.startsWith("/api/seo/keywords") ||
     path === "/api/seo/keyword-ideas" ||
     path === "/api/seo/report"
   );

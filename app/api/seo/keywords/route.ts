@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId, logActivity } from "@/lib/client-context";
-import { requireAdmin, requireAdminOrCustomer } from "@/lib/api-auth";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -70,8 +70,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  // Mutation: endast admin (kunden lägger inte till sökord).
-  const denied = await requireAdmin();
+  // Kunden får lägga till sina egna sökord — tenant-låst via resolveClientId.
+  const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   const clientId = await resolveClientId();
   const body = await req.json();
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   const clientId = await resolveClientId();
   const body = await req.json();
@@ -104,7 +104,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   const clientId = await resolveClientId();
   const id = req.nextUrl.searchParams.get("id");

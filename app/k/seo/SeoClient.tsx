@@ -96,6 +96,8 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
   const [ideasLoading, setIdeasLoading] = useState(false);
   const [focus, setFocus] = useState("");
   const [addedKw, setAddedKw] = useState<Set<string>>(new Set());
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
 
   async function reload() {
     const [ad, kw] = await Promise.all([
@@ -107,6 +109,20 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
   }
 
   useEffect(() => { reload(); }, []);
+
+  // "Hämta mina sökord från Google" — importerar orden du faktiskt syns på (GSC) till trackern.
+  async function importFromGsc() {
+    setImporting(true);
+    setImportMsg(null);
+    try {
+      const r = await fetch("/api/seo/keywords/import-gsc", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) { setImportMsg(d.error || "Något gick fel."); return; }
+      if (d.added > 0) { setImportMsg(`La till ${d.added} sökord du redan syns på i Google.`); await reload(); }
+      else { setImportMsg(d.reason || "Inget nytt att hämta just nu."); }
+    } catch { setImportMsg("Något gick fel. Försök igen om en stund."); }
+    finally { setImporting(false); }
+  }
 
   async function runAudit() {
     if (!auditUrl.trim()) return;
@@ -432,6 +448,18 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           >
             <Plus className="w-4 h-4" /> Lägg till
           </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 mb-4 -mt-1">
+          <button
+            onClick={importFromGsc}
+            disabled={importing}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border disabled:opacity-50 transition-colors"
+            style={{ borderColor: `${primaryColor}40`, color: primaryColor, background: `${primaryColor}0a` }}
+          >
+            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Hämta mina sökord från Google
+          </button>
+          {importMsg && <span className="text-xs text-gray-500">{importMsg}</span>}
         </div>
         {keywords.length === 0 ? <Empty text="Lägg till ditt första sökord ovan." /> : (
           <div className="overflow-x-auto">
