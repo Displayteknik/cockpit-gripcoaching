@@ -7,9 +7,15 @@ import VisitorTracker from "@/components/VisitorTracker";
 import StructuredData from "@/components/StructuredData";
 import ClarityScript from "@/components/ClarityScript";
 
-// Gripcoaching-ytor som INTE får ärva HM Motors schema/analys/widget/spårning.
+// Bara HM Motors PUBLIKA sajt får ärva HM Motors schema/analys/widget/spårning.
+// Kund-portalen (/k, /k-utloggad…), inloggning och gripcoaching-ytor undantas — annars
+// läcker HM Motors localbusiness-schema, Clarity och besöksspårning in hos andra klienter.
 function isHmMotorSurface(path: string): boolean {
-  return !path.startsWith("/ikigai");
+  if (
+    path === "/k" || path.startsWith("/k/") || path.startsWith("/k-") ||
+    path.startsWith("/logga-in") || path.startsWith("/ikigai")
+  ) return false;
+  return true;
 }
 
 const spaceGrotesk = Space_Grotesk({
