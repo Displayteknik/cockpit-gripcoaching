@@ -11,12 +11,15 @@ interface Props {
 // Flik-titel brandad mot kunden själv — inte ärvd publik HM Motor-titel.
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getCustomerSession();
+  const name = session?.client_name ? `${session.client_name} · MySales Pro` : "Kundportal · MySales Pro";
+  // Överskriv ALLT HM-Motor-arv (titel, beskrivning, dela-bild/sajtnamn) — kunden ska
+  // aldrig se HM Motor i flik, sökresultat eller länk-förhandsvisning.
   return {
-    title: {
-      absolute: session?.client_name
-        ? `${session.client_name} · MySales Pro`
-        : "Kundportal · MySales Pro",
-    },
+    title: { absolute: name },
+    description: "Din egen vy i MySales Pro — besök, synlighet i Google och AI-sök, och din profil på ett ställe.",
+    robots: { index: false, follow: false },
+    openGraph: { title: name, siteName: "MySales Pro", images: [] },
+    twitter: { card: "summary", title: name },
   };
 }
 
