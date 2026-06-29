@@ -50,39 +50,32 @@ interface ContentAudit {
 // Ärligt: "Du gör" = kunden själv här på sidan, "Vi gör" = byrån hjälper till.
 const FLOW: { n: number; who: "du" | "vi" | "duvi"; title: string; desc: string; what: string; how: string; tips: string[] }[] = [
   {
-    n: 1, who: "du", title: "Analysera sidan",
-    desc: "Kör en sid-analys och se hur välbyggd sidan är — plus de viktigaste fixarna.",
-    what: "Verktyget hämtar din sida och läser hur den är byggd: titel, rubriker, om den har FAQ och strukturerad data, interna länkar, bilder utan alt-text och laddtid (Googles PageSpeed).",
-    how: "Klistra in sidans adress och kör. Du får två tekniska poäng 0–100 (SEO + AEO) och en lista på vad som kan förbättras. \"Klartext-rapporten\" ger ett djupare omdöme med prioriterade åtgärder.",
+    n: 1, who: "du", title: "Analysera din sida",
+    desc: "Kör sid-analysen och se hur välbyggd sidan är — plus de viktigaste fixarna.",
+    what: "Verktyget hämtar din sida och läser hur den är byggd: titel, rubriker, om den har FAQ, interna länkar, bilder utan alt-text och laddtid (Googles PageSpeed).",
+    how: "Klistra in sidans adress i \"Sid-analys\" nedan och kör. Du får två tekniska poäng 0–100 (SEO + AEO) och en lista på vad som kan förbättras.",
     tips: ["Poängen mäter sidans uppbyggnad — inte hur högt du rankar.", "Börja med din viktigaste sida.", "Följ åtgärdslistan uppifrån; de översta ger mest effekt."],
   },
   {
-    n: 2, who: "du", title: "Kvalitetskolla texten",
-    desc: "Granska texten innan du publicerar: ton, AI-känsla och om den får läsaren att höra av sig.",
-    what: "En AI läser texten och bedömer den mot Googles E-E-A-T (erfarenhet, expertis, auktoritet, trovärdighet), om den känns AI-skriven, och om den får läsaren att höra av sig.",
-    how: "Klistra in texten eller en adress. Du får poäng, utpekade AI-fraser och konkreta förslag på omskrivning.",
-    tips: ["Kör den innan du publicerar ny text.", "Skriv om det den flaggar som AI-känsla och svaga avslut.", "Skriv i din egen röst och kör igen — jämför."],
+    n: 2, who: "du", title: "Hitta dina sökord",
+    desc: "Få förslag på sökord dina kunder söker på, och lägg dem i din bevakning.",
+    what: "Utifrån din profil föreslår verktyget korta, vassa sökord du borde synas på. I Sökords-trackern följer du sen hur dina placeringar utvecklas över tid.",
+    how: "Klicka \"Vad ska du ranka på?\" för förslag och lägg till dem med ett klick. Skriv in var du ligger på Google i trackern, så ser du utvecklingen.",
+    tips: ["Ju mer ifylld din profil är, desto bättre förslag.", "Sök i inkognitoläge så resultatet inte påverkas av din historik.", "Uppdatera positionerna ungefär en gång i månaden."],
   },
   {
-    n: 3, who: "duvi", title: "Skriv för AI-sök",
-    desc: "Anpassa sidan så ChatGPT, Perplexity och Google AI citerar dig. Följ tipsen nedan — eller hör av dig så hjälper vi till.",
-    what: "Sidan anpassas så att den både rankar på Google och blir citerad av AI-sökmotorer (ChatGPT, Perplexity, Googles AI-svar): direkt svar i första meningen, frågebaserade rubriker, tydlig definition tidigt och en FAQ.",
-    how: "Här på sidan ser du tipsen och kan följa dem själv. Vill du ha sidan omskriven åt dig hör du av dig — då kör vi om-skrivnings-verktyget och levererar texten. Att lägga in den på sajten är sen ett manuellt steg.",
-    tips: ["Skriv rubriker som frågor dina kunder faktiskt ställer.", "Ge ett direkt svar i första meningen efter varje rubrik — det är det AI citerar.", "Punktlistor och tabeller citeras oftare."],
+    n: 3, who: "duvi", title: "Skriv så du syns",
+    desc: "Kvalitetskolla texten och skriv så att Google och AI-sökmotorer citerar dig. Vi hjälper vid behov.",
+    what: "En AI bedömer din text (ton, AI-känsla, om den får läsaren att höra av sig) och pekar ut vad som kan bli bättre. Plus konkreta tips för att synas i AI-sökmotorer som ChatGPT och Perplexity.",
+    how: "Kör \"AI-granskning av text\" och skriv om det den flaggar. Följ AI-tipsen längst ner på sidan — eller hör av dig så hjälper vi till med omskrivningen.",
+    tips: ["Skriv rubriker som frågor dina kunder faktiskt ställer.", "Ge ett direkt svar i första meningen efter varje rubrik — det är det AI citerar.", "Skriv i din egen röst; kör granskningen igen och jämför."],
   },
   {
-    n: 4, who: "vi", title: "Teknik på plats",
-    desc: "Vi tar fram en osynlig kodbit som hjälper sökmotorerna förstå sidan. Sen läggs den in på sajten — ett manuellt steg vi hjälper till med.",
-    what: "En osynlig kodbit (strukturerad data, så kallad \"schema\") som beskriver sidan för Google och AI-sökmotorer. Besökaren ser den aldrig.",
-    how: "Vi tar fram koden utifrån sidans innehåll. Sen klistras den in på sajten — ett manuellt steg vi hjälper till med. Verktyget publicerar den alltså inte automatiskt på din sajt.",
-    tips: ["Det gör att AI förstår och citerar sidan rätt.", "Det ger INTE stjärnor eller expanderbara frågor i vanliga Google — de är borttagna för vanliga sajter.", "Mest värt på sidor med tydliga fakta, tjänster eller en FAQ."],
-  },
-  {
-    n: 5, who: "vi", title: "Fräscha upp",
-    desc: "Vi går igenom gammalt innehåll med jämna mellanrum och säger vad som bör behållas, uppdateras eller skrivas om.",
-    what: "Vi bedömer gammalt innehåll utifrån ålder, hur sök har ändrats och vad AI-sökmotorer kräver — och ger en dom: behåll, uppdatera eller skriv om.",
-    how: "Vi kör en genomgång med jämna mellanrum och ger en åtgärdslista per sida. Du behöver inte göra något själv — men säg gärna till om en sida känns inaktuell.",
-    tips: ["Innehåll som inte rörts på länge tappar ofta i sök.", "Ofta räcker en uppdatering — allt behöver inte skrivas om.", "Färskt datum + uppdaterade fakta bygger förtroende (E-E-A-T)."],
+    n: 4, who: "du", title: "Följ resultatet",
+    desc: "Se i Statistik om du klättrar — besök, placeringar och synlighet i AI-sök.",
+    what: "Statistik visar din riktiga synlighet: besök på sajten, vilka sökord du syns på, var du rankar i Google och om AI-sökmotorer börjar skicka besök.",
+    how: "Öppna Statistik och titta vecka för vecka. \"Var rankar du på Google\" och \"Dina snabbaste möjligheter\" visar var nästa insats ger mest.",
+    tips: ["Sökdatan kommer från Google Search Console — riktiga siffror, inga gissningar.", "Kolla \"sida 2\"-orden — de är närmast att nå sida 1.", "Jämför perioder (7 / 28 / 90 dagar) för att se trenden."],
   },
 ];
 
@@ -221,9 +214,9 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           Så jobbar vi med din synlighet
         </h2>
         <p className="text-sm text-gray-600 mt-1 mb-4 max-w-2xl">
-          Fem steg som gör att du syns bättre i både Google och AI-sökmotorer. En del sköter du själv här på sidan, resten hjälper vi till med.
+          Fyra steg — allt finns här på sidan. Så syns du bättre i både Google och AI-sökmotorer. Behöver du hjälp med en omskrivning är vi ett mejl bort.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {FLOW.map((s) => (
             <div key={s.n} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-2">
