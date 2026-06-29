@@ -33,6 +33,11 @@ interface Keyword {
   best_rank: number | null;
   search_volume: number | null;
   last_checked: string | null;
+  gsc_position?: number | null;
+  gsc_clicks?: number;
+  gsc_impressions?: number;
+  gsc_related_query?: string | null;
+  gsc_related_position?: number | null;
 }
 
 interface ContentAudit {
@@ -406,11 +411,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       )}
 
       {/* Sökords-tracker */}
-      <Card title="Sökords-tracker" subtitle="Lägg in dina viktigaste sökord. Sök på Google, se var du ligger och skriv in din position — så ser du utvecklingen över tid."
+      <Card title="Sökords-tracker" subtitle="Lägg in de sökord du vill ranka på. Placeringen hämtas automatiskt från Google (Search Console) för de ord du redan syns på — du behöver inte fylla i den själv."
         guide={<FunctionGuide primaryColor={primaryColor} title="Sökords-tracker"
-          what="Din egen bevakningslista över de sökord du vill ranka på, så du kan följa hur dina placeringar i Google utvecklas över tid."
-          how="Skriv in ett sökord och lägg till det. Sök på ordet i Google (inkognito för rättvist resultat), se vilken plats du ligger på och skriv in siffran. Uppdatera då och då — så ser du om du klättrar."
-          tips={["Lägg till de viktigaste orden från 'Vad ska du ranka på?'.", "Sök i inkognitoläge så resultatet inte påverkas av din historik.", "Uppdatera positionerna ungefär en gång i månaden."]} />}>
+          what="Din egen bevakningslista över de sökord du vill ranka på. För ord du redan syns på hämtas din placering automatiskt från Google Search Console, så du ser utvecklingen över tid."
+          how="Skriv in ett sökord och lägg till det. Syns du redan på ordet fylls din snittplacering i automatiskt från Google. Ord du inte rankar på än får ingen placering — då kan du skriva in en själv om du vill."
+          tips={["Lägg till de viktigaste orden från 'Vad ska du ranka på?'.", "Placeringen kommer från Google automatiskt för ord du redan syns på.", "Ord utan siffra rankar du inte på än — skriv mer innehåll om dem så börjar de synas."]} />}>
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <input
             value={newKw.keyword}
@@ -449,15 +454,33 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                     </td>
                     <td className="py-2 px-2 text-right tabular-nums text-gray-600">{k.search_volume ?? "—"}</td>
                     <td className="py-2 px-2 text-right">
-                      <input
-                        type="number"
-                        value={k.current_rank ?? ""}
-                        onChange={(e) => updateRank(k.id, e.target.value ? parseInt(e.target.value) : null)}
-                        placeholder="—"
-                        className="w-16 px-2 py-1 rounded border border-gray-200 text-sm text-right tabular-nums outline-none focus:border-gray-400"
-                      />
+                      {k.gsc_position != null ? (
+                        <span className="inline-flex items-center gap-1.5 justify-end" title="Hämtad automatiskt från Google Search Console — din snittplacering på exakt det här ordet.">
+                          <span className="tabular-nums font-semibold text-gray-900">{k.gsc_position}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-blue-50 text-blue-600">Google</span>
+                        </span>
+                      ) : k.gsc_related_position != null ? (
+                        <span className="inline-flex flex-col items-end" title={`Du syns inte på exakt det här ordet, men på en liknande sökning: "${k.gsc_related_query}" (plats ${k.gsc_related_position}). Siffran gäller den sökningen.`}>
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="tabular-nums font-medium text-gray-500">~{k.gsc_related_position}</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-amber-50 text-amber-600">liknande</span>
+                          </span>
+                          <span className="text-[10px] text-gray-400 truncate max-w-[140px]">”{k.gsc_related_query}”</span>
+                        </span>
+                      ) : (
+                        <input
+                          type="number"
+                          value={k.current_rank ?? ""}
+                          onChange={(e) => updateRank(k.id, e.target.value ? parseInt(e.target.value) : null)}
+                          placeholder="—"
+                          title="Du syns inte på det här ordet (eller något liknande) i Google än. Fyll i en placering själv om du vill."
+                          className="w-16 px-2 py-1 rounded border border-gray-200 text-sm text-right tabular-nums outline-none focus:border-gray-400"
+                        />
+                      )}
                     </td>
-                    <td className="py-2 px-2 text-right tabular-nums text-emerald-700 font-medium">{k.best_rank ?? "—"}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-emerald-700 font-medium">
+                      {(() => { const vals = [k.best_rank, k.gsc_position].filter((v): v is number => typeof v === "number"); return vals.length ? Math.min(...vals) : "—"; })()}
+                    </td>
                     <td className="py-2 px-2">
                       <div className="flex items-center gap-1">
                         <a href={`https://www.google.com/search?q=${encodeURIComponent(k.keyword)}&gl=se&hl=sv`} target="_blank" rel="noopener" className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Sök på Google">
