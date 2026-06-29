@@ -48,12 +48,42 @@ interface ContentAudit {
 
 // Orienterande flöde överst på sidan — vad som görs för din synlighet och VEM som gör vad.
 // Ärligt: "Du gör" = kunden själv här på sidan, "Vi gör" = byrån hjälper till.
-const FLOW: { n: number; who: "du" | "vi" | "duvi"; title: string; desc: string }[] = [
-  { n: 1, who: "du", title: "Analysera sidan", desc: "Kör en sid-analys och se hur välbyggd sidan är — plus de viktigaste fixarna." },
-  { n: 2, who: "du", title: "Kvalitetskolla texten", desc: "Granska texten innan du publicerar: ton, AI-känsla och om den får läsaren att höra av sig." },
-  { n: 3, who: "duvi", title: "Skriv för AI-sök", desc: "Anpassa sidan så ChatGPT, Perplexity och Google AI citerar dig. Följ tipsen nedan — eller hör av dig så hjälper vi till." },
-  { n: 4, who: "vi", title: "Teknik på plats", desc: "Vi lägger in det som gör att sökmotorerna förstår exakt vad sidan handlar om." },
-  { n: 5, who: "du", title: "Fräscha upp", desc: "Granska gammalt innehåll med jämna mellanrum och uppdatera det som hänt sen sist." },
+const FLOW: { n: number; who: "du" | "vi" | "duvi"; title: string; desc: string; what: string; how: string; tips: string[] }[] = [
+  {
+    n: 1, who: "du", title: "Analysera sidan",
+    desc: "Kör en sid-analys och se hur välbyggd sidan är — plus de viktigaste fixarna.",
+    what: "Verktyget hämtar din sida och läser hur den är byggd: titel, rubriker, om den har FAQ och strukturerad data, interna länkar, bilder utan alt-text och laddtid (Googles PageSpeed).",
+    how: "Klistra in sidans adress och kör. Du får två tekniska poäng 0–100 (SEO + AEO) och en lista på vad som kan förbättras. \"Klartext-rapporten\" ger ett djupare omdöme med prioriterade åtgärder.",
+    tips: ["Poängen mäter sidans uppbyggnad — inte hur högt du rankar.", "Börja med din viktigaste sida.", "Följ åtgärdslistan uppifrån; de översta ger mest effekt."],
+  },
+  {
+    n: 2, who: "du", title: "Kvalitetskolla texten",
+    desc: "Granska texten innan du publicerar: ton, AI-känsla och om den får läsaren att höra av sig.",
+    what: "En AI läser texten och bedömer den mot Googles E-E-A-T (erfarenhet, expertis, auktoritet, trovärdighet), om den känns AI-skriven, och om den får läsaren att höra av sig.",
+    how: "Klistra in texten eller en adress. Du får poäng, utpekade AI-fraser och konkreta förslag på omskrivning.",
+    tips: ["Kör den innan du publicerar ny text.", "Skriv om det den flaggar som AI-känsla och svaga avslut.", "Skriv i din egen röst och kör igen — jämför."],
+  },
+  {
+    n: 3, who: "duvi", title: "Skriv för AI-sök",
+    desc: "Anpassa sidan så ChatGPT, Perplexity och Google AI citerar dig. Följ tipsen nedan — eller hör av dig så hjälper vi till.",
+    what: "Sidan anpassas så att den både rankar på Google och blir citerad av AI-sökmotorer (ChatGPT, Perplexity, Googles AI-svar): direkt svar i första meningen, frågebaserade rubriker, tydlig definition tidigt och en FAQ.",
+    how: "Här på sidan ser du tipsen och kan följa dem själv. Vill du ha sidan omskriven åt dig hör du av dig — då kör vi om-skrivnings-verktyget och levererar texten. Att lägga in den på sajten är sen ett manuellt steg.",
+    tips: ["Skriv rubriker som frågor dina kunder faktiskt ställer.", "Ge ett direkt svar i första meningen efter varje rubrik — det är det AI citerar.", "Punktlistor och tabeller citeras oftare."],
+  },
+  {
+    n: 4, who: "vi", title: "Teknik på plats",
+    desc: "Vi tar fram en osynlig kodbit som hjälper sökmotorerna förstå sidan. Sen läggs den in på sajten — ett manuellt steg vi hjälper till med.",
+    what: "En osynlig kodbit (strukturerad data, så kallad \"schema\") som beskriver sidan för Google och AI-sökmotorer. Besökaren ser den aldrig.",
+    how: "Vi tar fram koden utifrån sidans innehåll. Sen klistras den in på sajten — ett manuellt steg vi hjälper till med. Verktyget publicerar den alltså inte automatiskt på din sajt.",
+    tips: ["Det gör att AI förstår och citerar sidan rätt.", "Det ger INTE stjärnor eller expanderbara frågor i vanliga Google — de är borttagna för vanliga sajter.", "Mest värt på sidor med tydliga fakta, tjänster eller en FAQ."],
+  },
+  {
+    n: 5, who: "vi", title: "Fräscha upp",
+    desc: "Vi går igenom gammalt innehåll med jämna mellanrum och säger vad som bör behållas, uppdateras eller skrivas om.",
+    what: "Vi bedömer gammalt innehåll utifrån ålder, hur sök har ändrats och vad AI-sökmotorer kräver — och ger en dom: behåll, uppdatera eller skriv om.",
+    how: "Vi kör en genomgång med jämna mellanrum och ger en åtgärdslista per sida. Du behöver inte göra något själv — men säg gärna till om en sida känns inaktuell.",
+    tips: ["Innehåll som inte rörts på länge tappar ofta i sök.", "Ofta räcker en uppdatering — allt behöver inte skrivas om.", "Färskt datum + uppdaterade fakta bygger förtroende (E-E-A-T)."],
+  },
 ];
 
 export default function SeoClient({ primaryColor, clientName, publicUrl, showKeywordIdeas = false }: { primaryColor: string; clientName: string; publicUrl: string; showKeywordIdeas?: boolean }) {
@@ -198,7 +228,10 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
             <div key={s.n} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-lg font-bold font-display tabular-nums" style={{ color: primaryColor }}>{s.n}</span>
-                <WhoBadge who={s.who} primaryColor={primaryColor} />
+                <div className="flex items-center gap-0.5">
+                  <FunctionGuide primaryColor={primaryColor} title={s.title} what={s.what} how={s.how} tips={s.tips} />
+                  <WhoBadge who={s.who} primaryColor={primaryColor} />
+                </div>
               </div>
               <div className="font-semibold text-gray-900 text-sm leading-tight">{s.title}</div>
               <div className="text-xs text-gray-500 mt-1 leading-relaxed">{s.desc}</div>
