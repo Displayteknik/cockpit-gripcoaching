@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Lightbulb, Bot } from "lucide-react";
+import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, ExternalLink, Sparkles, Lightbulb, Bot, FileText, X, Download } from "lucide-react";
 import { SeoReportBlock } from "@/components/SeoReport";
 import { FunctionGuide } from "@/components/FunctionGuide";
+import MarkdownView from "@/components/MarkdownView";
 
 interface Audit {
   id: string;
@@ -38,6 +39,13 @@ interface Keyword {
   gsc_impressions?: number;
   gsc_related_query?: string | null;
   gsc_related_position?: number | null;
+}
+
+interface DeepReport {
+  id: string;
+  body: string;
+  metadata: { url?: string } | null;
+  created_at: string;
 }
 
 interface ContentAudit {
@@ -98,14 +106,18 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
   const [addedKw, setAddedKw] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [deepReports, setDeepReports] = useState<DeepReport[]>([]);
+  const [openReport, setOpenReport] = useState<DeepReport | null>(null);
 
   async function reload() {
-    const [ad, kw] = await Promise.all([
+    const [ad, kw, deep] = await Promise.all([
       fetch("/api/seo/audit").then((r) => r.json()).catch(() => []),
       fetch("/api/seo/keywords").then((r) => r.json()).catch(() => []),
+      fetch("/api/seo/deep-audit").then((r) => r.json()).catch(() => ({ reports: [] })),
     ]);
     setAudits(Array.isArray(ad) ? ad : []);
     setKeywords(Array.isArray(kw) ? kw : []);
+    setDeepReports(Array.isArray(deep?.reports) ? deep.reports : []);
   }
 
   useEffect(() => { reload(); }, []);
@@ -253,6 +265,42 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           ))}
         </div>
       </div>
+
+      {/* Din djupgranskning — byråns kompletta SEO/AEO-rapport för hela sajten. Levereras av oss. */}
+      {deepReports.length > 0 && (
+        <div className="rounded-2xl border p-5 shadow-sm" style={{ background: `${primaryColor}0a`, borderColor: `${primaryColor}30` }}>
+          <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+              <FileText className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+            </span>
+            Din djupgranskning
+          </h2>
+          <p className="text-sm text-gray-600 mt-1 mb-4 max-w-2xl">
+            Vi har gått igenom hela din sajt och Googles sökdata och skrivit en komplett rapport — vad som
+            redan fungerar, vad som bromsar dig, och färdiga texter du kan klistra in direkt. Öppna och läs,
+            eller ladda ner.
+          </p>
+          <div className="space-y-2">
+            {deepReports.map((r) => (
+              <div key={r.id} className="flex items-center justify-between gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3">
+                <div className="min-w-0">
+                  <div className="font-medium text-gray-900 text-sm truncate">
+                    SEO &amp; AEO-djupgranskning{r.metadata?.url ? ` — ${r.metadata.url.replace(/^https?:\/\/(www\.)?/, "")}` : ""}
+                  </div>
+                  <div className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString("sv-SE", { year: "numeric", month: "long", day: "numeric" })}</div>
+                </div>
+                <button
+                  onClick={() => setOpenReport(r)}
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white flex-shrink-0"
+                  style={{ background: primaryColor }}
+                >
+                  <FileText className="w-4 h-4" /> Läs rapporten
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Sid-audit */}
       <Card title="Sid-analys (teknisk SEO + AEO)" subtitle="Klistra in en URL. Vi analyserar sidans uppbyggnad (titel, struktur, schema, laddtid) och ger en poäng + åtgärdslista. OBS: poängen mäter hur välbyggd sidan är — INTE hur högt den rankar i Google."
@@ -545,6 +593,40 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </div>
 
       {showAiAudit && <AiAuditModal primaryColor={primaryColor} onClose={() => setShowAiAudit(false)} />}
+      {openReport && <DeepReportModal report={openReport} clientName={clientName} primaryColor={primaryColor} onClose={() => setOpenReport(null)} />}
+    </div>
+  );
+}
+
+function DeepReportModal({ report, clientName, primaryColor, onClose }: { report: DeepReport; clientName: string; primaryColor: string; onClose: () => void }) {
+  function downloadMd() {
+    const blob = new Blob([report.body], { type: "text/markdown;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `SEO-AEO-djupgranskning-${clientName.replace(/[^a-z0-9]+/gi, "-")}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between" style={{ background: `${primaryColor}0a` }}>
+          <h3 className="font-display font-bold text-base flex items-center gap-2 text-gray-900">
+            <FileText className="w-4 h-4" style={{ color: primaryColor }} />
+            SEO &amp; AEO-djupgranskning
+          </h3>
+          <div className="flex items-center gap-2">
+            <button onClick={downloadMd} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">
+              <Download className="w-3.5 h-3.5" /> Ladda ner
+            </button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1"><X className="w-5 h-5" /></button>
+          </div>
+        </div>
+        <div className="overflow-y-auto p-6">
+          <MarkdownView>{report.body}</MarkdownView>
+        </div>
+      </div>
     </div>
   );
 }

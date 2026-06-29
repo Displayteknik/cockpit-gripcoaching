@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId, logActivity } from "@/lib/client-context";
 import { crawlSite } from "@/lib/seo-deep";
 
@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
   if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY saknas" }, { status: 500 });
 
   const t0 = Date.now();
-  const sb = supabaseServer();
+  const sb = supabaseService(); // client_assets har strikt RLS → kräver service-role
   const clientId = await resolveClientId();
   const body = (await req.json().catch(() => ({}))) as AuditInput;
 
@@ -334,7 +334,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 
 // Lista sparade rapporter + finalisera ev. pågående batch-jobb
 export async function GET() {
-  const sb = supabaseServer();
+  const sb = supabaseService(); // client_assets har strikt RLS → kräver service-role
   const clientId = await resolveClientId();
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
