@@ -8,6 +8,9 @@ import { MobileStickyButton } from "@/components/layout/MobileStickyButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  // Egen titel (var tidigare root-defaulten) — så hemsidans HM Motor-SEO behålls
+  // även när root-defaulten är neutral för agency-ytorna.
+  title: { absolute: "HM Motor Krokom — CF Moto, begagnade bilar & fyrhjulingar i Jämtland" },
   alternates: { canonical: "/" },
 };
 

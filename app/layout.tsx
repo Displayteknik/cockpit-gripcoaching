@@ -32,7 +32,9 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "HM Motor Krokom — CF Moto, begagnade bilar & fyrhjulingar i Jämtland",
+    // Neutral fallback för agency-ytorna (dashboard m.fl.) — så de inte ärver HM Motor i fliken.
+    // HM Motors publika sidor (hem, fordon, blogg, [slug]) sätter sina EGNA titlar nedan/i sina segment.
+    default: "Cockpit · GripCoaching",
     template: "%s | HM Motor Krokom",
   },
   description:
