@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: { absolute: "Logga in · Cockpit — GripCoaching" },
   description: "Logga in på din portal.",
   robots: { index: false, follow: false },
+  icons: { icon: "/portal-icon.svg" },
   openGraph: { title: "Logga in · Cockpit", siteName: "Cockpit · GripCoaching", images: [] },
   twitter: { card: "summary" },
 };

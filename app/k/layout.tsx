@@ -18,6 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { absolute: name },
     description: "Din egen vy i MySales Pro — besök, synlighet i Google och AI-sök, och din profil på ett ställe.",
     robots: { index: false, follow: false },
+    icons: { icon: "/portal-icon.svg" },
     openGraph: { title: name, siteName: "MySales Pro", images: [] },
     twitter: { card: "summary", title: name },
   };

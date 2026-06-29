@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: { absolute: "Utloggad · MySales Pro" },
   robots: { index: false, follow: false },
+  icons: { icon: "/portal-icon.svg" },
 };
 
 export default function LoggedOut() {
