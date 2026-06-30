@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const sb = supabaseServer();
+  const sb = supabaseService(); // ikigai_sessions har RLS på → service-role; tenant-scopad via clientId nedan
   const clientId = await getActiveClientId();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const sb = supabaseServer();
+  const sb = supabaseService(); // ikigai_sessions har RLS på → service-role; tenant-scopad via clientId nedan
   const clientId = await getActiveClientId();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");

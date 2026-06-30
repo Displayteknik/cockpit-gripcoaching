@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStaticKnowledge } from "@/lib/knowledge";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
 import { generateIkigai, type IkigaiInputs } from "@/lib/ikigai";
 
@@ -15,7 +15,7 @@ function validEmail(e: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = supabaseServer();
+  const sb = supabaseService(); // ikigai_sessions har RLS på → service-role (publik endpoint, nyckeln server-side)
   let inputs: IkigaiInputs = {};
   try {
     inputs = (await req.json()) as IkigaiInputs;

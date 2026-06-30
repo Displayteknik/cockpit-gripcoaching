@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getKnowledge } from "@/lib/knowledge";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { generateIkigai, buildInputBlock, ALLOWED_BRAND_FIELDS, type IkigaiInputs } from "@/lib/ikigai";
 
@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
-  const sb = supabaseServer();
+  const sb = supabaseService(); // ikigai_sessions har RLS på → service-role (admin-grindad i proxy, tenant-scopad via clientId)
   const clientId = await getActiveClientId();
   let inputs: IkigaiInputs = {};
   try {
