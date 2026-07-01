@@ -213,7 +213,9 @@ export async function POST(req: NextRequest) {
   // Hel-sajt-crawl: alla sidor i sitemap, render-medvetet (avkodar JS-payload på GHL)
   let site;
   try {
-    site = await crawlSite(url, { maxPages: 25 });
+    // maxPages 12 + skipLighthouse = snabb crawl så hela POST:en (crawl + synkron Sonnet)
+    // ryms inom maxDuration=300. PageSpeed/CWV per sida finns i separata Sid-analysen.
+    site = await crawlSite(url, { maxPages: 12, skipLighthouse: true });
   } catch (e) {
     return NextResponse.json({ error: `Kunde inte hamta sajten: ${(e as Error).message}` }, { status: 500 });
   }
@@ -271,7 +273,8 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 - DOMÄN-DUBBLETT: kolla "domainRedirect". Om redirectWorks=true (t.ex. www → icke-www 301 finns) → flagga ALDRIG "duplicerad sajt" som HÖG. Det är redan löst på serversidan. Nämn det då bara som klar/hygien. Bara om redirectWorks=false är domän-dubblett ett riktigt HÖG-problem.
 - Canonical-taggar som pekar på olika domänvarianter (crossPage.canonicalTagInconsistent) när redirect finns = LÅG hygien, inte HÖG. Rekommendera att ensa till primaryHost (domainRedirect.primaryHost), men säg att effekten är liten eftersom redirecten redan styr Google rätt.
 - Använd EXAKT datumet i # Klient → Datum nedan i rapportens rubrik. Hitta inte på årtal.
-- Inga påhittade siffror, inga floskler.`;
+- Inga påhittade siffror, inga floskler.
+- LÄNGD (ABSOLUT KRAV): du har ~8000 tokens totalt. PLANERA så att ALLA sektioner ryms och avslutas — den allra sista sektionen (Ordlista) MÅSTE hinna skrivas klart. Det är viktigare att rapporten är HEL än lång. Korta därför ned rejält där det är billigast: i "Färdiga texter" tar du de 2-3 viktigaste (inte alla), och i Innehållsplanen max 6 bloggrubriker. Skriv koncist. Avsluta ALDRIG mitt i en mening, lista eller tabell.`;
 
   // Synkron generering (Messages API) — hela Sonnet-rapporten i ETT svar, sparas direkt som
   // "active" och returneras. Ryms inom maxDuration=300 (crawl + Sonnet ~2-3 min). Ersätter det
@@ -286,7 +289,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 14000,
+        max_tokens: 8000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
       }),

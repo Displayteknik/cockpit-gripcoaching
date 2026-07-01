@@ -445,8 +445,9 @@ async function detectDomainRedirect(rootUrl: string): Promise<{ primaryHost: str
 
 // Granska HELA sajten: sid-lista från sitemap → render-medveten extraktion per sida
 // (Lighthouse körs bara på startsidan för fart) → tvärsides-aggregat.
-export async function crawlSite(rootUrl: string, opts?: { maxPages?: number }): Promise<SiteAudit> {
+export async function crawlSite(rootUrl: string, opts?: { maxPages?: number; skipLighthouse?: boolean }): Promise<SiteAudit> {
   const maxPages = opts?.maxPages ?? 20;
+  const skipLighthouse = opts?.skipLighthouse ?? false;
   const proto = new URL(rootUrl).protocol;
   const domainRedirect = await detectDomainRedirect(rootUrl);
   const primaryRoot = `${proto}//${domainRedirect.primaryHost}/`;
@@ -468,7 +469,7 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number }): 
   const [{ robotsTxt }, sitemapUrls, home] = await Promise.all([
     fetchRobotsAndSitemap(primaryRoot),
     fetchSitemapUrls(origin),
-    extractPageSignals(primaryRoot, { skipRobotsSitemap: true }).catch(() => null),
+    extractPageSignals(primaryRoot, { skipRobotsSitemap: true, skipLighthouse }).catch(() => null),
   ]);
 
   // Sid-lista: normaliserad + dedupad (ingen www/icke-www-dubblett), startsidan först
