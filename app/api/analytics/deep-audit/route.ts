@@ -96,18 +96,13 @@ Föreslå konkret var på sajten siffror/citat/expertspråk ska in — och lägg
 
 # Färdiga texter att klistra in (kompletta)
 
-[HÄR skriver du ut VARJE föreslagen text I SIN HELHET — färdig att kopiera rakt in, inga "[...]", inga halva meningar, inga "och så vidare". Varje block ska ha en tydlig rubrik som säger vilken sida texten ska in på och var. Inkludera allt som nämnts i punkterna ovan, t.ex.:
-- Hela definitions-texten (t.ex. "Vad är en LED-skärm?" — full paragraf, färdigskriven)
-- Hela jämförelsetabellen med ALLA rader ifyllda
-- Hela FAQ-frågorna med fullständiga, färdiga svar
-- Eventuell färdig HTML-/schema-kod om det behövs
-Använd [DIN SIFFRA] BARA där en riktig siffra saknas (t.ex. pris) — allt annat ska vara komplett. Lista allra sist exakt vilka [DIN SIFFRA] företagaren behöver fylla i, så inget glöms.]
+[Skriv ut de 3-4 VIKTIGASTE (störst effekt) föreslagna texterna I SIN HELHET — färdiga att kopiera rakt in, inga "[...]", inga halva meningar. Välj de mest värdefulla (t.ex. en definition, en FAQ med 4-5 frågor, en jämförelsetabell). Resterande föreslagna texter listar du bara som korta rubriker under "Fler texter jag kan skriva åt dig — säg till" (inte utskrivna). Varje utskrivet block ska ha en tydlig rubrik som säger vilken sida texten ska in på. Använd [DIN SIFFRA] BARA där en riktig siffra saknas. Håll sektionen fokuserad så hela rapporten (inkl. Ordlista nedan) hinner skrivas klart.]
 
 ---
 
 # Innehållsplan — bloggrubriker som lyfter ditt toppord
 
-[Identifiera klientens STÖRSTA möjlighet i GSC-datan: sökordet med många visningar men få klick och position på sida 2 (pos 11-25) — det ordet och sidan som rankar för det = "pelarsidan". Föreslå sedan 8-10 färdiga bloggrubriker som bygger ett ämneskluster runt det ordet. Varje rubrik tar ett SMALARE long-tail-ord (lägre konkurrens, köpstarkare) och ska internlänka upp till pelarsidan. Det lär Google att klienten är expert på ämnet → pelarsidan klättrar.
+[Identifiera klientens STÖRSTA möjlighet i GSC-datan: sökordet med många visningar men få klick och position på sida 2 (pos 11-25) — det ordet och sidan som rankar för det = "pelarsidan". Föreslå sedan 6 färdiga bloggrubriker som bygger ett ämneskluster runt det ordet. Varje rubrik tar ett SMALARE long-tail-ord (lägre konkurrens, köpstarkare) och ska internlänka upp till pelarsidan. Det lär Google att klienten är expert på ämnet → pelarsidan klättrar.
 
 Blanda intentionstyper som i ett riktigt kluster: kostnad ("vad kostar X"), jämförelse ("X eller Y"), segment (klientens RIKTIGA målgrupper), teknik/guide. Sortera störst köp-/lead-potential först. Rubriker ska vara front-laddade med sökordet, konkreta, i klientens ton, inga floskler. Format som tabell:
 
@@ -274,7 +269,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 - Canonical-taggar som pekar på olika domänvarianter (crossPage.canonicalTagInconsistent) när redirect finns = LÅG hygien, inte HÖG. Rekommendera att ensa till primaryHost (domainRedirect.primaryHost), men säg att effekten är liten eftersom redirecten redan styr Google rätt.
 - Använd EXAKT datumet i # Klient → Datum nedan i rapportens rubrik. Hitta inte på årtal.
 - Inga påhittade siffror, inga floskler.
-- LÄNGD & KOMPLETTHET (ABSOLUT KRAV): skriv HELA mallen ända till slutet — de TVÅ avslutande sektionerna "Antaganden och öppna frågor" och "Ordlista — vad orden betyder" MÅSTE finnas med och skrivas klart, plus den korta "Vad jag kan göra åt dig direkt". Håll varje sektion koncis så allt får plats i svaret: i "Färdiga texter att klistra in" räcker de 2-3 viktigaste blocken (inte alla), och i Innehållsplanen max 6 bloggrubriker. Bättre kort-men-komplett än lång-men-avhuggen. Sluta ALDRIG mitt i en mening, lista eller tabell, och hoppa ALDRIG över Ordlistan.`;
+- LÄNGD: skriv koncist och fokuserat. Prioritera de mest värdefulla sektionerna (topp-3, nuläge, brister, åtgärder) och håll "Färdiga texter" till de 2-3 viktigaste blocken. Avsluta helst med en kort Ordlista. Skriv hellre klart en sektion än påbörja många — sluta aldrig mitt i en mening om du kan undvika det.`;
 
   // Synkron generering (Messages API) — hela Sonnet-rapporten i ETT svar, sparas direkt som
   // "active" och returneras. Ryms inom maxDuration=300 (crawl + Sonnet ~2-3 min). Ersätter det
