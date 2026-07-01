@@ -142,15 +142,29 @@ export default function AnalyticsDashboard() {
             : `Servern svarade oväntat (status ${r.status}).`,
         );
       }
-      if (!r.ok || d.error) throw new Error(d.error || `Kunde inte skapa granskningen (status ${r.status})`);
+      if (!r.ok || d.error) throw new Error(d.error || `Kunde inte starta granskningen (status ${r.status})`);
 
-      // Synkron generering: hela rapporten kommer i svaret. Visa den direkt + uppdatera listan.
-      if (d.report) setReportText(d.report);
-      const refresh = await fetch("/api/analytics/deep-audit")
-        .then((rr) => rr.json())
-        .catch(() => ({ reports: [] }));
-      setSavedReports(refresh.reports ?? []);
-      if (!d.report) throw new Error("Rapporten skapades men kunde inte visas. Den finns i listan över sparade rapporter.");
+      // Full rapport körs i bakgrunden (Batch-API). Polla tills den finaliserats — men den
+      // sparas ändå pålitligt av cronen även om användaren stänger fönstret.
+      const assetId = d.asset_id;
+      const startedAt = Date.now();
+      const MAX_WAIT_MS = 10 * 60 * 1000; // 10 min i UI:t; cronen fixar resten
+      while (Date.now() - startedAt < MAX_WAIT_MS) {
+        await new Promise((res) => setTimeout(res, 15000));
+        const refresh = await fetch("/api/analytics/deep-audit")
+          .then((rr) => rr.json())
+          .catch(() => ({ reports: [] }));
+        const reports = refresh.reports ?? [];
+        setSavedReports(reports);
+        const list = reports as Array<{ id: string; body: string }>;
+        const done = assetId ? list.find((x) => x.id === assetId) : list[0];
+        if (done && done.body) {
+          setReportText(done.body);
+          setGeneratingReport(false);
+          return;
+        }
+      }
+      throw new Error("Granskningen körs fortfarande i bakgrunden. Den dyker upp här i ”Tidigare djupgranskningar” inom några minuter — du kan stänga det här fönstret.");
     } catch (e) {
       setReportError((e as Error).message);
     } finally {
@@ -509,7 +523,7 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-gray-900">{generatingReport ? "Granskar sajten..." : "Generera djupgranskning"}</div>
-            <div className="text-xs text-gray-600 mt-0.5">{generatingReport ? "Tar 1-3 minuter — håll fönstret öppet" : "Full SEO/AEO-rapport: TL;DR + brister + sprintplan"}</div>
+            <div className="text-xs text-gray-600 mt-0.5">{generatingReport ? "Körs i bakgrunden — några minuter" : "Full SEO/AEO-rapport: TL;DR + brister + sprintplan"}</div>
           </div>
         </button>
       </div>
@@ -1211,7 +1225,7 @@ export default function AnalyticsDashboard() {
               {generatingReport && !reportText && (
                 <div className="flex flex-col items-center gap-3 py-12 text-gray-500">
                   <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-                  <div className="text-sm">Granskar {data.client?.public_url ?? "sajten"} — det tar 1-3 minuter...</div>
+                  <div className="text-sm">Granskar {data.client?.public_url ?? "sajten"} — körs i bakgrunden, några minuter...</div>
                   <div className="text-xs text-gray-400">Hämtar HTML, läser GSC-data, kör Claude Sonnet 4.5</div>
                 </div>
               )}

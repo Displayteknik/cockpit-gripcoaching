@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
+import { finalizePendingAudits } from "@/lib/deep-audit-finalize";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -10,6 +11,11 @@ export async function GET(req: NextRequest) {
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  // Finalisera klara djupgransknings-batchar för ALLA klienter (pålitlig bakgrunds-sparning
+  // även om användaren stängt fönstret innan batchen blev klar). Får aldrig fälla cronen.
+  const auditsFinalized = await finalizePendingAudits().catch(() => 0);
+
   const sb = supabaseServer();
   const now = new Date().toISOString();
   const { data: due } = await sb
@@ -19,7 +25,7 @@ export async function GET(req: NextRequest) {
     .lte("scheduled_at", now)
     .limit(20);
 
-  if (!due?.length) return NextResponse.json({ ok: true, processed: 0 });
+  if (!due?.length) return NextResponse.json({ ok: true, processed: 0, auditsFinalized });
 
   const results: { id: string; ok: boolean; error?: string; ig_media_id?: string }[] = [];
   for (const job of due) {
@@ -51,5 +57,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, processed: results.length, results });
+  return NextResponse.json({ ok: true, processed: results.length, results, auditsFinalized });
 }
