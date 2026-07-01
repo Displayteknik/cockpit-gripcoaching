@@ -132,7 +132,7 @@ export default function AnalyticsDashboard() {
     try {
       const r = await fetch("/api/analytics/deep-audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const raw = await r.text();
-      let d: { error?: string; status?: string; asset_id?: string } = {};
+      let d: { error?: string; status?: string; asset_id?: string; report?: string } = {};
       try {
         d = raw ? JSON.parse(raw) : {};
       } catch {
@@ -142,28 +142,15 @@ export default function AnalyticsDashboard() {
             : `Servern svarade oväntat (status ${r.status}).`,
         );
       }
-      if (!r.ok || d.error) throw new Error(d.error || `Kunde inte starta granskningen (status ${r.status})`);
+      if (!r.ok || d.error) throw new Error(d.error || `Kunde inte skapa granskningen (status ${r.status})`);
 
-      // Granskningen körs i bakgrunden (Batch-API, full kvalitet, ingen 60s-gräns). Polla tills klar.
-      const assetId = d.asset_id;
-      const startedAt = Date.now();
-      const MAX_WAIT_MS = 30 * 60 * 1000; // 30 min
-      while (Date.now() - startedAt < MAX_WAIT_MS) {
-        await new Promise((res) => setTimeout(res, 15000));
-        const refresh = await fetch("/api/analytics/deep-audit")
-          .then((rr) => rr.json())
-          .catch(() => ({ reports: [] }));
-        const reports = refresh.reports ?? [];
-        setSavedReports(reports);
-        const list = reports as Array<{ id: string; body: string }>;
-        const done = assetId ? list.find((x) => x.id === assetId) : list[0];
-        if (done && done.body) {
-          setReportText(done.body);
-          setGeneratingReport(false);
-          return;
-        }
-      }
-      throw new Error("Granskningen tar ovanligt lång tid. Den fortsätter i bakgrunden och dyker upp i listan över sparade rapporter när den är klar.");
+      // Synkron generering: hela rapporten kommer i svaret. Visa den direkt + uppdatera listan.
+      if (d.report) setReportText(d.report);
+      const refresh = await fetch("/api/analytics/deep-audit")
+        .then((rr) => rr.json())
+        .catch(() => ({ reports: [] }));
+      setSavedReports(refresh.reports ?? []);
+      if (!d.report) throw new Error("Rapporten skapades men kunde inte visas. Den finns i listan över sparade rapporter.");
     } catch (e) {
       setReportError((e as Error).message);
     } finally {
@@ -522,7 +509,7 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-gray-900">{generatingReport ? "Granskar sajten..." : "Generera djupgranskning"}</div>
-            <div className="text-xs text-gray-600 mt-0.5">{generatingReport ? "60-90 sekunder" : "Full SEO/AEO-rapport: TL;DR + brister + sprintplan"}</div>
+            <div className="text-xs text-gray-600 mt-0.5">{generatingReport ? "Tar 1-3 minuter — håll fönstret öppet" : "Full SEO/AEO-rapport: TL;DR + brister + sprintplan"}</div>
           </div>
         </button>
       </div>
@@ -1224,7 +1211,7 @@ export default function AnalyticsDashboard() {
               {generatingReport && !reportText && (
                 <div className="flex flex-col items-center gap-3 py-12 text-gray-500">
                   <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-                  <div className="text-sm">Granskar {data.client?.public_url ?? "sajten"} — det tar 60-90 sekunder...</div>
+                  <div className="text-sm">Granskar {data.client?.public_url ?? "sajten"} — det tar 1-3 minuter...</div>
                   <div className="text-xs text-gray-400">Hämtar HTML, läser GSC-data, kör Claude Sonnet 4.5</div>
                 </div>
               )}
