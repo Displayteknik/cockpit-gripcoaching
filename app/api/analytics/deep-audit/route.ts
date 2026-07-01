@@ -274,7 +274,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 - Canonical-taggar som pekar på olika domänvarianter (crossPage.canonicalTagInconsistent) när redirect finns = LÅG hygien, inte HÖG. Rekommendera att ensa till primaryHost (domainRedirect.primaryHost), men säg att effekten är liten eftersom redirecten redan styr Google rätt.
 - Använd EXAKT datumet i # Klient → Datum nedan i rapportens rubrik. Hitta inte på årtal.
 - Inga påhittade siffror, inga floskler.
-- LÄNGD (ABSOLUT KRAV): du har ~8000 tokens totalt. PLANERA så att ALLA sektioner ryms och avslutas — den allra sista sektionen (Ordlista) MÅSTE hinna skrivas klart. Det är viktigare att rapporten är HEL än lång. Korta därför ned rejält där det är billigast: i "Färdiga texter" tar du de 2-3 viktigaste (inte alla), och i Innehållsplanen max 6 bloggrubriker. Skriv koncist. Avsluta ALDRIG mitt i en mening, lista eller tabell.`;
+- LÄNGD & KOMPLETTHET (ABSOLUT KRAV): skriv HELA mallen ända till slutet — de TVÅ avslutande sektionerna "Antaganden och öppna frågor" och "Ordlista — vad orden betyder" MÅSTE finnas med och skrivas klart, plus den korta "Vad jag kan göra åt dig direkt". Håll varje sektion koncis så allt får plats i svaret: i "Färdiga texter att klistra in" räcker de 2-3 viktigaste blocken (inte alla), och i Innehållsplanen max 6 bloggrubriker. Bättre kort-men-komplett än lång-men-avhuggen. Sluta ALDRIG mitt i en mening, lista eller tabell, och hoppa ALDRIG över Ordlistan.`;
 
   // Synkron generering (Messages API) — hela Sonnet-rapporten i ETT svar, sparas direkt som
   // "active" och returneras. Ryms inom maxDuration=300 (crawl + Sonnet ~2-3 min). Ersätter det
