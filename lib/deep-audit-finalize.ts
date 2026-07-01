@@ -15,7 +15,7 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
     .from("client_assets")
     .select("id, metadata")
     .eq("category", "deep_audit_report")
-    .eq("status", "generating")
+    .eq("status", "processing")
     .limit(20);
   if (clientId) q = q.eq("client_id", clientId);
   const { data: pending } = await q;

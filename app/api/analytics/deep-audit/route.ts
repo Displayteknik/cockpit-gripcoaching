@@ -276,7 +276,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 
   // Full uttömmande rapport via Anthropic Batch-API — ingen tidsgräns på själva genereringen,
   // så hela mallen (>14000 tokens) kan skrivas ut i sin helhet. POST submittar batchen (<5s) och
-  // sparar en platshållare (status generating). Finaliseringen sker PÅLITLIGT via:
+  // sparar en platshållare (status processing). Finaliseringen sker PÅLITLIGT via:
   //   - GET (denna route) när dashboarden pollar, OCH
   //   - /api/scheduler/cron var 5:e minut (även om användaren stängt fönstret).
   try {
@@ -312,7 +312,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
       category: "deep_audit_report",
       subcategory: "seo_aeo",
       body: "",
-      status: "generating",
+      status: "processing", // OBS: client_assets_status_check tillåter bara active/archived/processing/failed — INTE "generating"
       metadata: {
         url,
         batch_id: batch.id,
@@ -348,13 +348,13 @@ export async function GET() {
     .select("id, body, metadata, created_at, status")
     .eq("client_id", clientId)
     .eq("category", "deep_audit_report")
-    .in("status", ["active", "generating"])
+    .in("status", ["active", "processing"])
     .order("created_at", { ascending: false })
     .limit(10);
 
   const rows = (data ?? []) as Array<{ id: string; status: string; body?: string }>;
   return NextResponse.json({
     reports: rows.filter((r) => r.status === "active" && r.body?.trim()),
-    generating: rows.filter((r) => r.status === "generating").map((r) => r.id),
+    generating: rows.filter((r) => r.status === "processing").map((r) => r.id),
   });
 }
