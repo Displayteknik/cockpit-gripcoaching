@@ -9,6 +9,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/analytics/deep-audit/finalize",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/agents/night-iterate",
       "schedule": "30 2 * * *"
     },

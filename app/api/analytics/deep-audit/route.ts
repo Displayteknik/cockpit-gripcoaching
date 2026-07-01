@@ -293,7 +293,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
             custom_id: "audit",
             params: {
               model: MODEL,
-              max_tokens: 14000,
+              max_tokens: 20000, // batch har ingen tidsgräns → högt tak så hela mallen (inkl. Ordlista) blir komplett
               system: SYSTEM_PROMPT,
               messages: [{ role: "user", content: userPrompt }],
             },

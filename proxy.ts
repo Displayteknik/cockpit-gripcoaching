@@ -40,6 +40,7 @@ function isPublicApi(path: string): boolean {
 // proxy:n får inte blockera dem (de har ingen admin-cookie).
 const CRON_PATHS = new Set([
   "/api/agents/night-iterate",
+  "/api/analytics/deep-audit/finalize",
   "/api/blog/cron",
   "/api/fordon/sync-cron",
   "/api/google/gsc/cron",
