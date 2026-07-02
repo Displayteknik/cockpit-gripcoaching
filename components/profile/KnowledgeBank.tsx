@@ -16,6 +16,7 @@ import {
   X,
   Check,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 type AssetType = "post" | "photo" | "audio" | "video" | "testimonial" | "link" | "document";
 
@@ -162,8 +163,9 @@ function PostEditor({ onCreated }: { onCreated: () => void }) {
   async function save() {
     if (!text.trim()) return;
     setBusy(true);
-    // Splittar på rader med dubbla nyrader → flera inlägg
-    const blocks = text.split(/\n{2,}/).map((s) => s.trim()).filter((s) => s.length > 30);
+    // Splittar BARA på en avgränsarrad med "---" → blankrader bevaras inom samma inlägg.
+    // Utan "---" sparas hela texten som ETT inlägg (även med blankrader).
+    const blocks = text.split(/\n[ \t]*-{3,}[ \t]*\n/).map((s) => s.trim()).filter(Boolean);
     const items = blocks.length > 0 ? blocks : [text.trim()];
     for (const body of items) {
       await fetch("/api/assets", {
@@ -183,7 +185,7 @@ function PostEditor({ onCreated }: { onCreated: () => void }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={5}
-        placeholder="Klistra in ett eller flera inlägg. Separera flera inlägg med en blank rad."
+        placeholder={"Klistra in en text — blankrader bevaras.\n\nVill du lägga till flera inlägg på en gång? Separera dem med en rad som bara innehåller ---"}
         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-body leading-relaxed focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none"
       />
       <div className="flex justify-end">
@@ -314,29 +316,77 @@ function FileUploader({ assetType, onUploaded }: { assetType: AssetType; onUploa
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string>("");
+  const [dragActive, setDragActive] = useState(false);
   const accept =
     assetType === "photo" ? "image/*" : assetType === "audio" ? "audio/*" : assetType === "video" ? "video/*" : "*/*";
+
+  const acceptPrefix =
+    assetType === "photo" ? "image/" : assetType === "audio" ? "audio/" : assetType === "video" ? "video/" : "";
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragActive(false);
+    if (busy) return;
+    const dropped = Array.from(e.dataTransfer.files);
+    // Filtrera bort filer som inte matchar (om vi har ett krav)
+    const valid = acceptPrefix ? dropped.filter((f) => f.type.startsWith(acceptPrefix)) : dropped;
+    if (valid.length === 0) {
+      if (dropped.length > 0) alert(`Fel filtyp — släpp ${assetType === "photo" ? "bilder" : assetType === "audio" ? "ljudfiler" : "videofiler"}.`);
+      return;
+    }
+    const dt = new DataTransfer();
+    valid.forEach((f) => dt.items.add(f));
+    handleFiles(dt.files);
+  }
 
   async function handleFiles(files: FileList) {
     setBusy(true);
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const mime = file.type || "application/octet-stream";
       setProgress(`Laddar upp ${i + 1}/${files.length}: ${file.name}`);
-      const fd = new FormData();
-      fd.append("file", file);
-      const r = await fetch("/api/assets/upload", { method: "POST", body: fd });
-      const d = await r.json();
-      if (d.error) {
-        alert(`Fel: ${d.error}`);
+
+      // 1) Hämta signerad upload-URL (går förbi Vercels ~4,5 MB body-gräns)
+      const urlRes = await fetch("/api/assets/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, mime, size: file.size }),
+      });
+      const urlData = await urlRes.json();
+      if (!urlRes.ok || urlData.error) {
+        alert(`Fel: ${urlData.error || "kunde inte förbereda uppladdning"}`);
         continue;
       }
-      // Auto-transkribera audio/video
-      if ((assetType === "audio" || assetType === "video") && d.asset?.id) {
+
+      // 2) Ladda upp filen DIREKT till Supabase Storage
+      const up = await supabase.storage
+        .from("client-assets")
+        .uploadToSignedUrl(urlData.path, urlData.token, file, { contentType: mime });
+      if (up.error) {
+        alert(`Fel vid uppladdning: ${up.error.message}`);
+        continue;
+      }
+
+      // 3) Bekräfta → skapa databasraden
+      setProgress(`Sparar ${i + 1}/${files.length}...`);
+      const finRes = await fetch("/api/assets/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: urlData.path, mime, size: file.size, title: file.name }),
+      });
+      const finData = await finRes.json();
+      if (!finRes.ok || finData.error) {
+        alert(`Fel: ${finData.error || "kunde inte spara"}`);
+        continue;
+      }
+
+      // 4) Auto-transkribera audio/video
+      if ((assetType === "audio" || assetType === "video") && finData.asset?.id) {
         setProgress(`Transkriberar ${i + 1}/${files.length}...`);
         await fetch("/api/assets/transcribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: d.asset.id }),
+          body: JSON.stringify({ id: finData.asset.id }),
         });
       }
     }
@@ -359,11 +409,16 @@ function FileUploader({ assetType, onUploaded }: { assetType: AssetType; onUploa
       <button
         onClick={() => inputRef.current?.click()}
         disabled={busy}
-        className="w-full border-2 border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded-lg p-6 flex flex-col items-center gap-2 transition-colors disabled:opacity-50"
+        onDragOver={(e) => { e.preventDefault(); if (!busy) setDragActive(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
+        onDrop={onDrop}
+        className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center gap-2 transition-colors disabled:opacity-50 ${
+          dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+        }`}
       >
-        {busy ? <Loader2 className="w-6 h-6 animate-spin text-gray-400" /> : <Upload className="w-6 h-6 text-gray-400" />}
+        {busy ? <Loader2 className="w-6 h-6 animate-spin text-gray-400" /> : <Upload className={`w-6 h-6 ${dragActive ? "text-blue-500" : "text-gray-400"}`} />}
         <span className="text-sm text-gray-600 font-medium">
-          {busy ? progress || "Laddar upp..." : `Ladda upp ${assetType === "photo" ? "foton" : assetType === "audio" ? "ljud" : "video"}`}
+          {busy ? progress || "Laddar upp..." : dragActive ? "Släpp här" : `Ladda upp ${assetType === "photo" ? "foton" : assetType === "audio" ? "ljud" : "video"}`}
         </span>
         <span className="text-xs text-gray-400">Klicka eller dra hit filer</span>
       </button>
