@@ -108,19 +108,51 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [deepReports, setDeepReports] = useState<DeepReport[]>([]);
   const [openReport, setOpenReport] = useState<DeepReport | null>(null);
+  const [deepGenerating, setDeepGenerating] = useState<string[]>([]);
+  const [startingAudit, setStartingAudit] = useState(false);
+  const [auditNote, setAuditNote] = useState<string | null>(null);
 
   async function reload() {
     const [ad, kw, deep] = await Promise.all([
       fetch("/api/seo/audit").then((r) => r.json()).catch(() => []),
       fetch("/api/seo/keywords").then((r) => r.json()).catch(() => []),
-      fetch("/api/seo/deep-audit").then((r) => r.json()).catch(() => ({ reports: [] })),
+      fetch("/api/seo/deep-audit").then((r) => r.json()).catch(() => ({ reports: [], generating: [] })),
     ]);
     setAudits(Array.isArray(ad) ? ad : []);
     setKeywords(Array.isArray(kw) ? kw : []);
     setDeepReports(Array.isArray(deep?.reports) ? deep.reports : []);
+    setDeepGenerating(Array.isArray(deep?.generating) ? deep.generating : []);
   }
 
   useEffect(() => { reload(); }, []);
+
+  // Kunden startar sin egen djupgranskning. Körs i bakgrunden (kan ta ~5-10 min) — vi pollar
+  // tills den dyker upp i listan, men lämnar den ändå att fortsätta om man stänger sidan.
+  async function generateDeepAudit() {
+    setStartingAudit(true);
+    setAuditNote(null);
+    try {
+      const r = await fetch("/api/seo/deep-audit", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok || d.error) throw new Error(d.error || "Kunde inte starta granskningen.");
+      await reload();
+
+      const startedAt = Date.now();
+      const MAX_WAIT_MS = 10 * 60 * 1000;
+      while (Date.now() - startedAt < MAX_WAIT_MS) {
+        await new Promise((res) => setTimeout(res, 15000));
+        const refresh = await fetch("/api/seo/deep-audit").then((rr) => rr.json()).catch(() => ({ reports: [], generating: [] }));
+        setDeepReports(Array.isArray(refresh?.reports) ? refresh.reports : []);
+        setDeepGenerating(Array.isArray(refresh?.generating) ? refresh.generating : []);
+        if (!refresh?.generating?.length) return;
+      }
+      setAuditNote("Granskningen körs fortfarande i bakgrunden — den dyker upp här inom några minuter. Du kan lämna sidan under tiden.");
+    } catch (e) {
+      setAuditNote((e as Error).message);
+    } finally {
+      setStartingAudit(false);
+    }
+  }
 
   // "Hämta mina sökord från Google" — importerar orden du faktiskt syns på (GSC) till trackern.
   async function importFromGsc() {
@@ -266,21 +298,45 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
         </div>
       </div>
 
-      {/* Din djupgranskning — byråns kompletta SEO/AEO-rapport för hela sajten. Levereras av oss. */}
-      {deepReports.length > 0 && (
-        <div className="rounded-2xl border p-5 shadow-sm" style={{ background: `${primaryColor}0a`, borderColor: `${primaryColor}30` }}>
-          <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
-              <FileText className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
-            </span>
-            Din djupgranskning
-          </h2>
-          <p className="text-sm text-gray-600 mt-1 mb-4 max-w-2xl">
-            Vi har gått igenom hela din sajt och Googles sökdata och skrivit en komplett rapport — vad som
-            redan fungerar, vad som bromsar dig, och färdiga texter du kan klistra in direkt. Öppna och läs,
-            eller ladda ner.
-          </p>
-          <div className="space-y-2">
+      {/* Din djupgranskning — komplett SEO/AEO-rapport för hela sajten. Kunden kan starta sin egen. */}
+      <div className="rounded-2xl border p-5 shadow-sm" style={{ background: `${primaryColor}0a`, borderColor: `${primaryColor}30` }}>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+                <FileText className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+              </span>
+              Din djupgranskning
+            </h2>
+            <p className="text-sm text-gray-600 mt-1 max-w-2xl">
+              En komplett genomgång av hela din sajt och Googles sökdata — vad som redan fungerar, vad
+              som bromsar dig, och färdiga texter du kan klistra in direkt. Tar ~5–10 minuter; du kan
+              lämna sidan under tiden.
+            </p>
+          </div>
+          <button
+            onClick={generateDeepAudit}
+            disabled={startingAudit || deepGenerating.length > 0}
+            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-50 flex-shrink-0"
+            style={{ background: primaryColor }}
+          >
+            {startingAudit || deepGenerating.length > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {deepGenerating.length > 0 ? "Granskning pågår…" : "Generera ny djupgranskning"}
+          </button>
+        </div>
+
+        {auditNote && (
+          <div className="mt-3 text-xs rounded-lg px-3 py-2 bg-white border border-gray-200 text-gray-600">{auditNote}</div>
+        )}
+
+        {(deepReports.length > 0 || deepGenerating.length > 0) && (
+          <div className="space-y-2 mt-4">
+            {deepGenerating.length > 0 && (
+              <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" style={{ color: primaryColor }} />
+                Granskar sajten just nu — dyker upp här automatiskt när den är klar.
+              </div>
+            )}
             {deepReports.map((r) => (
               <div key={r.id} className="flex items-center justify-between gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3">
                 <div className="min-w-0">
@@ -299,8 +355,8 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Sid-audit */}
       <Card title="Sid-analys (teknisk SEO + AEO)" subtitle="Klistra in en URL. Vi analyserar sidans uppbyggnad (titel, struktur, schema, laddtid) och ger en poäng + åtgärdslista. OBS: poängen mäter hur välbyggd sidan är — INTE hur högt den rankar i Google."

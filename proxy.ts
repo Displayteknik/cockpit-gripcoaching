@@ -66,7 +66,7 @@ function isCustomerServedApi(path: string): boolean {
     path.startsWith("/api/seo/keywords") ||
     path === "/api/seo/keyword-ideas" ||
     path === "/api/seo/report" ||
-    path === "/api/seo/deep-audit"   // read-only: kunden läser sina färdiga djupgranskningar (GET, grindas i routen)
+    path === "/api/seo/deep-audit"   // kunden läser OCH kan själv starta djupgranskningar (GET+POST, grindas i routen)
   );
 }
 
