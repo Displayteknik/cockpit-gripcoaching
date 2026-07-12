@@ -123,8 +123,8 @@ export const puckConfigLifeibalans: Config = {
         tint: true,
         steps: [
           { label: "Gratis · 3 min", title: "Nervsystemstestet", desc: "Femton frågor. Du får en personlig profil av var ditt nervsystem är just nu — och konkreta första steg, direkt i din inkorg.", ctaText: "Gör testet", ctaUrl: "/nervsystemstestet" },
-          { label: "Instegsprogram", title: "En mjuk start", desc: "För dig som vill börja i mindre skala — en kort introduktion till nervsystemet och de första verktygen, i din egen takt.", ctaText: "Läs mer", ctaUrl: "/kontakt" },
-          { label: "8 veckor · liten grupp", title: "Åtta veckor till ett reglerat nervsystem", desc: "Det fullständiga programmet: förstå vad som händer i kroppen och få verktyg som håller i en full vardag. Live varje vecka, inspelat, arbetsbok och en liten grupp.", ctaText: "Läs om programmet", ctaUrl: "/programmet" },
+          { label: "Instegskurs · i egen takt", title: "Förstå ditt nervsystem i klimakteriet", desc: "Fyra korta moduler där du förstår vad som faktiskt händer när stress möter klimakteriet — inspelade lektioner, arbetsblad och ljudövningar, i din egen takt. Den mjuka vägen in.", ctaText: "Läs om instegskursen", ctaUrl: "/instegskursen" },
+          { label: "8 veckor · liten grupp · live", title: "Åtta veckor till ett reglerat nervsystem", desc: "Signaturprogrammet: åtta veckor med inspelade lektioner, en liveträff i veckan, arbetsbok och en liten grupp. Du går från att kämpa mot din kropp till att förstå och kunna påverka den.", ctaText: "Läs om programmet", ctaUrl: "/programmet" },
         ],
       },
       render: Vagen as any,
