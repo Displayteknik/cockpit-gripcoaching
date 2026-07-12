@@ -181,6 +181,21 @@ export const LIB_STYLES = `
 .lib-care{position:relative;overflow:hidden;background:linear-gradient(150deg,#f2efe1,#e9e7d2);border-left:2px solid var(--sage);border-radius:0 var(--r-media) var(--r-media) 0;padding:clamp(1.6rem,3.5vw,2.4rem);box-shadow:0 1px 2px rgba(43,55,36,.04),0 18px 44px -30px rgba(43,55,36,.38);max-width:48rem;margin-inline:auto;}
 .lib-textblock{max-width:46rem;margin-inline:auto;display:flex;flex-direction:column;gap:1.1rem;}
 
+/* Kontaktformulär */
+.lib-cols{display:grid;gap:clamp(2rem,4vw,3.5rem);grid-template-columns:1fr;align-items:start;}
+@media(min-width:900px){.lib-cols{grid-template-columns:1fr 1fr;align-items:center;}}
+.lib-form{max-width:34rem;position:relative;}
+.lib-field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.1rem;}
+.lib-field label{font-size:.74rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--forest);}
+.lib-field input,.lib-field textarea{font-family:'Hanken Grotesk',sans-serif;font-size:1rem;color:var(--ink);background:#fffdf9;border:1px solid var(--line-strong);border-radius:7px;padding:.8rem .95rem;transition:border-color .2s var(--ease-soft),box-shadow .2s var(--ease-soft);}
+.lib-field input:focus,.lib-field textarea:focus{outline:none;border-color:var(--clay);box-shadow:0 0 0 3px rgba(176,98,60,.12);}
+.lib-field textarea{min-height:130px;resize:vertical;line-height:1.5;}
+.lib-form__hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+.lib-form__msg{margin-top:.9rem;font-size:.95rem;}
+.lib-form__msg--err{color:#a03a2a;}
+.lib-form__done{background:linear-gradient(150deg,#eef1e4,#e4e8d2);border:1px solid var(--line);border-radius:var(--r-media);padding:clamp(1.6rem,3.5vw,2.4rem);text-align:center;box-shadow:0 1px 2px rgba(43,55,36,.04),0 18px 44px -30px rgba(43,55,36,.38);}
+.lib-form__done h3{font-family:'Spectral',Georgia,serif;font-weight:400;font-size:1.5rem;color:var(--ink);margin:0 0 .5rem;}
+
 /* Reveal — synligt som default; JS taggar .lib-prep för att gömma + fade in */
 .lib-reveal{transition:opacity .8s var(--ease-soft),transform .8s var(--ease-soft);}
 .lib-reveal.lib-prep{opacity:0;transform:translateY(14px);}
@@ -221,6 +236,14 @@ export function Leaf({ size = 16 }: { size?: number }) {
       <path d="M12 4.5v16" stroke="var(--paper)" strokeWidth="1.1" strokeLinecap="round" opacity="0.85" />
     </svg>
   );
+}
+
+/** Prefixa interna länkar med sajtens bas (tom på egen domän, /sites/lifeibalans i cockpit-preview). */
+export function withBase(base: string | undefined, url: string | undefined): string {
+  const u = url || "#";
+  if (!base) return u;
+  if (/^(https?:|mailto:|tel:|#)/.test(u)) return u;
+  return u.startsWith("/") ? base + u : u;
 }
 
 /** Pil för textlänkar. */

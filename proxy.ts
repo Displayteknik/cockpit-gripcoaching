@@ -31,6 +31,7 @@ function isPublicApi(path: string): boolean {
   if (path === "/api/ikigai/public") return true;          // publik lead-magnet
   if (pfx(path, "/api/track")) return true;                // spårningspixel
   if (pfx(path, "/api/lead")) return true;                 // publikt lead-formulär
+  if (pfx(path, "/api/lifeibalans")) return true;          // Life i Balans publika endpoints (kontaktformulär)
   if (pfx(path, "/api/indexnow")) return true;             // IndexNow-ping
   if (path.startsWith("/api/share/")) return true;         // publik kund-godkännandelänk (token i path)
   return false;                                            // OBS: /api/share (skapa) = admin
@@ -92,7 +93,7 @@ export async function proxy(req: NextRequest) {
 
   // Klient-sajt på egen domän → rewrite till isolerad route (rör ej HM Motor).
   const sitePrefix = HOST_SITES[host];
-  if (sitePrefix && !path.startsWith(sitePrefix)) {
+  if (sitePrefix && !path.startsWith(sitePrefix) && !path.startsWith("/api") && !path.startsWith("/_next")) {
     const target = sitePrefix + (path === "/" ? "" : path);
     const url = req.nextUrl.clone();
     url.pathname = target;

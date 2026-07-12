@@ -81,8 +81,7 @@ export const LIB_PAGES: Record<string, Data> = {
     root: { props: { title: "Kontakt — Life i Balans" } },
     content: [
       { type: "Rubrik", props: { id: "h", eyebrow: "Kontakt", title: "Hör av dig — jag svarar själv.", emphasisWord: "själv", lead: "Undrar du om något är rätt för dig, eller vill du bara ställa en fråga? Skriv några rader, så återkommer jag.", tint: false } },
-      { type: "GhlEmbed", props: { id: "e", embedId: "GHL_CONTACT_FORM", title: "Skicka ett meddelande", minHeight: 520 } },
-      { type: "TextBlock", props: { id: "note", eyebrow: "Andra vägar", title: "Hellre mejl?", body: "Skriv till linda@lifeibalans.se, eller följ med på vägen på Instagram @lifeibalans. Är du i ett akut skede — hör av dig, så pratar vi om det är rätt tidpunkt. Vid akut fara: ring 112.", care: false, tint: true } },
+      { type: "Kontaktformular", props: { id: "form", eyebrow: "Skriv till mig", title: "Det finns inget dumt att höra av sig om.", intro: "Skriv några rader, så återkommer jag — jag svarar själv. Är du i ett akut skede, hör av dig så pratar vi om det är rätt tidpunkt. Vid akut fara, ring alltid 112.", email: "linda@lifeibalans.se", tint: false } },
     ],
   },
 };

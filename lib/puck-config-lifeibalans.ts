@@ -2,7 +2,7 @@
 import type { Config } from "@puckeditor/core";
 import {
   Hero, Recognition, Statement, ShockAbsorber, Offering, AboutLinda, Faq, Closing, GhlEmbed, Vagen,
-  Rubrik, Punkter, TextBlock,
+  Rubrik, Punkter, TextBlock, Kontaktformular,
 } from "@/components/puck-lifeibalans/sections";
 
 const boolField = { type: "radio" as const, options: [ { label: "Ja", value: true }, { label: "Nej", value: false } ] };
@@ -12,7 +12,7 @@ const boolField = { type: "radio" as const, options: [ { label: "Ja", value: tru
 export const puckConfigLifeibalans: Config = {
   categories: {
     sektioner: { title: "Sektioner", components: ["Hero", "Rubrik", "Igenkanning", "Statement", "Stotdampare", "Vagen", "Uppslag", "Punkter", "TextBlock", "OmLinda", "FAQ", "Avslut"] },
-    integration: { title: "Integration", components: ["GhlEmbed"] },
+    integration: { title: "Integration", components: ["Kontaktformular", "GhlEmbed"] },
   },
   components: {
     Hero: {
@@ -219,6 +219,19 @@ export const puckConfigLifeibalans: Config = {
         noteLinkText: "Kontakta Linda", noteLinkUrl: "/kontakt",
       },
       render: Closing as any,
+    },
+
+    Kontaktformular: {
+      label: "Kontaktformulär",
+      fields: {
+        eyebrow: { type: "text", label: "Eyebrow" },
+        title: { type: "text", label: "Rubrik" },
+        intro: { type: "textarea", label: "Ingress" },
+        email: { type: "text", label: "Mejladress (visas som alternativ)" },
+        tint: { ...boolField, label: "Tonad bakgrund" },
+      },
+      defaultProps: { eyebrow: "Skriv till mig", title: "Det finns inget dumt att höra av sig om.", intro: "Skriv några rader, så återkommer jag. Jag svarar själv.", email: "linda@lifeibalans.se", tint: false },
+      render: Kontaktformular as any,
     },
 
     GhlEmbed: {

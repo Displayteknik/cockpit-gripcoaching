@@ -4,7 +4,12 @@
 // Rena render-komponenter; fält definieras i lib/puck-config-lifeibalans.ts.
 
 import React from "react";
-import { StyleHost, Leaf, ArrowIcon } from "./theme";
+import { StyleHost, Leaf, ArrowIcon, withBase } from "./theme";
+
+// Puck skickar `puck.metadata` till varje render — där ligger sajtens bas-path.
+function baseOf(p: unknown): string | undefined {
+  return (p as { puck?: { metadata?: { basePath?: string } } })?.puck?.metadata?.basePath;
+}
 
 /** Byt ut första förekomsten av `word` i `text` mot kursiv. */
 function withEmphasis(text: string, word?: string): React.ReactNode {
@@ -46,8 +51,8 @@ export function Hero(p: HeroProps) {
           <h1 className="lib-display lib-reveal">{withEmphasis(p.title, p.emphasisWord)}</h1>
           <p className="lib-lead lib-reveal">{p.lead}</p>
           <div className="lib-hero__cta lib-reveal">
-            {p.ctaText ? <a href={p.ctaUrl || "#"} className="lib-btn lib-btn-primary">{p.ctaText}</a> : null}
-            {p.linkText ? <a href={p.linkUrl || "#"} className="lib-link-arrow">{p.linkText}<ArrowIcon /></a> : null}
+            {p.ctaText ? <a href={withBase(baseOf(p), p.ctaUrl)} className="lib-btn lib-btn-primary">{p.ctaText}</a> : null}
+            {p.linkText ? <a href={withBase(baseOf(p), p.linkUrl)} className="lib-link-arrow">{p.linkText}<ArrowIcon /></a> : null}
           </div>
         </div>
         <div className="lib-hero__media lib-breathe">
@@ -157,7 +162,7 @@ export function Offering(p: OfferingProps) {
           <p className="lib-eyebrow lib-reveal">{p.eyebrow}</p>
           <h3 className="lib-h3 lib-reveal">{p.title}</h3>
           <div className="lib-prose lib-reveal"><p>{p.body}</p></div>
-          {p.ctaText ? <span className="lib-reveal"><a href={p.ctaUrl || "#"} className="lib-link-arrow">{p.ctaText}<ArrowIcon /></a></span> : null}
+          {p.ctaText ? <span className="lib-reveal"><a href={withBase(baseOf(p), p.ctaUrl)} className="lib-link-arrow">{p.ctaText}<ArrowIcon /></a></span> : null}
         </div>
         <div className="lib-split__media"><div className="lib-reveal"><Figure src={p.image} alt={p.imageAlt} caption={p.caption} wide={p.wide} /></div></div>
       </section>
@@ -186,7 +191,7 @@ export function AboutLinda(p: AboutProps) {
               <li key={i}>{i > 0 ? <Leaf size={14} /> : null}<span>{t.text}</span></li>
             ))}
           </ul>
-          {p.linkText ? <span className="lib-reveal"><a href={p.linkUrl || "#"} className="lib-link-arrow">{p.linkText}<ArrowIcon /></a></span> : null}
+          {p.linkText ? <span className="lib-reveal"><a href={withBase(baseOf(p), p.linkUrl)} className="lib-link-arrow">{p.linkText}<ArrowIcon /></a></span> : null}
         </div>
       </section>
     </StyleHost>
@@ -236,11 +241,11 @@ export function Closing(p: ClosingProps) {
           <span className="lib-reveal"><Leaf size={26} /></span>
           <h2 className="lib-closing__title lib-reveal">{p.title}</h2>
           <p className="lib-lead lib-closing__text lib-reveal">{p.body}</p>
-          {p.ctaText ? <span className="lib-reveal"><a href={p.ctaUrl || "#"} className="lib-btn lib-btn-primary">{p.ctaText}</a></span> : null}
+          {p.ctaText ? <span className="lib-reveal"><a href={withBase(baseOf(p), p.ctaUrl)} className="lib-btn lib-btn-primary">{p.ctaText}</a></span> : null}
           {p.noteText ? (
             <p className="lib-small lib-closing__note lib-reveal">
               {p.noteText}{" "}
-              {p.noteLinkText ? <a href={p.noteLinkUrl || "#"} className="lib-link">{p.noteLinkText}</a> : null}
+              {p.noteLinkText ? <a href={withBase(baseOf(p), p.noteLinkUrl)} className="lib-link">{p.noteLinkText}</a> : null}
             </p>
           ) : null}
         </div>
@@ -333,10 +338,61 @@ export function Vagen(p: VagenProps) {
                   <h3 className="lib-vagen__h">{s.title}</h3>
                   <p className="lib-vagen__desc">{s.desc}</p>
                 </div>
-                {s.ctaText ? <a href={s.ctaUrl || "#"} className="lib-link-arrow lib-vagen__cta">{s.ctaText}<ArrowIcon /></a> : null}
+                {s.ctaText ? <a href={withBase(baseOf(p), s.ctaUrl)} className="lib-link-arrow lib-vagen__cta">{s.ctaText}<ArrowIcon /></a> : null}
               </div>
             ))}
           </div>
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
+// ── KONTAKTFORMULÄR (native → /api/lifeibalans/lead → Resend) ──
+export function LibContactForm() {
+  const [status, setStatus] = React.useState<"idle" | "sending" | "done" | "error">("idle");
+  const [err, setErr] = React.useState("");
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    setStatus("sending"); setErr("");
+    const payload = Object.fromEntries(new FormData(form).entries());
+    try {
+      const r = await fetch("/api/lifeibalans/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) { setStatus("done"); form.reset(); }
+      else { setStatus("error"); setErr(j.error || "Något gick fel. Försök igen."); }
+    } catch { setStatus("error"); setErr("Kunde inte skicka — försök igen eller mejla direkt."); }
+  }
+  if (status === "done") {
+    return <div className="lib-form__done"><h3>Tack — jag hör av mig.</h3><p className="lib-small">Ditt meddelande är skickat. Jag svarar själv, så snart jag kan.</p></div>;
+  }
+  return (
+    <form className="lib-form" onSubmit={onSubmit} noValidate>
+      <div className="lib-form__hp" aria-hidden="true"><label>Lämna tomt<input name="company" tabIndex={-1} autoComplete="off" /></label></div>
+      <div className="lib-field"><label htmlFor="lf-name">Namn</label><input id="lf-name" name="name" required autoComplete="name" /></div>
+      <div className="lib-field"><label htmlFor="lf-email">E-post</label><input id="lf-email" name="email" type="email" required autoComplete="email" /></div>
+      <div className="lib-field"><label htmlFor="lf-phone">Telefon (valfritt)</label><input id="lf-phone" name="phone" type="tel" autoComplete="tel" /></div>
+      <div className="lib-field"><label htmlFor="lf-msg">Meddelande</label><textarea id="lf-msg" name="message" placeholder="Vad undrar du över?" /></div>
+      <button type="submit" className="lib-btn lib-btn-primary" disabled={status === "sending"}>{status === "sending" ? "Skickar…" : "Skicka meddelande"}</button>
+      {status === "error" ? <p className="lib-form__msg lib-form__msg--err">{err}</p> : null}
+    </form>
+  );
+}
+
+export interface KontaktProps { eyebrow: string; title: string; intro?: string; email?: string; tint?: boolean; }
+export function Kontaktformular(p: KontaktProps) {
+  return (
+    <StyleHost>
+      <section className={`lib-section${p.tint ? " lib-section--tint" : ""}`}>
+        <div className="lib-container lib-cols">
+          <div className="lib-split__text">
+            <p className="lib-eyebrow">{p.eyebrow}</p>
+            <h2 className="lib-h2">{p.title}</h2>
+            {p.intro ? <p className="lib-lead">{p.intro}</p> : null}
+            {p.email ? <p className="lib-small">Hellre mejl? <a href={`mailto:${p.email}`} className="lib-link">{p.email}</a></p> : null}
+          </div>
+          <LibContactForm />
         </div>
       </section>
     </StyleHost>

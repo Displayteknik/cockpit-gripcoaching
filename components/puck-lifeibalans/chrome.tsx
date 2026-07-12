@@ -4,7 +4,7 @@
 // Örtagård-stil via lib-klasser (StyleHost injicerar tema).
 
 import React from "react";
-import { StyleHost } from "./theme";
+import { StyleHost, withBase } from "./theme";
 
 const NAV = [
   { href: "/programmet", label: "Programmet" },
@@ -51,18 +51,18 @@ function Logo({ height = 52 }: { height?: number }) {
   );
 }
 
-export function LibHeader() {
+export function LibHeader({ basePath }: { basePath?: string }) {
   return (
     <StyleHost>
       <style dangerouslySetInnerHTML={{ __html: CHROME_CSS }} />
       <header className="lib-hdr">
         <div className="lib-container lib-hdr__in">
-          <a href="/" className="lib-brand" aria-label="Life i Balans — startsida">
+          <a href={withBase(basePath, "/")} className="lib-brand" aria-label="Life i Balans — startsida">
             <Logo height={84} />
           </a>
           <nav className="lib-nav" aria-label="Huvudmeny">
-            {NAV.map((l) => <a key={l.href} href={l.href}>{l.label}</a>)}
-            <a href="/nervsystemstestet" className="lib-btn lib-btn-primary">Gör testet</a>
+            {NAV.map((l) => <a key={l.href} href={withBase(basePath, l.href)}>{l.label}</a>)}
+            <a href={withBase(basePath, "/nervsystemstestet")} className="lib-btn lib-btn-primary">Gör testet</a>
           </nav>
         </div>
       </header>
@@ -70,7 +70,7 @@ export function LibHeader() {
   );
 }
 
-export function LibFooter() {
+export function LibFooter({ basePath }: { basePath?: string }) {
   return (
     <StyleHost>
       <style dangerouslySetInnerHTML={{ __html: CHROME_CSS }} />
@@ -78,11 +78,11 @@ export function LibFooter() {
         <div className="lib-container">
           <div className="lib-ftr__cols">
             <div>
-              <a href="/" className="lib-brand"><Logo height={58} /></a>
+              <a href={withBase(basePath, "/")} className="lib-brand"><Logo height={58} /></a>
               <p className="lib-small lib-ftr__tag">Utbildning och coaching om nervsystem, stress och klimakteriet — av Linda Fernquist, leg. sjuksköterska.</p>
             </div>
             <nav className="lib-ftr__links" aria-label="Sidfotsmeny">
-              {NAV.map((l) => <a key={l.href} href={l.href}>{l.label}</a>)}
+              {NAV.map((l) => <a key={l.href} href={withBase(basePath, l.href)}>{l.label}</a>)}
             </nav>
             <div className="lib-ftr__links">
               <a href="mailto:linda@lifeibalans.se" className="lib-link">linda@lifeibalans.se</a>

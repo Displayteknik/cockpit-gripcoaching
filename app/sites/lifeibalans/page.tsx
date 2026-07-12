@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { LibRender } from "@/components/puck-lifeibalans/Render";
 import { LibHeader, LibFooter } from "@/components/puck-lifeibalans/chrome";
 import { LIB_HOME_DATA } from "@/lib/puck-lifeibalans-default";
+import { headers } from "next/headers";
 
 const CLIENT_SLUG = "lifeibalans";
 
@@ -35,6 +36,12 @@ export async function getLifeibalansClientId(): Promise<string | null> {
   return data?.id || null;
 }
 
+// Länk-bas: tom på egen domän (lifeibalans.se), /sites/lifeibalans i cockpit-preview.
+export async function getSiteBase(): Promise<string> {
+  const host = (await headers()).get("host") || "";
+  return /(^|\.)lifeibalans\.se$/i.test(host) ? "" : "/sites/lifeibalans";
+}
+
 export default async function LifeibalansHome() {
   const clientId = await getLifeibalansClientId();
   let pageData: Data = LIB_HOME_DATA;
@@ -48,13 +55,14 @@ export default async function LifeibalansHome() {
       .single();
     if (page?.data) pageData = page.data as Data;
   }
+  const basePath = await getSiteBase();
   return (
     <>
-      <LibHeader />
+      <LibHeader basePath={basePath} />
       <main>
-        <LibRender data={pageData} />
+        <LibRender data={pageData} basePath={basePath} />
       </main>
-      <LibFooter />
+      <LibFooter basePath={basePath} />
     </>
   );
 }

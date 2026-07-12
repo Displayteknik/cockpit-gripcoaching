@@ -4,7 +4,7 @@ import { type Data } from "@puckeditor/core";
 import { supabase } from "@/lib/supabase";
 import { LibRender } from "@/components/puck-lifeibalans/Render";
 import { LibHeader, LibFooter } from "@/components/puck-lifeibalans/chrome";
-import { getLifeibalansClientId } from "../page";
+import { getLifeibalansClientId, getSiteBase } from "../page";
 import { LIB_PAGES } from "@/lib/puck-lifeibalans-pages";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -32,7 +32,8 @@ async function loadPage(slug: string): Promise<{ data: Data; title?: string } | 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const page = await loadPage(slug);
-  const title = page?.title ? `${page.title} — Life i Balans` : "Life i Balans";
+  const t = page?.title || "";
+  const title = !t ? "Life i Balans" : /life i balans/i.test(t) ? t : `${t} — Life i Balans`;
   return {
     metadataBase: new URL("https://cockpit.gripcoaching.se"),
     title: { absolute: title },
@@ -52,13 +53,14 @@ export default async function LifeibalansPage({ params }: Params) {
   const { slug } = await params;
   const page = await loadPage(slug);
   if (!page?.data) notFound();
+  const basePath = await getSiteBase();
   return (
     <>
-      <LibHeader />
+      <LibHeader basePath={basePath} />
       <main>
-        <LibRender data={page.data as Data} />
+        <LibRender data={page.data as Data} basePath={basePath} />
       </main>
-      <LibFooter />
+      <LibFooter basePath={basePath} />
     </>
   );
 }
