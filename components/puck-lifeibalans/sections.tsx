@@ -249,6 +249,68 @@ export function Closing(p: ClosingProps) {
   );
 }
 
+// ── RUBRIK (sidhuvud för undersidor) ──────────────────────────
+export interface RubrikProps { eyebrow: string; title: string; emphasisWord?: string; lead?: string; tint?: boolean; }
+export function Rubrik(p: RubrikProps) {
+  return (
+    <StyleHost>
+      <section className={`lib-section${p.tint ? " lib-section--tint" : ""}`} style={{ paddingBottom: "clamp(2rem,4vw,3rem)" }}>
+        <div className="lib-container">
+          <div className="lib-pagehead">
+            <p className="lib-eyebrow">{p.eyebrow}</p>
+            <h1 className="lib-display">{withEmphasis(p.title, p.emphasisWord)}</h1>
+            {p.lead ? <p className="lib-lead" style={{ maxWidth: "44rem" }}>{p.lead}</p> : null}
+          </div>
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
+// ── PUNKTER (löv-lista med rubrik) ────────────────────────────
+export interface PunkterProps { eyebrow: string; title: string; intro?: string; points: { text: string }[]; tint?: boolean; }
+export function Punkter(p: PunkterProps) {
+  return (
+    <StyleHost>
+      <section className={`lib-section${p.tint ? " lib-section--tint" : ""}`}>
+        <div className="lib-container lib-punkter">
+          <div className="lib-punkter__head">
+            <p className="lib-eyebrow">{p.eyebrow}</p>
+            <h2 className="lib-h2">{p.title}</h2>
+            {p.intro ? <p className="lib-lead" style={{ maxWidth: "44rem" }}>{p.intro}</p> : null}
+          </div>
+          <ul className="lib-leaf-list">
+            {(p.points || []).map((pt, i) => (<li key={i}><Leaf size={16} /><span>{pt.text}</span></li>))}
+          </ul>
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
+// ── TEXT / VÅRD-RUTA ──────────────────────────────────────────
+export interface TextBlockProps { eyebrow: string; title: string; body: string; care?: boolean; tint?: boolean; }
+export function TextBlock(p: TextBlockProps) {
+  const inner = (
+    <>
+      <p className="lib-eyebrow">{p.eyebrow}</p>
+      <h2 className="lib-h3" style={{ marginTop: ".5rem" }}>{p.title}</h2>
+      <div className="lib-prose" style={{ marginTop: ".9rem" }}>
+        {p.body.split("\n").filter(Boolean).map((para, i) => (<p key={i}>{para}</p>))}
+      </div>
+    </>
+  );
+  return (
+    <StyleHost>
+      <section className={`lib-section${p.tint ? " lib-section--tint" : ""}`}>
+        <div className="lib-container">
+          {p.care ? <div className="lib-care">{inner}</div> : <div className="lib-textblock">{inner}</div>}
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
 // ── VÄGEN IN (tre steg, inga bilder) ──────────────────────────
 export interface VagenProps {
   eyebrow: string; title: string; tint?: boolean;

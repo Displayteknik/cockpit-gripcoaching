@@ -5,20 +5,28 @@ import { supabase } from "@/lib/supabase";
 import { LibRender } from "@/components/puck-lifeibalans/Render";
 import { LibHeader, LibFooter } from "@/components/puck-lifeibalans/chrome";
 import { getLifeibalansClientId } from "../page";
+import { LIB_PAGES } from "@/lib/puck-lifeibalans-pages";
 
 type Params = { params: Promise<{ slug: string }> };
 
-async function loadPage(slug: string) {
+async function loadPage(slug: string): Promise<{ data: Data; title?: string } | null> {
   const clientId = await getLifeibalansClientId();
-  if (!clientId) return null;
-  const { data } = await supabase
-    .from("hm_pages")
-    .select("data,title")
-    .eq("client_id", clientId)
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .single();
-  return data || null;
+  if (clientId) {
+    const { data } = await supabase
+      .from("hm_pages")
+      .select("data,title")
+      .eq("client_id", clientId)
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .single();
+    if (data?.data) return { data: data.data as Data, title: data.title };
+  }
+  const fallback = LIB_PAGES[slug];
+  if (fallback) {
+    const t = (fallback.root?.props as { title?: string } | undefined)?.title;
+    return { data: fallback, title: t };
+  }
+  return null;
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {

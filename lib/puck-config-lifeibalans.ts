@@ -2,6 +2,7 @@
 import type { Config } from "@puckeditor/core";
 import {
   Hero, Recognition, Statement, ShockAbsorber, Offering, AboutLinda, Faq, Closing, GhlEmbed, Vagen,
+  Rubrik, Punkter, TextBlock,
 } from "@/components/puck-lifeibalans/sections";
 
 const boolField = { type: "radio" as const, options: [ { label: "Ja", value: true }, { label: "Nej", value: false } ] };
@@ -10,7 +11,7 @@ const boolField = { type: "radio" as const, options: [ { label: "Ja", value: tru
 // så varje block ser färdigt ut direkt i editorn.
 export const puckConfigLifeibalans: Config = {
   categories: {
-    sektioner: { title: "Sektioner", components: ["Hero", "Igenkanning", "Statement", "Stotdampare", "Vagen", "Uppslag", "OmLinda", "FAQ", "Avslut"] },
+    sektioner: { title: "Sektioner", components: ["Hero", "Rubrik", "Igenkanning", "Statement", "Stotdampare", "Vagen", "Uppslag", "Punkter", "TextBlock", "OmLinda", "FAQ", "Avslut"] },
     integration: { title: "Integration", components: ["GhlEmbed"] },
   },
   components: {
@@ -229,6 +230,45 @@ export const puckConfigLifeibalans: Config = {
       },
       defaultProps: { embedId: "GHL_CONTACT_FORM", title: "Skicka ett meddelande", minHeight: 520 },
       render: GhlEmbed as any,
+    },
+
+    Rubrik: {
+      label: "Rubrik (sidhuvud)",
+      fields: {
+        eyebrow: { type: "text", label: "Eyebrow" },
+        title: { type: "text", label: "Rubrik" },
+        emphasisWord: { type: "text", label: "Kursivt ord" },
+        lead: { type: "textarea", label: "Ingress" },
+        tint: { ...boolField, label: "Tonad bakgrund" },
+      },
+      defaultProps: { eyebrow: "Eyebrow", title: "Sidrubrik", emphasisWord: "", lead: "Kort ingress.", tint: false },
+      render: Rubrik as any,
+    },
+
+    Punkter: {
+      label: "Punkter (löv-lista)",
+      fields: {
+        eyebrow: { type: "text", label: "Eyebrow" },
+        title: { type: "text", label: "Rubrik" },
+        intro: { type: "textarea", label: "Ingress" },
+        tint: { ...boolField, label: "Tonad bakgrund" },
+        points: { type: "array", label: "Punkter", arrayFields: { text: { type: "textarea", label: "Text" } }, getItemSummary: (i: any) => i.text?.slice(0, 40) || "Punkt" },
+      },
+      defaultProps: { eyebrow: "Det här får du", title: "Rubrik", intro: "", tint: false, points: [ { text: "Punkt ett." }, { text: "Punkt två." }, { text: "Punkt tre." } ] },
+      render: Punkter as any,
+    },
+
+    TextBlock: {
+      label: "Text / vård-ruta",
+      fields: {
+        eyebrow: { type: "text", label: "Eyebrow" },
+        title: { type: "text", label: "Rubrik" },
+        body: { type: "textarea", label: "Brödtext (dela stycken med radbryt)" },
+        care: { ...boolField, label: "Vård-ruta (salvia-ram)" },
+        tint: { ...boolField, label: "Tonad bakgrund" },
+      },
+      defaultProps: { eyebrow: "Ärligt", title: "Rubrik", body: "Text.", care: false, tint: false },
+      render: TextBlock as any,
     },
   },
 };

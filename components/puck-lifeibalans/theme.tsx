@@ -174,6 +174,13 @@ export const LIB_STYLES = `
   .lib-vagen__cta{align-self:center;}
 }
 
+/* Undersidor — sidhuvud, punkter, vård-ruta */
+.lib-pagehead{max-width:52rem;display:flex;flex-direction:column;align-items:flex-start;gap:1.35rem;}
+.lib-punkter{max-width:52rem;margin-inline:auto;display:flex;flex-direction:column;gap:clamp(1.5rem,3vw,2.25rem);}
+.lib-punkter__head{display:flex;flex-direction:column;gap:1rem;}
+.lib-care{position:relative;overflow:hidden;background:linear-gradient(150deg,#f2efe1,#e9e7d2);border-left:2px solid var(--sage);border-radius:0 var(--r-media) var(--r-media) 0;padding:clamp(1.6rem,3.5vw,2.4rem);box-shadow:0 1px 2px rgba(43,55,36,.04),0 18px 44px -30px rgba(43,55,36,.38);max-width:48rem;margin-inline:auto;}
+.lib-textblock{max-width:46rem;margin-inline:auto;display:flex;flex-direction:column;gap:1.1rem;}
+
 /* Reveal — synligt som default; JS taggar .lib-prep för att gömma + fade in */
 .lib-reveal{transition:opacity .8s var(--ease-soft),transform .8s var(--ease-soft);}
 .lib-reveal.lib-prep{opacity:0;transform:translateY(14px);}
