@@ -24,9 +24,19 @@ async function loadPage(slug: string) {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const page = await loadPage(slug);
+  const title = page?.title ? `${page.title} — Life i Balans` : "Life i Balans";
   return {
-    title: page?.title ? { absolute: `${page.title} — Life i Balans` } : "Life i Balans",
+    metadataBase: new URL("https://cockpit.gripcoaching.se"),
+    title: { absolute: title },
     alternates: { canonical: `https://lifeibalans.se/${slug}` },
+    openGraph: {
+      type: "website",
+      locale: "sv_SE",
+      siteName: "Life i Balans",
+      url: `https://cockpit.gripcoaching.se/sites/lifeibalans/${slug}`,
+      title,
+    },
+    twitter: { card: "summary_large_image", title },
   };
 }
 
