@@ -6,6 +6,7 @@ import "@puckeditor/core/puck.css";
 import { puckConfig } from "@/lib/puck-config";
 import { supabase, type PageData } from "@/lib/supabase";
 import DarekPuckEditor from "@/components/DarekPuckEditor";
+import LifeIBalansPuckEditor from "@/components/LifeIBalansPuckEditor";
 
 const emptyData: Data = {
   content: [],
@@ -13,12 +14,13 @@ const emptyData: Data = {
 };
 
 export default function AdminRouter() {
-  const [resourceModule, setResourceModule] = useState<string | null>(null);
+  const [client, setClient] = useState<{ slug?: string; resource_module?: string } | null | undefined>(undefined);
   useEffect(() => {
-    fetch("/api/clients/active").then((r) => r.json()).then((c) => setResourceModule(c?.resource_module || "automotive"));
+    fetch("/api/clients/active").then((r) => r.json()).then((c) => setClient(c || null));
   }, []);
-  if (resourceModule === null) return <div className="h-screen flex items-center justify-center bg-gray-50"><div className="text-gray-500">Laddar...</div></div>;
-  if (resourceModule === "art") return <DarekPuckEditor />;
+  if (client === undefined) return <div className="h-screen flex items-center justify-center bg-gray-50"><div className="text-gray-500">Laddar...</div></div>;
+  if (client?.slug === "lifeibalans") return <LifeIBalansPuckEditor />;
+  if (client?.resource_module === "art") return <DarekPuckEditor />;
   return <AdminEditor />;
 }
 

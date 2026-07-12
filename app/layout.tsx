@@ -13,7 +13,8 @@ import ClarityScript from "@/components/ClarityScript";
 function isHmMotorSurface(path: string): boolean {
   if (
     path === "/k" || path.startsWith("/k/") || path.startsWith("/k-") ||
-    path.startsWith("/logga-in") || path.startsWith("/ikigai")
+    path.startsWith("/logga-in") || path.startsWith("/ikigai") ||
+    path.startsWith("/sites/")
   ) return false;
   return true;
 }

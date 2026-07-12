@@ -79,9 +79,27 @@ function isGuardedApi(path: string): boolean {
   return true;
 }
 
+// Klienter vars publika sajt serveras som isolerad route inuti Cockpit.
+// Host → intern route-prefix. Statiska filer är redan exkluderade av matchern.
+const HOST_SITES: Record<string, string> = {
+  "lifeibalans.se": "/sites/lifeibalans",
+  "www.lifeibalans.se": "/sites/lifeibalans",
+};
+
 export async function proxy(req: NextRequest) {
   const host = req.headers.get("host") || "";
   const path = req.nextUrl.pathname;
+
+  // Klient-sajt på egen domän → rewrite till isolerad route (rör ej HM Motor).
+  const sitePrefix = HOST_SITES[host];
+  if (sitePrefix && !path.startsWith(sitePrefix)) {
+    const target = sitePrefix + (path === "/" ? "" : path);
+    const url = req.nextUrl.clone();
+    url.pathname = target;
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-pathname", target);
+    return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+  }
 
   // Admin-grind: kräver giltig signerad session för /dashboard + /admin.
   if (isAdminArea(path)) {
