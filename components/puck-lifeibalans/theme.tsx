@@ -156,6 +156,24 @@ export const LIB_STYLES = `
 .lib-ghl__title{font-family:'Spectral',Georgia,serif;font-size:1.35rem;color:var(--ink);margin:.4rem 0;}
 .lib-ghl code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:rgba(56,71,47,.08);color:var(--forest);padding:.12em .45em;border-radius:3px;}
 
+/* Vägen in — tre steg, editorial, inga bilder */
+.lib-vagen{max-width:62rem;margin-inline:auto;}
+.lib-vagen__head{text-align:center;margin-bottom:clamp(1.75rem,4vw,2.75rem);display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.lib-vagen__list{border-top:1px solid var(--line);}
+.lib-vagen__row{display:grid;grid-template-columns:1fr;gap:.9rem;padding:1.9rem 0;border-bottom:1px solid var(--line);transition:padding-left .35s var(--ease-soft);}
+.lib-vagen__row:hover{padding-left:.6rem;}
+.lib-vagen__meta{display:flex;align-items:center;gap:.65rem;}
+.lib-vagen__label{font-size:.72rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--forest);}
+.lib-vagen__main{display:flex;flex-direction:column;gap:.5rem;}
+.lib-vagen__h{font-family:'Spectral',Georgia,serif;font-size:clamp(1.45rem,1.2rem+.9vw,2rem);font-weight:400;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:0;}
+.lib-vagen__desc{color:var(--ink-soft);max-width:54ch;margin:0;}
+.lib-vagen__cta{align-self:flex-start;}
+@media(min-width:760px){
+  .lib-vagen__row{grid-template-columns:13rem 1fr auto;gap:1rem 2.5rem;align-items:center;}
+  .lib-vagen__meta{align-items:flex-start;}
+  .lib-vagen__cta{align-self:center;}
+}
+
 /* Reveal — synligt som default; JS taggar .lib-prep för att gömma + fade in */
 .lib-reveal{transition:opacity .8s var(--ease-soft),transform .8s var(--ease-soft);}
 .lib-reveal.lib-prep{opacity:0;transform:translateY(14px);}

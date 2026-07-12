@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Config } from "@puckeditor/core";
 import {
-  Hero, Recognition, Statement, ShockAbsorber, Offering, AboutLinda, Faq, Closing, GhlEmbed,
+  Hero, Recognition, Statement, ShockAbsorber, Offering, AboutLinda, Faq, Closing, GhlEmbed, Vagen,
 } from "@/components/puck-lifeibalans/sections";
 
 const boolField = { type: "radio" as const, options: [ { label: "Ja", value: true }, { label: "Nej", value: false } ] };
@@ -10,7 +10,7 @@ const boolField = { type: "radio" as const, options: [ { label: "Ja", value: tru
 // så varje block ser färdigt ut direkt i editorn.
 export const puckConfigLifeibalans: Config = {
   categories: {
-    sektioner: { title: "Sektioner", components: ["Hero", "Igenkanning", "Statement", "Stotdampare", "Uppslag", "OmLinda", "FAQ", "Avslut"] },
+    sektioner: { title: "Sektioner", components: ["Hero", "Igenkanning", "Statement", "Stotdampare", "Vagen", "Uppslag", "OmLinda", "FAQ", "Avslut"] },
     integration: { title: "Integration", components: ["GhlEmbed"] },
   },
   components: {
@@ -97,6 +97,37 @@ export const puckConfigLifeibalans: Config = {
         quote: "Du har inte blivit svagare. Du har blivit oskyddad. Det är en helt annan sak.",
       },
       render: ShockAbsorber as any,
+    },
+
+    Vagen: {
+      label: "Vägen in (3 steg)",
+      fields: {
+        eyebrow: { type: "text", label: "Eyebrow" },
+        title: { type: "text", label: "Rubrik" },
+        tint: { ...boolField, label: "Tonad bakgrund" },
+        steps: {
+          type: "array", label: "Steg",
+          arrayFields: {
+            label: { type: "text", label: "Etikett" },
+            title: { type: "text", label: "Rubrik" },
+            desc: { type: "textarea", label: "Text" },
+            ctaText: { type: "text", label: "Länktext" },
+            ctaUrl: { type: "text", label: "Länk" },
+          },
+          getItemSummary: (i: any) => i.title || "Steg",
+        },
+      },
+      defaultProps: {
+        eyebrow: "Vägen in",
+        title: "Var du än är finns ett nästa steg.",
+        tint: true,
+        steps: [
+          { label: "Gratis · 3 min", title: "Nervsystemstestet", desc: "Femton frågor. Du får en personlig profil av var ditt nervsystem är just nu — och konkreta första steg, direkt i din inkorg.", ctaText: "Gör testet", ctaUrl: "/nervsystemstestet" },
+          { label: "Instegsprogram", title: "En mjuk start", desc: "För dig som vill börja i mindre skala — en kort introduktion till nervsystemet och de första verktygen, i din egen takt.", ctaText: "Läs mer", ctaUrl: "/kontakt" },
+          { label: "8 veckor · liten grupp", title: "Åtta veckor till ett reglerat nervsystem", desc: "Det fullständiga programmet: förstå vad som händer i kroppen och få verktyg som håller i en full vardag. Live varje vecka, inspelat, arbetsbok och en liten grupp.", ctaText: "Läs om programmet", ctaUrl: "/programmet" },
+        ],
+      },
+      render: Vagen as any,
     },
 
     Uppslag: {

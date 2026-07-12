@@ -249,6 +249,38 @@ export function Closing(p: ClosingProps) {
   );
 }
 
+// ── VÄGEN IN (tre steg, inga bilder) ──────────────────────────
+export interface VagenProps {
+  eyebrow: string; title: string; tint?: boolean;
+  steps: { label: string; title: string; desc: string; ctaText: string; ctaUrl: string }[];
+}
+export function Vagen(p: VagenProps) {
+  return (
+    <StyleHost>
+      <section className={`lib-section${p.tint ? " lib-section--tint" : ""}`}>
+        <div className="lib-container lib-vagen">
+          <div className="lib-vagen__head">
+            <p className="lib-eyebrow">{p.eyebrow}</p>
+            <h2 className="lib-h2">{p.title}</h2>
+          </div>
+          <div className="lib-vagen__list">
+            {(p.steps || []).map((s, i) => (
+              <div className="lib-vagen__row" key={i}>
+                <div className="lib-vagen__meta"><Leaf size={16} /><span className="lib-vagen__label">{s.label}</span></div>
+                <div className="lib-vagen__main">
+                  <h3 className="lib-vagen__h">{s.title}</h3>
+                  <p className="lib-vagen__desc">{s.desc}</p>
+                </div>
+                {s.ctaText ? <a href={s.ctaUrl || "#"} className="lib-link-arrow lib-vagen__cta">{s.ctaText}<ArrowIcon /></a> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </StyleHost>
+  );
+}
+
 // ── GHL-EMBED ─────────────────────────────────────────────────
 export interface GhlProps { embedId: string; title: string; minHeight: number; }
 export function GhlEmbed(p: GhlProps) {
