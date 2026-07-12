@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { sendEmail } from "@/lib/email";
-import { LEAD_FROM } from "@/lib/contact";
 
 export const runtime = "nodejs";
+
+// Avsändare för Life i Balans — samma verifierade Resend-domän (mysales.se),
+// eget namn. onboarding@resend.dev funkar EJ (se lib/contact.ts).
+const LIB_FROM = "Life i Balans <noreply@mysales.se>";
 
 function esc(s: string): string {
   return String(s || "").replace(/[<>&]/g, (c) => (({ "<": "&lt;", ">": "&gt;", "&": "&amp;" } as Record<string, string>)[c]));
@@ -62,7 +65,7 @@ export async function POST(req: NextRequest) {
       `Svara direkt på detta mejl för att nå ${name}.`,
     ].filter((l) => l !== "").join("\n");
 
-    const mail = await sendEmail({ to: recipients, from: LEAD_FROM, subject, html, text, reply_to: email });
+    const mail = await sendEmail({ to: recipients, from: LIB_FROM, subject, html, text, reply_to: email });
     if (!mail.sent) console.error("[lifeibalans/lead] Mejl gick INTE iväg:", mail.reason);
 
     // Best effort — loggning får aldrig fälla requesten.
