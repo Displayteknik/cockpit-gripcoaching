@@ -16,41 +16,27 @@ const FAQ_ITEMS = [
 ];
 
 export const LIB_PAGES: Record<string, Data> = {
-  instegskursen: {
-    root: { props: { title: "Instegskursen — Förstå ditt nervsystem i klimakteriet" } },
+  programmen: {
+    root: { props: { title: "Programmen — Life i Balans" } },
     content: [
-      { type: "Rubrik", props: { id: "h", eyebrow: "Instegskurs · i egen takt", title: "Förstå ditt nervsystem i klimakteriet", emphasisWord: "nervsystem", lead: "Fyra korta moduler där du förstår vad som faktiskt händer när stress möter klimakteriet — i din egen takt, när det passar dig.", tint: false } },
-      { type: "Punkter", props: { id: "p", eyebrow: "Det här får du", title: "Kunskap i klartext — och verktyg du kan börja med i veckan.", intro: "", tint: true, points: [
-        { text: "Fyra moduler, tolv inspelade lektioner — du ser dem i din egen takt." },
+      { type: "Rubrik", props: { id: "h", eyebrow: "Programmen", title: "Två vägar — samma mål: ett reglerat nervsystem.", emphasisWord: "reglerat", lead: "Börja där du är. Instegskursen i din egen takt, eller signaturprogrammet med liveträffar och en liten grupp — båda bygger på samma kunskap och samma verktyg.", tint: false } },
+      { type: "Punkter", props: { id: "insteg", eyebrow: "Instegskurs · i egen takt", title: "Förstå ditt nervsystem i klimakteriet", intro: "Den mjuka vägen in — fyra korta moduler du ser precis när det passar dig.", tint: false, points: [
+        { text: "Fyra moduler, tolv inspelade lektioner — helt i din egen takt." },
         { text: "Förstå ditt nervsystem: gas och broms, dina tre lägen, och varför viljestyrka inte räcker." },
         { text: "Se kopplingen stress–hormoner: vad som händer 40+ och varför det träffar hårdare nu." },
         { text: "Arbetsblad, symtomkarta, ljudövningar och verktygskort du använder direkt i vardagen." },
       ] } },
-      { type: "Statement", props: { id: "s", title: "Du har inte blivit svagare.", emphasisWord: "svagare", body: "Din stötdämpare har blivit tunnare — samtidigt som livet ofta är som mest krävande. Det är inte samma sak som att vara trasig. Det är att förstå sin biologi." } },
-      { type: "TextBlock", props: { id: "vard", eyebrow: "Ärligt om vad det här är", title: "När du ska söka vård i stället", body: CARE_BODY, care: true, tint: false } },
-      { type: "Avslut", props: { id: "cta", title: "Börja där du är.", body: "Osäker på var du står? Gör Nervsystemstestet först — tre minuter, och du får en bild av var ditt nervsystem faktiskt är.", ctaText: "Gör Nervsystemstestet", ctaUrl: "/nervsystemstestet", noteText: "Eller hör av dig till mig direkt — jag svarar själv.", noteLinkText: "Kontakta Linda", noteLinkUrl: "/kontakt" } },
-    ],
-  },
-
-  programmet: {
-    root: { props: { title: "Signaturprogrammet — Åtta veckor till ett reglerat nervsystem" } },
-    content: [
-      { type: "Rubrik", props: { id: "h", eyebrow: "8 veckor · liten grupp · live varje vecka", title: "Åtta veckor till ett reglerat nervsystem", emphasisWord: "reglerat", lead: "Du går från att kämpa mot din kropp till att förstå och kunna påverka den. Inte symtomfrihet — utan förståelse, verktyg som håller i en verklig vardag, och en plan du själv äger när de åtta veckorna är slut.", tint: false } },
-      { type: "Punkter", props: { id: "larande", eyebrow: "Vad du lär dig", title: "Från att kämpa emot — till att förstå och kunna påverka.", intro: "", tint: false, points: [
-        { text: "Förstå vad som händer i kroppen när stress möter klimakteriet." },
-        { text: "Känna igen ditt eget nervsystem — och vad som sätter igång det." },
-        { text: "Få verktyg för att reglera ner, som håller i en vanlig vardag." },
-        { text: "Bygga rutiner för sömn, återhämtning och gränser som faktiskt fastnar." },
-      ] } },
-      { type: "Punkter", props: { id: "upplagg", eyebrow: "Så är upplägget", title: "Cirka två timmar i veckan. Byggt för en vardag som redan är full.", intro: "Samma struktur varje vecka — tryggheten sitter i formen.", tint: true, points: [
-        { text: "Tre inspelade lektioner i veckan (12–20 min) — du ser dem i egen takt före liveträffen." },
+      { type: "Punkter", props: { id: "signatur", eyebrow: "8 veckor · liten grupp · live varje vecka", title: "Åtta veckor till ett reglerat nervsystem", intro: "Signaturprogrammet — det fullständiga. Du går från att kämpa mot din kropp till att förstå och kunna påverka den. Cirka två timmar i veckan, byggt för en vardag som redan är full.", tint: true, points: [
+        { text: "Förstå vad som händer i kroppen — och få verktyg som håller i en vanlig vardag." },
+        { text: "Tre inspelade lektioner i veckan (12–20 min), i egen takt före liveträffen." },
         { text: "En liveträff på 75 minuter varje vecka (Zoom, fast veckodag). Alla träffar spelas in." },
-        { text: "En kort veckoövning, 5–15 minuter om dagen — det är upprepningen som förändrar nervsystemet." },
+        { text: "En kort veckoövning, 5–15 min om dagen — det är upprepningen som förändrar nervsystemet." },
         { text: "Arbetsbok, ljudövningar och en liten grupp (max 12–20) som förstår exakt var du är." },
       ] } },
+      { type: "Statement", props: { id: "s", title: "Du har inte blivit svagare.", emphasisWord: "svagare", body: "Din stötdämpare har blivit tunnare — samtidigt som livet ofta är som mest krävande. Det är inte samma sak som att vara trasig. Det är att förstå sin biologi." } },
       { type: "TextBlock", props: { id: "vard", eyebrow: "Ärligt om vad det här är", title: "När du ska söka vård i stället", body: CARE_BODY, care: true, tint: false } },
       { type: "FAQ", props: { id: "faq", title: "Det du undrar.", items: FAQ_ITEMS } },
-      { type: "Avslut", props: { id: "cta", title: "Redo att förstå din kropp på riktigt?", body: "Osäker på om det är rätt för dig just nu? Börja med testet, eller hör av dig — jag svarar själv.", ctaText: "Anmäl dig till programmet", ctaUrl: "/kontakt", noteText: "Gör gärna Nervsystemstestet först.", noteLinkText: "Gör testet", noteLinkUrl: "/nervsystemstestet" } },
+      { type: "Avslut", props: { id: "cta", title: "Osäker på var du ska börja?", body: "Börja med Nervsystemstestet — tre minuter, och du får en bild av var ditt nervsystem faktiskt är. Sen väljer vi väg tillsammans.", ctaText: "Gör Nervsystemstestet", ctaUrl: "/nervsystemstestet", noteText: "Eller hör av dig direkt — jag svarar själv.", noteLinkText: "Kontakta Linda", noteLinkUrl: "/kontakt" } },
     ],
   },
 
@@ -63,7 +49,7 @@ export const LIB_PAGES: Record<string, Data> = {
         { text: "En förklaring i klartext av vad profilen betyder." },
         { text: "Tre konkreta första steg du kan börja med i veckan." },
       ] } },
-      { type: "GhlEmbed", props: { id: "e", embedId: "GHL_TEST_EMBED", title: "Nervsystemstestet", minHeight: 560 } },
+      { type: "NervTest", props: { id: "test", eyebrow: "Kostnadsfritt · Tre minuter", heading: "Femton frågor. En ärlig bild av var du är.", intro: "Svara så som det känns just nu — det finns inga rätt eller fel. Du får en personlig profil direkt, med konkreta första steg." } },
       { type: "TextBlock", props: { id: "note", eyebrow: "Bra att veta", title: "Det här är en självskattning — inte en diagnos.", body: "Testet hjälper dig förstå var du är, så att du vet vad du kan börja med. Det är inget medicinskt test.", care: false, tint: false } },
     ],
   },
@@ -72,7 +58,7 @@ export const LIB_PAGES: Record<string, Data> = {
     root: { props: { title: "Om Linda Fernquist" } },
     content: [
       { type: "Rubrik", props: { id: "h", eyebrow: "Om Linda", title: "Sjuksköterskan som själv har stått där du står.", emphasisWord: "själv", lead: "Jag vet hur det känns när kroppen slutar lyssna — och hur det känns när ingen lyssnar på dig.", tint: false } },
-      { type: "OmLinda", props: { id: "story", eyebrow: "Kunskapen kommer från vården", title: "Förståelsen kommer från mig själv.", body: "Jag är legitimerad sjuksköterska med tio år som lärare inom vården, specialiserad inom psykiatri, stressrelaterade tillstånd, nervsystemsreglering och klimakteriet. Jag har också egen erfarenhet av långvarig stress och en tung klimakterieperiod — så jag vet hur det känns när kroppen slutar lyssna, och hur det känns när ingen lyssnar på dig.", trust: [ { text: "Leg. sjuksköterska" }, { text: "10 år som vårdlärare" }, { text: "Psykiatri & kvinnohälsa" } ], linkText: "Läs om programmet", linkUrl: "/programmet", image: "/lifeibalans/linda/om-linda.jpg", imageAlt: "Linda Fernquist", caption: "Linda Fernquist · leg. sjuksköterska" } },
+      { type: "OmLinda", props: { id: "story", eyebrow: "Kunskapen kommer från vården", title: "Förståelsen kommer från mig själv.", body: "Jag är legitimerad sjuksköterska med tio år som lärare inom vården, specialiserad inom psykiatri, stressrelaterade tillstånd, nervsystemsreglering och klimakteriet. Jag har också egen erfarenhet av långvarig stress och en tung klimakterieperiod — så jag vet hur det känns när kroppen slutar lyssna, och hur det känns när ingen lyssnar på dig.", trust: [ { text: "Leg. sjuksköterska" }, { text: "10 år som vårdlärare" }, { text: "Psykiatri & kvinnohälsa" } ], linkText: "Läs om programmet", linkUrl: "/programmen", image: "/lifeibalans/linda/om-linda.jpg", imageAlt: "Linda Fernquist", caption: "Linda Fernquist · leg. sjuksköterska" } },
       { type: "Avslut", props: { id: "cta", title: "Vill du veta var du är just nu?", body: "Börja med Nervsystemstestet — tre minuter, och du får en bild av var ditt nervsystem faktiskt är.", ctaText: "Gör Nervsystemstestet", ctaUrl: "/nervsystemstestet", noteText: "Eller hör av dig direkt.", noteLinkText: "Kontakta Linda", noteLinkUrl: "/kontakt" } },
     ],
   },

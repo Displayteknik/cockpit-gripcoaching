@@ -7,7 +7,7 @@ import React from "react";
 import { StyleHost, withBase } from "./theme";
 
 const NAV = [
-  { href: "/programmet", label: "Programmet" },
+  { href: "/programmen", label: "Programmen" },
   { href: "/nervsystemstestet", label: "Nervsystemstestet" },
   { href: "/om-linda", label: "Om Linda" },
   { href: "/kontakt", label: "Kontakt" },

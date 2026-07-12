@@ -196,6 +196,26 @@ export const LIB_STYLES = `
 .lib-form__done{background:linear-gradient(150deg,#eef1e4,#e4e8d2);border:1px solid var(--line);border-radius:var(--r-media);padding:clamp(1.6rem,3.5vw,2.4rem);text-align:center;box-shadow:0 1px 2px rgba(43,55,36,.04),0 18px 44px -30px rgba(43,55,36,.38);}
 .lib-form__done h3{font-family:'Spectral',Georgia,serif;font-weight:400;font-size:1.5rem;color:var(--ink);margin:0 0 .5rem;}
 
+/* Nervsystemstest (multi-steg quiz) */
+.lib-test{max-width:44rem;margin-inline:auto;}
+.lib-test__card{background:linear-gradient(160deg,#faf7f0,#f1ece0);border:1px solid var(--line);border-radius:var(--r-media);padding:clamp(1.6rem,4vw,2.75rem);box-shadow:0 2px 6px rgba(43,55,36,.05),0 30px 64px -38px rgba(43,55,36,.4);}
+.lib-test__progress{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:.7rem;}
+.lib-test__bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--clay));transition:width .4s var(--ease-soft);}
+.lib-test__count{font-size:.72rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 1.4rem;}
+.lib-test__q{font-family:'Spectral',Georgia,serif;font-weight:400;font-size:clamp(1.35rem,1.15rem+.9vw,1.85rem);line-height:1.25;color:var(--ink);margin:0 0 1.5rem;text-wrap:balance;}
+.lib-test__opts{display:grid;gap:.65rem;}
+.lib-test__opt{text-align:left;font-family:'Hanken Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--ink);background:#fffdf9;border:1px solid var(--line-strong);border-radius:9px;padding:.9rem 1.15rem;cursor:pointer;transition:border-color .2s var(--ease-soft),background .2s var(--ease-soft),transform .15s var(--ease-soft);}
+.lib-test__opt:hover{border-color:var(--clay);background:rgba(176,98,60,.05);transform:translateY(-1px);}
+.lib-test__opt.is-sel{border-color:var(--clay);background:rgba(176,98,60,.1);box-shadow:0 0 0 2px rgba(176,98,60,.14);}
+.lib-test__nav{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;gap:1rem;}
+.lib-test__back{background:none;border:0;color:var(--ink-soft);font-weight:600;cursor:pointer;padding:.5rem 0;font-family:inherit;font-size:.95rem;}
+.lib-test__back:hover{color:var(--clay-deep);}
+.lib-test__intro h3,.lib-test__result h3{font-family:'Spectral',Georgia,serif;font-weight:400;font-size:clamp(1.55rem,1.3rem+1vw,2.15rem);line-height:1.2;color:var(--ink);margin:0 0 .4rem;}
+.lib-test__result .lib-eyebrow,.lib-test__intro .lib-eyebrow{margin-bottom:.7rem;}
+.lib-test__steps{list-style:none;margin:1.2rem 0 0;padding:0;display:flex;flex-direction:column;gap:.85rem;}
+.lib-test__steps li{display:flex;gap:.7rem;align-items:flex-start;font-weight:500;}
+.lib-test__steps li>svg{margin-top:.25em;flex:none;}
+
 /* Reveal — synligt som default; JS taggar .lib-prep för att gömma + fade in */
 .lib-reveal{transition:opacity .8s var(--ease-soft),transform .8s var(--ease-soft);}
 .lib-reveal.lib-prep{opacity:0;transform:translateY(14px);}

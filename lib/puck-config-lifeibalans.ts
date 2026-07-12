@@ -4,6 +4,7 @@ import {
   Hero, Recognition, Statement, ShockAbsorber, Offering, AboutLinda, Faq, Closing, GhlEmbed, Vagen,
   Rubrik, Punkter, TextBlock, Kontaktformular,
 } from "@/components/puck-lifeibalans/sections";
+import { NervTest } from "@/components/puck-lifeibalans/test";
 
 const boolField = { type: "radio" as const, options: [ { label: "Ja", value: true }, { label: "Nej", value: false } ] };
 
@@ -12,7 +13,7 @@ const boolField = { type: "radio" as const, options: [ { label: "Ja", value: tru
 export const puckConfigLifeibalans: Config = {
   categories: {
     sektioner: { title: "Sektioner", components: ["Hero", "Rubrik", "Igenkanning", "Statement", "Stotdampare", "Vagen", "Uppslag", "Punkter", "TextBlock", "OmLinda", "FAQ", "Avslut"] },
-    integration: { title: "Integration", components: ["Kontaktformular", "GhlEmbed"] },
+    integration: { title: "Integration", components: ["NervTest", "Kontaktformular", "GhlEmbed"] },
   },
   components: {
     Hero: {
@@ -38,7 +39,7 @@ export const puckConfigLifeibalans: Config = {
         ctaText: "Gör Nervsystemstestet — gratis",
         ctaUrl: "/nervsystemstestet",
         linkText: "Läs om 8-veckorsprogrammet",
-        linkUrl: "/programmet",
+        linkUrl: "/programmen",
         image: "/lifeibalans/linda/hero.jpg",
         imageAlt: "Linda Fernquist, leg. sjuksköterska",
         caption: "Linda Fernquist · leg. sjuksköterska",
@@ -124,8 +125,8 @@ export const puckConfigLifeibalans: Config = {
         tint: true,
         steps: [
           { label: "Gratis · 3 min", title: "Nervsystemstestet", desc: "Femton frågor. Du får en personlig profil av var ditt nervsystem är just nu — och konkreta första steg, direkt i din inkorg.", ctaText: "Gör testet", ctaUrl: "/nervsystemstestet" },
-          { label: "Instegskurs · i egen takt", title: "Förstå ditt nervsystem i klimakteriet", desc: "Fyra korta moduler där du förstår vad som faktiskt händer när stress möter klimakteriet — inspelade lektioner, arbetsblad och ljudövningar, i din egen takt. Den mjuka vägen in.", ctaText: "Läs om instegskursen", ctaUrl: "/instegskursen" },
-          { label: "8 veckor · liten grupp · live", title: "Åtta veckor till ett reglerat nervsystem", desc: "Signaturprogrammet: åtta veckor med inspelade lektioner, en liveträff i veckan, arbetsbok och en liten grupp. Du går från att kämpa mot din kropp till att förstå och kunna påverka den.", ctaText: "Läs om programmet", ctaUrl: "/programmet" },
+          { label: "Instegskurs · i egen takt", title: "Förstå ditt nervsystem i klimakteriet", desc: "Fyra korta moduler där du förstår vad som faktiskt händer när stress möter klimakteriet — inspelade lektioner, arbetsblad och ljudövningar, i din egen takt. Den mjuka vägen in.", ctaText: "Läs om instegskursen", ctaUrl: "/programmen" },
+          { label: "8 veckor · liten grupp · live", title: "Åtta veckor till ett reglerat nervsystem", desc: "Signaturprogrammet: åtta veckor med inspelade lektioner, en liveträff i veckan, arbetsbok och en liten grupp. Du går från att kämpa mot din kropp till att förstå och kunna påverka den.", ctaText: "Läs om programmet", ctaUrl: "/programmen" },
         ],
       },
       render: Vagen as any,
@@ -219,6 +220,21 @@ export const puckConfigLifeibalans: Config = {
         noteLinkText: "Kontakta Linda", noteLinkUrl: "/kontakt",
       },
       render: Closing as any,
+    },
+
+    NervTest: {
+      label: "Nervsystemstest (interaktivt)",
+      fields: {
+        eyebrow: { type: "text", label: "Eyebrow" },
+        heading: { type: "text", label: "Rubrik (intro)" },
+        intro: { type: "textarea", label: "Introtext" },
+      },
+      defaultProps: {
+        eyebrow: "Kostnadsfritt · Tre minuter",
+        heading: "Femton frågor. En ärlig bild av var du är.",
+        intro: "Svara så som det känns just nu — det finns inga rätt eller fel. Du får en personlig profil direkt, med konkreta första steg.",
+      },
+      render: NervTest as any,
     },
 
     Kontaktformular: {
