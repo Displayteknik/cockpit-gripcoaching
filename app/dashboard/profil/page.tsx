@@ -78,6 +78,23 @@ export default function ProfilPage() {
   const update = (field: keyof Profile, value: string) =>
     setProfile((p) => ({ ...p, [field]: value }));
 
+  // Klick på ett completeness-område i QualityMeter → scrolla till rätt sektion + kort highlight
+  // så man ser var man ska jobba vidare. Keys från /api/profile/quality.
+  function scrollToDimension(key: string) {
+    const targets: Record<string, string> = {
+      voice: "sec-ton",
+      icp: "sec-malgrupp",
+      authority: "sec-berattelse",
+      proof: "sec-kunskapsbank",
+      offer: "sec-erbjudande",
+    };
+    const el = document.getElementById(targets[key] || "");
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.style.boxShadow = "0 0 0 3px rgba(37, 99, 235, 0.45)";
+    window.setTimeout(() => { el.style.boxShadow = ""; }, 1800);
+  }
+
   async function save() {
     setSaving(true);
     const r = await fetch("/api/profile", {
@@ -138,7 +155,7 @@ export default function ProfilPage() {
         </button>
       </div>
 
-      <QualityMeter refreshKey={qualityRefresh} />
+      <QualityMeter refreshKey={qualityRefresh} onNavigate={scrollToDimension} />
 
       <button
         onClick={() => setShowIntakeAgent(true)}
@@ -170,7 +187,9 @@ export default function ProfilPage() {
         }}
       />
 
-      <KnowledgeBank onChange={() => setQualityRefresh((n) => n + 1)} />
+      <div id="sec-kunskapsbank" className="scroll-mt-20">
+        <KnowledgeBank onChange={() => setQualityRefresh((n) => n + 1)} />
+      </div>
 
       <div className="flex gap-2 flex-wrap">
         <button
@@ -211,7 +230,7 @@ export default function ProfilPage() {
         </Row>
       </Section>
 
-      <Section title="Berättelsen" icon={User}>
+      <Section id="sec-berattelse" title="Berättelsen" icon={User}>
         <TextArea
           label="Brand story"
           hint="2–4 stycken — varför företaget finns, hur det började, vad som gör det speciellt."
@@ -244,7 +263,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Erbjudande & CTA" icon={ShoppingBag}>
+      <Section id="sec-erbjudande" title="Erbjudande & CTA" icon={ShoppingBag}>
         <TextArea
           label="Tjänster / produkter"
           hint="Vad du faktiskt säljer. En per rad."
@@ -267,7 +286,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Målgrupp" icon={Target}>
+      <Section id="sec-malgrupp" title="Målgrupp" icon={Target}>
         <TextArea
           label="Din viktigaste målgrupp"
           hint="Dina bästa kunder — vilka de är, var de finns, vad de oroar sig för, hur de köper och vad som får dem att höra av sig."
@@ -328,7 +347,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Ton & språk" icon={MessageSquare}>
+      <Section id="sec-ton" title="Ton & språk" icon={MessageSquare}>
         <TextArea
           label="Tonregler"
           hint="Hur du låter när du är som bäst. Konkreta regler med GÖR / GÖR INTE."
@@ -458,9 +477,9 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
   );
 }
 
-function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+function Section({ title, icon: Icon, children, id }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; id?: string }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+    <div id={id} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 scroll-mt-20 transition-shadow">
       <h2 className="font-display font-bold text-gray-900 flex items-center gap-2">
         <Icon className="w-5 h-5 text-brand-blue" />
         {title}

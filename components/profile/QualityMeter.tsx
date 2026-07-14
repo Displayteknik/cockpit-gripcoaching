@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, AlertCircle, Circle, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertCircle, Circle, Loader2, RefreshCw, ArrowRight } from "lucide-react";
 
 interface Dimension {
   key: string;
@@ -26,7 +26,7 @@ const STATUS_STYLES = {
   red: { bar: "bg-rose-500", text: "text-rose-700", bg: "bg-rose-50", icon: Circle },
 };
 
-export default function QualityMeter({ refreshKey }: { refreshKey?: number }) {
+export default function QualityMeter({ refreshKey, onNavigate }: { refreshKey?: number; onNavigate?: (key: string) => void }) {
   const [report, setReport] = useState<QualityReport | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,13 +91,25 @@ export default function QualityMeter({ refreshKey }: { refreshKey?: number }) {
         {report.dimensions.map((d) => {
           const s = STATUS_STYLES[d.status];
           const Icon = s.icon;
+          const clickable = !!onNavigate;
           return (
-            <div key={d.key} className={`rounded-lg border ${s.bg} border-gray-200 p-4`}>
+            <button
+              key={d.key}
+              type="button"
+              onClick={clickable ? () => onNavigate!(d.key) : undefined}
+              disabled={!clickable}
+              className={`group text-left w-full rounded-lg border ${s.bg} border-gray-200 p-4 transition ${
+                clickable ? "cursor-pointer hover:border-gray-300 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40" : ""
+              }`}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Icon className={`w-5 h-5 ${s.text}`} />
                   <div>
-                    <div className="font-display font-semibold text-gray-900">{d.label}</div>
+                    <div className="font-display font-semibold text-gray-900 flex items-center gap-1.5">
+                      {d.label}
+                      {clickable && <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all" />}
+                    </div>
                     <div className="text-xs text-gray-500">
                       {d.filled} av {d.total} klara
                     </div>
@@ -125,7 +137,12 @@ export default function QualityMeter({ refreshKey }: { refreshKey?: number }) {
                 </div>
               )}
               <div className="mt-2 text-xs text-gray-500 italic">{d.hint}</div>
-            </div>
+              {clickable && (
+                <div className="mt-2 text-xs font-medium text-brand-blue opacity-0 group-hover:opacity-100 transition-opacity">
+                  Öppna och fyll i →
+                </div>
+              )}
+            </button>
           );
         })}
       </div>

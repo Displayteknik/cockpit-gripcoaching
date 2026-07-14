@@ -303,7 +303,7 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 
     const { data: saved } = await sb.from("client_assets").insert({
       client_id: clientId,
-      asset_type: "post",
+      asset_type: "document", // INTE "post" — annars räknas rapporten som ett röst-exempel i Kunskapsbanken + röst-träningen
       category: "deep_audit_report",
       subcategory: "seo_aeo",
       body: "",

@@ -15,6 +15,7 @@ import {
   Plus,
   X,
   Check,
+  Pencil,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -60,9 +61,13 @@ export default function KnowledgeBank({ onChange }: { onChange?: () => void }) {
       const r = await fetch("/api/assets");
       const d = await r.json();
       if (d.assets) {
-        setAssets(d.assets as Asset[]);
+        // Systemgenererat material (t.ex. SEO-djupgranskningar) är INTE eget röst-råmaterial —
+        // ska aldrig visas eller räknas i Kunskapsbanken.
+        const GENERATED = new Set(["deep_audit_report"]);
+        const clean = (d.assets as Asset[]).filter((a) => !a.category || !GENERATED.has(a.category));
+        setAssets(clean);
         const c = TABS.reduce((acc, t) => ({ ...acc, [t.key]: 0 }), {} as Record<AssetType, number>);
-        for (const a of d.assets as Asset[]) c[a.asset_type] = (c[a.asset_type] || 0) + 1;
+        for (const a of clean) c[a.asset_type] = (c[a.asset_type] || 0) + 1;
         setCounts(c);
       }
     } finally {
@@ -429,6 +434,14 @@ function FileUploader({ assetType, onUploaded }: { assetType: AssetType; onUploa
 function AssetCard({ asset, onChanged }: { asset: Asset; onChanged: () => void }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({
+    body: asset.body || "",
+    title: asset.title || "",
+    source_url: asset.source_url || "",
+    person_name: asset.person_name || "",
+    person_label: asset.person_label || "",
+  });
 
   async function remove() {
     setBusy(true);
@@ -437,9 +450,81 @@ function AssetCard({ asset, onChanged }: { asset: Asset; onChanged: () => void }
     onChanged();
   }
 
+  async function saveEdit() {
+    setBusy(true);
+    // Skicka bara relevanta fält per typ. För inlägg speglar vi title från början av body.
+    const patch: Record<string, string | null> =
+      asset.asset_type === "post"
+        ? { body: draft.body, title: draft.body.slice(0, 80) }
+        : asset.asset_type === "testimonial"
+        ? { body: draft.body, person_name: draft.person_name || null, person_label: draft.person_label || null }
+        : asset.asset_type === "link"
+        ? { source_url: draft.source_url, title: draft.title || draft.source_url }
+        : { title: draft.title };
+    const r = await fetch(`/api/assets/${asset.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    setBusy(false);
+    if (r.ok) {
+      setEditing(false);
+      onChanged();
+    } else {
+      alert("Kunde inte spara ändringen.");
+    }
+  }
+
   const isImage = asset.asset_type === "photo" && asset.signed_url;
   const isAudio = asset.asset_type === "audio" && asset.signed_url;
   const isVideo = asset.asset_type === "video" && asset.signed_url;
+  const isFile = asset.asset_type === "photo" || asset.asset_type === "audio" || asset.asset_type === "video";
+
+  if (editing) {
+    return (
+      <div className="border border-purple-200 rounded-lg p-3 bg-purple-50/40">
+        <div className="space-y-2">
+          {asset.asset_type === "post" && (
+            <textarea
+              value={draft.body}
+              onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+              rows={6}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-body leading-relaxed focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none"
+            />
+          )}
+          {asset.asset_type === "testimonial" && (
+            <>
+              <textarea
+                value={draft.body}
+                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input value={draft.person_name} onChange={(e) => setDraft({ ...draft, person_name: e.target.value })} placeholder="Namn" className="px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-amber-500" />
+                <input value={draft.person_label} onChange={(e) => setDraft({ ...draft, person_label: e.target.value })} placeholder="Beskrivning" className="px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-amber-500" />
+              </div>
+            </>
+          )}
+          {asset.asset_type === "link" && (
+            <>
+              <input value={draft.source_url} onChange={(e) => setDraft({ ...draft, source_url: e.target.value })} placeholder="https://..." className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500" />
+              <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Beskrivning" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500" />
+            </>
+          )}
+          {isFile && (
+            <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Titel" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400" />
+          )}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => { setEditing(false); setDraft({ body: asset.body || "", title: asset.title || "", source_url: asset.source_url || "", person_name: asset.person_name || "", person_label: asset.person_label || "" }); }} className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100">Avbryt</button>
+            <button onClick={saveEdit} disabled={busy} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Spara
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
@@ -509,13 +594,22 @@ function AssetCard({ asset, onChanged }: { asset: Asset; onChanged: () => void }
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setConfirming(true)}
-              className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded"
-              title="Ta bort"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <>
+              <button
+                onClick={() => setEditing(true)}
+                className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded"
+                title="Redigera"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setConfirming(true)}
+                className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded"
+                title="Ta bort"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>
