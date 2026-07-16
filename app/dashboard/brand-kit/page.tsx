@@ -32,6 +32,8 @@ export default function BrandKitPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState("");
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentNote, setAgentNote] = useState("");
 
   useEffect(() => {
     fetch("/api/brand-kit").then((r) => r.json()).then((d) => {
@@ -75,6 +77,28 @@ export default function BrandKitPage() {
     } catch (e) { setError((e as Error).message); } finally { setUploading(""); }
   }, [set]);
 
+  const runAgent = useCallback(async () => {
+    setError(""); setAgentNote(""); setAgentLoading(true);
+    try {
+      const r = await fetch("/api/brand-kit/agent", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Analysen misslyckades");
+      const p = d.proposed || {};
+      // Slå ihop förslaget (fyller bara det agenten hittade — skriver över tomt).
+      setKit((prev) => {
+        const next = structuredClone(prev);
+        if (p.colors) next.colors = { ...(next.colors || {}), ...p.colors };
+        if (p.fonts) next.fonts = { ...(next.fonts || {}), ...p.fonts };
+        if (p.logo) next.logo = { ...(next.logo || {}), ...p.logo };
+        if (p.imageStyle) next.imageStyle = { ...(next.imageStyle || {}), ...p.imageStyle };
+        if (p.donts) next.donts = p.donts;
+        return next;
+      });
+      const bits = [p.colors && "färger", p.fonts && "typsnitt", p.logo && "logga", p.imageStyle && "bildstil", p.donts && "vill-inte-ha"].filter(Boolean);
+      setAgentNote(bits.length ? `Förslag infogat: ${bits.join(", ")}. Granska och tryck Spara.` : "Hittade inget säkert att föreslå — fyll i manuellt.");
+    } catch (e) { setError((e as Error).message); } finally { setAgentLoading(false); }
+  }, []);
+
   const previewColors = useMemo(() => ({
     primary: colors.primary || clientPrimary,
     accent: colors.accent || "#F2B01E",
@@ -106,6 +130,15 @@ export default function BrandKitPage() {
         </div>
 
         {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+        {/* Auto-setup från webbplatsen */}
+        <div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white shadow-sm p-4 flex items-center gap-3 flex-wrap">
+          <button onClick={runAgent} disabled={agentLoading} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40" style={{ background: previewColors.primary }}>
+            {agentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Hämta från webbplatsen
+          </button>
+          <span className="text-sm text-gray-500">Låt AI:n läsa av logga, färger och typsnitt från kundens sajt — du granskar och justerar innan du sparar.</span>
+          {agentNote && <span className="text-sm w-full font-medium" style={{ color: previewColors.primary }}>{agentNote}</span>}
+        </div>
 
         <div className="grid lg:grid-cols-[1fr_300px] gap-6 items-start">
           <div className="space-y-6">
