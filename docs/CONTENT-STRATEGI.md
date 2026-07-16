@@ -81,8 +81,10 @@ IDÉ ──► SKAPA ──► GRANSKA ──► PUBLICERA ──► FÖLJ UPP
 }
 ```
 
-Sätts av auto-agenten (förslag ur profilen) + justeras i Grafisk profil. Styr vilka format som VISAS
-och vad AI:n föreslår — enkelhet genom bortval.
+Sätts av auto-agenten (förslag ur profilen) + justeras i Grafisk profil.
+**VIKTIGT (Håkan 2026-07-17): `formats` är en REKOMMENDATION, inte ett filter.** ALLA klienter har alltid
+tillgång till ALLA format — man väljer per inlägg vad som passar just nu. `formats` sorterar bara de
+föreslagna först och ger en "Föreslås"-markering. Flexibilitet byggs aldrig bort.
 
 ### 3.2 Nya arketyper (Studio-render, brand-kit-drivna som de fem befintliga)
 
@@ -139,8 +141,10 @@ Idé/ämne ──► Outline (godkänn) ──► Artikel ──► Granska ─�
 ## 6. Enkelhets-kontraktet (UX-regler, hårda)
 
 1. Max **3 beslut per steg**; allt annat är AI-förslag med "ändra"-möjlighet.
-2. **Klientstyrd bortfiltrering**: format, kanaler och destinationer som inte gäller klienten renderas inte
-   (samma mönster som `customer_features`/resource_module).
+2. **Rekommendation, inte bortfiltrering**: alla format/kanaler finns ALLTID tillgängliga — profilen
+   sorterar och markerar det som passar ("Föreslås"), men tar aldrig bort val. Enkelhet genom bra
+   default + tydlig vägledning, inte genom att gömma kraft. (Destinationer/kanaler kan förväljas men
+   alltid bytas.)
 3. **Förslag först**: varje tomt fält har en "Föreslå"-knapp som drar från profil + brand kit + historik.
 4. **Statusbadges överallt** (MySales Coach-mönstret): Aktiv/Utkast/Schemalagd/Publicerad — alltid synligt
    var innehållet befinner sig.
