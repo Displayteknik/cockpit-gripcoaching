@@ -34,6 +34,15 @@ export interface BrandImageStyle {
   colorGrade: "warm" | "cool" | "neutral";
 }
 
+export type ContentFormat = "overlay" | "quote" | "carousel" | "poster" | "list" | "statement" | "offer" | "text-only";
+
+export interface BrandContent {
+  clientType: string; // retail | coach | consultant | b2b-tech | automotive
+  textWeight: "poster" | "balanced" | "text-first";
+  overlayStyle: "scrim-bottom" | "scrim-full" | "band";
+  formats: ContentFormat[]; // vilka format klienten ser (tom = alla)
+}
+
 export interface StudioBrand {
   clientId: string;
   name: string;
@@ -42,6 +51,7 @@ export interface StudioBrand {
   fonts: { headline: string; body: string; logo: string };
   elements: BrandElements;
   imageStyle: BrandImageStyle;
+  content: BrandContent;
   footer: { show: boolean; tagline: string; address: string; ctaLabel: string; ctaUrl: string; qrUrl: string };
   donts: string[];
   assets: {
@@ -62,6 +72,7 @@ export interface BrandKit {
   logo?: { primaryUrl?: string; onDarkUrl?: string; iconUrl?: string };
   elements?: Partial<BrandElements>;
   imageStyle?: Partial<BrandImageStyle>;
+  contentProfile?: Partial<BrandContent>;
   footer?: { show?: boolean; tagline?: string; address?: string; ctaLabel?: string; ctaUrl?: string; qrUrl?: string };
   donts?: string[];
 }
@@ -113,6 +124,7 @@ export function brandFromKit(slug: string, name: string, primary: string, kit: B
     },
     elements: normalizeElements(kit.elements),
     imageStyle: normalizeImageStyle(kit.imageStyle),
+    content: normalizeContent(kit.contentProfile),
     footer: {
       show: kit.footer?.show ?? true,
       tagline: kit.footer?.tagline || "",
@@ -158,6 +170,7 @@ function adaptLegacyBrand(raw: LegacyBrand, slug: string): StudioBrand {
     fonts: raw.fonts,
     elements: normalizeElements({ brush: { enabled: true, color: "accent" }, badge: { enabled: true, shape: "starburst" } }),
     imageStyle: normalizeImageStyle(undefined),
+    content: normalizeContent({ clientType: "retail", textWeight: "poster", formats: ["poster", "offer", "list", "statement"] }),
     footer: {
       show: true,
       tagline: raw.footer.tagline,
@@ -233,6 +246,15 @@ function normalizeImageStyle(s?: Partial<BrandImageStyle>): BrandImageStyle {
     negative: s?.negative || "",
     people: s?.people ?? true,
     colorGrade: s?.colorGrade || "neutral",
+  };
+}
+
+function normalizeContent(c?: Partial<BrandContent>): BrandContent {
+  return {
+    clientType: c?.clientType || "",
+    textWeight: c?.textWeight || "balanced",
+    overlayStyle: c?.overlayStyle || "scrim-bottom",
+    formats: Array.isArray(c?.formats) ? (c!.formats as ContentFormat[]) : [],
   };
 }
 

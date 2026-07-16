@@ -6,6 +6,8 @@ import ArkStatement from "./archetypes/ArkStatement";
 import ArkCitat from "./archetypes/ArkCitat";
 import ArkLista from "./archetypes/ArkLista";
 import ArkErbjudande from "./archetypes/ArkErbjudande";
+import ArkOverlay from "./archetypes/ArkOverlay";
+import ArkTextkort from "./archetypes/ArkTextkort";
 import type { StudioPayload, StudioFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 
@@ -41,6 +43,8 @@ export const STUDIO_TEMPLATES: Record<string, TemplateDef> = {
   "ark-citat": { id: "ark-citat", name: "Citat", formats: ["1080x1350", "1080x1080"], component: ArkCitat },
   "ark-lista": { id: "ark-lista", name: "Lista / tips", formats: ["1080x1350", "1080x1080"], component: ArkLista },
   "ark-erbjudande": { id: "ark-erbjudande", name: "Erbjudande", formats: ["1080x1350", "1080x1080"], component: ArkErbjudande },
+  "ark-overlay": { id: "ark-overlay", name: "Foto + overlay", formats: ["1080x1350", "1080x1080"], component: ArkOverlay },
+  "ark-textkort": { id: "ark-textkort", name: "Textkort", formats: ["1080x1350", "1080x1080"], component: ArkTextkort },
 };
 
 export function getTemplate(id: string): TemplateDef | null {

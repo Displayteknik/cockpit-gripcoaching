@@ -57,6 +57,7 @@ export default function StudioPage() {
   const [prevImageUrl, setPrevImageUrl] = useState("");
   const [brushColor, setBrushColor] = useState(DEFAULT_BRUSH);
   const [swatches, setSwatches] = useState(BRUSH_SWATCHES);
+  const [contentFormats, setContentFormats] = useState<string[]>([]);
   const [topic, setTopic] = useState("");
 
   const [uploading, setUploading] = useState(false);
@@ -85,7 +86,7 @@ export default function StudioPage() {
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
   const slug = client?.slug || "opticur";
-  const availableTemplates = useMemo(() => templatesForClient(slug), [slug]);
+  const availableTemplates = useMemo(() => templatesForClient(slug, contentFormats as never), [slug, contentFormats]);
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
@@ -94,6 +95,8 @@ export default function StudioPage() {
   // Färg-swatches ur klientens grafiska profil (roll-färger) — annars Opticur-standard.
   useEffect(() => {
     fetch("/api/brand-kit").then((r) => r.json()).then((d) => {
+      const fmts = d?.kit?.contentProfile?.formats;
+      if (Array.isArray(fmts)) setContentFormats(fmts);
       const col = d?.kit?.colors || {};
       const roles: { name: string; hex: string }[] = [
         { name: "Accent", hex: col.accent }, { name: "Primär", hex: col.primary },

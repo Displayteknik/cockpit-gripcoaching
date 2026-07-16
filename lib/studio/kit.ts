@@ -8,6 +8,7 @@ export interface KitDirectives {
   imageNegative: string; // saker att undvika i bild
   donts: string[]; // hårda regler för copy
   colors: Partial<BrandColors>; // roll-färger (för UI-swatches m.m.)
+  formats: string[]; // contentProfile.formats (tom = alla)
 }
 
 export async function getKitDirectives(clientId: string): Promise<KitDirectives> {
@@ -23,14 +24,16 @@ export async function getKitDirectives(clientId: string): Promise<KitDirectives>
     if (im.colorGrade === "warm") parts.push("warm color grade");
     else if (im.colorGrade === "cool") parts.push("cool color grade");
     if (im.people === false) parts.push("no people in the image");
+    const cp = (kit.contentProfile || {}) as Record<string, any>;
     return {
       imageExtra: parts.join(", "),
       imageNegative: im.negative ? String(im.negative) : "",
       donts: Array.isArray(kit.donts) ? kit.donts.map(String) : [],
       colors: (kit.colors || {}) as Partial<BrandColors>,
+      formats: Array.isArray(cp.formats) ? cp.formats.map(String) : [],
     };
   } catch {
-    return { imageExtra: "", imageNegative: "", donts: [], colors: {} };
+    return { imageExtra: "", imageNegative: "", donts: [], colors: {}, formats: [] };
   }
 }
 

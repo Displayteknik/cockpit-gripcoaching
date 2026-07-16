@@ -37,7 +37,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   const [playbook, profile, directives] = await Promise.all([
     getKnowledge("hook-playbook").catch(() => ""),
     getProfileAsMarkdown().catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [], colors: {} })),
+    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [], colors: {}, formats: [] })),
   ]);
   const brand = opts.brandName || "kunden";
   const industry = opts.industry ? ` (${opts.industry})` : "";

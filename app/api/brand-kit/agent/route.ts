@@ -22,24 +22,28 @@ export async function POST() {
     const profile = await getProfileAsMarkdown().catch(() => "");
     let imageStyle: Record<string, unknown> = {};
     let donts: string[] = [];
+    let contentProfile: Record<string, unknown> = {};
     if (profile) {
       try {
         const raw = await generate({
           model: "gemini-2.5-flash",
           systemInstruction: [
-            `Utifrån varumärkesprofilen för ${client.name}, föreslå bildstil och vill-inte-ha för deras grafik.`,
+            `Utifrån varumärkesprofilen för ${client.name}, föreslå bildstil, vill-inte-ha OCH innehållsprofil för deras sociala grafik.`,
             profile.slice(0, 4000),
-            'SVAR: strikt JSON {"imageStyle":{"mode":"photo|illustration|mixed","prompt":"kort svensk stilbeskrivning","negative":"undvik-lista","colorGrade":"warm|cool|neutral","people":true},"donts":["kort regel", "..."]}',
+            "Vägledning innehållsprofil: retail/butik → affisch/erbjudande/lista. coach/personlig utveckling → foto+overlay, citat, textkort (mer text). konsult/tjänst → textkort, citat, statement. b2b/teknik → statement, lista, foto+overlay. Välj de 3–5 format som passar bäst.",
+            'Format-nycklar: overlay, text-only, quote, poster, statement, list, offer, carousel.',
+            'SVAR: strikt JSON {"imageStyle":{"mode":"photo|illustration|mixed","prompt":"kort svensk stilbeskrivning","negative":"undvik-lista","colorGrade":"warm|cool|neutral","people":true},"donts":["kort regel"],"contentProfile":{"clientType":"retail|coach|consultant|b2b-tech|automotive","textWeight":"poster|balanced|text-first","overlayStyle":"scrim-bottom|scrim-full|band","formats":["overlay","text-only"]}}',
             "Föreslå bara det profilen stödjer. Max 4 donts.",
           ].join("\n"),
-          prompt: "Föreslå bildstil och donts nu.",
+          prompt: "Föreslå bildstil, donts och innehållsprofil nu.",
           temperature: 0.6,
-          maxOutputTokens: 600,
+          maxOutputTokens: 800,
           jsonMode: true,
         });
         const obj = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}");
         imageStyle = obj.imageStyle || {};
         donts = Array.isArray(obj.donts) ? obj.donts.slice(0, 4) : [];
+        contentProfile = obj.contentProfile && typeof obj.contentProfile === "object" ? obj.contentProfile : {};
       } catch { /* hoppa över */ }
     }
 
@@ -50,6 +54,7 @@ export async function POST() {
     if (analysis.logo?.primaryUrl) proposed.logo = analysis.logo;
     if (Object.keys(imageStyle).length) proposed.imageStyle = imageStyle;
     if (donts.length) proposed.donts = donts;
+    if (Object.keys(contentProfile).length) proposed.contentProfile = contentProfile;
 
     return NextResponse.json({ proposed, analysis: analysis.found });
   } catch (e) {

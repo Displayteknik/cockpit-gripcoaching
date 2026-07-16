@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { repurposeToSocial } from "@/lib/studio/blog";
+import { getKitDirectives } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -25,8 +26,15 @@ export async function POST(req: NextRequest) {
     if (!variants.length) return NextResponse.json({ error: "Kunde inte skapa inlägg ur artikeln" }, { status: 500 });
 
     const slug = client?.slug || "opticur";
-    // Arketyp per hook: berättelse → foto (bild läggs till), annars statement (klar utan bild).
-    const pickArchetype = (hook: string) => (hook === "berättelse" ? "ark-foto-ruta" : "ark-statement");
+    // Format-medvetet arketypval ur klientens contentProfile. Faller tillbaka på statement.
+    const { formats } = await getKitDirectives(clientId);
+    const has = (f: string) => !formats.length || formats.includes(f);
+    const pickArchetype = (hook: string): string => {
+      if (hook === "berättelse") return has("overlay") ? "ark-overlay" : has("poster") ? "ark-foto-ruta" : "ark-statement";
+      if (hook === "fråga" || hook === "konträr") return has("text-only") ? "ark-textkort" : "ark-statement";
+      if (hook === "statistik") return has("list") ? "ark-lista" : "ark-statement";
+      return has("statement") ? "ark-statement" : has("text-only") ? "ark-textkort" : "ark-foto-ruta";
+    };
     const rows = variants.map((v) => {
       const templateId = pickArchetype(v.hookType);
       return {

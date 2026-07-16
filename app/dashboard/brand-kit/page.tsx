@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Palette, Save, Check, Loader2, Upload, Type, Sparkles, ImageIcon, Ban, Wand2 } from "lucide-react";
+import { Palette, Save, Check, Loader2, Upload, Type, Sparkles, ImageIcon, Ban, Wand2, Layers } from "lucide-react";
 
 const FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display"];
 const COLOR_ROLES: { key: string; label: string; hint: string }[] = [
@@ -91,10 +91,11 @@ export default function BrandKitPage() {
         if (p.fonts) next.fonts = { ...(next.fonts || {}), ...p.fonts };
         if (p.logo) next.logo = { ...(next.logo || {}), ...p.logo };
         if (p.imageStyle) next.imageStyle = { ...(next.imageStyle || {}), ...p.imageStyle };
+        if (p.contentProfile) next.contentProfile = { ...(next.contentProfile || {}), ...p.contentProfile };
         if (p.donts) next.donts = p.donts;
         return next;
       });
-      const bits = [p.colors && "färger", p.fonts && "typsnitt", p.logo && "logga", p.imageStyle && "bildstil", p.donts && "vill-inte-ha"].filter(Boolean);
+      const bits = [p.colors && "färger", p.fonts && "typsnitt", p.logo && "logga", p.imageStyle && "bildstil", p.contentProfile && "format", p.donts && "vill-inte-ha"].filter(Boolean);
       setAgentNote(bits.length ? `Förslag infogat: ${bits.join(", ")}. Granska och tryck Spara.` : "Hittade inget säkert att föreslå — fyll i manuellt.");
     } catch (e) { setError((e as Error).message); } finally { setAgentLoading(false); }
   }, []);
@@ -241,6 +242,47 @@ export default function BrandKitPage() {
               <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                 <input type="checkbox" checked={kit.imageStyle?.people ?? true} onChange={(e) => set("imageStyle.people", e.target.checked)} style={{ accentColor: previewColors.primary }} /> Får innehålla människor
               </label>
+            </section>
+
+            {/* Format & innehåll */}
+            <section className={card}>
+              <div className="flex items-center gap-2"><Layers className="w-5 h-5" style={{ color: previewColors.primary }} /><h2 className="font-display font-bold text-gray-900 text-lg">Format & innehåll</h2></div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Typ av verksamhet</label>
+                  <select value={kit.contentProfile?.clientType || ""} onChange={(e) => set("contentProfile.clientType", e.target.value)} className={inputCls}>
+                    <option value="">—</option><option value="retail">Butik / retail</option><option value="coach">Coach / personlig utv.</option>
+                    <option value="consultant">Konsult / tjänst</option><option value="b2b-tech">B2B / teknik</option><option value="automotive">Fordon</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Textvikt</label>
+                  <select value={kit.contentProfile?.textWeight || "balanced"} onChange={(e) => set("contentProfile.textWeight", e.target.value)} className={inputCls}>
+                    <option value="poster">Affisch (lite text)</option><option value="balanced">Balanserad</option><option value="text-first">Text-först (mycket text)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Overlay-stil (foto+text)</label>
+                  <select value={kit.contentProfile?.overlayStyle || "scrim-bottom"} onChange={(e) => set("contentProfile.overlayStyle", e.target.value)} className={inputCls}>
+                    <option value="scrim-bottom">Mörkning nedtill</option><option value="scrim-full">Mörkning hela</option><option value="band">Färgband</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-2">Format som visas för klienten (inga valda = alla)</label>
+                <div className="flex flex-wrap gap-2">
+                  {([["overlay", "Foto+overlay"], ["text-only", "Textkort"], ["quote", "Citat"], ["carousel", "Karusell"], ["poster", "Affisch"], ["statement", "Statement"], ["list", "Lista"], ["offer", "Erbjudande"]] as const).map(([key, label]) => {
+                    const on = (kit.contentProfile?.formats || []).includes(key);
+                    return (
+                      <button key={key} onClick={() => { const cur: string[] = kit.contentProfile?.formats || []; set("contentProfile.formats", on ? cur.filter((x) => x !== key) : [...cur, key]); }}
+                        className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                        style={on ? { background: previewColors.primary, color: "#fff", borderColor: previewColors.primary } : { background: "#fff", color: "#374151", borderColor: "#e5e7eb" }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </section>
 
             {/* Fot + Vill inte ha */}
