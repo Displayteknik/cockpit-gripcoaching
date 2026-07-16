@@ -4,20 +4,22 @@ import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
-const BUCKET = "studio-images"; // publik läs — bilderna ska ändå till sociala medier
+const DEFAULT_BUCKET = "studio-images"; // publik läs — bilderna ska ändå till sociala medier
+const ALLOWED_BUCKETS = new Set(["studio-images", "brand-assets"]);
 const MAX_BYTES = 25 * 1024 * 1024;
-const OK_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const OK_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/svg+xml"]);
 
-// POST /api/studio/upload-url — { filename, mime, size }
+// POST /api/studio/upload-url — { filename, mime, size, bucket? }
 // Signerad direkt-uppladdning till Supabase Storage (förbi Vercels ~4,5 MB-gräns).
 // Admin-grindad av proxy.ts. Säkerställer bucketen (skapar publik om den saknas).
 export async function POST(req: NextRequest) {
   try {
     const clientId = await getActiveClientId();
-    const { filename, mime, size } = await req.json();
+    const { filename, mime, size, bucket: reqBucket } = await req.json();
+    const BUCKET = ALLOWED_BUCKETS.has(reqBucket) ? reqBucket : DEFAULT_BUCKET;
 
     if (typeof mime !== "string" || !OK_MIME.has(mime)) {
-      return NextResponse.json({ error: "Endast JPG, PNG eller WebP" }, { status: 400 });
+      return NextResponse.json({ error: "Endast JPG, PNG, WebP eller SVG" }, { status: 400 });
     }
     if (typeof size !== "number" || size > MAX_BYTES) {
       return NextResponse.json({ error: "Bilden är för stor (max 25 MB)" }, { status: 400 });
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
       await sb.storage.createBucket(BUCKET, { public: true });
     }
 
-    const ext = (mime.split("/")[1] || "jpg").replace("jpeg", "jpg");
+    const ext = (mime.split("/")[1] || "jpg").replace("jpeg", "jpg").replace("svg+xml", "svg");
     const safe = String(filename || "foto").replace(/[^a-z0-9._-]/gi, "-").slice(0, 40);
     const path = `${clientId}/${Date.now()}-${safe}.${ext}`;
 

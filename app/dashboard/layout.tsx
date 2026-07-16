@@ -41,6 +41,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard", label: "Översikt", icon: Home },
         { href: "/dashboard/profil", label: "Brand-profil", icon: Target },
+        { href: "/dashboard/brand-kit", label: "Grafisk profil", icon: Palette },
         { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
         { href: "/dashboard/analysator", label: "Profil-analysator", icon: Search },
       ],
