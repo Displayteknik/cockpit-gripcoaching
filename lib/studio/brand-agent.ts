@@ -50,11 +50,13 @@ function topColors(html: string, fallback?: string): string[] {
     .sort((a, b) => b[1] - a[1])
     .map(([hex]) => hex);
 
-  // Om klientens primary_color inte redan finns med, lägg den främst.
-  if (fallback) { const f = normHex(fallback); if (f && !ranked.includes(f)) ranked.unshift(f); }
-  // Dedupe nära-identiska
+  // Dedupe nära-identiska — litar på SAJTENS faktiska färger (rankade efter förekomst).
   const out: string[] = [];
   for (const c of ranked) { if (!out.some((o) => colorDist(o, c) < 28)) out.push(c); if (out.length >= 6) break; }
+
+  // Klientens DB-primary_color används BARA som sista utväg om sajten inte gav något
+  // (annars överkör ett gammalt/godtyckligt DB-värde den riktiga profilen — buggen 2026-07-17).
+  if (!out.length && fallback) { const f = normHex(fallback); if (f) out.push(f); }
   return out;
 }
 
