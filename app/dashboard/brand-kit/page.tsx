@@ -269,7 +269,7 @@ export default function BrandKitPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2">Format som visas för klienten (inga valda = alla)</label>
+                <label className="block text-xs font-medium text-gray-500 mb-2">Föreslagna format <span className="text-gray-400 font-normal">— alla format finns alltid tillgängliga; dessa markeras "Föreslås"</span></label>
                 <div className="flex flex-wrap gap-2">
                   {([["overlay", "Foto+overlay"], ["text-only", "Textkort"], ["quote", "Citat"], ["carousel", "Karusell"], ["poster", "Affisch"], ["statement", "Statement"], ["list", "Lista"], ["offer", "Erbjudande"]] as const).map(([key, label]) => {
                     const on = (kit.contentProfile?.formats || []).includes(key);

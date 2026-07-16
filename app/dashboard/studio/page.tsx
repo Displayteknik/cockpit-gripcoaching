@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
 } from "lucide-react";
-import { TEMPLATE_META, templatesForClient } from "@/lib/studio/templates-meta";
+import { TEMPLATE_META, templatesForClient, isRecommendedFormat } from "@/lib/studio/templates-meta";
 import type { StudioFormat } from "@/lib/studio/payload";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
@@ -439,11 +439,15 @@ export default function StudioPage() {
               <div className="grid grid-cols-2 gap-3">
                 {availableTemplates.map((t) => {
                   const active = t.id === templateId;
+                  const rec = isRecommendedFormat(t, contentFormats as never);
                   return (
                     <button key={t.id} onClick={() => setTemplateId(t.id)}
-                      className="text-left rounded-xl border px-4 py-3 transition-colors"
+                      className="text-left rounded-xl border px-4 py-3 transition-colors relative"
                       style={active ? { borderColor: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb" }}>
-                      <div className="text-sm font-semibold text-gray-900">{t.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-gray-900">{t.name}</span>
+                        {rec && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>Föreslås</span>}
+                      </div>
                       <div className="text-xs text-gray-500 mt-0.5">{t.formats.join(" · ")}</div>
                     </button>
                   );

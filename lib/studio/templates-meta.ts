@@ -66,13 +66,21 @@ export function getTemplateMeta(id: string): TemplateMeta | undefined {
   return TEMPLATE_META.find((t) => t.id === id);
 }
 
-// Mallar som ska visas för en klient: klientens exklusiva + arketyper som ingår i
-// klientens contentProfile.formats (tom lista = alla arketyper visas).
-export function templatesForClient(slug: string, formats?: ContentFormat[]): TemplateMeta[] {
-  const active = formats && formats.length ? new Set(formats) : null;
-  return TEMPLATE_META.filter((t) => {
-    if (t.clientSlug) return t.clientSlug === slug; // exklusiva: bara egen klient
-    if (!active) return true; // ingen profil satt → visa alla arketyper
-    return t.formatKey ? active.has(t.formatKey) : true;
+// ALLA klienter har tillgång till ALLA arketyper — flexibilitet byggs aldrig bort.
+// `recommended` (contentProfile.formats) FILTRERAR inte, den bara sorterar de
+// föreslagna formaten först. Opticurs exklusiva mallar visas bara för Opticur.
+export function templatesForClient(slug: string, recommended?: ContentFormat[]): TemplateMeta[] {
+  const list = TEMPLATE_META.filter((t) => !t.clientSlug || t.clientSlug === slug);
+  if (!recommended || !recommended.length) return list;
+  const rec = new Set(recommended);
+  return [...list].sort((a, b) => {
+    const ra = a.formatKey && rec.has(a.formatKey) ? 0 : 1;
+    const rb = b.formatKey && rec.has(b.formatKey) ? 0 : 1;
+    return ra - rb;
   });
+}
+
+// Är formatet föreslaget för klienten (för "Föreslås"-markering i UI)?
+export function isRecommendedFormat(meta: TemplateMeta, recommended?: ContentFormat[]): boolean {
+  return !!recommended?.length && !!meta.formatKey && recommended.includes(meta.formatKey);
 }
