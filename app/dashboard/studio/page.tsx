@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
-  Maximize2, Save, Check, Search, RefreshCw,
+  Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen,
 } from "lucide-react";
 import { TEMPLATE_META } from "@/lib/studio/templates-meta";
 import type { StudioFormat } from "@/lib/studio/payload";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface Suggestion { hookType: string; headline1: string; headline2: string; body: string }
+interface StudioPost { id: string; template_id: string; format: StudioFormat; title: string; image_url: string | null; payload: Record<string, unknown>; updated_at: string }
 
 const HOOK_LABEL: Record<string, string> = {
   "fråga": "Fråga", "statistik": "Statistik", "konträr": "Konträr",
@@ -50,6 +51,9 @@ export default function StudioPage() {
   const [badgeLine2, setBadgeLine2] = useState("0 KR");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFocusY, setImageFocusY] = useState(40);
+  const [imgComment, setImgComment] = useState("");
+  const [editingImg, setEditingImg] = useState(false);
+  const [prevImageUrl, setPrevImageUrl] = useState("");
   const [brushColor, setBrushColor] = useState(DEFAULT_BRUSH);
   const [topic, setTopic] = useState("");
 
@@ -61,6 +65,9 @@ export default function StudioPage() {
   const [imgResults, setImgResults] = useState<{ url: string; thumb: string; credit: string }[]>([]);
   const [searchingImg, setSearchingImg] = useState<"stock" | "ai" | "">("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [posts, setPosts] = useState<StudioPost[]>([]);
+  const [loadedPostId, setLoadedPostId] = useState<string | null>(null);
+  const [savingPost, setSavingPost] = useState(false);
 
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
@@ -132,6 +139,33 @@ export default function StudioPage() {
     }
   }, [topic, headline1, format]);
 
+  // ── Ändra bild via kommentar (bild-till-bild, Nano Banana) ──
+  const editImage = useCallback(async () => {
+    if (!imageUrl || !imgComment.trim()) return;
+    setError(""); setEditingImg(true);
+    try {
+      const r = await fetch("/api/studio/edit-image", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl, instruction: imgComment }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Bildändring misslyckades");
+      setPrevImageUrl(imageUrl);
+      setImageUrl(d.url);
+      setImgComment("");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setEditingImg(false);
+    }
+  }, [imageUrl, imgComment]);
+
+  const undoImageEdit = useCallback(() => {
+    if (!prevImageUrl) return;
+    setImageUrl(prevImageUrl);
+    setPrevImageUrl("");
+  }, [prevImageUrl]);
+
   // ── AI-textförslag (3 hook-drivna varianter) ──
   const suggest = useCallback(async () => {
     setError(""); setSuggesting(true); setSuggestions([]);
@@ -191,19 +225,71 @@ export default function StudioPage() {
     localStorage.setItem(draftKey, JSON.stringify(payload));
     setSaved(true); setTimeout(() => setSaved(false), 1500);
   }, [draftKey, payload]);
+  // Fyller hela editorn från en payload (delas av utkast + bibliotek).
+  const applyPayload = useCallback((d: Record<string, unknown>) => {
+    const badge = (d.badge ?? {}) as { enabled?: boolean; line1?: string; line2?: string };
+    setTemplateId((d.templateId as string) ?? TEMPLATE_META[0].id);
+    setFormat((d.format as StudioFormat) ?? "1080x1350");
+    setHeadline1((d.headline1 as string) ?? ""); setHeadline2((d.headline2 as string) ?? ""); setBody((d.body as string) ?? "");
+    setBadgeEnabled(!!badge.enabled); setBadgeLine1(badge.line1 ?? "FRÅN"); setBadgeLine2(badge.line2 ?? "0 KR");
+    setImageUrl((d.imageUrl as string) ?? ""); setImageFocusY((d.imageFocusY as number) ?? 40);
+    setBrushColor((d.brushColor as string) || DEFAULT_BRUSH);
+    setPrevImageUrl("");
+  }, []);
+
   const loadDraft = useCallback(() => {
     const raw = localStorage.getItem(draftKey);
     if (!raw) return;
+    try { applyPayload(JSON.parse(raw)); setLoadedPostId(null); } catch { /* ignore */ }
+  }, [draftKey, applyPayload]);
+
+  // ── Bibliotek: tidigare skapelser (studio_posts) ──
+  const refreshPosts = useCallback(async () => {
     try {
-      const d = JSON.parse(raw);
-      setTemplateId(d.templateId ?? TEMPLATE_META[0].id);
-      setFormat(d.format ?? "1080x1350");
-      setHeadline1(d.headline1 ?? ""); setHeadline2(d.headline2 ?? ""); setBody(d.body ?? "");
-      setBadgeEnabled(!!d.badge?.enabled); setBadgeLine1(d.badge?.line1 ?? "FRÅN"); setBadgeLine2(d.badge?.line2 ?? "0 KR");
-      setImageUrl(d.imageUrl ?? ""); setImageFocusY(d.imageFocusY ?? 40);
-      setBrushColor(d.brushColor || DEFAULT_BRUSH);
+      const r = await fetch("/api/studio/posts");
+      const d = await r.json();
+      if (r.ok) setPosts(Array.isArray(d.posts) ? d.posts : []);
     } catch { /* ignore */ }
-  }, [draftKey]);
+  }, []);
+
+  useEffect(() => { refreshPosts(); }, [refreshPosts, client]);
+
+  // Spara aktuell skapelse i biblioteket. asNew=true → alltid ny kopia.
+  const savePost = useCallback(async (asNew = false) => {
+    setError(""); setSavingPost(true);
+    try {
+      const title = headline1 || body.slice(0, 40) || "Namnlöst inlägg";
+      const r = await fetch("/api/studio/posts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte spara i biblioteket");
+      setLoadedPostId(d.post?.id ?? null);
+      await refreshPosts();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSavingPost(false);
+    }
+  }, [headline1, body, loadedPostId, payload, refreshPosts]);
+
+  // Öppna en sparad skapelse i editorn för återanvändning/redigering.
+  const openPost = useCallback((p: StudioPost) => {
+    applyPayload(p.payload);
+    setLoadedPostId(p.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [applyPayload]);
+
+  const deletePost = useCallback(async (id: string) => {
+    try {
+      const r = await fetch(`/api/studio/posts/${id}`, { method: "DELETE" });
+      if (r.ok) {
+        setPosts((prev) => prev.filter((p) => p.id !== id));
+        if (loadedPostId === id) setLoadedPostId(null);
+      }
+    } catch { /* ignore */ }
+  }, [loadedPostId]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -298,6 +384,30 @@ export default function StudioPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Vertikal fokuspunkt ({imageFocusY}%)</label>
                   <input type="range" min={0} max={100} value={imageFocusY} onChange={(e) => setImageFocusY(Number(e.target.value))} className="w-full" style={{ accentColor: primary }} />
+                </div>
+              )}
+
+              {/* Ändra bilden via kommentar (AI redigerar den befintliga bilden) */}
+              {imageUrl && (
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
+                  <label className="block text-xs font-medium text-gray-600">Ändra bilden — skriv vad du vill</label>
+                  <textarea value={imgComment} onChange={(e) => setImgComment(e.target.value)} rows={2}
+                    placeholder='T.ex. "visa bara barnet, inte optikern, annars lika" eller "ljusare bakgrund"'
+                    className={inputCls} />
+                  <div className="flex items-center gap-2">
+                    <button onClick={editImage} disabled={editingImg || !imgComment.trim()}
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                      style={{ background: primary }}>
+                      {editingImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Ändra bild
+                    </button>
+                    {prevImageUrl && (
+                      <button onClick={undoImageEdit} disabled={editingImg}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+                        <RefreshCw className="w-4 h-4" /> Ångra ändring
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400">Behåller komposition och stil — ändrar bara det du ber om.</p>
                 </div>
               )}
 
@@ -442,6 +552,22 @@ export default function StudioPage() {
               </div>
             </section>
 
+            {/* Spara i biblioteket (återanvändbar skapelse) */}
+            <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-3 space-y-2">
+              <button onClick={() => savePost(false)} disabled={savingPost}
+                className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                style={{ background: primary }}>
+                {savingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {loadedPostId ? "Uppdatera i biblioteket" : "Spara i biblioteket"}
+              </button>
+              {loadedPostId && (
+                <button onClick={() => savePost(true)} disabled={savingPost}
+                  className="w-full inline-flex items-center justify-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+                  <Copy className="w-4 h-4" /> Spara som ny
+                </button>
+              )}
+              {loadedPostId && <p className="text-xs text-gray-400 text-center">Redigerar en sparad skapelse — uppdatera den eller spara som ny.</p>}
+            </div>
+
             <button onClick={exportPng} disabled={exporting}
               className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-3 rounded-xl text-white shadow-sm hover:opacity-90 disabled:opacity-40"
               style={{ background: primary }}>
@@ -455,6 +581,53 @@ export default function StudioPage() {
             </p>
           </div>
         </div>
+
+        {/* ── Tidigare skapelser (återanvänd & redigera) ── */}
+        {posts.length > 0 && (
+          <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="w-5 h-5" style={{ color: primary }} />
+                <h2 className="font-display font-bold text-gray-900 text-lg">Tidigare skapelser</h2>
+                <span className="text-xs text-gray-400">({posts.length})</span>
+              </div>
+              <button onClick={refreshPosts} className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
+                <RefreshCw className="w-3.5 h-3.5" /> Uppdatera
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {posts.map((p) => {
+                const [pw, ph] = p.format === "1080x1080" ? [1080, 1080] : [1080, 1350];
+                const cardW = 150;
+                const s = cardW / pw;
+                const active = loadedPostId === p.id;
+                return (
+                  <div key={p.id} className="group rounded-xl border overflow-hidden transition-colors" style={{ borderColor: active ? primary : "#f3f4f6" }}>
+                    <div className="bg-gray-100 overflow-hidden mx-auto" style={{ width: cardW, height: ph * s }}>
+                      <iframe title={p.title} scrolling="no"
+                        src={`/studio/render/${p.template_id}?p=${encodeURIComponent(encodePayload(p.payload))}`}
+                        style={{ width: pw, height: ph, border: 0, transform: `scale(${s})`, transformOrigin: "top left", pointerEvents: "none" }} />
+                    </div>
+                    <div className="p-2 space-y-1.5">
+                      <div className="text-xs font-semibold text-gray-800 truncate" title={p.title}>{p.title}</div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openPost(p)}
+                          className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium px-2 py-1.5 rounded-lg text-white hover:opacity-90"
+                          style={{ background: primary }}>
+                          <FolderOpen className="w-3.5 h-3.5" /> Öppna
+                        </button>
+                        <button onClick={() => deletePost(p.id)} title="Ta bort"
+                          className="inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

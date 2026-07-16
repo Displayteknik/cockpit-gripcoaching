@@ -269,6 +269,64 @@ export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16"
   return { error: lastError };
 }
 
+// Redigera en befintlig bild via textinstruktion (bild-till-bild, "Nano Banana").
+// Ex: "visa bara barnet, inte optikern, annars lika". Behåller komposition/stil/ljus
+// och ändrar bara det instruktionen ber om. Returnerar data-URL (PNG/JPEG base64).
+export async function editImagen(
+  instruction: string,
+  baseImageUrl: string,
+): Promise<{ success?: boolean; image?: string; error?: string }> {
+  if (!GEMINI_KEY) return { error: "GEMINI_API_KEY saknas" };
+  if (!baseImageUrl) return { error: "Basbild saknas" };
+
+  // Hämta basbilden server-side → base64 inline.
+  let inline: { mimeType: string; data: string };
+  try {
+    const imgRes = await fetch(baseImageUrl);
+    if (!imgRes.ok) return { error: "Kunde inte hämta basbilden" };
+    const buf = Buffer.from(await imgRes.arrayBuffer());
+    if (buf.length >= 19 * 1024 * 1024) return { error: "Basbilden är för stor (max 19 MB)" };
+    inline = { mimeType: imgRes.headers.get("content-type") || "image/jpeg", data: buf.toString("base64") };
+  } catch (e) {
+    return { error: "Nätverksfel vid hämtning av basbild: " + (e as Error).message };
+  }
+
+  const fullPrompt =
+    `Redigera bilden enligt instruktionen. Behåll allt annat oförändrat — samma komposition, ` +
+    `stil, ljus, färgton och bildformat. Ändra endast det som efterfrågas. Inga texter, siffror eller bokstäver i bilden.\n` +
+    `Instruktion: ${instruction}`;
+
+  const parts = [
+    { inlineData: inline },
+    { text: fullPrompt },
+  ];
+  const models = ["gemini-2.5-flash-image", "gemini-3.1-flash-image-preview"];
+  let lastError = "Ingen bild genererades";
+  for (const model of models) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts }],
+          generationConfig: { responseModalities: ["IMAGE"] },
+        }),
+      });
+      if (!r.ok) { lastError = (await r.text()).slice(0, 200); continue; }
+      const data = await r.json();
+      const part = data?.candidates?.[0]?.content?.parts?.find(
+        (p: { inlineData?: { data?: string; mimeType?: string } }) => p.inlineData?.data,
+      );
+      if (part?.inlineData?.data) {
+        return { success: true, image: `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}` };
+      }
+    } catch (e) {
+      lastError = "Nätverksfel: " + (e as Error).message;
+    }
+  }
+  return { error: lastError };
+}
+
 export async function generateFlux(prompt: string, aspect: "square" | "portrait" | "landscape" = "square"): Promise<{ success?: boolean; image?: string; error?: string }> {
   if (!FAL_KEY) return generateImagen(prompt, aspect === "square" ? "1:1" : aspect === "portrait" ? "9:16" : "16:9");
   try {
