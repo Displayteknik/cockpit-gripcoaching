@@ -73,14 +73,14 @@ function buildNavSections(resourceModule: string): NavSection[] {
       label: "Studio",
       items: [
         { href: "/dashboard/studio", label: "Studio", icon: ImageIcon },
-        { href: "/dashboard/studio/blogg", label: "Blogg → GHL", icon: FileText },
+        { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText },
         { href: "/dashboard/studio/kalender", label: "Publiceringsöversikt", icon: Calendar },
       ],
     },
     {
       label: "Innehåll & SEO",
       items: [
-        { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
+        { href: "/dashboard/studio/blogg", label: "Blogg-maskin", icon: BookOpen },
         { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: FileText },
         { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },

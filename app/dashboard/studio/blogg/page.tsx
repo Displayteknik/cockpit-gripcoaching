@@ -43,6 +43,7 @@ export default function StudioBloggPage() {
   const [categoryId, setCategoryId] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState("");
+  const [destination, setDestination] = useState<"ghl" | "native">("ghl");
 
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
 
@@ -52,13 +53,16 @@ export default function StudioBloggPage() {
 
   useEffect(() => {
     fetch("/api/studio/blog/meta").then((r) => r.json()).then((d) => {
+      const conn = !!d.connected && (d.meta?.sites?.length || 0) > 0;
       setConnected(!!d.connected);
+      // Förval: GHL om kopplat med sajt, annars Cockpit-native.
+      setDestination(conn ? "ghl" : "native");
       if (d.meta) {
         setSites(d.meta.sites || []); setAuthors(d.meta.authors || []); setCategories(d.meta.categories || []);
         setBlogId(d.meta.sites?.[0]?.id || "");
         setAuthorId(d.meta.authors?.[0]?.id || "");
       }
-    }).catch(() => setConnected(false));
+    }).catch(() => { setConnected(false); setDestination("native"); });
   }, [client]);
 
   const generate = useCallback(async () => {
@@ -84,26 +88,36 @@ export default function StudioBloggPage() {
   }, [topic, wordCount]);
 
   const publish = useCallback(async () => {
-    if (!blogId) { setError("Välj en bloggsajt"); return; }
     setError(""); setPublishing(true); setPublishedUrl("");
     try {
-      const r = await fetch("/api/studio/blog/publish", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          blogId, title, html, description: metaDescription, urlSlug,
-          author: authorId || undefined, categories: categoryId ? [categoryId] : [],
-          imageUrl: coverImageUrl || undefined, imageAltText: coverImageAlt || undefined,
-        }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
-      setPublishedUrl(d.postId || "ok");
+      if (destination === "native") {
+        const r = await fetch("/api/studio/blog/publish-native", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, html, urlSlug, description: metaDescription }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
+        setPublishedUrl("native");
+      } else {
+        if (!blogId) { setError("Välj en bloggsajt"); setPublishing(false); return; }
+        const r = await fetch("/api/studio/blog/publish", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blogId, title, html, description: metaDescription, urlSlug,
+            author: authorId || undefined, categories: categoryId ? [categoryId] : [],
+            imageUrl: coverImageUrl || undefined, imageAltText: coverImageAlt || undefined,
+          }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
+        setPublishedUrl(d.postId || "ok");
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setPublishing(false);
     }
-  }, [blogId, title, html, metaDescription, urlSlug, authorId, categoryId, coverImageUrl, coverImageAlt]);
+  }, [destination, blogId, title, html, metaDescription, urlSlug, authorId, categoryId, coverImageUrl, coverImageAlt]);
 
   const repurpose = useCallback(async () => {
     setError(""); setRepurposing(true);
@@ -131,8 +145,8 @@ export default function StudioBloggPage() {
             <FileText className="w-6 h-6" style={{ color: primary }} />
           </span>
           <div>
-            <h1 className="font-display font-bold text-2xl text-gray-900">Blogg → GHL</h1>
-            <p className="text-sm text-gray-500">Ämne → färdig SEO-artikel → utkast i GHL Blogs. {client ? `Klient: ${client.name}` : ""}</p>
+            <h1 className="font-display font-bold text-2xl text-gray-900">Blogg</h1>
+            <p className="text-sm text-gray-500">Ämne → färdig SEO-artikel → utkast i GHL Blogs eller på Cockpit-sajten. {client ? `Klient: ${client.name}` : ""}</p>
           </div>
         </div>
 
@@ -212,17 +226,30 @@ export default function StudioBloggPage() {
 
             {/* Publicera */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="font-display font-bold text-gray-900 text-lg">3. Publicera som utkast i GHL</h2>
-              {connected === null ? (
-                <div className="text-sm text-gray-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Kollar GHL-koppling…</div>
-              ) : !connected ? (
-                <div className="rounded-lg bg-amber-50 border border-amber-100 p-3 text-sm text-amber-700">
-                  GHL är inte kopplat för {client?.name || "klienten"}. Koppla det i Studio (bild-vyn) → panelen "Publicera till GHL".
-                </div>
-              ) : sites.length === 0 ? (
-                <div className="text-sm text-gray-500">Inga bloggsajter hittades i GHL (kräver token-scope Blogs).</div>
-              ) : (
-                <>
+              <h2 className="font-display font-bold text-gray-900 text-lg">3. Publicera som utkast</h2>
+
+              {/* Destinationsväljare — förvald per klient */}
+              <div className="flex gap-2">
+                <button onClick={() => setDestination("ghl")} disabled={!connected || sites.length === 0}
+                  className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-40"
+                  style={destination === "ghl" ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#374151" }}>
+                  GHL Blogs {(!connected || sites.length === 0) && "(ej kopplat)"}
+                </button>
+                <button onClick={() => setDestination("native")}
+                  className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
+                  style={destination === "native" ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#374151" }}>
+                  Cockpit-sajt
+                </button>
+              </div>
+
+              {destination === "ghl" ? (
+                connected === null ? (
+                  <div className="text-sm text-gray-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Kollar GHL-koppling…</div>
+                ) : !connected || sites.length === 0 ? (
+                  <div className="rounded-lg bg-amber-50 border border-amber-100 p-3 text-sm text-amber-700">
+                    GHL-blogg är inte kopplad för {client?.name || "klienten"}. Koppla i Studio (bild-vyn) → "Publicera till GHL", eller välj Cockpit-sajt.
+                  </div>
+                ) : (
                   <div className="grid sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Bloggsajt</label>
@@ -245,18 +272,23 @@ export default function StudioBloggPage() {
                       </select>
                     </div>
                   </div>
-                  <button onClick={publish} disabled={publishing}
-                    className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-3 rounded-xl text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-                    style={{ background: primary }}>
-                    {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : publishedUrl ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                    {publishedUrl ? "Utkast skapat i GHL Blogs" : "Skapa utkast i GHL Blogs"}
-                  </button>
-                  {publishedUrl && (
-                    <p className="text-xs text-gray-500 text-center">Utkastet ligger nu i GHL → Sites → Blogs (status Draft). Granska, lägg till bild och publicera där.</p>
-                  )}
-                  <p className="text-xs text-gray-400">Skapar ett utkast — publicerar aldrig skarpt. Du granskar och publicerar i GHL.</p>
-                </>
+                )
+              ) : (
+                <p className="text-sm text-gray-500">Sparas som utkast på Cockpit-sajten (Blogg-arkiv) — opublicerat tills du släpper det.</p>
               )}
+
+              <button onClick={publish} disabled={publishing || (destination === "ghl" && (!connected || sites.length === 0))}
+                className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-3 rounded-xl text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                style={{ background: primary }}>
+                {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : publishedUrl ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                {publishedUrl ? "Utkast skapat" : destination === "ghl" ? "Skapa utkast i GHL Blogs" : "Spara utkast på Cockpit-sajten"}
+              </button>
+              {publishedUrl && (
+                <p className="text-xs text-gray-500 text-center">
+                  {publishedUrl === "native" ? "Utkastet ligger i Blogg-arkiv (opublicerat) — granska och publicera där." : "Utkastet ligger i GHL → Sites → Blogs (status Draft). Granska och publicera där."}
+                </p>
+              )}
+              <p className="text-xs text-gray-400">Skapar ett utkast — publicerar aldrig skarpt.</p>
             </section>
 
             {/* Repurposing: blogg → sociala inlägg */}
