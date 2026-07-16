@@ -5,6 +5,7 @@
 
 import { generate } from "@/lib/gemini";
 import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
+import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 
 export interface InternalLink { title: string; url: string }
 
@@ -32,9 +33,10 @@ export interface BlogGenOpts {
 const FORBIDDEN = ["kraftfull", "banbrytande", "game-changer", "handlar om", "nästa nivå", "holistisk", "skalbar"];
 
 export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticle> {
-  const [playbook, profile] = await Promise.all([
+  const [playbook, profile, directives] = await Promise.all([
     getKnowledge("hook-playbook").catch(() => ""),
     getProfileAsMarkdown().catch(() => ""),
+    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [] as string[], colors: {} })),
   ]);
   const brand = opts.brandName || "kunden";
   const words = Math.min(Math.max(opts.wordCount || 900, 400), 2200);
@@ -68,6 +70,7 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
     "- faq: SAMMA frågor/svar som i Vanliga frågor-sektionen (rå text, ingen HTML) — används för FAQ-schema.",
     "- coverImagePrompt: en engelsk fotoprompt för en redaktionell, verklig omslagsbild som passar ämnet och branschen (inga texter/logotyper i bilden). coverImageAlt: svensk alt-text.",
     `- FÖRBJUDNA ord: ${FORBIDDEN.join(", ")}. Svenska tecken å/ä/ö korrekt överallt.`,
+    dontsRule(directives.donts),
     "\n=== SVAR: ENDAST strikt JSON, inga kodstaket ===",
     '{"title":"...","metaTitle":"...","metaDescription":"...","urlSlug":"...","html":"<h2>...</h2><p>... <a href=\\"...\\">...</a></p>","faq":[{"q":"...","a":"..."}],"tags":["..."],"coverImagePrompt":"...","coverImageAlt":"..."}',
   ].join("\n");
@@ -111,10 +114,12 @@ export async function repurposeToSocial(opts: {
   clientId: string; title: string; articleText: string; brandName?: string; industry?: string;
 }): Promise<SocialFromArticle[]> {
   const profile = await getProfileAsMarkdown().catch(() => "");
+  const directives = await getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [] as string[], colors: {} }));
   const brand = opts.brandName || "kunden";
 
   const system = [
     `Du gör om en bloggartikel för ${brand}${opts.industry ? ` (${opts.industry})` : ""} till korta sociala affisch-inlägg (text PÅ en bild).`,
+    dontsRule(directives.donts),
     profile ? `\n=== VARUMÄRKESPROFIL — grunda röst/målgrupp/ord på denna ===\n${profile.slice(0, 4000)}` : "",
     "\n=== REGLER (affisch-format) ===",
     "- headline1: kort slagkraftig rubrik, MAX ~26 tecken, hel fras (aldrig fragment).",

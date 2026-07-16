@@ -6,6 +6,7 @@
 import { iterateGenerate } from "@/lib/iterate";
 import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
+import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 
 export interface StudioCopySuggestion {
   hookType: string;
@@ -33,9 +34,10 @@ const DANGLING = /\b(och|att|som|en|ett|för|med|på|till|av|den|det|är|kan|nä
 
 export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCopySuggestion[]> {
   const meta = getTemplateMeta(opts.templateId);
-  const [playbook, profile] = await Promise.all([
+  const [playbook, profile, directives] = await Promise.all([
     getKnowledge("hook-playbook").catch(() => ""),
     getProfileAsMarkdown().catch(() => ""),
+    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [], colors: {} })),
   ]);
   const brand = opts.brandName || "kunden";
   const industry = opts.industry ? ` (${opts.industry})` : "";
@@ -58,6 +60,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     "- Använd EN tydlig hook-typ och gör den scrollstoppande enligt playbooken (komprimerad till affisch-längd).",
     "- Gyllene-zonen-kedjan: rubrik väcker → underrubrik/text levererar → kort uppmaning att boka.",
     "- Målgruppens EGNA ord ur profilen. Svenska tecken å/ä/ö korrekt. Uppfinn inget utanför kundens värld.",
+    dontsRule(directives.donts),
   ].join("\n");
 
   const userPrompt = [

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { searchStockPhotos, generateImagen } from "@/lib/images";
+import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -20,7 +21,8 @@ export async function POST(req: NextRequest) {
 
     if (body.mode === "ai") {
       const ar = body.aspect === "portrait" ? "3:4" : body.aspect === "square" ? "1:1" : "4:3";
-      const gen = await generateImagen(`${topic}. Branch: ${niche}. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.`, ar);
+      const directives = await getKitDirectives(await getActiveClientId());
+      const gen = await generateImagen(`${topic}. Branch: ${niche}. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
       if (gen.error || !m) return NextResponse.json({ error: gen.error || "Bildgenerering misslyckades" }, { status: 500 });
 

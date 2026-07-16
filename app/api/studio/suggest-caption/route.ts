@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClient } from "@/lib/client-context";
+import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
+import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
     const body = (b.body || "").toString().slice(0, 300);
     const topic = (b.topic || "").toString().slice(0, 200);
     const profile = await getProfileAsMarkdown().catch(() => "");
+    const directives = await getKitDirectives(await getActiveClientId());
 
     const system = [
       `Du skriver en bildtext (caption) till ett socialt inlägg (Instagram/Facebook) för ${client?.name || "kunden"}.`,
@@ -28,6 +30,7 @@ export async function POST(req: NextRequest) {
       "- FÖRBJUDNA ord: kraftfull, banbrytande, game-changer, handlar om, nästa nivå, holistisk, skalbar.",
       "- Max 1–3 relevanta hashtags på slutet (valfritt). Inga telefonnummer/URL:er.",
       "- Returnera ENDAST själva captionen, ingen förklaring.",
+      dontsRule(directives.donts),
     ].join("\n");
 
     const prompt = [

@@ -56,6 +56,7 @@ export default function StudioPage() {
   const [editingImg, setEditingImg] = useState(false);
   const [prevImageUrl, setPrevImageUrl] = useState("");
   const [brushColor, setBrushColor] = useState(DEFAULT_BRUSH);
+  const [swatches, setSwatches] = useState(BRUSH_SWATCHES);
   const [topic, setTopic] = useState("");
 
   const [uploading, setUploading] = useState(false);
@@ -89,6 +90,19 @@ export default function StudioPage() {
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
   }, []);
+
+  // Färg-swatches ur klientens grafiska profil (roll-färger) — annars Opticur-standard.
+  useEffect(() => {
+    fetch("/api/brand-kit").then((r) => r.json()).then((d) => {
+      const col = d?.kit?.colors || {};
+      const roles: { name: string; hex: string }[] = [
+        { name: "Accent", hex: col.accent }, { name: "Primär", hex: col.primary },
+        { name: "Primär ljus", hex: col.primaryLight }, { name: "Stödfärg", hex: col.support },
+        { name: "Primär mörk", hex: col.primaryDeep },
+      ].filter((x) => typeof x.hex === "string" && /^#/.test(x.hex));
+      if (roles.length >= 2) setSwatches([...roles, { name: "Vit", hex: "#FFFFFF" }]);
+    }).catch(() => {});
+  }, [client]);
 
   const payload = useMemo(
     () => ({
@@ -597,7 +611,7 @@ export default function StudioPage() {
                 <div className="pt-2 border-t border-gray-100 space-y-2">
                   <label className="block text-xs font-medium text-gray-500">Färg på rutan</label>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {BRUSH_SWATCHES.map((s) => {
+                    {swatches.map((s) => {
                       const active = brushColor.toUpperCase() === s.hex.toUpperCase();
                       return (
                         <button key={s.hex} onClick={() => setBrushColor(s.hex)} title={s.name}

@@ -3,6 +3,7 @@ import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { generateBlogArticle, buildFaqJsonLd, type InternalLink } from "@/lib/studio/blog";
 import { getGhlConfig, ghlBlogMeta, ghlListBlogPosts, resolveBlogPostBase } from "@/lib/studio/ghl";
 import { generateImagen, searchStockPhotos } from "@/lib/images";
+import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -69,8 +70,9 @@ export async function POST(req: NextRequest) {
 
 async function makeCoverImage(clientId: string, prompt: string, industry: string): Promise<string> {
   try {
+    const directives = await getKitDirectives(clientId);
     const gen = await generateImagen(
-      `${prompt}. Editorial photo for a ${industry || "business"} blog. Realistic, natural light, no text, no letters, no logos.`,
+      `${prompt}. Editorial cover image for a ${industry || "business"} blog. Realistic, natural light, no text, no letters, no logos.${imageDirectiveSuffix(directives)}`,
       "16:9",
     );
     const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
