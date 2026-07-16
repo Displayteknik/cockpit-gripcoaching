@@ -9,6 +9,16 @@ export interface StudioBadge {
   line2: string;
 }
 
+export interface StudioOverrides {
+  fontScale: number; // global textskala, 0.7–1.4 (1 = mallens standard)
+  headlineColor: string; // "" = mallens standard
+  bodyColor: string; // "" = mallens standard
+  imageScale: number; // 1 = cover, >1 = inzoomat
+  imageX: number; // -50..50 horisontell panorering (%)
+  hideBrush: boolean;
+  hideBadge: boolean;
+}
+
 export interface StudioPayload {
   clientId: string;
   templateId: string;
@@ -20,7 +30,12 @@ export interface StudioPayload {
   imageUrl: string;
   imageFocusY: number; // 0–100 (%) — vertikal fokuspunkt för object-position
   brushColor: string; // penselrutans färg (hex); tom = mallens standard (brand.colors.yellow)
+  overrides: StudioOverrides; // fri redigering ovanpå mallen (tweak-lager)
 }
+
+export const DEFAULT_OVERRIDES: StudioOverrides = {
+  fontScale: 1, headlineColor: "", bodyColor: "", imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false,
+};
 
 export const FORMAT_DIMENSIONS: Record<StudioFormat, { w: number; h: number }> = {
   "1080x1350": { w: 1080, h: 1350 },
@@ -56,6 +71,20 @@ export function normalizePayload(raw: Partial<StudioPayload>): StudioPayload {
     imageUrl: raw.imageUrl ?? "",
     imageFocusY: clamp(Number(raw.imageFocusY ?? 50), 0, 100),
     brushColor: typeof raw.brushColor === "string" ? raw.brushColor : "",
+    overrides: normalizeOverrides(raw.overrides),
+  };
+}
+
+function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOverrides {
+  const o = raw || {};
+  return {
+    fontScale: clamp(Number(o.fontScale ?? 1), 0.6, 1.6),
+    headlineColor: typeof o.headlineColor === "string" ? o.headlineColor : "",
+    bodyColor: typeof o.bodyColor === "string" ? o.bodyColor : "",
+    imageScale: clamp(Number(o.imageScale ?? 1), 1, 3),
+    imageX: clamp(Number(o.imageX ?? 0), -50, 50),
+    hideBrush: Boolean(o.hideBrush),
+    hideBadge: Boolean(o.hideBadge),
   };
 }
 

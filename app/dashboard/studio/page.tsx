@@ -7,7 +7,10 @@ import {
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat } from "@/lib/studio/templates-meta";
-import type { StudioFormat } from "@/lib/studio/payload";
+import type { StudioFormat, StudioOverrides } from "@/lib/studio/payload";
+import { DEFAULT_OVERRIDES } from "@/lib/studio/payload";
+import type { StudioBrand } from "@/lib/studio/brand";
+import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface Suggestion { hookType: string; headline1: string; headline2: string; body: string }
@@ -58,6 +61,10 @@ export default function StudioPage() {
   const [brushColor, setBrushColor] = useState(DEFAULT_BRUSH);
   const [swatches, setSwatches] = useState(BRUSH_SWATCHES);
   const [contentFormats, setContentFormats] = useState<string[]>([]);
+  const [overrides, setOverrides] = useState<StudioOverrides>(DEFAULT_OVERRIDES);
+  const [brand, setBrand] = useState<StudioBrand | null>(null);
+  const [pasteText, setPasteText] = useState("");
+  const [applyingPaste, setApplyingPaste] = useState(false);
   const [topic, setTopic] = useState("");
 
   const [uploading, setUploading] = useState(false);
@@ -92,6 +99,11 @@ export default function StudioPage() {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
   }, []);
 
+  // Resolved brand för live-editorn (samma som exporten använder).
+  useEffect(() => {
+    fetch("/api/studio/brand").then((r) => r.json()).then((d) => { if (d.brand) setBrand(d.brand); }).catch(() => {});
+  }, [client]);
+
   // Färg-swatches ur klientens grafiska profil (roll-färger) — annars Opticur-standard.
   useEffect(() => {
     fetch("/api/brand-kit").then((r) => r.json()).then((d) => {
@@ -111,9 +123,9 @@ export default function StudioPage() {
     () => ({
       clientId: slug, templateId, format, headline1, headline2, body,
       badge: { enabled: meta.fields.badge && badgeEnabled, line1: badgeLine1, line2: badgeLine2 },
-      imageUrl, imageFocusY, brushColor,
+      imageUrl, imageFocusY, brushColor, overrides,
     }),
-    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor],
+    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides],
   );
 
   // Debouncad preview-URL så iframen inte laddar om vid varje tangenttryck.
@@ -196,6 +208,33 @@ export default function StudioPage() {
     setPrevImageUrl("");
   }, [prevImageUrl]);
 
+  // Direkt-manipulation av bilden i live-editorn (dra=flytta, scroll=zooma).
+  const onImagePatch = useCallback((p: ImagePatch) => {
+    if (p.imageFocusY !== undefined) setImageFocusY(p.imageFocusY);
+    if (p.imageX !== undefined || p.imageScale !== undefined) {
+      setOverrides((o) => ({ ...o, ...(p.imageX !== undefined ? { imageX: p.imageX } : {}), ...(p.imageScale !== undefined ? { imageScale: p.imageScale } : {}) }));
+    }
+  }, []);
+  const setOv = useCallback((patch: Partial<StudioOverrides>) => setOverrides((o) => ({ ...o, ...patch })), []);
+
+  // Klistra in eget utkast → AI delar upp i rubrik/underrubrik/brödtext.
+  const applyPaste = useCallback(async () => {
+    if (!pasteText.trim()) return;
+    setApplyingPaste(true); setError("");
+    try {
+      const r = await fetch("/api/studio/parse-draft", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: pasteText, templateId }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte tolka texten");
+      if (typeof d.headline1 === "string") setHeadline1(d.headline1);
+      if (typeof d.headline2 === "string") setHeadline2(d.headline2);
+      if (typeof d.body === "string") setBody(d.body);
+      setPasteText("");
+    } catch (e) { setError((e as Error).message); } finally { setApplyingPaste(false); }
+  }, [pasteText, templateId]);
+
   // ── AI-textförslag (3 hook-drivna varianter) ──
   const suggest = useCallback(async () => {
     setError(""); setSuggesting(true); setSuggestions([]);
@@ -265,6 +304,7 @@ export default function StudioPage() {
     setImageUrl((d.imageUrl as string) ?? ""); setImageFocusY((d.imageFocusY as number) ?? 40);
     setBrushColor((d.brushColor as string) || DEFAULT_BRUSH);
     setCaption((d.caption as string) ?? "");
+    setOverrides({ ...DEFAULT_OVERRIDES, ...((d.overrides as object) || {}) });
     setPrevImageUrl("");
   }, []);
 
@@ -563,6 +603,16 @@ export default function StudioPage() {
               </div>
               <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ämne för AI-förslag (valfritt) — t.ex. skolstart, barnglasögon…" className={inputCls} />
 
+              {/* Klistra in eget utkast */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
+                <label className="block text-xs font-medium text-gray-600">Har du ett eget utkast? Klistra in — AI delar upp i rubrik och text</label>
+                <textarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={2} placeholder="Klistra in din egen text här…" className={inputCls} />
+                <button onClick={applyPaste} disabled={applyingPaste || !pasteText.trim()}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+                  {applyingPaste ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Använd min text
+                </button>
+              </div>
+
               {suggestions.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-xs font-medium text-gray-500">Välj ett förslag — klicka för att fylla i:</div>
@@ -656,12 +706,44 @@ export default function StudioPage() {
                   </a>
                 </div>
               </div>
-              <div className="mx-auto rounded-xl overflow-hidden border border-gray-100 bg-gray-100" style={{ width: w * previewScale, height: h * previewScale }}>
-                {previewSrc && (
-                  <iframe title="preview" src={previewSrc} scrolling="no"
-                    style={{ width: w, height: h, border: 0, transform: `scale(${previewScale})`, transformOrigin: "top left" }} />
-                )}
+              <div className="mx-auto rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
+                <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} />
               </div>
+              {payload.imageUrl && (
+                <p className="text-[11px] text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma</p>
+              )}
+            </section>
+
+            {/* Redigera — tweak-lager */}
+            <section className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display font-bold text-gray-900 text-sm uppercase tracking-wide text-gray-500">Redigera</h2>
+                <button onClick={() => { setOverrides(DEFAULT_OVERRIDES); }} className="text-xs text-gray-400 hover:text-gray-700">Återställ</button>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Textstorlek ({Math.round(overrides.fontScale * 100)}%)</label>
+                <input type="range" min={0.6} max={1.6} step={0.05} value={overrides.fontScale} onChange={(e) => setOv({ fontScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+              </div>
+              {payload.imageUrl && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Bildzoom ({Math.round(overrides.imageScale * 100)}%)</label>
+                  <input type="range" min={1} max={3} step={0.05} value={overrides.imageScale} onChange={(e) => setOv({ imageScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+                </div>
+              )}
+              {(meta.fields.brush || meta.fields.badge) && (
+                <div className="flex flex-wrap gap-4 pt-1">
+                  {meta.fields.brush && (
+                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                      <input type="checkbox" checked={!overrides.hideBrush} onChange={(e) => setOv({ hideBrush: !e.target.checked })} style={{ accentColor: primary }} /> Penselruta
+                    </label>
+                  )}
+                  {meta.fields.badge && (
+                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                      <input type="checkbox" checked={!overrides.hideBadge} onChange={(e) => setOv({ hideBadge: !e.target.checked })} style={{ accentColor: primary }} /> Badge
+                    </label>
+                  )}
+                </div>
+              )}
             </section>
 
             {/* Spara i biblioteket (återanvändbar skapelse) */}

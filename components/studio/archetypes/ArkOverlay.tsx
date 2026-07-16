@@ -1,6 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
+import { fs, hlColor, imgPosition, imgScale } from "@/lib/studio/overrides";
 
 // Arketyp 6: Foto + text-overlay. Text ligger PÅ bilden med scrim för läsbarhet.
 // Stil ur brand.content.overlayStyle. För coaching/tjänst där bilden bär känslan
@@ -25,7 +26,7 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
       {/* Foto */}
       {payload.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={payload.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: `center ${payload.imageFocusY}%` }} />
+        <img src={payload.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${c.primary}, ${c.primaryDeep})` }} />
       )}
@@ -52,11 +53,11 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
               {payload.headline2}
             </div>
           ) : null}
-          <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: "#fff", fontSize: 74, lineHeight: 1.02, letterSpacing: -1, textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
+          <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor("#fff", payload), fontSize: fs(74, payload), lineHeight: 1.02, letterSpacing: -1, textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
             {payload.headline1}
           </div>
           {payload.body ? (
-            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: "#fff", opacity: 0.94, fontSize: 32, lineHeight: 1.35, marginTop: 22, maxWidth: 820, textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: "#fff", opacity: 0.94, fontSize: fs(32, payload), lineHeight: 1.35, marginTop: 22, maxWidth: 820, textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
               {payload.body}
             </div>
           ) : null}

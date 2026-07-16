@@ -1,6 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
+import { fs } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
 import { isLightColor } from "@/components/studio/StudioBits";
 
@@ -16,15 +17,15 @@ export default function ArkCitat({ payload, brand }: { payload: StudioPayload; b
     <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, background: bg }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 84px", position: "relative" }}>
         {/* Stort citattecken */}
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 260, lineHeight: 0.7, color: c.accent, height: 130, overflow: "hidden" }}>&ldquo;</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: fs(260, payload), lineHeight: 0.7, color: c.accent, height: 130, overflow: "hidden" }}>&ldquo;</div>
         {payload.headline1 ? (
-          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: c.primary, fontSize: 22, marginBottom: 10 }}>{payload.headline1}</div>
+          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: c.primary, fontSize: fs(22, payload), marginBottom: 10 }}>{payload.headline1}</div>
         ) : null}
-        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 700, color: c.ink, fontSize: 52, lineHeight: 1.22 }}>{payload.body}</div>
+        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 700, color: c.ink, fontSize: fs(52, payload), lineHeight: 1.22 }}>{payload.body}</div>
         {payload.headline2 ? (
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 30 }}>
             <div style={{ width: 46, height: 4, background: c.primary, borderRadius: 2 }} />
-            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, color: c.primaryDeep, fontSize: 28 }}>{payload.headline2}</div>
+            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, color: c.primaryDeep, fontSize: fs(28, payload) }}>{payload.headline2}</div>
           </div>
         ) : null}
       </div>
