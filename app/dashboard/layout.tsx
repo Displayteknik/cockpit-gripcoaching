@@ -73,6 +73,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/studio", label: "Studio", icon: ImageIcon },
         { href: "/dashboard/studio/blogg", label: "Blogg → GHL", icon: FileText },
+        { href: "/dashboard/studio/kalender", label: "Publiceringsöversikt", icon: Calendar },
       ],
     },
     {

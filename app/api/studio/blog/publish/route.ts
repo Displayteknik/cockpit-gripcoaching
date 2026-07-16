@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
       author: b.author || undefined,
       categories: Array.isArray(b.categories) ? b.categories.filter(Boolean) : [],
       imageUrl: b.imageUrl || undefined,
+      imageAltText: b.imageAltText || title,
     });
     if (error || !postId) return NextResponse.json({ error: error || "GHL skapade inget utkast" }, { status: 500 });
     return NextResponse.json({ ok: true, postId, status: "draft" });

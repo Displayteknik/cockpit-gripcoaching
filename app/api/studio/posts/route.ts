@@ -14,10 +14,10 @@ export async function GET() {
     const sb = supabaseService();
     const { data, error } = await sb
       .from("studio_posts")
-      .select("id, template_id, format, title, image_url, payload, updated_at")
+      .select("id, template_id, format, title, image_url, payload, updated_at, ghl_status, scheduled_at")
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false })
-      .limit(60);
+      .limit(120);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ posts: data || [] });
   } catch (e) {

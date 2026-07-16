@@ -80,15 +80,18 @@ export async function ghlFirstUserId(cfg: GhlConfig): Promise<string | null> {
 // Skapa ett UTKAST i Social Planner. Returnerar GHL-postens id.
 export async function ghlCreateDraft(
   cfg: GhlConfig,
-  opts: { accountIds: string[]; summary: string; mediaUrl?: string; userId: string; postType?: "post" | "story" | "reel" },
-): Promise<{ postId?: string; error?: string }> {
+  opts: { accountIds: string[]; summary: string; mediaUrl?: string; userId: string; postType?: "post" | "story" | "reel"; scheduleDate?: string },
+): Promise<{ postId?: string; error?: string; scheduled?: boolean }> {
   try {
+    // scheduleDate satt → schemalägg (publiceras vid tidpunkten). Annars utkast.
+    const scheduled = !!opts.scheduleDate;
     const body: Record<string, unknown> = {
       accountIds: opts.accountIds,
       summary: opts.summary || "",
       type: opts.postType || "post",
       userId: opts.userId,
-      status: "draft",
+      status: scheduled ? "scheduled" : "draft",
+      ...(scheduled ? { scheduleDate: opts.scheduleDate } : {}),
       media: opts.mediaUrl ? [{ url: opts.mediaUrl }] : [],
     };
     const r = await fetch(`${BASE}/social-media-posting/${cfg.locationId}/posts`, {
@@ -104,7 +107,7 @@ export async function ghlCreateDraft(
     // Svaret är { results: { post: { _id } } } (verifierat mot live-API).
     const p = d?.results?.post || d?.post || d;
     const postId = p?._id || p?.id;
-    return { postId: postId ? String(postId) : undefined };
+    return { postId: postId ? String(postId) : undefined, scheduled };
   } catch (e) {
     return { error: (e as Error).message };
   }
@@ -152,6 +155,47 @@ export async function ghlBlogMeta(cfg: GhlConfig): Promise<{ meta?: GhlBlogMeta;
       categories: arr(catsRes?.categories ?? catsRes?.data).map((c) => ({ id: String(c._id || c.id), label: String(c.label || c.name || "") })),
     },
   };
+}
+
+// Befintliga publicerade inlägg (för interna länkar). Kräver status+searchTerm (verifierat).
+export async function ghlListBlogPosts(
+  cfg: GhlConfig,
+  blogId: string,
+  limit = 40,
+): Promise<{ title: string; urlSlug: string; description: string }[]> {
+  const d = await ghlGet(
+    cfg,
+    `/blogs/posts/all?locationId=${cfg.locationId}&blogId=${blogId}&limit=${limit}&offset=0&status=PUBLISHED&searchTerm=`,
+  );
+  const arr = Array.isArray(d?.blogs) ? (d!.blogs as Record<string, unknown>[]) : [];
+  return arr
+    .map((p) => ({ title: String(p.title || ""), urlSlug: String(p.urlSlug || ""), description: String(p.description || "") }))
+    .filter((p) => p.title && p.urlSlug);
+}
+
+// Löser klientens publika blogg-post-URL-bas (t.ex. https://displayteknik.se/blogg/b/)
+// genom att läsa live-sajten och extrahera ett riktigt post-mönster (…/b/<slug>).
+// Garanterar giltiga interna länkar istället för gissade URL:er. null = kunde ej lösa.
+export async function resolveBlogPostBase(publicUrl: string): Promise<string | null> {
+  if (!publicUrl) return null;
+  const origin = publicUrl.replace(/\/+$/, "");
+  const candidates = ["/blogg", "/blog", "", "/nyheter", "/artiklar"];
+  for (const path of candidates) {
+    try {
+      const r = await fetch(`${origin}${path}`, { redirect: "follow" });
+      if (!r.ok) continue;
+      const html = await r.text();
+      // Leta efter ett riktigt post-href: …/b/<slug>
+      const m = html.match(/href="((?:https?:\/\/[^"]+)?\/[^"]*\/b\/)[a-z0-9-]+"/i);
+      if (m) {
+        const base = m[1].startsWith("http") ? m[1] : `${origin}${m[1]}`;
+        return base;
+      }
+    } catch {
+      /* nästa kandidat */
+    }
+  }
+  return null;
 }
 
 export async function ghlCreateBlogDraft(

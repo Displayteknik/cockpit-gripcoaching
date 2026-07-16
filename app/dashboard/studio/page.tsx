@@ -79,6 +79,7 @@ export default function StudioPage() {
   const [ghlLocInput, setGhlLocInput] = useState("");
   const [ghlPitInput, setGhlPitInput] = useState("");
   const [connectingGhl, setConnectingGhl] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
 
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
@@ -367,7 +368,7 @@ export default function StudioPage() {
     try {
       const r = await fetch("/api/studio/publish", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: loadedPostId, accountIds: selectedAccounts, caption, imageUrl }),
+        body: JSON.stringify({ postId: loadedPostId, accountIds: selectedAccounts, caption, imageUrl, scheduleDate: scheduleDate || undefined }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
@@ -378,7 +379,7 @@ export default function StudioPage() {
     } finally {
       setPublishing(false);
     }
-  }, [selectedAccounts, loadedPostId, caption, imageUrl, refreshPosts]);
+  }, [selectedAccounts, loadedPostId, caption, imageUrl, scheduleDate, refreshPosts]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -723,14 +724,21 @@ export default function StudioPage() {
               )}
 
               {ghlConnected && ghlAccounts.length > 0 && (
-                <button onClick={publishDraft} disabled={publishing || !selectedAccounts.length}
-                  className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-                  style={{ background: primary }}>
-                  {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : published ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                  {published ? "Utkast skapat i GHL" : "Skapa utkast i GHL"}
-                </button>
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Schemalägg (valfritt)</label>
+                    <input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className={inputCls} />
+                    {scheduleDate && <button onClick={() => setScheduleDate("")} className="text-xs text-gray-400 hover:text-gray-600 mt-1">Rensa (skapa som utkast istället)</button>}
+                  </div>
+                  <button onClick={publishDraft} disabled={publishing || !selectedAccounts.length}
+                    className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    style={{ background: primary }}>
+                    {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : published ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                    {published ? (scheduleDate ? "Schemalagt i GHL" : "Utkast skapat i GHL") : (scheduleDate ? "Schemalägg i GHL" : "Skapa utkast i GHL")}
+                  </button>
+                </>
               )}
-              <p className="text-xs text-gray-400">Skapar ett utkast i Social Planner — publicerar inte skarpt. Du granskar och schemalägger i GHL.</p>
+              <p className="text-xs text-gray-400">Utan datum: skapar utkast (publicerar inte). Med datum: schemaläggs i Social Planner och publiceras vid tidpunkten.</p>
             </div>
           </div>
         </div>

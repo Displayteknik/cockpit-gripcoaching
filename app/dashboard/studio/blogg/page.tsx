@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FileText, Loader2, Wand2, Send, Check, Eye, Code } from "lucide-react";
+import { FileText, Loader2, Wand2, Send, Check, Eye, Code, Link2, Layers, Image as ImageIcon } from "lucide-react";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface BlogSite { id: string; name: string }
@@ -25,8 +25,13 @@ export default function StudioBloggPage() {
   const [metaDescription, setMetaDescription] = useState("");
   const [urlSlug, setUrlSlug] = useState("");
   const [html, setHtml] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [coverImageAlt, setCoverImageAlt] = useState("");
+  const [internalLinks, setInternalLinks] = useState(0);
   const [hasArticle, setHasArticle] = useState(false);
   const [showHtml, setShowHtml] = useState(false);
+  const [repurposing, setRepurposing] = useState(false);
+  const [repurposed, setRepurposed] = useState(0);
 
   // GHL blogg-meta
   const [connected, setConnected] = useState<boolean | null>(null);
@@ -69,6 +74,8 @@ export default function StudioBloggPage() {
       const a = d.article;
       setTitle(a.title || ""); setMetaTitle(a.metaTitle || ""); setMetaDescription(a.metaDescription || "");
       setUrlSlug(a.urlSlug || ""); setHtml(a.html || ""); setHasArticle(true);
+      setCoverImageUrl(a.coverImageUrl || ""); setCoverImageAlt(a.coverImageAlt || "");
+      setInternalLinks(d.internalLinksCount || 0); setRepurposed(0);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -85,6 +92,7 @@ export default function StudioBloggPage() {
         body: JSON.stringify({
           blogId, title, html, description: metaDescription, urlSlug,
           author: authorId || undefined, categories: categoryId ? [categoryId] : [],
+          imageUrl: coverImageUrl || undefined, imageAltText: coverImageAlt || undefined,
         }),
       });
       const d = await r.json();
@@ -95,7 +103,25 @@ export default function StudioBloggPage() {
     } finally {
       setPublishing(false);
     }
-  }, [blogId, title, html, metaDescription, urlSlug, authorId, categoryId]);
+  }, [blogId, title, html, metaDescription, urlSlug, authorId, categoryId, coverImageUrl, coverImageAlt]);
+
+  const repurpose = useCallback(async () => {
+    setError(""); setRepurposing(true);
+    try {
+      const plain = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 4000);
+      const r = await fetch("/api/studio/blog/repurpose", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, articleText: plain, topic }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte skapa sociala inlägg");
+      setRepurposed(d.count || 0);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setRepurposing(false);
+    }
+  }, [html, title, topic]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -143,6 +169,19 @@ export default function StudioBloggPage() {
                   {showHtml ? <><Eye className="w-3.5 h-3.5" /> Förhandsvisning</> : <><Code className="w-3.5 h-3.5" /> Redigera HTML</>}
                 </button>
               </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-600"><Link2 className="w-3.5 h-3.5" /> {internalLinks} interna länkar</span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-600"><ImageIcon className="w-3.5 h-3.5" /> {coverImageUrl ? "Omslagsbild klar" : "Ingen bild"}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-600">FAQ-schema</span>
+              </div>
+
+              {coverImageUrl && (
+                <div className="rounded-xl overflow-hidden border border-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={coverImageUrl} alt={coverImageAlt} className="w-full max-h-64 object-cover" />
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Titel (H1)</label>
                 <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} />
@@ -218,6 +257,24 @@ export default function StudioBloggPage() {
                   <p className="text-xs text-gray-400">Skapar ett utkast — publicerar aldrig skarpt. Du granskar och publicerar i GHL.</p>
                 </>
               )}
+            </section>
+
+            {/* Repurposing: blogg → sociala inlägg */}
+            <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
+              <h2 className="font-display font-bold text-gray-900 text-lg">4. Gör om till sociala inlägg</h2>
+              <p className="text-sm text-gray-500">Skapa 3 färdiga social-inlägg ur artikeln (olika hooks) — sparas i Studio-biblioteket, redo att lägga bild på och publicera/schemalägga.</p>
+              <div className="flex items-center gap-3">
+                <button onClick={repurpose} disabled={repurposing}
+                  className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                  style={{ background: primary }}>
+                  {repurposing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />} Skapa sociala inlägg
+                </button>
+                {repurposed > 0 && (
+                  <span className="inline-flex items-center gap-1.5 text-sm text-emerald-700">
+                    <Check className="w-4 h-4" /> {repurposed} inlägg sparade — <a href="/dashboard/studio" className="underline">öppna i Studio</a>
+                  </span>
+                )}
+              </div>
             </section>
           </>
         )}

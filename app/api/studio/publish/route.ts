@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
     const accountIds: string[] = Array.isArray(body.accountIds) ? body.accountIds.filter(Boolean) : [];
     const caption = (body.caption || "").toString();
     const imageUrl = (body.imageUrl || "").toString();
+    // ISO-datum i framtiden → schemalägg, annars utkast.
+    const scheduleDate = body.scheduleDate ? new Date(body.scheduleDate).toISOString() : undefined;
     if (!accountIds.length) return NextResponse.json({ error: "Välj minst ett konto att publicera till" }, { status: 400 });
 
     const cfg = await getGhlConfig(clientId);
@@ -29,20 +31,20 @@ export async function POST(req: NextRequest) {
     const userId = await ghlFirstUserId(cfg);
     if (!userId) return NextResponse.json({ error: "Kunde inte hämta GHL-användare för location" }, { status: 500 });
 
-    const { postId, error } = await ghlCreateDraft(cfg, { accountIds, summary: caption, mediaUrl: imageUrl, userId });
-    if (error || !postId) return NextResponse.json({ error: error || "GHL skapade inget utkast" }, { status: 500 });
+    const { postId, error, scheduled } = await ghlCreateDraft(cfg, { accountIds, summary: caption, mediaUrl: imageUrl, userId, scheduleDate });
+    if (error || !postId) return NextResponse.json({ error: error || "GHL skapade inget inlägg" }, { status: 500 });
 
     // Uppdatera bibliotekets rad om vi publicerade en sparad skapelse.
     if (body.postId) {
       const sb = supabaseService();
       await sb
         .from("studio_posts")
-        .update({ ghl_status: "draft", ghl_post_id: postId, caption, updated_at: new Date().toISOString() })
+        .update({ ghl_status: scheduled ? "scheduled" : "draft", ghl_post_id: postId, caption, scheduled_at: scheduleDate || null, updated_at: new Date().toISOString() })
         .eq("id", body.postId)
         .eq("client_id", clientId);
     }
 
-    return NextResponse.json({ ok: true, postId, status: "draft" });
+    return NextResponse.json({ ok: true, postId, status: scheduled ? "scheduled" : "draft" });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
