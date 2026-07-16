@@ -25,27 +25,32 @@ export async function POST(req: NextRequest) {
     if (!variants.length) return NextResponse.json({ error: "Kunde inte skapa inlägg ur artikeln" }, { status: 500 });
 
     const slug = client?.slug || "opticur";
-    const rows = variants.map((v) => ({
-      client_id: clientId,
-      template_id: "opticur-foto-gul-ruta",
-      format: "1080x1350",
-      title: v.headline1 || title,
-      payload: {
-        clientId: slug,
-        templateId: "opticur-foto-gul-ruta",
+    // Arketyp per hook: berättelse → foto (bild läggs till), annars statement (klar utan bild).
+    const pickArchetype = (hook: string) => (hook === "berättelse" ? "ark-foto-ruta" : "ark-statement");
+    const rows = variants.map((v) => {
+      const templateId = pickArchetype(v.hookType);
+      return {
+        client_id: clientId,
+        template_id: templateId,
         format: "1080x1350",
-        headline1: v.headline1,
-        headline2: v.headline2,
-        body: v.body,
-        badge: { enabled: false, line1: "", line2: "" },
-        imageUrl: "",
-        imageFocusY: 40,
-        brushColor: "",
-        source: "blog-repurpose",
-      },
-      image_url: null,
-      updated_at: new Date().toISOString(),
-    }));
+        title: v.headline1 || title,
+        payload: {
+          clientId: slug,
+          templateId,
+          format: "1080x1350",
+          headline1: v.headline1,
+          headline2: v.headline2,
+          body: v.body,
+          badge: { enabled: false, line1: "", line2: "" },
+          imageUrl: "",
+          imageFocusY: 40,
+          brushColor: "",
+          source: "blog-repurpose",
+        },
+        image_url: null,
+        updated_at: new Date().toISOString(),
+      };
+    });
 
     const sb = supabaseService();
     const { data, error } = await sb.from("studio_posts").insert(rows).select("id");

@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
 } from "lucide-react";
-import { TEMPLATE_META } from "@/lib/studio/templates-meta";
+import { TEMPLATE_META, templatesForClient } from "@/lib/studio/templates-meta";
 import type { StudioFormat } from "@/lib/studio/payload";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
@@ -84,6 +84,7 @@ export default function StudioPage() {
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
   const slug = client?.slug || "opticur";
+  const availableTemplates = useMemo(() => templatesForClient(slug), [slug]);
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
@@ -419,7 +420,7 @@ export default function StudioPage() {
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
               <h2 className="font-display font-bold text-gray-900 text-lg">Mall</h2>
               <div className="grid grid-cols-2 gap-3">
-                {TEMPLATE_META.map((t) => {
+                {availableTemplates.map((t) => {
                   const active = t.id === templateId;
                   return (
                     <button key={t.id} onClick={() => setTemplateId(t.id)}
