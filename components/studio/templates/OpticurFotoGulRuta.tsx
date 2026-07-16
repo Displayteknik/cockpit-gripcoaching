@@ -15,10 +15,10 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
 
   // Penselfärg: vald färg, annars mallens standard (Opticur-gul). Auto-kontrast så
   // text + sol-ikon förblir läsbara på valfri färg (svart på ljus, vitt på mörk).
-  const brushColor = payload.brushColor || c.yellow;
+  const brushColor = payload.brushColor || c.accent;
   const light = isLightColor(brushColor);
-  const inkColor = light ? c.black : c.white;
-  const iconColor = light ? c.greenDeep : c.white;
+  const inkColor = light ? c.ink : c.paper;
+  const iconColor = light ? c.primaryDeep : c.paper;
 
   return (
     <div
@@ -28,7 +28,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
         height: h,
         position: "relative",
         overflow: "hidden",
-        background: c.white,
+        background: c.paper,
         display: "flex",
         flexDirection: "column",
         fontFamily: "Inter, sans-serif",
@@ -41,7 +41,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
             fontFamily: "Inter, sans-serif",
             fontWeight: 800,
             textTransform: "uppercase",
-            color: c.greenDark,
+            color: c.primary,
             fontSize: 62,
             lineHeight: 1.0,
             letterSpacing: -0.5,
@@ -54,7 +54,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
             style={{
               fontFamily: "Inter, sans-serif",
               fontWeight: 800,
-              color: c.black,
+              color: c.ink,
               fontSize: 50,
               lineHeight: 1.05,
               marginTop: 6,
@@ -132,9 +132,9 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
             <StarBadge
               line1={payload.badge.line1}
               line2={payload.badge.line2}
-              fill={c.yellow}
-              textColor={c.black}
-              strokeColor={c.yellow}
+              fill={c.accent}
+              textColor={c.ink}
+              strokeColor={c.accent}
               size={224}
             />
           </div>

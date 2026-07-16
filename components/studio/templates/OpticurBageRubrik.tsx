@@ -22,7 +22,7 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
         height: h,
         position: "relative",
         overflow: "hidden",
-        background: c.white,
+        background: c.paper,
         display: "flex",
         flexDirection: "column",
         fontFamily: "Inter, sans-serif",
@@ -52,9 +52,9 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
             <StarBadge
               line1={payload.badge.line1}
               line2={payload.badge.line2}
-              fill={c.yellow}
-              textColor={c.black}
-              strokeColor={c.yellow}
+              fill={c.accent}
+              textColor={c.ink}
+              strokeColor={c.accent}
               size={200}
             />
           </div>
@@ -68,8 +68,8 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
           preserveAspectRatio="none"
           style={{ position: "absolute", left: 0, bottom: -1, display: "block" }}
         >
-          <path d="M0,150 L0,44 Q540,110 1080,44 L1080,150 Z" fill={c.white} />
-          <path d="M0,44 Q540,110 1080,44" fill="none" stroke={c.greenDark} strokeWidth="5" />
+          <path d="M0,150 L0,44 Q540,110 1080,44 L1080,150 Z" fill={c.paper} />
+          <path d="M0,44 Q540,110 1080,44" fill="none" stroke={c.primary} strokeWidth="5" />
         </svg>
       </div>
 
@@ -88,8 +88,8 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
       >
         {/* Gula streck-accenter */}
         <div style={{ display: "flex", gap: 12, marginBottom: 6 }}>
-          <span style={{ width: 44, height: 8, background: c.yellow, borderRadius: 5, transform: "rotate(-18deg)" }} />
-          <span style={{ width: 26, height: 8, background: c.yellow, borderRadius: 5, transform: "rotate(-6deg)" }} />
+          <span style={{ width: 44, height: 8, background: c.accent, borderRadius: 5, transform: "rotate(-18deg)" }} />
+          <span style={{ width: 26, height: 8, background: c.accent, borderRadius: 5, transform: "rotate(-6deg)" }} />
         </div>
 
         {/* Gul jätterubrik med grön kontur */}
@@ -98,8 +98,8 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
             fontFamily: "Inter, sans-serif",
             fontWeight: 800,
             textTransform: "uppercase",
-            color: c.yellow,
-            WebkitTextStroke: `4px ${c.greenDark}`,
+            color: c.accent,
+            WebkitTextStroke: `4px ${c.primary}`,
             paintOrder: "stroke fill",
             fontSize: 104,
             lineHeight: 0.98,
@@ -115,7 +115,7 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
             style={{
               fontFamily: "Inter, sans-serif",
               fontWeight: 700,
-              color: c.greenDark,
+              color: c.primary,
               fontSize: 42,
               lineHeight: 1.14,
               marginTop: 26,
@@ -131,7 +131,7 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
             style={{
               fontFamily: "Inter, sans-serif",
               fontWeight: 500,
-              color: c.black,
+              color: c.ink,
               fontSize: 26,
               lineHeight: 1.24,
               marginTop: 22,

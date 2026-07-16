@@ -21,7 +21,7 @@ export default function ClientFooterOpticur({ brand }: { brand: StudioBrand }) {
   }
 
   return (
-    <div style={{ position: "relative", width: "100%", height: 340, background: colors.white, marginTop: "auto" }}>
+    <div style={{ position: "relative", width: "100%", height: 340, background: colors.paper, marginTop: "auto" }}>
       {/* OPTICUR — riktig wordmark (logo.png, innehåller glasögon) */}
       <div style={{ position: "absolute", top: 30, left: 0, right: 0, textAlign: "center" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,10 +41,10 @@ export default function ClientFooterOpticur({ brand }: { brand: StudioBrand }) {
           gap: 14,
         }}
       >
-        <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 28, color: colors.greenDeep }}>
+        <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 28, color: colors.primaryDeep }}>
           {footer.tagline}
         </span>
-        <GlassesLogo color={colors.greenDark} />
+        <GlassesLogo color={colors.primary} />
       </div>
 
       {/* Avdelarlinje */}
@@ -61,7 +61,7 @@ export default function ClientFooterOpticur({ brand }: { brand: StudioBrand }) {
           fontFamily: "Inter, sans-serif",
           fontWeight: 500,
           fontSize: 23,
-          color: colors.black,
+          color: colors.ink,
         }}
       >
         {footer.address}
@@ -90,8 +90,8 @@ export default function ClientFooterOpticur({ brand }: { brand: StudioBrand }) {
           right: 0,
           bottom: 0,
           height: 60,
-          background: colors.greenDark,
-          color: colors.white,
+          background: colors.primary,
+          color: colors.paper,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -101,7 +101,7 @@ export default function ClientFooterOpticur({ brand }: { brand: StudioBrand }) {
           letterSpacing: 1,
         }}
       >
-        {footer.bookingLabel}
+        {footer.ctaLabel}
       </div>
     </div>
   );
