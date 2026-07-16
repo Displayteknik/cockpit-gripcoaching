@@ -1,7 +1,12 @@
 # Brand Kit & mall-arketyper — plan (v1 + v2)
 
-> Skriven 2026-07-16 (Fable 5). Status: **VÄNTAR PÅ GODKÄNNANDE — ingen kod skrivs innan Håkan säger kör.**
-> Kompletterar `PLAN.md` (Fas 0–5). Detta dokument ersätter Fas 5-punkten "Mallar för HM Motor, Ledarskapskultur, Displayteknik" med en starkare arkitektur.
+> Skriven 2026-07-16 (Fable 5). Status: **GENOMFÖRD — Etapp A–E byggda & live samma dag** (commits `08e2140`→`7a99808`).
+> Kompletterar `PLAN.md` (Fas 0–5). Detta dokument ersatte Fas 5-punkten "Mallar för HM Motor, Ledarskapskultur, Displayteknik" med en starkare arkitektur.
+>
+> **KORRIGERING 2026-07-16 (kväll):** arketypfamiljen här (5 affisch-arketyper) räcker inte för coaching/tjänsteföretag —
+> de behöver overlay-, karusell- och text-först-format. Se **`docs/CONTENT-STRATEGI.md`** (överordnad) för
+> formatbiblioteket (8 arketyper + `contentProfile`) och den totala innehållsarkitekturen. Allt i detta dokument
+> gäller fortsatt — det utökas, ändras inte.
 
 ---
 

@@ -1,7 +1,10 @@
 # PLAN — Studio (Publiceringsmotorn)
 
 > Fas 0-leverans enligt `KICKOFF-Publiceringsmotorn-Cockpit.md`. Skriven 2026-07-15.
-> Status: VÄNTAR PÅ GODKÄNNANDE innan Fas 1 påbörjas.
+> Status: **Fas 0–5 GENOMFÖRDA** (social + blogg + repurposing + schemaläggning + brand kit A–E, 2026-07-16).
+> **Övergripande riktning framåt: `docs/CONTENT-STRATEGI.md`** (en innehållsupplevelse för hela Cockpit —
+> blogg-konsolidering, formatbibliotek per klienttyp, en kalender, en publiceringsmodul).
+> Detta dokument är historik/referens för Studio-fundamentet.
 
 ---
 
