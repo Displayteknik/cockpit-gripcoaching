@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async headers() {
+    // Studio-render aldrig cachad i webbläsaren → preview visar alltid senaste koden.
+    return [
+      {
+        source: "/studio/render/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0, must-revalidate" }],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

@@ -239,21 +239,34 @@ Write ONLY the prompt, 3-4 sentences, hyper-specific about: subject, environment
 
 export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16" | "16:9" | "4:3" | "3:4" = "1:1"): Promise<{ success?: boolean; image?: string; error?: string }> {
   if (!GEMINI_KEY) return { error: "GEMINI_API_KEY saknas" };
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio } }),
-    });
-    const data = await r.json();
-    if (data.error) return { error: data.error.message || "Bildgenerering misslyckades" };
-    if (data.predictions?.[0]?.bytesBase64Encoded) {
-      return { success: true, image: `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}` };
+  // Imagen-modellerna (imagen-4.0-*) är stängda för nya nyckelanvändare → använd Gemini
+  // native image ("Nano Banana"), samma motor som app/api/posts/[id]/nano-banana.
+  const fullPrompt = `${prompt}\nBildformat/komposition: ${aspectRatio}.`;
+  const models = ["gemini-2.5-flash-image", "gemini-3.1-flash-image-preview"];
+  let lastError = "Ingen bild genererades";
+  for (const model of models) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+          generationConfig: { responseModalities: ["IMAGE"] },
+        }),
+      });
+      if (!r.ok) { lastError = (await r.text()).slice(0, 200); continue; }
+      const data = await r.json();
+      const part = data?.candidates?.[0]?.content?.parts?.find(
+        (p: { inlineData?: { data?: string; mimeType?: string } }) => p.inlineData?.data,
+      );
+      if (part?.inlineData?.data) {
+        return { success: true, image: `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}` };
+      }
+    } catch (e) {
+      lastError = "Nätverksfel: " + (e as Error).message;
     }
-    return { error: "Ingen bild genererades" };
-  } catch (e) {
-    return { error: "Nätverksfel: " + (e as Error).message };
   }
+  return { error: lastError };
 }
 
 export async function generateFlux(prompt: string, aspect: "square" | "portrait" | "landscape" = "square"): Promise<{ success?: boolean; image?: string; error?: string }> {

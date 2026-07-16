@@ -1,0 +1,30 @@
+{
+  "clientId": "opticur",
+  "name": "Opticur",
+  "colors": {
+    "greenDark": "#1A6B3C",
+    "greenDeep": "#0F4F2A",
+    "greenLight": "#5AAF32",
+    "mint": "#7ECECA",
+    "yellow": "#F2B01E",
+    "black": "#1A1A1A",
+    "white": "#FFFFFF"
+  },
+  "fonts": {
+    "headline": "Inter",
+    "body": "Inter",
+    "logo": "Playfair Display"
+  },
+  "footer": {
+    "tagline": "Leg. optiker",
+    "address": "Storgatan 44 · Högsby · Tel 0491-200 62",
+    "bookingLabel": "Boka online via bokadirekt.se",
+    "bookingUrl": "https://www.bokadirekt.se/"
+  },
+  "assets": {
+    "logo": "/clients/opticur/logo.png",
+    "zeiss": "/clients/opticur/zeiss.svg",
+    "qr": "/clients/opticur/qr.png"
+  },
+  "_todo": "Kvar (platshållare): zeiss.svg → officiell ZEISS-logga. QR + font (Inter/Playfair) + OPTICUR-logga (Playfair-text) + färger = riktiga, från Opticur_Editor_Tisdag.html. (Penselrutan ritas numera som färgbar vektor — ingen bildfil behövs.)"
+}

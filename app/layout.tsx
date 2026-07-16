@@ -14,7 +14,7 @@ function isHmMotorSurface(path: string): boolean {
   if (
     path === "/k" || path.startsWith("/k/") || path.startsWith("/k-") ||
     path.startsWith("/logga-in") || path.startsWith("/ikigai") ||
-    path.startsWith("/sites/")
+    path.startsWith("/sites/") || path.startsWith("/studio/")
   ) return false;
   return true;
 }

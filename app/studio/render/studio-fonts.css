@@ -1,0 +1,16 @@
+/* Självhostade typsnitt för Studio-render — inga CDN-anrop, deterministisk offline-export.
+   Speglar Opticurs Canva/editor-system (Opticur_Editor_Tisdag.html):
+   Inter (rubriker + brödtext) + Playfair Display 900 (OPTICUR-logotyp, "fet serif"). */
+
+@font-face { font-family: "Inter"; src: url("/fonts/inter-500.ttf") format("truetype"); font-weight: 500; font-style: normal; font-display: block; }
+@font-face { font-family: "Inter"; src: url("/fonts/inter-600.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: block; }
+@font-face { font-family: "Inter"; src: url("/fonts/inter-700.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: "Inter"; src: url("/fonts/inter-800.ttf") format("truetype"); font-weight: 800; font-style: normal; font-display: block; }
+@font-face { font-family: "Inter"; src: url("/fonts/inter-900.ttf") format("truetype"); font-weight: 900; font-style: normal; font-display: block; }
+@font-face { font-family: "Playfair Display"; src: url("/fonts/playfair-900.ttf") format("truetype"); font-weight: 900; font-style: normal; font-display: block; }
+
+/* Render-ytan: nolla ev. marginaler så element-screenshot blir exakt. */
+#studio-render-root {
+  display: inline-block;
+  line-height: 0;
+}

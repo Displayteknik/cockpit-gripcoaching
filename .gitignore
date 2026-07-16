@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Studio-export
+/exports/
+
+# scratch
+/scratchpad/

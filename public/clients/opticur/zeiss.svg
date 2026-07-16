@@ -1,0 +1,7 @@
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- PLATSHÅLLARE: ZEISS-partnerbadge. Ersätts av Håkans officiella ZEISS-logga (PNG). -->
+  <rect x="1" y="1" width="238" height="238" rx="6" fill="#FFFFFF" stroke="#D8DCE6" stroke-width="2"/>
+  <text x="120" y="120" text-anchor="middle" font-family="Poppins, Arial, sans-serif" font-weight="800" font-size="62" letter-spacing="2" fill="#1A2F8F">ZEISS</text>
+  <line x1="46" y1="146" x2="194" y2="146" stroke="#1A2F8F" stroke-width="2.5"/>
+  <text x="120" y="180" text-anchor="middle" font-family="Poppins, Arial, sans-serif" font-weight="500" font-size="26" fill="#1A2F8F">Seeing beyond</text>
+</svg>

@@ -69,6 +69,12 @@ function buildNavSections(resourceModule: string): NavSection[] {
       ],
     },
     {
+      label: "Studio",
+      items: [
+        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon },
+      ],
+    },
+    {
       label: "Innehåll & SEO",
       items: [
         { href: "/dashboard/blogg-maskin", label: "Blogg-maskin", icon: BookOpen },
