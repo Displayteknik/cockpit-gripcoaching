@@ -11,6 +11,10 @@ interface BlogCategory { id: string; label: string }
 
 const DEFAULT_COLOR = "#1A6B3C";
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export default function StudioBloggPage() {
   const [client, setClient] = useState<ClientInfo | null>(null);
   const primary = client?.primary_color || DEFAULT_COLOR;
@@ -216,10 +220,8 @@ export default function StudioBloggPage() {
               {showHtml ? (
                 <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={16} className={`${inputCls} font-mono text-xs`} />
               ) : (
-                <div className="rounded-xl border border-gray-100 bg-white p-6 prose prose-sm max-w-none overflow-x-auto">
-                  <h1>{title}</h1>
-                  <div dangerouslySetInnerHTML={{ __html: html }} />
-                </div>
+                <div className="blog-content rounded-xl border border-gray-100 bg-white p-8 max-w-none overflow-x-auto"
+                  dangerouslySetInnerHTML={{ __html: `<h1>${escapeHtml(title)}</h1>${html}` }} />
               )}
             </section>
 

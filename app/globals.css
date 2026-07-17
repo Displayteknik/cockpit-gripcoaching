@@ -90,7 +90,16 @@ html {
 }
 
 .blog-content.blog-content > * + * {
-  margin-top: 1.1em;
+  margin-top: 1.35em;
+}
+
+.blog-content.blog-content h1 {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 1.25rem;
 }
 
 .blog-content.blog-content p.lead,
@@ -127,10 +136,22 @@ html {
   padding-left: 0;
   margin: 1.25rem 0;
 }
+/* Punktlistor med synlig färgad punkt (uppstyrt, luftigt) */
 .blog-content.blog-content ul li {
-  padding: 0.5rem 0 0.5rem 0;
-  margin: 0.25rem 0;
-  line-height: 1.6;
+  position: relative;
+  padding: 0.4rem 0 0.4rem 1.7rem;
+  margin: 0.35rem 0;
+  line-height: 1.65;
+}
+.blog-content.blog-content ul li::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.98rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-brand-blue);
 }
 .blog-content.blog-content ol {
   padding-left: 1.5rem;
