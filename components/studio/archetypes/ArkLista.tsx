@@ -1,5 +1,5 @@
 import type { StudioPayload } from "@/lib/studio/payload";
-import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs, hlColor, bodyColor } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
@@ -8,7 +8,7 @@ import { isLightColor } from "@/components/studio/StudioBits";
 // Arketyp 4: Lista/tips. Rubrik + numrerade punkter (body delas på radbrytning/·/;).
 export default function ArkLista({ payload, brand }: { payload: StudioPayload; brand: StudioBrand }) {
   const { w, h } = FORMAT_DIMENSIONS[payload.format];
-  const portrait = payload.format === "1080x1350";
+  const portrait = isPortraitFormat(payload.format);
   const c = brand.colors;
   const numInk = isLightColor(c.accent) ? c.ink : c.paper;
   const items = payload.body.split(/\n|·|;|•/).map((s) => s.trim()).filter(Boolean).slice(0, 4);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { getGhlConfig, ghlFirstUserId, ghlCreateDraft } from "@/lib/studio/ghl";
+import { derivePostType, type StudioFormat } from "@/lib/studio/payload";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -16,9 +17,16 @@ export async function POST(req: NextRequest) {
     const accountIds: string[] = Array.isArray(body.accountIds) ? body.accountIds.filter(Boolean) : [];
     const caption = (body.caption || "").toString();
     const imageUrl = (body.imageUrl || "").toString();
+    const videoUrl = (body.videoUrl || "").toString();
+    const format = (body.format || "1080x1350") as StudioFormat;
+    // 9:16 + video = reel, 9:16 utan video = story, annars vanligt inlägg.
+    const postType = derivePostType(format, videoUrl);
+    // Reel publicerar videon (Studio-rendern är 9:16-cover); story/post publicerar bilden.
+    const mediaUrl = postType === "reel" ? videoUrl : imageUrl;
     // ISO-datum i framtiden → schemalägg, annars utkast.
     const scheduleDate = body.scheduleDate ? new Date(body.scheduleDate).toISOString() : undefined;
     if (!accountIds.length) return NextResponse.json({ error: "Välj minst ett konto att publicera till" }, { status: 400 });
+    if (postType === "reel" && !videoUrl) return NextResponse.json({ error: "Reel kräver en uppladdad video" }, { status: 400 });
 
     const cfg = await getGhlConfig(clientId);
     if (!cfg) {
@@ -31,7 +39,7 @@ export async function POST(req: NextRequest) {
     const userId = await ghlFirstUserId(cfg);
     if (!userId) return NextResponse.json({ error: "Kunde inte hämta GHL-användare för location" }, { status: 500 });
 
-    const { postId, error, scheduled } = await ghlCreateDraft(cfg, { accountIds, summary: caption, mediaUrl: imageUrl, userId, scheduleDate });
+    const { postId, error, scheduled } = await ghlCreateDraft(cfg, { accountIds, summary: caption, mediaUrl, userId, postType, scheduleDate });
     if (error || !postId) return NextResponse.json({ error: error || "GHL skapade inget inlägg" }, { status: 500 });
 
     // Uppdatera bibliotekets rad om vi publicerade en sparad skapelse.

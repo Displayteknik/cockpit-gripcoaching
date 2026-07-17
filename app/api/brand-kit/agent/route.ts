@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getActiveClient } from "@/lib/client-context";
 import { analyzeSite } from "@/lib/studio/brand-agent";
+import { processLogo } from "@/lib/studio/logo-assets";
 import { generate } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
 
@@ -51,7 +52,10 @@ export async function POST() {
     const proposed: Record<string, unknown> = {};
     if (Object.keys(analysis.colors).length) proposed.colors = analysis.colors;
     if (analysis.fonts.headline) proposed.fonts = analysis.fonts;
-    if (analysis.logo?.primaryUrl) proposed.logo = analysis.logo;
+    // §00: hittad logga → hosta ljus + mörk version så den funkar på alla bakgrunder (aldrig namntext).
+    if (analysis.logo?.primaryUrl) {
+      proposed.logo = await processLogo(client.id, analysis.logo.primaryUrl);
+    }
     if (Object.keys(imageStyle).length) proposed.imageStyle = imageStyle;
     if (donts.length) proposed.donts = donts;
     if (Object.keys(contentProfile).length) proposed.contentProfile = contentProfile;

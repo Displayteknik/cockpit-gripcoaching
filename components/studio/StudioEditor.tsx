@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { STUDIO_TEMPLATES } from "@/components/studio/registry";
 import type { StudioPayload } from "@/lib/studio/payload";
+import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 
 // Live-editor: renderar mall-komponenten DIREKT i sidan (inte iframe) → WYSIWYG med
@@ -30,16 +31,17 @@ const IMAGE_TEMPLATES = new Set(["ark-overlay", "ark-foto-ruta", "ark-erbjudande
 export interface ImagePatch { imageX?: number; imageFocusY?: number; imageScale?: number }
 
 export default function StudioEditor({
-  templateId, payload, brand, scale, onImagePatch,
+  templateId, payload, brand, scale, onImagePatch, slideIndex,
 }: {
   templateId: string;
   payload: StudioPayload;
   brand: StudioBrand | null;
   scale: number;
   onImagePatch: (p: ImagePatch) => void;
+  slideIndex?: number;
 }) {
   const Tpl = STUDIO_TEMPLATES[templateId]?.component;
-  const [w, h] = payload.format === "1080x1080" ? [1080, 1080] : [1080, 1350];
+  const { w, h } = FORMAT_DIMENSIONS[payload.format] ?? FORMAT_DIMENSIONS["1080x1350"];
   const drag = useRef<{ x: number; y: number; fx: number; fy: number } | null>(null);
   const canDragImage = Boolean(payload.imageUrl) && IMAGE_TEMPLATES.has(templateId);
 
@@ -71,7 +73,7 @@ export default function StudioEditor({
     <div style={{ position: "relative", width: w * scale, height: h * scale }}>
       <style>{FONT_CSS}</style>
       <div style={{ width: w, height: h, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-        <Tpl payload={payload} brand={brand} />
+        <Tpl payload={payload} brand={brand} slideIndex={slideIndex} />
       </div>
       {canDragImage && (
         <div

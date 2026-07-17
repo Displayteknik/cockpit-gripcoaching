@@ -6,6 +6,36 @@
 > (2) inläggsmotorn är Opticur-formad — coaching/tjänsteföretag behöver andra format (mer text, overlay på bild),
 > (3) motorerna vi redan byggt (IG-motorn, LinkedIn-motorn, Studio) måste sättas ihop till EN genomtänkt enhet.
 > Förebild för känslan: MySales Coach-dashboarden — guidat stegflöde, statusbadges, allt på ett ställe.
+>
+> **Tillägg 2026-07-17 (Håkan):** superprompten satte aldrig en KVALITETSNIVÅ. Den definieras nu i §00 nedan
+> och är överordnad allt annat. Dessutom: ett inlägg = **visuellt + brödtext (caption)**. Captionen är hälften
+> av inlägget och ska vara en förstaklassig, egen skapare/redigerare i flödet — aldrig en eftertanke i publicering.
+
+---
+
+## 00. Kvalitetsnivån — VÄRLDSKLASS (icke förhandlingsbar, grundar allt)
+
+Allt som lämnar Cockpit ska hålla **AD-nivå** — som gjort av en senior art director + copywriter, inte av en mall.
+Om något ser generiskt, platt eller "AI-gjort" ut är det en **bugg**, inte en smaksak. Riktmärke: en byrå tar
+15 000 kr för inlägget och kunden blir stolt att dela det.
+
+**Hårda regler (varje genererat inlägg måste passera):**
+
+1. **Riktig logga, alltid.** Aldrig namntext som platshållare. Loggan hämtas/sparas per klient (ljus + mörk
+   version) och väljs efter faktisk bakgrundsljushet. Saknas logga → hämta den, generera inte runt problemet.
+2. **Riktigt foto, aldrig tom yta.** Foto-mallar utan bild = grå placeholder = platt. Ett inlägg publiceras
+   aldrig med tom bildyta — Studio föreslår/genererar en on-brand bild (kundens bildstil) om användaren inte
+   laddat upp en. Bild bär känslan; texten är budskapet.
+3. **Brödtext (caption) är obligatorisk och skriven på riktigt.** Krok först, värde i mitten, tydlig uppmaning,
+   relevanta hashtags. Egen skapare/redigerare — se §4b.
+4. **Varumärket bär hela vägen.** Färgroller, typsnitt, element och bildstil ur brand kit — inte Studios
+   standard. Samma arketyp × olika kit = tydligt olika varumärke.
+5. **Aldrig AI-språk.** Förbjudet: kraftfull, banbrytande, game-changer, handlar om, nästa nivå, holistisk,
+   skalbar. Svenska tecken å/ä/ö korrekt. Skriv som människa.
+6. **Äkta data.** Aldrig påhittade siffror/priser/volym → platshållare tydligt markerade.
+
+**Grind:** varje etapp granskas visuellt mot den här nivån (export-PNG / render), inte bara "kompilerar".
+En leverans som inte får dig stolt att visa upp för kunden är inte klar.
 
 ---
 
@@ -140,6 +170,27 @@ Att bygga story/reel/karusell både i gamla verktyget OCH i Studio = bygga bort 
   DM & Pipeline + Analys → egna vyer i innehålls-navet (Etapp I); IG Graph direkt-publicering → den
   gemensamma publiceringsmodulen bredvid GHL Social Planner (Etapp J).
 - Kort: Studio ritar, IG-motorns rytm/pipeline/analys/IG-publicering lever vidare runt omkring.
+
+---
+
+## 4b. Brödtexten (caption) — förstaklassig skapare, inte eftertanke
+
+**Problem (Håkan 2026-07-17):** vi byggde det visuella (bild/karusell/story/reel), men brödtexten — captionen
+man faktiskt LÄSER under inlägget — hade ingen egen skapare/redigerare. Den låg begravd i publiceringsrutan,
+såg bara rubriken (inte karusellens slides), gav en enda variant. Ett inlägg = visuellt **+** text. Båda ska vara
+förstaklassiga.
+
+**Målbild:** en egen **"Bildtext"-sektion** i skapandet (vänsterkolumnen, bredvid det visuella), för ALLA
+inläggstyper (feed/karusell/story/reel):
+- **Skapare:** "Föreslå bildtext" som grundas i hela inläggets innehåll (rubrik + brödtext ELLER alla karusell-slides
+  ELLER reel-ämne) + varumärkesröst + hook-playbook. Struktur: krok först, värde/berättelse i mitten (korta stycken,
+  radbrytningar), tydlig uppmaning, 1–5 relevanta hashtags.
+- **Redigerare:** fri text, teckenräknare, "skriv om"/varianter, klistra-in eget.
+- **Genomslag:** samma caption flödar till publiceringen (GHL summary / IG Graph) — publiceringsrutan visar den
+  bara som förhandsvisning ("redigeras ovan"), aldrig en andra redigerare (en sak på ett ställe, §0.2).
+- **Kvalitet:** följer §00 — mänskligt språk, inga AI-ord, å/ä/ö rätt, klientens röst.
+
+Status: **byggs nu (2026-07-17)** som direkt följd av kvalitetslyftet. Captionen är hälften av inlägget.
 
 ---
 

@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock, FileEdit, FolderOpen, RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import { FORMAT_DIMENSIONS, type StudioFormat } from "@/lib/studio/payload";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface StudioPost {
-  id: string; template_id: string; format: "1080x1350" | "1080x1080"; title: string;
+  id: string; template_id: string; format: StudioFormat; title: string;
   image_url: string | null; payload: Record<string, unknown>; updated_at: string;
   ghl_status: string | null; scheduled_at: string | null;
 }
@@ -53,7 +54,7 @@ export default function StudioKalenderPage() {
   }, [posts]);
 
   const Card = ({ p }: { p: StudioPost }) => {
-    const [pw, ph] = p.format === "1080x1080" ? [1080, 1080] : [1080, 1350];
+    const { w: pw, h: ph } = FORMAT_DIMENSIONS[p.format] ?? FORMAT_DIMENSIONS["1080x1350"];
     const cardW = 130; const s = cardW / pw;
     return (
       <div className="rounded-xl border border-gray-100 overflow-hidden bg-white">

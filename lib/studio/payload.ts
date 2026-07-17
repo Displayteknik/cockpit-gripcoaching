@@ -1,7 +1,24 @@
 // Studio — payload-kontrakt (samma för alla mallar, se docs/studio/PLAN.md §3.3 i KICKOFF).
 // Deterministisk: mallen ritas ENBART från detta objekt. AI rör aldrig layout.
 
-export type StudioFormat = "1080x1350" | "1080x1080";
+export type StudioFormat = "1080x1350" | "1080x1080" | "1080x1920";
+
+// Etikett för formatväljaren (client-säker).
+export const FORMAT_LABELS: Record<StudioFormat, string> = {
+  "1080x1350": "Porträtt 4:5",
+  "1080x1080": "Kvadrat 1:1",
+  "1080x1920": "Story 9:16",
+};
+
+// Stående format (visar fot, mer vertikal luft). 1:1 är det enda icke-stående.
+export function isPortraitFormat(f: StudioFormat): boolean {
+  return f !== "1080x1080";
+}
+
+// 9:16 = story/reel-mått. Bild-aspect + publiceringstyp härleds från detta.
+export function isStoryFormat(f: StudioFormat): boolean {
+  return f === "1080x1920";
+}
 
 export interface StudioBadge {
   enabled: boolean;
@@ -19,6 +36,15 @@ export interface StudioOverrides {
   hideBadge: boolean;
 }
 
+// En karusell-slide (ark-karusell). kind styr layouten: hook = omslag/krok,
+// point = innehållspunkt, cta = avslutande uppmaning.
+export interface StudioSlide {
+  kind: "hook" | "point" | "cta";
+  headline: string;
+  body: string;
+  imageUrl: string; // valfri; tom = ingen bild
+}
+
 export interface StudioPayload {
   clientId: string;
   templateId: string;
@@ -31,6 +57,14 @@ export interface StudioPayload {
   imageFocusY: number; // 0–100 (%) — vertikal fokuspunkt för object-position
   brushColor: string; // penselrutans färg (hex); tom = mallens standard (brand.colors.yellow)
   overrides: StudioOverrides; // fri redigering ovanpå mallen (tweak-lager)
+  slides: StudioSlide[]; // ark-karusell: N slides → N PNG. Tom för icke-karusell-mallar.
+  videoUrl: string; // reel: uppladdad video (studio-videos). Studio-rendern = 9:16-cover. Tom = ingen video.
+}
+
+export const MAX_SLIDES = 10;
+
+export function emptySlide(kind: StudioSlide["kind"] = "point"): StudioSlide {
+  return { kind, headline: "", body: "", imageUrl: "" };
 }
 
 export const DEFAULT_OVERRIDES: StudioOverrides = {
@@ -40,6 +74,7 @@ export const DEFAULT_OVERRIDES: StudioOverrides = {
 export const FORMAT_DIMENSIONS: Record<StudioFormat, { w: number; h: number }> = {
   "1080x1350": { w: 1080, h: 1350 },
   "1080x1080": { w: 1080, h: 1080 },
+  "1080x1920": { w: 1080, h: 1920 },
 };
 
 // UTF-8-säker base64 (åäö) — fungerar i node (render-route + export-CLI, båda server-side).
@@ -54,7 +89,8 @@ export function decodePayload(b64: string): StudioPayload {
 
 // Fyller defaults + klampar så en trasig/ofullständig payload aldrig kraschar rendern.
 export function normalizePayload(raw: Partial<StudioPayload>): StudioPayload {
-  const format: StudioFormat = raw.format === "1080x1080" ? "1080x1080" : "1080x1350";
+  const format: StudioFormat =
+    raw.format === "1080x1080" ? "1080x1080" : raw.format === "1080x1920" ? "1080x1920" : "1080x1350";
   const badge = raw.badge ?? { enabled: false, line1: "", line2: "" };
   return {
     clientId: raw.clientId || "opticur",
@@ -72,7 +108,29 @@ export function normalizePayload(raw: Partial<StudioPayload>): StudioPayload {
     imageFocusY: clamp(Number(raw.imageFocusY ?? 50), 0, 100),
     brushColor: typeof raw.brushColor === "string" ? raw.brushColor : "",
     overrides: normalizeOverrides(raw.overrides),
+    slides: normalizeSlides(raw.slides),
+    videoUrl: typeof raw.videoUrl === "string" ? raw.videoUrl : "",
   };
+}
+
+// Publiceringstyp härledd ur format + video: 9:16 + video = reel, 9:16 utan = story, annars post.
+export function derivePostType(format: StudioFormat, videoUrl: string): "post" | "story" | "reel" {
+  if (isStoryFormat(format)) return videoUrl ? "reel" : "story";
+  return "post";
+}
+
+function normalizeSlides(raw: unknown): StudioSlide[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, MAX_SLIDES).map((s): StudioSlide => {
+    const o = (s || {}) as Partial<StudioSlide>;
+    const kind: StudioSlide["kind"] = o.kind === "hook" || o.kind === "cta" ? o.kind : "point";
+    return {
+      kind,
+      headline: typeof o.headline === "string" ? o.headline : "",
+      body: typeof o.body === "string" ? o.body : "",
+      imageUrl: typeof o.imageUrl === "string" ? o.imageUrl : "",
+    };
+  });
 }
 
 function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOverrides {

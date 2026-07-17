@@ -13,10 +13,11 @@ export default async function StudioRenderPage({
   searchParams,
 }: {
   params: Promise<{ templateId: string }>;
-  searchParams: Promise<{ p?: string }>;
+  searchParams: Promise<{ p?: string; slide?: string }>;
 }) {
   const { templateId } = await params;
   const sp = await searchParams;
+  const slideIndex = Math.max(0, Number(sp.slide ?? 0) || 0);
 
   const def = getTemplate(templateId);
   if (!def) notFound();
@@ -38,7 +39,7 @@ export default async function StudioRenderPage({
 
   return (
     <div id="studio-render-root">
-      <Template payload={payload} brand={brand} />
+      <Template payload={payload} brand={brand} slideIndex={slideIndex} />
     </div>
   );
 }

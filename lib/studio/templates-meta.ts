@@ -11,6 +11,7 @@ export interface TemplateMeta {
   headlineSoftMax: number; // ~tecken som ryms på en rubrik-rad (mjuk varning i UI)
   archetype?: boolean; // brand-kit-driven (funkar för alla klienter)
   clientSlug?: string; // exklusiv för denna klient (t.ex. Opticurs handgjorda mallar)
+  carousel?: boolean; // fler-slide-mall (redigeras via slides[], inte standardfälten)
   formatKey?: ContentFormat; // vilket contentProfile-format mallen tillhör
   fields: {
     headline1: string; // etikett; tom = dölj fältet
@@ -24,11 +25,11 @@ export interface TemplateMeta {
 export const TEMPLATE_META: TemplateMeta[] = [
   // ── Brand-kit-arketyper (alla klienter) ──
   {
-    id: "ark-overlay", name: "Foto + overlay", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 22, archetype: true, formatKey: "overlay",
+    id: "ark-overlay", name: "Foto + overlay", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 22, archetype: true, formatKey: "overlay",
     fields: { headline1: "Rubrik (på bilden)", headline2: "Etikett (valfri)", body: "Text på bilden", badge: false, brush: false },
   },
   {
-    id: "ark-textkort", name: "Textkort", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 28, archetype: true, formatKey: "text-only",
+    id: "ark-textkort", name: "Textkort", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 28, archetype: true, formatKey: "text-only",
     fields: { headline1: "Etikett (valfri)", headline2: "Rubrik", body: "Huvudtext", badge: false, brush: false },
   },
   {
@@ -36,11 +37,11 @@ export const TEMPLATE_META: TemplateMeta[] = [
     fields: { headline1: "Rubrik (versaler)", headline2: "Underrubrik", body: "Text i rutan", badge: true, brush: true },
   },
   {
-    id: "ark-statement", name: "Statement", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 20, archetype: true, formatKey: "statement",
+    id: "ark-statement", name: "Statement", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 20, archetype: true, formatKey: "statement",
     fields: { headline1: "Jätterubrik", headline2: "Underrubrik", body: "Kort text (valfri)", badge: false, brush: false },
   },
   {
-    id: "ark-citat", name: "Citat / kundröst", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 24, archetype: true, formatKey: "quote",
+    id: "ark-citat", name: "Citat / kundröst", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 24, archetype: true, formatKey: "quote",
     fields: { headline1: "Etikett (valfri, t.ex. KUNDRÖST)", headline2: "Avsändare / roll", body: "Citatet", badge: false, brush: false },
   },
   {
@@ -50,6 +51,10 @@ export const TEMPLATE_META: TemplateMeta[] = [
   {
     id: "ark-erbjudande", name: "Erbjudande", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 24, archetype: true, formatKey: "offer",
     fields: { headline1: "Rubrik", headline2: "Underrubrik", body: "Text (om ingen badge)", badge: true, brush: false },
+  },
+  {
+    id: "ark-karusell", name: "Karusell", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 32, archetype: true, formatKey: "carousel", carousel: true,
+    fields: { headline1: "", headline2: "", body: "", badge: false, brush: false },
   },
   // ── Opticur-exklusiva (handgjorda, premium) ──
   {
@@ -64,6 +69,12 @@ export const TEMPLATE_META: TemplateMeta[] = [
 
 export function getTemplateMeta(id: string): TemplateMeta | undefined {
   return TEMPLATE_META.find((t) => t.id === id);
+}
+
+// Mallar där bilden BÄR inlägget — får aldrig publiceras med tom yta (§00 världsklass).
+const IMAGE_TEMPLATES = new Set(["ark-overlay", "ark-foto-ruta", "ark-erbjudande", "opticur-foto-gul-ruta"]);
+export function templateNeedsImage(id: string): boolean {
+  return IMAGE_TEMPLATES.has(id);
 }
 
 // ALLA klienter har tillgång till ALLA arketyper — flexibilitet byggs aldrig bort.

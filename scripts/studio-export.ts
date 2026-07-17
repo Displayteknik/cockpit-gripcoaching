@@ -66,34 +66,50 @@ async function main() {
   }
 
   const b64 = encodePayload(payload);
-  const url = `${BASE}/studio/render/${payload.templateId}?p=${encodeURIComponent(b64)}`;
+  // Karusell → N PNG (en per slide). Övriga → en enda.
+  const slideCount = payload.slides.length > 1 ? payload.slides.length : 0;
 
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
-    // OBS: inte "networkidle" — dev-serverns HMR-websocket håller anslutningen öppen
-    // så networkidle löser aldrig ut. Vänta på load + fonter + bilder explicit istället.
-    await page.goto(url, { waitUntil: "load", timeout: 60000 });
-    // Dölj Next.js dev-indikatorn (annars fastnar "N"-märket i element-screenshoten).
-    await page.addStyleTag({ content: "nextjs-portal{display:none !important}" });
-    await page.evaluate(async () => {
-      const doc = document as unknown as { fonts: { ready: Promise<unknown> } };
-      await doc.fonts.ready;
-      await Promise.all(
-        [...document.images].map((img) =>
-          img.complete ? Promise.resolve() : new Promise((r) => { img.onload = img.onerror = r; })
-        )
-      );
-    });
-    const canvas = page.locator("#studio-canvas");
-    await canvas.waitFor({ state: "visible", timeout: 15000 });
-
     const outDir = path.join(process.cwd(), "exports", payload.clientId);
     await mkdir(outDir, { recursive: true });
     const date = new Date().toISOString().slice(0, 10);
-    const out = path.join(outDir, `${date}-${slugify(payload.headline1 || payload.templateId)}-${payload.format}.png`);
-    await canvas.screenshot({ path: out });
-    console.log("✔ Exporterad:", out, `(${w}×${h})`);
+    const stem = slugify(payload.headline1 || payload.slides[0]?.headline || payload.templateId);
+
+    const renderOne = async (slide: number | null): Promise<string> => {
+      const url = `${BASE}/studio/render/${payload.templateId}?p=${encodeURIComponent(b64)}${slide !== null ? `&slide=${slide}` : ""}`;
+      // OBS: inte "networkidle" — dev-serverns HMR-websocket håller anslutningen öppen
+      // så networkidle löser aldrig ut. Vänta på load + fonter + bilder explicit istället.
+      await page.goto(url, { waitUntil: "load", timeout: 60000 });
+      // Dölj Next.js dev-indikatorn (annars fastnar "N"-märket i element-screenshoten).
+      await page.addStyleTag({ content: "nextjs-portal{display:none !important}" });
+      await page.evaluate(async () => {
+        const doc = document as unknown as { fonts: { ready: Promise<unknown> } };
+        await doc.fonts.ready;
+        await Promise.all(
+          [...document.images].map((img) =>
+            img.complete ? Promise.resolve() : new Promise((r) => { img.onload = img.onerror = r; })
+          )
+        );
+      });
+      const canvas = page.locator("#studio-canvas");
+      await canvas.waitFor({ state: "visible", timeout: 15000 });
+      const suffix = slide !== null ? `-slide-${String(slide + 1).padStart(2, "0")}` : "";
+      const out = path.join(outDir, `${date}-${stem}${suffix}-${payload.format}.png`);
+      await canvas.screenshot({ path: out });
+      return out;
+    };
+
+    if (slideCount) {
+      for (let s = 0; s < slideCount; s++) {
+        const out = await renderOne(s);
+        console.log("✔ Slide", s + 1, "/", slideCount, "→", out, `(${w}×${h})`);
+      }
+    } else {
+      const out = await renderOne(null);
+      console.log("✔ Exporterad:", out, `(${w}×${h})`);
+    }
   } finally {
     await browser.close();
     if (child) child.kill();

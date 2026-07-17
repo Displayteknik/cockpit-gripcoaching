@@ -1,5 +1,5 @@
 import type { StudioPayload } from "@/lib/studio/payload";
-import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs, hlColor, bodyColor, imgPosition, imgScale } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
@@ -8,7 +8,7 @@ import { StarBadge, isLightColor } from "@/components/studio/StudioBits";
 // Arketyp 5: Erbjudande/CTA. Rubrik + foto/färgyta + stor badge med pris/erbjudande.
 export default function ArkErbjudande({ payload, brand }: { payload: StudioPayload; brand: StudioBrand }) {
   const { w, h } = FORMAT_DIMENSIONS[payload.format];
-  const portrait = payload.format === "1080x1350";
+  const portrait = isPortraitFormat(payload.format);
   const c = brand.colors;
   const badgeInk = isLightColor(c.accent) ? c.ink : c.paper;
   const onPrimary = isLightColor(c.primary) ? c.ink : c.paper;

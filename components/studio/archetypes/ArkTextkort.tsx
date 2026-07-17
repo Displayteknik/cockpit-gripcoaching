@@ -1,5 +1,5 @@
 import type { StudioPayload } from "@/lib/studio/payload";
-import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs, hlColor, bodyColor } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
@@ -9,7 +9,7 @@ import KitFooter from "@/components/studio/KitFooter";
 // headline1 = liten etikett, headline2 = rubrik, body = huvudtext (längre).
 export default function ArkTextkort({ payload, brand }: { payload: StudioPayload; brand: StudioBrand }) {
   const { w, h } = FORMAT_DIMENSIONS[payload.format];
-  const portrait = payload.format === "1080x1350";
+  const portrait = isPortraitFormat(payload.format);
   const c = brand.colors;
 
   return (

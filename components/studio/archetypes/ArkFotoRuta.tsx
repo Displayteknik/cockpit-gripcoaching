@@ -1,5 +1,5 @@
 import type { StudioPayload } from "@/lib/studio/payload";
-import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs, hlColor, bodyColor, imgPosition, imgScale, showBrush, showBadge } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
@@ -8,7 +8,7 @@ import { BrushBox, StarBadge, isLightColor } from "@/components/studio/StudioBit
 // Arketyp 1: Foto + textruta. Fullbleed-foto, rubrik topp, färg-/penselruta med brödtext.
 export default function ArkFotoRuta({ payload, brand }: { payload: StudioPayload; brand: StudioBrand }) {
   const { w, h } = FORMAT_DIMENSIONS[payload.format];
-  const portrait = payload.format === "1080x1350";
+  const portrait = isPortraitFormat(payload.format);
   const c = brand.colors;
   const useBrush = brand.elements.brush.enabled;
   const boxColor = payload.brushColor || c[brand.elements.brush.color] || c.accent;

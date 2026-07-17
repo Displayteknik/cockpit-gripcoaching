@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const topic = (body.topic || "").toString().slice(0, 200) || niche;
 
     if (body.mode === "ai") {
-      const ar = body.aspect === "portrait" ? "3:4" : body.aspect === "square" ? "1:1" : "4:3";
+      const ar = body.aspect === "story" ? "9:16" : body.aspect === "portrait" ? "3:4" : body.aspect === "square" ? "1:1" : "4:3";
       const directives = await getKitDirectives(await getActiveClientId());
       const gen = await generateImagen(`${topic}. Branch: ${niche}. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);

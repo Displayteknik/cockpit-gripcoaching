@@ -6,9 +6,9 @@ import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
 } from "lucide-react";
-import { TEMPLATE_META, templatesForClient, isRecommendedFormat } from "@/lib/studio/templates-meta";
-import type { StudioFormat, StudioOverrides } from "@/lib/studio/payload";
-import { DEFAULT_OVERRIDES } from "@/lib/studio/payload";
+import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
+import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
+import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
 
@@ -21,6 +21,8 @@ const HOOK_LABEL: Record<string, string> = {
   "fråga": "Fråga", "statistik": "Statistik", "konträr": "Konträr",
   "berättelse": "Berättelse", "påstående": "Påstående",
 };
+
+const SLIDE_KIND_LABEL: Record<string, string> = { hook: "Krok", point: "Punkt", cta: "Avslut" };
 
 const DEFAULT_COLOR = "#1A6B3C";
 
@@ -62,6 +64,11 @@ export default function StudioPage() {
   const [swatches, setSwatches] = useState(BRUSH_SWATCHES);
   const [contentFormats, setContentFormats] = useState<string[]>([]);
   const [overrides, setOverrides] = useState<StudioOverrides>(DEFAULT_OVERRIDES);
+  const [slides, setSlides] = useState<StudioSlide[]>([]);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [genCarousel, setGenCarousel] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [brand, setBrand] = useState<StudioBrand | null>(null);
   const [pasteText, setPasteText] = useState("");
   const [applyingPaste, setApplyingPaste] = useState(false);
@@ -95,6 +102,11 @@ export default function StudioPage() {
   const slug = client?.slug || "opticur";
   const availableTemplates = useMemo(() => templatesForClient(slug, contentFormats as never), [slug, contentFormats]);
 
+  // Vald mall stödjer kanske inte aktuellt format (t.ex. byte till Opticur-mall utan 9:16) → hoppa till mallens första.
+  useEffect(() => {
+    if (!meta.formats.includes(format)) setFormat(meta.formats[0]);
+  }, [meta, format]);
+
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
   }, []);
@@ -123,10 +135,52 @@ export default function StudioPage() {
     () => ({
       clientId: slug, templateId, format, headline1, headline2, body,
       badge: { enabled: meta.fields.badge && badgeEnabled, line1: badgeLine1, line2: badgeLine2 },
-      imageUrl, imageFocusY, brushColor, overrides,
+      imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl,
     }),
-    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides],
+    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl],
   );
+
+  const isCarousel = Boolean(meta.carousel);
+  const slideCount = slides.length;
+  const postType = derivePostType(format, videoUrl); // "post" | "story" | "reel"
+  const needsImage = templateNeedsImage(templateId); // §00: mallar där bilden bär inlägget
+
+  // Seed en tom karusell (hook → 3 punkter → cta) när man byter till karusell-mallen.
+  useEffect(() => {
+    if (isCarousel && slides.length === 0) {
+      setSlides([emptySlide("hook"), emptySlide("point"), emptySlide("point"), emptySlide("point"), emptySlide("cta")]);
+      setSlideIdx(0);
+    }
+  }, [isCarousel, slides.length]);
+
+  const updateSlide = useCallback((i: number, patch: Partial<StudioSlide>) => {
+    setSlides((prev) => prev.map((s, n) => (n === i ? { ...s, ...patch } : s)));
+  }, []);
+  const addSlide = useCallback(() => {
+    setSlides((prev) => {
+      if (prev.length >= MAX_SLIDES) return prev;
+      // Ny punkt före ev. cta-sliden så avslutet stannar sist.
+      const ctaAt = prev.findIndex((s) => s.kind === "cta");
+      const at = ctaAt >= 0 ? ctaAt : prev.length;
+      const next = [...prev];
+      next.splice(at, 0, emptySlide("point"));
+      setSlideIdx(at);
+      return next;
+    });
+  }, []);
+  const removeSlide = useCallback((i: number) => {
+    setSlides((prev) => (prev.length <= 1 ? prev : prev.filter((_, n) => n !== i)));
+  }, []);
+  const moveSlide = useCallback((i: number, dir: -1 | 1) => {
+    setSlides((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+    setSlideIdx((cur) => Math.min(Math.max(0, cur + dir), MAX_SLIDES - 1));
+  }, []);
 
   // Debouncad preview-URL så iframen inte laddar om vid varje tangenttryck.
   // _v = cache-brytare; "Uppdatera"-knappen sätter nytt värde → tvingar färsk render.
@@ -134,12 +188,18 @@ export default function StudioPage() {
   const [previewSrc, setPreviewSrc] = useState("");
   useEffect(() => {
     const t = setTimeout(() => {
-      setPreviewSrc(`/studio/render/${templateId}?p=${encodeURIComponent(encodePayload(payload))}&_v=${nonce}`);
+      const slideQ = isCarousel ? `&slide=${slideIdx}` : "";
+      setPreviewSrc(`/studio/render/${templateId}?p=${encodeURIComponent(encodePayload(payload))}${slideQ}&_v=${nonce}`);
     }, 400);
     return () => clearTimeout(t);
-  }, [payload, templateId, nonce]);
+  }, [payload, templateId, nonce, isCarousel, slideIdx]);
 
-  const [w, h] = format === "1080x1080" ? [1080, 1080] : [1080, 1350];
+  // Håll slide-index inom gränserna när slides ändras.
+  useEffect(() => {
+    if (slideIdx > Math.max(0, slideCount - 1)) setSlideIdx(Math.max(0, slideCount - 1));
+  }, [slideCount, slideIdx]);
+
+  const { w, h } = FORMAT_DIMENSIONS[format];
   const previewScale = 300 / w; // preview-bredd ~300px
 
   // ── Foto-uppladdning (signerad URL → Supabase Storage) ──
@@ -163,13 +223,34 @@ export default function StudioPage() {
     }
   }, []);
 
+  // Video-uppladdning (för reels) → studio-videos-bucketen. Studio-rendern blir 9:16-cover.
+  const onVideoFile = useCallback(async (file: File) => {
+    setError(""); setUploadingVideo(true);
+    try {
+      const r = await fetch("/api/studio/upload-url", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Video-uppladdning misslyckades");
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+      const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
+      if (up.error) throw new Error(up.error.message);
+      setVideoUrl(d.publicUrl);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUploadingVideo(false);
+    }
+  }, []);
+
   // ── Bildförslag (Pexels-stock eller AI-genererad) ──
   const suggestImage = useCallback(async (mode: "stock" | "ai") => {
     setError(""); setSearchingImg(mode);
     try {
       const r = await fetch("/api/studio/suggest-image", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, topic: topic || headline1, aspect: format === "1080x1350" ? "portrait" : "square" }),
+        body: JSON.stringify({ mode, topic: topic || headline1, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Bildförslag misslyckades");
@@ -180,6 +261,26 @@ export default function StudioPage() {
       setSearchingImg("");
     }
   }, [topic, headline1, format]);
+
+  // §00: aldrig tom yta — generera on-brand bild ur inläggets innehåll och applicera direkt.
+  const generateOnBrandImage = useCallback(async () => {
+    setError(""); setSearchingImg("ai");
+    try {
+      const t = [headline1, topic, body].filter(Boolean).join(". ").slice(0, 220) || topic;
+      const r = await fetch("/api/studio/suggest-image", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "ai", topic: t, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Bildgenerering misslyckades");
+      const url = d.photos?.[0]?.url;
+      if (url) setImageUrl(url); else throw new Error("Ingen bild genererades");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSearchingImg("");
+    }
+  }, [headline1, topic, body, format]);
 
   // ── Ändra bild via kommentar (bild-till-bild, Nano Banana) ──
   const editImage = useCallback(async () => {
@@ -259,6 +360,24 @@ export default function StudioPage() {
     setBody(s.body || "");
   }, []);
 
+  // Generera hela karusellen (hook → punkter → cta) ur ämne + varumärkesröst.
+  const generateCarouselNow = useCallback(async () => {
+    setError(""); setGenCarousel(true);
+    try {
+      const r = await fetch("/api/studio/carousel/generate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic || headline1, points: 3 }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Karusell-generering misslyckades");
+      if (Array.isArray(d.slides) && d.slides.length) { setSlides(d.slides); setSlideIdx(0); }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setGenCarousel(false);
+    }
+  }, [topic, headline1]);
+
   // ── Export PNG (en klick lokalt; annars payload-nedladdning) ──
   const exportPng = useCallback(async () => {
     setError(""); setExporting(true);
@@ -305,6 +424,9 @@ export default function StudioPage() {
     setBrushColor((d.brushColor as string) || DEFAULT_BRUSH);
     setCaption((d.caption as string) ?? "");
     setOverrides({ ...DEFAULT_OVERRIDES, ...((d.overrides as object) || {}) });
+    setSlides(Array.isArray(d.slides) ? (d.slides as StudioSlide[]) : []);
+    setSlideIdx(0);
+    setVideoUrl((d.videoUrl as string) ?? "");
     setPrevImageUrl("");
   }, []);
 
@@ -404,17 +526,17 @@ export default function StudioPage() {
     try {
       const r = await fetch("/api/studio/suggest-caption", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ headline: headline1, body, topic }),
+        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "Kunde inte föreslå caption");
+      if (!r.ok) throw new Error(d.error || "Kunde inte föreslå bildtext");
       setCaption(d.caption || "");
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSuggestingCaption(false);
     }
-  }, [headline1, body, topic]);
+  }, [headline1, headline2, body, topic, slides, postType]);
 
   const toggleAccount = useCallback((id: string) => {
     setSelectedAccounts((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
@@ -426,7 +548,7 @@ export default function StudioPage() {
     try {
       const r = await fetch("/api/studio/publish", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: loadedPostId, accountIds: selectedAccounts, caption, imageUrl, scheduleDate: scheduleDate || undefined }),
+        body: JSON.stringify({ postId: loadedPostId, accountIds: selectedAccounts, caption, imageUrl, videoUrl, format, scheduleDate: scheduleDate || undefined }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
@@ -437,7 +559,7 @@ export default function StudioPage() {
     } finally {
       setPublishing(false);
     }
-  }, [selectedAccounts, loadedPostId, caption, imageUrl, scheduleDate, refreshPosts]);
+  }, [selectedAccounts, loadedPostId, caption, imageUrl, videoUrl, format, scheduleDate, refreshPosts]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -493,14 +615,14 @@ export default function StudioPage() {
                   );
                 })}
               </div>
-              <div className="flex gap-2">
-                {(["1080x1350", "1080x1080"] as StudioFormat[]).map((f) => {
+              <div className="flex flex-wrap gap-2">
+                {meta.formats.map((f) => {
                   const active = f === format;
                   return (
                     <button key={f} onClick={() => setFormat(f)}
-                      className="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                      className="flex-1 min-w-[90px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
                       style={active ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#374151" }}>
-                      {f === "1080x1350" ? "Porträtt 4:5" : "Kvadrat 1:1"}
+                      {FORMAT_LABELS[f]}
                     </button>
                   );
                 })}
@@ -510,6 +632,18 @@ export default function StudioPage() {
             {/* Foto */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
               <h2 className="font-display font-bold text-gray-900 text-lg">Foto</h2>
+
+              {/* §00: den här mallen behöver en bild — aldrig tom yta */}
+              {needsImage && !imageUrl && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
+                  <div className="text-xs text-amber-800">Den här mallen bärs av bilden — publicera aldrig med tom yta. Ladda upp en, eller generera en on-brand bild ur inläggets innehåll.</div>
+                  <button onClick={generateOnBrandImage} disabled={searchingImg === "ai"}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    style={{ background: primary }}>
+                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Generera on-brand bild
+                  </button>
+                </div>
+              )}
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) onFile(f); }}
@@ -591,19 +725,54 @@ export default function StudioPage() {
               </div>
             </section>
 
+            {/* Video (reel) — bara i 9:16 */}
+            {isStoryFormat(format) && (
+              <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display font-bold text-gray-900 text-lg">Video (reel)</h2>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
+                    {postType === "reel" ? "Blir reel" : "Blir story"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">Ladda upp en video så publiceras inlägget som <strong>reel</strong> — Studio-bilden ovan blir omslag/cover. Utan video blir 9:16-inlägget en <strong>story</strong>.</p>
+                {videoUrl ? (
+                  <div className="flex items-center gap-3">
+                    <video src={videoUrl} className="w-24 rounded-lg border border-gray-100" style={{ aspectRatio: "9/16", objectFit: "cover" }} muted />
+                    <div className="flex-1 text-xs text-gray-500 truncate">Video uppladdad</div>
+                    <button onClick={() => setVideoUrl("")} className="text-xs text-red-500 hover:text-red-700 inline-flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Ta bort</button>
+                  </div>
+                ) : (
+                  <label className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer">
+                    {uploadingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Ladda upp video (MP4/MOV)
+                    <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) onVideoFile(f); }} />
+                  </label>
+                )}
+              </section>
+            )}
+
             {/* Text */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="font-display font-bold text-gray-900 text-lg">Text</h2>
-                <button onClick={suggest} disabled={suggesting}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-                  style={{ background: primary }}>
-                  {suggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Föreslå text
-                </button>
+                <h2 className="font-display font-bold text-gray-900 text-lg">{isCarousel ? "Karusell" : "Text"}</h2>
+                {isCarousel ? (
+                  <button onClick={generateCarouselNow} disabled={genCarousel}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    style={{ background: primary }}>
+                    {genCarousel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Generera karusell
+                  </button>
+                ) : (
+                  <button onClick={suggest} disabled={suggesting}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    style={{ background: primary }}>
+                    {suggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Föreslå text
+                  </button>
+                )}
               </div>
-              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ämne för AI-förslag (valfritt) — t.ex. skolstart, barnglasögon…" className={inputCls} />
+              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={isCarousel ? "Ämne för karusellen — t.ex. 5 vanor som stjäl energi" : "Ämne för AI-förslag (valfritt) — t.ex. skolstart, barnglasögon…"} className={inputCls} />
 
-              {/* Klistra in eget utkast */}
+              {/* Klistra in eget utkast (ej karusell) */}
+              {!isCarousel && (
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                 <label className="block text-xs font-medium text-gray-600">Har du ett eget utkast? Klistra in — AI delar upp i rubrik och text</label>
                 <textarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={2} placeholder="Klistra in din egen text här…" className={inputCls} />
@@ -612,8 +781,9 @@ export default function StudioPage() {
                   {applyingPaste ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Använd min text
                 </button>
               </div>
+              )}
 
-              {suggestions.length > 0 && (
+              {!isCarousel && suggestions.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-xs font-medium text-gray-500">Välj ett förslag — klicka för att fylla i:</div>
                   {suggestions.map((s, i) => (
@@ -631,6 +801,54 @@ export default function StudioPage() {
                 </div>
               )}
 
+              {isCarousel ? (
+                <div className="space-y-3">
+                  {/* Slide-flikar */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {slides.map((s, i) => (
+                      <button key={i} onClick={() => setSlideIdx(i)}
+                        className="rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors"
+                        style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                        {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                      </button>
+                    ))}
+                    {slides.length < MAX_SLIDES && (
+                      <button onClick={addSlide} className="rounded-lg border border-dashed border-gray-300 px-2.5 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50">+ Slide</button>
+                    )}
+                  </div>
+
+                  {/* Aktiv slide */}
+                  {slides[slideIdx] && (
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex gap-1.5">
+                          {(["hook", "point", "cta"] as StudioSlide["kind"][]).map((k) => (
+                            <button key={k} onClick={() => updateSlide(slideIdx, { kind: k })}
+                              className="rounded-md border px-2 py-1 text-xs font-medium transition-colors"
+                              style={slides[slideIdx].kind === k ? { borderColor: primary, color: primary, background: "#fff" } : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
+                              {SLIDE_KIND_LABEL[k]}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => moveSlide(slideIdx, -1)} disabled={slideIdx === 0} className="px-1.5 py-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Flytta upp">↑</button>
+                          <button onClick={() => moveSlide(slideIdx, 1)} disabled={slideIdx === slides.length - 1} className="px-1.5 py-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Flytta ner">↓</button>
+                          <button onClick={() => removeSlide(slideIdx)} disabled={slides.length <= 1} className="px-1.5 py-1 rounded text-red-400 hover:text-red-600 disabled:opacity-30" title="Ta bort"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Rubrik</label>
+                        <input value={slides[slideIdx].headline} onChange={(e) => updateSlide(slideIdx, { headline: e.target.value })} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Text</label>
+                        <textarea value={slides[slideIdx].body} onChange={(e) => updateSlide(slideIdx, { body: e.target.value })} rows={3} className={inputCls} />
+                      </div>
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-400">{slides.length} slides · exporteras som {slides.length} bilder. Krok först, avslut sist.</div>
+                </div>
+              ) : (
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{meta.fields.headline1}</label>
@@ -648,6 +866,7 @@ export default function StudioPage() {
                   <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} className={inputCls} />
                 </div>
               </div>
+              )}
 
               {meta.fields.badge && (
                 <div className="pt-2 border-t border-gray-100 space-y-3">
@@ -690,6 +909,28 @@ export default function StudioPage() {
                 </div>
               )}
             </section>
+
+            {/* Bildtext (caption) — förstaklassig, hälften av inlägget */}
+            <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-display font-bold text-gray-900 text-lg">Bildtext</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Texten man läser under inlägget — krok, värde, uppmaning, hashtags.</p>
+                </div>
+                <button onClick={suggestCaption} disabled={suggestingCaption}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40 shrink-0"
+                  style={{ background: primary }}>
+                  {suggestingCaption ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} {caption ? "Skriv om" : "Föreslå bildtext"}
+                </button>
+              </div>
+              <textarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={7}
+                placeholder="Skriv bildtexten här, eller låt AI föreslå en ur inläggets innehåll och din röst…"
+                className={`${inputCls} leading-relaxed`} style={{ whiteSpace: "pre-wrap" }} />
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <span>{caption.trim() ? `${caption.length} tecken` : "Ingen bildtext än"}</span>
+                <span>{isCarousel ? "Grundas på karusellens slides" : postType === "reel" ? "Anpassad för reel" : "Grundas på inläggets innehåll"}</span>
+              </div>
+            </section>
           </div>
 
           {/* ── Höger: live-preview (sticky) ── */}
@@ -707,7 +948,7 @@ export default function StudioPage() {
                 </div>
               </div>
               <div className="mx-auto rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
-                <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} />
+                <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined} />
               </div>
               {payload.imageUrl && (
                 <p className="text-[11px] text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma</p>
@@ -795,16 +1036,18 @@ export default function StudioPage() {
               <div className="flex items-center gap-2">
                 <Send className="w-4 h-4" style={{ color: primary }} />
                 <h3 className="font-display font-bold text-gray-900 text-sm">Publicera till GHL (utkast)</h3>
+                <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
+                  {postType === "reel" ? "Reel" : postType === "story" ? "Story" : "Inlägg"}
+                </span>
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-gray-500">Bildtext (caption)</label>
-                  <button onClick={suggestCaption} disabled={suggestingCaption} className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40">
-                    {suggestingCaption ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />} Föreslå
-                  </button>
-                </div>
-                <textarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={4} placeholder="Skriv eller föreslå en caption…" className={inputCls} />
+                <label className="text-xs font-medium text-gray-500">Bildtext</label>
+                {caption.trim() ? (
+                  <div className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-2.5 max-h-28 overflow-auto" style={{ whiteSpace: "pre-wrap" }}>{caption}</div>
+                ) : (
+                  <div className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-2.5">Ingen bildtext än — skriv eller föreslå en i <strong>Bildtext</strong>-rutan till vänster.</div>
+                )}
               </div>
 
               {ghlConnected === null ? (
@@ -878,7 +1121,7 @@ export default function StudioPage() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {posts.map((p) => {
-                const [pw, ph] = p.format === "1080x1080" ? [1080, 1080] : [1080, 1350];
+                const { w: pw, h: ph } = FORMAT_DIMENSIONS[p.format] ?? FORMAT_DIMENSIONS["1080x1350"];
                 const cardW = 150;
                 const s = cardW / pw;
                 const active = loadedPostId === p.id;

@@ -1,5 +1,5 @@
 import type { StudioPayload } from "@/lib/studio/payload";
-import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs, hlColor, bodyColor } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
@@ -8,7 +8,7 @@ import { isLightColor } from "@/components/studio/StudioBits";
 // Arketyp 2: Statement. Färgstark helyta, stor typografi, valfri accent-understrykning.
 export default function ArkStatement({ payload, brand }: { payload: StudioPayload; brand: StudioBrand }) {
   const { w, h } = FORMAT_DIMENSIONS[payload.format];
-  const portrait = payload.format === "1080x1350";
+  const portrait = isPortraitFormat(payload.format);
   const c = brand.colors;
   const onPrimary = isLightColor(c.primary) ? c.ink : c.paper;
 
