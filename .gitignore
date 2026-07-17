@@ -47,3 +47,6 @@ next-env.d.ts
 
 # scratch
 /scratchpad/
+
+# Fas 6 QA-skärmbilder (lokala, ej i repo)
+qa-screens/
