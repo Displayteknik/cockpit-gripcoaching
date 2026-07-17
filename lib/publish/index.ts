@@ -9,6 +9,7 @@
 //   ig-graph     → Instagram Graph (hanteras ännu i Skapa inlägg-motorn — migreras hit)
 
 import { getGhlConfig, ghlFirstUserId, ghlCreateDraft, ghlCreateBlogDraft } from "@/lib/studio/ghl";
+import { getIgConnection, publishSingle, publishCarousel, publishStory, publishReel } from "@/lib/instagram";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export type PublishChannel = "ghl-social" | "ghl-blog" | "cockpit-blog" | "ig-graph";
@@ -21,7 +22,10 @@ export interface PublishRequest {
   accountIds?: string[];
   postType?: "post" | "story" | "reel";
   caption?: string;
-  mediaUrl?: string;
+  mediaUrl?: string;       // enkel bild (IG kräver JPEG, publik URL)
+  slideUrls?: string[];    // karusell (2–10 JPEG)
+  videoUrl?: string;       // reel
+  coverUrl?: string;       // reel-omslag
   scheduleDate?: string; // ISO → schemalägg
   // blogg-fält
   blog?: {
@@ -50,9 +54,57 @@ export async function publishContent(req: PublishRequest): Promise<PublishResult
     case "cockpit-blog":
       return publishCockpitBlog(req);
     case "ig-graph":
-      return fail("ig-graph", "Instagram Graph-publicering hanteras i Skapa inlägg-motorn (migreras till denna modul).");
+      return publishIgGraph(req);
     default:
       return fail(req.channel, "Okänd kanal");
+  }
+}
+
+// ── Instagram Graph (skarp direktpublicering) ──
+// All Graph-logik lever i lib/instagram.ts (verifierad mot Metas aktuella docs:
+// container → status FINISHED → media_publish). Denna funktion är EN vägen in —
+// gamla /api/instagram/publish-routerna delegerar hit.
+// Meta-krav (verifierat juli 2026): bild = JPEG, publik URL. Vi grindar PNG med
+// ett tydligt fel i stället för Metas kryptiska svar.
+function looksNonJpeg(url?: string): boolean {
+  return !!url && /\.(png|webp|gif)(\?|#|$)/i.test(url);
+}
+
+async function publishIgGraph(req: PublishRequest): Promise<PublishResult> {
+  const conn = await getIgConnection(req.clientId);
+  if (!conn?.ig_account_id || !conn.ig_access_token) {
+    return fail("ig-graph", "Instagram är inte kopplat för den här klienten.");
+  }
+  const accId = conn.ig_account_id;
+  const token = conn.ig_access_token;
+  const caption = req.caption || "";
+  try {
+    // Karusell (2–10 bilder)
+    if (req.slideUrls && req.slideUrls.length >= 2) {
+      if (req.slideUrls.some(looksNonJpeg)) return fail("ig-graph", "Instagram tar bara emot JPEG — karusellbilderna måste serveras som JPEG (Studio exporterar PNG).");
+      const { id } = await publishCarousel(accId, token, req.slideUrls, caption);
+      return { status: "published", id, channel: "ig-graph" };
+    }
+    // Reel (video + ev. omslag)
+    if (req.postType === "reel" || req.videoUrl) {
+      if (!req.videoUrl) return fail("ig-graph", "Reel kräver en video-URL.");
+      const { id } = await publishReel(accId, token, req.videoUrl, caption, req.coverUrl);
+      return { status: "published", id, channel: "ig-graph" };
+    }
+    // Story (bild)
+    if (req.postType === "story") {
+      if (!req.mediaUrl) return fail("ig-graph", "Story kräver en bild-URL.");
+      if (looksNonJpeg(req.mediaUrl)) return fail("ig-graph", "Instagram tar bara emot JPEG för story-bilden (Studio exporterar PNG).");
+      const { id } = await publishStory(accId, token, req.mediaUrl);
+      return { status: "published", id, channel: "ig-graph" };
+    }
+    // Enkel bild
+    if (!req.mediaUrl) return fail("ig-graph", "Inlägget kräver en bild-URL.");
+    if (looksNonJpeg(req.mediaUrl)) return fail("ig-graph", "Instagram tar bara emot JPEG — bilden måste serveras som JPEG (Studio exporterar PNG).");
+    const { id } = await publishSingle(accId, token, req.mediaUrl, caption);
+    return { status: "published", id, channel: "ig-graph" };
+  } catch (e) {
+    return fail("ig-graph", (e as Error).message);
   }
 }
 
