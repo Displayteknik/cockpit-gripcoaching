@@ -7,13 +7,15 @@ import { supabaseService } from "@/lib/supabase-admin";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// POST /api/studio/publish — { postId?, accountIds[], caption, imageUrl, videoUrl, format, scheduleDate? }
-// Skapar ett UTKAST/schemalagt i GHL Social Planner via den gemensamma publiceringsmodulen
-// (lib/publish). Uppdaterar studio_posts (ghl_status/ghl_post_id/caption) om postId ges.
+// POST /api/studio/publish — { postId?, channel?, accountIds[], caption, imageUrl, videoUrl, format, scheduleDate? }
+// channel: "ghl-social" (default, utkast/schema i GHL) ELLER "ig-graph" (direkt till
+// klientens kopplade Instagram, publiceras nu — PNG konverteras till JPEG). Via lib/publish.
+// Uppdaterar studio_posts (ghl_status/ghl_post_id/caption) om postId ges.
 export async function POST(req: NextRequest) {
   try {
     const clientId = await getActiveClientId();
     const body = await req.json().catch(() => ({}));
+    const channel = body.channel === "ig-graph" ? "ig-graph" : "ghl-social";
     const accountIds: string[] = Array.isArray(body.accountIds) ? body.accountIds.filter(Boolean) : [];
     const caption = (body.caption || "").toString();
     const imageUrl = (body.imageUrl || "").toString();
@@ -26,9 +28,10 @@ export async function POST(req: NextRequest) {
     const scheduleDate = body.scheduleDate ? new Date(body.scheduleDate).toISOString() : undefined;
     if (postType === "reel" && !videoUrl) return NextResponse.json({ error: "Reel kräver en uppladdad video" }, { status: 400 });
 
-    const result = await publishContent({
-      clientId, channel: "ghl-social", accountIds, postType, caption, mediaUrl, scheduleDate,
-    });
+    const result = channel === "ig-graph"
+      // Direkt IG: bilden i mediaUrl (konverteras till JPEG i lib/publish), reel via videoUrl. Ingen schemaläggning.
+      ? await publishContent({ clientId, channel: "ig-graph", postType, caption, mediaUrl: imageUrl, videoUrl: videoUrl || undefined })
+      : await publishContent({ clientId, channel: "ghl-social", accountIds, postType, caption, mediaUrl, scheduleDate });
     if (result.status === "failed" || !result.id) {
       return NextResponse.json({ error: result.error || "Publicering misslyckades" }, { status: 400 });
     }

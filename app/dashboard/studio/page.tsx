@@ -96,6 +96,8 @@ export default function StudioPage() {
   const [ghlPitInput, setGhlPitInput] = useState("");
   const [connectingGhl, setConnectingGhl] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
+  const [pubChannel, setPubChannel] = useState<"ghl" | "ig">("ghl"); // publiceringskanal: GHL-utkast | Instagram direkt
+  const [igConn, setIgConn] = useState<{ connected: boolean; handle: string | null } | null>(null);
 
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
@@ -497,6 +499,14 @@ export default function StudioPage() {
   }, []);
   useEffect(() => { refreshGhlAccounts(); }, [refreshGhlAccounts, client]);
 
+  // Instagram-kopplingsstatus (för direkt-IG-valet). Per aktiv klient.
+  useEffect(() => {
+    fetch("/api/instagram/connect")
+      .then((r) => r.json())
+      .then((d) => setIgConn({ connected: !!d.connected, handle: d.handle || null }))
+      .catch(() => setIgConn({ connected: false, handle: null }));
+  }, [client]);
+
   const connectGhl = useCallback(async () => {
     if (!ghlLocInput.trim() || !ghlPitInput.trim()) { setError("Fyll i location-id och token"); return; }
     setError(""); setConnectingGhl(true);
@@ -543,12 +553,16 @@ export default function StudioPage() {
   }, []);
 
   const publishDraft = useCallback(async () => {
-    if (!selectedAccounts.length) { setError("Välj minst ett konto"); return; }
+    if (pubChannel === "ghl" && !selectedAccounts.length) { setError("Välj minst ett konto"); return; }
+    if (pubChannel === "ig" && !igConn?.connected) { setError("Instagram är inte kopplat för den här klienten (koppla i Inställningar)."); return; }
     setError(""); setPublishing(true); setPublished(false);
     try {
+      const payload = pubChannel === "ig"
+        ? { postId: loadedPostId, channel: "ig-graph", caption, imageUrl, videoUrl, format } // direkt IG — publiceras nu (inget utkast/schema)
+        : { postId: loadedPostId, channel: "ghl-social", accountIds: selectedAccounts, caption, imageUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
       const r = await fetch("/api/studio/publish", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: loadedPostId, accountIds: selectedAccounts, caption, imageUrl, videoUrl, format, scheduleDate: scheduleDate || undefined }),
+        body: JSON.stringify(payload),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
@@ -559,7 +573,7 @@ export default function StudioPage() {
     } finally {
       setPublishing(false);
     }
-  }, [selectedAccounts, loadedPostId, caption, imageUrl, videoUrl, format, scheduleDate, refreshPosts]);
+  }, [pubChannel, igConn, selectedAccounts, loadedPostId, caption, imageUrl, videoUrl, format, scheduleDate, refreshPosts]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -1035,10 +1049,20 @@ export default function StudioPage() {
             <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Send className="w-4 h-4" style={{ color: primary }} />
-                <h3 className="font-display font-bold text-gray-900 text-sm">Publicera till GHL (utkast)</h3>
+                <h3 className="font-display font-bold text-gray-900 text-sm">Publicera</h3>
                 <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
                   {postType === "reel" ? "Reel" : postType === "story" ? "Story" : "Inlägg"}
                 </span>
+              </div>
+
+              {/* Kanalval: GHL-utkast eller Instagram direkt (alltid tillgängligt) */}
+              <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg">
+                {([["ghl", "GHL (utkast)"], ["ig", "Instagram (direkt)"]] as const).map(([k, label]) => (
+                  <button key={k} onClick={() => { setPubChannel(k); setPublished(false); setError(""); }}
+                    className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-md transition-colors ${pubChannel === k ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>
+                    {label}
+                  </button>
+                ))}
               </div>
 
               <div className="space-y-1.5">
@@ -1050,6 +1074,8 @@ export default function StudioPage() {
                 )}
               </div>
 
+              {pubChannel === "ghl" ? (
+              <div className="space-y-3">
               {ghlConnected === null ? (
                 <div className="text-xs text-gray-400 flex items-center gap-1"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Kollar koppling…</div>
               ) : !ghlConnected ? (
@@ -1102,6 +1128,24 @@ export default function StudioPage() {
                 </>
               )}
               <p className="text-xs text-gray-400">Utan datum: skapar utkast (publicerar inte). Med datum: schemaläggs i Social Planner och publiceras vid tidpunkten.</p>
+              </div>
+              ) : (
+                igConn === null ? (
+                  <div className="text-xs text-gray-400 flex items-center gap-1"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Kollar Instagram…</div>
+                ) : !igConn.connected ? (
+                  <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 text-xs text-gray-600">Instagram är inte kopplat för {client?.name || "klienten"}. Koppla under <a href="/dashboard/installningar" className="font-medium underline" style={{ color: primary }}>Inställningar</a> (IG Business Account ID + long-lived token).</div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-xs text-gray-600">Publiceras <strong>direkt</strong> till {igConn.handle ? `@${igConn.handle}` : "kontots Instagram"} nu. PNG konverteras automatiskt till JPEG. Inget utkast eller schema — Instagram publicerar direkt.</div>
+                    <button onClick={publishDraft} disabled={publishing}
+                      className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                      style={{ background: primary }}>
+                      {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : published ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                      {published ? "Publicerat på Instagram ✓" : "Publicera nu till Instagram"}
+                    </button>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
