@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryGsc, queryGscDaily, autoSelectGaProperty } from "@/lib/google";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   const t0 = Date.now();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const days = Number(req.nextUrl.searchParams.get("days") || 28);
 
   // Hamta alla klienter med GSC-koppling

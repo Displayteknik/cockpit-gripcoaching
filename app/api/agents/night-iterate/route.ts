@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { iterateGenerate } from "@/lib/iterate";
 
 export const runtime = "nodejs";
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
   }
 
   const t0 = Date.now();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const onlyClient = req.nextUrl.searchParams.get("client_id");
 
   // Hamta aktiva klienter med voice-fingerprint (har minst 5 source assets)

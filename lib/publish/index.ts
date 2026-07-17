@@ -10,6 +10,7 @@
 
 import { getGhlConfig, ghlFirstUserId, ghlCreateDraft, ghlCreateBlogDraft } from "@/lib/studio/ghl";
 import { getIgConnection, publishSingle, publishCarousel, publishStory, publishReel } from "@/lib/instagram";
+import { ensureJpegUrl } from "@/lib/images";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export type PublishChannel = "ghl-social" | "ghl-blog" | "cockpit-blog" | "ig-graph";
@@ -64,12 +65,9 @@ export async function publishContent(req: PublishRequest): Promise<PublishResult
 // All Graph-logik lever i lib/instagram.ts (verifierad mot Metas aktuella docs:
 // container → status FINISHED → media_publish). Denna funktion är EN vägen in —
 // gamla /api/instagram/publish-routerna delegerar hit.
-// Meta-krav (verifierat juli 2026): bild = JPEG, publik URL. Vi grindar PNG med
-// ett tydligt fel i stället för Metas kryptiska svar.
-function looksNonJpeg(url?: string): boolean {
-  return !!url && /\.(png|webp|gif)(\?|#|$)/i.test(url);
-}
-
+// Meta-krav (verifierat juli 2026): bild = JPEG, publik URL. Studio/Gemini renderar
+// PNG → vi KONVERTERAR till JPEG (sharp) och hostar om vid publicering, i stället
+// för att stoppa. ensureJpegUrl returnerar en JPEG-URL (eller genskjuter om redan JPEG).
 async function publishIgGraph(req: PublishRequest): Promise<PublishResult> {
   const conn = await getIgConnection(req.clientId);
   if (!conn?.ig_account_id || !conn.ig_access_token) {
@@ -79,10 +77,15 @@ async function publishIgGraph(req: PublishRequest): Promise<PublishResult> {
   const token = conn.ig_access_token;
   const caption = req.caption || "";
   try {
-    // Karusell (2–10 bilder)
+    // Karusell (2–10 bilder) — varje bild säkras till JPEG.
     if (req.slideUrls && req.slideUrls.length >= 2) {
-      if (req.slideUrls.some(looksNonJpeg)) return fail("ig-graph", "Instagram tar bara emot JPEG — karusellbilderna måste serveras som JPEG (Studio exporterar PNG).");
-      const { id } = await publishCarousel(accId, token, req.slideUrls, caption);
+      const jpegs: string[] = [];
+      for (const s of req.slideUrls) {
+        const j = await ensureJpegUrl(s);
+        if (!j.url) return fail("ig-graph", `Karusellbild kunde inte förberedas: ${j.error}`);
+        jpegs.push(j.url);
+      }
+      const { id } = await publishCarousel(accId, token, jpegs, caption);
       return { status: "published", id, channel: "ig-graph" };
     }
     // Reel (video + ev. omslag)
@@ -91,17 +94,19 @@ async function publishIgGraph(req: PublishRequest): Promise<PublishResult> {
       const { id } = await publishReel(accId, token, req.videoUrl, caption, req.coverUrl);
       return { status: "published", id, channel: "ig-graph" };
     }
-    // Story (bild)
+    // Story (bild → JPEG)
     if (req.postType === "story") {
       if (!req.mediaUrl) return fail("ig-graph", "Story kräver en bild-URL.");
-      if (looksNonJpeg(req.mediaUrl)) return fail("ig-graph", "Instagram tar bara emot JPEG för story-bilden (Studio exporterar PNG).");
-      const { id } = await publishStory(accId, token, req.mediaUrl);
+      const j = await ensureJpegUrl(req.mediaUrl);
+      if (!j.url) return fail("ig-graph", `Story-bild kunde inte förberedas: ${j.error}`);
+      const { id } = await publishStory(accId, token, j.url);
       return { status: "published", id, channel: "ig-graph" };
     }
-    // Enkel bild
+    // Enkel bild → JPEG
     if (!req.mediaUrl) return fail("ig-graph", "Inlägget kräver en bild-URL.");
-    if (looksNonJpeg(req.mediaUrl)) return fail("ig-graph", "Instagram tar bara emot JPEG — bilden måste serveras som JPEG (Studio exporterar PNG).");
-    const { id } = await publishSingle(accId, token, req.mediaUrl, caption);
+    const j = await ensureJpegUrl(req.mediaUrl);
+    if (!j.url) return fail("ig-graph", `Bilden kunde inte förberedas: ${j.error}`);
+    const { id } = await publishSingle(accId, token, j.url, caption);
     return { status: "published", id, channel: "ig-graph" };
   } catch (e) {
     return fail("ig-graph", (e as Error).message);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const days = Math.max(1, Math.min(90, Number(req.nextUrl.searchParams.get("days") || 14)));
   const clientId = req.nextUrl.searchParams.get("client_id");
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
 
   let q = sb

@@ -2,11 +2,11 @@
 // Customer-cookien sätts redan av /k/[token] så client_id-resolution fungerar.
 // Serverside-spärr: kunden måste ha modulen "skapa" påslagen.
 import { requireCustomerFeature } from "@/lib/customer-context";
-import SkapaPage from "@/app/dashboard/(inlagg)/skapa/page";
+import SkapaMaker from "@/components/SkapaInlaggMaker";
 
 export const dynamic = "force-dynamic";
 
 export default async function KSkapa() {
   await requireCustomerFeature("skapa");
-  return <SkapaPage />;
+  return <SkapaMaker />;
 }

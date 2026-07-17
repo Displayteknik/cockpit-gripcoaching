@@ -431,6 +431,30 @@ export async function ensurePublicImageUrl(imageData: string): Promise<{ url?: s
   return { error: "Okänt bildformat" };
 }
 
+// Instagram Graph tar BARA emot JPEG för bildinlägg (verifierat mot Metas docs).
+// Studio/Gemini renderar PNG → konvertera vid publicering och hosta som JPEG på
+// den publika 'images'-bucketen. sharp finns i runtime (används i logo-assets).
+export async function ensureJpegUrl(url: string): Promise<{ url?: string; error?: string }> {
+  if (!url) return { error: "Ingen bild" };
+  if (/\.jpe?g(\?|#|$)/i.test(url)) return { url }; // redan JPEG
+  try {
+    await assertSafePublicUrl(url); // SSRF-skydd
+    const res = await fetch(url);
+    if (!res.ok) return { error: "Kunde inte ladda ner bild för JPEG-konvertering" };
+    const input = Buffer.from(await res.arrayBuffer());
+    const sharp = (await import("sharp")).default; // native-modul, dynamiskt (finns i runtime)
+    const jpeg = await sharp(input).jpeg({ quality: 90 }).toBuffer();
+    const sb = supabaseServer();
+    const fileName = `social/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { error } = await sb.storage.from("images").upload(fileName, jpeg, { contentType: "image/jpeg", upsert: false });
+    if (error) return { error: error.message };
+    const { data } = sb.storage.from("images").getPublicUrl(fileName);
+    return { url: data.publicUrl };
+  } catch (e) {
+    return { error: "JPEG-konvertering misslyckades: " + (e as Error).message };
+  }
+}
+
 // Pexels stock photos
 export interface StockPhoto { id: number; url: string; src: string; srcMedium: string; photographer: string; alt: string }
 

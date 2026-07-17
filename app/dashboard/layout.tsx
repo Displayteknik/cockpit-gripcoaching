@@ -50,13 +50,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       label: "Innehåll",
       items: [
         { href: "/dashboard/innehall", label: "Navet", icon: Compass, match: ["/dashboard/innehall"] },
-        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon },
-        {
-          href: "/dashboard/skapa",
-          label: "Inlägg",
-          icon: Sparkles,
-          match: ["/dashboard/skapa", "/dashboard/veckoplan", "/dashboard/fordon-inlagg", "/dashboard/scheduler", "/dashboard/dm", "/dashboard/analytics", "/dashboard/social"],
-        },
+        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon, match: ["/dashboard/studio", "/dashboard/skapa"] },
         { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText },
         { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar },
         { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon },

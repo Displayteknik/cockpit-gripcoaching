@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { sendEmail, weeklyReportEmailHtml, emailConfigured } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const onlyClient = url.searchParams.get("client_id");
   const dryRun = url.searchParams.get("dry_run") === "1";
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   let q = sb
     .from("clients")
     .select("id, name, slug, public_url, report_recipients")
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
 }
 
 async function buildClientSummary(clientId: string): Promise<string> {
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
   const since14 = new Date(Date.now() - 14 * 86400000).toISOString();
 

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
 
 // Listar idéer fran ideas_bank for aktiv klient.
 export async function GET(req: NextRequest) {
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
   const status = req.nextUrl.searchParams.get("status") || "pending";
   const type = req.nextUrl.searchParams.get("type");
@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest) {
   if (!["approved", "rejected", "used"].includes(status)) {
     return NextResponse.json({ error: "ogiltig status" }, { status: 400 });
   }
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const updates: Record<string, unknown> = { status };
   if (status === "approved") updates.approved_at = new Date().toISOString();
   if (status === "used") updates.used_at = new Date().toISOString();

@@ -1,13 +1,13 @@
 // Bygger den kompletta analytics-dashboarden för en klient.
 // EN källa — används av både admin (/api/analytics/dashboard) och kundportalen (/api/k/dashboard)
 // så kunden ser EXAKT samma rika data (KPI, kanaler, AI-synlighet, trend, position, brand, quick-wins).
-import { supabaseServer } from "./supabase-admin";
+import { supabaseService } from "./supabase-admin";
 import { autoSelectGaProperty, queryGsc, queryGscDaily } from "./google";
 import { getGa4Summary } from "./ga4";
 import { urlHost, fetchSitemapPages, bestPageForKeyword, samePagePath } from "./page-match";
 
 export async function buildDashboardData(clientId: string, daysRaw: number) {
-  const sb = supabaseServer();
+  const sb = supabaseService();
   // Självkoppla GA4-property om Google är anslutet men ingen property vald (matchar domän, best-effort).
   try { await autoSelectGaProperty(clientId); } catch {}
   const days = Math.max(1, Math.min(180, Number(daysRaw) || 30));
