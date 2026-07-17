@@ -115,6 +115,49 @@ export async function getEffectiveModuleIds(clientId: string): Promise<string[]>
   return (await getEffectiveModules(clientId)).map((m) => m.id);
 }
 
+// Admin Vy 2: varje modul för en tenant med effektiv-status, källa och ev. override.
+export interface TenantModuleRow {
+  id: string;
+  label: string;
+  description: string | null;
+  in_pro_default: boolean;
+  active: boolean;
+  effective: boolean;
+  source: EffectiveModule["source"] | null;
+  override: "add" | "remove" | null; // manuellt tillägg/avdrag om satt
+}
+
+export async function getTenantModuleView(clientId: string): Promise<TenantModuleRow[]> {
+  const sb = supabaseService();
+  const [modsRes, ovRes] = await Promise.all([
+    sb.from("platform_modules").select("*").order("sort_order", { ascending: true }),
+    sb.from("tenant_modules").select("module_id, enabled").eq("client_id", clientId),
+  ]);
+  const modules = (modsRes.data as PlatformModule[] | null) || [];
+  const overrides = new Map(
+    ((ovRes.data as { module_id: string; enabled: boolean }[] | null) || []).map((o) => [o.module_id, o.enabled]),
+  );
+  const eff = new Map((await getEffectiveModules(clientId)).map((e) => [e.id, e]));
+  return modules.map((m) => {
+    const e = eff.get(m.id);
+    const override: "add" | "remove" | null = overrides.has(m.id)
+      ? overrides.get(m.id)
+        ? "add"
+        : "remove"
+      : null;
+    return {
+      id: m.id,
+      label: m.label,
+      description: m.description,
+      in_pro_default: m.in_pro_default,
+      active: m.active,
+      effective: !!e,
+      source: e?.source ?? null,
+      override,
+    };
+  });
+}
+
 // Serverside-grind: används av layouts/route handlers.
 export async function hasModule(clientId: string, moduleId: string): Promise<boolean> {
   const ids = await getEffectiveModuleIds(clientId);

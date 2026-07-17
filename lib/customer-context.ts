@@ -11,27 +11,63 @@ export interface CustomerSession {
   client_name: string;
   client_slug: string;
   primary_color: string;
+  role: string;              // 'customer' (delad länk) | roll från platform_users
   features: string[];
 }
 
-// Validera token mot DB och cacha-id i cookie
+// Validera token mot DB. Löser BÅDE en delad klient-token (customer_token) OCH
+// en per-användar magic-link (platform_users.login_token) → per-användar-inloggning
+// funkar genom samma /k/[token]-route, och att avaktivera en användare släcker
+// länken direkt (nästa sidladdning → utloggad).
 export async function resolveCustomerToken(token: string): Promise<CustomerSession | null> {
   if (!token || token.length < 32) return null;
   const sb = supabaseService();
+
+  // 1. Delad klient-token (befintlig väg — behåll-fungerande-väg).
   const { data } = await sb
     .from("clients")
-    .select("id, name, slug, primary_color, customer_access_enabled, customer_features")
+    .select("id, name, slug, primary_color, customer_access_enabled")
     .eq("customer_token", token)
     .maybeSingle();
-  if (!data || !data.customer_access_enabled) return null;
-  return {
-    client_id: data.id as string,
-    client_name: data.name as string,
-    client_slug: data.slug as string,
-    primary_color: (data.primary_color as string) || "#1A6B3C",
-    // EN källa: effektiv behörighet (Pro-standard ∪ kampanj ∪ manuella tillägg − avdrag).
-    features: await getEffectiveModuleIds(data.id as string),
-  };
+  if (data && data.customer_access_enabled) {
+    return {
+      client_id: data.id as string,
+      client_name: data.name as string,
+      client_slug: data.slug as string,
+      primary_color: (data.primary_color as string) || "#1A6B3C",
+      role: "customer",
+      features: await getEffectiveModuleIds(data.id as string),
+    };
+  }
+
+  // 2. Per-användar magic-link (platform_users). Kräver aktiv användare + klient med access.
+  const { data: u } = await sb
+    .from("platform_users")
+    .select("id, role, client_id, active, activated_at")
+    .eq("login_token", token)
+    .maybeSingle();
+  if (u && u.active && u.client_id) {
+    const { data: c } = await sb
+      .from("clients")
+      .select("id, name, slug, primary_color, customer_access_enabled")
+      .eq("id", u.client_id)
+      .maybeSingle();
+    if (c && c.customer_access_enabled) {
+      if (!u.activated_at) {
+        await sb.from("platform_users").update({ activated_at: new Date().toISOString() }).eq("id", u.id);
+      }
+      return {
+        client_id: c.id as string,
+        client_name: c.name as string,
+        client_slug: c.slug as string,
+        primary_color: (c.primary_color as string) || "#1A6B3C",
+        role: (u.role as string) || "customer",
+        features: await getEffectiveModuleIds(c.id as string),
+      };
+    }
+  }
+
+  return null;
 }
 
 // Server-side: hämta aktuell kund-session från cookies.

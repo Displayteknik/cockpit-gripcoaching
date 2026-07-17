@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -78,7 +78,8 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
         { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
-        { href: "/dashboard/kund-access", label: "MySales Pro-access", icon: ExternalLink },
+        { href: "/dashboard/paket", label: "Paket & moduler", icon: Package },
+        { href: "/dashboard/kund-access", label: "Kund-access (länk)", icon: ExternalLink },
         { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass },
       ],
     },

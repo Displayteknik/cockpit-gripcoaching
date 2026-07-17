@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
+import { getEffectiveModules } from "@/lib/entitlements";
+import CustomerModuleCards from "@/components/CustomerModuleCards";
 import { supabaseService } from "@/lib/supabase-admin";
 import { buildDashboardData } from "@/lib/dashboard-data";
 import { computeFocusInsights, type FocusIcon, type FocusInsight } from "@/lib/dashboard-insights";
@@ -14,6 +16,9 @@ const FOCUS_ICON: Record<FocusIcon, React.ComponentType<{ className?: string }>>
 export default async function CustomerHome() {
   const session = await getCustomerSession();
   if (!session) return null;
+
+  // Kundens köpta moduler (rikt: namn, beskrivning, kampanj) → "Dina verktyg"-korten.
+  const effectiveModules = await getEffectiveModules(session.client_id);
 
   const has = (k: string) => session.features.includes(k);
   const showSocialStats = has("skapa") || has("veckoplan") || has("dm");
@@ -140,6 +145,9 @@ export default async function CustomerHome() {
           )}
         </div>
       </div>
+
+      {/* DINA VERKTYG — kundens köpta moduler som kort, med ev. kampanjbadge */}
+      <CustomerModuleCards modules={effectiveModules} primaryColor={primary} />
 
       {/* ATT GÖRA NU — det första kunden ser: 1–3 konkreta nästa steg ur egen data */}
       {focusInsights.length > 0 && (
