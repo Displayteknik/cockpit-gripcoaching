@@ -59,6 +59,13 @@ function buildNavSections(resourceModule: string): NavSection[] {
       ],
     },
     {
+      label: "Innehåll",
+      items: [
+        { href: "/dashboard/innehall", label: "Navet", icon: Compass, match: ["/dashboard/innehall"] },
+        { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar },
+      ],
+    },
+    {
       label: "Inlägg & Social",
       items: [
         {
@@ -74,7 +81,6 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/studio", label: "Studio", icon: ImageIcon },
         { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText },
-        { href: "/dashboard/studio/kalender", label: "Publiceringsöversikt", icon: Calendar },
       ],
     },
     {
