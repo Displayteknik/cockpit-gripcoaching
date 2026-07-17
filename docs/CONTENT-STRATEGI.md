@@ -126,6 +126,21 @@ Ett inlägg väljer **kanal + format + stil** när du jobbar — full frihet, f�
 - Studio slutar vara "en egen ö" och blir Cockpits **bildfabrik** — alla motorer som behöver ett visuellt
   anropar samma render (`/studio/render/<arketyp>?p=…`).
 
+### 3.3c ★ BESLUT (Håkan 2026-07-17): var Instagram "blir klart"
+
+**Instagram-delen görs klar i Studio + den gemensamma kalendern/publiceringen — INTE i det gamla
+"Skapa inlägg"-mockup-verktyget.** Motiv: den gamla Inlägg-motorns visuella preview var HTML-mockuper,
+inte riktiga renderingar. Studio gör nu äkta, on-brand, redigerbara renderingar (brand kit + editor).
+Att bygga story/reel/karusell både i gamla verktyget OCH i Studio = bygga bort "en enhet"-principen.
+
+- **Studio = MAKAREN** (format, renderingar, editor, brand kit). Reels/story/karusell byggs HÄR (Etapp H).
+- **"Skapa inlägg"-sidan pensioneras** → blir en tunn genväg till Studio (val (b) valt; val (a) = bygga om
+  gamla sidan till Studio-renders förkastat pga dubbelunderhåll). Görs i Etapp I (nav-städ).
+- **Inlägg-motorns HJÄRNA vävs in, byggs ej om:** 4A-veckorytm/veckodagslogik → kalendern (Etapp I);
+  DM & Pipeline + Analys → egna vyer i innehålls-navet (Etapp I); IG Graph direkt-publicering → den
+  gemensamma publiceringsmodulen bredvid GHL Social Planner (Etapp J).
+- Kort: Studio ritar, IG-motorns rytm/pipeline/analys/IG-publicering lever vidare runt omkring.
+
 ---
 
 ## 4. Bloggen — ETT flöde, tre destinationer (löser problem 1)
