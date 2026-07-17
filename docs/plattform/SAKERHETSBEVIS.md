@@ -40,12 +40,11 @@ lagrar bara publikt utpris (Bytbil-feed). De verkliga interna fälten och deras 
 | `client_voice_profile` | röst-fingerprint | Strikt RLS. |
 | `dm_pipeline_contacts` (notes, next_action, lead-PII) | intern CRM | Strikt RLS. |
 | `hm_brand_profile.pricing_notes` | intern prisstrategi | Nås bara via tenant-låst server-API; visas aldrig i kund-portalen. |
-| `ideas_bank` (ogodkända utkast) | internt innehåll | ⚠️ "open dev"-policy kvar (staged härdning — kräver route-migrering först, se `platform_hardening.sql`). |
+| `ideas_bank`, `gsc_queries_daily`, `agent_experiments` | internt innehåll / draft / PII | ✅ **HÄRDADE** — routes migrerade `supabaseServer→supabaseService`, "open dev"-policy droppad (`platform_hardening_step2.sql`). Verifierat: 0 policies, RLS på, endast service-role. `/k/besokare` (som läser gsc via service-role) laddar 200. |
 | `ikigai_sessions` (person_email, PII) | lead-PII | ✅ **RLS påslagen i detta bygge** (var av tidigare) → service-role only. |
 
-Härdning av de tre kvarvarande anon-öppna tabellerna (`ideas_bank`, `gsc_queries_daily`,
-`agent_experiments`) är stagad bakom en route-migrering (`supabaseServer→supabaseService`) —
-dokumenterad, inte tyst hoppad. [[PL-001]]
+Alla tidigare anon-öppna tabeller är nu stängda till service-role. Route-migreringen kördes
+FÖRE policy-droppen så live-kod aldrig träffade en låst tabell. [[PL-001]]
 
 ---
 
