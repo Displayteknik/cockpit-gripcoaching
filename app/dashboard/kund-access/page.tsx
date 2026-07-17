@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Copy, Check, RefreshCw, ExternalLink, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { Loader2, Copy, Check, RefreshCw, ExternalLink, Lock, Unlock, AlertTriangle, KeyRound } from "lucide-react";
 import { CUSTOMER_FEATURES } from "@/lib/customer-features";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface Access {
   token: string;
@@ -102,12 +103,12 @@ export default function KundAccessPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900">Kund-access</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Ge {access.name} en personlig länk till sin egen vy. Du väljer själv vilka moduler de får använda — t.ex. bara SEO &amp; AEO.
-        </p>
-      </div>
+      <DashHero
+        title="Kund-access"
+        subtitle={`Ge ${access.name} en personlig länk till sin egen vy. Du väljer själv vilka moduler de får använda — t.ex. bara SEO & AEO.`}
+        icon={KeyRound}
+        eyebrow={<LivePill label="Kund-access" />}
+      />
 
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">

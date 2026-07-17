@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Loader2, ExternalLink, Users, Hash, Image as ImageIcon, AlertCircle, ThumbsUp, ThumbsDown, Lightbulb, Zap } from "lucide-react";
 import { fetchJson } from "@/lib/safe-fetch";
+import { DashHero, LivePill, StatTile } from "@/components/ui/dash";
 
 interface Snapshot { followers?: number; following?: number; posts?: number; bio?: string; full_name?: string; verified?: boolean }
 interface Analysis {
@@ -42,15 +43,12 @@ export default function AnalysatorPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Search className="w-6 h-6 text-pink-600" />
-          Profil-analysator
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Klistra in en Instagram-handle (din egen, kunds, eller konkurrent). Hämtar publik data + Gemini-analys: vad funkar, vad inte, konkreta rekommendationer.
-        </p>
-      </div>
+      <DashHero
+        title="Profil-analysator"
+        subtitle="Klistra in en Instagram-handle (din egen, kunds, eller konkurrent). Hämtar publik data + Gemini-analys: vad funkar, vad inte, konkreta rekommendationer."
+        icon={Search}
+        eyebrow={<LivePill label="Instagram-analys" />}
+      />
 
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <div className="space-y-3">
@@ -74,20 +72,20 @@ export default function AnalysatorPage() {
       {result && (
         <div className="space-y-4">
           {/* Snapshot */}
+          <div className="grid grid-cols-3 gap-4">
+            <StatTile i={0} label="Följare" value={result.snapshot.followers ?? null} icon={Users} tone="violet" />
+            <StatTile i={1} label="Följer" value={result.snapshot.following ?? null} icon={Users} tone="blue" />
+            <StatTile i={2} label="Inlägg" value={result.snapshot.posts ?? null} icon={ImageIcon} tone="emerald" />
+          </div>
           <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2">
               <h2 className="font-display font-bold text-gray-900">@{handle.replace(/^@/, "")}</h2>
               {result.snapshot.verified && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">✓ Verifierad</span>}
               <a href={`https://instagram.com/${handle.replace(/^@/, "")}`} target="_blank" rel="noopener" className="text-xs text-blue-600 hover:underline ml-auto inline-flex items-center gap-1">
                 Öppna profil <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-            <div className="grid grid-cols-3 gap-4 mb-3">
-              <Stat icon={Users} label="Följare" value={result.snapshot.followers} color="pink" />
-              <Stat icon={Users} label="Följer" value={result.snapshot.following} color="purple" />
-              <Stat icon={ImageIcon} label="Inlägg" value={result.snapshot.posts} color="blue" />
-            </div>
-            {result.snapshot.full_name && <div className="text-sm font-medium text-gray-900">{result.snapshot.full_name}</div>}
+            {result.snapshot.full_name && <div className="mt-3 text-sm font-medium text-gray-900">{result.snapshot.full_name}</div>}
             {result.snapshot.bio && (
               <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">{result.snapshot.bio}</div>
             )}
@@ -153,19 +151,6 @@ export default function AnalysatorPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function Stat({ icon: Icon, label, value, color }: { icon: React.ComponentType<{ className?: string }>; label: string; value?: number; color: string }) {
-  const colors: Record<string, string> = { pink: "text-pink-600 bg-pink-50 border-pink-100", purple: "text-purple-600 bg-purple-50 border-purple-100", blue: "text-blue-600 bg-blue-50 border-blue-100" };
-  return (
-    <div className={`rounded-lg border p-3 ${colors[color]}`}>
-      <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
-        <Icon className="w-3.5 h-3.5" />
-        {label}
-      </div>
-      <div className="text-2xl font-bold tabular-nums">{value?.toLocaleString("sv-SE") ?? "—"}</div>
     </div>
   );
 }

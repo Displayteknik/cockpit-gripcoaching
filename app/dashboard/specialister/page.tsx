@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 type SpecialistMeta = {
   id: string;
@@ -52,15 +53,12 @@ export default function SpecialisterPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-purple-600" />
-          AI-specialister
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Skarpa systemprompts för säljcopy, ICP-tydliggörande och kundprojekt-kickoff. Drivs av Claude Sonnet.
-        </p>
-      </div>
+      <DashHero
+        title="AI-specialister"
+        subtitle="Skarpa systemprompts för säljcopy, ICP-tydliggörande och kundprojekt-kickoff. Drivs av Claude Sonnet."
+        icon={Sparkles}
+        eyebrow={<LivePill label="Specialister" />}
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">

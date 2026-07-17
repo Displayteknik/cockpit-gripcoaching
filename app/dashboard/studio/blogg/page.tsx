@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { FileText, Loader2, Wand2, Send, Check, Eye, Code, Link2, Layers, Image as ImageIcon } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface BlogSite { id: string; name: string }
@@ -140,15 +141,13 @@ export default function StudioBloggPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <span className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
-            <FileText className="w-6 h-6" style={{ color: primary }} />
-          </span>
-          <div>
-            <h1 className="font-display font-bold text-2xl text-gray-900">Blogg</h1>
-            <p className="text-sm text-gray-500">Ämne → färdig SEO-artikel → utkast i GHL Blogs eller på Cockpit-sajten. {client ? `Klient: ${client.name}` : ""}</p>
-          </div>
-        </div>
+        <DashHero
+          title="Blogg"
+          subtitle={`Ämne → färdig SEO-artikel → utkast i GHL Blogs eller på Cockpit-sajten.${client ? ` · ${client.name}` : ""}`}
+          accent={primary}
+          icon={FileText}
+          eyebrow={<LivePill label="Bloggmotorn" />}
+        />
 
         {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 

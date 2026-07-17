@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase, type PageData } from "@/lib/supabase";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, ExternalLink, Globe, GlobeLock } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Globe, GlobeLock, Files } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 export default function SidorRouter() {
   const [resourceModule, setResourceModule] = useState<string | null>(null);
   useEffect(() => {
@@ -89,20 +90,22 @@ function SidorDashboardPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900">Sidor</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Hantera sidor som redigeras i den visuella editorn
-          </p>
-        </div>
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className="flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Ny sida
-        </button>
+      <div className="mb-6">
+        <DashHero
+          title="Sidor"
+          subtitle="Hantera sidor som redigeras i den visuella editorn."
+          icon={Files}
+          eyebrow={<LivePill label="Sidor" />}
+          right={
+            <button
+              onClick={() => setShowNew(!showNew)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15"
+            >
+              <Plus className="h-4 w-4" />
+              Ny sida
+            </button>
+          }
+        />
       </div>
 
       {/* Extern, handgjord sajt (Hay Days) — redigeras via klick-på-sajten */}

@@ -5,6 +5,7 @@ import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, Message
 import QualityMeter from "@/components/profile/QualityMeter";
 import KnowledgeBank from "@/components/profile/KnowledgeBank";
 import IntakeAgent from "@/components/IntakeAgent";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface Profile {
   company_name: string;
@@ -138,22 +139,22 @@ export default function ProfilPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="flex items-start justify-between sticky top-0 bg-gray-50 -mx-4 px-4 py-3 z-10 border-b border-gray-200">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900">Din profil</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du — och desto bättre förslag får du.
-          </p>
-        </div>
-        <button
-          onClick={save}
-          disabled={saving}
-          className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-blue-dark disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedAt ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          {saving ? "Sparar..." : savedAt ? "Sparat" : "Spara"}
-        </button>
-      </div>
+      <DashHero
+        title="Din profil"
+        subtitle="Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du — och desto bättre förslag får du."
+        icon={User}
+        eyebrow={<LivePill label="Profil" />}
+        right={
+          <button
+            onClick={save}
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedAt ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {saving ? "Sparar..." : savedAt ? "Sparat" : "Spara"}
+          </button>
+        }
+      />
 
       <QualityMeter refreshKey={qualityRefresh} onNavigate={scrollToDimension} />
 

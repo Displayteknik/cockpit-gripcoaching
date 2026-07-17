@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Mail, ArrowRight, Loader2, Users, FileText, ShieldAlert, Beaker, Reply, CalendarDays, Sparkles } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 type SpecialistMeta = {
   id: string;
@@ -74,21 +75,12 @@ export default function MejlMotorPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200">
-            Mejl-motor
-          </span>
-        </div>
-        <h1 className="font-display text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <Mail className="w-7 h-7 text-orange-600" />
-          Mejl-motorn
-        </h1>
-        <p className="text-gray-600 text-sm mt-2 max-w-2xl">
-          Cold outbound, nyhetsbrev och säljmejl med voice-fingerprint per klient. Sex specialister
-          i ett flöde — från ICP till sekvens till spam-grind till svarsklassning.
-        </p>
-      </div>
+      <DashHero
+        title="Mejl-motorn"
+        subtitle="Cold outbound, nyhetsbrev och säljmejl med voice-fingerprint per klient. Sex specialister i ett flöde — från ICP till sekvens till spam-grind till svarsklassning."
+        icon={Mail}
+        eyebrow={<LivePill label="Mejl-motor" />}
+      />
 
       {/* FLODE */}
       <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">

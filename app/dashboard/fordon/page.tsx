@@ -6,8 +6,9 @@ import { formatPrice } from "@/lib/utils";
 import { parseStock, encodeStock, STOCK_OPTIONS, type StockStatus } from "@/lib/stock";
 import {
   Plus, Pencil, Trash2, Star, Search, X, Upload, Image as ImageIcon,
-  GripVertical, ChevronDown, Eye, RefreshCw, Loader2,
+  GripVertical, ChevronDown, Eye, RefreshCw, Loader2, Car,
 } from "lucide-react";
+import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 
 const CATEGORIES = [
   { value: "car", label: "Bil" },
@@ -268,28 +269,35 @@ export default function DashboardPage() {
   const allImages = editing ? [editing.image_url, ...(editing.gallery || [])].filter(Boolean) as string[] : [];
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900">Fordon</h1>
-          <p className="text-sm text-gray-500 mt-1">{activeCount} till salu &middot; {soldCount} sålda &middot; {filtered.length} visas</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {hasFeed && (
-            <button onClick={syncBytbil} disabled={syncing}
-              className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-              title="Hämta bilarna från Bytbil och uppdatera listan">
-              {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              {syncing ? "Synkar..." : "Synka från Bytbil"}
+    <div className="space-y-6">
+      <DashHero
+        title="Fordon"
+        subtitle="Bilar, ATV, UTV och släp — med bilder, specs och bytesstatus."
+        icon={Car}
+        eyebrow={<LivePill label="Lager" />}
+        chips={
+          <>
+            <HeroChip icon={Car} label={`${activeCount} till salu`} />
+            <HeroChip icon={Star} label={`${soldCount} sålda`} />
+          </>
+        }
+        right={
+          <div className="flex items-center gap-2">
+            {hasFeed && (
+              <button onClick={syncBytbil} disabled={syncing}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50"
+                title="Hämta bilarna från Bytbil och uppdatera listan">
+                {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {syncing ? "Synkar…" : "Synka"}
+              </button>
+            )}
+            <button onClick={openNew} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-white/90">
+              <Plus className="w-4 h-4" /> Nytt fordon
             </button>
-          )}
-          <button onClick={openNew} className="flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-            <Plus className="w-4 h-4" />
-            Nytt fordon
-          </button>
-        </div>
-      </div>
+          </div>
+        }
+      />
+      <div className="flex items-center justify-end"><span className="text-xs text-gray-400">{filtered.length} visas</span></div>
 
       {syncMsg && (
         <div className={`mb-4 text-sm rounded-lg px-4 py-2.5 border ${syncMsg.ok ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"}`}>

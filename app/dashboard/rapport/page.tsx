@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FileBarChart, Loader2, Send, Mail, Eye, Clock, Plus, Copy, Check } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface Report {
   id: string;
@@ -79,16 +80,12 @@ export default function RapportPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <FileBarChart className="w-6 h-6 text-emerald-600" />
-          Veckorapport
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Sammanfattar trafik, sökord, leads och innehåll. Gemini skriver en konsultmässig veckokoll.
-          Kan visas direkt, kopieras, eller mejlas till kund — du väljer.
-        </p>
-      </div>
+      <DashHero
+        title="Veckorapport"
+        subtitle="Sammanfattar trafik, sökord, leads och innehåll. Gemini skriver en konsultmässig veckokoll. Kan visas direkt, kopieras, eller mejlas till kund — du väljer."
+        icon={FileBarChart}
+        eyebrow={<LivePill label="Veckorapport" />}
+      />
 
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <h2 className="font-display font-bold text-gray-900 mb-3 flex items-center gap-2">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bot, Loader2, TrendingUp, CheckCircle2, XCircle, Clock, Sparkles } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 type TrendByType = {
   type: string;
@@ -66,22 +67,13 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12">
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-            Agent-loop
-          </span>
-        </div>
-        <h1 className="font-display text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <Bot className="w-7 h-7 text-indigo-600" />
-          AI-experiment & idé-bank
-        </h1>
-        <p className="text-gray-600 text-sm mt-2 max-w-2xl">
-          Automat-genererade utkast varje natt + score-trend per klient och typ. Godkänn det som
-          låter rätt — det blir publicerbart material.
-        </p>
-      </div>
+    <div className="space-y-6 pb-12">
+      <DashHero
+        title="Idé-bank"
+        subtitle="Automat-genererade utkast varje natt + score-trend per klient och typ. Godkänn det som låter rätt — det blir publicerbart material."
+        icon={Bot}
+        eyebrow={<LivePill label="Agent-loop" />}
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">{error}</div>

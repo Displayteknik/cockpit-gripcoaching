@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2, Search, Sparkles, ExternalLink, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, Target, Zap } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface Competitor {
   id: string;
@@ -75,21 +76,18 @@ export default function KonkurrenterPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Target className="w-6 h-6 text-red-600" />
-            Konkurrenter
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Spaning på vad som funkar för andra — och hur vi gör det bättre.
-          </p>
-        </div>
-        <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-blue-dark">
-          <Plus className="w-4 h-4" />
-          Ny konkurrent
-        </button>
-      </div>
+      <DashHero
+        title="Konkurrenter"
+        subtitle="Spaning på vad som funkar för andra — och hur vi gör det bättre."
+        icon={Target}
+        eyebrow={<LivePill label="Konkurrent-spaning" />}
+        right={
+          <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15">
+            <Plus className="w-4 h-4" />
+            Ny konkurrent
+          </button>
+        }
+      />
 
       {showAdd && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">

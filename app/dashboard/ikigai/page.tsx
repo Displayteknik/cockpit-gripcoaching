@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Compass, Loader2, Sparkles, Download, ArrowRight, ChevronDown, ChevronUp, RefreshCw, Trash2 } from "lucide-react";
 import MarkdownView from "@/components/MarkdownView";
+import { DashHero, LivePill } from "@/components/ui/dash";
 import IkigaiDiagram, { type IkigaiDiagramData } from "@/components/IkigaiDiagram";
 import { downloadMarkdownPdf } from "@/lib/markdown-pdf";
 import { QUADRANTS } from "@/lib/ikigai-questions";
@@ -112,13 +113,13 @@ export default function IkigaiPage() {
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Compass className="w-6 h-6 text-brand-blue" /> Ikigai-motorn
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">Fyra fält in → en konkret nisch, ett MVP-erbjudande och en 14-dagars plan ut. Resultatet kan fylla på brand-profilen för den aktiva klienten.</p>
-      </div>
+    <div className="space-y-6">
+      <DashHero
+        title="Ikigai-motorn"
+        subtitle="Fyra fält in → en konkret nisch, ett MVP-erbjudande och en 14-dagars plan ut. Resultatet kan fylla på brand-profilen för den aktiva klienten."
+        icon={Compass}
+        eyebrow={<LivePill label="Coaching" />}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,460px)_1fr] gap-6">
         {/* Wizard */}

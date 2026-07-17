@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Palette, Save, Check, Loader2, Upload, Type, Sparkles, ImageIcon, Ban, Wand2, Layers } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 const FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display"];
 const COLOR_ROLES: { key: string; label: string; hint: string }[] = [
@@ -117,18 +118,18 @@ export default function BrandKitPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between sticky top-0 bg-gray-50 -mx-4 px-4 py-3 z-10 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: `${previewColors.primary}1a` }}><Palette className="w-6 h-6" style={{ color: previewColors.primary }} /></span>
-            <div>
-              <h1 className="font-display font-bold text-2xl text-gray-900">Grafisk profil</h1>
-              <p className="text-sm text-gray-500">Logga, färger, typsnitt, element och bildstil — så allt innehåll blir rätt automatiskt. {clientName && `Klient: ${clientName}`}</p>
-            </div>
-          </div>
-          <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-50" style={{ background: previewColors.primary }}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />} {saving ? "Sparar…" : saved ? "Sparat" : "Spara"}
-          </button>
-        </div>
+        <DashHero
+          title="Grafisk profil"
+          subtitle={`Logga, färger, typsnitt, element och bildstil — så allt innehåll blir rätt automatiskt.${clientName ? ` Klient: ${clientName}` : ""}`}
+          accent={previewColors.primary}
+          icon={Palette}
+          eyebrow={<LivePill label="Brand kit" />}
+          right={
+            <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />} {saving ? "Sparar…" : saved ? "Sparat" : "Spara"}
+            </button>
+          }
+        />
 
         {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 

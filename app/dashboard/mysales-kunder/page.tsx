@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { Users, Search, ExternalLink, Crown, Loader2, RefreshCw, Database, Activity } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface CoachUser {
   id: string;
@@ -74,24 +75,18 @@ export default function MySalesKunderPage() {
   }, [users, filter, search]);
 
   return (
-    <div>
-      <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-brand-blue" />
-            MySales pionjärer
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Alla användare av MySales Coach · status, aktivitet, anslutning</p>
-        </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          Uppdatera
-        </button>
-      </div>
+    <div className="space-y-6">
+      <DashHero
+        title="MySales pionjärer"
+        subtitle="Alla användare av MySales Coach · status, aktivitet, anslutning."
+        icon={Users}
+        eyebrow={<LivePill label="Pionjärer" />}
+        right={
+          <button onClick={load} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50">
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Uppdatera
+          </button>
+        }
+      />
 
       {/* Summary cards */}
       {summary && (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Copy, ExternalLink, Trash2, Check, X, Clock, MessageSquare, Loader2 } from "lucide-react";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface ShareLink {
   id: string;
@@ -53,15 +54,12 @@ export default function GodkannandePage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <MessageSquare className="w-6 h-6 text-blue-600" />
-          Godkännanden
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Delade utkast till kunden. Skapa delningslänkar från Social- eller Blogg-modulen, kopiera och skicka via mejl/SMS.
-        </p>
-      </div>
+      <DashHero
+        title="Godkännanden"
+        subtitle="Delade utkast till kunden. Skapa delningslänkar från Social- eller Blogg-modulen, kopiera och skicka via mejl/SMS."
+        icon={MessageSquare}
+        eyebrow={<LivePill label="Godkännanden" />}
+      />
 
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Väntar svar" value={counts.pending} color="amber" active={filter === "pending"} onClick={() => setFilter(filter === "pending" ? "all" : "pending")} />

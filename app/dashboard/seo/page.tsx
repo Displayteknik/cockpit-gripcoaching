@@ -7,6 +7,7 @@ import { Search, TrendingUp, Eye, Globe, Plus, Trash2, Loader2, ExternalLink, Ga
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import { SeoReportBlock } from "@/components/SeoReport";
 import { fetchJson } from "@/lib/safe-fetch";
+import { DashHero, LivePill } from "@/components/ui/dash";
 
 interface Analytics {
   visits_24h: number;
@@ -181,42 +182,40 @@ function SEOPageInner() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-emerald-600" />
-            SEO &amp; AEO
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Synlighet i Google + AI-motorer (ChatGPT, Perplexity, Google AI). Helt gratis verktyg.
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {googleStatus?.connected && googleStatus?.connection?.gsc_site ? (
-            <button onClick={() => syncGsc(28)} disabled={syncing} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
-              {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshIcon />}
-              Synka GSC (28 dagar)
+      <DashHero
+        title="SEO & AEO"
+        subtitle="Synlighet i Google + AI-motorer (ChatGPT, Perplexity, Google AI). Helt gratis verktyg."
+        accent={activeClient?.primary_color}
+        icon={TrendingUp}
+        eyebrow={<LivePill label="SEO-motor" />}
+        right={
+          <div className="flex flex-wrap justify-end gap-2">
+            {googleStatus?.connected && googleStatus?.connection?.gsc_site ? (
+              <button onClick={() => syncGsc(28)} disabled={syncing} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50">
+                {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshIcon />}
+                Synka GSC (28 dagar)
+              </button>
+            ) : (
+              <a href="/dashboard/installningar" className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15">
+                <ExternalLink className="w-4 h-4" />
+                Anslut Google
+              </a>
+            )}
+            <button onClick={() => setShowGscImport(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15">
+              <Upload className="w-4 h-4" />
+              CSV-import
             </button>
-          ) : (
-            <a href="/dashboard/installningar" className="flex items-center gap-2 bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-lg text-sm font-medium">
-              <ExternalLink className="w-4 h-4" />
-              Anslut Google
-            </a>
-          )}
-          <button onClick={() => setShowGscImport(true)} className="flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-300 px-3 py-2 rounded-lg text-sm font-medium text-gray-700">
-            <Upload className="w-4 h-4" />
-            CSV-import
-          </button>
-          <button onClick={() => setShowPaa(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90">
-            <HelpCircle className="w-4 h-4" />
-            People Also Ask
-          </button>
-          <button onClick={() => setShowAiAudit(true)} className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90">
-            <Sparkles className="w-4 h-4" />
-            AI Content-audit
-          </button>
-        </div>
-      </div>
+            <button onClick={() => setShowPaa(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 px-3 py-1.5 text-sm font-medium text-white ring-1 ring-white/10 hover:opacity-90">
+              <HelpCircle className="w-4 h-4" />
+              People Also Ask
+            </button>
+            <button onClick={() => setShowAiAudit(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-3 py-1.5 text-sm font-medium text-white ring-1 ring-white/10 hover:opacity-90">
+              <Sparkles className="w-4 h-4" />
+              AI Content-audit
+            </button>
+          </div>
+        }
+      />
 
       {/* TABS */}
       <div className="flex gap-1 border-b border-gray-200 -mt-2">
