@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs } from "@/lib/studio/overrides";
+import { fs, hlColor, bodyColor } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
 import { isLightColor } from "@/components/studio/StudioBits";
 
@@ -21,7 +21,7 @@ export default function ArkCitat({ payload, brand }: { payload: StudioPayload; b
         {payload.headline1 ? (
           <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: c.primary, fontSize: fs(22, payload), marginBottom: 10 }}>{payload.headline1}</div>
         ) : null}
-        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 700, color: c.ink, fontSize: fs(52, payload), lineHeight: 1.22 }}>{payload.body}</div>
+        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 700, color: bodyColor(c.ink, payload), fontSize: fs(52, payload), lineHeight: 1.22 }}>{payload.body}</div>
         {payload.headline2 ? (
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 30 }}>
             <div style={{ width: 46, height: 4, background: c.primary, borderRadius: 2 }} />

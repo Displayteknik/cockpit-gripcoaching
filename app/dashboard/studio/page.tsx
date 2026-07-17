@@ -724,6 +724,22 @@ export default function StudioPage() {
                 <label className="block text-xs font-medium text-gray-500 mb-1">Textstorlek ({Math.round(overrides.fontScale * 100)}%)</label>
                 <input type="range" min={0.6} max={1.6} step={0.05} value={overrides.fontScale} onChange={(e) => setOv({ fontScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Rubrikfärg</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={overrides.headlineColor || "#1A1A1A"} onChange={(e) => setOv({ headlineColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
+                    <button onClick={() => setOv({ headlineColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.headlineColor ? "Auto" : "Standard"}</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Textfärg</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={overrides.bodyColor || "#1A1A1A"} onChange={(e) => setOv({ bodyColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
+                    <button onClick={() => setOv({ bodyColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.bodyColor ? "Auto" : "Standard"}</button>
+                  </div>
+                </div>
+              </div>
               {payload.imageUrl && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Bildzoom ({Math.round(overrides.imageScale * 100)}%)</label>
