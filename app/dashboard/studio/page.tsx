@@ -678,7 +678,7 @@ export default function StudioPage() {
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                   <label className="block text-xs font-medium text-gray-600">Ändra bilden — skriv vad du vill</label>
                   <textarea value={imgComment} onChange={(e) => setImgComment(e.target.value)} rows={2}
-                    placeholder='T.ex. "visa bara barnet, inte optikern, annars lika" eller "ljusare bakgrund"'
+                    placeholder='T.ex. "ljusare bakgrund", "visa produkten större" eller "ta bort personen i bakgrunden"'
                     className={inputCls} />
                   <div className="flex items-center gap-2">
                     <button onClick={editImage} disabled={editingImg || !imgComment.trim()}
@@ -769,7 +769,7 @@ export default function StudioPage() {
                   </button>
                 )}
               </div>
-              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={isCarousel ? "Ämne för karusellen — t.ex. 5 vanor som stjäl energi" : "Ämne för AI-förslag (valfritt) — t.ex. skolstart, barnglasögon…"} className={inputCls} />
+              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={isCarousel ? "Ämne för karusellen — t.ex. 3 misstag att undvika, 5 tips" : "Ämne för AI-förslag (valfritt) — t.ex. ett erbjudande, en nyhet, en fråga"} className={inputCls} />
 
               {/* Klistra in eget utkast (ej karusell) */}
               {!isCarousel && (

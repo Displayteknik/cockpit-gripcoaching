@@ -156,7 +156,7 @@ export default function StudioBloggPage() {
         <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
           <h2 className="font-display font-bold text-gray-900 text-lg">1. Skapa artikel</h2>
           <textarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={2}
-            placeholder="Ämne/vinkel — t.ex. 'Så väljer du rätt LED-skärm för skyltfönstret'" className={inputCls} />
+            placeholder="Ämne/vinkel — t.ex. en guide, en jämförelse eller vanliga frågor" className={inputCls} />
           <div className="flex items-center gap-3">
             <label className="text-xs font-medium text-gray-500">Längd</label>
             <select value={wordCount} onChange={(e) => setWordCount(Number(e.target.value))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm">

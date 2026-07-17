@@ -289,7 +289,7 @@ export default function BrandKitPage() {
             <section className={card}>
               <div className="flex items-center gap-2"><Ban className="w-5 h-5" style={{ color: previewColors.primary }} /><h2 className="font-display font-bold text-gray-900 text-lg">Fot & vill-inte-ha</h2></div>
               <div className="grid sm:grid-cols-2 gap-3">
-                <input value={kit.footer?.tagline || ""} onChange={(e) => set("footer.tagline", e.target.value)} placeholder="Tagline (t.ex. Leg. optiker)" className={inputCls} />
+                <input value={kit.footer?.tagline || ""} onChange={(e) => set("footer.tagline", e.target.value)} placeholder="Tagline (kort slogan under loggan)" className={inputCls} />
                 <input value={kit.footer?.address || ""} onChange={(e) => set("footer.address", e.target.value)} placeholder="Adress · ort · telefon" className={inputCls} />
                 <input value={kit.footer?.ctaLabel || ""} onChange={(e) => set("footer.ctaLabel", e.target.value)} placeholder="CTA-text (Boka online…)" className={inputCls} />
                 <input value={kit.footer?.ctaUrl || ""} onChange={(e) => set("footer.ctaUrl", e.target.value)} placeholder="CTA-länk" className={inputCls} />
