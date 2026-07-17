@@ -30,16 +30,16 @@ function buildNavSections(resourceModule: string): NavSection[] {
 
   return [
     {
-      label: "HQ",
+      label: "Överblick",
       items: [
-        { href: "/dashboard/hq", label: "HQ — Allt på ett ställe", icon: Command },
+        { href: "/dashboard", label: "Översikt", icon: Home },
+        { href: "/dashboard/hq", label: "HQ — allt på ett ställe", icon: Command },
         { href: "/dashboard/mysales-kunder", label: "MySales pionjärer", icon: Users },
       ],
     },
     {
-      label: "Strategi",
+      label: "Varumärke",
       items: [
-        { href: "/dashboard", label: "Översikt", icon: Home },
         { href: "/dashboard/profil", label: "Brand-profil", icon: Target },
         { href: "/dashboard/brand-kit", label: "Grafisk profil", icon: Palette },
         { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
@@ -47,71 +47,39 @@ function buildNavSections(resourceModule: string): NavSection[] {
       ],
     },
     {
-      label: "Coaching",
-      items: [
-        { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass },
-      ],
-    },
-    {
-      label: "LinkedIn",
-      items: [
-        { href: "/dashboard/linkedin", label: "LinkedIn-motor", icon: LinkedinIcon },
-      ],
-    },
-    {
       label: "Innehåll",
       items: [
         { href: "/dashboard/innehall", label: "Navet", icon: Compass, match: ["/dashboard/innehall"] },
-        { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar },
-      ],
-    },
-    {
-      label: "Inlägg & Social",
-      items: [
+        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon },
         {
           href: "/dashboard/skapa",
           label: "Inlägg",
           icon: Sparkles,
           match: ["/dashboard/skapa", "/dashboard/veckoplan", "/dashboard/fordon-inlagg", "/dashboard/scheduler", "/dashboard/dm", "/dashboard/analytics", "/dashboard/social"],
         },
-      ],
-    },
-    {
-      label: "Studio",
-      items: [
-        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon },
         { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText },
+        { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar },
+        { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon },
+        { href: "/dashboard/mejl", label: "Mejl", icon: Mail },
+        { href: "/dashboard/agents", label: "Idé-bank", icon: Bot },
       ],
     },
     {
-      label: "Innehåll & SEO",
+      label: "SEO & sajt",
       items: [
-        { href: "/dashboard/studio/blogg", label: "Blogg-maskin", icon: BookOpen },
-        { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: FileText },
         { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
-        { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
+        { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: BookOpen },
+        ...resourceItems,
       ],
     },
     {
-      label: "Mejl-motor",
-      items: [
-        { href: "/dashboard/mejl", label: "Mejl-motor", icon: Mail },
-      ],
-    },
-    {
-      label: "Agent-loop",
-      items: [
-        { href: "/dashboard/agents", label: "Idé-bank & trend", icon: Bot },
-      ],
-    },
-    {
-      label: "Kund-förvaltning",
+      label: "Kunder",
       items: [
         { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
         { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
         { href: "/dashboard/kund-access", label: "MySales Pro-access", icon: ExternalLink },
-        ...resourceItems,
+        { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass },
       ],
     },
     {
@@ -119,6 +87,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/setup/onboard", label: "Onboarding", icon: Rocket },
         { href: "/dashboard/setup", label: "Setup-agent", icon: Wrench },
+        { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
         { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
         { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
       ],
@@ -163,8 +132,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return i.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(i.href);
   };
 
-  // Hitta aktiv sektion-label för mobile-titel
-  const activeItem = navSections.flatMap((s) => s.items).find(itemActive);
+  // Mest specifik vinner: bara den djupaste matchande posten markeras aktiv
+  // (annars lyser t.ex. "Studio" samtidigt som "Blogg"/"Kalender").
+  const allItems = navSections.flatMap((s) => s.items);
+  const activeHref = allItems
+    .filter(itemActive)
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  const activeItem = allItems.find((i) => i.href === activeHref);
 
   // Sätt browser-flikens titel (admin-yta ärver annars publika HM Motor-titeln)
   useEffect(() => {
@@ -176,15 +150,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className={`${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 transition-transform overflow-y-auto`}>
-        <div className="px-4 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-              <LayoutDashboard className="w-4 h-4 text-white" />
+      <aside className={`${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-100 transition-transform flex flex-col`}>
+        <div className="px-4 py-4 border-b border-gray-100">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm">
+              <LayoutDashboard className="w-[18px] h-[18px] text-white" />
             </div>
             <div className="leading-tight">
               <div className="font-display font-bold text-sm text-gray-900">Cockpit</div>
-              <div className="text-[10px] text-gray-500">GripCoaching</div>
+              <div className="text-xs text-gray-400">GripCoaching</div>
             </div>
           </Link>
           <div className="mt-3">
@@ -192,25 +166,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <nav className="px-2 py-3">
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
           {navSections.map((section) => (
-            <div key={section.label} className="mb-4">
-              <div className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">{section.label}</div>
+            <div key={section.label} className="mb-5">
+              <div className="px-3 mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">{section.label}</div>
               <div className="space-y-0.5">
                 {section.items.map((item) => {
-                  const isActive = itemActive(item);
+                  const isActive = item.href === activeHref;
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      aria-current={isActive ? "page" : undefined}
+                      className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                         isActive
-                          ? "bg-blue-50 text-blue-700 font-semibold"
-                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                          ? "bg-indigo-50 text-indigo-700 font-semibold"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       }`}
                     >
-                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                      <item.icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}`} />
                       <span className="truncate">{item.label}</span>
                     </Link>
                   );
@@ -221,22 +196,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Sidfot: byrå-genvägar (döljs i låst klientvy) + utloggning (alltid synlig) */}
-        <div className="px-3 pb-4 mt-auto border-t border-gray-100 pt-3 space-y-1">
+        <div className="px-3 py-3 border-t border-gray-100 space-y-0.5">
           {!scoped && (
             <>
-              <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
-                <ExternalLink className="w-3.5 h-3.5" />
+              <Link href="/admin" className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+                <ExternalLink className="w-[18px] h-[18px] text-gray-400" />
                 Sideditor (Puck)
               </Link>
-              <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
-                <ExternalLink className="w-3.5 h-3.5" />
+              <Link href="/" className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+                <ExternalLink className="w-[18px] h-[18px] text-gray-400" />
                 Visa publik sajt
               </Link>
             </>
           )}
           <form action="/api/admin/logout" method="post">
-            <button type="submit" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-900">
-              <LogOut className="w-3.5 h-3.5" />
+            <button type="submit" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+              <LogOut className="w-[18px] h-[18px] text-gray-400" />
               Logga ut
             </button>
           </form>
