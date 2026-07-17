@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock, FileEdit, CheckCircle2, Lightbulb, RefreshCw, Loader2, ExternalLink, ImageIcon } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
+import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 
 interface ClientInfo { name: string; primary_color: string }
 
@@ -73,34 +74,35 @@ export default function KalenderPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
-              <CalendarClock className="w-6 h-6" style={{ color: primary }} />
-            </span>
-            <div>
-              <h1 className="font-display font-bold text-2xl text-gray-900">Kalender</h1>
-              <p className="text-sm text-gray-500">Allt innehåll — Studio, inlägg, LinkedIn och blogg — samlat. {client ? `Klient: ${client.name}` : ""}</p>
-            </div>
-          </div>
-          <button onClick={refresh} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Uppdatera
-          </button>
-        </div>
-
-        <Section title="Schemalagt" color={STATUS_COLOR.scheduled} icon={<CalendarClock className="w-5 h-5" style={{ color: STATUS_COLOR.scheduled }} />} list={groups.scheduled} hint="På väg ut, sorterat efter tid." />
-        <Section title="Utkast" color={STATUS_COLOR.draft} icon={<FileEdit className="w-5 h-5" style={{ color: STATUS_COLOR.draft }} />} list={groups.draft} hint="Skapade, ej publicerade — öppna i verkstaden." />
-        <Section title="Publicerat" color={STATUS_COLOR.published} icon={<CheckCircle2 className="w-5 h-5" style={{ color: STATUS_COLOR.published }} />} list={groups.published} hint="Ute nu." />
-        {groups.idea.length > 0 && (
-          <Section title="Idéer" color={STATUS_COLOR.idea} icon={<Lightbulb className="w-5 h-5" style={{ color: STATUS_COLOR.idea }} />} list={groups.idea} hint="Uppslag att utveckla." />
+    <div className="space-y-6">
+      <DashHero
+        title="Kalender"
+        subtitle={`Allt innehåll — Studio, inlägg, LinkedIn och blogg — samlat.${client ? ` · ${client.name}` : ""}`}
+        accent={primary}
+        icon={CalendarClock}
+        eyebrow={<LivePill label="Publiceringsöversikt" />}
+        chips={(
+          <>
+            <HeroChip icon={CalendarClock} label={`${groups.scheduled.length} schemalagt`} />
+            <HeroChip icon={FileEdit} label={`${groups.draft.length} utkast`} />
+            <HeroChip icon={CheckCircle2} label={`${groups.published.length} publicerat`} />
+          </>
         )}
+        right={<button onClick={refresh} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Uppdatera
+        </button>}
+      />
 
-        <p className="text-xs text-gray-400 flex items-center gap-1">
-          <ExternalLink className="w-3.5 h-3.5" /> Klicka på ett inlägg för att öppna det i rätt verkstad. Slutlig publicering sker där (GHL / IG / blogg).
-        </p>
-      </div>
+      <Section title="Schemalagt" color={STATUS_COLOR.scheduled} icon={<CalendarClock className="w-5 h-5" style={{ color: STATUS_COLOR.scheduled }} />} list={groups.scheduled} hint="På väg ut, sorterat efter tid." />
+      <Section title="Utkast" color={STATUS_COLOR.draft} icon={<FileEdit className="w-5 h-5" style={{ color: STATUS_COLOR.draft }} />} list={groups.draft} hint="Skapade, ej publicerade — öppna i verkstaden." />
+      <Section title="Publicerat" color={STATUS_COLOR.published} icon={<CheckCircle2 className="w-5 h-5" style={{ color: STATUS_COLOR.published }} />} list={groups.published} hint="Ute nu." />
+      {groups.idea.length > 0 && (
+        <Section title="Idéer" color={STATUS_COLOR.idea} icon={<Lightbulb className="w-5 h-5" style={{ color: STATUS_COLOR.idea }} />} list={groups.idea} hint="Uppslag att utveckla." />
+      )}
+
+      <p className="text-xs text-gray-400 flex items-center gap-1">
+        <ExternalLink className="w-3.5 h-3.5" /> Klicka på ett inlägg för att öppna det i rätt verkstad. Slutlig publicering sker där (GHL / IG / blogg).
+      </p>
     </div>
   );
 }
