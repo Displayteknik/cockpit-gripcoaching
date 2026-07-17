@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseService } from "./supabase-admin";
-import { normalizeFeatures } from "./customer-features";
+import { getEffectiveModuleIds } from "./entitlements";
 
 const TOKEN_COOKIE = "customer_token";
 const CLIENT_COOKIE = "customer_client_id";
@@ -29,7 +29,8 @@ export async function resolveCustomerToken(token: string): Promise<CustomerSessi
     client_name: data.name as string,
     client_slug: data.slug as string,
     primary_color: (data.primary_color as string) || "#1A6B3C",
-    features: normalizeFeatures(data.customer_features as string[] | null),
+    // EN källa: effektiv behörighet (Pro-standard ∪ kampanj ∪ manuella tillägg − avdrag).
+    features: await getEffectiveModuleIds(data.id as string),
   };
 }
 
@@ -51,7 +52,7 @@ export async function getCustomerSession(): Promise<CustomerSession | null> {
 export async function requireCustomerFeature(featureKey: string): Promise<CustomerSession> {
   const session = await getCustomerSession();
   if (!session) redirect("/k-utloggad");
-  if (!session.features.includes(featureKey)) redirect("/k");
+  if (!session.features.includes(featureKey)) redirect(`/k/ej-i-paket?m=${encodeURIComponent(featureKey)}`);
   return session;
 }
 
