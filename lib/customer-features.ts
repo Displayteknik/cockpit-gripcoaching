@@ -58,6 +58,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     description: "Dina B2B-offerter från MySales Coach, samlade.",
   },
   {
+    key: "fokus",
+    label: "Säljöversikt",
+    href: "/k/fokus",
+    icon: Target,
+    description: "Din aktivitet, pipeline och offert-KPI:er från MySales Coach.",
+  },
+  {
     key: "ideer",
     label: "Idé-bank",
     href: "/k/ideer",
