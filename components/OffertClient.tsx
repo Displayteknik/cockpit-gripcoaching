@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Building2, Upload, CheckCircle2, Sparkles, RefreshCw, ListChecks } from "lucide-react";
+import OffertKatalog from "@/components/OffertKatalog";
 
 interface Quote {
   id: string; quote_number?: string; customer_name?: string; customer_company?: string;
@@ -173,6 +174,9 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
           onChange={(e) => { const f = e.target.files?.[0]; if (f) laddaUpp(f); e.target.value = ""; }}
         />
       </section>
+
+      {/* Produktkatalog (Fas 2) */}
+      <OffertKatalog primaryColor={primaryColor} />
 
       {/* Offertlista (befintlig, read-only) */}
       <section className="space-y-3">
