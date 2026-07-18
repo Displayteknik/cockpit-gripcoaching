@@ -28,6 +28,14 @@ const SLIDE_KIND_LABEL: Record<string, string> = { hook: "Krok", point: "Punkt",
 
 const DEFAULT_COLOR = "#1A6B3C";
 
+// Pedagogiska stegfärger (1-5) — harmoniska men distinkta. Varje steg får sin färg på
+// nummer, ram och skugga så det syns direkt vad som hör ihop.
+const STEG_FARGER = ["#6366f1", "#0ea5e9", "#f59e0b", "#10b981", "#f43f5e"];
+// Ram + mjuk färgad skugga för ett stegområde.
+function stegRam(c: string): React.CSSProperties {
+  return { borderColor: `${c}66`, boxShadow: `0 10px 30px -14px ${c}99` };
+}
+
 // Standardfärg + snabbval för penseldrags-rutan. Gul = Opticurs standard.
 const DEFAULT_BRUSH = "#F2B01E";
 const BRUSH_SWATCHES: { name: string; hex: string }[] = [
@@ -620,8 +628,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             { n: 5, t: "Publicera" },
           ].map((s, i, arr) => (
             <span key={s.n} className="inline-flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-gray-500">
-                <StegNr n={s.n} color={primary} /> {s.t}
+              <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: STEG_FARGER[s.n - 1] }}>
+                <StegNr n={s.n} color={STEG_FARGER[s.n - 1]} /> {s.t}
               </span>
               {i < arr.length - 1 && <span className="text-gray-300">→</span>}
             </span>
@@ -632,8 +640,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
           {/* ── Vänster: formulär ── */}
           <div className="space-y-6">
             {/* Mall + format */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={1} color={primary} /> Format &amp; mall</h2>
+            <section className="bg-white border rounded-2xl p-6 space-y-4" style={stegRam(STEG_FARGER[0])}>
+              <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={1} color={STEG_FARGER[0]} /> Format &amp; mall</h2>
               <div className="grid grid-cols-2 gap-3">
                 {availableTemplates.map((t) => {
                   const active = t.id === templateId;
@@ -666,8 +674,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </section>
 
             {/* Foto */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={2} color={primary} /> Bild</h2>
+            <section className="bg-white border rounded-2xl p-6 space-y-4" style={stegRam(STEG_FARGER[1])}>
+              <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={2} color={STEG_FARGER[1]} /> Bild</h2>
 
               {/* Mallen visar en bild — mjuk hjälp, inte varning */}
               {needsImage && !imageUrl && (
@@ -788,10 +796,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             )}
 
             {/* Text */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
+            <section className="bg-white border rounded-2xl p-6 space-y-4" style={stegRam(STEG_FARGER[2])}>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={3} color={primary} /> {isCarousel ? "Karusell" : "Text på bilden"}</h2>
+                  <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={3} color={STEG_FARGER[2]} /> {isCarousel ? "Karusell" : "Text på bilden"}</h2>
                   {!isCarousel && <p className="text-xs text-gray-500 mt-0.5 ml-9">Rubrik och text som syns i <strong>själva bilden</strong>.</p>}
                 </div>
                 {isCarousel ? (
@@ -950,10 +958,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </section>
 
             {/* Bildtext (caption) — förstaklassig, hälften av inlägget */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
+            <section className="bg-white border rounded-2xl p-6 space-y-3" style={stegRam(STEG_FARGER[3])}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={4} color={primary} /> Bildtext</h2>
+                  <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={4} color={STEG_FARGER[3]} /> Bildtext</h2>
                   <p className="text-xs text-gray-500 mt-0.5 ml-9">Texten <strong>under inlägget</strong> på Instagram (caption) — krok, värde, uppmaning, hashtags.</p>
                 </div>
                 <button onClick={suggestCaption} disabled={suggestingCaption}
@@ -1084,9 +1092,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             )}
 
             {/* Publicera till GHL (utkast) */}
-            <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-4 space-y-3">
+            <div className="rounded-xl border bg-white p-4 space-y-3" style={stegRam(STEG_FARGER[4])}>
               <div className="flex items-center gap-2">
-                <StegNr n={5} color={primary} />
+                <StegNr n={5} color={STEG_FARGER[4]} />
                 <h3 className="font-display font-bold text-gray-900 text-sm">Publicera</h3>
                 <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
                   {postType === "reel" ? "Reel" : postType === "story" ? "Story" : "Inlägg"}
