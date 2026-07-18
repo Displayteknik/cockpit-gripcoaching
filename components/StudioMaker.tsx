@@ -14,7 +14,7 @@ import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/pa
 import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
-import ChannelPreview, { type ChannelKey } from "@/components/studio/ChannelPreview";
+import ChannelPreview, { type ChannelKey, CHANNEL_BRAND } from "@/components/studio/ChannelPreview";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface Suggestion { hookType: string; headline1: string; headline2: string; body: string }
@@ -28,34 +28,12 @@ const HOOK_LABEL: Record<string, string> = {
 
 const SLIDE_KIND_LABEL: Record<string, string> = { hook: "Krok", point: "Punkt", cta: "Avslut" };
 
-// Brand-glyfer (lucide slutade exportera dem) — små inline-SVG:er.
-function IgIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-function FbIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M13.5 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.25-1.5 1.55-1.5H17V4.6c-.3-.04-1.3-.13-2.46-.13-2.44 0-4.1 1.49-4.1 4.22v2.35H7.7V14h2.74v8h3.06z" />
-    </svg>
-  );
-}
-function LiIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.8 0 0 .78 0 1.75v20.5C0 23.22.8 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.75V1.75C24 .78 23.2 0 22.22 0z" />
-    </svg>
-  );
-}
-
 // Fas B — de tre kanalerna. platform = matchning mot GHL:s platform-sträng.
-const CHANNELS: { key: ChannelKey; label: string; platform: string; Icon: (p: { className?: string }) => React.JSX.Element }[] = [
-  { key: "ig", label: "Instagram", platform: "instagram", Icon: IgIcon },
-  { key: "fb", label: "Facebook", platform: "facebook", Icon: FbIcon },
-  { key: "li", label: "LinkedIn", platform: "linkedin", Icon: LiIcon },
+// Grafisk identitet (label/färg/gradient/ikon) hämtas ur CHANNEL_BRAND (EN källa).
+const CHANNELS: { key: ChannelKey; platform: string }[] = [
+  { key: "ig", platform: "instagram" },
+  { key: "fb", platform: "facebook" },
+  { key: "li", platform: "linkedin" },
 ];
 
 const DEFAULT_COLOR = "#1A6B3C";
@@ -676,7 +654,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       } else {
         const platform = k === "fb" ? "facebook" : k === "li" ? "linkedin" : "instagram";
         const accs = ghlFor(platform).map((a) => a.id).filter((id) => selectedAccounts.includes(id));
-        if (!accs.length) throw new Error(`Inga valda ${CHANNELS.find((c) => c.key === k)?.label}-konton i GHL.`);
+        if (!accs.length) throw new Error(`Inga valda ${CHANNEL_BRAND[k].label}-konton i GHL.`);
         reqBody = { postId: loadedPostId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
       }
       const r = await fetch("/api/studio/publish", {
@@ -1216,14 +1194,19 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
           {/* Kanalväljare — förikryssad efter vad klienten kopplat */}
           <div className="flex flex-wrap items-center gap-2">
-            {CHANNELS.map(({ key, label, Icon }) => {
+            {CHANNELS.map(({ key }) => {
               const on = selectedChannels.includes(key);
               const conn = channelConnected[key];
+              const brand = CHANNEL_BRAND[key];
+              const { Icon } = brand;
               return (
                 <button key={key} onClick={() => toggleChannel(key)}
                   className="inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors"
-                  style={on ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                  <Icon className="w-4 h-4" /> {label}
+                  style={on ? { borderColor: brand.color, color: brand.color, background: `${brand.color}12` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-white" style={{ background: on ? brand.gradient : "#9ca3af" }}>
+                    <Icon className="w-3 h-3" />
+                  </span>
+                  {brand.label}
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                     style={conn ? { background: "#dcfce7", color: "#15803d" } : { background: "#f3f4f6", color: "#9ca3af" }}>
                     {conn ? "kopplad" : "ej kopplad"}
@@ -1245,7 +1228,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <div className="text-sm text-gray-500 text-center py-6">Välj minst en kanal ovan för att förhandsgranska.</div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {CHANNELS.filter((c) => selectedChannels.includes(c.key)).map(({ key, label }) => {
+              {CHANNELS.filter((c) => selectedChannels.includes(c.key)).map(({ key }) => {
+                const brand = CHANNEL_BRAND[key];
+                const label = brand.label;
+                const { Icon } = brand;
                 const eff = capFor(key);
                 const busy = pubBusy === key;
                 const res = pubResult[key];
@@ -1259,9 +1245,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       clientName={client?.name || slug} handle={key === "ig" ? igConn?.handle : null} primary={primary} />
 
                     {/* Per-kanal-caption (redigerbar) — faller tillbaka på grund-captionen */}
-                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-2.5 space-y-1.5">
+                    <div className="rounded-xl border bg-gray-50 p-2.5 space-y-1.5" style={{ borderColor: `${brand.color}26` }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{label}-text</span>
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: brand.color }}>
+                          <span className="w-4 h-4 rounded flex items-center justify-center text-white" style={{ background: brand.gradient }}>
+                            <Icon className="w-2.5 h-2.5" />
+                          </span>
+                          {label}-text
+                        </span>
                         <button onClick={() => copyChannelText(key)} className="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-800">
                           {copied === key ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />} Kopiera
                         </button>
@@ -1275,14 +1266,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     {igDirect ? (
                       <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
                         className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-                        style={{ background: primary }}>
+                        style={{ background: brand.gradient }}>
                         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                         {res === "ok" ? "Publicerat på Instagram ✓" : "Publicera nu på Instagram"}
                       </button>
                     ) : canPublish ? (
                       <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
                         className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-                        style={{ background: primary }}>
+                        style={{ background: brand.gradient }}>
                         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                         {res === "ok" ? (scheduleDate ? "Schemalagt i GHL ✓" : "Utkast skapat i GHL ✓") : (scheduleDate ? `Schemalägg ${label} i GHL` : `Skapa ${label}-utkast i GHL`)}
                       </button>
