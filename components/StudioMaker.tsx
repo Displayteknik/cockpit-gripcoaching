@@ -103,6 +103,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [error, setError] = useState("");
   const [imgResults, setImgResults] = useState<{ url: string; thumb: string; credit: string }[]>([]);
   const [searchingImg, setSearchingImg] = useState<"stock" | "ai" | "">("");
+  // Personligt mediabibliotek (uppladdade + AI-bilder) — återanvänd eller släng.
+  const [showMedia, setShowMedia] = useState(false);
+  const [mediaItems, setMediaItems] = useState<{ path: string; url: string; name: string; updated: string | null }[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [deletingPath, setDeletingPath] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [posts, setPosts] = useState<StudioPost[]>([]);
   const [loadedPostId, setLoadedPostId] = useState<string | null>(null);
@@ -292,6 +297,29 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       setSearchingImg("");
     }
   }, [topic, headline1, format]);
+
+  // ── Mediabibliotek: klientens sparade bilder (studio-images/<clientId>/) ──
+  const loadMedia = useCallback(async () => {
+    setLoadingMedia(true);
+    try {
+      const r = await fetch("/api/studio/media");
+      const d = await r.json();
+      if (r.ok) setMediaItems(Array.isArray(d.items) ? d.items : []);
+    } catch { /* ignore */ } finally { setLoadingMedia(false); }
+  }, []);
+  const toggleMedia = useCallback(() => {
+    setShowMedia((v) => { if (!v) loadMedia(); return !v; });
+  }, [loadMedia]);
+  const deleteMedia = useCallback(async (path: string) => {
+    setDeletingPath(path);
+    try {
+      const r = await fetch("/api/studio/media", {
+        method: "DELETE", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path }),
+      });
+      if (r.ok) setMediaItems((prev) => prev.filter((m) => m.path !== path));
+    } catch { /* ignore */ } finally { setDeletingPath(""); }
+  }, []);
 
   // §00: aldrig tom yta — generera on-brand bild ur inläggets innehåll och applicera direkt.
   const generateOnBrandImage = useCallback(async () => {
@@ -853,6 +881,37 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </button>
                     ))}
                   </div>
+                )}
+              </div>
+
+              {/* Mediabibliotek — dina uppladdade + AI-skapade bilder. Återanvänd eller släng. */}
+              <div className="pt-3 border-t border-gray-100 space-y-3">
+                <button onClick={toggleMedia}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                  <FolderOpen className="w-4 h-4" /> {showMedia ? "Dölj mediabibliotek" : "Mina bilder (mediabibliotek)"}
+                </button>
+                {showMedia && (
+                  loadingMedia ? (
+                    <div className="flex items-center gap-2 text-xs text-gray-500 justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /> Hämtar dina bilder…</div>
+                  ) : mediaItems.length === 0 ? (
+                    <div className="text-xs text-gray-500 text-center py-4">Inga sparade bilder än. Bilder du laddar upp eller genererar dyker upp här.</div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {mediaItems.map((m) => (
+                        <div key={m.path} className="relative group rounded-lg overflow-hidden border-2 aspect-square" style={{ borderColor: imageUrl === m.url ? primary : "transparent" }}>
+                          <button onClick={() => setImageUrl(m.url)} className="w-full h-full" title="Använd den här bilden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={m.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                          </button>
+                          <button onClick={() => deleteMedia(m.path)} disabled={deletingPath === m.path} title="Ta bort bilden"
+                            className="absolute top-1 right-1 w-6 h-6 rounded-md bg-white/90 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100">
+                            {deletingPath === m.path ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                          </button>
+                          {imageUrl === m.url && <span className="absolute bottom-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded text-white" style={{ background: primary }}>Vald</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
             </section>
