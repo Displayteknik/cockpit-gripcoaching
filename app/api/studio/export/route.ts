@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizePayload, encodePayload, FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,6 +10,9 @@ export const maxDuration = 60;
 // (Vercel, playwright = devDependency) faller den tillbaka med 501 → använd CLI/payload.
 // Admin-grindad av proxy.ts.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const raw = await req.json();
     const payload = normalizePayload(raw);

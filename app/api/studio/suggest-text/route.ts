@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient } from "@/lib/client-context";
 import { generateStudioCopy } from "@/lib/studio/copy";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,6 +11,9 @@ export const maxDuration = 60;
 // + winning examples via iterateGenerate (Anthropic), 5 varianter → topp 3 (inga fragment/AI-språk).
 // Admin-grindad av proxy.ts.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const client = await getActiveClient();
     const body = await req.json().catch(() => ({}));

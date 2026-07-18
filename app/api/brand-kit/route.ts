@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
+import { requireAdminOrCustomer, requireAdmin } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -8,6 +9,9 @@ export const runtime = "nodejs";
 
 // GET /api/brand-kit — { kit, clientPrimary, clientName }
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const client = await getActiveClient();
     const clientId = await getActiveClientId();
@@ -26,6 +30,9 @@ export async function GET() {
 
 // PUT /api/brand-kit — { kit } → sparar/uppdaterar klientens kit
 export async function PUT(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const clientId = await getActiveClientId();
     const b = await req.json().catch(() => ({}));

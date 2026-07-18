@@ -3,6 +3,7 @@ import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { searchStockPhotos, generateImagen } from "@/lib/images";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -13,6 +14,9 @@ const BUCKET = "studio-images";
 // stock → Pexels-foton (publika URL:er, direkt användbara). ai → Imagen 4.0 → studio-images.
 // Admin-grindad av proxy.ts.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const client = await getActiveClient();
     const niche = client?.industry || "optiker";

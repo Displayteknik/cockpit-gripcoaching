@@ -3,6 +3,7 @@ import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -35,6 +36,9 @@ function sanitizeCaption(t: string): string {
 // Genererar en färdig, strukturerad social-caption (brödtexten man LÄSER, inte affisch-text)
 // grundad i HELA inläggets innehåll + varumärkesröst. Admin-grindad av proxy.ts.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const client = await getActiveClient();
     const b = await req.json().catch(() => ({}));

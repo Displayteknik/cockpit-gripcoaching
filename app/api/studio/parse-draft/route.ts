@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generate } from "@/lib/gemini";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -8,6 +9,9 @@ export const maxDuration = 20;
 // POST /api/studio/parse-draft — { text, templateId } → { headline1, headline2, body }
 // Delar upp användarens egna utkast i mallens fält. Ändrar inte innehållet i sak.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const b = await req.json().catch(() => ({}));
     const text = (b.text || "").toString().trim();

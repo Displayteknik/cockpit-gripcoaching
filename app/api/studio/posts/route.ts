@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,9 @@ export const runtime = "nodejs";
 
 // GET /api/studio/posts — lista aktiv klients skapelser (nyast först)
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const clientId = await getActiveClientId();
     const sb = supabaseService();
@@ -27,6 +31,9 @@ export async function GET() {
 
 // POST /api/studio/posts — { id?, title, payload } → spara ny eller uppdatera befintlig
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const clientId = await getActiveClientId();
     const body = await req.json().catch(() => ({}));

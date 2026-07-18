@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { getProfile } from "@/lib/instagram";
+import { requireAdminOrCustomer, requireAdmin } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 interface Body { ig_account_id: string; ig_access_token: string; ig_handle?: string }
 
 export async function PUT(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const clientId = await getActiveClientId();
   const body = (await req.json()) as Body;
   if (!body.ig_account_id || !body.ig_access_token) return NextResponse.json({ error: "ig_account_id + ig_access_token krävs" }, { status: 400 });
@@ -42,6 +46,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   const clientId = await getActiveClientId();
   const sb = supabaseServer();
   const { data } = await sb.from("clients").select("ig_account_id, ig_handle").eq("id", clientId).maybeSingle();
@@ -52,6 +59,9 @@ export async function GET() {
 }
 
 export async function DELETE() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const clientId = await getActiveClientId();
   const sb = supabaseServer();
   await sb.from("clients").update({ ig_account_id: null, ig_access_token: null, ig_handle: null }).eq("id", clientId);

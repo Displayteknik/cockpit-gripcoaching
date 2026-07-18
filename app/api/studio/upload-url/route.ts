@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,9 @@ const OK_VIDEO = new Set(["video/mp4", "video/quicktime", "video/webm"]);
 // Stödjer bild (studio-images/brand-assets) OCH video (studio-videos, för reels).
 // Admin-grindad av proxy.ts. Säkerställer bucketen (skapar publik om den saknas).
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const clientId = await getActiveClientId();
     const { filename, mime, size, bucket: reqBucket } = await req.json();

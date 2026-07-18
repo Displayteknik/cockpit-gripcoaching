@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { generateCarousel } from "@/lib/studio/carousel";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -8,6 +9,9 @@ export const maxDuration = 45;
 // POST /api/studio/carousel/generate — { topic, points } → { slides: StudioSlide[] }
 // Admin-grindad av proxy.ts. Text grundas i klientens röst + hook-playbook.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const client = await getActiveClient();
     const clientId = await getActiveClientId();

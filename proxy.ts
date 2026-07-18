@@ -60,6 +60,13 @@ function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/profile")) return true;
   if (path.startsWith("/api/assets")) return true;
   if (path.startsWith("/api/intake/")) return true;
+  // Kund-vänd Studio (/k/studio): aktiv klient + brand kit + IG-status (läs) + alla studio-endpoints.
+  // Varje route grindas in-route med requireAdminOrCustomer/requireAdmin + tenant-låses via
+  // getActiveClientId. GHL-config/-accounts stannar admin-only (ej i denna allowlist).
+  if (path === "/api/clients/active") return true;
+  if (path === "/api/brand-kit") return true;
+  if (path === "/api/instagram/connect") return true;
+  if (path.startsWith("/api/studio/") && path !== "/api/studio/ghl-config" && path !== "/api/studio/ghl-accounts") return true;
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||

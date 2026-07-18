@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { derivePostType, type StudioFormat } from "@/lib/studio/payload";
 import { publishContent } from "@/lib/publish";
 import { supabaseService } from "@/lib/supabase-admin";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -12,6 +13,9 @@ export const maxDuration = 60;
 // klientens kopplade Instagram, publiceras nu — PNG konverteras till JPEG). Via lib/publish.
 // Uppdaterar studio_posts (ghl_status/ghl_post_id/caption) om postId ges.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const clientId = await getActiveClientId();
     const body = await req.json().catch(() => ({}));

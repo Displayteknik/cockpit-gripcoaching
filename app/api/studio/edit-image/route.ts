@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { editImagen } from "@/lib/images";
 import { supabaseService } from "@/lib/supabase-admin";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -12,6 +13,9 @@ const BUCKET = "studio-images";
 // Redigerar en befintlig Studio-bild via textkommentar (bild-till-bild, Nano Banana).
 // Ex: "visa bara barnet, inte optikern, annars lika". Admin-grindad av proxy.ts.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+
   try {
     const body = await req.json().catch(() => ({}));
     const imageUrl = (body.imageUrl || "").toString();
