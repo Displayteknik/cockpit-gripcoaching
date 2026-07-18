@@ -592,8 +592,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <ImageIcon className="w-6 h-6" style={{ color: primary }} />
             </span>
             <div>
-              <h1 className="font-display font-bold text-2xl text-gray-900">Studio</h1>
-              <p className="text-sm text-gray-500">Skapa färdiga inlägg — utan Canva. {client ? `Klient: ${client.name}` : ""}</p>
+              <h1 className="font-display font-bold text-2xl text-gray-900">Skapa inlägg</h1>
+              <p className="text-sm text-gray-500">Färdiga inlägg till Instagram — utan Canva. {client ? `Klient: ${client.name}` : ""}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -610,12 +610,30 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
           <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
 
+        {/* Så funkar det — numrerad stegöversikt */}
+        <div className="flex items-center gap-2 flex-wrap text-sm">
+          {[
+            { n: 1, t: "Format & mall" },
+            { n: 2, t: "Bild" },
+            { n: 3, t: "Text på bilden" },
+            { n: 4, t: "Bildtext" },
+            { n: 5, t: "Publicera" },
+          ].map((s, i, arr) => (
+            <span key={s.n} className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-gray-500">
+                <StegNr n={s.n} color={primary} /> {s.t}
+              </span>
+              {i < arr.length - 1 && <span className="text-gray-300">→</span>}
+            </span>
+          ))}
+        </div>
+
         <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
           {/* ── Vänster: formulär ── */}
           <div className="space-y-6">
             {/* Mall + format */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="font-display font-bold text-gray-900 text-lg">Mall</h2>
+              <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={1} color={primary} /> Format &amp; mall</h2>
               <div className="grid grid-cols-2 gap-3">
                 {availableTemplates.map((t) => {
                   const active = t.id === templateId;
@@ -628,7 +646,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         <span className="text-sm font-semibold text-gray-900">{t.name}</span>
                         {rec && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>Föreslås</span>}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">{t.formats.join(" · ")}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{t.formats.map((f) => FORMAT_LABELS[f]).join(" · ")}</div>
                     </button>
                   );
                 })}
@@ -649,16 +667,16 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
             {/* Foto */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="font-display font-bold text-gray-900 text-lg">Foto</h2>
+              <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={2} color={primary} /> Bild</h2>
 
-              {/* §00: den här mallen behöver en bild — aldrig tom yta */}
+              {/* Mallen visar en bild — mjuk hjälp, inte varning */}
               {needsImage && !imageUrl && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
-                  <div className="text-xs text-amber-800">Den här mallen bärs av bilden — publicera aldrig med tom yta. Ladda upp en, eller generera en on-brand bild ur inläggets innehåll.</div>
+                <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
+                  <div className="text-xs text-gray-600">Den här mallen visar en bild. Ladda upp din egen nedan — eller låt oss skapa en on-brand bild ur innehållet.</div>
                   <button onClick={generateOnBrandImage} disabled={searchingImg === "ai"}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     style={{ background: primary }}>
-                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Generera on-brand bild
+                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Skapa on-brand bild
                   </button>
                 </div>
               )}
@@ -771,8 +789,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
             {/* Text */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display font-bold text-gray-900 text-lg">{isCarousel ? "Karusell" : "Text"}</h2>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={3} color={primary} /> {isCarousel ? "Karusell" : "Text på bilden"}</h2>
+                  {!isCarousel && <p className="text-xs text-gray-500 mt-0.5 ml-9">Rubrik och text som syns i <strong>själva bilden</strong>.</p>}
+                </div>
                 {isCarousel ? (
                   <button onClick={generateCarouselNow} disabled={genCarousel}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
@@ -932,8 +953,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-display font-bold text-gray-900 text-lg">Bildtext</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Texten man läser under inlägget — krok, värde, uppmaning, hashtags.</p>
+                  <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={4} color={primary} /> Bildtext</h2>
+                  <p className="text-xs text-gray-500 mt-0.5 ml-9">Texten <strong>under inlägget</strong> på Instagram (caption) — krok, värde, uppmaning, hashtags.</p>
                 </div>
                 <button onClick={suggestCaption} disabled={suggestingCaption}
                   className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40 shrink-0"
@@ -965,8 +986,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </a>
                 </div>
               </div>
-              <div className="mx-auto rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
+              <div className="relative mx-auto rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
                 <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined} />
+                {!imageUrl && !videoUrl && !headline1.trim() && !body.trim() && (!isCarousel || slides.every((s) => !s.headline?.trim() && !s.body?.trim())) && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 p-6 bg-white/85 backdrop-blur-sm">
+                    <span className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
+                      <Wand2 className="w-5 h-5" style={{ color: primary }} />
+                    </span>
+                    <div className="text-sm font-semibold text-gray-800">Ditt inlägg visas här</div>
+                    <p className="text-xs text-gray-500 max-w-[220px]">Skriv text i <strong>steg 3</strong> eller tryck <strong>Föreslå text</strong> — så ser du resultatet direkt.</p>
+                  </div>
+                )}
               </div>
               {payload.imageUrl && (
                 <p className="text-[11px] text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma</p>
@@ -1056,7 +1086,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             {/* Publicera till GHL (utkast) */}
             <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Send className="w-4 h-4" style={{ color: primary }} />
+                <StegNr n={5} color={primary} />
                 <h3 className="font-display font-bold text-gray-900 text-sm">Publicera</h3>
                 <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
                   {postType === "reel" ? "Reel" : postType === "story" ? "Story" : "Inlägg"}
@@ -1080,7 +1110,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 {caption.trim() ? (
                   <div className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-2.5 max-h-28 overflow-auto" style={{ whiteSpace: "pre-wrap" }}>{caption}</div>
                 ) : (
-                  <div className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-2.5">Ingen bildtext än — skriv eller föreslå en i <strong>Bildtext</strong>-rutan till vänster.</div>
+                  <div className="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-2.5">Ingen bildtext än — skriv eller föreslå en i <strong>steg 4 · Bildtext</strong>.</div>
                 )}
               </div>
 
@@ -1208,5 +1238,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         )}
       </div>
     </div>
+  );
+}
+
+// Numrerad steg-bricka — gör flödet begripligt (steg 1-5).
+function StegNr({ n, color }: { n: number; color: string }) {
+  return (
+    <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: color }}>
+      {n}
+    </span>
   );
 }
