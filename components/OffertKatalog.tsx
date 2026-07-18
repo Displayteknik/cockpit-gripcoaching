@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Package, Loader2, Plus, Upload, Pencil, Trash2, X, Truck, Clock } from "lucide-react";
+import { Package, Loader2, Plus, Upload, Pencil, Trash2, X, Truck, Clock, AlertTriangle } from "lucide-react";
+import { calcRate } from "@/lib/offert/fx";
 
 interface Product {
   id: string;
@@ -18,7 +19,8 @@ interface Product {
   notes?: string | null;
 }
 
-const TOM: Partial<Product> = { name: "", category: "", unit: "st", supplier_name: "", purchase_price: null, freight: null, lead_time_days: null, markup_pct: null };
+const VALUTOR = ["SEK", "USD", "EUR", "CNY"];
+const TOM: Partial<Product> = { name: "", category: "", unit: "st", supplier_name: "", currency: "SEK", purchase_price: null, freight: null, lead_time_days: null, markup_pct: null };
 
 function nOrNull(v: string): number | null {
   const s = v.replace(",", ".").replace(/[^\d.]/g, "");
@@ -27,10 +29,16 @@ function nOrNull(v: string): number | null {
 function kr(n?: number | null) {
   return typeof n === "number" ? n.toLocaleString("sv-SE") + " kr" : "—";
 }
-function prisForslag(p: Partial<Product>): number | null {
+// Landat pris i SEK = (inpris + frakt) × kalkylkurs (spot × buffert). Utländsk valuta räknas om.
+function landatSEK(p: Partial<Product>, rates: Record<string, number>): number | null {
   if (typeof p.purchase_price !== "number") return null;
-  const bas = p.purchase_price + (Number(p.freight) || 0);
-  return Math.round(bas * (1 + (Number(p.markup_pct) || 0) / 100));
+  const rate = calcRate(rates, p.currency);
+  return Math.round((p.purchase_price + (Number(p.freight) || 0)) * rate);
+}
+function prisForslag(p: Partial<Product>, rates: Record<string, number>): number | null {
+  const landat = landatSEK(p, rates);
+  if (landat == null) return null;
+  return Math.round(landat * (1 + (Number(p.markup_pct) || 0) / 100));
 }
 
 export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryColor?: string }) {
@@ -41,13 +49,19 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
   const [importing, setImporting] = useState(false);
   const [supplierForImport, setSupplierForImport] = useState("");
   const [fel, setFel] = useState<string | null>(null);
+  const [rates, setRates] = useState<Record<string, number>>({ SEK: 1 });
+  const [fxDate, setFxDate] = useState<string>("");
+  const [importFlags, setImportFlags] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const ladda = () => {
     setLoading(true);
     fetch("/api/offert/products").then((r) => r.json()).then((d) => setProducts(d.products || [])).catch(() => {}).finally(() => setLoading(false));
   };
-  useEffect(ladda, []);
+  useEffect(() => {
+    ladda();
+    fetch("/api/offert/fx").then((r) => r.json()).then((d) => { if (d.rates) setRates(d.rates); if (d.date) setFxDate(d.date); }).catch(() => {});
+  }, []);
 
   const spara = async () => {
     if (!form?.name?.trim() || sparar) return;
@@ -69,14 +83,14 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
   };
 
   const importera = async (file: File) => {
-    setImporting(true); setFel(null);
+    setImporting(true); setFel(null); setImportFlags([]);
     try {
       const fd = new FormData();
       fd.append("file", file);
       if (supplierForImport.trim()) fd.append("supplierName", supplierForImport.trim());
       const r = await fetch("/api/offert/products/extract", { method: "POST", body: fd });
       const d = await r.json();
-      if (d.ok) { setSupplierForImport(""); ladda(); }
+      if (d.ok) { setSupplierForImport(""); setImportFlags(d.flags || []); ladda(); }
       else setFel(d.error || "Kunde inte importera");
     } catch { setFel("Kunde inte importera"); } finally { setImporting(false); }
   };
@@ -109,6 +123,13 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
 
       {fel && <div className="text-xs text-red-600">{fel}</div>}
 
+      {importFlags.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800"><AlertTriangle className="w-3.5 h-3.5" /> Att kontrollera i prislistan</div>
+          {importFlags.map((f, i) => <div key={i} className="text-xs text-amber-700 pl-5">• {f}</div>)}
+        </div>
+      )}
+
       {form && (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
@@ -121,15 +142,27 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
             <Falt label="Leverantör"><In value={form.supplier_name || ""} onChange={(v) => setForm({ ...form, supplier_name: v })} /></Falt>
             <Falt label="Enhet"><In value={form.unit || ""} onChange={(v) => setForm({ ...form, unit: v })} placeholder="st" /></Falt>
             <Falt label="Art.nr"><In value={form.sku || ""} onChange={(v) => setForm({ ...form, sku: v })} /></Falt>
-            <Falt label="Inpris (kr)"><In value={form.purchase_price ?? ""} onChange={(v) => setForm({ ...form, purchase_price: nOrNull(v) })} numeric /></Falt>
-            <Falt label="Frakt (kr)"><In value={form.freight ?? ""} onChange={(v) => setForm({ ...form, freight: nOrNull(v) })} numeric /></Falt>
+            <Falt label="Valuta">
+              <div className="flex gap-1">
+                {VALUTOR.map((c) => (
+                  <button key={c} type="button" onClick={() => setForm({ ...form, currency: c })}
+                    className={`flex-1 text-xs font-semibold px-1 py-2 rounded-lg border ${(form.currency || "SEK") === c ? "text-white border-transparent" : "bg-white border-gray-200 text-gray-600"}`}
+                    style={(form.currency || "SEK") === c ? { background: primaryColor } : undefined}>{c}</button>
+                ))}
+              </div>
+            </Falt>
+            <Falt label={`Inpris (${form.currency || "SEK"})`}><In value={form.purchase_price ?? ""} onChange={(v) => setForm({ ...form, purchase_price: nOrNull(v) })} numeric /></Falt>
+            <Falt label={`Frakt/enhet (${form.currency || "SEK"})`}><In value={form.freight ?? ""} onChange={(v) => setForm({ ...form, freight: nOrNull(v) })} numeric /></Falt>
             <Falt label="Ledtid (dgr)"><In value={form.lead_time_days ?? ""} onChange={(v) => setForm({ ...form, lead_time_days: nOrNull(v) })} numeric /></Falt>
             <Falt label="Pålägg (%)"><In value={form.markup_pct ?? ""} onChange={(v) => setForm({ ...form, markup_pct: nOrNull(v) })} numeric /></Falt>
           </div>
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              Prisförslag: <span className="font-bold text-gray-900">{prisForslag(form) != null ? kr(prisForslag(form)) : "—"}</span>
-              <span className="text-xs text-gray-400"> (inpris + frakt + pålägg)</span>
+              {(form.currency && form.currency !== "SEK") && landatSEK(form, rates) != null && (
+                <span className="mr-2">Landat: <span className="font-semibold text-gray-700">{kr(landatSEK(form, rates))}</span>
+                  <span className="text-xs text-gray-400"> ({form.currency}→SEK, +3% buffert)</span></span>
+              )}
+              Prisförslag: <span className="font-bold text-gray-900">{prisForslag(form, rates) != null ? kr(prisForslag(form, rates)) : "—"}</span>
             </div>
             <button
               onClick={spara}
@@ -156,7 +189,9 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
       ) : (
         <div className="space-y-2">
           {products.map((p) => {
-            const pris = prisForslag(p);
+            const pris = prisForslag(p, rates);
+            const cur = p.currency || "SEK";
+            const landat = landatSEK(p, rates);
             return (
               <div key={p.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between gap-4">
                 <div className="min-w-0">
@@ -166,8 +201,9 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
                   </div>
                   <div className="flex items-center gap-x-3 gap-y-0.5 flex-wrap text-xs text-gray-500 mt-1">
                     {p.supplier_name && <span>{p.supplier_name}</span>}
-                    <span>Inpris {kr(p.purchase_price)}{p.unit ? `/${p.unit}` : ""}</span>
-                    {p.freight != null && <span className="inline-flex items-center gap-1"><Truck className="w-3 h-3" /> {kr(p.freight)}</span>}
+                    <span>Inpris {typeof p.purchase_price === "number" ? p.purchase_price.toLocaleString("sv-SE") : "—"} {cur}{p.unit ? `/${p.unit}` : ""}</span>
+                    {p.freight != null && <span className="inline-flex items-center gap-1"><Truck className="w-3 h-3" /> {p.freight.toLocaleString("sv-SE")} {cur}</span>}
+                    {cur !== "SEK" && landat != null && <span className="text-gray-700 font-medium">= landat {kr(landat)}</span>}
                     {p.lead_time_days != null && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {p.lead_time_days} dgr</span>}
                     {p.markup_pct != null && <span>+{p.markup_pct}%</span>}
                   </div>

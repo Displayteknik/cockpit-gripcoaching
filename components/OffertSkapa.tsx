@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Loader2, Plus, Trash2, Users, Package, TrendingUp, Search, Sparkles, ExternalLink } from "lucide-react";
 import { landat, prisFranPalagg, summera, overGolv } from "@/lib/offert/kalkyl";
+import { calcRate } from "@/lib/offert/fx";
 
 interface Product {
-  id: string; name: string; supplier_name?: string | null;
+  id: string; name: string; supplier_name?: string | null; currency?: string | null;
   purchase_price?: number | null; freight?: number | null; markup_pct?: number | null; lead_time_days?: number | null; unit?: string | null;
 }
 interface Customer { name: string; company: string; ghlContactId: string; ghlOpportunityId: string }
@@ -33,10 +34,12 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
   const [marknadLoading, setMarknadLoading] = useState(false);
   const [sparar, setSparar] = useState(false);
   const [fel, setFel] = useState<string | null>(null);
+  const [rates, setRates] = useState<Record<string, number>>({ SEK: 1 });
 
   useEffect(() => {
     fetch("/api/offert/products").then((r) => r.json()).then((d) => setProducts(d.products || [])).catch(() => {});
     fetch("/api/offert/customers").then((r) => r.json()).then((d) => setCustomers(d.customers || [])).catch(() => {});
+    fetch("/api/offert/fx").then((r) => r.json()).then((d) => { if (d.rates) setRates(d.rates); }).catch(() => {});
     const d = new Date();
     setOffertnr(`OFF-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`);
   }, []);
@@ -45,7 +48,7 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
   const golvOk = overGolv(totals.marginPct);
 
   const laggProdukt = (p: Product) => {
-    const cost = landat(p.purchase_price, p.freight);
+    const cost = landat(p.purchase_price, p.freight, calcRate(rates, p.currency)); // landat i SEK (valuta omräknad)
     const pris = prisFranPalagg(cost, p.markup_pct);
     setRows((rs) => [...rs, { product_id: p.id, name: p.name, qty: 1, unit_price: pris || null, cost: cost || null, lead_time_days: p.lead_time_days ?? null }]);
     setVisaProdukter(false); setProdSok("");
@@ -153,7 +156,7 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
                 {prodFiltrerade.map((p) => (
                   <button key={p.id} onClick={() => laggProdukt(p)} className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 text-sm flex justify-between">
                     <span className="font-medium text-gray-800">{p.name}</span>
-                    <span className="text-gray-500 text-xs">{kr(prisFranPalagg(landat(p.purchase_price, p.freight), p.markup_pct))}</span>
+                    <span className="text-gray-500 text-xs">{kr(prisFranPalagg(landat(p.purchase_price, p.freight, calcRate(rates, p.currency)), p.markup_pct))}</span>
                   </button>
                 ))}
               </div>
