@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase, type Vehicle, formatPrice } from "@/lib/supabase";
 import { Sparkles, Loader2, Search, Copy, Check, RefreshCw, Image as ImageIcon, Save, Car } from "lucide-react";
@@ -226,7 +228,7 @@ function Field({ label, value, onChange, rows }: { label: string; value: string;
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</label>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows}
+      <SmartTextarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows}
         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none resize-none" />
     </div>
   );

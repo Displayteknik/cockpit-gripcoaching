@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Compass, Loader2, Sparkles, Download, ArrowRight, ChevronDown, ChevronUp, RefreshCw, Trash2 } from "lucide-react";
@@ -138,9 +140,10 @@ export default function IkigaiMaker({ customerMode = false }: { customerMode?: b
                   <q.icon className={`w-4 h-4 ${q.color}`} /> {q.label}
                 </label>
                 <p className="text-xs text-gray-500 mt-0.5 mb-1.5 leading-relaxed">{q.intro}</p>
-                <textarea
+                <SmartTextarea
                   value={inp[q.key]} onChange={(e) => set(q.key, e.target.value)} rows={3}
                   placeholder={q.placeholder}
+                  hint={false}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none resize-none"
                 />
                 <p className="text-xs text-gray-400 italic mt-1 leading-relaxed">{q.example}</p>

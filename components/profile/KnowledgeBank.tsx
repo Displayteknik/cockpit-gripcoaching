@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useEffect, useRef, useState } from "react";
 import {
   FileText,
@@ -186,7 +188,7 @@ function PostEditor({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="space-y-2">
-      <textarea
+      <SmartTextarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={5}
@@ -235,7 +237,7 @@ function TestimonialEditor({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="space-y-2">
-      <textarea
+      <SmartTextarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={3}
@@ -485,7 +487,7 @@ function AssetCard({ asset, onChanged }: { asset: Asset; onChanged: () => void }
       <div className="border border-purple-200 rounded-lg p-3 bg-purple-50/40">
         <div className="space-y-2">
           {asset.asset_type === "post" && (
-            <textarea
+            <SmartTextarea
               value={draft.body}
               onChange={(e) => setDraft({ ...draft, body: e.target.value })}
               rows={6}
@@ -494,7 +496,7 @@ function AssetCard({ asset, onChanged }: { asset: Asset; onChanged: () => void }
           )}
           {asset.asset_type === "testimonial" && (
             <>
-              <textarea
+              <SmartTextarea
                 value={draft.body}
                 onChange={(e) => setDraft({ ...draft, body: e.target.value })}
                 rows={3}

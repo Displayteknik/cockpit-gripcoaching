@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -693,7 +695,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {imageUrl && (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                   <label className="block text-xs font-medium text-gray-600">Ändra bilden — skriv vad du vill</label>
-                  <textarea value={imgComment} onChange={(e) => setImgComment(e.target.value)} rows={2}
+                  <SmartTextarea value={imgComment} onChange={(e) => setImgComment(e.target.value)} rows={2}
                     placeholder='T.ex. "ljusare bakgrund", "visa produkten större" eller "ta bort personen i bakgrunden"'
                     className={inputCls} />
                   <div className="flex items-center gap-2">
@@ -791,7 +793,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {!isCarousel && (
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                 <label className="block text-xs font-medium text-gray-600">Har du ett eget utkast? Klistra in — AI delar upp i rubrik och text</label>
-                <textarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={2} placeholder="Klistra in din egen text här…" className={inputCls} />
+                <SmartTextarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={2} placeholder="Klistra in din egen text här…" className={inputCls} />
                 <button onClick={applyPaste} disabled={applyingPaste || !pasteText.trim()}
                   className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
                   {applyingPaste ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Använd min text
@@ -858,7 +860,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Text</label>
-                        <textarea value={slides[slideIdx].body} onChange={(e) => updateSlide(slideIdx, { body: e.target.value })} rows={3} className={inputCls} />
+                        <SmartTextarea value={slides[slideIdx].body} onChange={(e) => updateSlide(slideIdx, { body: e.target.value })} rows={3} className={inputCls} />
                       </div>
                     </div>
                   )}
@@ -879,7 +881,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{meta.fields.body}</label>
-                  <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} className={inputCls} />
+                  <SmartTextarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} className={inputCls} />
                 </div>
               </div>
               )}
@@ -939,7 +941,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   {suggestingCaption ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} {caption ? "Skriv om" : "Föreslå bildtext"}
                 </button>
               </div>
-              <textarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={7}
+              <SmartTextarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={7}
                 placeholder="Skriv bildtexten här, eller låt AI föreslå en ur inläggets innehåll och din röst…"
                 className={`${inputCls} leading-relaxed`} style={{ whiteSpace: "pre-wrap" }} />
               <div className="flex items-center justify-between text-xs text-gray-400">

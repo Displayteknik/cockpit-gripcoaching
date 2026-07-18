@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useCallback, useEffect, useState } from "react";
 import { FileText, Loader2, Wand2, Send, Check, Eye, Code, Link2, Layers, Image as ImageIcon } from "lucide-react";
 import { DashHero, LivePill } from "@/components/ui/dash";
@@ -158,7 +160,7 @@ export default function StudioBloggPage() {
         {/* Generera */}
         <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
           <h2 className="font-display font-bold text-gray-900 text-lg">1. Skapa artikel</h2>
-          <textarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={2}
+          <SmartTextarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={2}
             placeholder="Ämne/vinkel — t.ex. en guide, en jämförelse eller vanliga frågor" className={inputCls} />
           <div className="flex items-center gap-3">
             <label className="text-xs font-medium text-gray-500">Längd</label>
@@ -215,7 +217,7 @@ export default function StudioBloggPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Meta-beskrivning ({metaDescription.length}/160)</label>
-                <textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} rows={2} className={inputCls} />
+                <SmartTextarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} rows={2} className={inputCls} />
               </div>
               {showHtml ? (
                 <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={16} className={`${inputCls} font-mono text-xs`} />

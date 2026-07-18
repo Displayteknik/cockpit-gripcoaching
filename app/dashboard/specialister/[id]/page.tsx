@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { Suspense, useEffect, useState, use } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -258,7 +260,7 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
                 {f.required && <span className="text-red-500 ml-0.5">*</span>}
               </label>
               {f.type === "textarea" ? (
-                <textarea
+                <SmartTextarea
                   rows={4}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
                   value={values[f.key] ?? ""}

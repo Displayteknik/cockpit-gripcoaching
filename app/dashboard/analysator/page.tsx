@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useState } from "react";
 import { Search, Loader2, ExternalLink, Users, Hash, Image as ImageIcon, AlertCircle, ThumbsUp, ThumbsDown, Lightbulb, Zap } from "lucide-react";
 import { fetchJson } from "@/lib/safe-fetch";
@@ -64,7 +66,7 @@ export default function AnalysatorPage() {
           </div>
           <details className="text-sm">
             <summary className="cursor-pointer text-gray-600 hover:text-gray-900">+ Lägg till senaste inläggens texter (frivilligt — ger djupare analys)</summary>
-            <textarea value={recent} onChange={(e) => setRecent(e.target.value)} rows={6} placeholder="Klistra in 3–5 inläggs-bildtexter för djupare innehållsanalys..." className="w-full mt-2 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+            <SmartTextarea value={recent} onChange={(e) => setRecent(e.target.value)} rows={6} placeholder="Klistra in 3–5 inläggs-bildtexter för djupare innehållsanalys..." className="w-full mt-2 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
           </details>
         </div>
       </div>

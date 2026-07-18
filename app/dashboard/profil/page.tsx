@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useEffect, useState } from "react";
 import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle, Quote, Users, Award, ShoppingBag } from "lucide-react";
 import QualityMeter from "@/components/profile/QualityMeter";
@@ -457,7 +459,7 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
       <div className="text-sm text-gray-600 mb-3">
         Klistra in 3–10 verkliga citat från dina kunder (recensioner, mejl, chatt, samtalsanteckningar). AI:n plockar ut exakta fraser, vad de oroar sig för och hur de uttrycker sig — och väver in det i dina tonregler.
       </div>
-      <textarea
+      <SmartTextarea
         value={quotes}
         onChange={(e) => setQuotes(e.target.value)}
         rows={10}
@@ -529,7 +531,7 @@ function TextArea({ label, hint, value, onChange, onAssist, assisting, rows = 4 
         )}
       </div>
       {hint && <div className="text-xs text-gray-400 mb-1">{hint}</div>}
-      <textarea
+      <SmartTextarea
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
@@ -594,7 +596,7 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
       </div>
       <div className="text-xs text-gray-400 mb-1">Fråga {step + 1} av {questions.length}</div>
       <div className="text-lg font-display font-bold text-gray-900 mb-3">{q.label}</div>
-      <textarea
+      <SmartTextarea
         value={inputs[q.key]}
         onChange={(e) => setInputs({ ...inputs, [q.key]: e.target.value })}
         placeholder={q.placeholder}
@@ -657,7 +659,7 @@ function ToneWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: stri
       <div className="text-sm text-gray-600 mb-3">
         Klistra in 2–5 exempelmeningar som låter exakt som du vill låta.
       </div>
-      <textarea
+      <SmartTextarea
         value={examples}
         onChange={(e) => setExamples(e.target.value)}
         rows={6}
@@ -665,7 +667,7 @@ function ToneWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: stri
         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none mb-3"
       />
       <div className="text-sm text-gray-600 mb-2">Ord/uttryck du undviker?</div>
-      <textarea
+      <SmartTextarea
         value={avoid}
         onChange={(e) => setAvoid(e.target.value)}
         rows={2}

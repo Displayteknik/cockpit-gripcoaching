@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useEffect, useRef, useState } from "react";
 import {
   Sparkles,
@@ -1230,7 +1232,7 @@ function OwnPostReview() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Hook (första raderna)</label>
-        <textarea
+        <SmartTextarea
           value={hook}
           onChange={(e) => setHook(e.target.value)}
           rows={2}
@@ -1241,7 +1243,7 @@ function OwnPostReview() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Body</label>
-        <textarea
+        <SmartTextarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={8}

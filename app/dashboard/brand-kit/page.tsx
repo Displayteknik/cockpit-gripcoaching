@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Palette, Save, Check, Loader2, Upload, Type, Sparkles, ImageIcon, Ban, Wand2, Layers } from "lucide-react";
@@ -297,7 +299,7 @@ export default function BrandKitPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Vill inte ha (en per rad)</label>
-                <textarea value={(kit.donts || []).join("\n")} onChange={(e) => set("donts", e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))} rows={3} placeholder={"Aldrig emojis i grafik\nIngen röd färg"} className={inputCls} />
+                <SmartTextarea value={(kit.donts || []).join("\n")} onChange={(e) => set("donts", e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))} rows={3} placeholder={"Aldrig emojis i grafik\nIngen röd färg"} className={inputCls} />
               </div>
             </section>
           </div>

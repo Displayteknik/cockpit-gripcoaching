@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useEffect, useState } from "react";
 import { Sparkles, Copy, Check, Trash2, Plus, RefreshCw, ExternalLink, Edit3, Save, X, Wand2, Layers, Lightbulb, FileText, Inbox, BookOpen, Upload, BarChart3 } from "lucide-react";
 import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
@@ -524,7 +526,7 @@ function FreeWriter({ pillars, onCreated }: { pillars: Pillar[]; onCreated: () =
         </div>
         <div>
           <label className="text-xs font-medium text-gray-700 block mb-1">Vinkel/idé (valfritt)</label>
-          <textarea value={angle} onChange={(e) => setAngle(e.target.value)} rows={3} placeholder="Vad ska inlägget driva för poäng? Vilken erfarenhet ska det utgå från?" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <SmartTextarea value={angle} onChange={(e) => setAngle(e.target.value)} rows={3} placeholder="Vad ska inlägget driva för poäng? Vilken erfarenhet ska det utgå från?" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
@@ -627,7 +629,7 @@ function EditModal({ post, onClose, onSave }: { post: Post; onClose: () => void;
           </div>
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Inläggets text</label>
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={14} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" />
+            <SmartTextarea value={body} onChange={(e) => setBody(e.target.value)} rows={14} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" />
             <VoiceCheckBadge text={`${hook}\n\n${body}`} surface="linkedin" className="mt-2" />
           </div>
           <div>

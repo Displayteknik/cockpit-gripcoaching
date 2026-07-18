@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useEffect, useState } from "react";
 import { supabase, type Vehicle } from "@/lib/supabase";
 import { Sparkles, Copy, Trash2, Loader2, Check, Send, Image as ImageIcon, Pencil, X, Wand2, Save, Eye, Calendar, Upload } from "lucide-react";
@@ -325,7 +327,7 @@ export default function SocialPage() {
 
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Extra info (valfritt)</label>
-            <textarea
+            <SmartTextarea
               value={extra}
               onChange={(e) => setExtra(e.target.value)}
               rows={3}
@@ -511,7 +513,7 @@ export default function SocialPage() {
                       </div>
                       <div>
                         <label className="text-xs font-bold text-amber-900 uppercase">Bildtext</label>
-                        <textarea
+                        <SmartTextarea
                           value={edits.caption || ""}
                           onChange={(e) => setEdits({ ...edits, caption: e.target.value })}
                           rows={6}

@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useEffect, useState } from "react";
 import {
   UserPlus,
@@ -398,7 +400,7 @@ function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
             <option value="manuell">Manuellt tillagd</option>
             <option value="import">Import</option>
           </select>
-          <textarea
+          <SmartTextarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
@@ -511,7 +513,7 @@ function AutomationView() {
             </select>
           </div>
         </div>
-        <textarea
+        <SmartTextarea
           value={response}
           onChange={(e) => setResponse(e.target.value)}
           rows={3}

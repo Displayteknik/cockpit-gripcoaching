@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, type BlogPost } from "@/lib/supabase";
 import { RichEditor } from "@/components/dashboard/RichEditor";
@@ -351,7 +353,7 @@ export default function BlogDashboardPage() {
         </div>
 
         {/* Excerpt */}
-        <textarea
+        <SmartTextarea
           value={editing.excerpt || ""}
           onChange={(e) => setEditing({ ...editing, excerpt: e.target.value })}
           placeholder="Kort utdrag som visas i listningar..."

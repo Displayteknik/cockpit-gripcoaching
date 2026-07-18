@@ -1,5 +1,7 @@
 "use client";
 
+import SmartTextarea from "@/components/SmartTextarea";
+
 import { useEffect, useRef, useState } from "react";
 import {
   Loader2,
@@ -484,7 +486,7 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
                   Google Gemini 2.5 Flash Image — snabb, bra på enkla scener. <strong>Lägg INTE svensk text i bilden</strong> — modeller renderar å/ä/ö trasigt.
                 </div>
                 <SmartPromptHeader meta={smartPromptMeta} loading={smartLoading} onRegenerate={buildSmartPrompt} />
-                <textarea
+                <SmartTextarea
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   rows={5}
@@ -507,7 +509,7 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
                   Google Imagen 4.0 — fotorealistisk, ~15 sek per bild. <strong>Lägg INTE svensk text i bilden</strong>.
                 </div>
                 <SmartPromptHeader meta={smartPromptMeta} loading={smartLoading} onRegenerate={buildSmartPrompt} />
-                <textarea
+                <SmartTextarea
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   rows={5}
