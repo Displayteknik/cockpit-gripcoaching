@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { CUSTOMER_FEATURES, OVERVIEW_NAV } from "@/lib/customer-features";
 
 // Kundportalens sidomeny med tydlig markering av vald sida (i kundens egen färg).
-export default function CustomerNav({ features, primaryColor }: { features: string[]; primaryColor: string }) {
+export default function CustomerNav({ features, primaryColor, onNavigate }: { features: string[]; primaryColor: string; onNavigate?: () => void }) {
   const pathname = usePathname();
   const items = [OVERVIEW_NAV, ...CUSTOMER_FEATURES.filter((f) => features.includes(f.key))];
 
@@ -18,6 +18,7 @@ export default function CustomerNav({ features, primaryColor }: { features: stri
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg font-medium transition-colors ${
               active ? "" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
