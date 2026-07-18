@@ -218,7 +218,7 @@ export default function ProfilPage() {
         </button>
       </div>
 
-      <Section title="Grundinfo" icon={Building2}>
+      <Section title="Grundinfo" icon={Building2} onSave={save} saving={saving} savedAt={savedAt}>
         <Row>
           <Field label="Företagsnamn" value={profile.company_name} onChange={(v) => update("company_name", v)} />
           <Field label="Tagline" value={profile.tagline} onChange={(v) => update("tagline", v)} />
@@ -233,7 +233,7 @@ export default function ProfilPage() {
         </Row>
       </Section>
 
-      <Section id="sec-berattelse" title="Berättelsen" icon={User}>
+      <Section id="sec-berattelse" title="Berättelsen" icon={User} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Brand story"
           hint="2–4 stycken — varför företaget finns, hur det började, vad som gör det speciellt."
@@ -254,7 +254,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Differentiering" icon={Award}>
+      <Section title="Differentiering" icon={Award} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Tre saker bara du kan säga"
           hint="Det som ger dig tyngd — år av erfarenhet, certifieringar, lokal koppling, en metod ingen annan har. En per rad."
@@ -266,7 +266,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section id="sec-erbjudande" title="Erbjudande & CTA" icon={ShoppingBag}>
+      <Section id="sec-erbjudande" title="Erbjudande & CTA" icon={ShoppingBag} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Tjänster / produkter"
           hint="Vad du faktiskt säljer. En per rad."
@@ -289,7 +289,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section id="sec-malgrupp" title="Målgrupp" icon={Target}>
+      <Section id="sec-malgrupp" title="Målgrupp" icon={Target} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Din viktigaste målgrupp"
           hint="Dina bästa kunder — vilka de är, var de finns, vad de oroar sig för, hur de köper och vad som får dem att höra av sig."
@@ -319,7 +319,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Kundernas egna ord" icon={Quote}>
+      <Section title="Kundernas egna ord" icon={Quote} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Kundord & recensioner"
           hint="Klistra in riktiga recensioner, mejl och samtalsanteckningar från dina kunder. AI:n plockar ut deras sätt att prata så texterna känns igen."
@@ -338,7 +338,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Konkurrenter" icon={Users}>
+      <Section title="Konkurrenter" icon={Users} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Konkurrent-översikt"
           hint="Vilka är dina 3–5 främsta konkurrenter? Vad gör de bra och vad gör de dåligt?"
@@ -350,7 +350,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section id="sec-ton" title="Ton & språk" icon={MessageSquare}>
+      <Section id="sec-ton" title="Ton & språk" icon={MessageSquare} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Tonregler"
           hint="Hur du låter när du är som bäst. Konkreta regler med GÖR / GÖR INTE."
@@ -480,13 +480,25 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
   );
 }
 
-function Section({ title, icon: Icon, children, id }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; id?: string }) {
+function Section({ title, icon: Icon, children, id, onSave, saving, savedAt }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; id?: string; onSave?: () => void; saving?: boolean; savedAt?: Date | null }) {
   return (
     <div id={id} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 scroll-mt-20 transition-shadow">
-      <h2 className="font-display font-bold text-gray-900 flex items-center gap-2">
-        <Icon className="w-5 h-5 text-brand-blue" />
-        {title}
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display font-bold text-gray-900 flex items-center gap-2">
+          <Icon className="w-5 h-5 text-brand-blue" />
+          {title}
+        </h2>
+        {onSave && (
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-blue text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : savedAt ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+            {saving ? "Sparar…" : "Spara"}
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );

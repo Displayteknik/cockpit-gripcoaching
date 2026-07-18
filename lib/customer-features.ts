@@ -12,6 +12,7 @@ export interface CustomerFeature {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
+  hideFromNav?: boolean; // modulen finns kvar (route + access) men visas inte i sidomenyn
 }
 
 export const CUSTOMER_FEATURES: CustomerFeature[] = [
@@ -49,6 +50,7 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     href: "/k/linkedin",
     icon: LinkedinIcon,
     description: "Skriv och planera LinkedIn-innehåll i din röst.",
+    hideFromNav: true, // inbakad i "Skapa inlägg" (per-kanal) — göms i menyn, routen kvar
   },
   {
     key: "offert",

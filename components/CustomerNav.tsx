@@ -7,7 +7,7 @@ import { CUSTOMER_FEATURES, OVERVIEW_NAV } from "@/lib/customer-features";
 // Kundportalens sidomeny med tydlig markering av vald sida (i kundens egen färg).
 export default function CustomerNav({ features, primaryColor, onNavigate }: { features: string[]; primaryColor: string; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const items = [OVERVIEW_NAV, ...CUSTOMER_FEATURES.filter((f) => features.includes(f.key))];
+  const items = [OVERVIEW_NAV, ...CUSTOMER_FEATURES.filter((f) => features.includes(f.key) && !f.hideFromNav)];
 
   return (
     <nav className="flex-1 py-4 space-y-1 px-3">

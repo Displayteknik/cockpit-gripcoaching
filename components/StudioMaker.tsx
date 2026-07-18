@@ -526,7 +526,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       setSelectedAccounts(accs.filter((a) => !a.isExpired).map((a) => a.id));
     } catch { setGhlConnected(false); }
   }, []);
-  useEffect(() => { if (!customerMode) refreshGhlAccounts(); }, [refreshGhlAccounts, client, customerMode]);
+  // Hämta GHL-konton i BÅDE admin och kundläge — så kunden ser om FB/LI är kopplat via
+  // MySales och kan publicera den vägen. Endast GHL-config-boxen (token) är admin-only.
+  useEffect(() => { refreshGhlAccounts(); }, [refreshGhlAccounts, client]);
 
   // Instagram-kopplingsstatus (för direkt-IG-valet). Per aktiv klient.
   useEffect(() => {
@@ -607,7 +609,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   useEffect(() => {
     if (channelsSeeded) return;
     if (igConn === null) return; // vänta tills IG-status finns
-    if (!customerMode && ghlConnected === null) return; // vänta även på GHL-status i admin
+    if (ghlConnected === null) return; // vänta även på GHL-status (hämtas i båda lägena)
     const connected = CHANNELS.filter((c) => channelConnected[c.key]).map((c) => c.key);
     setSelectedChannels(connected.length ? connected : ["ig"]);
     setChannelsSeeded(true);
@@ -1342,7 +1344,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </div>
           )}
           {customerMode && (selectedChannels.includes("fb") || selectedChannels.includes("li")) && (
-            <p className="text-xs text-gray-400">Facebook och LinkedIn förhandsvisas här — publicering till dem sköts av din byrå. Instagram kan du publicera direkt.</p>
+            <p className="text-xs text-gray-400">
+              {ghlConnected
+                ? "Är kanalen kopplad via MySales publicerar du direkt härifrån. Är den inte kopplad — kopiera texten och lägg upp manuellt, eller be din byrå koppla den."
+                : "Facebook och LinkedIn förhandsvisas här. När de kopplats via MySales kan du publicera direkt — annars kopiera texten och lägg upp manuellt."}
+            </p>
           )}
         </section>
 

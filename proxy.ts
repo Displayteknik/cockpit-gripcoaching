@@ -62,11 +62,12 @@ function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/intake/")) return true;
   // Kund-vänd Studio (/k/studio): aktiv klient + brand kit + IG-status (läs) + alla studio-endpoints.
   // Varje route grindas in-route med requireAdminOrCustomer/requireAdmin + tenant-låses via
-  // getActiveClientId. GHL-config/-accounts stannar admin-only (ej i denna allowlist).
+  // getActiveClientId. ghl-accounts (LÄS kopplade konton) är kund-tillåten så kunden kan se om
+  // FB/LI är kopplat via MySales och publicera den vägen; ghl-config (token-hantering) = admin-only.
   if (path === "/api/clients/active") return true;
   if (path === "/api/brand-kit") return true;
   if (path === "/api/instagram/connect") return true;
-  if (path.startsWith("/api/studio/") && path !== "/api/studio/ghl-config" && path !== "/api/studio/ghl-accounts") return true;
+  if (path.startsWith("/api/studio/") && path !== "/api/studio/ghl-config") return true;
   // Kund-vänd LinkedIn-motor (/k/linkedin): alla linkedin-endpoints. Varje route grindas
   // in-route med requireAdminOrCustomer + tenant-låses via getActiveClientId (kund når bara sin egen klient).
   if (path.startsWith("/api/linkedin/")) return true;
