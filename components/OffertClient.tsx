@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Upload, CheckCircle2, Sparkles, RefreshCw, ListChecks, Plus } from "lucide-react";
 import OffertKatalog from "@/components/OffertKatalog";
 import OffertSkapa from "@/components/OffertSkapa";
+import OffertDokument from "@/components/OffertDokument";
 
 interface Quote {
   id: string; quote_number?: string; customer_name?: string; customer_company?: string;
@@ -36,6 +37,7 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
   const [laser, setLaser] = useState(false);
   const [fel, setFel] = useState<string | null>(null);
   const [visaSkapa, setVisaSkapa] = useState(false);
+  const [docQuote, setDocQuote] = useState<Quote | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const laddaQuotes = useCallback(() => {
@@ -220,8 +222,14 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
                       {q.customer_company || q.customer_name || "—"}{q.updated_at ? ` · ${datum(q.updated_at)}` : ""}
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="font-bold text-gray-900 tabular-nums">{kr(q.total)}</div>
+                    <button
+                      onClick={() => setDocQuote(q)}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Öppna
+                    </button>
                   </div>
                 </div>
               );
@@ -231,6 +239,7 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
       </section>
 
       {visaSkapa && <OffertSkapa primaryColor={primaryColor} onClose={() => setVisaSkapa(false)} onSaved={laddaQuotes} />}
+      {docQuote && <OffertDokument quote={docQuote} primaryColor={primaryColor} onClose={() => setDocQuote(null)} />}
     </div>
   );
 }
