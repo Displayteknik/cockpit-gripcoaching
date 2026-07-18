@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { FileText, Loader2, Building2, Upload, CheckCircle2, Sparkles, RefreshCw, ListChecks } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FileText, Loader2, Upload, CheckCircle2, Sparkles, RefreshCw, ListChecks, Plus } from "lucide-react";
 import OffertKatalog from "@/components/OffertKatalog";
+import OffertSkapa from "@/components/OffertSkapa";
 
 interface Quote {
   id: string; quote_number?: string; customer_name?: string; customer_company?: string;
@@ -29,22 +30,26 @@ function datum(s?: string) { return s ? new Date(s).toLocaleDateString("sv-SE", 
 
 export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColor?: string }) {
   const [loading, setLoading] = useState(true);
-  const [linked, setLinked] = useState(false);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [bp, setBp] = useState<Blueprint | null>(null);
   const [bpLoading, setBpLoading] = useState(true);
   const [laser, setLaser] = useState(false);
   const [fel, setFel] = useState<string | null>(null);
+  const [visaSkapa, setVisaSkapa] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
+  const laddaQuotes = useCallback(() => {
+    setLoading(true);
+    fetch("/api/offert/quote").then((r) => r.json()).then((d) => setQuotes(Array.isArray(d.quotes) ? d.quotes : []))
+      .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
   useEffect(() => {
-    fetch("/api/offert/quotes").then((r) => r.json()).then((d) => {
-      setLinked(!!d.linked); setQuotes(Array.isArray(d.quotes) ? d.quotes : []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    laddaQuotes();
     fetch("/api/offert/blueprint").then((r) => r.json()).then((d) => {
       if (d.hasBlueprint) setBp(d.blueprint);
     }).catch(() => {}).finally(() => setBpLoading(false));
-  }, []);
+  }, [laddaQuotes]);
 
   const laddaUpp = async (file: File) => {
     setFel(null); setLaser(true);
@@ -178,19 +183,27 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
       {/* Produktkatalog (Fas 2) */}
       <OffertKatalog primaryColor={primaryColor} />
 
-      {/* Offertlista (befintlig, read-only) */}
+      {/* Offertlista + Skapa offert */}
       <section className="space-y-3">
-        <h2 className="font-display font-bold text-gray-900 text-lg">Dina offerter</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display font-bold text-gray-900 text-lg">Dina offerter</h2>
+          {bp ? (
+            <button
+              onClick={() => setVisaSkapa(true)}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90"
+              style={{ background: primaryColor }}
+            >
+              <Plus className="w-4 h-4" /> Skapa offert
+            </button>
+          ) : (
+            <span className="text-xs text-gray-400">Lär in din offertmall först för att skapa offerter</span>
+          )}
+        </div>
         {loading ? (
           <div className="flex items-center gap-2 text-gray-500 py-6"><Loader2 className="w-4 h-4 animate-spin" /> Laddar offerter…</div>
-        ) : !linked ? (
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm text-sm text-gray-500">
-            <Building2 className="w-7 h-7 text-gray-300 mx-auto mb-2" />
-            Här samlas offerter du skapat i MySales Coach när kontot är kopplat.
-          </div>
         ) : quotes.length === 0 ? (
           <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm text-sm text-gray-500">
-            Inga offerter än. De dyker upp här när du skapat din första.
+            Inga offerter än. Klicka <span className="font-semibold">Skapa offert</span> för din första.
           </div>
         ) : (
           <div className="space-y-2">
@@ -216,6 +229,8 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
           </div>
         )}
       </section>
+
+      {visaSkapa && <OffertSkapa primaryColor={primaryColor} onClose={() => setVisaSkapa(false)} onSaved={laddaQuotes} />}
     </div>
   );
 }
