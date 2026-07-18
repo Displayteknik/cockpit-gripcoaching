@@ -59,10 +59,10 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
   },
   {
     key: "fokus",
-    label: "Säljöversikt",
+    label: "Fokus idag",
     href: "/k/fokus",
     icon: Target,
-    description: "Din aktivitet, pipeline och offert-KPI:er från MySales Coach.",
+    description: "Dina viktigaste affärer idag — prioriterade, med säljcoach och nästa drag.",
   },
   {
     key: "ikigai",
