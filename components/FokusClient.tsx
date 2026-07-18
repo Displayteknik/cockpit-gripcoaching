@@ -17,6 +17,11 @@ import {
   Mic,
   Square,
   Image as ImageIcon,
+  CalendarClock,
+  CalendarPlus,
+  Phone,
+  Mail,
+  CheckCircle2,
 } from "lucide-react";
 
 // ── Typer speglar /api/fokus/board (prioriteringsmotorn) ──
@@ -37,6 +42,12 @@ interface ScoredCard {
   lagesText: string;
   rekommenderatDrag: string;
 }
+interface Planering {
+  id: string;
+  kanal: string;
+  dueAt: string;
+  note: string | null;
+}
 interface Board {
   linked: boolean;
   antal?: number;
@@ -48,6 +59,21 @@ interface Board {
     pengalinjen: { frisk: number; risk: number; kallnar: number; totalt: number };
     antalKallnar: number;
   };
+  planering?: Record<string, Planering>;
+  attGoraIdag?: string[];
+}
+
+// "idag" / "imorgon" / "18 jul" ur ett ISO-datum.
+function planText(dueAt: string): string {
+  const d = new Date(dueAt);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dd = new Date(d);
+  dd.setHours(0, 0, 0, 0);
+  const diff = Math.round((dd.getTime() - today.getTime()) / 86400000);
+  if (diff <= 0) return "idag";
+  if (diff === 1) return "imorgon";
+  return d.toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 }
 interface CoachSvar {
   lagesbild: string;
@@ -94,6 +120,11 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
   const drag = p?.dagensDrag || [];
   const avgor = p?.avgor || [];
   const pl = p?.pengalinjen;
+  const planering = b.planering || {};
+  const attSet = new Set(b.attGoraIdag || []);
+  const attGoraKort = [...drag, ...avgor].filter((c) => attSet.has(c.id));
+  const dragKvar = drag.filter((c) => !attSet.has(c.id));
+  const avgorKvar = avgor.filter((c) => !attSet.has(c.id));
 
   return (
     <div className="space-y-8">
@@ -143,6 +174,32 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
         </div>
       ) : (
         <>
+          {/* Att göra idag — planerade kontakter som förfaller */}
+          {attGoraKort.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="w-5 h-5" style={{ color: primaryColor }} />
+                <h2 className="font-display font-bold text-gray-900 text-lg">Att göra idag</h2>
+                <span className="text-xs text-gray-400">({attGoraKort.length})</span>
+              </div>
+              <p className="text-xs text-gray-500 -mt-1">Planerade kontakter som är dags nu. Beta av dem först.</p>
+              <div className="space-y-3">
+                {attGoraKort.map((c) => (
+                  <DragKort
+                    key={c.id}
+                    c={c}
+                    primaryColor={primaryColor}
+                    locationId={b.locationId}
+                    planering={planering[c.id]}
+                    attGora
+                    onCoacha={() => setCoachKort(c)}
+                    onSaved={ladda}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Pengalinjen */}
           {pl && pl.totalt > 0 && (
             <section className="space-y-3">
@@ -167,20 +224,21 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5" style={{ color: primaryColor }} />
               <h2 className="font-display font-bold text-gray-900 text-lg">Dagens drag</h2>
-              <span className="text-xs text-gray-400">({drag.length})</span>
+              <span className="text-xs text-gray-400">({dragKvar.length})</span>
             </div>
-            {drag.length === 0 ? (
+            {dragKvar.length === 0 ? (
               <div className="text-center text-sm text-gray-400 py-8 bg-white border border-gray-100 rounded-2xl">
                 Inga aktiva affärer som kräver ett drag just nu. Snyggt jobbat.
               </div>
             ) : (
               <div className="space-y-3">
-                {drag.map((c) => (
+                {dragKvar.map((c) => (
                   <DragKort
                     key={c.id}
                     c={c}
                     primaryColor={primaryColor}
                     locationId={b.locationId}
+                    planering={planering[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
                   />
@@ -190,23 +248,24 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
           </section>
 
           {/* Avgör (kallnar) */}
-          {avgor.length > 0 && (
+          {avgorKvar.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center gap-2">
                 <Snowflake className="w-5 h-5 text-slate-400" />
                 <h2 className="font-display font-bold text-gray-900 text-lg">Avgör</h2>
-                <span className="text-xs text-gray-400">({avgor.length})</span>
+                <span className="text-xs text-gray-400">({avgorKvar.length})</span>
               </div>
               <p className="text-xs text-gray-500 -mt-1">
                 Legat still länge. Ge sista stöten eller släpp — de blockerar toppen.
               </p>
               <div className="space-y-3">
-                {avgor.map((c) => (
+                {avgorKvar.map((c) => (
                   <DragKort
                     key={c.id}
                     c={c}
                     primaryColor={primaryColor}
                     locationId={b.locationId}
+                    planering={planering[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
                   />
@@ -218,7 +277,12 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
       )}
 
       {coachKort && (
-        <CoachPanel kort={coachKort} primaryColor={primaryColor} onClose={() => setCoachKort(null)} />
+        <CoachPanel
+          kort={coachKort}
+          primaryColor={primaryColor}
+          onClose={() => setCoachKort(null)}
+          onRefresh={ladda}
+        />
       )}
     </div>
   );
@@ -252,12 +316,16 @@ function DragKort({
   c,
   primaryColor,
   locationId,
+  planering,
+  attGora,
   onCoacha,
   onSaved,
 }: {
   c: ScoredCard;
   primaryColor: string;
   locationId?: string;
+  planering?: Planering;
+  attGora?: boolean;
   onCoacha: () => void;
   onSaved: () => void;
 }) {
@@ -265,10 +333,30 @@ function DragKort({
   const [sattVarde, setSattVarde] = useState(false);
   const [egen, setEgen] = useState("");
   const [sparar, setSparar] = useState(false);
+  const [klarar, setKlarar] = useState(false);
   const deeplink =
     locationId && c.ghlContactId
       ? `https://app.mysales.se/location/${locationId}/customers/detail/${c.ghlContactId}`
       : null;
+
+  const markKlar = async () => {
+    if (!planering || klarar) return;
+    setKlarar(true);
+    try {
+      const r = await fetch("/api/fokus/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: planering.id, done: true }),
+      });
+      const d = await r.json();
+      if (d.ok) onSaved();
+      else alert(d.error || "Kunde inte markera klar");
+    } catch {
+      alert("Kunde inte markera klar");
+    } finally {
+      setKlarar(false);
+    }
+  };
 
   const spara = async (varde: number) => {
     if (sparar) return;
@@ -295,8 +383,8 @@ function DragKort({
 
   return (
     <div
-      className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
-      style={{ borderLeft: `4px solid ${z.kant}` }}
+      className="bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+      style={{ borderLeft: `4px solid ${attGora ? primaryColor : z.kant}`, borderColor: attGora ? `${primaryColor}55` : undefined }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -319,6 +407,33 @@ function DragKort({
         <span className="text-gray-400">·</span>
         <span className="text-gray-500">{c.lagesText}</span>
       </div>
+
+      {/* Planerad kontakt */}
+      {attGora && planering ? (
+        <div
+          className="mt-3 flex items-center justify-between gap-2 rounded-xl px-3 py-2.5"
+          style={{ background: `${primaryColor}12` }}
+        >
+          <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: primaryColor }}>
+            {planering.kanal === "mejl" ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+            {planering.kanal === "mejl" ? "Mejla" : "Ring"} nu
+            <span className="text-xs font-normal text-gray-500">· planerat {planText(planering.dueAt)}</span>
+          </div>
+          <button
+            onClick={markKlar}
+            disabled={klarar}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-40"
+            style={{ background: primaryColor }}
+          >
+            {klarar ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Klar
+          </button>
+        </div>
+      ) : planering ? (
+        <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
+          <CalendarClock className="w-3.5 h-3.5" />
+          Planerat {planText(planering.dueAt)} · {planering.kanal === "mejl" ? "mejl" : "ring"}
+        </div>
+      ) : null}
 
       {/* Rekommenderat drag */}
       <div className="mt-3 flex items-start gap-2 rounded-xl bg-gray-50 px-3 py-2.5">
@@ -387,6 +502,7 @@ function DragKort({
         >
           <Sparkles className="w-4 h-4" /> Coacha affären
         </button>
+        <PlaneraKnapp kort={c} primaryColor={primaryColor} onDone={onSaved} redanPlanerad={!!planering} />
         {deeplink && (
           <a
             href={deeplink}
@@ -399,6 +515,121 @@ function DragKort({
         )}
       </div>
     </div>
+  );
+}
+
+// Planera en kontakt (ring/mejl) med datum → fokus_planering + GHL-uppgift → "Att göra idag".
+function PlaneraKnapp({
+  kort,
+  primaryColor,
+  onDone,
+  redanPlanerad,
+  block,
+}: {
+  kort: ScoredCard;
+  primaryColor: string;
+  onDone: () => void;
+  redanPlanerad?: boolean;
+  block?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [kanal, setKanal] = useState<"ring" | "mejl">("ring");
+  const [egetDatum, setEgetDatum] = useState("");
+  const [sparar, setSparar] = useState(false);
+
+  const isoOm = (dagar: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + dagar);
+    d.setHours(9, 0, 0, 0);
+    return d.toISOString();
+  };
+
+  const plan = async (dueAt: string) => {
+    if (sparar || !dueAt) return;
+    setSparar(true);
+    try {
+      const r = await fetch("/api/fokus/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oppId: kort.id, ghlContactId: kort.ghlContactId, kanal, dueAt, kontaktNamn: kort.namn }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        setOpen(false);
+        onDone();
+      } else {
+        alert(d.error || "Kunde inte planera");
+      }
+    } catch {
+      alert("Kunde inte planera");
+    } finally {
+      setSparar(false);
+    }
+  };
+
+  return (
+    <div className={block ? "" : "relative"}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg border ${
+          redanPlanerad ? "border-indigo-200 text-indigo-700 bg-indigo-50" : "border-gray-200 text-gray-700 bg-white hover:bg-gray-50"
+        }`}
+      >
+        <CalendarPlus className="w-4 h-4" /> {redanPlanerad ? "Omplanera" : "Planera kontakt"}
+      </button>
+      {open && (
+        <div className={`${block ? "mt-2" : "absolute z-20 mt-2 left-0"} w-72 bg-white border border-gray-200 rounded-2xl shadow-lg p-4 space-y-3`}>
+          <div className="flex items-center gap-1.5">
+            {(["ring", "mejl"] as const).map((k) => (
+              <button
+                key={k}
+                onClick={() => setKanal(k)}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-2 py-1.5 rounded-lg border ${
+                  kanal === k ? "text-white border-transparent" : "bg-white border-gray-200 text-gray-600"
+                }`}
+                style={kanal === k ? { background: primaryColor } : undefined}
+              >
+                {k === "mejl" ? <Mail className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
+                {k === "mejl" ? "Mejla" : "Ring"}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            <PresetKnapp label="Idag" onClick={() => plan(isoOm(0))} disabled={sparar} />
+            <PresetKnapp label="Imorgon" onClick={() => plan(isoOm(1))} disabled={sparar} />
+            <PresetKnapp label="Om 3 dgr" onClick={() => plan(isoOm(3))} disabled={sparar} />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={egetDatum}
+              onChange={(e) => setEgetDatum(e.target.value)}
+              className="flex-1 text-xs rounded-lg border border-gray-200 px-2 py-1.5 focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+            />
+            <button
+              disabled={sparar || !egetDatum}
+              onClick={() => plan(new Date(`${egetDatum}T09:00:00`).toISOString())}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-40"
+              style={{ background: primaryColor }}
+            >
+              {sparar ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Planera"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PresetKnapp({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+    >
+      {label}
+    </button>
   );
 }
 
@@ -615,12 +846,33 @@ function CoachContextInput({
 }
 
 // ── Coach-panel (portal till body — /k-layoutens transform bryter annars position:fixed) ──
-function CoachPanel({ kort, primaryColor, onClose }: { kort: ScoredCard; primaryColor: string; onClose: () => void }) {
+function CoachPanel({
+  kort,
+  primaryColor,
+  onClose,
+  onRefresh,
+}: {
+  kort: ScoredCard;
+  primaryColor: string;
+  onClose: () => void;
+  onRefresh: () => void;
+}) {
   const [loading, setLoading] = useState(true);
   const [svar, setSvar] = useState<CoachSvar | null>(null);
   const [insamling, setInsamling] = useState<string | null>(null);
   const [fraga, setFraga] = useState("");
   const [kopierad, setKopierad] = useState(false);
+  const [kontakt, setKontakt] = useState<{ namn?: string; email?: string; telefon?: string; foretag?: string } | null>(null);
+
+  useEffect(() => {
+    if (!kort.ghlContactId) return;
+    fetch(`/api/fokus/contact?contactId=${encodeURIComponent(kort.ghlContactId)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.linked) setKontakt(d);
+      })
+      .catch(() => {});
+  }, [kort.ghlContactId]);
 
   const kor = useCallback(
     async (medFraga?: string) => {
@@ -672,6 +924,43 @@ function CoachPanel({ kort, primaryColor, onClose }: { kort: ScoredCard; primary
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Faktaruta — kontaktuppgifter + planera kontakt */}
+        <div className="px-6 pt-4">
+          <div className="rounded-2xl border border-gray-100 bg-gray-50 p-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+              {kontakt?.telefon ? (
+                <a href={`tel:${kontakt.telefon}`} className="inline-flex items-center gap-1.5 font-semibold text-gray-800 hover:underline">
+                  <Phone className="w-3.5 h-3.5" style={{ color: primaryColor }} /> {kontakt.telefon}
+                </a>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-gray-400">
+                  <Phone className="w-3.5 h-3.5" /> Tel saknas
+                </span>
+              )}
+              {kontakt?.email && (
+                <a href={`mailto:${kontakt.email}`} className="inline-flex items-center gap-1.5 text-gray-700 hover:underline">
+                  <Mail className="w-3.5 h-3.5" style={{ color: primaryColor }} /> {kontakt.email}
+                </a>
+              )}
+              <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                <CalendarClock className="w-3.5 h-3.5" /> {kort.lagesText}
+              </span>
+            </div>
+            <div className="mt-2.5">
+              <PlaneraKnapp
+                kort={kort}
+                primaryColor={primaryColor}
+                redanPlanerad={false}
+                block
+                onDone={() => {
+                  onRefresh();
+                  onClose();
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="px-6 py-5 space-y-4">

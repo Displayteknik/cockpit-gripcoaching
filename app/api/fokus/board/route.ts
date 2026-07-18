@@ -77,11 +77,30 @@ export async function GET() {
   const prioritering = prioritize(opps, cfg, Date.now());
   const syncedAt = deduped.reduce((m, r) => ((r.updated_at || "") > m ? r.updated_at || "" : m), "") || null;
 
+  // Planerade kontakter (fokus_planering) → badge "Planerat" + "Att göra idag" när de förfaller.
+  const { data: planRows } = await sb
+    .from("fokus_planering")
+    .select("id, ghl_opportunity_id, kanal, due_at, note")
+    .in("tenant_id", ctx.ids)
+    .eq("status", "open");
+  const planering: Record<string, { id: string; kanal: string; dueAt: string; note: string | null }> = {};
+  for (const pr of (planRows as { id: string; ghl_opportunity_id: string; kanal: string; due_at: string; note: string | null }[] | null) || []) {
+    const prev = planering[pr.ghl_opportunity_id];
+    if (!prev || pr.due_at < prev.dueAt)
+      planering[pr.ghl_opportunity_id] = { id: pr.id, kanal: pr.kanal, dueAt: pr.due_at, note: pr.note };
+  }
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const attGoraIdag = Object.entries(planering)
+    .filter(([, p]) => (p.dueAt || "").slice(0, 10) <= todayStr)
+    .map(([oppId]) => oppId);
+
   return NextResponse.json({
     linked: true,
     prioritering,
     syncedAt,
     antal: opps.length,
     locationId: ctx.locationId,
+    planering,
+    attGoraIdag,
   });
 }

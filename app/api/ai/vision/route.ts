@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     b.prompt ||
     "Detta är en skärmbild kopplad till en säljaffär (t.ex. ett mejl, en chatt eller ett offertsvar från kunden). " +
       "Sammanfatta i 1–3 meningar på svenska: vad kunden säger/gör, kundens ton, och ev. invändning eller nästa steg. " +
+      "Ta ALLTID med eventuella datum du ser (när mejlet/meddelandet skickades, utlovade tider, deadlines) — de säger mycket om tempot. " +
       "Läs av text ordagrant där det är relevant. Skriv bara sammanfattningen, inga rubriker.";
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
