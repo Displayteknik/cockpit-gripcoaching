@@ -989,14 +989,14 @@ function CoachPanel({
             </div>
           ) : svar ? (
             <>
-              <Block titel="Läget">{svar.lagesbild}</Block>
-              <Block titel="Hypotes">{svar.disc_hypotes}</Block>
+              <Block titel="Läget"><GlossText text={svar.lagesbild} /></Block>
+              <Block titel="Hypotes"><GlossText text={svar.disc_hypotes} /></Block>
               <div className="rounded-2xl border border-gray-100 p-4 space-y-2" style={{ background: `${primaryColor}0a` }}>
                 <div className="text-xs uppercase tracking-wide font-semibold" style={{ color: primaryColor }}>
                   Gör så här
                 </div>
-                <div className="font-semibold text-gray-900">{svar.drag.vad}</div>
-                <p className="text-sm text-gray-600">{svar.drag.varfor}</p>
+                <div className="font-semibold text-gray-900"><GlossText text={svar.drag.vad} /></div>
+                <p className="text-sm text-gray-600"><GlossText text={svar.drag.varfor} /></p>
                 <p className="text-sm text-gray-800 italic">”{svar.drag.oppning}”</p>
               </div>
               <div className="rounded-2xl border border-gray-100 p-4 space-y-2">
@@ -1054,5 +1054,75 @@ function Block({ titel, children }: { titel: string; children: React.ReactNode }
       <div className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">{titel}</div>
       <p className="text-sm text-gray-700">{children}</p>
     </div>
+  );
+}
+
+// ── Ordlista: markera facktermer (DISC) i coach-texten → hovra/tap för förklaring ──
+const GLOSSARY: Record<string, { titel: string; def: string }> = {
+  DISC: {
+    titel: "DISC",
+    def: "Fyra beteendestilar (D/I/S/C) som hjälper dig anpassa HUR du säljer till just den här personen. Det är en hypotes utifrån hur de beter sig — inte en sanning.",
+  },
+  D: {
+    titel: "D-profil (Dominant)",
+    def: "Resultatorienterad, rak, snabb. Vill ha korta besked och känna kontroll. Bemöt: kom till saken, ge tydliga alternativ, respektera deras tid.",
+  },
+  I: {
+    titel: "I-profil (Inspirerande)",
+    def: "Social, entusiastisk, relationsdriven. Gillar dialog och den stora bilden. Bemöt: bygg relation, var personlig, håll energin uppe.",
+  },
+  S: {
+    titel: "S-profil (Stabil)",
+    def: "Lugn, lojal, söker harmoni. Ogillar press och snabba svängar. Bemöt: ta det tryggt, förenkla beslutet, ta bort risk och stress.",
+  },
+  C: {
+    titel: "C-profil (Analytisk)",
+    def: "Noggrann, faktadriven, försiktig. Vill ha detaljer och bevis. Bemöt: ge fakta, referenser, riskreducering och skriftligt underlag.",
+  },
+};
+
+const GLOSS_RE = /(DISC|[DISC]-(?:profil|profilen|personlighet|personligheten|person|personen|typ|typen))/g;
+
+// Renderar en textsträng och gör kända termer klickbara/hoverbara med förklaring.
+function GlossText({ text }: { text: string }) {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  GLOSS_RE.lastIndex = 0;
+  let i = 0;
+  while ((m = GLOSS_RE.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    const token = m[0];
+    const key = token.startsWith("DISC") ? "DISC" : token[0];
+    const entry = GLOSSARY[key];
+    if (entry) parts.push(<Term key={`t${i++}`} token={token} entry={entry} />);
+    else parts.push(token);
+    last = GLOSS_RE.lastIndex;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
+}
+
+function Term({ token, entry }: { token: string; entry: { titel: string; def: string } }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        className="underline decoration-dotted decoration-gray-400 underline-offset-2 font-semibold text-gray-800 cursor-help"
+        aria-label={`Vad betyder ${token}?`}
+      >
+        {token}
+      </button>
+      {open && (
+        <span className="absolute left-0 top-full mt-1 z-30 w-64 rounded-xl bg-gray-900 text-white text-xs leading-relaxed p-3 shadow-xl">
+          <span className="font-semibold block mb-0.5">{entry.titel}</span>
+          {entry.def}
+        </span>
+      )}
+    </span>
   );
 }
