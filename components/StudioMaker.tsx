@@ -7,12 +7,14 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
+  ExternalLink,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
 import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
+import ChannelPreview, { type ChannelKey } from "@/components/studio/ChannelPreview";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface Suggestion { hookType: string; headline1: string; headline2: string; body: string }
@@ -25,6 +27,36 @@ const HOOK_LABEL: Record<string, string> = {
 };
 
 const SLIDE_KIND_LABEL: Record<string, string> = { hook: "Krok", point: "Punkt", cta: "Avslut" };
+
+// Brand-glyfer (lucide slutade exportera dem) — små inline-SVG:er.
+function IgIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+function FbIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M13.5 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.25-1.5 1.55-1.5H17V4.6c-.3-.04-1.3-.13-2.46-.13-2.44 0-4.1 1.49-4.1 4.22v2.35H7.7V14h2.74v8h3.06z" />
+    </svg>
+  );
+}
+function LiIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.8 0 0 .78 0 1.75v20.5C0 23.22.8 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.75V1.75C24 .78 23.2 0 22.22 0z" />
+    </svg>
+  );
+}
+
+// Fas B — de tre kanalerna. platform = matchning mot GHL:s platform-sträng.
+const CHANNELS: { key: ChannelKey; label: string; platform: string; Icon: (p: { className?: string }) => React.JSX.Element }[] = [
+  { key: "ig", label: "Instagram", platform: "instagram", Icon: IgIcon },
+  { key: "fb", label: "Facebook", platform: "facebook", Icon: FbIcon },
+  { key: "li", label: "LinkedIn", platform: "linkedin", Icon: LiIcon },
+];
 
 const DEFAULT_COLOR = "#1A6B3C";
 
@@ -102,14 +134,21 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [ghlConnected, setGhlConnected] = useState<boolean | null>(null);
   const [ghlAccounts, setGhlAccounts] = useState<GhlAccount[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
-  const [publishing, setPublishing] = useState(false);
-  const [published, setPublished] = useState(false);
   const [ghlLocInput, setGhlLocInput] = useState("");
   const [ghlPitInput, setGhlPitInput] = useState("");
   const [connectingGhl, setConnectingGhl] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
-  const [pubChannel, setPubChannel] = useState<"ghl" | "ig">(customerMode ? "ig" : "ghl"); // kund = endast IG-direkt
   const [igConn, setIgConn] = useState<{ connected: boolean; handle: string | null } | null>(null);
+  // Fas B — multi-kanal: valda kanaler (förikryssade efter koppling), per-kanal-caption,
+  // per-kanal publiceringsstatus. Grund-captionen (steg 4) är källa; kanal-caption faller
+  // tillbaka på den tills man anpassar.
+  const [selectedChannels, setSelectedChannels] = useState<ChannelKey[]>(["ig"]);
+  const [channelsSeeded, setChannelsSeeded] = useState(false);
+  const [channelCaptions, setChannelCaptions] = useState<Record<ChannelKey, string>>({ ig: "", fb: "", li: "" });
+  const [adapting, setAdapting] = useState(false);
+  const [pubBusy, setPubBusy] = useState<ChannelKey | "">("");
+  const [pubResult, setPubResult] = useState<Record<ChannelKey, "" | "ok" | "err">>({ ig: "", fb: "", li: "" });
+  const [copied, setCopied] = useState<ChannelKey | "">("");
 
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
@@ -564,28 +603,97 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setSelectedAccounts((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   }, []);
 
-  const publishDraft = useCallback(async () => {
-    if (pubChannel === "ghl" && !selectedAccounts.length) { setError("Välj minst ett konto"); return; }
-    if (pubChannel === "ig" && !igConn?.connected) { setError("Instagram är inte kopplat för den här klienten (koppla i Inställningar)."); return; }
-    setError(""); setPublishing(true); setPublished(false);
+  // ── Fas B: kanaldetektering, anpassning, per-kanal-publicering ──
+  // Icke-utgångna GHL-konton för en plattform (facebook/linkedin/instagram).
+  const ghlFor = useCallback(
+    (platform: string) => ghlAccounts.filter((a) => a.platform.toLowerCase().includes(platform) && !a.isExpired),
+    [ghlAccounts],
+  );
+  // Är kanalen publicerbar? IG = direkt-koppling ELLER GHL-IG. FB/LI = via GHL.
+  const channelConnected = useMemo<Record<ChannelKey, boolean>>(() => ({
+    ig: !!igConn?.connected || ghlFor("instagram").length > 0,
+    fb: ghlFor("facebook").length > 0,
+    li: ghlFor("linkedin").length > 0,
+  }), [igConn, ghlFor]);
+
+  // Effektiv caption för en kanal: den anpassade om den finns, annars grund-captionen.
+  const capFor = useCallback((k: ChannelKey) => (channelCaptions[k]?.trim() ? channelCaptions[k] : caption), [channelCaptions, caption]);
+
+  // Render-URL för preview-bilden (samma bild i alla enhetsramar). Karusell = första sliden.
+  const channelRenderSrc = useMemo(
+    () => `/studio/render/${templateId}?p=${encodeURIComponent(encodePayload(payload))}${isCarousel ? "&slide=0" : ""}`,
+    [templateId, payload, isCarousel],
+  );
+
+  // Förikryssa kanaler efter vad klienten kopplat — en gång, när kopplingsstatus lästs in.
+  useEffect(() => {
+    if (channelsSeeded) return;
+    if (igConn === null) return; // vänta tills IG-status finns
+    if (!customerMode && ghlConnected === null) return; // vänta även på GHL-status i admin
+    const connected = CHANNELS.filter((c) => channelConnected[c.key]).map((c) => c.key);
+    setSelectedChannels(connected.length ? connected : ["ig"]);
+    setChannelsSeeded(true);
+  }, [channelsSeeded, igConn, ghlConnected, customerMode, channelConnected]);
+
+  const toggleChannel = useCallback((k: ChannelKey) => {
+    setSelectedChannels((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
+  }, []);
+  const setChannelCap = useCallback((k: ChannelKey, v: string) => {
+    setChannelCaptions((prev) => ({ ...prev, [k]: v }));
+  }, []);
+
+  // Skriv en gång → AI anpassar grund-captionen per vald kanal (krok/längd/ton/hashtags).
+  const adaptChannels = useCallback(async () => {
+    const targets = selectedChannels.length ? selectedChannels : (["ig", "fb", "li"] as ChannelKey[]);
+    setError(""); setAdapting(true);
     try {
-      const payload = pubChannel === "ig"
-        ? { postId: loadedPostId, channel: "ig-graph", caption, imageUrl, videoUrl, format } // direkt IG — publiceras nu (inget utkast/schema)
-        : { postId: loadedPostId, channel: "ghl-social", accountIds: selectedAccounts, caption, imageUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
-      const r = await fetch("/api/studio/publish", {
+      const r = await fetch("/api/studio/adapt-channel", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ caption, headline: headline1, headline2, body, topic, slides, postType, channels: targets }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
-      setPublished(true);
-      await refreshPosts();
+      if (!r.ok) throw new Error(d.error || "Kunde inte anpassa per kanal");
+      if (d.captions) setChannelCaptions((prev) => ({ ...prev, ...d.captions }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setPublishing(false);
+      setAdapting(false);
     }
-  }, [pubChannel, igConn, selectedAccounts, loadedPostId, caption, imageUrl, videoUrl, format, scheduleDate, refreshPosts]);
+  }, [selectedChannels, caption, headline1, headline2, body, topic, slides, postType]);
+
+  const copyChannelText = useCallback((k: ChannelKey) => {
+    navigator.clipboard?.writeText(capFor(k)).then(() => { setCopied(k); setTimeout(() => setCopied(""), 1500); }).catch(() => {});
+  }, [capFor]);
+
+  // Publicera EN kanal: IG direkt (ig-graph), FB/LI via GHL (ghl-social) med den plattformens konton.
+  const publishTo = useCallback(async (k: ChannelKey) => {
+    setError(""); setPubBusy(k); setPubResult((p) => ({ ...p, [k]: "" }));
+    try {
+      let reqBody: Record<string, unknown>;
+      if (k === "ig" && igConn?.connected) {
+        // Direkt till klientens Instagram — publiceras nu (inget utkast/schema).
+        reqBody = { postId: loadedPostId, channel: "ig-graph", caption: capFor("ig"), imageUrl, videoUrl, format };
+      } else {
+        const platform = k === "fb" ? "facebook" : k === "li" ? "linkedin" : "instagram";
+        const accs = ghlFor(platform).map((a) => a.id).filter((id) => selectedAccounts.includes(id));
+        if (!accs.length) throw new Error(`Inga valda ${CHANNELS.find((c) => c.key === k)?.label}-konton i GHL.`);
+        reqBody = { postId: loadedPostId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
+      }
+      const r = await fetch("/api/studio/publish", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reqBody),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
+      setPubResult((p) => ({ ...p, [k]: "ok" }));
+      await refreshPosts();
+    } catch (e) {
+      setError((e as Error).message);
+      setPubResult((p) => ({ ...p, [k]: "err" }));
+    } finally {
+      setPubBusy("");
+    }
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, ghlFor, selectedAccounts, scheduleDate, refreshPosts]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -625,7 +733,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             { n: 2, t: "Bild" },
             { n: 3, t: "Text på bilden" },
             { n: 4, t: "Bildtext" },
-            { n: 5, t: "Publicera" },
+            { n: 5, t: "Kanaler & publicera" },
           ].map((s, i, arr) => (
             <span key={s.n} className="inline-flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: STEG_FARGER[s.n - 1] }}>
@@ -1091,50 +1199,128 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </>
             )}
 
-            {/* Publicera till GHL (utkast) */}
-            <div className="rounded-xl border bg-white p-4 space-y-3" style={stegRam(STEG_FARGER[4])}>
+            <p className="text-xs text-gray-400 text-center px-2">Kanaler, förhandsvisning och publicering — <strong>steg 5</strong> längre ner.</p>
+          </div>
+        </div>
+
+        {/* ── Steg 5 · Kanaler & publicera — en yta, tre plattformar (Fas B) ── */}
+        <section className="bg-white border rounded-2xl p-6 space-y-5" style={stegRam(STEG_FARGER[4])}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <StegNr n={5} color={STEG_FARGER[4]} />
+            <h2 className="font-display font-bold text-gray-900 text-lg">Kanaler &amp; publicera</h2>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
+              {postType === "reel" ? "Reel" : postType === "story" ? "Story" : isCarousel ? "Karusell" : "Inlägg"}
+            </span>
+            <span className="ml-auto text-xs text-gray-500">Skriv en gång — se och anpassa per plattform, som i GHL.</span>
+          </div>
+
+          {/* Kanalväljare — förikryssad efter vad klienten kopplat */}
+          <div className="flex flex-wrap items-center gap-2">
+            {CHANNELS.map(({ key, label, Icon }) => {
+              const on = selectedChannels.includes(key);
+              const conn = channelConnected[key];
+              return (
+                <button key={key} onClick={() => toggleChannel(key)}
+                  className="inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors"
+                  style={on ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                  <Icon className="w-4 h-4" /> {label}
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                    style={conn ? { background: "#dcfce7", color: "#15803d" } : { background: "#f3f4f6", color: "#9ca3af" }}>
+                    {conn ? "kopplad" : "ej kopplad"}
+                  </span>
+                </button>
+              );
+            })}
+            <button onClick={adaptChannels} disabled={adapting || (!caption.trim() && !headline1.trim() && slides.every((s) => !s.headline?.trim()))}
+              className="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+              style={{ background: primary }}>
+              {adapting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Anpassa texten per kanal
+            </button>
+          </div>
+          {!caption.trim() && (
+            <div className="text-xs text-gray-500">Tips: skriv eller föreslå en bildtext i <strong>steg 4</strong> först — den blir grunden AI anpassar per kanal.</div>
+          )}
+
+          {selectedChannels.length === 0 ? (
+            <div className="text-sm text-gray-500 text-center py-6">Välj minst en kanal ovan för att förhandsgranska.</div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {CHANNELS.filter((c) => selectedChannels.includes(c.key)).map(({ key, label }) => {
+                const eff = capFor(key);
+                const busy = pubBusy === key;
+                const res = pubResult[key];
+                const igDirect = key === "ig" && !!igConn?.connected;
+                const ghlAccs = ghlFor(key === "fb" ? "facebook" : key === "li" ? "linkedin" : "instagram");
+                const canPublish = igDirect || (!igDirect && ghlAccs.some((a) => selectedAccounts.includes(a.id)));
+                const openUrl = key === "li" ? "https://www.linkedin.com/feed/" : key === "fb" ? "https://www.facebook.com/" : "https://www.instagram.com/";
+                return (
+                  <div key={key} className="space-y-3">
+                    <ChannelPreview channel={key} renderSrc={channelRenderSrc} format={format} caption={eff}
+                      clientName={client?.name || slug} handle={key === "ig" ? igConn?.handle : null} primary={primary} />
+
+                    {/* Per-kanal-caption (redigerbar) — faller tillbaka på grund-captionen */}
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{label}-text</span>
+                        <button onClick={() => copyChannelText(key)} className="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-800">
+                          {copied === key ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />} Kopiera
+                        </button>
+                      </div>
+                      <textarea value={channelCaptions[key]} onChange={(e) => setChannelCap(key, e.target.value)}
+                        rows={4} placeholder={caption.trim() ? "Använder grund-captionen — anpassa via knappen eller skriv här." : "Ingen bildtext än (steg 4)."}
+                        className="w-full rounded-lg border border-gray-200 px-2.5 py-2 text-xs leading-relaxed focus:border-gray-400 outline-none bg-white" style={{ whiteSpace: "pre-wrap" }} />
+                    </div>
+
+                    {/* Publiceringsrouting per kanal */}
+                    {igDirect ? (
+                      <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
+                        className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                        style={{ background: primary }}>
+                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                        {res === "ok" ? "Publicerat på Instagram ✓" : "Publicera nu på Instagram"}
+                      </button>
+                    ) : canPublish ? (
+                      <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
+                        className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                        style={{ background: primary }}>
+                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                        {res === "ok" ? (scheduleDate ? "Schemalagt i GHL ✓" : "Utkast skapat i GHL ✓") : (scheduleDate ? `Schemalägg ${label} i GHL` : `Skapa ${label}-utkast i GHL`)}
+                      </button>
+                    ) : (
+                      // Fallback: ingen direktväg (t.ex. LinkedIn utan GHL, eller kundläge) → kopiera + öppna.
+                      <div className="space-y-1.5">
+                        <a href={openUrl} target="_blank" rel="noopener" onClick={() => copyChannelText(key)}
+                          className="w-full inline-flex items-center justify-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                          {copied === key ? <Check className="w-4 h-4 text-emerald-600" /> : <ExternalLink className="w-4 h-4" />} Kopiera text &amp; öppna {label}
+                        </a>
+                        <p className="text-[11px] text-gray-400">{label} saknar direktpublicering här — ladda ner PNG:en ovan, kopiera texten och lägg upp manuellt{customerMode ? "" : ", eller koppla GHL nedan"}.</p>
+                      </div>
+                    )}
+                    {res === "err" && <p className="text-[11px] text-red-500">Publicering misslyckades — se felrutan högst upp.</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* GHL-koppling & kontoval (byrå-only) — driver FB/LI-publiceringen ovan */}
+          {!customerMode && (selectedChannels.includes("fb") || selectedChannels.includes("li") || (selectedChannels.includes("ig") && !igConn?.connected)) && (
+            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <StegNr n={5} color={STEG_FARGER[4]} />
-                <h3 className="font-display font-bold text-gray-900 text-sm">Publicera</h3>
-                <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
-                  {postType === "reel" ? "Reel" : postType === "story" ? "Story" : "Inlägg"}
-                </span>
+                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">GHL Social Planner (Facebook / LinkedIn)</span>
+                {ghlConnected && <button onClick={disconnectGhl} className="ml-auto text-xs text-gray-400 hover:text-red-600">Koppla från</button>}
               </div>
-
-              {/* Kanalval: GHL-utkast eller Instagram direkt. Kund-läge = endast IG-direkt (byrå sköter GHL). */}
-              {!customerMode && (
-                <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg">
-                  {([["ghl", "GHL (utkast)"], ["ig", "Instagram (direkt)"]] as const).map(([k, label]) => (
-                    <button key={k} onClick={() => { setPubChannel(k); setPublished(false); setError(""); }}
-                      className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-md transition-colors ${pubChannel === k ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Bildtext</label>
-                {caption.trim() ? (
-                  <div className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-2.5 max-h-28 overflow-auto" style={{ whiteSpace: "pre-wrap" }}>{caption}</div>
-                ) : (
-                  <div className="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-2.5">Ingen bildtext än — skriv eller föreslå en i <strong>steg 4 · Bildtext</strong>.</div>
-                )}
-              </div>
-
-              {pubChannel === "ghl" ? (
-              <div className="space-y-3">
               {ghlConnected === null ? (
                 <div className="text-xs text-gray-400 flex items-center gap-1"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Kollar koppling…</div>
               ) : !ghlConnected ? (
-                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-2">
-                  <div className="text-xs text-gray-600">Koppla {client?.name || "klienten"}s GHL för att publicera. Skapa en <span className="font-medium">Private Integration-token</span> (scope: Social Media + View Users) i klientens GHL.</div>
+                <div className="space-y-2">
+                  <div className="text-xs text-gray-600">Koppla {client?.name || "klienten"}s GHL för att publicera FB/LI. Skapa en <span className="font-medium">Private Integration-token</span> (scope: Social Media + View Users) i klientens GHL.</div>
                   <input value={ghlLocInput} onChange={(e) => setGhlLocInput(e.target.value)} placeholder="Location-id (t.ex. ZWqjUhS3f77BPpOiyMHK)" className={inputCls}
                     name="ghl-location-id" autoComplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" spellCheck={false} />
                   <input value={ghlPitInput} onChange={(e) => setGhlPitInput(e.target.value)} type="text" placeholder="Private Integration-token (pit-…)" className={`${inputCls} font-mono`}
                     name="ghl-pit-token" autoComplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" spellCheck={false} />
                   <button onClick={connectGhl} disabled={connectingGhl}
-                    className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     style={{ background: primary }}>
                     {connectingGhl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Koppla GHL
                   </button>
@@ -1142,12 +1328,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               ) : ghlAccounts.length === 0 ? (
                 <div className="text-xs text-gray-500">Inga kopplade sociala konton i GHL för den här klienten.</div>
               ) : (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-medium text-gray-500">Publicera till</div>
-                    <button onClick={disconnectGhl} className="text-xs text-gray-400 hover:text-red-600">Koppla från</button>
-                  </div>
+                <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
                   <div className="space-y-1">
+                    <div className="text-xs font-medium text-gray-500">Publicera till konton</div>
                     {ghlAccounts.map((a) => (
                       <label key={a.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                         <input type="checkbox" checked={selectedAccounts.includes(a.id)} onChange={() => toggleAccount(a.id)} disabled={a.isExpired} style={{ accentColor: primary }} />
@@ -1157,46 +1340,20 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </label>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {ghlConnected && ghlAccounts.length > 0 && (
-                <>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Schemalägg (valfritt)</label>
                     <input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className={inputCls} />
                     {scheduleDate && <button onClick={() => setScheduleDate("")} className="text-xs text-gray-400 hover:text-gray-600 mt-1">Rensa (skapa som utkast istället)</button>}
+                    <p className="text-xs text-gray-400 mt-2">Utan datum: utkast i GHL. Med datum: schemaläggs i Social Planner.</p>
                   </div>
-                  <button onClick={publishDraft} disabled={publishing || !selectedAccounts.length}
-                    className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-                    style={{ background: primary }}>
-                    {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : published ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                    {published ? (scheduleDate ? "Schemalagt i GHL" : "Utkast skapat i GHL") : (scheduleDate ? "Schemalägg i GHL" : "Skapa utkast i GHL")}
-                  </button>
-                </>
-              )}
-              <p className="text-xs text-gray-400">Utan datum: skapar utkast (publicerar inte). Med datum: schemaläggs i Social Planner och publiceras vid tidpunkten.</p>
-              </div>
-              ) : (
-                igConn === null ? (
-                  <div className="text-xs text-gray-400 flex items-center gap-1"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Kollar Instagram…</div>
-                ) : !igConn.connected ? (
-                  <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 text-xs text-gray-600">Instagram är inte kopplat för {client?.name || "klienten"}. Koppla under <a href="/dashboard/installningar" className="font-medium underline" style={{ color: primary }}>Inställningar</a> (IG Business Account ID + long-lived token).</div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="text-xs text-gray-600">Publiceras <strong>direkt</strong> till {igConn.handle ? `@${igConn.handle}` : "kontots Instagram"} nu. PNG konverteras automatiskt till JPEG. Inget utkast eller schema — Instagram publicerar direkt.</div>
-                    <button onClick={publishDraft} disabled={publishing}
-                      className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-                      style={{ background: primary }}>
-                      {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : published ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                      {published ? "Publicerat på Instagram ✓" : "Publicera nu till Instagram"}
-                    </button>
-                  </div>
-                )
+                </div>
               )}
             </div>
-          </div>
-        </div>
+          )}
+          {customerMode && (selectedChannels.includes("fb") || selectedChannels.includes("li")) && (
+            <p className="text-xs text-gray-400">Facebook och LinkedIn förhandsvisas här — publicering till dem sköts av din byrå. Instagram kan du publicera direkt.</p>
+          )}
+        </section>
 
         {/* ── Tidigare skapelser (återanvänd & redigera) ── */}
         {posts.length > 0 && (
