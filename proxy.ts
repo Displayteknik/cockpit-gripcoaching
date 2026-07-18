@@ -74,6 +74,8 @@ function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/offert/")) return true;
   // Kund-vänd Fokusmotor (/k/fokus): read-only säljöversikt. Route grindad + bryggan tenant-låser.
   if (path.startsWith("/api/fokus/")) return true;
+  // Kund-vänd Ikigai-motor (/k/ikigai): sessions + generate (public-varianten hanteras i isPublicApi).
+  if (path === "/api/ikigai/sessions" || path === "/api/ikigai/generate") return true;
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||

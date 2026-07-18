@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseService(); // ikigai_sessions har RLS på → service-role; tenant-scopad via clientId nedan
   const clientId = await getActiveClientId();
   const { searchParams } = new URL(req.url);
@@ -32,6 +35,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseService(); // ikigai_sessions har RLS på → service-role; tenant-scopad via clientId nedan
   const clientId = await getActiveClientId();
   const { searchParams } = new URL(req.url);

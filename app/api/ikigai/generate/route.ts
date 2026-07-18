@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { generateIkigai, buildInputBlock, ALLOWED_BRAND_FIELDS, type IkigaiInputs } from "@/lib/ikigai";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseService(); // ikigai_sessions har RLS på → service-role (admin-grindad i proxy, tenant-scopad via clientId)
   const clientId = await getActiveClientId();
   let inputs: IkigaiInputs = {};

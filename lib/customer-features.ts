@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass } from "lucide-react";
 import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
@@ -63,6 +63,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     href: "/k/fokus",
     icon: Target,
     description: "Din aktivitet, pipeline och offert-KPI:er från MySales Coach.",
+  },
+  {
+    key: "ikigai",
+    label: "Ikigai",
+    href: "/k/ikigai",
+    icon: Compass,
+    description: "Lead-magnet som fångar och kvalificerar intressenter.",
   },
   {
     key: "ideer",
