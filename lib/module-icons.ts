@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import {
   Target, TrendingUp, Globe, Sparkles, Lightbulb, Calendar, Users,
-  Mail, Compass, LayoutGrid,
+  Mail, Compass, LayoutGrid, FileText,
 } from "lucide-react";
 
 // Ikon som accepterar både className och style (lucide-props).
@@ -23,7 +23,7 @@ export function LinkedinIcon({ className, style }: { className?: string; style?:
 // dess kundvy (och ikon) byggs.
 const MODULE_ICON: Record<string, IconType> = {
   Target, TrendingUp, Globe, Sparkles, Lightbulb, Calendar, Users,
-  Mail, Compass, Linkedin: LinkedinIcon,
+  Mail, Compass, FileText, Linkedin: LinkedinIcon,
 };
 
 export function moduleIcon(name: string | null | undefined): IconType {

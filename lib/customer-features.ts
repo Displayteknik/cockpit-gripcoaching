@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText } from "lucide-react";
 import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
@@ -49,6 +49,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     href: "/k/linkedin",
     icon: LinkedinIcon,
     description: "Skriv och planera LinkedIn-innehåll i din röst.",
+  },
+  {
+    key: "offert",
+    label: "Offerter",
+    href: "/k/offert",
+    icon: FileText,
+    description: "Dina B2B-offerter från MySales Coach, samlade.",
   },
   {
     key: "ideer",

@@ -70,6 +70,8 @@ function isCustomerServedApi(path: string): boolean {
   // Kund-vänd LinkedIn-motor (/k/linkedin): alla linkedin-endpoints. Varje route grindas
   // in-route med requireAdminOrCustomer + tenant-låses via getActiveClientId (kund når bara sin egen klient).
   if (path.startsWith("/api/linkedin/")) return true;
+  // Kund-vänd Offertmotor (/k/offert): read-only offert-lista. Route grindad + bryggan tenant-låser.
+  if (path.startsWith("/api/offert/")) return true;
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||
