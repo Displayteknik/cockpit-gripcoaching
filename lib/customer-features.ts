@@ -1,4 +1,5 @@
 import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe } from "lucide-react";
+import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
 // EN källa: används av admin-väljaren (kund-access), portal-navet och serverside-spärren.
@@ -41,6 +42,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     href: "/k/studio", // premium-Studion (utrullad); gamla /k/skapa kvar som fallback
     icon: Sparkles,
     description: "Skapa on-brand inlägg, bilder, karuseller och reels i din röst.",
+  },
+  {
+    key: "linkedin",
+    label: "LinkedIn",
+    href: "/k/linkedin",
+    icon: LinkedinIcon,
+    description: "Skriv och planera LinkedIn-innehåll i din röst.",
   },
   {
     key: "ideer",

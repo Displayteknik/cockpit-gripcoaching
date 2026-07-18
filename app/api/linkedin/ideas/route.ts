@@ -3,6 +3,7 @@ import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -21,6 +22,8 @@ interface GenResponse {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const body = (await req.json()) as { count?: number; pillar?: string; mode?: string };
     const count = Math.min(Math.max(body.count ?? 10, 1), 20);

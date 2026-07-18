@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,6 +17,8 @@ interface SeedResult {
 }
 
 export async function POST(_req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
     const client = await getActiveClient();

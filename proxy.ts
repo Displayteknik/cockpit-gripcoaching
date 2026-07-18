@@ -67,6 +67,9 @@ function isCustomerServedApi(path: string): boolean {
   if (path === "/api/brand-kit") return true;
   if (path === "/api/instagram/connect") return true;
   if (path.startsWith("/api/studio/") && path !== "/api/studio/ghl-config" && path !== "/api/studio/ghl-accounts") return true;
+  // Kund-vänd LinkedIn-motor (/k/linkedin): alla linkedin-endpoints. Varje route grindas
+  // in-route med requireAdminOrCustomer + tenant-låses via getActiveClientId (kund når bara sin egen klient).
+  if (path.startsWith("/api/linkedin/")) return true;
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||

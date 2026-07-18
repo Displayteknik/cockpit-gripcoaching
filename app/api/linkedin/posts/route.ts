@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseServer();
   const clientId = await getActiveClientId();
   const { searchParams } = new URL(req.url);
@@ -23,6 +26,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseServer();
   const clientId = await getActiveClientId();
   const body = await req.json();
@@ -58,6 +63,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseServer();
   const clientId = await getActiveClientId();
   const { searchParams } = new URL(req.url);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,8 @@ const FIELD_ALIASES: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const { raw }: { raw: string } = await req.json();
     if (!raw?.trim()) return NextResponse.json({ error: "Tomt input" }, { status: 400 });
@@ -112,6 +115,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const sb = supabaseServer();
   const clientId = await getActiveClientId();
   const { data, error } = await sb
