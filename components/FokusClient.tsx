@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Zap,
@@ -14,6 +14,9 @@ import {
   TrendingUp,
   Snowflake,
   RefreshCw,
+  Mic,
+  Square,
+  Image as ImageIcon,
 } from "lucide-react";
 
 // ── Typer speglar /api/fokus/board (prioriteringsmotorn) ──
@@ -399,6 +402,218 @@ function DragKort({
   );
 }
 
+// ── Kontext-input med röstinmatning + bildanalys (återanvänder /api/ai/transcribe + /api/ai/vision) ──
+function CoachContextInput({
+  value,
+  onChange,
+  onSubmit,
+  submitLabel,
+  placeholder,
+  primaryColor,
+  rows = 3,
+  compact = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
+  submitLabel: string;
+  placeholder: string;
+  primaryColor: string;
+  rows?: number;
+  compact?: boolean;
+}) {
+  const [recording, setRecording] = useState(false);
+  const [sekunder, setSekunder] = useState(0);
+  const [jobbar, setJobbar] = useState<null | "röst" | "bild">(null);
+  const [fel, setFel] = useState<string | null>(null);
+  const mrRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const append = (snippet: string) => {
+    const s = snippet.trim();
+    if (!s) return;
+    onChange(value ? `${value.trim()} ${s}` : s);
+  };
+
+  const stadaMic = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+  useEffect(() => () => stadaMic(), []);
+
+  const pickMime = () => {
+    if (typeof MediaRecorder === "undefined") return "";
+    for (const t of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"])
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    return "";
+  };
+
+  const startaRost = async () => {
+    setFel(null);
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setFel("Webbläsaren stödjer inte röstinspelning");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = pickMime();
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      mrRef.current = mr;
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      mr.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
+        stadaMic();
+        setRecording(false);
+        if (blob.size < 1200) return; // för kort → strunta
+        setJobbar("röst");
+        try {
+          const fd = new FormData();
+          const ext = (mr.mimeType || "webm").includes("mp4") ? "m4a" : "webm";
+          fd.append("audio", blob, `rost.${ext}`);
+          const r = await fetch("/api/ai/transcribe", { method: "POST", body: fd });
+          const d = await r.json();
+          if (d.text) append(d.text);
+          else setFel(d.error || "Kunde inte transkribera");
+        } catch {
+          setFel("Kunde inte transkribera");
+        } finally {
+          setJobbar(null);
+        }
+      };
+      mr.start();
+      setRecording(true);
+      setSekunder(0);
+      timerRef.current = setInterval(() => setSekunder((s) => s + 1), 1000);
+    } catch (e) {
+      setFel((e as Error).message || "Kunde inte starta mic");
+    }
+  };
+
+  const stoppaRost = () => {
+    if (mrRef.current && mrRef.current.state !== "inactive") mrRef.current.stop();
+  };
+
+  const analyseraBild = async (file: File | Blob) => {
+    setFel(null);
+    if (file.size > 8 * 1024 * 1024) {
+      setFel("Bilden är för stor (max 8 MB)");
+      return;
+    }
+    setJobbar("bild");
+    try {
+      const dataUrl: string = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result));
+        fr.onerror = () => rej(new Error("läsfel"));
+        fr.readAsDataURL(file);
+      });
+      const r = await fetch("/api/ai/vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: dataUrl }),
+      });
+      const d = await r.json();
+      if (d.text) append(d.text);
+      else setFel(d.error || "Kunde inte analysera bilden");
+    } catch {
+      setFel("Kunde inte analysera bilden");
+    } finally {
+      setJobbar(null);
+    }
+  };
+
+  const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith("image/"));
+    if (item) {
+      const f = item.getAsFile();
+      if (f) {
+        e.preventDefault();
+        analyseraBild(f);
+      }
+    }
+  };
+
+  const upptagen = jobbar !== null;
+
+  return (
+    <div className="space-y-2">
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onPaste={onPaste}
+        rows={rows}
+        placeholder={placeholder}
+        className="w-full text-sm rounded-xl border border-gray-200 px-3 py-2.5 focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) analyseraBild(f);
+          e.target.value = "";
+        }}
+      />
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Röst */}
+        {recording ? (
+          <button
+            onClick={stoppaRost}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200"
+          >
+            <Square className="w-3.5 h-3.5 fill-current" /> Stoppa
+            <span className="tabular-nums">
+              {Math.floor(sekunder / 60)}:{String(sekunder % 60).padStart(2, "0")}
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={startaRost}
+            disabled={upptagen}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+          >
+            {jobbar === "röst" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mic className="w-3.5 h-3.5" />}
+            {jobbar === "röst" ? "Skriver…" : "Prata in"}
+          </button>
+        )}
+        {/* Bild */}
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={upptagen || recording}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+        >
+          {jobbar === "bild" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+          {jobbar === "bild" ? "Analyserar…" : "Bild"}
+        </button>
+        {!compact && <span className="text-[11px] text-gray-400">eller klistra in en skärmbild direkt (Ctrl+V)</span>}
+        <div className="flex-1" />
+        <button
+          onClick={onSubmit}
+          disabled={!value.trim() || upptagen || recording}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-40"
+          style={{ background: primaryColor }}
+        >
+          <Sparkles className="w-4 h-4" /> {submitLabel}
+        </button>
+      </div>
+      {fel && <div className="text-[11px] text-red-600">{fel}</div>}
+    </div>
+  );
+}
+
 // ── Coach-panel (portal till body — /k-layoutens transform bryter annars position:fixed) ──
 function CoachPanel({ kort, primaryColor, onClose }: { kort: ScoredCard; primaryColor: string; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
@@ -467,21 +682,21 @@ function CoachPanel({ kort, primaryColor, onClose }: { kort: ScoredCard; primary
           ) : insamling ? (
             <div className="space-y-3">
               <p className="text-sm text-gray-700">{insamling}</p>
-              <textarea
+              <CoachContextInput
                 value={fraga}
-                onChange={(e) => setFraga(e.target.value)}
+                onChange={setFraga}
+                onSubmit={() => {
+                  const q = fraga.trim();
+                  if (q) {
+                    kor(q);
+                    setFraga("");
+                  }
+                }}
+                submitLabel="Ge mig ett råd"
+                placeholder="Skriv, prata in eller klistra in en skärmbild av vad som hänt sedan sist…"
+                primaryColor={primaryColor}
                 rows={3}
-                placeholder="Skriv en mening om vad som hänt sedan sist…"
-                className="w-full text-sm rounded-xl border border-gray-200 px-3 py-2.5 focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
               />
-              <button
-                disabled={!fraga.trim()}
-                onClick={() => kor(fraga.trim())}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-40"
-                style={{ background: primaryColor }}
-              >
-                <Sparkles className="w-4 h-4" /> Ge mig ett råd
-              </button>
             </div>
           ) : svar ? (
             <>
@@ -516,24 +731,24 @@ function CoachPanel({ kort, primaryColor, onClose }: { kort: ScoredCard; primary
               {svar.riskflagga && (
                 <div className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2">⚠ {svar.riskflagga}</div>
               )}
-              <div className="flex items-center gap-2 pt-1">
-                <input
+              <div className="pt-1 border-t border-gray-100">
+                <div className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-2 mt-3">Följdfråga</div>
+                <CoachContextInput
                   value={fraga}
-                  onChange={(e) => setFraga(e.target.value)}
-                  placeholder="Följdfråga till coachen…"
-                  className="flex-1 text-sm rounded-lg border border-gray-200 px-3 py-2 focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && fraga.trim()) kor(fraga.trim());
+                  onChange={setFraga}
+                  onSubmit={() => {
+                    const q = fraga.trim();
+                    if (q) {
+                      kor(q);
+                      setFraga("");
+                    }
                   }}
+                  submitLabel="Fråga"
+                  placeholder="Ställ en följdfråga, prata in eller klistra in en skärmbild…"
+                  primaryColor={primaryColor}
+                  rows={2}
+                  compact
                 />
-                <button
-                  disabled={!fraga.trim()}
-                  onClick={() => kor(fraga.trim())}
-                  className="text-sm font-semibold px-3 py-2 rounded-lg text-white disabled:opacity-40"
-                  style={{ background: primaryColor }}
-                >
-                  Fråga
-                </button>
               </div>
             </>
           ) : null}

@@ -72,8 +72,10 @@ function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/linkedin/")) return true;
   // Kund-vänd Offertmotor (/k/offert): read-only offert-lista. Route grindad + bryggan tenant-låser.
   if (path.startsWith("/api/offert/")) return true;
-  // Kund-vänd Fokusmotor (/k/fokus): read-only säljöversikt. Route grindad + bryggan tenant-låser.
+  // Kund-vänd Fokusmotor (/k/fokus): IDAG-tavla + set-värde + coach. Route grindad + bryggan tenant-låser.
   if (path.startsWith("/api/fokus/")) return true;
+  // Generella AI-hjälpmedel (röst→text, bildanalys) — används i kundvända verktyg. Grindas i routen.
+  if (path.startsWith("/api/ai/")) return true;
   // Kund-vänd Ikigai-motor (/k/ikigai): sessions + generate (public-varianten hanteras i isPublicApi).
   if (path === "/api/ikigai/sessions" || path === "/api/ikigai/generate") return true;
   return (
