@@ -38,9 +38,9 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
   {
     key: "skapa",
     label: "Skapa inlägg",
-    href: "/k/skapa",
+    href: "/k/studio", // premium-Studion (utrullad); gamla /k/skapa kvar som fallback
     icon: Sparkles,
-    description: "Generera sociala inlägg i sin egen röst.",
+    description: "Skapa on-brand inlägg, bilder, karuseller och reels i din röst.",
   },
   {
     key: "ideer",
