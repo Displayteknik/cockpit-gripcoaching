@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
@@ -12,7 +12,7 @@ function fmt(d: Date) { return d.toISOString().slice(0, 10); }
 
 export async function GET() {
   const clientId = await getActiveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data } = await sb.from("weekly_reports").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(20);
   return NextResponse.json(data || []);
 }
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const clientId = await getActiveClientId();
   const client = await getActiveClient();
   const body = (await req.json().catch(() => ({}))) as GenerateBody;
-  const sb = supabaseServer();
+  const sb = supabaseService();
 
   const end = new Date();
   const start = new Date(Date.now() - 7 * 86400000);

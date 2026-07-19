@@ -1,6 +1,6 @@
 // GA4 Data API — auktoritativ trafik/kanal/AI-data för dashboarden.
 // Använder klientens anslutna ga_property_id. Returnerar null om GA4 ej kopplat.
-import { supabaseServer } from "./supabase-admin";
+import { supabaseService } from "./supabase-admin";
 import { getValidAccessToken } from "./google";
 
 const DATA_API = "https://analyticsdata.googleapis.com/v1beta";
@@ -29,7 +29,7 @@ type Row = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{
 
 export async function getGa4Summary(clientId: string, days: number): Promise<Ga4Summary | null> {
   try {
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const { data: conn } = await sb.from("google_connections").select("ga_property_id").eq("client_id", clientId).maybeSingle();
     const propertyId = conn?.ga_property_id as string | undefined;
     if (!propertyId) return null;

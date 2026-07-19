@@ -1,7 +1,7 @@
 // Google OAuth 2.0 + Search Console API + GA4 Data API
 // Kräver: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI i env
 
-import { supabaseServer } from "./supabase-admin";
+import { supabaseService } from "./supabase-admin";
 
 const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN = "https://oauth2.googleapis.com/token";
@@ -65,7 +65,7 @@ export async function refreshAccessToken(refresh_token: string) {
 }
 
 export async function getValidAccessToken(clientId: string): Promise<string> {
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data } = await sb.from("google_connections").select("*").eq("client_id", clientId).single();
   if (!data) throw new Error("Google ej anslutet för denna klient");
   const expiresAt = data.expires_at ? new Date(data.expires_at).getTime() : 0;
@@ -78,12 +78,12 @@ export async function getValidAccessToken(clientId: string): Promise<string> {
 
 // Auto-koppla rätt GA4-property genom att matcha klientens domän mot property:ns web-datastream.
 // Körs best-effort (kastar aldrig). Returnerar property_id om vald/redan satt, annars null.
-async function saveGaProperty(sb: ReturnType<typeof supabaseServer>, clientId: string, propertyId: string) {
+async function saveGaProperty(sb: ReturnType<typeof supabaseService>, clientId: string, propertyId: string) {
   await sb.from("google_connections").update({ ga_property_id: propertyId, updated_at: new Date().toISOString() }).eq("client_id", clientId);
 }
 
 export async function autoSelectGaProperty(clientId: string): Promise<string | null> {
-  const sb = supabaseServer();
+  const sb = supabaseService();
   try {
     const { data: conn } = await sb.from("google_connections").select("ga_property_id").eq("client_id", clientId).maybeSingle();
     if (!conn) return null;

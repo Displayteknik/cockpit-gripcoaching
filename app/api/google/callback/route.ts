@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeCode, getUserInfo } from "@/lib/google";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
 
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const userInfo = await getUserInfo(tokens.access_token);
     const expires_at = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-    const sb = supabaseServer();
+    const sb = supabaseService();
     await sb.from("google_connections").upsert({
       client_id: state,
       refresh_token: tokens.refresh_token,

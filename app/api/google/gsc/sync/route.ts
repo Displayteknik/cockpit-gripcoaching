@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryGsc } from "@/lib/google";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 
 export const runtime = "nodejs";
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const days: number = body.days || 28;
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data: conn } = await sb.from("google_connections").select("gsc_site").eq("client_id", clientId).maybeSingle();
   if (!conn?.gsc_site) return NextResponse.json({ error: "Välj en GSC-site först" }, { status: 400 });
 

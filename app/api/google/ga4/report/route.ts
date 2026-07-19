@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getValidAccessToken } from "@/lib/google";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const clientId = await getActiveClientId();
   const days = parseInt(req.nextUrl.searchParams.get("days") || "28");
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data: conn } = await sb.from("google_connections").select("ga_property_id").eq("client_id", clientId).maybeSingle();
   if (!conn?.ga_property_id) return NextResponse.json({ error: "Välj GA4-property först" }, { status: 400 });
 
