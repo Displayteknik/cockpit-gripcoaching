@@ -1,0 +1,21 @@
+name: Native schemaläggare
+
+# Kör den native schemaläggaren var 15:e minut (Vercel Hobby tillåter bara dagliga crons,
+# så GitHub Actions är den täta triggern). Endpointen är idempotent och hämtar köade
+# studio_scheduled-jobb vars tid passerat. Kräver repo-secret CRON_SECRET = samma värde
+# som Vercels CRON_SECRET-env. Vercels dagliga cron finns kvar som reserv.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigga /api/scheduler/cron
+        run: |
+          curl -fsS -X GET "https://cockpit.gripcoaching.se/api/scheduler/cron" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

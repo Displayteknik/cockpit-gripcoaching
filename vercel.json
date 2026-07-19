@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/scheduler/cron",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/agents/night-iterate",
