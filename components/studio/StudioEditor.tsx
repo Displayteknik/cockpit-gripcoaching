@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { STUDIO_TEMPLATES } from "@/components/studio/registry";
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
@@ -32,6 +32,7 @@ export interface ImagePatch { imageX?: number; imageFocusY?: number; imageScale?
 
 export default function StudioEditor({
   templateId, payload, brand, scale, onImagePatch, slideIndex,
+  editMode = false, onEditField, onEditImage, editColor = "#6366f1",
 }: {
   templateId: string;
   payload: StudioPayload;
@@ -39,11 +40,53 @@ export default function StudioEditor({
   scale: number;
   onImagePatch: (p: ImagePatch) => void;
   slideIndex?: number;
+  // Inline-redigering (Fas C): klicka text→skriv direkt (contentEditable, commit-on-blur),
+  // klicka bild→byt. Mallen markerar noder med data-edit="<fält>" / data-edit-image.
+  editMode?: boolean;
+  onEditField?: (field: string, text: string) => void;
+  onEditImage?: () => void;
+  editColor?: string;
 }) {
   const Tpl = STUDIO_TEMPLATES[templateId]?.component;
   const { w, h } = FORMAT_DIMENSIONS[payload.format] ?? FORMAT_DIMENSIONS["1080x1350"];
   const drag = useRef<{ x: number; y: number; fx: number; fy: number } | null>(null);
-  const canDragImage = Boolean(payload.imageUrl) && IMAGE_TEMPLATES.has(templateId);
+  const canDragImage = Boolean(payload.imageUrl) && IMAGE_TEMPLATES.has(templateId) && !editMode;
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Gör data-edit-noderna redigerbara: contentEditable + commit-on-blur (ingen setState
+  // under skrivning → ingen cursor-hopp). Bild-noder blir klickbara → byt bild.
+  useEffect(() => {
+    const root = canvasRef.current;
+    if (!root || !editMode) return;
+    const cleanups: (() => void)[] = [];
+    if (onEditField) {
+      root.querySelectorAll<HTMLElement>("[data-edit]").forEach((el) => {
+        const field = el.getAttribute("data-edit");
+        if (!field) return;
+        el.contentEditable = "true";
+        el.spellcheck = false;
+        (el.style as CSSStyleDeclaration).outline = "none";
+        el.style.cursor = "text";
+        const commit = () => onEditField(field, el.innerText.replace(/\n{2,}/g, "\n").trim());
+        const onKey = (e: KeyboardEvent) => {
+          if (e.key === "Enter" && !e.shiftKey && field !== "body") { e.preventDefault(); el.blur(); }
+          if (e.key === "Escape") el.blur();
+        };
+        el.addEventListener("blur", commit);
+        el.addEventListener("keydown", onKey);
+        cleanups.push(() => { el.contentEditable = "false"; el.removeEventListener("blur", commit); el.removeEventListener("keydown", onKey); });
+      });
+    }
+    if (onEditImage) {
+      root.querySelectorAll<HTMLElement>("[data-edit-image]").forEach((el) => {
+        el.style.cursor = "pointer";
+        const onClick = () => onEditImage();
+        el.addEventListener("click", onClick);
+        cleanups.push(() => el.removeEventListener("click", onClick));
+      });
+    }
+    return () => cleanups.forEach((c) => c());
+  }, [editMode, onEditField, onEditImage, payload, templateId, slideIndex]);
 
   if (!Tpl || !brand) {
     return <div style={{ width: w * scale, height: h * scale }} className="bg-gray-100 rounded-xl flex items-center justify-center text-xs text-gray-400">Laddar…</div>;
@@ -72,7 +115,10 @@ export default function StudioEditor({
   return (
     <div style={{ position: "relative", width: w * scale, height: h * scale }}>
       <style>{FONT_CSS}</style>
-      <div style={{ width: w, height: h, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+      {editMode && (
+        <style>{`[data-edit]:hover{outline:2px dashed ${editColor}88;outline-offset:3px;border-radius:2px}[data-edit]:focus{outline:2px solid ${editColor};outline-offset:3px}[data-edit-image]:hover{outline:3px dashed ${editColor}88;outline-offset:-3px}`}</style>
+      )}
+      <div ref={canvasRef} style={{ width: w, height: h, transform: `scale(${scale})`, transformOrigin: "top left" }}>
         <Tpl payload={payload} brand={brand} slideIndex={slideIndex} />
       </div>
       {canDragImage && (

@@ -109,6 +109,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [mediaItems, setMediaItems] = useState<{ path: string; url: string; name: string; updated: string | null }[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [deletingPath, setDeletingPath] = useState("");
+  const [editOpen, setEditOpen] = useState(false); // Fas C: inline-redigering (modal)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [posts, setPosts] = useState<StudioPost[]>([]);
   const [loadedPostId, setLoadedPostId] = useState<string | null>(null);
@@ -377,6 +378,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }
   }, []);
   const setOv = useCallback((patch: Partial<StudioOverrides>) => setOverrides((o) => ({ ...o, ...patch })), []);
+
+  // Fas C: inline-redigering — data-edit-fält (från mallen) → rätt state. Commit-on-blur.
+  const onEditField = useCallback((field: string, text: string) => {
+    if (field === "headline1") setHeadline1(text);
+    else if (field === "headline2") setHeadline2(text);
+    else if (field === "body") setBody(text);
+    else if (field === "badge1") setBadgeLine1(text);
+    else if (field === "badge2") setBadgeLine2(text);
+    else if (field === "slide-headline") updateSlide(slideIdx, { headline: text });
+    else if (field === "slide-body") updateSlide(slideIdx, { body: text });
+  }, [slideIdx, updateSlide]);
 
   // Klistra in eget utkast → AI delar upp i rubrik/underrubrik/brödtext.
   const applyPaste = useCallback(async () => {
@@ -1222,6 +1234,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {payload.imageUrl && (
                 <p className="text-[11px] text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma</p>
               )}
+              <button onClick={() => setEditOpen(true)} disabled={!brand}
+                className="w-full mt-3 inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                style={{ background: primary }}>
+                <Wand2 className="w-4 h-4" /> Redigera direkt på bilden
+              </button>
             </section>
 
             {/* Redigera — tweak-lager */}
@@ -1522,6 +1539,46 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               })}
             </div>
           </section>
+        )}
+
+        {/* Fas C: inline-redigering — förstorad canvas i modal. Klicka text→skriv (contentEditable,
+            commit-on-blur), klicka bild→byt. Ändringar syncar live till formulär + previews. */}
+        {editOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditOpen(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-[94vw] max-h-[94vh] overflow-auto p-5">
+              <div className="flex items-start justify-between gap-6 mb-3">
+                <div>
+                  <h3 className="font-display font-bold text-gray-900 text-lg">Redigera direkt</h3>
+                  <p className="text-xs text-gray-500 max-w-md">Klicka en <strong>text</strong> och skriv direkt · klicka <strong>bilden</strong> för att byta. Ändringar sparas när du klickar bort (Enter för rubriker).</p>
+                </div>
+                <button onClick={() => setEditOpen(false)}
+                  className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm hover:opacity-90"
+                  style={{ background: primary }}>
+                  <Check className="w-4 h-4" /> Klar
+                </button>
+              </div>
+              {(() => { const editScale = Math.min(440 / w, 620 / h); return (
+                <div className="mx-auto rounded-xl overflow-hidden border border-gray-200 bg-gray-100" style={{ width: w * editScale }}>
+                  <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={editScale}
+                    onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined}
+                    editMode onEditField={onEditField} onEditImage={() => fileRef.current?.click()} editColor={primary} />
+                </div>
+              ); })()}
+              {isCarousel && (
+                <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                  {slides.map((s, i) => (
+                    <button key={i} onClick={() => setSlideIdx(i)}
+                      className="rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors"
+                      style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                      {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="text-[11px] text-gray-400 text-center mt-3">Byter du bild öppnas filväljaren. Fler bildval (Mina bilder, AI, stock) finns i <strong>steg 2 · Bild</strong>.</p>
+            </div>
+          </div>
         )}
 
         {/* Dold full-skala render (scale=1) — fångas klient-sida av html-to-image vid publicering

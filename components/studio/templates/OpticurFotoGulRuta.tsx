@@ -37,6 +37,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
       {/* Rubrikblock (centrerat — rad 2 hamnar centrerad under rubriken) */}
       <div style={{ padding: "40px 50px 0", textAlign: "center" }}>
         <div
+          data-edit="headline1"
           style={{
             fontFamily: "Inter, sans-serif",
             fontWeight: 800,
@@ -51,6 +52,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
         </div>
         {payload.headline2 ? (
           <div
+            data-edit="headline2"
             style={{
               fontFamily: "Inter, sans-serif",
               fontWeight: 800,
@@ -68,7 +70,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
       {/* Fotozon — foto ut i kanterna (ingen ram), overlays får sticka ut */}
       <div style={{ position: "relative", flex: 1, margin: "16px 0 0" }}>
         {/* Fullbredds-foto (ingen rundning) */}
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        <div data-edit-image style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           {payload.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -112,6 +114,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
             >
               <SunOutline color={iconColor} size={60} />
               <div
+                data-edit="body"
                 style={{
                   fontFamily: "Inter, sans-serif",
                   fontWeight: 700,
