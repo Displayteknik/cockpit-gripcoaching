@@ -918,6 +918,27 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
               {/* Mediabibliotek — dina uppladdade + AI-skapade bilder. Återanvänd eller släng. */}
               <div className="pt-3 border-t border-gray-100 space-y-3">
+                {/* Canva (lätt version): öppna Canva i ny flik i rätt storlek, ladda upp tillbaka. */}
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[11px] font-bold" style={{ background: "linear-gradient(135deg,#00C4CC,#7D2AE8)" }}>C</span>
+                    <span className="text-xs font-semibold text-gray-700">Canva</span>
+                    <span className="ml-auto text-[10px] text-gray-400">{isStoryFormat(format) ? "Story 9:16" : "Inlägg"}</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500">Skapa eller redigera i Canva, exportera som PNG och ladda upp tillbaka hit — så syns den i biblioteket och kan användas direkt.</p>
+                  <div className="flex gap-2">
+                    <a href={isStoryFormat(format) ? "https://www.canva.com/create/instagram-stories/" : "https://www.canva.com/create/instagram-posts/"}
+                      target="_blank" rel="noopener"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                      <ExternalLink className="w-4 h-4" /> Öppna Canva
+                    </a>
+                    <label className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer">
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Ladda upp från Canva
+                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
+                    </label>
+                  </div>
+                </div>
                 <button onClick={toggleMedia}
                   className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                   <FolderOpen className="w-4 h-4" /> {showMedia ? "Dölj mediabibliotek" : "Mina bilder (mediabibliotek)"}
