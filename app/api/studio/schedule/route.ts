@@ -87,6 +87,34 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// PATCH /api/studio/schedule — { id, scheduledAt } — ändra tid på ett köat jobb.
+export async function PATCH(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
+  try {
+    const clientId = await getActiveClientId();
+    const b = await req.json().catch(() => ({}));
+    const id = (b.id || "").toString();
+    const when = b.scheduledAt ? new Date(b.scheduledAt) : null;
+    if (!id || !when || Number.isNaN(when.getTime())) return NextResponse.json({ error: "id + giltig tid krävs" }, { status: 400 });
+    if (when.getTime() < Date.now() - 60_000) return NextResponse.json({ error: "Tidpunkten har redan passerat" }, { status: 400 });
+    const sb = supabaseService();
+    const iso = when.toISOString();
+    const { data: job, error } = await sb.from("studio_scheduled")
+      .update({ scheduled_at: iso })
+      .eq("id", id).eq("client_id", clientId).eq("status", "queued")
+      .select("studio_post_id, blog_id, channel").maybeSingle();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!job) return NextResponse.json({ error: "Hittade inte det köade jobbet" }, { status: 404 });
+    // Spegla nya tiden.
+    if (job.studio_post_id) await sb.from("studio_posts").update({ scheduled_at: iso }).eq("id", job.studio_post_id).eq("client_id", clientId);
+    if (job.channel === "cockpit-blog" && job.blog_id) await sb.from("hm_blog").update({ published_at: iso }).eq("id", job.blog_id).eq("client_id", clientId);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
+}
+
 // DELETE /api/studio/schedule?id= — avboka ett köat jobb.
 export async function DELETE(req: NextRequest) {
   const denied = await requireAdminOrCustomer();

@@ -15,6 +15,7 @@ import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emp
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
 import ChannelPreview, { type ChannelKey, CHANNEL_BRAND } from "@/components/studio/ChannelPreview";
+import ScheduleQueue from "@/components/studio/ScheduleQueue";
 import { toBlob } from "html-to-image";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
@@ -110,6 +111,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [deletingPath, setDeletingPath] = useState("");
   const [editOpen, setEditOpen] = useState(false); // Fas C: inline-redigering (modal)
+  const [scheduleRefresh, setScheduleRefresh] = useState(0); // bumpas efter schemaläggning → laddar om kön
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [posts, setPosts] = useState<StudioPost[]>([]);
   const [loadedPostId, setLoadedPostId] = useState<string | null>(null);
@@ -138,7 +140,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
   const slug = client?.slug || "opticur";
-  const availableTemplates = useMemo(() => templatesForClient(slug, contentFormats as never), [slug, contentFormats]);
+  // Mall-väljaren: använd RIKTIGA slugen (tom när klienten ännu inte laddats) så klient-exklusiva
+  // mallar (t.ex. Opticur) ALDRIG visas för fel klient under laddning. Rot-fix mot footer-läckan.
+  const availableTemplates = useMemo(() => templatesForClient(client?.slug || "", contentFormats as never), [client?.slug, contentFormats]);
 
   // Vald mall stödjer kanske inte aktuellt format (t.ex. byte till Opticur-mall utan 9:16) → hoppa till mallens första.
   useEffect(() => {
@@ -770,7 +774,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Schemaläggning misslyckades");
         setPubResult((p) => ({ ...p, [k]: "ok" }));
-        await refreshPosts(); loadMedia();
+        await refreshPosts(); loadMedia(); setScheduleRefresh((n) => n + 1);
         return;
       }
 
@@ -1527,6 +1531,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </p>
           )}
         </section>
+
+        {/* ── Schemalagt & kö (native IG + blogg) — avboka/ändra tid. Admin + kund. ── */}
+        <ScheduleQueue primary={primary} refreshKey={scheduleRefresh} />
 
         {/* ── Tidigare skapelser (återanvänd & redigera) ── */}
         {posts.length > 0 && (
