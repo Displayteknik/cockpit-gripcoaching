@@ -1,12 +1,9 @@
-// Kund-yta för Skapa — återanvänder samma komponent som byrå-vyn.
-// Customer-cookien sätts redan av /k/[token] så client_id-resolution fungerar.
-// Serverside-spärr: kunden måste ha modulen "skapa" påslagen.
-import { requireCustomerFeature } from "@/lib/customer-context";
-import SkapaMaker from "@/components/SkapaInlaggMaker";
+// Pensionerad (Fas C): gamla "Skapa"-vyn ersatt av premium-Studion på /k/studio.
+// Behåller routen som permanent redirect så gamla länkar/bokmärken inte dör.
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function KSkapa() {
-  await requireCustomerFeature("skapa");
-  return <SkapaMaker />;
+  redirect("/k/studio");
 }

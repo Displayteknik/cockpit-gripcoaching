@@ -520,8 +520,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   useEffect(() => { refreshPosts(); }, [refreshPosts, client]);
 
-  // Spara aktuell skapelse i biblioteket. asNew=true → alltid ny kopia.
-  const savePost = useCallback(async (asNew = false) => {
+  // Spara aktuell skapelse i biblioteket. asNew=true → alltid ny kopia. Returnerar post-id.
+  const savePost = useCallback(async (asNew = false): Promise<string | null> => {
     setError(""); setSavingPost(true);
     try {
       const title = headline1 || body.slice(0, 40) || "Namnlöst inlägg";
@@ -531,10 +531,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte spara i biblioteket");
-      setLoadedPostId(d.post?.id ?? null);
+      const id = d.post?.id ?? null;
+      setLoadedPostId(id);
       await refreshPosts();
+      return id;
     } catch (e) {
       setError((e as Error).message);
+      return null;
     } finally {
       setSavingPost(false);
     }
@@ -728,15 +731,18 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       // Reel publicerar videon; övriga publicerar den FÄRDIGA designen (fallback: råfotot).
       const designUrl = postType === "reel" ? imageUrl : (await renderDesignPng()) || imageUrl;
+      // Schemalagt → säkerställ en biblioteks-rad så scheduled_at skrivs och inlägget syns i Kalendern.
+      let postId = loadedPostId;
+      if (scheduleDate && !postId) postId = await savePost(false);
       let reqBody: Record<string, unknown>;
       if (k === "ig" && igConn?.connected) {
         // Direkt till klientens Instagram — publiceras nu (inget utkast/schema).
-        reqBody = { postId: loadedPostId, channel: "ig-graph", caption: capFor("ig"), imageUrl: designUrl, videoUrl, format };
+        reqBody = { postId, channel: "ig-graph", caption: capFor("ig"), imageUrl: designUrl, videoUrl, format };
       } else {
         const platform = k === "fb" ? "facebook" : k === "li" ? "linkedin" : "instagram";
         const accs = ghlFor(platform).map((a) => a.id).filter((id) => selectedAccounts.includes(id));
         if (!accs.length) throw new Error(`Inga valda ${CHANNEL_BRAND[k].label}-konton i GHL.`);
-        reqBody = { postId: loadedPostId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl: designUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
+        reqBody = { postId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl: designUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
       }
       const r = await fetch("/api/studio/publish", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -753,7 +759,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setPubBusy("");
     }
-  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia]);
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
