@@ -1,4 +1,5 @@
 import type { StudioBrand } from "@/lib/studio/brand";
+import KitFooter from "@/components/studio/KitFooter";
 
 // Fast fot för alla Opticur-mallar (endast 1080×1350). Speglar kundens VARIANT 2:
 // centrerad OPTICUR-wordmark · "Leg. optiker" + glasögon · avdelarlinje · adress ·
@@ -9,6 +10,12 @@ import type { StudioBrand } from "@/lib/studio/brand";
 
 export default function ClientFooterOpticur({ brand }: { brand: StudioBrand }) {
   const { colors, footer, assets } = brand;
+
+  // SKYDD: den hårdkodade Opticur-foten (glasögon/ZEISS/QR/"Boka") får ALDRIG rendera för
+  // en annan klient. Om en Opticur-mall läckt in på t.ex. Displayteknik (via fallback-slug)
+  // → använd den generiska brand-drivna foten istället. Opticur = namn matchar ELLER ZEISS-asset.
+  const isOpticur = /opticur/i.test(brand.name) || Boolean(assets.zeiss);
+  if (!isOpticur) return <KitFooter brand={brand} />;
 
   // Exakt fot-bild (om kunden droppat en crop) → 100% trogen.
   if (assets.footer) {
