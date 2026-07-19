@@ -15,6 +15,7 @@ import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emp
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
 import ChannelPreview, { type ChannelKey, CHANNEL_BRAND } from "@/components/studio/ChannelPreview";
+import { toBlob } from "html-to-image";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface Suggestion { hookType: string; headline1: string; headline2: string; body: string }
@@ -673,19 +674,50 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     navigator.clipboard?.writeText(capFor(k)).then(() => { setCopied(k); setTimeout(() => setCopied(""), 1500); }).catch(() => {});
   }, [capFor]);
 
+  // Rendera den FÄRDIGA designen (bild + ram + text + badge) klient-sida till en PNG och
+  // ladda upp den — så det är DESIGNEN som publiceras, inte råfotot. Playwright-export körs
+  // bara lokalt (501 i moln); detta fångar samma live-render i webbläsaren. null = misslyckades.
+  const captureRef = useRef<HTMLDivElement>(null);
+  const renderDesignPng = useCallback(async (): Promise<string | null> => {
+    const node = captureRef.current;
+    if (!node || !brand) return null;
+    try {
+      const { w: cw, h: ch } = FORMAT_DIMENSIONS[format];
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 150)); // låt bilden i den dolda editorn ladda klart
+      const blob = await toBlob(node, { width: cw, height: ch, pixelRatio: 1, cacheBust: true, backgroundColor: "#ffffff" });
+      if (!blob) return null;
+      const file = new File([blob], `design-${templateId}-${Date.now()}.png`, { type: "image/png" });
+      const r = await fetch("/api/studio/upload-url", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
+      });
+      const d = await r.json();
+      if (!r.ok) return null;
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+      const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
+      if (up.error) return null;
+      return d.publicUrl as string;
+    } catch {
+      return null;
+    }
+  }, [brand, format, templateId]);
+
   // Publicera EN kanal: IG direkt (ig-graph), FB/LI via GHL (ghl-social) med den plattformens konton.
   const publishTo = useCallback(async (k: ChannelKey) => {
     setError(""); setPubBusy(k); setPubResult((p) => ({ ...p, [k]: "" }));
     try {
+      // Reel publicerar videon; övriga publicerar den FÄRDIGA designen (fallback: råfotot).
+      const designUrl = postType === "reel" ? imageUrl : (await renderDesignPng()) || imageUrl;
       let reqBody: Record<string, unknown>;
       if (k === "ig" && igConn?.connected) {
         // Direkt till klientens Instagram — publiceras nu (inget utkast/schema).
-        reqBody = { postId: loadedPostId, channel: "ig-graph", caption: capFor("ig"), imageUrl, videoUrl, format };
+        reqBody = { postId: loadedPostId, channel: "ig-graph", caption: capFor("ig"), imageUrl: designUrl, videoUrl, format };
       } else {
         const platform = k === "fb" ? "facebook" : k === "li" ? "linkedin" : "instagram";
         const accs = ghlFor(platform).map((a) => a.id).filter((id) => selectedAccounts.includes(id));
         if (!accs.length) throw new Error(`Inga valda ${CHANNEL_BRAND[k].label}-konton i GHL.`);
-        reqBody = { postId: loadedPostId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
+        reqBody = { postId: loadedPostId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl: designUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
       }
       const r = await fetch("/api/studio/publish", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -701,7 +733,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setPubBusy("");
     }
-  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, ghlFor, selectedAccounts, scheduleDate, refreshPosts]);
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -1457,6 +1489,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </div>
           </section>
         )}
+
+        {/* Dold full-skala render (scale=1) — fångas klient-sida av html-to-image vid publicering
+            så DESIGNEN publiceras, inte råfotot. Off-screen, påverkar inte layouten. */}
+        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, width: w, height: h, pointerEvents: "none", opacity: 0, zIndex: -1 }}>
+          <div ref={captureRef}>
+            <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={1} onImagePatch={() => {}} slideIndex={isCarousel ? slideIdx : undefined} />
+          </div>
+        </div>
       </div>
     </div>
   );
