@@ -946,27 +946,6 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </button>
                 <p className="text-[11px] text-gray-400 -mt-1">Renderar hela inlägget (bild + ram + text) till en färdig bild — samma bild som publiceras. Dyker upp nedan.</p>
 
-                {/* Canva (lätt version): manuell round-trip tills auto-kopplingen är på. */}
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[11px] font-bold" style={{ background: "linear-gradient(135deg,#00C4CC,#7D2AE8)" }}>C</span>
-                    <span className="text-xs font-semibold text-gray-700">Canva</span>
-                    <span className="ml-auto text-[10px] text-gray-400">manuell tills vidare</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500"><strong>1.</strong> Öppna Canva och designa · <strong>2.</strong> Ladda ner som PNG i Canva · <strong>3.</strong> Ladda upp PNG:en här — då hamnar den i biblioteket.</p>
-                  <div className="flex gap-2">
-                    <a href={isStoryFormat(format) ? "https://www.canva.com/create/instagram-stories/" : "https://www.canva.com/create/instagram-posts/"}
-                      target="_blank" rel="noopener"
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
-                      <ExternalLink className="w-4 h-4" /> 1. Öppna Canva
-                    </a>
-                    <label className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer">
-                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} 3. Ladda upp PNG:en
-                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
-                        onChange={(e) => { const f = e.target.files?.[0]; if (f) { onFile(f); if (showMedia) loadMedia(); } }} />
-                    </label>
-                  </div>
-                </div>
                 <button onClick={toggleMedia}
                   className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                   <FolderOpen className="w-4 h-4" /> {showMedia ? "Dölj mediabibliotek" : "Mina bilder (mediabibliotek)"}
