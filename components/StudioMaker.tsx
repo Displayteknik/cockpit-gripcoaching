@@ -438,26 +438,39 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }
   }, [topic, headline1]);
 
-  // ── Export PNG (en klick lokalt; annars payload-nedladdning) ──
+  // Fånga den dolda full-skala-designen (#hidden canvas) till en PNG-blob i webbläsaren.
+  // Delas av export + spara-i-bibliotek + publicera. Fungerar i molnet (Playwright gör inte det).
+  const captureRef = useRef<HTMLDivElement>(null);
+  const captureDesignBlob = useCallback(async (): Promise<Blob | null> => {
+    const node = captureRef.current;
+    if (!node || !brand) return null;
+    try {
+      const { w: cw, h: ch } = FORMAT_DIMENSIONS[format];
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 150)); // låt bilden i den dolda editorn ladda klart
+      return await toBlob(node, { width: cw, height: ch, pixelRatio: 1, cacheBust: true, backgroundColor: "#ffffff" });
+    } catch {
+      return null;
+    }
+  }, [brand, format]);
+
+  // ── Export PNG — klient-render (fungerar i molnet, laddar ner den färdiga designen) ──
   const exportPng = useCallback(async () => {
     setError(""); setExporting(true);
     try {
-      const r = await fetch("/api/studio/export", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "Export misslyckades");
+      const blob = await captureDesignBlob();
+      if (!blob) throw new Error("Kunde inte skapa bilden — prova igen om en stund.");
       const a = document.createElement("a");
-      a.href = d.dataUrl;
+      a.href = URL.createObjectURL(blob);
       a.download = `${slug}-${templateId}-${format}.png`;
       a.click();
+      URL.revokeObjectURL(a.href);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setExporting(false);
     }
-  }, [payload, slug, templateId, format]);
+  }, [captureDesignBlob, slug, templateId, format]);
 
   const downloadPayload = useCallback(() => {
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -677,16 +690,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // Rendera den FÄRDIGA designen (bild + ram + text + badge) klient-sida till en PNG och
   // ladda upp den — så det är DESIGNEN som publiceras, inte råfotot. Playwright-export körs
   // bara lokalt (501 i moln); detta fångar samma live-render i webbläsaren. null = misslyckades.
-  const captureRef = useRef<HTMLDivElement>(null);
+  // Rendera + ladda upp designen till studio-images → durabel publik URL. null = misslyckades.
   const renderDesignPng = useCallback(async (): Promise<string | null> => {
-    const node = captureRef.current;
-    if (!node || !brand) return null;
+    const blob = await captureDesignBlob();
+    if (!blob) return null;
     try {
-      const { w: cw, h: ch } = FORMAT_DIMENSIONS[format];
-      if (document.fonts?.ready) await document.fonts.ready;
-      await new Promise((r) => setTimeout(r, 150)); // låt bilden i den dolda editorn ladda klart
-      const blob = await toBlob(node, { width: cw, height: ch, pixelRatio: 1, cacheBust: true, backgroundColor: "#ffffff" });
-      if (!blob) return null;
       const file = new File([blob], `design-${templateId}-${Date.now()}.png`, { type: "image/png" });
       const r = await fetch("/api/studio/upload-url", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -701,7 +709,18 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } catch {
       return null;
     }
-  }, [brand, format, templateId]);
+  }, [captureDesignBlob, templateId]);
+  // Spara den färdiga designen som en bild i mediabiblioteket (syns direkt + kan återanvändas).
+  const [savingDesign, setSavingDesign] = useState(false);
+  const saveDesignToLibrary = useCallback(async () => {
+    setError(""); setSavingDesign(true);
+    try {
+      const url = await renderDesignPng();
+      if (!url) throw new Error("Kunde inte skapa den färdiga bilden — prova igen om en stund.");
+      setShowMedia(true);
+      await loadMedia();
+    } catch (e) { setError((e as Error).message); } finally { setSavingDesign(false); }
+  }, [renderDesignPng, loadMedia]);
 
   // Publicera EN kanal: IG direkt (ig-graph), FB/LI via GHL (ghl-social) med den plattformens konton.
   const publishTo = useCallback(async (k: ChannelKey) => {
@@ -727,13 +746,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
       setPubResult((p) => ({ ...p, [k]: "ok" }));
       await refreshPosts();
+      loadMedia(); // den renderade designen syns nu i mediabiblioteket
     } catch (e) {
       setError((e as Error).message);
       setPubResult((p) => ({ ...p, [k]: "err" }));
     } finally {
       setPubBusy("");
     }
-  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts]);
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -916,26 +936,34 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 )}
               </div>
 
-              {/* Mediabibliotek — dina uppladdade + AI-skapade bilder. Återanvänd eller släng. */}
+              {/* Mediabibliotek — dina uppladdade + AI-skapade + färdiga design-bilder. */}
               <div className="pt-3 border-t border-gray-100 space-y-3">
-                {/* Canva (lätt version): öppna Canva i ny flik i rätt storlek, ladda upp tillbaka. */}
+                {/* Spara den FÄRDIGA designen (bild + ram + text) som en bild i biblioteket. */}
+                <button onClick={saveDesignToLibrary} disabled={savingDesign || !brand}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                  style={{ background: primary }}>
+                  {savingDesign ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Spara färdig bild i biblioteket
+                </button>
+                <p className="text-[11px] text-gray-400 -mt-1">Renderar hela inlägget (bild + ram + text) till en färdig bild — samma bild som publiceras. Dyker upp nedan.</p>
+
+                {/* Canva (lätt version): manuell round-trip tills auto-kopplingen är på. */}
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[11px] font-bold" style={{ background: "linear-gradient(135deg,#00C4CC,#7D2AE8)" }}>C</span>
                     <span className="text-xs font-semibold text-gray-700">Canva</span>
-                    <span className="ml-auto text-[10px] text-gray-400">{isStoryFormat(format) ? "Story 9:16" : "Inlägg"}</span>
+                    <span className="ml-auto text-[10px] text-gray-400">manuell tills vidare</span>
                   </div>
-                  <p className="text-[11px] text-gray-500">Skapa eller redigera i Canva, exportera som PNG och ladda upp tillbaka hit — så syns den i biblioteket och kan användas direkt.</p>
+                  <p className="text-[11px] text-gray-500"><strong>1.</strong> Öppna Canva och designa · <strong>2.</strong> Ladda ner som PNG i Canva · <strong>3.</strong> Ladda upp PNG:en här — då hamnar den i biblioteket.</p>
                   <div className="flex gap-2">
                     <a href={isStoryFormat(format) ? "https://www.canva.com/create/instagram-stories/" : "https://www.canva.com/create/instagram-posts/"}
                       target="_blank" rel="noopener"
                       className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
-                      <ExternalLink className="w-4 h-4" /> Öppna Canva
+                      <ExternalLink className="w-4 h-4" /> 1. Öppna Canva
                     </a>
                     <label className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer">
-                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Ladda upp från Canva
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} 3. Ladda upp PNG:en
                       <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
-                        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) { onFile(f); if (showMedia) loadMedia(); } }} />
                     </label>
                   </div>
                 </div>
@@ -1286,7 +1314,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   Ladda ner payload (för CLI-export)
                 </button>
                 <p className="text-xs text-gray-400 text-center px-2">
-                  Export kör lokalt via Playwright. Funkar inte knappen (t.ex. i molnet) — ladda ner payload och kör <code className="bg-gray-100 px-1 rounded">npm run studio:export</code>.
+                  &quot;Exportera PNG&quot; renderas i webbläsaren och funkar även i molnet. Payload/CLI (<code className="bg-gray-100 px-1 rounded">npm run studio:export</code>) finns kvar som pixelperfekt reserv.
                 </p>
               </>
             )}
