@@ -8,6 +8,30 @@
 
 ---
 
+# SLUTFÖRANDE FAS 1 — 2026-07-19 (pågående, BLOCKERAD på beslut)
+
+> Mål: stänga databasen. Utfall: hålet fullt kartlagt + forensik klar + incident dokumenterad
+> (`docs/INCIDENT-2026-07-19.md`). **Stängningen kan INTE köras rakt igenom som planerad** —
+> se blockeraren nedan. Ingen policy droppad, inget deployat, inget roterat.
+
+| Steg | Status | Resultat |
+|---|---|---|
+| 1.1 Browser-beroende | **KLART (kritiskt fynd)** | 26 klientfiler gör direkta anon-anrop från webbläsaren — **läs OCH skriv** (`hm_pages`/`art_works`/`hm_vehicles`/`hm_blog`/`art_exhibitions` skrivs av dashboard-editorer; publika sajter läser via anon). Service-role kan aldrig nå browsern → naiv "droppa policies + byt server-routes" bryter appen + live-klient CF |
+| 1.4 Kö-granskning | **KLART** | Inga planterade/främmande jobb (`studio_scheduled` tom, `scheduled_posts` 3 legit, `hm_blog_queue` 1 utkast) |
+| 1.5 Integritet/XSS/storage | **KLART** | Ingen stored-XSS (hm_blog-träff = legit JSON-LD, opublicerad). `admin_users` orörd sedan mars. `google_connections`-uppdatering = normal GA-token-refresh (285 UPDATE-anrop i pg_stat_statements) |
+| 1.6 Loggar + incident-doc | **DELVIS** | `docs/INCIDENT-2026-07-19.md` skriven. IP-attribution kräver Supabase Logflare/dashboard (ej nåbar rent via Management API härifrån) — Håkan drar edge/API-loggar |
+| 1.2 Server-route-migration | **BLOCKERAD** | Kräver arkitekturbeslut (väg A refaktor vs B Supabase Auth) + deploy-godkännande |
+| 1.3 Droppa anon-policies | **BLOCKERAD** | Får ej köras före 1.2 (bryter browser-läs/skriv). Delmängd server-only-tabeller kan stängas först (se incident-doc §5) |
+
+**BLOCKERARE (beslut krävs innan FAS 1 kan slutföras):** planen förutsatte att bara server-routes
+använder anon. Verkligheten: webbläsaren skriver via anon i 26 filer. Stängning kräver antingen
+**väg A** (flytta klient-skrivningar till server-routes + smala publika read-only-policies) eller
+**väg B** (Supabase Auth). Plus: varje stängning = en produktions-deploy (kräver ditt OK, får ej
+störa CF), och rotationerna (FAS 2) kräver att DU agerar i Google/Meta/GHL-kontona.
+Se `docs/INCIDENT-2026-07-19.md` §5–6.
+
+---
+
 # BEVIS-KÖRNING 2026-07-19 (kört, inte läst)
 
 > Varje punkt flippad genom KÖRNING mot live prod/DB denna session. Tidigare QA-artefakter räknas ej.
