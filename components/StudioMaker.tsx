@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
-  ExternalLink,
+  ExternalLink, CalendarClock,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
@@ -755,6 +755,25 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       // Schemalagt → säkerställ en biblioteks-rad så scheduled_at skrivs och inlägget syns i Kalendern.
       let postId = loadedPostId;
       if (scheduleDate && !postId) postId = await savePost(false);
+
+      // Native IG-schemaläggning (UTAN GHL): tid vald + IG-direkt → köa jobb med den färdiga
+      // bilden. Cronet publicerar vid rätt tid via IG Graph. FB/LI schemaläggs via GHL nedan.
+      if (scheduleDate && k === "ig" && igConn?.connected) {
+        const r = await fetch("/api/studio/schedule", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            channel: "ig-graph", caption: capFor("ig"), mediaUrl: designUrl, videoUrl, postType, format,
+            title: headline1 || body.slice(0, 40) || "Inlägg",
+            scheduledAt: new Date(scheduleDate).toISOString(), studioPostId: postId,
+          }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Schemaläggning misslyckades");
+        setPubResult((p) => ({ ...p, [k]: "ok" }));
+        await refreshPosts(); loadMedia();
+        return;
+      }
+
       let reqBody: Record<string, unknown>;
       if (k === "ig" && igConn?.connected) {
         // Direkt till klientens Instagram — publiceras nu (inget utkast/schema).
@@ -780,7 +799,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setPubBusy("");
     }
-  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost]);
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost, headline1, body]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
@@ -1377,6 +1396,19 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <div className="text-xs text-gray-500">Tips: skriv eller föreslå en bildtext i <strong>steg 4</strong> först — den blir grunden AI anpassar per kanal.</div>
           )}
 
+          {/* Schemalägg (valfritt) — gäller alla kanaler. IG schemaläggs nativt (utan GHL); FB/LI via GHL. */}
+          {selectedChannels.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600"><CalendarClock className="w-4 h-4" /> Schemalägg</span>
+              <input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-gray-400 outline-none" />
+              {scheduleDate ? (
+                <button onClick={() => setScheduleDate("")} className="text-xs text-gray-400 hover:text-gray-600">Rensa (publicera direkt)</button>
+              ) : (
+                <span className="text-xs text-gray-400">Lämna tom för att publicera direkt. IG: nativt i Cockpit. FB/LI: via GHL.</span>
+              )}
+            </div>
+          )}
+
           {selectedChannels.length === 0 ? (
             <div className="text-sm text-gray-500 text-center py-6">Välj minst en kanal ovan för att förhandsgranska.</div>
           ) : (
@@ -1420,8 +1452,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
                         className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                         style={{ background: brand.gradient }}>
-                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                        {res === "ok" ? "Publicerat på Instagram ✓" : "Publicera nu på Instagram"}
+                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : scheduleDate ? <CalendarClock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                        {res === "ok" ? (scheduleDate ? "Schemalagt på Instagram ✓" : "Publicerat på Instagram ✓") : (scheduleDate ? "Schemalägg på Instagram" : "Publicera nu på Instagram")}
                       </button>
                     ) : canPublish ? (
                       <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
@@ -1472,24 +1504,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               ) : ghlAccounts.length === 0 ? (
                 <div className="text-xs text-gray-500">Inga kopplade sociala konton i GHL för den här klienten.</div>
               ) : (
-                <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
-                  <div className="space-y-1">
-                    <div className="text-xs font-medium text-gray-500">Publicera till konton</div>
-                    {ghlAccounts.map((a) => (
-                      <label key={a.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                        <input type="checkbox" checked={selectedAccounts.includes(a.id)} onChange={() => toggleAccount(a.id)} disabled={a.isExpired} style={{ accentColor: primary }} />
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">{a.platform}</span>
-                        <span className="truncate">{a.name}</span>
-                        {a.isExpired && <span className="text-xs text-red-500">(utgången)</span>}
-                      </label>
-                    ))}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Schemalägg (valfritt)</label>
-                    <input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className={inputCls} />
-                    {scheduleDate && <button onClick={() => setScheduleDate("")} className="text-xs text-gray-400 hover:text-gray-600 mt-1">Rensa (skapa som utkast istället)</button>}
-                    <p className="text-xs text-gray-400 mt-2">Utan datum: utkast i GHL. Med datum: schemaläggs i Social Planner.</p>
-                  </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500">Publicera till konton</div>
+                  {ghlAccounts.map((a) => (
+                    <label key={a.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                      <input type="checkbox" checked={selectedAccounts.includes(a.id)} onChange={() => toggleAccount(a.id)} disabled={a.isExpired} style={{ accentColor: primary }} />
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">{a.platform}</span>
+                      <span className="truncate">{a.name}</span>
+                      {a.isExpired && <span className="text-xs text-red-500">(utgången)</span>}
+                    </label>
+                  ))}
+                  <p className="text-xs text-gray-400 pt-1">Utan schema-tid ovan: utkast i GHL. Med tid: schemaläggs i Social Planner.</p>
                 </div>
               )}
             </div>

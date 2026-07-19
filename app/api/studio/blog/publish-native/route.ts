@@ -15,6 +15,11 @@ export async function POST(req: NextRequest) {
     const slug = (b.urlSlug || "").toString().trim() || slugify(title);
     if (!title || !html) return NextResponse.json({ error: "Titel och innehåll krävs" }, { status: 400 });
 
+    // Schemalägg (valfritt): framtida tid → published_at = tiden, ett studio_scheduled-jobb
+    // publicerar (flippar published) vid rätt tid via cronet. Annars = utkast (nu).
+    const scheduledAt = b.scheduledAt ? new Date(b.scheduledAt) : null;
+    const scheduled = Boolean(scheduledAt && !Number.isNaN(scheduledAt.getTime()) && scheduledAt.getTime() > Date.now());
+
     const sb = supabaseService();
     const { data: clientRow } = await sb.from("clients").select("name").eq("id", clientId).maybeSingle();
     const { data, error } = await sb
@@ -27,12 +32,19 @@ export async function POST(req: NextRequest) {
         excerpt: (b.description || "").toString().slice(0, 300),
         author: clientRow?.name || "Redaktionen",
         published: false,
-        published_at: new Date().toISOString(),
+        published_at: scheduled ? scheduledAt!.toISOString() : new Date().toISOString(),
       })
       .select("id, slug")
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, id: data?.id, slug: data?.slug, destination: "native" });
+
+    if (scheduled && data?.id) {
+      await sb.from("studio_scheduled").insert({
+        client_id: clientId, blog_id: data.id, channel: "cockpit-blog", title,
+        scheduled_at: scheduledAt!.toISOString(), status: "queued",
+      });
+    }
+    return NextResponse.json({ ok: true, id: data?.id, slug: data?.slug, destination: "native", scheduled });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

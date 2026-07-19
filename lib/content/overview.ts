@@ -79,7 +79,9 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     });
   }
   for (const p of blog.data || []) {
-    const status = normStatus({ published: !!p.published, raw: p.published ? "published" : "draft" });
+    // Schemalagd blogg = opublicerad med framtida published_at (native blogg-schema).
+    const scheduledBlog = !p.published && !!p.published_at && new Date(p.published_at).getTime() > Date.now();
+    const status = normStatus({ published: !!p.published, scheduled: scheduledBlog });
     items.push({
       id: String(p.id), source: "blog", title: firstLine(p.title, "Bloggartikel"),
       channel: "blogg", status, when: p.published_at || p.created_at, imageUrl: p.image_url, editHref: WORKSHOP.blog,

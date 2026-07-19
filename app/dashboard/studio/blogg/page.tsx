@@ -51,6 +51,7 @@ export default function StudioBloggPage() {
   const [publishing, setPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState("");
   const [destination, setDestination] = useState<"ghl" | "native">("ghl");
+  const [blogSchedule, setBlogSchedule] = useState(""); // native: framtida tid → schemalägg publicering
 
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
 
@@ -100,11 +101,11 @@ export default function StudioBloggPage() {
       if (destination === "native") {
         const r = await fetch("/api/studio/blog/publish-native", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, html, urlSlug, description: metaDescription }),
+          body: JSON.stringify({ title, html, urlSlug, description: metaDescription, scheduledAt: blogSchedule || undefined }),
         });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
-        setPublishedUrl("native");
+        setPublishedUrl(d.scheduled ? "scheduled" : "native");
       } else {
         if (!blogId) { setError("Välj en bloggsajt"); setPublishing(false); return; }
         const r = await fetch("/api/studio/blog/publish", {
@@ -277,21 +278,30 @@ export default function StudioBloggPage() {
                   </div>
                 )
               ) : (
-                <p className="text-sm text-gray-500">Sparas som utkast på Cockpit-sajten (Blogg-arkiv) — opublicerat tills du släpper det.</p>
+                <p className="text-sm text-gray-500">Sparas på Cockpit-sajten (Blogg-arkiv). Utan tid = utkast. Med tid = publiceras automatiskt då.</p>
+              )}
+
+              {/* Schemalägg publicering (bara Cockpit-native — cronet flippar published vid rätt tid) */}
+              {destination === "native" && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Schemalägg publicering (valfritt)</label>
+                  <input type="datetime-local" value={blogSchedule} onChange={(e) => setBlogSchedule(e.target.value)} className={inputCls} />
+                  {blogSchedule && <button onClick={() => setBlogSchedule("")} className="text-xs text-gray-400 hover:text-gray-600 mt-1">Rensa (spara som utkast)</button>}
+                </div>
               )}
 
               <button onClick={publish} disabled={publishing || (destination === "ghl" && (!connected || sites.length === 0))}
                 className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-3 rounded-xl text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                 style={{ background: primary }}>
                 {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : publishedUrl ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                {publishedUrl ? "Utkast skapat" : destination === "ghl" ? "Skapa utkast i GHL Blogs" : "Spara utkast på Cockpit-sajten"}
+                {publishedUrl ? (publishedUrl === "scheduled" ? "Schemalagt" : "Utkast skapat") : destination === "ghl" ? "Skapa utkast i GHL Blogs" : blogSchedule ? "Schemalägg publicering" : "Spara utkast på Cockpit-sajten"}
               </button>
               {publishedUrl && (
                 <p className="text-xs text-gray-500 text-center">
-                  {publishedUrl === "native" ? "Utkastet ligger i Blogg-arkiv (opublicerat) — granska och publicera där." : "Utkastet ligger i GHL → Sites → Blogs (status Draft). Granska och publicera där."}
+                  {publishedUrl === "scheduled" ? "Schemalagt — publiceras automatiskt på Cockpit-sajten vid vald tid." : publishedUrl === "native" ? "Utkastet ligger i Blogg-arkiv (opublicerat) — granska och publicera där." : "Utkastet ligger i GHL → Sites → Blogs (status Draft). Granska och publicera där."}
                 </p>
               )}
-              <p className="text-xs text-gray-400">Skapar ett utkast — publicerar aldrig skarpt.</p>
+              <p className="text-xs text-gray-400">{blogSchedule && destination === "native" ? "Publiceras automatiskt vid vald tid." : "Skapar ett utkast — publicerar aldrig skarpt."}</p>
             </section>
 
             {/* Repurposing: blogg → sociala inlägg */}
