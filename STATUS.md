@@ -6,6 +6,50 @@
 > mekanismen är logiskt bevisbar av mig nu. Tidigare sessioners QA-påståenden citeras men markeras
 > som **ej reproducerade av mig**. Osäkert står under OSÄKERT — inget är gissat.
 
+---
+
+# BEVIS-KÖRNING 2026-07-19 (kört, inte läst)
+
+> Varje punkt flippad genom KÖRNING mot live prod/DB denna session. Tidigare QA-artefakter räknas ej.
+> **Två kritiska blockerare hittade: (1) öppen databas via publik anon-nyckel, (2) native scheduler publicerar aldrig.**
+
+| Punkt | Status | Bevis (kört nu) | Kommentar |
+|---|---|---|---|
+| **STEG 0** Deploy = HEAD, bygge grönt | **BEVISAD** | Senaste prod-deploy skapad 17:37:35 (`● Ready`, target=production, branch-alias `git-master`) = origin/master `2a9ce1f` (committad 17:37:30). 14 senaste deploys alla Ready | Commit-SHA-fältet ej greppbart i `vercel inspect --json` → länken vilar på 5-sek-tidsstämpel + git-master-alias |
+| **STEG 1** Hardening av §1.6-tabellerna | **BEVISAD** | Anon-curl: `ikigai_sessions`→`[]`, `ideas_bank`→`[]`; `agent_experiments`/`gsc_queries_daily`/`ideas_bank`/`ikigai_sessions` har 0 policies, RLS på | Just dessa 4 är stängda |
+| **STEG 1** Bredare anon-exponering | 🔴 **FALLERAD (GDPR/credential-kritisk)** | Publik anon-nyckel läser LIVE: `google_connections`→Google `refresh_token`+`access_token` i klartext (2 rader); `clients.customer_token` för alla 9; `admin_users`→email+`pin:1234`+superadmin; `hm_leads` 15 (PII); `dm_pipeline_contacts`, `hm_brand_profile` (pricing_notes) 5, `linkedin_posts` 17, `customer_voice` 18, `gsc_queries` 589 m.fl. — policies `ALL qual=true` = även skrivbart | Rotorsak: ingen Supabase Auth → anon-nyckel = appens arbetsnyckel + publik; råa PostgREST ligger ej bakom app-proxyn. SÄKERHETSBEVIS testade bara app-routes, aldrig råa anon-ytan. **DT:s IG-token + GHL-PIT är också anon-exponerade.** Åtgärd EJ gjord (din order: fixa sen) |
+| **STEG 2** App-lager tenant-isolering + modul-grind | **BEVISAD (app-lagret)** | Utökad `qa-security.mjs` mot prod: **10/10 PASS** (isolering, förfalskad cookie, modul-grind DENY→ej-i-paket, /api/platform nekad 401, cross-tenant asset 405, /api/clients läcker ej token) | **Ogiltigförklaras i praktiken av STEG 1** — vem som helst använder anon-nyckeln direkt, förbi appen. Test-4-assertionen rättad (pensionering la in mellanhopp /k/skapa→/k/studio→/k/ej-i-paket) |
+| **STEG 2.3** GHL-token-lagring | **BEVISAD** | `getGhlConfig` läser `clients.ghl_location_id`+`ghl_pit` via service-role, `.eq(id, clientId)` — **per tenant, ingen global tabell** | Ligger i `clients` → omfattas av STEG 1-läckan |
+| **STEG 3** Entitlements-nuläge | **BEVISAD (läst)** · ändring DEFERRAD | Live-DB: Pro-standard = 7 moduler; `skapa`(Studio) `pro_default=True` (alla med access ser Studio); CF låst seo/besokare/profil (tenant_modules drar 4) | Ändringen (moduler default-av) EJ gjord per din order |
+| **STEG 4.1** IG-publicering | **DELVIS** | Graph API-läsning med DT:s token: `username=displayteknik, followers=171, media=96` → token giltig, lib/instagram når Graph | Ingen publik post fyrades (cron-vägen trasig, se 4.3; jag avstår permanent publik post via workaround) |
+| **STEG 4.2** GHL-utkast | **DELVIS** · Opticur BLOCKERAD | DT:s PIT: `success 200, Fetched Accounts` (FB-sida kopplad) → GHL-vägen fungerar | Inget utkast skapat (icke-destruktivt). Opticur saknar PIT |
+| **STEG 4.3** Native schema E2E | 🔴 **FALLERAD** | Köade riktigt jobb → triggade cron (`workflow_dispatch`, run success 200) → jobbet **kvar `queued`**. Rotorsak: `scheduler/cron` läser `studio_scheduled` via `supabaseServer()` = **anon** (supabase-admin.ts rad 7), tabellen har RLS+0 policies → cron ser 0 jobb → **publicerar aldrig**. `studio_scheduled(published)=0` någonsin | Testjobbet raderat (landmina borttagen). CRON_SECRET ÄR satt (repo-secret 15:26); GH-cron kör var 15:e min (endpoint auth OK) — men internt tomt |
+| **STEG 5.1** tsc + prod-build | **BEVISAD** | `npx tsc --noEmit` exit 0; prod-build grön via STEG 0 (Vercel byggde `2a9ce1f`, 2m, Ready) | — |
+| **STEG 5.2** qa-screens (96 shots) | **EJ KÖRD** | — | Tungt visuellt svep, lägre värde än blockerarna; kör efter containment |
+| **STEG 5.3** 10 Studio-mallar render | **EJ KÖRD** | — | Samma skäl |
+| **STEG 6.1** Cron-hälsa (effekt-proxy) | **DELVIS BEVISAD** | `agent_experiments` idag 12:14 (night-iterate/service-role OK); `blog/cron` funkar (anon-öppna tabeller). MEN: `weekly_reports=0` någonsin; `hm_vehicles`+`gsc_queries_daily` senast **2026-07-16** (dagliga Vercel-crons ger ingen effekt på 3 dagar); `studio_scheduled(published)=0` | Kan ej dra Vercel cron-exekveringsloggar via CLI härifrån — proxyn via datastämplar |
+| **STEG 6.2** AI-kostnad | **EJ KVANTIFIERAD** | night-iterate körde (29 `agent_experiments`); Gemini/Fal.ai anropas per körning | Utan usage-loggar vägrar jag gissa siffror → flaggar: övervaka Gemini-kvot + bounda night-iterate före utrullning |
+
+## Ändringar gjorda i denna session (inga app-ändringar, ingen remediation)
+- `scratchpad/prove-query.mjs` — ny läs-only query-helper (bevis-verktyg).
+- `scratchpad/qa-security.mjs` — utökad med 3 testfall + rättad test-4-assertion (tillåten ändring b).
+- 1 `studio_scheduled`-testjobb infogat och **raderat** igen (tillåten ändring a, städat).
+- 1 `workflow_dispatch` av GH-cron (trigger, ingen state-ändring). App-kod orörd, tsc opåverkad.
+
+## Fynd utanför scope
+- **`supabaseServer()`=anon används av 77 API-routes.** De som rör strict-RLS/0-policy-tabeller misslyckas tyst: `scheduler/cron` (bevisat), `intake/analyze|commit|upload`, `blog/ideas`, `social/topic-suggest` (mot `client_voice_profile`/`client_assets`). Latent felkälla, samma mönster som lesson_client_assets_requires_service_role.
+- **Dagliga Vercel-crons ger ingen effekt sedan 2026-07-16** (fordon-synk, GSC); `weekly_reports` aldrig producerad. Kräver undersökning (koppling till */15-cron-incidenten?).
+- **`admin_users.pin = "1234"`** (svag + exponerad via STEG 1).
+
+## Rekommenderad nästa åtgärd (max 5)
+1. **Containment av anon-läckan** (per-tabell RLS-lås av credential/PII-tabeller) + **rotera exponerade hemligheter**: Google-token, alla `customer_token`, admin-PIN; behandla DT:s IG-token + GHL-PIT som komprometterade.
+2. **Fixa native scheduler**: `scheduler/cron` (m.fl. strict-tabell-routes) `supabaseServer→supabaseService`; kör om E2E-beviset.
+3. **Audita alla 77 `supabaseServer`-routes** mot strict-tabeller; migrera till service-role där det behövs.
+4. **Undersök de dagliga Vercel-cronsen** som stått stilla sedan 07-16 (fordon/GSC/weekly).
+5. **Före kundutrullning**: sätt oprövade kundmoduler (Studio/`skapa`, native schema, offert) default-AV tills ombevisade (den deferrade STEG 3).
+
+---
+
 ## SAMMANFATTNING
 Innehålls-etapperna F–J och plattformsskalet Fas 0–6 är alla **byggda och committade** (2026-07-16→17) och
 koden finns på disk (entitlements, publiceringsmodul med skarp IG, modulregister-migration, kundvy, admin
