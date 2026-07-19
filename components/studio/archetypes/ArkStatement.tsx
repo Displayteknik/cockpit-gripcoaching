@@ -16,16 +16,16 @@ export default function ArkStatement({ payload, brand }: { payload: StudioPayloa
     <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, background: c.primary }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 90px" }}>
         <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor(onPrimary, payload), fontSize: fs(96, payload), lineHeight: 0.98, letterSpacing: -1.5, textTransform: "uppercase" }}>
-          {payload.headline1}
+          <span data-edit="headline1">{payload.headline1}</span>
         </div>
         {brand.elements.underline.enabled ? (
           <div style={{ width: 180, height: 12, background: c.accent, borderRadius: 8, margin: "28px 0 8px" }} />
         ) : <div style={{ height: 24 }} />}
         {payload.headline2 ? (
-          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: onPrimary, opacity: 0.92, fontSize: fs(42, payload), lineHeight: 1.15 }}>{payload.headline2}</div>
+          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: onPrimary, opacity: 0.92, fontSize: fs(42, payload), lineHeight: 1.15 }}><span data-edit="headline2">{payload.headline2}</span></div>
         ) : null}
         {payload.body ? (
-          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor(onPrimary, payload), opacity: 0.85, fontSize: fs(30, payload), lineHeight: 1.35, marginTop: 22, maxWidth: 760 }}>{payload.body}</div>
+          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor(onPrimary, payload), opacity: 0.85, fontSize: fs(30, payload), lineHeight: 1.35, marginTop: 22, maxWidth: 760 }}><span data-edit="body">{payload.body}</span></div>
         ) : null}
       </div>
       {portrait ? <KitFooter brand={brand} /> : <div style={{ height: 40 }} />}

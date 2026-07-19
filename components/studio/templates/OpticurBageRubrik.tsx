@@ -29,7 +29,7 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
       }}
     >
       {/* Foto med bågform i underkant */}
-      <div style={{ position: "relative", width: "100%", height: photoH, flexShrink: 0 }}>
+      <div data-edit-image style={{ position: "relative", width: "100%", height: photoH, flexShrink: 0 }}>
         {payload.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -106,7 +106,7 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
             letterSpacing: -1,
           }}
         >
-          {payload.headline1}
+          <span data-edit="headline1">{payload.headline1}</span>
         </div>
 
         {/* Underrubrik (centrerad, ingen sol) */}
@@ -121,7 +121,7 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
               marginTop: 26,
             }}
           >
-            {payload.headline2}
+            <span data-edit="headline2">{payload.headline2}</span>
           </div>
         ) : null}
 
@@ -138,7 +138,7 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
               maxWidth: 760,
             }}
           >
-            {payload.body}
+            <span data-edit="body">{payload.body}</span>
           </div>
         ) : null}
       </div>

@@ -388,6 +388,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     else if (field === "badge2") setBadgeLine2(text);
     else if (field === "slide-headline") updateSlide(slideIdx, { headline: text });
     else if (field === "slide-body") updateSlide(slideIdx, { body: text });
+    else if (field.startsWith("list-")) {
+      const idx = Number(field.slice(5));
+      // Lista-mallen delar body på radbrytning/·/;/• → byt rätt punkt, bevara övriga.
+      setBody((prev) => {
+        const parts = prev.split(/\n|·|;|•/).map((s) => s.trim()).filter(Boolean);
+        if (idx >= 0 && idx < parts.length) { parts[idx] = text; return parts.join("\n"); }
+        return prev;
+      });
+    }
   }, [slideIdx, updateSlide]);
 
   // Klistra in eget utkast → AI delar upp i rubrik/underrubrik/brödtext.

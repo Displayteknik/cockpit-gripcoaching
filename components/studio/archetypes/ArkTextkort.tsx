@@ -19,13 +19,13 @@ export default function ArkTextkort({ payload, brand }: { payload: StudioPayload
         <div style={{ width: 70, height: 8, background: c.accent, borderRadius: 6, marginBottom: 34 }} />
 
         {payload.headline1 ? (
-          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2.5, color: c.primary, fontSize: fs(24, payload), marginBottom: 18 }}>{payload.headline1}</div>
+          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2.5, color: c.primary, fontSize: fs(24, payload), marginBottom: 18 }}><span data-edit="headline1">{payload.headline1}</span></div>
         ) : null}
         {payload.headline2 ? (
-          <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor(c.ink, payload), fontSize: fs(58, payload), lineHeight: 1.08, letterSpacing: -0.5, marginBottom: 26 }}>{payload.headline2}</div>
+          <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor(c.ink, payload), fontSize: fs(58, payload), lineHeight: 1.08, letterSpacing: -0.5, marginBottom: 26 }}><span data-edit="headline2">{payload.headline2}</span></div>
         ) : null}
         {payload.body ? (
-          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor(c.ink, payload), opacity: 0.86, fontSize: fs(36, payload), lineHeight: 1.45, maxWidth: 820 }}>{payload.body}</div>
+          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor(c.ink, payload), opacity: 0.86, fontSize: fs(36, payload), lineHeight: 1.45, maxWidth: 820 }}><span data-edit="body">{payload.body}</span></div>
         ) : null}
       </div>
       {portrait ? <KitFooter brand={brand} /> : <div style={{ height: 40 }} />}

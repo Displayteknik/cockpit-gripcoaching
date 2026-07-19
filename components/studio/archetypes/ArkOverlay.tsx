@@ -26,7 +26,7 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
       {/* Foto */}
       {payload.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={payload.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
+        <img data-edit-image src={payload.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${c.primary}, ${c.primaryDeep})` }} />
       )}
@@ -50,15 +50,15 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
         <div style={{ position: "relative" }}>
           {payload.headline2 ? (
             <div style={{ display: "inline-block", background: c.accent, color: (brand.colors.paper), padding: "6px 16px", borderRadius: 6, fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, fontSize: 24, marginBottom: 18, textTransform: "uppercase", letterSpacing: 1 }}>
-              {payload.headline2}
+              <span data-edit="headline2">{payload.headline2}</span>
             </div>
           ) : null}
           <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor("#fff", payload), fontSize: fs(74, payload), lineHeight: 1.02, letterSpacing: -1, textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
-            {payload.headline1}
+            <span data-edit="headline1">{payload.headline1}</span>
           </div>
           {payload.body ? (
             <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor("#fff", payload), opacity: 0.94, fontSize: fs(32, payload), lineHeight: 1.35, marginTop: 22, maxWidth: 820, textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
-              {payload.body}
+              <span data-edit="body">{payload.body}</span>
             </div>
           ) : null}
         </div>

@@ -59,12 +59,12 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0 }: { payloa
       <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", flexDirection: "column", justifyContent: slide.kind === "point" ? "flex-end" : "center", padding: slide.kind === "point" ? "0 80px 150px" : "0 80px" }}>
         {slide.headline ? (
           <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: ink, fontSize: fs(isHook ? 84 : 58, payload), lineHeight: 1.04, letterSpacing: -1 }}>
-            {slide.headline}
+            <span data-edit="slide-headline">{slide.headline}</span>
           </div>
         ) : null}
         {slide.body ? (
           <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: ink, opacity: dim, fontSize: fs(isHook ? 34 : 32, payload), lineHeight: 1.4, marginTop: 24, maxWidth: 860 }}>
-            {slide.body}
+            <span data-edit="slide-body">{slide.body}</span>
           </div>
         ) : null}
 

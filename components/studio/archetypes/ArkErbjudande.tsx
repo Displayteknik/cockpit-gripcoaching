@@ -17,12 +17,12 @@ export default function ArkErbjudande({ payload, brand }: { payload: StudioPaylo
   return (
     <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, background: c.paper }}>
       <div style={{ padding: "44px 56px 0", textAlign: "center" }}>
-        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor(c.primary, payload), fontSize: fs(60, payload), lineHeight: 1.0, textTransform: "uppercase", letterSpacing: -0.5 }}>{payload.headline1}</div>
-        {payload.headline2 ? <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: c.ink, fontSize: fs(36, payload), marginTop: 16 }}>{payload.headline2}</div> : null}
+        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor(c.primary, payload), fontSize: fs(60, payload), lineHeight: 1.0, textTransform: "uppercase", letterSpacing: -0.5 }}><span data-edit="headline1">{payload.headline1}</span></div>
+        {payload.headline2 ? <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: c.ink, fontSize: fs(36, payload), marginTop: 16 }}><span data-edit="headline2">{payload.headline2}</span></div> : null}
       </div>
 
       <div style={{ position: "relative", flex: 1, margin: "22px 0 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        <div data-edit-image style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           {payload.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
@@ -40,7 +40,7 @@ export default function ArkErbjudande({ payload, brand }: { payload: StudioPaylo
             </div>
           )
         ) : payload.body ? (
-          <div style={{ position: "relative", maxWidth: 780, textAlign: "center", fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: bodyColor(onPrimary, payload), fontSize: fs(64, payload), lineHeight: 1.05, padding: "0 40px" }}>{payload.body}</div>
+          <div style={{ position: "relative", maxWidth: 780, textAlign: "center", fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: bodyColor(onPrimary, payload), fontSize: fs(64, payload), lineHeight: 1.05, padding: "0 40px" }}><span data-edit="body">{payload.body}</span></div>
         ) : null}
       </div>
 
