@@ -62,6 +62,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       label: "SEO & sajt",
       items: [
         { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
+        { href: "/dashboard/webbdata-demo", label: "Webbdata (demo)", icon: Activity },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
         { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: BookOpen },
         ...resourceItems,
