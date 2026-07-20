@@ -20,8 +20,9 @@
 | 1.4 Kö-granskning | **KLART** | Inga planterade/främmande jobb (`studio_scheduled` tom, `scheduled_posts` 3 legit, `hm_blog_queue` 1 utkast) |
 | 1.5 Integritet/XSS/storage | **KLART** | Ingen stored-XSS (hm_blog-träff = legit JSON-LD, opublicerad). `admin_users` orörd sedan mars. `google_connections`-uppdatering = normal GA-token-refresh (285 UPDATE-anrop i pg_stat_statements) |
 | 1.6 Loggar + incident-doc | **DELVIS** | `docs/INCIDENT-2026-07-19.md` skriven. IP-attribution kräver Supabase Logflare/dashboard (ej nåbar rent via Management API härifrån) — Håkan drar edge/API-loggar |
-| 1.2 Server-route-migration | **BLOCKERAD** | Kräver arkitekturbeslut (väg A refaktor vs B Supabase Auth) + deploy-godkännande |
-| 1.3 Droppa anon-policies | **BLOCKERAD** | Får ej köras före 1.2 (bryter browser-läs/skriv). Delmängd server-only-tabeller kan stängas först (se incident-doc §5) |
+| 1.2/1.3 **Batch 1 containment** | **KLART & VERIFIERAT (2026-07-20)** | Beslut: containment JA + väg A. `google_connections` (Google OAuth `refresh_token`/`access_token`) + `dm_pipeline_contacts` (lead-PII) LÅSTA: 8 filer bytt `supabaseServer→supabaseService` (deploy `7422e07`, live i `481e939`), migration `fas1_containment_google_dm.sql` dragit anon-policies. **Bevis:** anon-curl båda → `*/0 []`; service-role → 200; RLS på + 0 anon-policies; google-route 401 (levande). Browser rör ej tabellerna → CF opåverkad |
+| 1.2/1.3 **Övriga server-only-tabeller** | **KVAR (nästa batch)** | Samma mönster: `gsc_queries` (8 routes), `linkedin_*` (11), `intake_*` (12), `competitors`/`weekly_reports`/`customer_voice`/`coach_users` → swap till service-role + dra anon. `admin_users`/`integration_keys` = oanvända i Cockpit (annan delad app?) → ditt beslut |
+| 1.2/1.3 **Browser-berörda tabeller** | **KVAR (väg A refaktor)** | `hm_pages/blog/vehicles/art*`, `clients`, `hm_leads`, `hm_brand_profile` — kräver flytt av klient-skrivningar till server-routes + smala publika read-only-policies. Egen etapp |
 
 **BLOCKERARE (beslut krävs innan FAS 1 kan slutföras):** planen förutsatte att bara server-routes
 använder anon. Verkligheten: webbläsaren skriver via anon i 26 filer. Stängning kräver antingen
