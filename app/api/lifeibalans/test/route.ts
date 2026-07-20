@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { sendEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const total = Number(body.total) || 0;
     if (!name || !email) return NextResponse.json({ ok: false, error: "Namn och e-post krävs." }, { status: 400 });
 
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const { data: client } = await sb.from("clients").select("id, report_recipients").eq("slug", "lifeibalans").single();
     const recipients = String(client?.report_recipients || "hakan@displayteknik.se").split(/[,;\s]+/).filter(Boolean);
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createAdminSession, passwordMatches, ADMIN_COOKIE, ADMIN_TTL_SECONDS } from "@/lib/admin-auth";
 import { setActiveClientId, HM_MOTOR_ID } from "@/lib/client-context";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { setCustomerSession } from "@/lib/customer-context";
 
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   if (custLogin) {
     const custPw = custLogin.passwordEnv ? process.env[custLogin.passwordEnv] : "";
     if (custPw && (await passwordMatches(password, custPw))) {
-      const sb = supabaseServer();
+      const sb = supabaseService();
       const { data } = await sb
         .from("clients")
         .select("id, customer_token, customer_access_enabled")

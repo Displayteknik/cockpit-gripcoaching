@@ -7,8 +7,8 @@ const BASE = "https://graph.facebook.com/v21.0";
 export interface IgClient { id: string; ig_account_id: string | null; ig_access_token: string | null; }
 
 export async function getIgConnection(clientId: string): Promise<IgClient | null> {
-  const { supabaseServer } = await import("./supabase-admin");
-  const sb = supabaseServer();
+  const { supabaseService } = await import("./supabase-admin");
+  const sb = supabaseService();
   const { data } = await sb.from("clients").select("id, ig_account_id, ig_access_token").eq("id", clientId).maybeSingle();
   if (!data?.ig_account_id || !data?.ig_access_token) return null;
   return data as IgClient;

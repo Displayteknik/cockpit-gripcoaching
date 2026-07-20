@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { sendEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Fyll i namn och e-post." }, { status: 400 });
     }
 
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const { data: client } = await sb
       .from("clients")
       .select("id, report_recipients")

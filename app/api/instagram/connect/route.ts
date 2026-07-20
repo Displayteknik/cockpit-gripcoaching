@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { getProfile } from "@/lib/instagram";
 import { requireAdminOrCustomer, requireAdmin } from "@/lib/api-auth";
@@ -19,7 +19,7 @@ export async function PUT(req: NextRequest) {
   // Validera mot Graph API
   try {
     const profile = await getProfile(body.ig_account_id, body.ig_access_token);
-    const sb = supabaseServer();
+    const sb = supabaseService();
     await sb.from("clients").update({
       ig_account_id: body.ig_account_id,
       ig_access_token: body.ig_access_token,
@@ -50,7 +50,7 @@ export async function GET() {
   if (denied) return denied;
 
   const clientId = await getActiveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data } = await sb.from("clients").select("ig_account_id, ig_handle").eq("id", clientId).maybeSingle();
   return NextResponse.json({
     connected: !!data?.ig_account_id,
@@ -63,7 +63,7 @@ export async function DELETE() {
   if (denied) return denied;
 
   const clientId = await getActiveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   await sb.from("clients").update({ ig_account_id: null, ig_access_token: null, ig_handle: null }).eq("id", clientId);
   return NextResponse.json({ ok: true });
 }

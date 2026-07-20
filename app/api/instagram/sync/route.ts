@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { getIgConnection, getProfile, getRecentMedia, getMediaInsights } from "@/lib/instagram";
 
@@ -12,7 +12,7 @@ export async function POST() {
   const conn = await getIgConnection(clientId);
   if (!conn) return NextResponse.json({ error: "Instagram inte anslutet" }, { status: 400 });
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   try {
     const profile = await getProfile(conn.ig_account_id!, conn.ig_access_token!);
     await sb.from("follower_snapshots").insert({

@@ -1,5 +1,5 @@
 import { cookies, headers } from "next/headers";
-import { supabaseServer } from "./supabase-admin";
+import { supabaseService } from "./supabase-admin";
 import { ADMIN_COOKIE, getSessionScope, verifyAdminSession } from "./admin-auth";
 
 const COOKIE_NAME = "active_client_id";
@@ -85,7 +85,7 @@ export async function setActiveClientId(id: string): Promise<void> {
 
 export async function getActiveClient(): Promise<Client | null> {
   const id = await getActiveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data } = await sb.from("clients").select("*").eq("id", id).single();
   return (data as Client) || null;
 }
@@ -98,7 +98,7 @@ export async function logActivity(
   meta?: Record<string, unknown>,
 ): Promise<void> {
   try {
-    const sb = supabaseServer();
+    const sb = supabaseService();
     await sb.from("client_activity").insert({ client_id: clientId, type, title, link, meta });
   } catch {
     // Tyst — logg ska aldrig blockera huvudoperationen

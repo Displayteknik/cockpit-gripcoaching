@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 
@@ -15,7 +15,7 @@ export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   let q = sb
     .from("clients")
     .select(CLIENT_PUBLIC_COLUMNS)
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
 
   const body = await req.json();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const slug = String(body.slug || body.name || "").toLowerCase().replace(/[åä]/g, "a").replace(/ö/g, "o").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const { data, error } = await sb
     .from("clients")
@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json();
   const { id, ...rest } = body;
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data, error } = await sb
     .from("clients")
     .update({ ...rest, updated_at: new Date().toISOString() })
