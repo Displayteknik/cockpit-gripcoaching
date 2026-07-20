@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data: next } = await sb
     .from("hm_blog_queue")
     .select("*")

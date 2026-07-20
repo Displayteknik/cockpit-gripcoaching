@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { finalizePendingAudits } from "@/lib/deep-audit-finalize";
 import { publishContent } from "@/lib/publish";
 import { logActivity } from "@/lib/client-context";
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   // Finalisera klara djupgransknings-batchar (får aldrig fälla cronet).
   const auditsFinalized = await finalizePendingAudits().catch(() => 0);
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const now = new Date().toISOString();
   const { data: due } = await sb
     .from("studio_scheduled")
