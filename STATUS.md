@@ -36,6 +36,15 @@ Se `docs/INCIDENT-2026-07-19.md` §5–6.
 
 ---
 
+# MOTOR-FIXAR 2026-07-20
+
+| Fix | Status | Bevis |
+|---|---|---|
+| **Native scheduler** (var FALLERAD) | ✅ **BEVISAD (FIXAD)** | `scheduler/cron`+`blog/cron`+`scheduler` → service-role (`8bac636`). E2E: köat cockpit-blog-jobb → cron-svar `{"ok":true,"processed":1}` → job `queued→published` + `hm_blog.published=true`. Testdata raderad. (Var: anon läste strict `studio_scheduled` → 0 jobb.) |
+| customer_token-rotation | ✅ **KLAR** | Alla 9 regenererade; gammal CF-länk→`/k-utloggad` (död), ny→`/k` (funkar). Nya länkar i `/dashboard/kund-access` |
+
+---
+
 # BEVIS-KÖRNING 2026-07-19 (kört, inte läst)
 
 > Varje punkt flippad genom KÖRNING mot live prod/DB denna session. Tidigare QA-artefakter räknas ej.
