@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -9,7 +9,7 @@ export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   const clientId = await getActiveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   let { data, error } = await sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle();
   if (!data && !error) {
     // Skapa tom om saknas
@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest) {
   const body = await req.json();
   delete body.id;
   delete body.client_id;
-  const sb = supabaseServer();
+  const sb = supabaseService();
 
   // Säkerställ att rad finns
   const existing = await sb.from("hm_brand_profile").select("client_id").eq("client_id", clientId).maybeSingle();

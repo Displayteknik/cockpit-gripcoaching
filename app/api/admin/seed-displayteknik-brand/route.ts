@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
@@ -228,7 +228,7 @@ const WINNING_EXAMPLES = [
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
-  const sb = supabaseServer();
+  const sb = supabaseService();
 
   // 1. Brand-profil — upsert alla fält
   const existing = await sb.from("hm_brand_profile").select("id").eq("client_id", CLIENT_ID).maybeSingle();

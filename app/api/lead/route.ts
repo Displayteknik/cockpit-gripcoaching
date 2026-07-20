@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { sendEmail } from "@/lib/email";
 import { LEAD_RECIPIENTS, LEAD_FROM } from "@/lib/contact";
 import { HM_MOTOR_CLIENT_ID } from "@/lib/supabase";
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     // 2) DB-lagring = best effort (för dashboard). Får ALDRIG fälla requesten.
     try {
-      const sb = supabaseServer();
+      const sb = supabaseService();
       // Befintlig hm_leads-tabell: name, phone, email, interest, source, status, notes, client_id.
       // Meddelande + fordon läggs i notes (inga egna kolumner finns).
       const notes = [

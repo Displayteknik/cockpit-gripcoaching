@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generate, type GeminiMessage } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 
@@ -16,7 +16,7 @@ interface ChatBody {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ChatBody;
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const clientId = await getActiveClientId();
     const client = await getActiveClient();
     const isAutomotive = client?.resource_module === "automotive";

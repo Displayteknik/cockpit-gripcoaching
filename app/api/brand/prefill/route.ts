@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 // fält (läsare/bransch/USP) fylls i automatiskt i stället för varje gång för hand.
 // Källan är hm_brand_profile + clients.industry — en sanningskälla.
 export async function GET() {
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await resolveClientId();
 
   const [{ data: profile }, { data: client }] = await Promise.all([

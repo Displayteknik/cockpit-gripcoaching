@@ -1,13 +1,13 @@
 // Server component som hämtar profile + settings och injekterar JSON-LD.
 // Kan användas på publika sidor: <StructuredData type="localbusiness" />
 
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { localBusinessJsonLd, jsonLdScript } from "@/lib/structured-data";
 
 export default async function StructuredData({ type = "localbusiness" }: { type?: "localbusiness" }) {
   const clientId = await getActiveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const [{ data: profile }, { data: settingsRows }] = await Promise.all([
     sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle(),
     sb.from("hm_settings").select("*").eq("client_id", clientId),
