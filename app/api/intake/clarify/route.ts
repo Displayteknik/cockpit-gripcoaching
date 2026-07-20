@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest) {
   if (denied) return denied;
   const { id, answer }: { id: string; answer: string } = await req.json();
   if (!id) return NextResponse.json({ error: "id krävs" }, { status: 400 });
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
 
   const { data: clarif } = await sb.from("intake_clarifications").select("session_id").eq("id", id).single();

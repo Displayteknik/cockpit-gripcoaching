@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { auditUrl, pageSpeed } from "@/lib/seo-audit";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { assertSafePublicUrl } from "@/lib/safe-url";
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
 
   // 1. Hämta konkurrentens HTML-innehåll
   let html = "";

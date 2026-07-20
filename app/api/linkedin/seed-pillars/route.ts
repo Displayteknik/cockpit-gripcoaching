@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -22,7 +22,7 @@ export async function POST(_req: NextRequest) {
   try {
     const clientId = await getActiveClientId();
     const client = await getActiveClient();
-    const sb = supabaseServer();
+    const sb = supabaseService();
 
     const { count: existingCount } = await sb
       .from("linkedin_pillars")

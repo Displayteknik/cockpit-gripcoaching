@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     const { session_id }: { session_id: string } = await req.json();
     if (!session_id) return NextResponse.json({ error: "session_id krävs" }, { status: 400 });
 
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const clientId = await getActiveClientId();
     const client = await getActiveClient();
 
@@ -211,7 +211,7 @@ Analysera nu enligt instruktionerna ovan. Returnera bara JSON.`;
       clarifications_count: clarifsToInsert.length,
     });
   } catch (e) {
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const body = await req.text().catch(() => "");
     const match = body.match(/"session_id"\s*:\s*"([^"]+)"/);
     if (match) {

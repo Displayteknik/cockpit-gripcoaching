@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { extractPageSignals, scoreSignals, schemaRichEligibility } from "@/lib/seo-deep";
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const { auditId, url: urlInput } = await req.json();
 
   const clientId = await resolveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
 
   // Hämta URL + de deterministiska poängen (korrekta siffror) från auditen om den finns
   let url = urlInput as string | undefined;

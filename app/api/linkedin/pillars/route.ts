@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
   const { data, error } = await sb
     .from("linkedin_pillars")
@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
   const body = await req.json();
   const { data, error } = await sb
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
   const body = await req.json();
   if (!body.id) return NextResponse.json({ error: "id krävs" }, { status: 400 });
@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");

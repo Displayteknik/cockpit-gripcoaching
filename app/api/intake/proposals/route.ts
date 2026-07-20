@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest) {
   if (denied) return denied;
   const { id, decision, edited_value }: { id: string; decision: "accepted" | "edited" | "skipped"; edited_value?: string } = await req.json();
   if (!id || !decision) return NextResponse.json({ error: "id + decision krävs" }, { status: 400 });
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
   const { error } = await sb
     .from("intake_proposals")

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ interface GscRow { query: string; clicks: number; impressions: number; position:
 export async function POST() {
   const clientId = await getActiveClientId();
   const client = await getActiveClient();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const isAutomotive = client?.resource_module === "automotive";
   const isArt = client?.resource_module === "art";
 

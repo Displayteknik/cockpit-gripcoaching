@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const { raw }: { raw: string } = await req.json();
     if (!raw?.trim()) return NextResponse.json({ error: "Tomt input" }, { status: 400 });
 
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const clientId = await getActiveClientId();
 
     const lines = raw.split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
   const { data, error } = await sb
     .from("linkedin_history")

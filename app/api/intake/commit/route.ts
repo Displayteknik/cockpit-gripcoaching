@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   const { session_id }: CommitBody = await req.json();
   if (!session_id) return NextResponse.json({ error: "session_id krävs" }, { status: 400 });
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const clientId = await getActiveClientId();
 
   const { data: session } = await sb.from("intake_sessions").select("*").eq("id", session_id).eq("client_id", clientId).single();

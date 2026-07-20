@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as DraftBody;
     const clientId = await getActiveClientId();
     const client = await getActiveClient();
-    const sb = supabaseServer();
+    const sb = supabaseService();
 
     let seed: DraftBody = body;
     if (body.post_id) {

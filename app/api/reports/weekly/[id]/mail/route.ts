@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { sendEmail, weeklyReportEmailHtml, emailConfigured } from "@/lib/email";
 
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const clientId = await getActiveClientId();
   const body = (await req.json().catch(() => ({}))) as Body;
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const client = await getActiveClient();
   const { data: report } = await sb.from("weekly_reports").select("*").eq("id", id).eq("client_id", clientId).maybeSingle();
   if (!report) return NextResponse.json({ error: "Rapport hittades inte" }, { status: 404 });

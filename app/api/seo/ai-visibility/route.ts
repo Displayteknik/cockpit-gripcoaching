@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 import { groundedGenerate, generateJSON } from "@/lib/gemini";
 
@@ -10,7 +10,7 @@ export const maxDuration = 300;
 // om klienten faktiskt nämns/citeras — och vilka konkurrenter som nämns i stället.
 export async function POST() {
   try {
-    const sb = supabaseServer();
+    const sb = supabaseService();
     const clientId = await resolveClientId();
 
     const [{ data: client }, { data: profile }] = await Promise.all([

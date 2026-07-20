@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 
 export const runtime = "nodejs";
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   if (!rows.length) return NextResponse.json({ error: "Inga rader hittades" }, { status: 400 });
 
-  const sb = supabaseServer();
+  const sb = supabaseService();
   // ERSÄTT klientens sökords-mätning (samma princip som GSC-synken) — annars staplas importer
   // ovanpå tidigare data och alla siffror flerdubblas. Vi använder ändå bara senaste mätningen.
   await sb.from("gsc_queries").delete().eq("client_id", clientId);
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   const clientId = await resolveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data } = await sb
     .from("gsc_queries")
     .select("*")

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -10,7 +10,7 @@ export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   const clientId = await resolveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { data, error } = await sb.from("hm_seo_keywords").select("*").eq("client_id", clientId).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
   const clientId = await resolveClientId();
   const body = await req.json();
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const rows = (Array.isArray(body) ? body : [body]).map((r) => ({ ...r, client_id: clientId }));
   const { data, error } = await sb.from("hm_seo_keywords").insert(rows).select();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -89,7 +89,7 @@ export async function PATCH(req: NextRequest) {
   const clientId = await resolveClientId();
   const body = await req.json();
   const { id, ...rest } = body;
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const update: Record<string, unknown> = { ...rest };
   if (rest.current_rank !== undefined) {
     update.last_checked = new Date().toISOString();
@@ -109,7 +109,7 @@ export async function DELETE(req: NextRequest) {
   const clientId = await resolveClientId();
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id krävs" }, { status: 400 });
-  const sb = supabaseServer();
+  const sb = supabaseService();
   const { error } = await sb.from("hm_seo_keywords").delete().eq("id", id).eq("client_id", clientId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

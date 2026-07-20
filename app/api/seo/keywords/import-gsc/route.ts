@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-admin";
+import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -13,7 +13,7 @@ export async function POST() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   const clientId = await resolveClientId();
-  const sb = supabaseServer();
+  const sb = supabaseService();
 
   const { data: meta } = await sb
     .from("gsc_queries").select("period_start")
