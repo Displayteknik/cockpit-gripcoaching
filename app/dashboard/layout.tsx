@@ -72,6 +72,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       label: "Kunder",
       items: [
         { href: "/dashboard/fokus", label: "Fokus idag", icon: Target },
+        { href: "https://mysales-coach.netlify.app/lobby", label: "Lobbyn (Coach)", icon: Users },
         { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
         { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
         { href: "/dashboard/paket", label: "Paket & moduler", icon: Package },
@@ -170,6 +171,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const isActive = item.href === activeHref;
+                  // Extern genväg (t.ex. Lobbyn i MySales Coach) → ny flik, aldrig aktiv-markerad.
+                  if (item.href.startsWith("http")) {
+                    return (
+                      <a
+                        key={item.href}
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => setMobileOpen(false)}
+                        className="group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <item.icon className="w-[18px] h-[18px] flex-shrink-0 text-gray-400 group-hover:text-gray-600" />
+                        <span className="truncate">{item.label}</span>
+                        <ExternalLink className="w-3.5 h-3.5 ml-auto text-gray-300 group-hover:text-gray-400" />
+                      </a>
+                    );
+                  }
                   return (
                     <Link
                       key={item.href}
