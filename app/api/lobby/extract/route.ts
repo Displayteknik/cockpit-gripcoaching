@@ -52,6 +52,7 @@ Returnera ENBART ett rått JSON-objekt (utan markdown-block):
   "platform": "linkedin" | "fb" | "ig" | "email" | "phone" | "web" | "other",
   "email": "",
   "phone": "",
+  "profile_url": "",
   "last_message": "",
   "next_step": "",
   "next_contact_date": "YYYY-MM-DD eller ''",
@@ -59,6 +60,7 @@ Returnera ENBART ett rått JSON-objekt (utan markdown-block):
 }
 
 Regler:
+- profile_url: om en profil-/chattlänk syns (linkedin.com/in/…, instagram.com/…, facebook.com/…, en hemsida) → ta med den, annars ''
 - Kontaktformulär på webbsida → platform "web"
 - Fyll i alla fält du kan identifiera med säkerhet
 - Fält som inte går att identifiera = tom sträng ''

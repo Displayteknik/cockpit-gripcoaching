@@ -47,6 +47,7 @@ Möjliga fält:
 - "name", "company", "title", "email"
 - "phone" (formatera svenskt, t.ex. 070-895 46 72)
 - "platform": "linkedin" | "fb" | "ig" | "email" | "phone" | "web" | "other"
+- "profile_url" (om en profil-/chattlänk nämns)
 - "status": "new" | "contacted" | "dialog" | "ready" | "passed"
 - "next_step" (max 150 tecken)
 - "next_contact_date": "YYYY-MM-DD" eller ""

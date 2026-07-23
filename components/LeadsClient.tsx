@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Users, Loader2, RefreshCw, Mail, Phone, Building2, CalendarClock, AlertCircle,
+  Users, Loader2, Mail, Phone, Building2, CalendarClock, AlertCircle,
   CheckCircle2, ChevronDown, Plus, Mic, Radio, ImageIcon, ClipboardPaste, X,
-  Sparkles, ExternalLink, ArrowUpCircle, Trash2, Undo2,
+  Sparkles, ExternalLink, ArrowUpCircle, Trash2, Undo2, MessageSquare, Copy, Check,
+  Globe, MonitorSmartphone,
 } from "lucide-react";
+import { LinkedinIcon, FacebookIcon, InstagramIcon } from "@/lib/module-icons";
 
-// Lobbyn i Cockpit — kontakterna INNAN de blir affärer i pipelinen.
-// Full port av MySales Coach-Lobbyn (`src/pages/Lobby.tsx`) i Cockpits ljusa design:
-// klistra in bild → Gemini skapar kontakten, prata in ny/uppdatering, synka till
-// MySales (GHL) med ett klick, öppna ärendet direkt, redigera inline, radera.
+// "Nya leads" (fd Lobbyn) — inflödet av nya kontakter från LinkedIn/IG/FB/mail/webb
+// INNAN de blir affärer i pipelinen. Bygg på varje case med bild/röst/text, få
+// AI-svarsförslag i din röst, öppna chatten direkt, och synka till MySales.
 
 type Status = "new" | "contacted" | "dialog" | "ready" | "passed";
 type Platform = "linkedin" | "fb" | "ig" | "email" | "phone" | "web" | "other";
@@ -30,6 +31,7 @@ interface Contact {
   email: string | null;
   phone: string | null;
   notes: string | null;
+  profile_url: string | null;
   ghl_contact_id: string | null;
 }
 
@@ -42,12 +44,17 @@ const STATUS: Record<Status, { label: string; chip: string }> = {
 };
 const STATUS_ORDER: Status[] = ["new", "contacted", "dialog", "ready", "passed"];
 
-const PLATFORMS: { value: Platform; label: string }[] = [
-  { value: "linkedin", label: "LinkedIn" }, { value: "fb", label: "Facebook" },
-  { value: "ig", label: "Instagram" }, { value: "email", label: "E-post" },
-  { value: "phone", label: "Telefon" }, { value: "web", label: "Webb" }, { value: "other", label: "Annat" },
+const PLATFORMS: { value: Platform; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { value: "linkedin", label: "LinkedIn", icon: LinkedinIcon },
+  { value: "fb", label: "Facebook", icon: FacebookIcon },
+  { value: "ig", label: "Instagram", icon: InstagramIcon },
+  { value: "email", label: "E-post", icon: Mail },
+  { value: "phone", label: "Telefon", icon: Phone },
+  { value: "web", label: "Hemsida", icon: MonitorSmartphone },
+  { value: "other", label: "Annat", icon: Globe },
 ];
-const PLATFORM_LABEL: Record<string, string> = Object.fromEntries(PLATFORMS.map((p) => [p.value, p.label]));
+const PLATFORM_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> =
+  Object.fromEntries(PLATFORMS.map((p) => [p.value, { label: p.label, icon: p.icon }]));
 
 // ── Web Speech (sv-SE) typer ─────────────────────────────────────────────────
 interface ISpeechRecognition extends EventTarget {
@@ -106,7 +113,19 @@ function gruppera(cs: Contact[]) {
   return { forsenat, idag, kommande, utanDatum };
 }
 
-export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor?: string }) {
+// Direktlänk till chatt/profil. Prioritet: sparad profil-URL → plattforms-fallback.
+function chattLank(c: Contact): { url: string; label: string } | null {
+  const url = (c.profile_url || "").trim();
+  if (url) return { url: url.startsWith("http") ? url : `https://${url}`, label: "Öppna chatt" };
+  if (c.platform === "email" && c.email) return { url: `mailto:${c.email}`, label: "Skriv mejl" };
+  if (c.platform === "phone" && c.phone) return { url: `tel:${c.phone}`, label: "Ring" };
+  if (c.email) return { url: `mailto:${c.email}`, label: "Skriv mejl" };
+  // LinkedIn: sök på namnet om ingen profil-URL sparats.
+  if (c.platform === "linkedin") return { url: `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(c.name)}`, label: "Sök på LinkedIn" };
+  return null;
+}
+
+export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor?: string }) {
   const [loading, setLoading] = useState(true);
   const [linked, setLinked] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -120,12 +139,18 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
   const [extraherar, setExtraherar] = useState(false);
   const [pastedImg, setPastedImg] = useState<string | null>(null);
 
-  // Röst
+  // Röst (kontextmedveten: oppenId satt → uppdatera det kortet, annars ny kontakt)
   const [lyssnar, setLyssnar] = useState(false);
   const [transkript, setTranskript] = useState("");
   const [rostAnalys, setRostAnalys] = useState(false);
-  const [oppenId, setOppenId] = useState<string | null>(null); // kontext för röst-uppdatering
+  const [oppenId, setOppenId] = useState<string | null>(null);
+  const oppenIdRef = useRef<string | null>(null);
   const recRef = useRef<ISpeechRecognition | null>(null);
+
+  // Per-kort "bygg på" (bild) + svarsförslag
+  const [byggerId, setByggerId] = useState<string | null>(null); // kort som just nu berikas via bild
+  const [forslag, setForslag] = useState<Record<string, { ton: string; text: string }[]>>({});
+  const [forslagLoad, setForslagLoad] = useState<string | null>(null);
 
   const visaToast = useCallback((text: string, typ: "ok" | "fel" = "ok") => {
     setToast({ text, typ });
@@ -146,6 +171,7 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
   }, []);
 
   useEffect(() => { ladda(); }, [ladda]);
+  useEffect(() => { oppenIdRef.current = oppenId; }, [oppenId]);
 
   // ── CRUD ────────────────────────────────────────────────────────────────────
   const spara = useCallback(async (id: string, changes: Partial<Contact>) => {
@@ -200,46 +226,67 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
         setContacts((cs) => cs.map((x) => (x.id === c.id ? { ...x, status: "passed", ghl_contact_id: d.ghlContactId } : x)));
         visaToast(`${c.name} är nu i MySales`);
         if (d.mysalesUrl) window.open(d.mysalesUrl, "_blank");
-      } else {
-        visaToast(d.error || "Synk misslyckades", "fel");
-      }
+      } else visaToast(d.error || "Synk misslyckades", "fel");
     } catch { visaToast("Nätverksfel vid synk", "fel"); }
     finally { setSparar(null); }
   }, [visaToast]);
 
   const oppnaIMysales = useCallback((c: Contact) => {
-    if (c.ghl_contact_id && mysalesBase) {
-      window.open(`${mysalesBase}/customers/detail/${c.ghl_contact_id}`, "_blank");
-    }
+    if (c.ghl_contact_id && mysalesBase) window.open(`${mysalesBase}/customers/detail/${c.ghl_contact_id}`, "_blank");
   }, [mysalesBase]);
 
-  // ── Bild → kontakt ────────────────────────────────────────────────────────────
+  // ── Bild → NY kontakt (i formuläret) ─────────────────────────────────────────
   const extrahera = useCallback(async (dataUrl: string) => {
-    setExtraherar(true);
-    setPastedImg(dataUrl);
+    setExtraherar(true); setPastedImg(dataUrl);
     try {
       const r = await fetch("/api/lobby/extract", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: dataUrl }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: dataUrl }),
       });
       if (!r.ok) throw new Error();
       const d = await r.json();
       const c = await skapa({
         name: d.name || "Okänd kontakt", company: d.company || "", title: d.title || "",
         platform: (PLATFORMS.find((p) => p.value === d.platform)?.value) || "linkedin",
-        email: d.email || "", phone: d.phone || "", last_message: d.last_message || "",
-        next_step: d.next_step || "", next_contact_date: d.next_contact_date || "", notes: d.notes || "",
+        email: d.email || "", phone: d.phone || "", profile_url: d.profile_url || "",
+        last_message: d.last_message || "", next_step: d.next_step || "",
+        next_contact_date: d.next_contact_date || "", notes: d.notes || "",
       });
       if (c) { visaToast(`${c.name} lades till`); setVisaForm(false); setPastedImg(null); }
     } catch { visaToast("Kunde inte läsa bilden", "fel"); }
     finally { setExtraherar(false); }
   }, [skapa, visaToast]);
 
-  const bildFil = useCallback((file: File) => {
+  const bildFilNy = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (ev) => { const url = ev.target?.result as string; if (url) extrahera(url); };
     reader.readAsDataURL(file);
   }, [extrahera]);
+
+  // ── Bild → BYGG PÅ befintligt kort (fyll tomma fält, uppdatera, append notes) ──
+  const byggPaBild = useCallback(async (id: string, dataUrl: string) => {
+    const c = contacts.find((x) => x.id === id);
+    if (!c) return;
+    setByggerId(id);
+    try {
+      const r = await fetch("/api/lobby/extract", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: dataUrl }),
+      });
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      const changes: Partial<Contact> = { last_contact_at: new Date().toISOString() };
+      const fyllTomt = (k: "company" | "title" | "email" | "phone" | "profile_url") => {
+        if (d[k] && !c[k]) (changes as Record<string, unknown>)[k] = d[k];
+      };
+      fyllTomt("company"); fyllTomt("title"); fyllTomt("email"); fyllTomt("phone"); fyllTomt("profile_url");
+      if (d.last_message) changes.last_message = d.last_message;
+      if (d.next_step) changes.next_step = d.next_step;
+      if (d.next_contact_date) changes.next_contact_date = d.next_contact_date;
+      if (d.notes) changes.notes = c.notes ? `${c.notes}\n---\n${d.notes}` : d.notes;
+      await spara(id, changes);
+      visaToast(`${c.name} uppdaterad från bild`);
+    } catch { visaToast("Kunde inte läsa bilden", "fel"); }
+    finally { setByggerId(null); }
+  }, [contacts, spara, visaToast]);
 
   // ── Röst ────────────────────────────────────────────────────────────────────
   const parseNyRost = useCallback(async (t: string) => {
@@ -292,9 +339,10 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
     finally { setRostAnalys(false); setTranskript(""); }
   }, [contacts, spara, visaToast]);
 
-  const startaRost = useCallback(() => {
+  const startaRost = useCallback((forKortId?: string) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { visaToast("Röst stöds ej — använd Chrome eller Edge", "fel"); return; }
+    if (forKortId !== undefined) { setOppenId(forKortId); oppenIdRef.current = forKortId; }
     const rec = new SR();
     rec.lang = "sv-SE"; rec.continuous = true; rec.interimResults = true;
     let slutText = "";
@@ -310,7 +358,8 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
     rec.onend = () => {
       setLyssnar(false);
       const t = slutText.trim();
-      if (t) { if (oppenId) rostUppdatera(t, oppenId); else parseNyRost(t); }
+      const mål = oppenIdRef.current;
+      if (t) { if (mål) rostUppdatera(t, mål); else parseNyRost(t); }
       else setTranskript("");
     };
     rec.onerror = (e: Event) => {
@@ -322,9 +371,23 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
     };
     recRef.current = rec;
     rec.start();
-  }, [oppenId, parseNyRost, rostUppdatera, visaToast]);
+  }, [parseNyRost, rostUppdatera, visaToast]);
 
   const stoppaRost = useCallback(() => recRef.current?.stop(), []);
+
+  // ── Svarsförslag ──────────────────────────────────────────────────────────────
+  const foreslaSvar = useCallback(async (id: string) => {
+    setForslagLoad(id);
+    try {
+      const r = await fetch("/api/lobby/suggest-reply", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
+      });
+      const d = await r.json();
+      if (r.ok && d.suggestions?.length) setForslag((f) => ({ ...f, [id]: d.suggestions }));
+      else visaToast(d.error || "Inga förslag kunde skapas", "fel");
+    } catch { visaToast("Kunde inte hämta förslag", "fel"); }
+    finally { setForslagLoad(null); }
+  }, [visaToast]);
 
   // ── Vyer ──────────────────────────────────────────────────────────────────────
   const aktiva = useMemo(() => contacts.filter((c) => c.status !== "passed"), [contacts]);
@@ -338,10 +401,13 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
 
   const oppetNamn = oppenId ? contacts.find((c) => c.id === oppenId)?.name?.split(" ")[0] : null;
 
-  const kortProps = (c: Contact) => ({
+  const kortProps = (c: Contact): React.ComponentProps<typeof Rad> => ({
     c, spara, sparar: sparar === c.id, radera, synka, oppnaIMysales,
     kanOppna: !!(c.ghl_contact_id && mysalesBase),
     oppen: oppenId === c.id, setOppen: (v: boolean) => setOppenId(v ? c.id : null),
+    startaRost, byggPaBild, bygger: byggerId === c.id,
+    foreslaSvar, forslag: forslag[c.id], forslagLoad: forslagLoad === c.id,
+    rostAktivForDetta: (lyssnar || rostAnalys) && oppenId === c.id,
   });
 
   return (
@@ -353,16 +419,16 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
         <div className="relative flex items-start justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold text-white/80 mb-2">
-              <Users className="w-3.5 h-3.5" /> Lobbyn
+              <Users className="w-3.5 h-3.5" /> Nya leads
             </div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Dina kontakter före affären</h1>
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Ditt inflöde av nya kunder</h1>
             <p className="text-white/80 mt-1.5 text-sm max-w-lg">
-              Klistra in, prata in eller skriv. När kontakten är redo — synka till MySales med ett klick.
+              Kontakter från LinkedIn, Instagram, Facebook, mejl och webben — bygg på varje case, få svarsförslag, och skicka vidare till pipelinen.
             </p>
           </div>
           {linked && (
             <div className="hidden sm:flex items-center gap-2">
-              <button onClick={lyssnar ? stoppaRost : startaRost} disabled={rostAnalys}
+              <button onClick={lyssnar ? stoppaRost : () => startaRost(undefined)} disabled={rostAnalys}
                 title={oppetNamn ? `Tala in → uppdatera ${oppetNamn}` : "Tala in en ny kontakt"}
                 className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-2 transition-colors ${
                   lyssnar ? "bg-red-500/90 text-white" : "bg-white/15 hover:bg-white/25 text-white/90"
@@ -373,7 +439,7 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
               </button>
               <button onClick={() => setVisaForm((v) => !v)}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-2 bg-white text-gray-900 hover:bg-white/90 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Lägg till
+                <Plus className="w-3.5 h-3.5" /> Nytt lead
               </button>
             </div>
           )}
@@ -400,12 +466,11 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
         </div>
       )}
 
-      {/* Lägg till-form */}
+      {/* Nytt lead-form */}
       {visaForm && linked && (
-        <LaggTillForm
+        <NyttLeadForm
           extraherar={extraherar} pastedImg={pastedImg} setPastedImg={setPastedImg}
-          onBild={bildFil} onExtrahera={extrahera}
-          onManuell={async (f) => { const c = await skapa(f); if (c) { visaToast(`${c.name} lades till`); setVisaForm(false); } }}
+          onBild={bildFilNy} onManuell={async (f) => { const c = await skapa(f); if (c) { visaToast(`${c.name} lades till`); setVisaForm(false); } }}
           onAvbryt={() => { setVisaForm(false); setPastedImg(null); }}
         />
       )}
@@ -414,9 +479,9 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
         <div className="flex items-center gap-2 text-gray-500 py-10"><Loader2 className="w-4 h-4 animate-spin" /> Laddar…</div>
       ) : !linked ? (
         <TomRuta ikon={Building2} titel="Ingen koppling än"
-          text="Lobbyn visas när klienten är kopplad till MySales Coach via sin GHL-location." />
+          text="Nya leads visas när klienten är kopplad till MySales Coach via sin GHL-location." />
       ) : aktiva.length === 0 && passade.length === 0 ? (
-        <TomRuta ikon={Users} titel="Inga kontakter än" text="Klistra in en bild, prata in eller klicka Lägg till." />
+        <TomRuta ikon={Users} titel="Inga leads än" text="Klistra in en skärmbild, prata in eller klicka Nytt lead." />
       ) : (
         <>
           <div className="flex flex-wrap gap-2">
@@ -435,11 +500,9 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
           {passade.length > 0 && (
             <details className="rounded-2xl border border-gray-100 bg-white shadow-sm">
               <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-gray-600 hover:text-gray-900">
-                Passade till MySales ({passade.length})
+                Skickade till MySales ({passade.length})
               </summary>
-              <div className="px-3 pb-3 space-y-2">
-                {passade.map((c) => <Rad key={c.id} {...kortProps(c)} />)}
-              </div>
+              <div className="px-3 pb-3 space-y-2">{passade.map((c) => <Rad key={c.id} {...kortProps(c)} />)}</div>
             </details>
           )}
         </>
@@ -449,9 +512,7 @@ export default function LobbyClient({ primaryColor = "#6366f1" }: { primaryColor
         <div onClick={() => setToast(null)}
           className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-sm max-w-sm text-center cursor-pointer border ${
             toast.typ === "fel" ? "bg-white border-red-200 text-red-700" : "bg-gray-900 border-gray-900 text-white"
-          }`}>
-          {toast.text}
-        </div>
+          }`}>{toast.text}</div>
       )}
     </div>
   );
@@ -487,14 +548,13 @@ function FilterKnapp({ aktiv, onClick, label }: { aktiv: boolean; onClick: () =>
   );
 }
 
-function LaggTillForm({
-  extraherar, pastedImg, setPastedImg, onBild, onExtrahera, onManuell, onAvbryt,
+function NyttLeadForm({
+  extraherar, pastedImg, setPastedImg, onBild, onManuell, onAvbryt,
 }: {
   extraherar: boolean;
   pastedImg: string | null;
   setPastedImg: (v: string | null) => void;
   onBild: (f: File) => void;
-  onExtrahera: (dataUrl: string) => void;
   onManuell: (f: Partial<Contact> & { name: string }) => void;
   onAvbryt: () => void;
 }) {
@@ -538,7 +598,7 @@ function LaggTillForm({
     <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-          <Sparkles className="w-4 h-4" style={{ color: "#7c3aed" }} /> Klistra in bild → Gemini skapar kontakten direkt
+          <Sparkles className="w-4 h-4" style={{ color: "#7c3aed" }} /> Klistra in skärmbild → Gemini skapar leadet direkt
         </div>
         <button onClick={klistraIn} className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900">
           <ClipboardPaste className="w-3.5 h-3.5" /> Klistra in
@@ -562,9 +622,8 @@ function LaggTillForm({
         <label onDrop={drop} onDragOver={(e) => e.preventDefault()}
           className="flex flex-col items-center gap-2 p-5 rounded-xl border border-dashed border-gray-300 hover:border-gray-400 cursor-pointer text-gray-500 transition-colors">
           <ImageIcon className="w-5 h-5" />
-          <span className="text-xs text-center">Dra &amp; släpp skärmbild, mejl, visitkort eller konversation</span>
-          <input type="file" accept="image/*" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) onBild(f); }} />
+          <span className="text-xs text-center">Dra &amp; släpp skärmbild från LinkedIn, mejl, Instagram, visitkort…</span>
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onBild(f); }} />
         </label>
       )}
 
@@ -579,7 +638,7 @@ function LaggTillForm({
       <div className="grid grid-cols-2 gap-3">
         <Falt etikett="Företag" varde={company} onChange={setCompany} placeholder="Företagsnamn…" />
         <label className="block">
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400">Plattform</span>
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400">Kanal</span>
           <select value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-800 outline-none focus:border-gray-400 bg-white">
             {PLATFORMS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
@@ -587,16 +646,14 @@ function LaggTillForm({
         </label>
         <Falt etikett="Nästa steg" varde={nextStep} onChange={setNextStep} placeholder="T.ex. Skicka offert…" />
         <Falt etikett="Nästa kontakt" varde={nextDate} onChange={setNextDate} typ="date" />
-        <div className="col-span-2">
-          <Falt etikett="Anteckningar" varde={notes} onChange={setNotes} placeholder="Fritext…" />
-        </div>
+        <div className="col-span-2"><Falt etikett="Anteckningar" varde={notes} onChange={setNotes} placeholder="Fritext…" /></div>
       </div>
 
       <div className="flex gap-2 justify-end">
         <button onClick={onAvbryt} className="text-sm font-medium text-gray-500 hover:text-gray-900 px-3 py-1.5">Avbryt</button>
         <button onClick={spara} disabled={!rawText.trim() || extraherar}
           className="inline-flex items-center gap-1.5 text-sm font-semibold bg-gray-900 text-white rounded-lg px-3 py-1.5 disabled:opacity-40">
-          <Plus className="w-3.5 h-3.5" /> Spara kontakt
+          <Plus className="w-3.5 h-3.5" /> Spara lead
         </button>
       </div>
     </div>
@@ -626,9 +683,7 @@ function Grupp({
   );
 }
 
-function Rad({
-  c, spara, sparar, radera, synka, oppnaIMysales, kanOppna, oppen, setOppen,
-}: {
+function Rad(props: {
   c: Contact;
   spara: (id: string, ch: Partial<Contact>) => void;
   sparar: boolean;
@@ -638,16 +693,48 @@ function Rad({
   kanOppna: boolean;
   oppen: boolean;
   setOppen: (v: boolean) => void;
+  startaRost: (id: string) => void;
+  byggPaBild: (id: string, dataUrl: string) => void;
+  bygger: boolean;
+  foreslaSvar: (id: string) => void;
+  forslag?: { ton: string; text: string }[];
+  forslagLoad: boolean;
+  rostAktivForDetta: boolean;
 }) {
+  const {
+    c, spara, sparar, radera, synka, oppnaIMysales, kanOppna, oppen, setOppen,
+    startaRost, byggPaBild, bygger, foreslaSvar, forslag, forslagLoad, rostAktivForDetta,
+  } = props;
   const [visaStatus, setVisaStatus] = useState(false);
   const [bekraftaRadera, setBekraftaRadera] = useState(false);
+  const [kopierad, setKopierad] = useState<number | null>(null);
   const st = STATUS[c.status] || STATUS.new;
   const dagar = dagarSedan(c.last_contact_at);
   const diff = datumDiff(c.next_contact_date);
+  const meta = PLATFORM_META[c.platform || "other"] || PLATFORM_META.other;
+  const KanalIkon = meta.icon;
+  const chatt = chattLank(c);
+
+  const bildInput = (file?: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { const url = ev.target?.result as string; if (url) byggPaBild(c.id, url); };
+    reader.readAsDataURL(file);
+  };
+  const kortPaste = (e: React.ClipboardEvent) => {
+    const img = Array.from(e.clipboardData.items).find((i) => i.type.startsWith("image/"));
+    if (img) { e.preventDefault(); bildInput(img.getAsFile()); }
+  };
+  const kopiera = async (text: string, i: number) => {
+    try { await navigator.clipboard.writeText(text); setKopierad(i); setTimeout(() => setKopierad(null), 1500); } catch { /* noop */ }
+  };
 
   return (
     <div className={`rounded-xl border bg-white shadow-sm overflow-hidden ${oppen ? "border-gray-300 ring-1 ring-gray-200" : "border-gray-100"}`}>
       <div className="flex items-center gap-3 px-4 py-3">
+        <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0" title={meta.label}>
+          <KanalIkon className="w-4 h-4 text-gray-500" />
+        </div>
         <button onClick={() => setOppen(!oppen)} className="flex-1 min-w-0 text-left">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-gray-900 truncate">{c.name}</span>
@@ -655,7 +742,7 @@ function Rad({
             {sparar && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
           </div>
           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
-            {c.platform && <span>{PLATFORM_LABEL[c.platform] || c.platform}</span>}
+            <span>{meta.label}</span>
             {dagar !== null && <span className={dagar >= 5 ? "text-red-500 font-medium" : ""}>Kontakt {dagar}d sedan</span>}
             {c.next_contact_date && (
               <span className={diff !== null && diff < 0 ? "text-red-500 font-medium" : diff === 0 ? "text-amber-600 font-medium" : ""}>
@@ -664,6 +751,14 @@ function Rad({
             )}
           </div>
         </button>
+
+        {chatt && (
+          <a href={chatt.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
+            title={chatt.label}
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg px-2.5 py-1 hover:bg-gray-50 flex-shrink-0">
+            <ExternalLink className="w-3.5 h-3.5" /> {chatt.label}
+          </a>
+        )}
 
         <div className="relative flex-shrink-0">
           <button onClick={() => setVisaStatus(!visaStatus)}
@@ -687,11 +782,54 @@ function Rad({
       </div>
 
       {oppen && (
-        <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-3">
+        <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-3" onPaste={kortPaste}>
+          {/* Bygg på-verktyg */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mr-1">Bygg på detta case:</span>
+            <label className={`inline-flex items-center gap-1.5 text-xs font-medium border rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors ${bygger ? "opacity-50 border-gray-200" : "border-gray-200 text-gray-700 hover:bg-white"}`}>
+              {bygger ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+              Klistra in bild
+              <input type="file" accept="image/*" className="hidden" disabled={bygger}
+                onChange={(e) => bildInput(e.target.files?.[0])} />
+            </label>
+            <button onClick={() => startaRost(c.id)} disabled={rostAktivForDetta}
+              className={`inline-flex items-center gap-1.5 text-xs font-medium border rounded-lg px-2.5 py-1.5 transition-colors ${rostAktivForDetta ? "border-red-200 text-red-600 bg-red-50" : "border-gray-200 text-gray-700 hover:bg-white"}`}>
+              {rostAktivForDetta ? <Radio className="w-3.5 h-3.5 animate-pulse" /> : <Mic className="w-3.5 h-3.5" />} Prata in
+            </button>
+            <button onClick={() => foreslaSvar(c.id)} disabled={forslagLoad}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-2.5 py-1.5 disabled:opacity-50"
+              style={{ background: "#7c3aed" }}>
+              {forslagLoad ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />} Förslag på svar
+            </button>
+          </div>
+
+          {/* Svarsförslag */}
+          {forslag && forslag.length > 0 && (
+            <div className="space-y-2">
+              {forslag.map((s, i) => (
+                <div key={i} className="rounded-lg border border-violet-100 bg-violet-50/50 p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-violet-700">{s.ton}</span>
+                    <button onClick={() => kopiera(s.text, i)} className="inline-flex items-center gap-1 text-xs text-violet-700 hover:underline">
+                      {kopierad === i ? <><Check className="w-3.5 h-3.5" /> Kopierat</> : <><Copy className="w-3.5 h-3.5" /> Kopiera</>}
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{s.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Kontaktuppgifter + chatt (mobil) */}
           <div className="flex flex-wrap gap-4 text-sm">
             {c.email && <a href={`mailto:${c.email}`} className="inline-flex items-center gap-1.5 text-gray-700 hover:underline"><Mail className="w-4 h-4 text-gray-400" /> {c.email}</a>}
             {c.phone && <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 font-semibold text-gray-800 hover:underline"><Phone className="w-4 h-4 text-gray-400" /> {c.phone}</a>}
             {c.title && <span className="text-gray-500">{c.title}</span>}
+            {chatt && (
+              <a href={chatt.url} target="_blank" rel="noreferrer" className="sm:hidden inline-flex items-center gap-1.5 text-gray-700 hover:underline">
+                <ExternalLink className="w-4 h-4 text-gray-400" /> {chatt.label}
+              </a>
+            )}
           </div>
 
           {c.last_message && (
@@ -704,6 +842,9 @@ function Rad({
           <div className="grid sm:grid-cols-2 gap-3">
             <Falt etikett="Nästa steg" varde={c.next_step || ""} onChange={(v) => spara(c.id, { next_step: v })} placeholder="Vad ska hända härnäst?" commitOnBlur />
             <Falt etikett="Nästa kontakt" varde={c.next_contact_date || ""} onChange={(v) => spara(c.id, { next_contact_date: v })} typ="date" commitOnBlur />
+            <div className="sm:col-span-2">
+              <Falt etikett="Chatt-/profillänk" varde={c.profile_url || ""} onChange={(v) => spara(c.id, { profile_url: v })} placeholder="linkedin.com/in/… eller hemsida" commitOnBlur />
+            </div>
           </div>
 
           {c.notes && (
@@ -717,9 +858,8 @@ function Rad({
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {c.status !== "passed" ? (
               <button onClick={() => synka(c)} disabled={sparar}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-3 py-1.5 disabled:opacity-40"
-                style={{ background: "#059669" }}>
-                <ArrowUpCircle className="w-3.5 h-3.5" /> Synka till MySales
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-3 py-1.5 disabled:opacity-40" style={{ background: "#059669" }}>
+                <ArrowUpCircle className="w-3.5 h-3.5" /> Skicka till MySales
               </button>
             ) : (
               <>
@@ -736,13 +876,12 @@ function Rad({
               </>
             )}
             {bekraftaRadera ? (
-              <span className="inline-flex items-center gap-1.5 text-xs">
+              <span className="inline-flex items-center gap-1.5 text-xs ml-auto">
                 <button onClick={() => radera(c.id)} className="font-semibold text-red-600 hover:underline">Radera?</button>
                 <button onClick={() => setBekraftaRadera(false)} className="text-gray-400 hover:text-gray-600">avbryt</button>
               </span>
             ) : (
-              <button onClick={() => setBekraftaRadera(true)}
-                className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-600 ml-auto">
+              <button onClick={() => setBekraftaRadera(true)} className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-600 ml-auto">
                 <Trash2 className="w-3.5 h-3.5" /> Radera
               </button>
             )}

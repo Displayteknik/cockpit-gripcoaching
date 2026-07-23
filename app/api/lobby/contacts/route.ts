@@ -14,11 +14,11 @@ export const runtime = "nodejs";
 const FIELDS =
   "id, user_id, name, company, title, platform, status, last_message, sentiment, " +
   "next_step, next_contact_date, last_contact_at, email, phone, notes, extra_notes, " +
-  "ghl_contact_id, created_at, updated_at";
+  "profile_url, ghl_contact_id, created_at, updated_at";
 
 const WRITABLE = [
   "name", "company", "title", "platform", "status", "last_message",
-  "sentiment", "next_step", "next_contact_date", "email", "phone", "notes", "last_contact_at",
+  "sentiment", "next_step", "next_contact_date", "email", "phone", "notes", "last_contact_at", "profile_url",
 ];
 
 export async function GET() {
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     status: "new",
     company: "", title: "", platform: "other", last_message: "", sentiment: 0,
     next_step: "", next_contact_date: "", email: "", phone: "", notes: "", extra_notes: [],
-    last_contact_at: now, created_at: now, updated_at: now,
+    profile_url: "", last_contact_at: now, created_at: now, updated_at: now,
   };
   for (const k of WRITABLE) if (k in body) row[k] = body[k];
   row.name = String(body.name).trim();

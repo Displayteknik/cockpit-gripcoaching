@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import LobbyClient from "@/components/LobbyClient";
+import LeadsClient from "@/components/LeadsClient";
 
-// Admin-vyn av Lobbyn (porterad från MySales Coach). Följer klientväljaren via
+// Admin-vyn av "Nya leads" (fd Lobbyn). Följer klientväljaren via
 // /api/lobby/contacts → getActiveClientId → identitetsbryggan.
-export default function DashboardLobby() {
+export default function DashboardLeads() {
   const [primary, setPrimary] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -15,5 +15,5 @@ export default function DashboardLobby() {
       .catch(() => {});
   }, []);
 
-  return <LobbyClient primaryColor={primary} />;
+  return <LeadsClient primaryColor={primary} />;
 }
