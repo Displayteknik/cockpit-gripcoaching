@@ -30,16 +30,36 @@ export async function GET() {
   if (!ctx.ids.length) return NextResponse.json({ linked: false, contacts: [] });
 
   const sb = supabaseService();
-  const { data, error } = await sb
-    .from("lobby_contacts")
-    .select(FIELDS)
-    .in("user_id", ctx.ids)
-    .order("updated_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const [lobbyRes, oppRes] = await Promise.all([
+    sb.from("lobby_contacts").select(FIELDS).in("user_id", ctx.ids).order("updated_at", { ascending: false }),
+    // Pipelinen (fokus_opportunities-spegeln) → en kontakt som redan är en affär
+    // hör hemma i Fokus idag, INTE i Nya leads. Matcha på ghl_contact_id (säkrast)
+    // + normaliserat namn (fokus_opportunities har varken email eller telefon).
+    sb.from("fokus_opportunities").select("kontakt, ghl_contact_id, steg_namn, status").in("tenant_id", ctx.ids),
+  ]);
+  if (lobbyRes.error) return NextResponse.json({ error: lobbyRes.error.message }, { status: 500 });
+
+  const norm = (s: string | null | undefined) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const oppById = new Map<string, string>();   // ghl_contact_id → steg_namn
+  const oppByName = new Map<string, string>();  // normaliserat namn → steg_namn
+  for (const o of (oppRes.data as { kontakt: string | null; ghl_contact_id: string | null; steg_namn: string | null; status: string | null }[] | null) || []) {
+    if (o.status && o.status !== "open") continue; // bara aktiva affärer räknas som "i pipelinen"
+    if (o.ghl_contact_id) oppById.set(o.ghl_contact_id, o.steg_namn || "");
+    if (o.kontakt) oppByName.set(norm(o.kontakt), o.steg_namn || "");
+  }
+
+  // Berika varje lead med pipeline_stage (null = inte i pipelinen → hör hemma i Nya leads).
+  const contacts = ((lobbyRes.data as unknown as Record<string, unknown>[] | null) || []).map((c) => {
+    const stage =
+      (c.ghl_contact_id ? oppById.get(c.ghl_contact_id as string) : undefined) ??
+      oppByName.get(norm(c.name as string)) ??
+      null;
+    return { ...c, pipeline_stage: stage };
+  });
 
   // White-label GHL-bas för "Öppna i MySales"-deeplänk (customers/detail per kontakt).
   const mysalesBase = ctx.locationId ? `https://app.mysales.se/location/${ctx.locationId}` : null;
-  return NextResponse.json({ linked: true, contacts: data || [], mysalesBase });
+  return NextResponse.json({ linked: true, contacts, mysalesBase });
 }
 
 // POST — skapa en ny kontakt. Skrivs till den kanoniska coach_user:n (första),

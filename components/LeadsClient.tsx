@@ -33,6 +33,7 @@ interface Contact {
   notes: string | null;
   profile_url: string | null;
   ghl_contact_id: string | null;
+  pipeline_stage?: string | null; // satt om kontakten redan är en affär i pipelinen (Fokus idag)
 }
 
 const STATUS: Record<Status, { label: string; chip: string }> = {
@@ -390,7 +391,9 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
   }, [visaToast]);
 
   // ── Vyer ──────────────────────────────────────────────────────────────────────
-  const aktiva = useMemo(() => contacts.filter((c) => c.status !== "passed"), [contacts]);
+  // Kontakter som redan är affärer i pipelinen hör hemma i Fokus idag, inte här.
+  const iPipeline = useMemo(() => contacts.filter((c) => c.status !== "passed" && c.pipeline_stage), [contacts]);
+  const aktiva = useMemo(() => contacts.filter((c) => c.status !== "passed" && !c.pipeline_stage), [contacts]);
   const passade = useMemo(() => contacts.filter((c) => c.status === "passed"), [contacts]);
   const synliga = useMemo(
     () => (filter === "alla" ? aktiva : aktiva.filter((c) => c.status === filter)),
@@ -480,22 +483,46 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
       ) : !linked ? (
         <TomRuta ikon={Building2} titel="Ingen koppling än"
           text="Nya leads visas när klienten är kopplad till MySales Coach via sin GHL-location." />
-      ) : aktiva.length === 0 && passade.length === 0 ? (
+      ) : aktiva.length === 0 && passade.length === 0 && iPipeline.length === 0 ? (
         <TomRuta ikon={Users} titel="Inga leads än" text="Klistra in en skärmbild, prata in eller klicka Nytt lead." />
       ) : (
         <>
-          <div className="flex flex-wrap gap-2">
-            <FilterKnapp aktiv={filter === "alla"} onClick={() => setFilter("alla")} label={`Alla (${aktiva.length})`} />
-            {STATUS_ORDER.filter((s) => s !== "passed").map((s) => {
-              const n = aktiva.filter((c) => c.status === s).length;
-              return n ? <FilterKnapp key={s} aktiv={filter === s} onClick={() => setFilter(s)} label={`${STATUS[s].label} (${n})`} /> : null;
-            })}
-          </div>
+          {/* Redan i pipelinen → hör hemma i Fokus idag, inte här */}
+          {iPipeline.length > 0 && (
+            <a href="/dashboard/fokus"
+              className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3.5 hover:bg-emerald-100 transition-colors">
+              <ArrowUpCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-emerald-900 text-sm">
+                  {iPipeline.length} {iPipeline.length === 1 ? "kontakt är" : "kontakter är"} redan affärer i pipelinen
+                </div>
+                <div className="text-xs text-emerald-700 mt-0.5 truncate">
+                  {iPipeline.slice(0, 3).map((c) => `${c.name}${c.pipeline_stage ? ` (${c.pipeline_stage})` : ""}`).join(", ")}
+                  {iPipeline.length > 3 ? " m.fl." : ""} — hantera i Fokus idag
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-emerald-700 whitespace-nowrap">Fokus idag →</span>
+            </a>
+          )}
+
+          {aktiva.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <FilterKnapp aktiv={filter === "alla"} onClick={() => setFilter("alla")} label={`Alla (${aktiva.length})`} />
+              {STATUS_ORDER.filter((s) => s !== "passed").map((s) => {
+                const n = aktiva.filter((c) => c.status === s).length;
+                return n ? <FilterKnapp key={s} aktiv={filter === s} onClick={() => setFilter(s)} label={`${STATUS[s].label} (${n})`} /> : null;
+              })}
+            </div>
+          )}
 
           <Grupp titel="Försenade" kontakter={grupper.forsenat} ton="röd" render={kortProps} />
           <Grupp titel="Att göra idag" kontakter={grupper.idag} ton="gul" render={kortProps} />
           <Grupp titel="Kommande" kontakter={grupper.kommande} ton="neutral" render={kortProps} />
           <Grupp titel="Utan datum" kontakter={grupper.utanDatum} ton="neutral" render={kortProps} />
+
+          {aktiva.length === 0 && iPipeline.length > 0 && (
+            <p className="text-sm text-gray-500 py-2">Inga nya leads att beta av — alla kontakter är redan på väg i pipelinen.</p>
+          )}
 
           {passade.length > 0 && (
             <details className="rounded-2xl border border-gray-100 bg-white shadow-sm">
