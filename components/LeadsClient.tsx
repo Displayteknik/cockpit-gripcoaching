@@ -2,13 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Users, Loader2, Mail, Phone, Building2, CalendarClock, AlertCircle,
-  CheckCircle2, ChevronDown, Plus, Mic, Radio, ImageIcon, ClipboardPaste, X,
+  Users, Loader2, Mail, Phone, Building2,
+  ChevronDown, ChevronRight, Plus, Mic, Radio, ImageIcon, ClipboardPaste, X,
   Sparkles, ExternalLink, ArrowUpCircle, Trash2, Undo2, MessageSquare, Copy, Check,
   Globe, MonitorSmartphone,
 } from "lucide-react";
 import { LinkedinIcon, FacebookIcon, InstagramIcon } from "@/lib/module-icons";
-import PipelineStegRad from "./PipelineStegRad";
 
 // "Nya leads" (fd Lobbyn) — inflödet av nya kontakter från LinkedIn/IG/FB/mail/webb
 // INNAN de blir affärer i pipelinen. Bygg på varje case med bild/röst/text, få
@@ -47,6 +46,22 @@ const STATUS: Record<Status, { label: string; chip: string }> = {
   passed: { label: "I MySales", chip: "bg-gray-100 text-gray-500 border-gray-200" },
 };
 const STATUS_ORDER: Status[] = ["new", "contacted", "dialog", "ready", "passed"];
+
+// Lead-pipelinen FÖRE MySales: egna steg med värme-nivå. När kontakten skickas till
+// MySales (status "passed" ELLER matchad affär i pipelinen) lämnar den den här vyn helt.
+const LEAD_STEG: { status: Status; label: string; varme: string; farg: string }[] = [
+  { status: "new", label: "Ny lead", varme: "Kall", farg: "#64748b" },
+  { status: "contacted", label: "Kontaktad", varme: "Ljummen", farg: "#3b82f6" },
+  { status: "dialog", label: "Svar / dialog", varme: "Varm", farg: "#f59e0b" },
+  { status: "ready", label: "Redo för MySales", varme: "Het", farg: "#ef4444" },
+];
+const VARME: Record<Status, { label: string; farg: string } | undefined> = {
+  new: { label: "Kall", farg: "#64748b" },
+  contacted: { label: "Ljummen", farg: "#3b82f6" },
+  dialog: { label: "Varm", farg: "#f59e0b" },
+  ready: { label: "Het", farg: "#ef4444" },
+  passed: undefined,
+};
 
 const PLATFORMS: { value: Platform; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: "linkedin", label: "LinkedIn", icon: LinkedinIcon },
@@ -103,20 +118,6 @@ function matchaNamn(cs: Contact[], namn: string): Contact | undefined {
     || cs.find((c) => c.name.toLowerCase().includes(n))
     || cs.find((c) => c.name.toLowerCase().startsWith(fornamn));
 }
-function gruppera(cs: Contact[]) {
-  const forsenat: Contact[] = [], idag: Contact[] = [], kommande: Contact[] = [], utanDatum: Contact[] = [];
-  for (const c of cs) {
-    const diff = datumDiff(c.next_contact_date);
-    if (diff === null) utanDatum.push(c);
-    else if (diff < 0) forsenat.push(c);
-    else if (diff === 0) idag.push(c);
-    else kommande.push(c);
-  }
-  const byDate = (a: Contact, b: Contact) => (a.next_contact_date || "").localeCompare(b.next_contact_date || "");
-  forsenat.sort(byDate); kommande.sort(byDate);
-  return { forsenat, idag, kommande, utanDatum };
-}
-
 // Direktlänk till chatt/profil. Prioritet: sparad profil-URL → plattforms-fallback.
 function chattLank(c: Contact): { url: string; label: string } | null {
   const url = (c.profile_url || "").trim();
@@ -394,16 +395,15 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
   }, [visaToast]);
 
   // ── Vyer ──────────────────────────────────────────────────────────────────────
-  // Kontakter som redan är affärer i pipelinen hör hemma i Fokus idag, inte här.
-  const iPipeline = useMemo(() => contacts.filter((c) => c.status !== "passed" && c.pipeline_stage), [contacts]);
-  const aktiva = useMemo(() => contacts.filter((c) => c.status !== "passed" && !c.pipeline_stage), [contacts]);
-  const passade = useMemo(() => contacts.filter((c) => c.status === "passed"), [contacts]);
+  // Lead-pipelinen FÖRE MySales. En kontakt som redan är i MySales (status "passed"
+  // ELLER matchad affär i pipelinen) lämnar vyn helt — den hör hemma i Fokus idag.
+  const iMysales = useMemo(() => contacts.filter((c) => c.status === "passed" || c.pipeline_stage), [contacts]);
+  const leads = useMemo(() => contacts.filter((c) => c.status !== "passed" && !c.pipeline_stage), [contacts]);
   const synliga = useMemo(
-    () => (filter === "alla" ? aktiva : aktiva.filter((c) => c.status === filter)),
-    [aktiva, filter],
+    () => (filter === "alla" ? leads : leads.filter((c) => c.status === filter)),
+    [leads, filter],
   );
-  const grupper = useMemo(() => gruppera(synliga), [synliga]);
-  const allaGrupper = useMemo(() => gruppera(aktiva), [aktiva]);
+  const varmaAntal = useMemo(() => leads.filter((c) => c.status === "dialog" || c.status === "ready").length, [leads]);
 
   const oppetNamn = oppenId ? contacts.find((c) => c.id === oppenId)?.name?.split(" ")[0] : null;
 
@@ -427,9 +427,9 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold text-white/80 mb-2">
               <Users className="w-3.5 h-3.5" /> Nya leads
             </div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Ditt inflöde av nya kunder</h1>
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Din lead-pipeline före MySales</h1>
             <p className="text-white/80 mt-1.5 text-sm max-w-lg">
-              Kontakter från LinkedIn, Instagram, Facebook, mejl och webben — bygg på varje case, få svarsförslag, och skicka vidare till pipelinen.
+              Nya kontakter från alla kanaler — följ hur varma de blir från kall lead till redo, och skicka vidare till MySales när det är läge.
             </p>
           </div>
           {linked && (
@@ -452,9 +452,9 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
         </div>
         {linked && !loading && (
           <div className="relative mt-6 grid grid-cols-3 gap-3 max-w-md">
-            <HeroKpi label="Aktiva" value={String(aktiva.length)} />
-            <HeroKpi label="Försenade" value={String(allaGrupper.forsenat.length)} />
-            <HeroKpi label="Idag" value={String(allaGrupper.idag.length)} />
+            <HeroKpi label="Leads i pipeline" value={String(leads.length)} />
+            <HeroKpi label="Varma" value={String(varmaAntal)} />
+            <HeroKpi label="I MySales" value={String(iMysales.length)} />
           </div>
         )}
       </div>
@@ -486,71 +486,47 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
       ) : !linked ? (
         <TomRuta ikon={Building2} titel="Ingen koppling än"
           text="Nya leads visas när klienten är kopplad till MySales Coach via sin GHL-location." />
-      ) : aktiva.length === 0 && passade.length === 0 && iPipeline.length === 0 ? (
+      ) : leads.length === 0 && iMysales.length === 0 ? (
         <TomRuta ikon={Users} titel="Inga leads än" text="Klistra in en skärmbild, prata in eller klicka Nytt lead." />
       ) : (
         <>
-          {/* Redan i pipelinen → visa var de står + flytta steg direkt (stegrad). */}
-          {iPipeline.length > 0 && (
-            <details className="rounded-2xl border border-emerald-200 bg-emerald-50/60 shadow-sm" open>
-              <summary className="cursor-pointer px-5 py-3.5 flex items-center gap-3">
-                <ArrowUpCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-emerald-900 text-sm">
-                    {iPipeline.length} {iPipeline.length === 1 ? "kontakt är" : "kontakter är"} redan affärer i pipelinen
-                  </div>
-                  <div className="text-xs text-emerald-700 mt-0.5">Se var de står och flytta steg direkt — eller öppna Fokus idag.</div>
+          {/* Lead-pipelinen som en tratt — kall → het. Klicka ett steg för att filtrera. */}
+          <LeadPipelineTratt
+            leads={leads}
+            filter={filter}
+            onFilter={(s) => setFilter(s)}
+          />
+
+          {/* Steg-sektioner (eller det filtrerade steget) */}
+          {(filter === "alla" ? LEAD_STEG : LEAD_STEG.filter((s) => s.status === filter)).map((steg) => {
+            const kontakter = synliga.filter((c) => c.status === steg.status);
+            if (!kontakter.length) return null;
+            return (
+              <section key={steg.status} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: steg.farg }} />
+                  <h2 className="font-display font-bold text-gray-900 text-lg">{steg.label}</h2>
+                  <span className="text-xs text-gray-400">({kontakter.length})</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${steg.farg}1a`, color: steg.farg }}>
+                    {steg.varme}
+                  </span>
                 </div>
-                <a href="/dashboard/fokus" onClick={(e) => e.stopPropagation()}
-                  className="text-xs font-semibold text-emerald-700 whitespace-nowrap hover:underline">Fokus idag →</a>
-              </summary>
-              <div className="px-3 pb-3 space-y-2">
-                {iPipeline.map((c) => (
-                  <div key={c.id} className="rounded-xl border border-emerald-100 bg-white p-3.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-900">{c.name}</span>
-                      {c.company && <span className="text-sm text-gray-500 truncate">· {c.company}</span>}
-                      {c.pipeline_stage && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{c.pipeline_stage}</span>
-                      )}
-                    </div>
-                    {c.steg_info && c.opp_id && c.steg_info.steg.length > 1 ? (
-                      <PipelineStegRad oppId={c.opp_id} stegInfo={c.steg_info} primaryColor={primaryColor} onMoved={ladda} />
-                    ) : (
-                      <p className="text-xs text-gray-400 mt-1.5">Öppna Fokus idag för att arbeta med affären.</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </details>
+                <div className="space-y-2">{kontakter.map((c) => <Rad key={c.id} {...kortProps(c)} />)}</div>
+              </section>
+            );
+          })}
+
+          {leads.length === 0 && (
+            <p className="text-sm text-gray-500 py-2">Inga leads i pipelinen just nu — nya kontakter dyker upp här.</p>
           )}
 
-          {aktiva.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <FilterKnapp aktiv={filter === "alla"} onClick={() => setFilter("alla")} label={`Alla (${aktiva.length})`} />
-              {STATUS_ORDER.filter((s) => s !== "passed").map((s) => {
-                const n = aktiva.filter((c) => c.status === s).length;
-                return n ? <FilterKnapp key={s} aktiv={filter === s} onClick={() => setFilter(s)} label={`${STATUS[s].label} (${n})`} /> : null;
-              })}
-            </div>
-          )}
-
-          <Grupp titel="Försenade" kontakter={grupper.forsenat} ton="röd" render={kortProps} />
-          <Grupp titel="Att göra idag" kontakter={grupper.idag} ton="gul" render={kortProps} />
-          <Grupp titel="Kommande" kontakter={grupper.kommande} ton="neutral" render={kortProps} />
-          <Grupp titel="Utan datum" kontakter={grupper.utanDatum} ton="neutral" render={kortProps} />
-
-          {aktiva.length === 0 && iPipeline.length > 0 && (
-            <p className="text-sm text-gray-500 py-2">Inga nya leads att beta av — alla kontakter är redan på väg i pipelinen.</p>
-          )}
-
-          {passade.length > 0 && (
-            <details className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-gray-600 hover:text-gray-900">
-                Skickade till MySales ({passade.length})
-              </summary>
-              <div className="px-3 pb-3 space-y-2">{passade.map((c) => <Rad key={c.id} {...kortProps(c)} />)}</div>
-            </details>
+          {/* Redan i MySales → hör hemma i Fokus idag. Bara en diskret rad, inga kort. */}
+          {iMysales.length > 0 && (
+            <a href="/dashboard/fokus"
+              className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 px-1 pt-2">
+              <ArrowUpCircle className="w-3.5 h-3.5" />
+              {iMysales.length} {iMysales.length === 1 ? "kontakt är" : "kontakter är"} redan i MySales-pipelinen — hantera i Fokus idag →
+            </a>
           )}
         </>
       )}
@@ -586,12 +562,46 @@ function TomRuta({ ikon: Ikon, titel, text }: { ikon: React.ComponentType<{ clas
   );
 }
 
-function FilterKnapp({ aktiv, onClick, label }: { aktiv: boolean; onClick: () => void; label: string }) {
+// Lead-pipelinen som en klickbar tratt: fyra steg med antal + värme-nivå, kall → het.
+function LeadPipelineTratt({
+  leads,
+  filter,
+  onFilter,
+}: {
+  leads: Contact[];
+  filter: Status | "alla";
+  onFilter: (s: Status | "alla") => void;
+}) {
   return (
-    <button onClick={onClick}
-      className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-        aktiv ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-      }`}>{label}</button>
+    <div className="flex items-stretch gap-1.5 overflow-x-auto pb-1">
+      {LEAD_STEG.map((steg, i) => {
+        const n = leads.filter((c) => c.status === steg.status).length;
+        const aktiv = filter === steg.status;
+        return (
+          <div key={steg.status} className="flex items-stretch flex-1 min-w-[120px]">
+            <button
+              onClick={() => onFilter(aktiv ? "alla" : steg.status)}
+              className="flex-1 rounded-xl border p-3 text-left transition-all hover:shadow-sm"
+              style={aktiv ? { borderColor: steg.farg, background: `${steg.farg}0f` } : { borderColor: "#f3f4f6", background: "#fff" }}
+              title={aktiv ? "Visa alla steg" : `Visa bara ${steg.label}`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-2xl font-bold tabular-nums leading-none" style={{ color: steg.farg }}>{n}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${steg.farg}1a`, color: steg.farg }}>
+                  {steg.varme}
+                </span>
+              </div>
+              <div className="text-[13px] font-semibold text-gray-800 mt-1.5 leading-tight">{steg.label}</div>
+            </button>
+            {i < LEAD_STEG.length - 1 && (
+              <div className="flex items-center px-0.5 text-gray-300 flex-shrink-0">
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -704,29 +714,6 @@ function NyttLeadForm({
         </button>
       </div>
     </div>
-  );
-}
-
-function Grupp({
-  titel, kontakter, ton, render,
-}: {
-  titel: string;
-  kontakter: Contact[];
-  ton: "röd" | "gul" | "neutral";
-  render: (c: Contact) => React.ComponentProps<typeof Rad>;
-}) {
-  if (!kontakter.length) return null;
-  const Ikon = ton === "röd" ? AlertCircle : ton === "gul" ? CalendarClock : CheckCircle2;
-  const färg = ton === "röd" ? "text-red-500" : ton === "gul" ? "text-amber-500" : "text-gray-400";
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Ikon className={`w-5 h-5 ${färg}`} />
-        <h2 className="font-display font-bold text-gray-900 text-lg">{titel}</h2>
-        <span className="text-xs text-gray-400">({kontakter.length})</span>
-      </div>
-      <div className="space-y-2">{kontakter.map((c) => <Rad key={c.id} {...render(c)} />)}</div>
-    </section>
   );
 }
 
