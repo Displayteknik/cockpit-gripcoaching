@@ -22,6 +22,7 @@ import {
   Phone,
   Mail,
   CheckCircle2,
+  FileText,
 } from "lucide-react";
 
 // ── Typer speglar /api/fokus/board (prioriteringsmotorn) ──
@@ -125,6 +126,11 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
   const attGoraKort = [...drag, ...avgor].filter((c) => attSet.has(c.id));
   const dragKvar = drag.filter((c) => !attSet.has(c.id));
   const avgorKvar = avgor.filter((c) => !attSet.has(c.id));
+  // "Väntar på offert": möte hållet men offert ej skickad (typ 'mote'). Lyfts UT ur
+  // Dagens drag/Avgör till egen sektion — nästa steg mot offert/order i pipelinen.
+  const vantarOffert = [...dragKvar, ...avgorKvar].filter((c) => c.typ === "mote");
+  const dragUtanOffert = dragKvar.filter((c) => c.typ !== "mote");
+  const avgorUtanOffert = avgorKvar.filter((c) => c.typ !== "mote");
 
   return (
     <div className="space-y-8">
@@ -219,20 +225,47 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
             </section>
           )}
 
+          {/* Väntar på offert — möte hållet, offert ej skickad. Nästa steg mot avslut. */}
+          {vantarOffert.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5" style={{ color: primaryColor }} />
+                <h2 className="font-display font-bold text-gray-900 text-lg">Väntar på offert</h2>
+                <span className="text-xs text-gray-400">({vantarOffert.length})</span>
+              </div>
+              <p className="text-xs text-gray-500 -mt-1">
+                Mötet är hållet men ingen offert skickad. Skicka offerten för att flytta affären mot order.
+              </p>
+              <div className="space-y-3">
+                {vantarOffert.map((c) => (
+                  <DragKort
+                    key={c.id}
+                    c={c}
+                    primaryColor={primaryColor}
+                    locationId={b.locationId}
+                    planering={planering[c.id]}
+                    onCoacha={() => setCoachKort(c)}
+                    onSaved={ladda}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Dagens drag */}
           <section className="space-y-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5" style={{ color: primaryColor }} />
               <h2 className="font-display font-bold text-gray-900 text-lg">Dagens drag</h2>
-              <span className="text-xs text-gray-400">({dragKvar.length})</span>
+              <span className="text-xs text-gray-400">({dragUtanOffert.length})</span>
             </div>
-            {dragKvar.length === 0 ? (
+            {dragUtanOffert.length === 0 ? (
               <div className="text-center text-sm text-gray-400 py-8 bg-white border border-gray-100 rounded-2xl">
                 Inga aktiva affärer som kräver ett drag just nu. Snyggt jobbat.
               </div>
             ) : (
               <div className="space-y-3">
-                {dragKvar.map((c) => (
+                {dragUtanOffert.map((c) => (
                   <DragKort
                     key={c.id}
                     c={c}
@@ -248,18 +281,18 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
           </section>
 
           {/* Avgör (kallnar) */}
-          {avgorKvar.length > 0 && (
+          {avgorUtanOffert.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center gap-2">
                 <Snowflake className="w-5 h-5 text-slate-400" />
                 <h2 className="font-display font-bold text-gray-900 text-lg">Avgör</h2>
-                <span className="text-xs text-gray-400">({avgorKvar.length})</span>
+                <span className="text-xs text-gray-400">({avgorUtanOffert.length})</span>
               </div>
               <p className="text-xs text-gray-500 -mt-1">
                 Legat still länge. Ge sista stöten eller släpp — de blockerar toppen.
               </p>
               <div className="space-y-3">
-                {avgorKvar.map((c) => (
+                {avgorUtanOffert.map((c) => (
                   <DragKort
                     key={c.id}
                     c={c}
@@ -503,6 +536,17 @@ function DragKort({
           <Sparkles className="w-4 h-4" /> Coacha affären
         </button>
         <PlaneraKnapp kort={c} primaryColor={primaryColor} onDone={onSaved} redanPlanerad={!!planering} />
+        {c.typ === "mote" && (
+          <a
+            href={`https://mysales-coach.netlify.app/offertmotorn?webblead=${encodeURIComponent(c.namn || c.foretag || "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-white border shadow-sm hover:bg-gray-50"
+            style={{ borderColor: `${primaryColor}55`, color: primaryColor }}
+          >
+            <FileText className="w-4 h-4" /> Skapa offert
+          </a>
+        )}
         {deeplink && (
           <a
             href={deeplink}
