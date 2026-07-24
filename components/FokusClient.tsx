@@ -62,6 +62,7 @@ interface Board {
   };
   planering?: Record<string, Planering>;
   attGoraIdag?: string[];
+  stegKarta?: Record<string, { aktuellId: string; steg: { id: string; namn: string }[] }>;
 }
 
 // "idag" / "imorgon" / "18 jul" ur ett ISO-datum.
@@ -197,6 +198,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     primaryColor={primaryColor}
                     locationId={b.locationId}
                     planering={planering[c.id]}
+                    stegInfo={b.stegKarta?.[c.id]}
                     attGora
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
@@ -244,6 +246,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     primaryColor={primaryColor}
                     locationId={b.locationId}
                     planering={planering[c.id]}
+                    stegInfo={b.stegKarta?.[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
                   />
@@ -272,6 +275,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     primaryColor={primaryColor}
                     locationId={b.locationId}
                     planering={planering[c.id]}
+                    stegInfo={b.stegKarta?.[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
                   />
@@ -299,6 +303,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     primaryColor={primaryColor}
                     locationId={b.locationId}
                     planering={planering[c.id]}
+                    stegInfo={b.stegKarta?.[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
                   />
@@ -351,6 +356,7 @@ function DragKort({
   locationId,
   planering,
   attGora,
+  stegInfo,
   onCoacha,
   onSaved,
 }: {
@@ -359,6 +365,7 @@ function DragKort({
   locationId?: string;
   planering?: Planering;
   attGora?: boolean;
+  stegInfo?: { aktuellId: string; steg: { id: string; namn: string }[] };
   onCoacha: () => void;
   onSaved: () => void;
 }) {
@@ -479,6 +486,11 @@ function DragKort({
         <span className="text-sm text-gray-700">{c.rekommenderatDrag}</span>
       </div>
 
+      {/* Pipeline-stegrad — se & flytta affären i GHL direkt */}
+      {stegInfo && stegInfo.steg.length > 1 && (
+        <StegRad oppId={c.id} stegInfo={stegInfo} primaryColor={primaryColor} onMoved={onSaved} />
+      )}
+
       {/* Sätt värde för 0 kr-affärer */}
       {c.okantVarde && (
         <div className="mt-3">
@@ -558,6 +570,82 @@ function DragKort({
           </a>
         )}
       </div>
+    </div>
+  );
+}
+
+// Grafisk pipeline-stegrad på kortet. Visar hela pipelinen, markerar nuvarande steg,
+// och flyttar affären i GHL på riktigt vid klick (via kundens knapptryck → move-stage).
+function StegRad({
+  oppId,
+  stegInfo,
+  primaryColor,
+  onMoved,
+}: {
+  oppId: string;
+  stegInfo: { aktuellId: string; steg: { id: string; namn: string }[] };
+  primaryColor: string;
+  onMoved: () => void;
+}) {
+  const [flyttar, setFlyttar] = useState<string | null>(null);
+  const aktuellIndex = stegInfo.steg.findIndex((s) => s.id === stegInfo.aktuellId);
+
+  const flytta = async (stegId: string, stegNamn: string) => {
+    if (stegId === stegInfo.aktuellId || flyttar) return;
+    setFlyttar(stegId);
+    try {
+      const r = await fetch("/api/fokus/move-stage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oppId, stegId, stegNamn }),
+      });
+      const d = await r.json();
+      if (d.ok) onMoved();
+      else alert(d.error || "Kunde inte flytta affären");
+    } catch {
+      alert("Kunde inte flytta affären");
+    } finally {
+      setFlyttar(null);
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1.5 -mx-0.5 px-0.5">
+        {stegInfo.steg.map((s, i) => {
+          const aktuell = i === aktuellIndex;
+          const passerad = i < aktuellIndex;
+          const laddar = flyttar === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => flytta(s.id, s.namn)}
+              disabled={aktuell || !!flyttar}
+              title={aktuell ? `Nuvarande steg: ${s.namn}` : `Flytta till "${s.namn}"`}
+              className={`group relative flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                aktuell ? "text-white shadow-sm" : passerad ? "text-white/95" : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+              } ${!aktuell && !flyttar ? "cursor-pointer" : ""} ${flyttar && !laddar ? "opacity-50" : ""}`}
+              style={
+                aktuell
+                  ? { background: primaryColor }
+                  : passerad
+                  ? { background: `${primaryColor}99` }
+                  : { background: "#f3f4f6" }
+              }
+            >
+              {laddar ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : passerad ? (
+                <Check className="w-3 h-3" />
+              ) : (
+                <span className={`w-1.5 h-1.5 rounded-full ${aktuell ? "bg-white" : "bg-gray-400"}`} />
+              )}
+              <span className="whitespace-nowrap">{s.namn}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-gray-400 mt-0.5">Klicka ett steg för att flytta affären i MySales.</p>
     </div>
   );
 }
