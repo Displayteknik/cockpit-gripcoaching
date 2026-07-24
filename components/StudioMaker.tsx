@@ -38,6 +38,32 @@ const CHANNELS: { key: ChannelKey; platform: string }[] = [
   { key: "li", platform: "linkedin" },
 ];
 
+// Fas D — bästa publiceringstid (HEURISTIK, branschstandard per plattform, INTE
+// klientens egen data ännu). När engagemangsdata finns per inlägg kan detta bli
+// data-drivet. dagar: JS getDay() 0=sön..6=lör. Vardagar = 1–5, LI Tis–Tors = 2–4.
+const BASTA_TIDER: Record<ChannelKey, { dagar: number[]; timmar: number[] }> = {
+  ig: { dagar: [1, 2, 3, 4, 5], timmar: [11, 19] },
+  fb: { dagar: [1, 2, 3, 4, 5], timmar: [9, 13] },
+  li: { dagar: [2, 3, 4], timmar: [8, 12, 17] },
+};
+function tillLokalInput(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+// Nästa bra tid-slot (minst 30 min fram) som matchar någon vald kanals bästa fönster.
+function nastaBastaTid(channels: ChannelKey[]): string {
+  const kandidater = channels.flatMap((k) => BASTA_TIDER[k] ? BASTA_TIDER[k].timmar.map((h) => ({ dagar: BASTA_TIDER[k].dagar, h })) : []);
+  if (!kandidater.length) return "";
+  const now = new Date();
+  for (let addH = 1; addH < 24 * 14; addH++) {
+    const t = new Date(now.getTime() + addH * 3600000);
+    t.setMinutes(0, 0, 0);
+    if (t.getTime() < now.getTime() + 30 * 60000) continue;
+    if (kandidater.some((c) => c.h === t.getHours() && c.dagar.includes(t.getDay()))) return tillLokalInput(t);
+  }
+  return "";
+}
+
 const DEFAULT_COLOR = "#1A6B3C";
 
 // Pedagogiska stegfärger (1-5) — harmoniska men distinkta. Varje steg får sin färg på
@@ -1461,10 +1487,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600"><CalendarClock className="w-4 h-4" /> Schemalägg</span>
               <input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-gray-400 outline-none" />
+              <button
+                onClick={() => { const t = nastaBastaTid(selectedChannels); if (t) setScheduleDate(t); }}
+                title="Föreslå nästa bra publiceringstid (branschstandard per plattform)"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border hover:bg-white"
+                style={{ borderColor: `${primary}55`, color: primary }}>
+                <Wand2 className="w-3.5 h-3.5" /> Bästa tid
+              </button>
               {scheduleDate ? (
                 <button onClick={() => setScheduleDate("")} className="text-xs text-gray-400 hover:text-gray-600">Rensa (publicera direkt)</button>
               ) : (
-                <span className="text-xs text-gray-400">Lämna tom för att publicera direkt. IG: nativt i Cockpit. FB/LI: via GHL.</span>
+                <span className="text-xs text-gray-400">Lämna tom för direkt. "Bästa tid" = branschstandard per plattform (ej din egen data än).</span>
               )}
             </div>
           )}
