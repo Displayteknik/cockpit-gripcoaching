@@ -12,12 +12,15 @@ export default function CustomerModuleCards({
   modules: EffectiveModule[];
   primaryColor: string;
 }) {
-  if (!modules.length) return null;
+  // Kundvyn visar bara kund-verktyg (/k-hrefs). Admin-moduler (t.ex. Content Compass,
+  // href /dashboard/...) är agency-verktyg och ska aldrig bli ett kort i /k.
+  const shown = modules.filter((m) => !((m.href || "/k").startsWith("/dashboard")));
+  if (!shown.length) return null;
   return (
     <section className="space-y-3">
       <h2 className="font-display font-bold text-gray-900 text-lg">Dina verktyg</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {modules.map((m) => {
+        {shown.map((m) => {
           const Icon = moduleIcon(m.icon);
           return (
             <Link

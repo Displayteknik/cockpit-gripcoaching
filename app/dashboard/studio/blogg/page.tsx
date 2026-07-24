@@ -39,6 +39,9 @@ export default function StudioBloggPage() {
   const [showHtml, setShowHtml] = useState(false);
   const [repurposing, setRepurposing] = useState(false);
   const [repurposed, setRepurposed] = useState(0);
+  // Repurposa ett BEFINTLIGT sparat blogginlägg (inte bara det nyss genererade).
+  const [savedBlogs, setSavedBlogs] = useState<{ id: string; title: string; text: string; published: boolean }[]>([]);
+  const [selBlog, setSelBlog] = useState("");
 
   // GHL blogg-meta
   const [connected, setConnected] = useState<boolean | null>(null);
@@ -57,6 +60,7 @@ export default function StudioBloggPage() {
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
+    fetch("/api/studio/blog/list").then((r) => r.json()).then((d) => setSavedBlogs(Array.isArray(d.posts) ? d.posts : [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -127,13 +131,12 @@ export default function StudioBloggPage() {
     }
   }, [destination, blogId, title, html, metaDescription, urlSlug, authorId, categoryId, coverImageUrl, coverImageAlt]);
 
-  const repurpose = useCallback(async () => {
-    setError(""); setRepurposing(true);
+  const doRepurpose = useCallback(async (t: string, text: string, topicHint: string) => {
+    setError(""); setRepurposing(true); setRepurposed(0);
     try {
-      const plain = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 4000);
       const r = await fetch("/api/studio/blog/repurpose", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, articleText: plain, topic }),
+        body: JSON.stringify({ title: t, articleText: text.slice(0, 4000), topic: topicHint }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa sociala inlägg");
@@ -143,7 +146,16 @@ export default function StudioBloggPage() {
     } finally {
       setRepurposing(false);
     }
-  }, [html, title, topic]);
+  }, []);
+  const repurpose = useCallback(() => {
+    const plain = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return doRepurpose(title, plain, topic);
+  }, [html, title, topic, doRepurpose]);
+  const repurposeSaved = useCallback(() => {
+    const b = savedBlogs.find((x) => x.id === selBlog);
+    if (!b) return;
+    return doRepurpose(b.title, b.text, "");
+  }, [savedBlogs, selBlog, doRepurpose]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,6 +169,25 @@ export default function StudioBloggPage() {
         />
 
         {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+        {/* Repurposa ett BEFINTLIGT blogginlägg → sociala inlägg */}
+        {savedBlogs.length > 0 && (
+          <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
+            <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><Layers className="w-5 h-5" style={{ color: primary }} /> Skapa sociala inlägg från ett sparat blogginlägg</h2>
+            <p className="text-sm text-gray-500">Välj ett befintligt blogginlägg, så gör AI:n om det till färdiga sociala inlägg i din röst. Sparas i Studio-biblioteket.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={selBlog} onChange={(e) => setSelBlog(e.target.value)} className={`${inputCls} max-w-md`}>
+                <option value="">Välj blogginlägg</option>
+                {savedBlogs.map((b) => <option key={b.id} value={b.id}>{b.title}{b.published ? "" : " (utkast)"}</option>)}
+              </select>
+              <button onClick={repurposeSaved} disabled={!selBlog || repurposing}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40" style={{ background: primary }}>
+                {repurposing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />} Skapa sociala inlägg
+              </button>
+            </div>
+            {repurposed > 0 && <div className="text-sm text-emerald-600 flex items-center gap-1.5"><Check className="w-4 h-4" /> {repurposed} inlägg sparade. <a href="/dashboard/studio" className="underline">Öppna i Studio</a></div>}
+          </section>
+        )}
 
         {/* Generera */}
         <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">

@@ -18,6 +18,7 @@ export interface IterateOptions {
   temperature?: number; // default 0.8 for spridning
   category?: string; // for winning-example-fetch
   targetLength?: { min: number; max: number };
+  contentCompass?: string; // Content Compass-block (anatomi + funnel/4A/DISC). Tomt = av.
   // Om inget clientId: kor utan voice-score, returnera forsta varianten
 }
 
@@ -67,6 +68,8 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
       fullSystem += `\nExempel ${i + 1}:\n${w}\n`;
     });
   }
+  // Lager 2 till 5 (inläggsanatomi + Content Compass), efter rösten och före guardrails.
+  if (opts.contentCompass) fullSystem += "\n\n" + opts.contentCompass;
   fullSystem += SPECIALIST_GUARDRAILS;
 
   // Generera N varianter parallellt

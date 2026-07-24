@@ -4,6 +4,7 @@ import { generate } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { contentCompassBlock } from "@/lib/content-compass/prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
     const slides: Slide[] = Array.isArray(b.slides) ? b.slides.slice(0, 12) : [];
     const profile = await getProfileAsMarkdown().catch(() => "");
     const directives = await getKitDirectives(await getActiveClientId());
+    const compassText = b.compass && typeof b.compass === "object" ? contentCompassBlock(b.compass) : "";
 
     const isCarousel = slides.length > 0;
     const longer = isCarousel || postType === "reel";
@@ -58,6 +60,7 @@ export async function POST(req: NextRequest) {
       `Du skriver bildtexten (captionen) till ${TYPE_LABEL[postType] || "ett socialt inlägg"} (Instagram/Facebook) för ${client?.name || "kunden"}.`,
       "Detta är texten man LÄSER under/bredvid inlägget — inte text på bilden. Skriv som en människa, varmt och konkret.",
       profile ? `\n=== VARUMÄRKESPROFIL — grunda röst, målgrupp och ord på denna ===\n${profile.slice(0, 5000)}` : "",
+      compassText ? `\n${compassText}` : "",
       "\n=== STRUKTUR (världsklass-caption) ===",
       "- RAD 1 = krok som stoppar scrollen (fristående, stark). Sedan en tom rad.",
       `- ${longer ? "2–4 korta stycken" : "1–2 korta stycken"} som ger konkret värde/berättelse. Radbryt för luft.`,

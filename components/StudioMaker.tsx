@@ -13,6 +13,8 @@ import {
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
 import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, STUDIO_FONTS } from "@/lib/studio/payload";
+import { profileForDate, type CompassSchedule, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
+import type { FourA } from "@/lib/content-framework";
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
 import ChannelPreview, { type ChannelKey, CHANNEL_BRAND } from "@/components/studio/ChannelPreview";
@@ -156,6 +158,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [ghlPitInput, setGhlPitInput] = useState("");
   const [connectingGhl, setConnectingGhl] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
+  // Content Compass: schema + dagens profil (förifylld, redigerbar).
+  const [compassSchedule, setCompassSchedule] = useState<CompassSchedule | null>(null);
+  const [compassEnabled, setCompassEnabled] = useState(false);
+  const [compass, setCompass] = useState<{ funnel: FunnelLevel | null; four_a: FourA | null; disc: DiscLetter[] }>({ funnel: null, four_a: null, disc: [] });
   const [igConn, setIgConn] = useState<{ connected: boolean; handle: string | null } | null>(null);
   // Fas B — multi-kanal: valda kanaler (förikryssade efter koppling), per-kanal-caption,
   // per-kanal publiceringsstatus. Grund-captionen (steg 4) är källa; kanal-caption faller
@@ -184,7 +190,16 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
+    // Content Compass-schema (för förifylld dagsprofil). Tyst om modul/data saknas.
+    fetch("/api/content-compass").then((r) => r.json()).then((d) => { if (d.schedule && d.enabled) { setCompassEnabled(true); setCompassSchedule({ days: d.schedule, cadence: d.cadence || "7" }); } }).catch(() => {});
   }, []);
+
+  // Förifyll dagens Compass-profil från schemat (schemaläggnings-datum, annars idag).
+  useEffect(() => {
+    if (!compassSchedule) return;
+    const p = profileForDate(compassSchedule, scheduleDate ? new Date(scheduleDate) : new Date());
+    setCompass(p ? { funnel: p.funnel, four_a: p.four_a, disc: p.disc } : { funnel: null, four_a: null, disc: [] });
+  }, [compassSchedule, scheduleDate]);
 
   // Resolved brand för live-editorn (samma som exporten använder).
   useEffect(() => {
@@ -618,7 +633,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const title = headline1 || body.slice(0, 40) || "Namnlöst inlägg";
       const r = await fetch("/api/studio/posts", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption } }),
+        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption }, compass }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte spara i biblioteket");
@@ -632,7 +647,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSavingPost(false);
     }
-  }, [headline1, body, caption, loadedPostId, payload, refreshPosts]);
+  }, [headline1, body, caption, loadedPostId, payload, refreshPosts, compass]);
 
   // Öppna en sparad skapelse i editorn för återanvändning/redigering.
   const openPost = useCallback((p: StudioPost) => {
@@ -703,7 +718,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       const r = await fetch("/api/studio/suggest-caption", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType }),
+        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, compass }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte föreslå bildtext");
@@ -713,7 +728,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSuggestingCaption(false);
     }
-  }, [headline1, headline2, body, topic, slides, postType]);
+  }, [headline1, headline2, body, topic, slides, postType, compass]);
 
   // Fas D: A/B — generera 3 caption-varianter med olika krok-vinklar att jämföra.
   const suggestCaptionVariants = useCallback(async () => {
@@ -721,7 +736,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       const r = await fetch("/api/studio/suggest-caption", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, variants: 3 }),
+        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, variants: 3, compass }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa varianter");
@@ -731,7 +746,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setLoadingVariants(false);
     }
-  }, [headline1, headline2, body, topic, slides, postType]);
+  }, [headline1, headline2, body, topic, slides, postType, compass]);
 
   const toggleAccount = useCallback((id: string) => {
     setSelectedAccounts((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
@@ -1345,6 +1360,33 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </button>
                 </div>
               </div>
+
+              {compassEnabled && (
+                <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-violet-700">Content Compass</span>
+                  <select value={compass.four_a || ""} onChange={(e) => setCompass((c) => ({ ...c, four_a: (e.target.value || null) as FourA | null }))} className="rounded-lg border border-violet-200 bg-white px-2 py-1 text-xs capitalize">
+                    <option value="">4A</option>
+                    {(["analytical", "aspirational", "actionable", "authentic"] as FourA[]).map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <select value={compass.funnel || ""} onChange={(e) => setCompass((c) => ({ ...c, funnel: (e.target.value || null) as FunnelLevel | null }))} className="rounded-lg border border-violet-200 bg-white px-2 py-1 text-xs uppercase">
+                    <option value="">Funnel</option>
+                    {(["tofu", "mofu", "bofu"] as FunnelLevel[]).map((o) => <option key={o} value={o}>{o.toUpperCase()}</option>)}
+                  </select>
+                  <div className="flex items-center gap-1">
+                    {(["D", "I", "S", "C"] as DiscLetter[]).map((letter) => {
+                      const on = compass.disc.includes(letter);
+                      return (
+                        <button key={letter} type="button" onClick={() => setCompass((c) => ({ ...c, disc: c.disc.includes(letter) ? c.disc.filter((x) => x !== letter) : [...c.disc, letter] }))}
+                          className={`w-7 h-7 rounded-md text-xs font-bold border transition-colors ${on ? "text-white border-transparent" : "text-gray-400 border-gray-200 hover:bg-white"}`}
+                          style={on ? { background: letter === "D" ? "#ef4444" : letter === "I" ? "#f59e0b" : letter === "S" ? "#10b981" : "#3b82f6" } : {}}>
+                          {letter}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="text-[11px] text-violet-600 ml-auto">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt.</span>
+                </div>
+              )}
 
               {/* A/B-varianter — jämför krokar, välj en */}
               {captionVariants.length > 0 && (

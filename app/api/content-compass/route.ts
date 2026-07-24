@@ -3,6 +3,7 @@ import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer, requireAdmin } from "@/lib/api-auth";
 import { getCompassSchedule, type Cadence } from "@/lib/content-compass/schedule";
+import { hasModule } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,8 @@ export async function GET() {
     const sb = supabaseService();
     const { data } = await sb.from("content_compass_schedules").select("schedule, cadence").eq("client_id", clientId).maybeSingle();
     const cc = await getCompassSchedule(clientId);
-    return NextResponse.json({ schedule: cc.days, cadence: cc.cadence, clientName: client?.name || "", isDefault: !data });
+    const enabled = await hasModule(clientId, "compass").catch(() => false);
+    return NextResponse.json({ schedule: cc.days, cadence: cc.cadence, clientName: client?.name || "", isDefault: !data, enabled });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

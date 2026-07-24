@@ -42,14 +42,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "payload krävs" }, { status: 400 });
     }
     const title = (body.title || "").toString().trim().slice(0, 120) || "Namnlöst inlägg";
+    // Content Compass-profil (valfri). Skrivs på posten så kalendern kan visa den.
+    const c = body.compass && typeof body.compass === "object" ? body.compass : null;
+    const compassCols = c
+      ? {
+          funnel_level: ["tofu", "mofu", "bofu"].includes(c.funnel) ? c.funnel : null,
+          four_a: ["analytical", "aspirational", "actionable", "authentic"].includes(c.four_a) ? c.four_a : null,
+          disc: Array.isArray(c.disc) && c.disc.length ? c.disc.filter((d: unknown) => ["D", "I", "S", "C"].includes(d as string)) : null,
+          compass_source: c.funnel || c.four_a ? "manual" : null,
+        }
+      : {};
     const row = {
       client_id: clientId,
-      template_id: String(payload.templateId || "opticur-foto-gul-ruta"),
+      template_id: String(payload.templateId || "ark-textkort"),
       format: String(payload.format || "1080x1350"),
       title,
       payload,
       image_url: payload.imageUrl || null,
       updated_at: new Date().toISOString(),
+      ...compassCols,
     };
     const sb = supabaseService();
 
