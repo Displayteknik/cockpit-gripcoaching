@@ -16,7 +16,7 @@ const FONT_CSS = `
 @font-face{font-family:"Inter";src:url("/fonts/inter-700.ttf");font-weight:700}
 @font-face{font-family:"Inter";src:url("/fonts/inter-800.ttf");font-weight:800}
 @font-face{font-family:"Inter";src:url("/fonts/inter-900.ttf");font-weight:900}
-@font-face{font-family:"Playfair Display";src:url("/fonts/playfair-900.ttf");font-weight:900}
+@font-face{font-family:"Playfair Display";src:url("/fonts/playfair-900.ttf");font-weight:400 900}
 @font-face{font-family:"Archivo";src:url("/fonts/archivo-700.ttf");font-weight:700}
 @font-face{font-family:"Archivo";src:url("/fonts/archivo-800.ttf");font-weight:800}
 @font-face{font-family:"Archivo";src:url("/fonts/archivo-900.ttf");font-weight:900}
