@@ -52,7 +52,7 @@ Möjliga fält:
 - "next_step" (max 150 tecken)
 - "next_contact_date": "YYYY-MM-DD" eller ""
 - "last_message"
-- "notes" (ny info att LÄGGA TILL, inte ersätta)
+- "notes": returnera ENDAST den nya meningen/informationen — ALDRIG tidigare anteckningstext (klienten lägger själv till den efter befintliga notes)
 
 Regler:
 - Telefon: tolka svenska ("noll sjuttio"=070)

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Mail, ArrowRight, Loader2, Users, FileText, ShieldAlert, Beaker, Reply, CalendarDays, Sparkles } from "lucide-react";
 import { DashHero, LivePill } from "@/components/ui/dash";
+import { FunctionGuide } from "@/components/FunctionGuide";
 
 type SpecialistMeta = {
   id: string;
@@ -80,6 +81,19 @@ export default function MejlMotorPage() {
         subtitle="Cold outbound, nyhetsbrev och säljmejl med voice-fingerprint per klient. Sex specialister i ett flöde — från ICP till sekvens till spam-grind till svarsklassning."
         icon={Mail}
         eyebrow={<LivePill label="Mejl-motor" />}
+        right={
+          <FunctionGuide
+            primaryColor="#d97706"
+            title="Mejl-motorn"
+            what="Bygger hela mejl-kampanjer i din röst — kall outbound, nyhetsbrev och säljmejl. Sex specialister tar dig från vem du ska nå (ICP) till färdig sekvens, med en spam-grind och svarsklassning på köpet."
+            how="Följ flödet uppifrån: definiera din ICP, bygg sekvensen, skruva ämnesraderna, kör spam-grinden innan du skickar, och låt svarsklassningen sortera inkommande svar. Varje steg är en specialist du kan köra separat."
+            tips={[
+              "Kör alltid spam-grinden innan utskick — den fångar ord som sänker leveransen.",
+              "En tydlig ICP ger vassare sekvenser — lägg tid där först.",
+              "Voice-fingerprint per klient gör att mejlen låter som avsändaren, inte som en mall.",
+            ]}
+          />
+        }
       />
 
       {/* FLODE */}

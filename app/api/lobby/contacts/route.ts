@@ -51,12 +51,18 @@ export async function GET() {
     if (o.kontakt && !oppByName.has(norm(o.kontakt))) oppByName.set(norm(o.kontakt), o.steg_namn || "");
   }
 
+  // Skilj SÄKER match (ghl_contact_id — sätts vid synk) från OSÄKER (bara namn).
+  // Säker match → kontakten döljs ur Nya leads (den ÄR i pipelinen). Namn-match →
+  // behåll leadet men flagga "kan redan vara i pipelinen" (två olika personer kan
+  // heta samma → tappa aldrig ett nytt lead tyst). [buggfix 2026-07-21]
   const contacts = ((lobbyRes.data as unknown as Record<string, unknown>[] | null) || []).map((c) => {
-    const stage =
-      (c.ghl_contact_id ? oppById.get(c.ghl_contact_id as string) : undefined) ??
-      oppByName.get(norm(c.name as string)) ??
-      null;
-    return { ...c, pipeline_stage: stage };
+    const idStage = c.ghl_contact_id ? oppById.get(c.ghl_contact_id as string) : undefined;
+    const nameStage = oppByName.get(norm(c.name as string));
+    return {
+      ...c,
+      pipeline_stage: idStage ?? null,                                   // säker → döljs
+      name_match_stage: !idStage && nameStage ? nameStage : null,        // osäker → badge
+    };
   });
 
   // White-label GHL-bas för "Öppna i MySales"-deeplänk (customers/detail per kontakt).

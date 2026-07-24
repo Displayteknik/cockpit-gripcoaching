@@ -33,9 +33,8 @@ interface Contact {
   notes: string | null;
   profile_url: string | null;
   ghl_contact_id: string | null;
-  pipeline_stage?: string | null; // satt om kontakten redan är en affär i pipelinen (Fokus idag)
-  opp_id?: string | null; // ghl_opportunity_id för stegraden (move-stage)
-  steg_info?: { aktuellId: string; pipelineNamn: string; steg: { id: string; namn: string }[] } | null;
+  pipeline_stage?: string | null;     // SÄKER match (ghl_contact_id) → kontakten är i MySales, döljs
+  name_match_stage?: string | null;   // OSÄKER match (bara namn) → behåll leadet men flagga
 }
 
 const STATUS: Record<Status, { label: string; chip: string }> = {
@@ -192,7 +191,9 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
       const d = await r.json();
       if (d.contact) setContacts((cs) => cs.map((c) => (c.id === id ? d.contact : c)));
     } catch {
-      setContacts(innan);
+      // Rulla bara tillbaka DET berörda kortet — inte hela listan (annars slås
+      // en parallell lyckad ändring på ett annat kort ut). [buggfix 2026-07-21]
+      setContacts((cs) => cs.map((c) => (c.id === id ? innan.find((x) => x.id === id) ?? c : c)));
       visaToast("Kunde inte spara", "fel");
     } finally { setSparar(null); }
   }, [contacts, visaToast]);
@@ -347,6 +348,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
   const startaRost = useCallback((forKortId?: string) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { visaToast("Röst stöds ej — använd Chrome eller Edge", "fel"); return; }
+    if (recRef.current) { try { recRef.current.stop(); } catch { /* redan stoppad */ } } // stoppa ev. aktiv session först
     if (forKortId !== undefined) { setOppenId(forKortId); oppenIdRef.current = forKortId; }
     const rec = new SR();
     rec.lang = "sv-SE"; rec.continuous = true; rec.interimResults = true;
@@ -773,6 +775,12 @@ function Rad(props: {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-gray-900 truncate">{c.name}</span>
             {c.company && <span className="text-sm text-gray-500 truncate">· {c.company}</span>}
+            {c.name_match_stage && (
+              <span title={`En affär med samma namn finns i pipelinen (${c.name_match_stage}). Kolla att det inte är samma person.`}
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                kan redan vara i pipeline
+              </span>
+            )}
             {sparar && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
           </div>
           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">

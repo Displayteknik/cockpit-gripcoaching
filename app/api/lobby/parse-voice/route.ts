@@ -41,7 +41,7 @@ Returnera ENBART JSON:
   "name": "Fullständigt namn",
   "company": "Företag, annars ''",
   "title": "Titel, annars ''",
-  "platform": "linkedin" | "fb" | "ig" | "email" | "phone" | "other",
+  "platform": "linkedin" | "fb" | "ig" | "email" | "phone" | "web" | "other",
   "last_message": "Vad hände, max 300 tecken",
   "next_step": "Vad ska göras härnäst, max 100 tecken",
   "next_contact_date": "YYYY-MM-DD om nämnt, annars ''",

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Sparkles, Copy, Check, Trash2, Plus, RefreshCw, ExternalLink, Edit3, Save, X, Wand2, Layers, Lightbulb, FileText, Inbox, BookOpen, Upload, BarChart3 } from "lucide-react";
 import { VoiceCheckBadge } from "@/components/dashboard/VoiceCheckBadge";
 import { DashHero, LivePill } from "@/components/ui/dash";
+import { FunctionGuide } from "@/components/FunctionGuide";
 
 // LinkedIn-logga som ikon-komponent (till DashHero icon-prop).
 function LinkedInIcon({ className }: { className?: string }) {
@@ -190,6 +191,19 @@ export default function LinkedinMaker({ customerMode = false }: { customerMode?:
         subtitle={'Idéer, skrivande och post-bank — driven av "Från Okänd till Kund"-metodiken.'}
         icon={LinkedInIcon}
         eyebrow={<LivePill label="LinkedIn-motor" />}
+        right={
+          <FunctionGuide
+            primaryColor="#0A66C2"
+            title="LinkedIn-motorn"
+            what="Hjälper dig hitta idéer, skriva och samla LinkedIn-inlägg i din röst — byggd på metodiken 'Från Okänd till Kund'. Allt du behöver för att synas och bygga förtroende på LinkedIn på ett ställe."
+            how="Börja med idéer utifrån ditt ämne, låt AI:n skriva ett utkast i din ton, finjustera i redigeraren och spara till din post-bank. Du kan också importera din LinkedIn-historik så förslagen låter mer som du."
+            tips={[
+              "Skriv i din brand-profil först — då blir inläggen mer lika din röst.",
+              "Spara det som fungerar i post-banken och återanvänd vinklarna.",
+              "En krok som stoppar scrollen på första raden är viktigare än längden.",
+            ]}
+          />
+        }
       />
 
       {error && (
