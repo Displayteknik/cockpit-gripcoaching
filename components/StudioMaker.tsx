@@ -118,6 +118,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [slides, setSlides] = useState<StudioSlide[]>([]);
   const [slideIdx, setSlideIdx] = useState(0);
   const [genCarousel, setGenCarousel] = useState(false);
+  const [genSlideImgs, setGenSlideImgs] = useState(""); // "" = idle, annars "2/5"-progress
   const [videoUrl, setVideoUrl] = useState("");
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [brand, setBrand] = useState<StudioBrand | null>(null);
@@ -501,6 +502,32 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       setGenCarousel(false);
     }
   }, [topic, headline1]);
+
+  // Skapa en on-brand AI-bild per slide (ämne = slidens egen text). Sekventiellt så
+  // Gemini/Fal-kvoten inte spränger, med synlig progress. Sätter bilden direkt på varje slide.
+  const generateSlideImages = useCallback(async () => {
+    setError("");
+    const aspect = isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square";
+    const list = slides;
+    try {
+      for (let n = 0; n < list.length; n++) {
+        setGenSlideImgs(`${n + 1}/${list.length}`);
+        const s = list[n];
+        const t = [s.headline, s.body].filter(Boolean).join(". ").slice(0, 220) || topic || headline1 || "on-brand bild";
+        const r = await fetch("/api/studio/suggest-image", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "ai", topic: t, aspect }),
+        });
+        const d = await r.json();
+        const url = d.photos?.[0]?.url;
+        if (url) updateSlide(n, { imageUrl: url });
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setGenSlideImgs("");
+    }
+  }, [slides, format, topic, headline1, updateSlide]);
 
   // Fånga den dolda full-skala-designen (#hidden canvas) till en PNG-blob i webbläsaren.
   // Delas av export + spara-i-bibliotek + publicera. Fungerar i molnet (Playwright gör inte det).
@@ -961,6 +988,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <section className="bg-white border rounded-2xl p-6 space-y-4" style={stegRam(STEG_FARGER[1])}>
               <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={2} color={STEG_FARGER[1]} /> Bild</h2>
 
+              {isCarousel && (
+                <div className="rounded-xl border p-3 text-xs text-gray-600" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
+                  Bilden läggs på <strong>slide {slideIdx + 1}/{slideCount}</strong> (den du ser i förhandsvisningen). Bläddra med pilarna för att sätta bild på fler slides — eller använd <strong>Skapa bilder till alla slides</strong> i steg 3.
+                </div>
+              )}
+
               {/* Mallen visar en bild — mjuk hjälp, inte varning */}
               {needsImage && !curImg && (
                 <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
@@ -1140,6 +1173,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 )}
               </div>
               <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={isCarousel ? "Ämne för karusellen — t.ex. 3 misstag att undvika, 5 tips" : "Ämne för AI-förslag (valfritt) — t.ex. ett erbjudande, en nyhet, en fråga"} className={inputCls} />
+
+              {isCarousel && slideCount > 0 && (
+                <div>
+                  <button onClick={generateSlideImages} disabled={!!genSlideImgs}
+                    className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg bg-white border-2 hover:bg-gray-50 disabled:opacity-50"
+                    style={{ borderColor: `${primary}55`, color: primary }}>
+                    {genSlideImgs ? <><Loader2 className="w-4 h-4 animate-spin" /> Genererar bild {genSlideImgs}…</> : <><ImageIcon className="w-4 h-4" /> Skapa bilder till alla slides</>}
+                  </button>
+                  <p className="text-[11px] text-gray-400 mt-1">On-brand AI-bild per slide (utifrån varje slides text). Vill du en egen bild på en slide: bläddra dit med pilarna och ladda upp under <strong>Bild</strong>.</p>
+                </div>
+              )}
 
               {/* Klistra in eget utkast (ej karusell) */}
               {!isCarousel && (
