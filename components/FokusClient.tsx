@@ -312,6 +312,9 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
               </div>
             </section>
           )}
+
+          {/* Inflödet — ledande indikatorer: veckans aktiviteter + KPI:er */}
+          <InflodeSektion primaryColor={primaryColor} />
         </>
       )}
 
@@ -332,6 +335,134 @@ function HeroKpi({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl bg-white/15 px-3 py-2.5 backdrop-blur-sm">
       <div className="text-lg font-bold text-white tabular-nums leading-tight">{value}</div>
       <div className="text-[11px] text-white/70 uppercase tracking-wide mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+// Inflödet (spec §14) — nedre halvan. Ledande indikatorer: veckans aktiviteter per kanal
+// (mål/utfall/quick-log) + KPI:er ur pipelinen & lobbyn. Data via /api/fokus/inflode.
+interface InflodeKanal { kanal: string; mal: number; utfall: number; underNiva: boolean }
+interface InflodeKpi { prospektsVecka: number; motenBokade: number; offerterSkickade: number; ordrarManad: number }
+
+function InflodeSektion({ primaryColor }: { primaryColor: string }) {
+  const [kanaler, setKanaler] = useState<InflodeKanal[]>([]);
+  const [kpi, setKpi] = useState<InflodeKpi>({ prospektsVecka: 0, motenBokade: 0, offerterSkickade: 0, ordrarManad: 0 });
+  const [laddar, setLaddar] = useState(true);
+  const [visa, setVisa] = useState(false);
+
+  const ladda = useCallback(async (action?: string, kanal?: string, mal?: number) => {
+    try {
+      const r = await fetch("/api/fokus/inflode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, kanal, mal }),
+      });
+      const d = await r.json();
+      if (d.linked === false) { setVisa(false); return; }
+      if (!d.error) {
+        setKanaler(d.kanaler || []);
+        setKpi(d.kpi || kpi);
+        setVisa(true);
+      }
+    } catch {
+      /* tyst — nedre halvan är icke-kritisk */
+    } finally {
+      setLaddar(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { ladda(); }, [ladda]);
+
+  const totMal = kanaler.reduce((s, k) => s + k.mal, 0);
+  const totUtfall = kanaler.reduce((s, k) => s + k.utfall, 0);
+
+  const sattMal = async (kanal: string, nuvarande: number) => {
+    const v = window.prompt(`Veckomål för ${kanal} (aktiviteter/vecka)?`, String(nuvarande));
+    if (v === null) return;
+    await ladda("setMal", kanal, parseInt(v, 10) || 0);
+  };
+
+  if (!visa && !laddar) return null;
+
+  return (
+    <section className="space-y-4 pt-4 border-t border-gray-100">
+      <div>
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-5 h-5" style={{ color: primaryColor }} />
+          <h2 className="font-display font-bold text-gray-900 text-lg">Inflödet · morgondagens pipeline</h2>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Övre halvan maler det du redan har. Här styr du aktiviteterna som skapar nästa månads affärer. Under nivå = fyll på.
+        </p>
+      </div>
+
+      {/* KPI:er ur riktig data */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiRuta label="Nya prospekt · vecka" value={kpi.prospektsVecka} tone="#3b82f6" />
+        <KpiRuta label="Möten bokade · vecka" value={kpi.motenBokade} tone="#8b5cf6" />
+        <KpiRuta label="Offerter · vecka" value={kpi.offerterSkickade} tone="#f59e0b" />
+        <KpiRuta label="Ordrar · månad" value={kpi.ordrarManad} tone="#10b981" />
+      </div>
+
+      {/* Veckans inflöde — mininivåer + quick-log */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-semibold text-gray-800">Veckans inflöde</span>
+          <span className="text-xs text-gray-500 tabular-nums">
+            {totUtfall} / {totMal} aktiviteter{totMal > 0 ? ` · ${Math.round((totUtfall / totMal) * 100)}%` : ""}
+          </span>
+        </div>
+        {laddar ? (
+          <div className="text-gray-400 text-sm py-3">Läser inflödet…</div>
+        ) : (
+          <div className="space-y-2.5">
+            {kanaler.map((k) => {
+              const pct = k.mal > 0 ? Math.min(100, Math.round((k.utfall / k.mal) * 100)) : 0;
+              return (
+                <div key={k.kanal} className="flex items-center gap-3">
+                  <button
+                    onClick={() => sattMal(k.kanal, k.mal)}
+                    className="w-20 sm:w-24 text-left text-[13px] text-gray-600 hover:text-gray-900 truncate"
+                    title="Klicka för att ändra veckomål"
+                  >
+                    {k.kanal}
+                  </button>
+                  <div className="flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, background: k.underNiva ? "#f59e0b" : "#10b981" }}
+                    />
+                  </div>
+                  <span className={`text-xs tabular-nums w-14 text-right ${k.underNiva ? "text-amber-600" : "text-emerald-600"}`}>
+                    {k.utfall} / {k.mal}
+                  </span>
+                  <button
+                    onClick={() => ladda("log", k.kanal)}
+                    className="text-xs px-2 py-1 rounded-md font-semibold flex items-center gap-1 shrink-0 hover:opacity-80"
+                    style={{ background: `${primaryColor}1a`, color: primaryColor }}
+                    title="Logga en aktivitet"
+                  >
+                    <span className="text-sm leading-none">+</span> 1
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="text-[11px] text-gray-400 mt-3">
+          Klicka kanalnamnet för veckomål · <b>+1</b> loggar en aktivitet · bärnstensfärgad stapel = under nivå. KPI:erna räknas ur din pipeline och lobby.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function KpiRuta({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+      <div className="text-2xl font-bold text-gray-900 tabular-nums" style={{ color: tone }}>{value}</div>
+      <div className="text-[11px] text-gray-500 uppercase tracking-wide mt-0.5">{label}</div>
     </div>
   );
 }
