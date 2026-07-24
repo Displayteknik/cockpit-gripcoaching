@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs, hlColor, bodyColor, imgPosition, imgScale } from "@/lib/studio/overrides";
+import { fs, hlColor, bodyColor, imgPosition, imgScale, font, textPlate, lh } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
 import { StarBadge, isLightColor } from "@/components/studio/StudioBits";
 
@@ -15,10 +15,10 @@ export default function ArkErbjudande({ payload, brand }: { payload: StudioPaylo
   const shape = brand.elements.badge.shape;
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, background: c.paper }}>
+    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.paper }}>
       <div style={{ padding: "44px 56px 0", textAlign: "center" }}>
-        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor(c.primary, payload), fontSize: fs(60, payload), lineHeight: 1.0, textTransform: "uppercase", letterSpacing: -0.5 }}><span data-edit="headline1">{payload.headline1}</span></div>
-        {payload.headline2 ? <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: c.ink, fontSize: fs(36, payload), marginTop: 16 }}><span data-edit="headline2">{payload.headline2}</span></div> : null}
+        <div style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor(c.primary, payload), fontSize: fs(60, payload, "h1"), lineHeight: lh(1.06, payload), textTransform: "uppercase", letterSpacing: -0.5 }}><span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span></div>
+        {payload.headline2 ? <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: c.ink, fontSize: fs(36, payload, "h2"), lineHeight: lh(1.2, payload), marginTop: 16 }}><span data-edit="headline2" style={textPlate(payload)}>{payload.headline2}</span></div> : null}
       </div>
 
       <div style={{ position: "relative", flex: 1, margin: "22px 0 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -40,7 +40,7 @@ export default function ArkErbjudande({ payload, brand }: { payload: StudioPaylo
             </div>
           )
         ) : payload.body ? (
-          <div style={{ position: "relative", maxWidth: 780, textAlign: "center", fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: bodyColor(onPrimary, payload), fontSize: fs(64, payload), lineHeight: 1.05, padding: "0 40px" }}><span data-edit="body">{payload.body}</span></div>
+          <div style={{ position: "relative", maxWidth: 780, textAlign: "center", fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: bodyColor(onPrimary, payload), fontSize: fs(64, payload, "body"), lineHeight: lh(1.1, payload), padding: "0 40px" }}><span data-edit="body" style={textPlate(payload)}>{payload.body}</span></div>
         ) : null}
       </div>
 

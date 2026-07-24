@@ -27,9 +27,15 @@ export interface StudioBadge {
 }
 
 export interface StudioOverrides {
-  fontScale: number; // global textskala, 0.7–1.4 (1 = mallens standard)
+  fontScale: number; // global textskala, 0.7–1.4 (1 = mallens standard) — multipliceras ovanpå per-element
+  h1Scale: number; // rubrik-storlek (per ruta), 1 = mallens standard
+  h2Scale: number; // underrubrik-storlek (per ruta)
+  bodyScale: number; // brödtext-/punktstorlek (per ruta)
+  fontFamily: string; // "" = mallens standard, annars Inter/Playfair Display/Archivo/Poppins/Anton
   headlineColor: string; // "" = mallens standard
   bodyColor: string; // "" = mallens standard
+  textBg: string; // "" = ingen, annars hex-färg på platta bakom texten (läsbarhet på foto)
+  lineScale: number; // radavstånd-multiplikator (1 = mallens standard)
   imageScale: number; // 1 = cover, >1 = inzoomat
   imageX: number; // -50..50 horisontell panorering (%)
   hideBrush: boolean;
@@ -68,8 +74,11 @@ export function emptySlide(kind: StudioSlide["kind"] = "point"): StudioSlide {
 }
 
 export const DEFAULT_OVERRIDES: StudioOverrides = {
-  fontScale: 1, headlineColor: "", bodyColor: "", imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false,
+  fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false,
 };
+
+// Typsnitt som får väljas i editorn (self-hostade → live = export). "" = mallens standard.
+export const STUDIO_FONTS = ["Inter", "Playfair Display", "Archivo", "Poppins", "Anton"] as const;
 
 export const FORMAT_DIMENSIONS: Record<StudioFormat, { w: number; h: number }> = {
   "1080x1350": { w: 1080, h: 1350 },
@@ -137,8 +146,14 @@ function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOv
   const o = raw || {};
   return {
     fontScale: clamp(Number(o.fontScale ?? 1), 0.6, 1.6),
+    h1Scale: clamp(Number(o.h1Scale ?? 1), 0.5, 2),
+    h2Scale: clamp(Number(o.h2Scale ?? 1), 0.5, 2),
+    bodyScale: clamp(Number(o.bodyScale ?? 1), 0.5, 2),
+    fontFamily: typeof o.fontFamily === "string" ? o.fontFamily : "",
     headlineColor: typeof o.headlineColor === "string" ? o.headlineColor : "",
     bodyColor: typeof o.bodyColor === "string" ? o.bodyColor : "",
+    textBg: typeof o.textBg === "string" ? o.textBg : "",
+    lineScale: clamp(Number(o.lineScale ?? 1), 0.8, 1.8),
     imageScale: clamp(Number(o.imageScale ?? 1), 1, 3),
     imageX: clamp(Number(o.imageX ?? 0), -50, 50),
     hideBrush: Boolean(o.hideBrush),

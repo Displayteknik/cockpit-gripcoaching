@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs, hlColor, bodyColor, imgPosition, imgScale } from "@/lib/studio/overrides";
+import { fs, hlColor, bodyColor, imgPosition, imgScale, font, textPlate, lh } from "@/lib/studio/overrides";
 
 // Arketyp 6: Foto + text-overlay. Text ligger PÅ bilden med scrim för läsbarhet.
 // Stil ur brand.content.overlayStyle. För coaching/tjänst där bilden bär känslan
@@ -22,7 +22,7 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
   const centered = style === "scrim-full";
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", fontFamily: `${brand.fonts.body}, sans-serif`, background: c.primaryDeep }}>
+    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.primaryDeep }}>
       {/* Foto */}
       {payload.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -53,12 +53,12 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
               <span data-edit="headline2">{payload.headline2}</span>
             </div>
           ) : null}
-          <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: hlColor("#fff", payload), fontSize: fs(74, payload), lineHeight: 1.02, letterSpacing: -1, textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
-            <span data-edit="headline1">{payload.headline1}</span>
+          <div style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor("#fff", payload), fontSize: fs(74, payload, "h1"), lineHeight: lh(1.08, payload), letterSpacing: -1, textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
+            <span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span>
           </div>
           {payload.body ? (
-            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor("#fff", payload), opacity: 0.94, fontSize: fs(32, payload), lineHeight: 1.35, marginTop: 22, maxWidth: 820, textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
-              <span data-edit="body">{payload.body}</span>
+            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor("#fff", payload), opacity: 0.94, fontSize: fs(32, payload, "body"), lineHeight: lh(1.4, payload), marginTop: 22, maxWidth: 820, textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+              <span data-edit="body" style={textPlate(payload)}>{payload.body}</span>
             </div>
           ) : null}
         </div>

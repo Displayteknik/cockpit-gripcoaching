@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs, hlColor, bodyColor, imgPosition, imgScale, showBrush, showBadge } from "@/lib/studio/overrides";
+import { fs, hlColor, bodyColor, imgPosition, imgScale, showBrush, showBadge, font, textPlate, lh } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
 import { BrushBox, StarBadge, isLightColor } from "@/components/studio/StudioBits";
 
@@ -16,10 +16,10 @@ export default function ArkFotoRuta({ payload, brand }: { payload: StudioPayload
   const ink = light ? c.ink : c.paper;
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", background: c.paper, display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif` }}>
+    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", background: c.paper, display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums" }}>
       <div style={{ padding: "40px 50px 0", textAlign: "center" }}>
-        <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, textTransform: "uppercase", color: hlColor(c.primary, payload), fontSize: fs(62, payload), lineHeight: 1.0, letterSpacing: -0.5 }}><span data-edit="headline1">{payload.headline1}</span></div>
-        {payload.headline2 ? <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: c.ink, fontSize: fs(50, payload), lineHeight: 1.05, marginTop: 6 }}><span data-edit="headline2">{payload.headline2}</span></div> : null}
+        <div style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, textTransform: "uppercase", color: hlColor(c.primary, payload), fontSize: fs(62, payload, "h1"), lineHeight: lh(1.06, payload), letterSpacing: -0.5 }}><span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span></div>
+        {payload.headline2 ? <div style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: c.ink, fontSize: fs(50, payload, "h2"), lineHeight: lh(1.1, payload), marginTop: 6 }}><span data-edit="headline2" style={textPlate(payload)}>{payload.headline2}</span></div> : null}
       </div>
 
       <div style={{ position: "relative", flex: 1, margin: "16px 0 0" }}>
@@ -34,7 +34,7 @@ export default function ArkFotoRuta({ payload, brand }: { payload: StudioPayload
           <div style={{ position: "absolute", left: 36, right: payload.badge.enabled ? 230 : 36, bottom: -18, minHeight: 150 }}>
             {useBrush && showBrush(payload) ? <BrushBox color={boxColor} /> : <div style={{ position: "absolute", inset: 0, background: boxColor, borderRadius: brand.elements.shapes.style === "sharp" ? 0 : 20 }} />}
             <div style={{ position: "relative", minHeight: 150, boxSizing: "border-box", display: "flex", alignItems: "center", padding: "34px 56px" }}>
-              <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, color: bodyColor(ink, payload), fontSize: fs(30, payload), lineHeight: 1.25 }}><span data-edit="body">{payload.body}</span></div>
+              <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, color: bodyColor(ink, payload), fontSize: fs(30, payload, "body"), lineHeight: lh(1.3, payload) }}><span data-edit="body" style={textPlate(payload)}>{payload.body}</span></div>
             </div>
           </div>
         ) : null}

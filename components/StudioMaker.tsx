@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
-import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType } from "@/lib/studio/payload";
+import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, STUDIO_FONTS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
 import ChannelPreview, { type ChannelKey, CHANNEL_BRAND } from "@/components/studio/ChannelPreview";
@@ -228,6 +228,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const updateSlide = useCallback((i: number, patch: Partial<StudioSlide>) => {
     setSlides((prev) => prev.map((s, n) => (n === i ? { ...s, ...patch } : s)));
   }, []);
+  // Bild: i karusell-läge hör bilden till AKTUELL slide, annars till inlägget.
+  const setImage = useCallback((url: string) => {
+    if (isCarousel) updateSlide(slideIdx, { imageUrl: url });
+    else setImageUrl(url);
+  }, [isCarousel, slideIdx, updateSlide]);
+  // Aktuell bild att visa/redigera (slidens bild i karusell, annars inläggets).
+  const curImg = isCarousel ? (slides[slideIdx]?.imageUrl || "") : imageUrl;
   const addSlide = useCallback(() => {
     setSlides((prev) => {
       if (prev.length >= MAX_SLIDES) return prev;
@@ -287,13 +294,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
       if (up.error) throw new Error(up.error.message);
-      setImageUrl(d.publicUrl);
+      setImage(d.publicUrl);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [setImage]);
 
   // Video-uppladdning (för reels) → studio-videos-bucketen. Studio-rendern blir 9:16-cover.
   const onVideoFile = useCallback(async (file: File) => {
@@ -369,40 +376,40 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Bildgenerering misslyckades");
       const url = d.photos?.[0]?.url;
-      if (url) setImageUrl(url); else throw new Error("Ingen bild genererades");
+      if (url) setImage(url); else throw new Error("Ingen bild genererades");
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSearchingImg("");
     }
-  }, [headline1, topic, body, format]);
+  }, [headline1, topic, body, format, setImage]);
 
   // ── Ändra bild via kommentar (bild-till-bild, Nano Banana) ──
   const editImage = useCallback(async () => {
-    if (!imageUrl || !imgComment.trim()) return;
+    if (!curImg || !imgComment.trim()) return;
     setError(""); setEditingImg(true);
     try {
       const r = await fetch("/api/studio/edit-image", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl, instruction: imgComment }),
+        body: JSON.stringify({ imageUrl: curImg, instruction: imgComment }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Bildändring misslyckades");
-      setPrevImageUrl(imageUrl);
-      setImageUrl(d.url);
+      setPrevImageUrl(curImg);
+      setImage(d.url);
       setImgComment("");
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setEditingImg(false);
     }
-  }, [imageUrl, imgComment]);
+  }, [curImg, imgComment, setImage]);
 
   const undoImageEdit = useCallback(() => {
     if (!prevImageUrl) return;
-    setImageUrl(prevImageUrl);
+    setImage(prevImageUrl);
     setPrevImageUrl("");
-  }, [prevImageUrl]);
+  }, [prevImageUrl, setImage]);
 
   // Direkt-manipulation av bilden i live-editorn (dra=flytta, scroll=zooma).
   const onImagePatch = useCallback((p: ImagePatch) => {
@@ -953,7 +960,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={2} color={STEG_FARGER[1]} /> Bild</h2>
 
               {/* Mallen visar en bild — mjuk hjälp, inte varning */}
-              {needsImage && !imageUrl && (
+              {needsImage && !curImg && (
                 <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
                   <div className="text-xs text-gray-600">Den här mallen visar en bild. Ladda upp din egen nedan — eller låt oss skapa en on-brand bild ur innehållet.</div>
                   <button onClick={generateOnBrandImage} disabled={searchingImg === "ai"}
@@ -971,9 +978,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               >
                 {uploading ? (
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-500"><Loader2 className="w-4 h-4 animate-spin" /> Laddar upp…</div>
-                ) : imageUrl ? (
+                ) : curImg ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imageUrl} alt="" className="max-h-40 mx-auto rounded-lg" />
+                  <img src={curImg} alt="" className="max-h-40 mx-auto rounded-lg" />
                 ) : (
                   <div className="flex flex-col items-center gap-2 text-sm text-gray-500">
                     <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
@@ -985,7 +992,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
               </div>
-              {imageUrl && (
+              {curImg && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Vertikal fokuspunkt ({imageFocusY}%)</label>
                   <input type="range" min={0} max={100} value={imageFocusY} onChange={(e) => setImageFocusY(Number(e.target.value))} className="w-full" style={{ accentColor: primary }} />
@@ -993,7 +1000,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               )}
 
               {/* Ändra bilden via kommentar (AI redigerar den befintliga bilden) */}
-              {imageUrl && (
+              {curImg && (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                   <label className="block text-xs font-medium text-gray-600">Ändra bilden — skriv vad du vill</label>
                   <SmartTextarea value={imgComment} onChange={(e) => setImgComment(e.target.value)} rows={2}
@@ -1032,9 +1039,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 {imgResults.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
                     {imgResults.map((p, i) => (
-                      <button key={i} onClick={() => setImageUrl(p.url)} title={p.credit}
+                      <button key={i} onClick={() => setImage(p.url)} title={p.credit}
                         className="rounded-lg overflow-hidden border-2 transition-colors aspect-square"
-                        style={{ borderColor: imageUrl === p.url ? primary : "transparent" }}>
+                        style={{ borderColor: curImg === p.url ? primary : "transparent" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={p.thumb} alt="" className="w-full h-full object-cover" />
                       </button>
@@ -1065,8 +1072,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
                       {mediaItems.map((m) => (
-                        <div key={m.path} className="relative group rounded-lg overflow-hidden border-2 aspect-square" style={{ borderColor: imageUrl === m.url ? primary : "transparent" }}>
-                          <button onClick={() => setImageUrl(m.url)} className="w-full h-full" title="Använd den här bilden">
+                        <div key={m.path} className="relative group rounded-lg overflow-hidden border-2 aspect-square" style={{ borderColor: curImg === m.url ? primary : "transparent" }}>
+                          <button onClick={() => setImage(m.url)} className="w-full h-full" title="Använd den här bilden">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={m.url} alt="" className="w-full h-full object-cover" loading="lazy" />
                           </button>
@@ -1074,7 +1081,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                             className="absolute top-1 right-1 w-6 h-6 rounded-md bg-white/90 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100">
                             {deletingPath === m.path ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                           </button>
-                          {imageUrl === m.url && <span className="absolute bottom-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded text-white" style={{ background: primary }}>Vald</span>}
+                          {curImg === m.url && <span className="absolute bottom-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded text-white" style={{ background: primary }}>Vald</span>}
                         </div>
                       ))}
                     </div>
@@ -1335,6 +1342,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-display font-bold text-gray-900 text-sm uppercase tracking-wide text-gray-500">Förhandsvisning</h2>
                 <div className="flex items-center gap-3">
+                  {isCarousel && slideCount > 0 && (
+                    <div className="flex items-center gap-1.5 mr-1">
+                      <button onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0} className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-30" title="Föregående slide">‹</button>
+                      <span className="text-xs font-semibold text-gray-500 tabular-nums">Slide {slideIdx + 1}/{slideCount}</span>
+                      <button onClick={() => setSlideIdx((i) => Math.min(slideCount - 1, i + 1))} disabled={slideIdx >= slideCount - 1} className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-30" title="Nästa slide">›</button>
+                    </div>
+                  )}
                   <button onClick={() => setNonce(Date.now())} title="Ladda om förhandsvisningen (färsk render)" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
                     <RefreshCw className="w-3.5 h-3.5" /> Uppdatera
                   </button>
@@ -1345,6 +1359,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
               <div className="relative mx-auto rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
                 <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined} />
+                {isCarousel && slideCount > 1 && (
+                  <>
+                    <button onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0} className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-white disabled:opacity-30 z-10" title="Föregående slide">‹</button>
+                    <button onClick={() => setSlideIdx((i) => Math.min(slideCount - 1, i + 1))} disabled={slideIdx >= slideCount - 1} className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-white disabled:opacity-30 z-10" title="Nästa slide">›</button>
+                  </>
+                )}
                 {!imageUrl && !videoUrl && !headline1.trim() && !body.trim() && (!isCarousel || slides.every((s) => !s.headline?.trim() && !s.body?.trim())) && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 p-6 bg-white/85 backdrop-blur-sm">
                     <span className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
@@ -1371,9 +1391,24 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <h2 className="font-display font-bold text-gray-900 text-sm uppercase tracking-wide text-gray-500">Redigera</h2>
                 <button onClick={() => { setOverrides(DEFAULT_OVERRIDES); }} className="text-xs text-gray-400 hover:text-gray-700">Återställ</button>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Textstorlek ({Math.round(overrides.fontScale * 100)}%)</label>
-                <input type="range" min={0.6} max={1.6} step={0.05} value={overrides.fontScale} onChange={(e) => setOv({ fontScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-gray-500">Textstorlek — per ruta</div>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-0.5">Rubrik ({Math.round(overrides.h1Scale * 100)}%)</label>
+                  <input type="range" min={0.5} max={2} step={0.05} value={overrides.h1Scale} onChange={(e) => setOv({ h1Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-0.5">Underrubrik ({Math.round(overrides.h2Scale * 100)}%)</label>
+                  <input type="range" min={0.5} max={2} step={0.05} value={overrides.h2Scale} onChange={(e) => setOv({ h2Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-0.5">Brödtext ({Math.round(overrides.bodyScale * 100)}%)</label>
+                  <input type="range" min={0.5} max={2} step={0.05} value={overrides.bodyScale} onChange={(e) => setOv({ bodyScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-0.5">Radavstånd ({Math.round(overrides.lineScale * 100)}%)</label>
+                  <input type="range" min={0.8} max={1.8} step={0.05} value={overrides.lineScale} onChange={(e) => setOv({ lineScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1388,6 +1423,22 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <div className="flex items-center gap-2">
                     <input type="color" value={overrides.bodyColor || "#1A1A1A"} onChange={(e) => setOv({ bodyColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
                     <button onClick={() => setOv({ bodyColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.bodyColor ? "Auto" : "Standard"}</button>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Typsnitt</label>
+                  <select value={overrides.fontFamily} onChange={(e) => setOv({ fontFamily: e.target.value })} className={inputCls} style={{ fontFamily: overrides.fontFamily ? `${overrides.fontFamily}, sans-serif` : undefined }}>
+                    <option value="">Standard (mall)</option>
+                    {STUDIO_FONTS.map((f) => <option key={f} value={f} style={{ fontFamily: `${f}, sans-serif` }}>{f}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Textbakgrund</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={overrides.textBg || "#000000"} onChange={(e) => setOv({ textBg: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
+                    <button onClick={() => setOv({ textBg: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.textBg ? "Ta bort" : "Ingen"}</button>
                   </div>
                 </div>
               </div>
