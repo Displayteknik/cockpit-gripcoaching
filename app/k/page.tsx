@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
 import { getEffectiveModules } from "@/lib/entitlements";
 import CustomerModuleCards from "@/components/CustomerModuleCards";
+import { FunctionGuide } from "@/components/FunctionGuide";
 import { supabaseService } from "@/lib/supabase-admin";
 import { buildDashboardData } from "@/lib/dashboard-data";
 import { computeFocusInsights, type FocusIcon, type FocusInsight } from "@/lib/dashboard-insights";
@@ -123,7 +124,16 @@ export default async function CustomerHome() {
           <div className="text-xs uppercase tracking-[0.2em] font-semibold text-white/70 mb-3">
             MySales Pro · {today}
           </div>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-white">Välkommen tillbaka</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-white">Välkommen tillbaka</h1>
+            <FunctionGuide
+              primaryColor={primary}
+              title="Din översikt"
+              what="Startsidan i MySales Pro — dina verktyg, ditt innehåll och läget för din synlighet på ett ställe."
+              how="Korten under 'Dina verktyg' är modulerna som ingår i ditt paket. Klicka in på en för att jobba, eller följ 'Att göra nu' för nästa steg."
+              tips={["Börja med Brand-profil så blir allt AI skriver mer likt dig."]}
+            />
+          </div>
           <p className="text-white/80 mt-2 max-w-xl text-sm md:text-base">
             Här är läget för {session.client_name} just nu.
           </p>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import PipelineStegRad from "./PipelineStegRad";
+import { FunctionGuide } from "@/components/FunctionGuide";
 import {
   Zap,
   Loader2,
@@ -147,7 +148,16 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold text-white/80 mb-2">
               <Zap className="w-3.5 h-3.5" /> Fokusmotor
             </div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Idag — dina viktigaste affärer</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Idag — dina viktigaste affärer</h1>
+              <FunctionGuide
+                primaryColor={primaryColor}
+                title="Fokus idag"
+                what="Visar dina viktigaste affärer just nu — prioriterade efter värde, brådska och hur nära pengarna de står."
+                how="Systemet räknar en prioritet per affär och lägger de mest brådskande överst med nästa drag och en säljcoach. 'Inflödet' håller koll på aktiviteterna som skapar nästa månads affärer."
+                tips={["Ta toppen först — 'I risk' betyder att något väntat för länge.", "Klicka 'Coacha affären' för konkret nästa steg.", "Logga aktiviteter i Inflödet så pipelinen aldrig sinar."]}
+              />
+            </div>
             <p className="text-white/80 mt-1.5 text-sm max-w-lg">
               Prioriterat efter värde, brådska och hur nära pengarna affären står. Ta toppen först.
             </p>

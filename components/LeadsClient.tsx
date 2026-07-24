@@ -8,6 +8,7 @@ import {
   Globe, MonitorSmartphone,
 } from "lucide-react";
 import { LinkedinIcon, FacebookIcon, InstagramIcon } from "@/lib/module-icons";
+import { FunctionGuide } from "@/components/FunctionGuide";
 
 // "Nya leads" (fd Lobbyn) — inflödet av nya kontakter från LinkedIn/IG/FB/mail/webb
 // INNAN de blir affärer i pipelinen. Bygg på varje case med bild/röst/text, få
@@ -429,7 +430,16 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold text-white/80 mb-2">
               <Users className="w-3.5 h-3.5" /> Nya leads
             </div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Din lead-pipeline före MySales</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Din lead-pipeline före MySales</h1>
+              <FunctionGuide
+                primaryColor={primaryColor}
+                title="Nya leads"
+                what="Samlar nya kontakter från Instagram, Facebook, LinkedIn, mejl och webb i en värme-trappa — från ny till redo för offert."
+                how="Varje lead får ett steg (Ny → Kontaktad → Dialog → Redo). Du kan skapa ett lead från en inklistrad skärmbild eller inspelad röst, och få AI-förslag på svar."
+                tips={["Flytta lead framåt i trappan när dialogen utvecklas.", "Använd AI-svarsförslaget som utkast, inte facit.", "Redo-leads går vidare till Fokus som affär."]}
+              />
+            </div>
             <p className="text-white/80 mt-1.5 text-sm max-w-lg">
               Nya kontakter från alla kanaler — följ hur varma de blir från kall lead till redo, och skicka vidare till MySales när det är läge.
             </p>

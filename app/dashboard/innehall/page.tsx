@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip, StatTile, TONES, type Tone } from "@/components/ui/dash";
+import { FunctionGuide } from "@/components/FunctionGuide";
 
 interface ClientInfo { name: string; primary_color: string }
 
@@ -97,7 +98,16 @@ export default function InnehallPage() {
       {/* Senaste innehåll */}
       <section className="cw-reveal rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]" style={{ animationDelay: "180ms" }}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-gray-900">Senaste innehåll</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-lg font-bold text-gray-900">Senaste innehåll</h2>
+            <FunctionGuide
+              primaryColor={primary}
+              title="Innehållskalender"
+              what="Visar allt ditt innehåll — Instagram, Facebook, LinkedIn och blogg — i en och samma vy."
+              how="Varje inlägg hamnar på sin dag med status (utkast, schemalagt, publicerat). Du ser hela veckan på ett ställe istället för utspritt per kanal."
+              tips={["Schemalägg i Studio så dyker inlägget upp här.", "Håll en jämn takt över kanalerna."]}
+            />
+          </div>
           <a href="/dashboard/studio/kalender" className="inline-flex items-center gap-1 text-sm font-medium hover:opacity-80" style={{ color: primary }}>
             <CalendarClock className="h-4 w-4" /> Kalender
           </a>

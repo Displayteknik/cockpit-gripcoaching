@@ -1,6 +1,7 @@
 "use client";
 
 import SmartTextarea from "@/components/SmartTextarea";
+import { FunctionGuide } from "@/components/FunctionGuide";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -865,7 +866,16 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <ImageIcon className="w-6 h-6" style={{ color: primary }} />
             </span>
             <div>
-              <h1 className="font-display font-bold text-2xl text-gray-900">Skapa inlägg</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-display font-bold text-2xl text-gray-900">Skapa inlägg</h1>
+                <FunctionGuide
+                  primaryColor={primary}
+                  title="Skapa inlägg"
+                  what="Bygger färdiga inlägg till Instagram, Facebook och LinkedIn — bild, text på bilden och bildtext i din röst, utan Canva."
+                  how="Välj mall och format, lägg till en bild (egen, sök eller AI), skriv eller låt AI föreslå rubrik och bildtext, förhandsgranska per kanal och schemalägg eller publicera."
+                  tips={["Fyll i din brand-profil först så låter texten mer som du.", "Klicka 'Få 3 varianter' för att jämföra olika krokar.", "Schemalägg direkt så hamnar inlägget i kalendern."]}
+                />
+              </div>
               <p className="text-sm text-gray-500">Färdiga inlägg till Instagram — utan Canva. {client ? `Klient: ${client.name}` : ""}</p>
             </div>
           </div>
