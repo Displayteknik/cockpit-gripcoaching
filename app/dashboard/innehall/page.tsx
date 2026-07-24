@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Lightbulb, FileEdit, CalendarClock, CheckCircle2, RefreshCw, Loader2,
-  ImageIcon, PenSquare, Send, Share2, ArrowUpRight, LayoutGrid,
+  ImageIcon, PenSquare, Send, Share2, ArrowUpRight, LayoutGrid, List as ListIcon,
 } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip, StatTile, TONES, type Tone } from "@/components/ui/dash";
 import { CompassBadges, funnelTintClass } from "@/components/content-compass/badges";
+import ContentCalendar from "@/components/content-compass/ContentCalendar";
 import { FunctionGuide } from "@/components/FunctionGuide";
 
 interface ClientInfo { name: string; primary_color: string }
@@ -35,6 +36,7 @@ export default function InnehallPage() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [counts, setCounts] = useState<Record<ContentStatus, number>>({ idea: 0, draft: 0, scheduled: 0, published: 0 });
   const [loading, setLoading] = useState(true);
+  const [navView, setNavView] = useState<"calendar" | "list">("calendar");
   const primary = client?.primary_color || "#6366f1";
 
   const refresh = useCallback(async () => {
@@ -109,14 +111,17 @@ export default function InnehallPage() {
               tips={["Schemalägg i Studio så dyker inlägget upp här.", "Håll en jämn takt över kanalerna."]}
             />
           </div>
-          <a href="/dashboard/studio/kalender" className="inline-flex items-center gap-1 text-sm font-medium hover:opacity-80" style={{ color: primary }}>
-            <CalendarClock className="h-4 w-4" /> Kalender
-          </a>
+          <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
+            <button onClick={() => setNavView("calendar")} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium ${navView === "calendar" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={navView === "calendar" ? { background: primary } : {}}><LayoutGrid className="h-4 w-4" /> Kalender</button>
+            <button onClick={() => setNavView("list")} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium ${navView === "list" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={navView === "list" ? { background: primary } : {}}><ListIcon className="h-4 w-4" /> Lista</button>
+          </div>
         </div>
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-gray-400"><Loader2 className="h-4 w-4 animate-spin" /> Laddar…</div>
         ) : items.length === 0 ? (
           <div className="py-8 text-center text-sm text-gray-400">Inget innehåll ännu — börja med “Skapa nytt” ovan.</div>
+        ) : navView === "calendar" ? (
+          <ContentCalendar items={items} primary={primary} />
         ) : (
           <div className="divide-y divide-gray-50">
             {items.slice(0, 15).map((it) => (
