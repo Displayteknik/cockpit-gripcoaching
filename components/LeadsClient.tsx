@@ -8,6 +8,7 @@ import {
   Globe, MonitorSmartphone,
 } from "lucide-react";
 import { LinkedinIcon, FacebookIcon, InstagramIcon } from "@/lib/module-icons";
+import PipelineStegRad from "./PipelineStegRad";
 
 // "Nya leads" (fd Lobbyn) — inflödet av nya kontakter från LinkedIn/IG/FB/mail/webb
 // INNAN de blir affärer i pipelinen. Bygg på varje case med bild/röst/text, få
@@ -34,6 +35,8 @@ interface Contact {
   profile_url: string | null;
   ghl_contact_id: string | null;
   pipeline_stage?: string | null; // satt om kontakten redan är en affär i pipelinen (Fokus idag)
+  opp_id?: string | null; // ghl_opportunity_id för stegraden (move-stage)
+  steg_info?: { aktuellId: string; pipelineNamn: string; steg: { id: string; namn: string }[] } | null;
 }
 
 const STATUS: Record<Status, { label: string; chip: string }> = {
@@ -487,22 +490,39 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
         <TomRuta ikon={Users} titel="Inga leads än" text="Klistra in en skärmbild, prata in eller klicka Nytt lead." />
       ) : (
         <>
-          {/* Redan i pipelinen → hör hemma i Fokus idag, inte här */}
+          {/* Redan i pipelinen → visa var de står + flytta steg direkt (stegrad). */}
           {iPipeline.length > 0 && (
-            <a href="/dashboard/fokus"
-              className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3.5 hover:bg-emerald-100 transition-colors">
-              <ArrowUpCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-emerald-900 text-sm">
-                  {iPipeline.length} {iPipeline.length === 1 ? "kontakt är" : "kontakter är"} redan affärer i pipelinen
+            <details className="rounded-2xl border border-emerald-200 bg-emerald-50/60 shadow-sm" open>
+              <summary className="cursor-pointer px-5 py-3.5 flex items-center gap-3">
+                <ArrowUpCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-emerald-900 text-sm">
+                    {iPipeline.length} {iPipeline.length === 1 ? "kontakt är" : "kontakter är"} redan affärer i pipelinen
+                  </div>
+                  <div className="text-xs text-emerald-700 mt-0.5">Se var de står och flytta steg direkt — eller öppna Fokus idag.</div>
                 </div>
-                <div className="text-xs text-emerald-700 mt-0.5 truncate">
-                  {iPipeline.slice(0, 3).map((c) => `${c.name}${c.pipeline_stage ? ` (${c.pipeline_stage})` : ""}`).join(", ")}
-                  {iPipeline.length > 3 ? " m.fl." : ""} — hantera i Fokus idag
-                </div>
+                <a href="/dashboard/fokus" onClick={(e) => e.stopPropagation()}
+                  className="text-xs font-semibold text-emerald-700 whitespace-nowrap hover:underline">Fokus idag →</a>
+              </summary>
+              <div className="px-3 pb-3 space-y-2">
+                {iPipeline.map((c) => (
+                  <div key={c.id} className="rounded-xl border border-emerald-100 bg-white p-3.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-900">{c.name}</span>
+                      {c.company && <span className="text-sm text-gray-500 truncate">· {c.company}</span>}
+                      {c.pipeline_stage && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{c.pipeline_stage}</span>
+                      )}
+                    </div>
+                    {c.steg_info && c.opp_id && c.steg_info.steg.length > 1 ? (
+                      <PipelineStegRad oppId={c.opp_id} stegInfo={c.steg_info} primaryColor={primaryColor} onMoved={ladda} />
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-1.5">Öppna Fokus idag för att arbeta med affären.</p>
+                    )}
+                  </div>
+                ))}
               </div>
-              <span className="text-xs font-semibold text-emerald-700 whitespace-nowrap">Fokus idag →</span>
-            </a>
+            </details>
           )}
 
           {aktiva.length > 0 && (
