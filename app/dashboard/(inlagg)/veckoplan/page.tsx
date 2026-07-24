@@ -14,6 +14,7 @@ import {
   CalendarPlus,
 } from "lucide-react";
 import KnowledgeText from "@/components/KnowledgeText";
+import { CompassBadges } from "@/components/content-compass/badges";
 
 interface DayPlan {
   day: string;
@@ -327,7 +328,7 @@ function DayCard({
               {day.hook || "(saknar hook)"}
             </div>
             <div className="text-xs text-gray-600 mt-0.5">
-              {day.fourA} · DISC {day.disc} · {day.funnel} · {day.format}
+              <CompassBadges funnel={day.funnel.toLowerCase()} four_a={day.fourA} disc={[day.disc]} /> <span className="text-gray-400">· {day.format}</span>
             </div>
           </div>
         </div>

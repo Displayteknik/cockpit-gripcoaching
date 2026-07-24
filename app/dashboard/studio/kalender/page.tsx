@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock, FileEdit, CheckCircle2, Lightbulb, RefreshCw, Loader2, ExternalLink, ImageIcon } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
+import { CompassBadges, funnelTintClass } from "@/components/content-compass/badges";
 
 interface ClientInfo { name: string; primary_color: string }
 
@@ -44,7 +45,7 @@ export default function KalenderPage() {
   }), [items]);
 
   const Row = ({ it }: { it: ContentItem }) => (
-    <a href={it.editHref} className="flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
+    <a href={it.editHref} className={`flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors ${funnelTintClass(it.funnel_level)}`}>
       <div className="w-11 h-11 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
         {it.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -53,7 +54,10 @@ export default function KalenderPage() {
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-gray-900 truncate">{it.title}</div>
-        <div className="text-xs text-gray-400">{SOURCE_LABEL[it.source] || it.source} · {it.channel}{it.when ? ` · ${fmt(it.when)}` : ""}</div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <div className="text-xs text-gray-400 truncate">{SOURCE_LABEL[it.source] || it.source} · {it.channel}{it.when ? ` · ${fmt(it.when)}` : ""}</div>
+          <CompassBadges funnel={it.funnel_level} four_a={it.four_a} disc={it.disc} />
+        </div>
       </div>
       <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 capitalize" style={{ background: `${STATUS_COLOR[it.status]}1a`, color: STATUS_COLOR[it.status] }}>
         {it.source}

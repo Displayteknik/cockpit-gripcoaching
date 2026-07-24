@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip, StatTile, TONES, type Tone } from "@/components/ui/dash";
+import { CompassBadges, funnelTintClass } from "@/components/content-compass/badges";
 import { FunctionGuide } from "@/components/FunctionGuide";
 
 interface ClientInfo { name: string; primary_color: string }
@@ -119,7 +120,7 @@ export default function InnehallPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {items.slice(0, 15).map((it) => (
-              <a key={`${it.source}-${it.id}`} href={it.editHref} className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-gray-50">
+              <a key={`${it.source}-${it.id}`} href={it.editHref} className={`group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-gray-50 ${funnelTintClass(it.funnel_level)}`}>
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                   {it.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -128,7 +129,10 @@ export default function InnehallPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-gray-900">{it.title}</div>
-                  <div className="text-xs text-gray-400">{SOURCE_LABEL[it.source] || it.source} · {it.channel}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-gray-400 truncate">{SOURCE_LABEL[it.source] || it.source} · {it.channel}</div>
+                    <CompassBadges funnel={it.funnel_level} four_a={it.four_a} disc={it.disc} />
+                  </div>
                 </div>
                 <span className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: `${STATUS_COLOR[it.status]}1a`, color: STATUS_COLOR[it.status] }}>
                   {STATUS_LABEL[it.status]}

@@ -16,6 +16,10 @@ export interface ContentItem {
   when: string | null; // ISO: schemalagt → publicerat → skapat
   imageUrl: string | null;
   editHref: string; // länk till verkstaden
+  // Content Compass-profil (null = oklassat). Tillagt CC-1, additivt.
+  funnel_level: string | null;
+  four_a: string | null;
+  disc: string[] | null;
 }
 
 export interface ContentOverview {
@@ -49,10 +53,10 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
   const sb = supabaseService();
 
   const [studio, social, linkedin, blog] = await Promise.all([
-    sb.from("studio_posts").select("id, title, caption, image_url, format, ghl_status, scheduled_at, created_at").eq("client_id", clientId).order("updated_at", { ascending: false }).limit(100),
-    sb.from("hm_social_posts").select("id, platform, hook, caption, image_url, status, scheduled_for, published_at, created_at").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
-    sb.from("linkedin_posts").select("id, hook, body, status, scheduled_for, posted_at, created_at").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
-    sb.from("hm_blog").select("id, title, image_url, published, published_at, created_at").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
+    sb.from("studio_posts").select("id, title, caption, image_url, format, ghl_status, scheduled_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("updated_at", { ascending: false }).limit(100),
+    sb.from("hm_social_posts").select("id, platform, hook, caption, image_url, status, scheduled_for, published_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
+    sb.from("linkedin_posts").select("id, hook, body, status, scheduled_for, posted_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
+    sb.from("hm_blog").select("id, title, image_url, published, published_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
   ]);
 
   const items: ContentItem[] = [];
@@ -62,6 +66,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     items.push({
       id: String(p.id), source: "studio", title: firstLine(p.title || p.caption, "Studio-inlägg"),
       channel: "social", status, when: p.scheduled_at || p.created_at, imageUrl: p.image_url, editHref: WORKSHOP.studio,
+      funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
   for (const p of social.data || []) {
@@ -69,6 +74,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     items.push({
       id: String(p.id), source: "social", title: firstLine(p.hook || p.caption, "Inlägg"),
       channel: (p.platform || "social").toLowerCase(), status, when: p.scheduled_for || p.published_at || p.created_at, imageUrl: p.image_url, editHref: WORKSHOP.social,
+      funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
   for (const p of linkedin.data || []) {
@@ -76,6 +82,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     items.push({
       id: String(p.id), source: "linkedin", title: firstLine(p.hook || p.body, "LinkedIn-inlägg"),
       channel: "linkedin", status, when: p.scheduled_for || p.posted_at || p.created_at, imageUrl: null, editHref: WORKSHOP.linkedin,
+      funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
   for (const p of blog.data || []) {
@@ -85,6 +92,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     items.push({
       id: String(p.id), source: "blog", title: firstLine(p.title, "Bloggartikel"),
       channel: "blogg", status, when: p.published_at || p.created_at, imageUrl: p.image_url, editHref: WORKSHOP.blog,
+      funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
 
