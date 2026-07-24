@@ -118,6 +118,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [savingPost, setSavingPost] = useState(false);
   const [caption, setCaption] = useState("");
   const [suggestingCaption, setSuggestingCaption] = useState(false);
+  // Fas D — A/B-varianter av captionen (olika krok-vinklar) att jämföra och välja.
+  const [captionVariants, setCaptionVariants] = useState<{ angle: string; caption: string }[]>([]);
+  const [loadingVariants, setLoadingVariants] = useState(false);
   const [ghlConnected, setGhlConnected] = useState<boolean | null>(null);
   const [ghlAccounts, setGhlAccounts] = useState<GhlAccount[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -646,6 +649,24 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       setError((e as Error).message);
     } finally {
       setSuggestingCaption(false);
+    }
+  }, [headline1, headline2, body, topic, slides, postType]);
+
+  // Fas D: A/B — generera 3 caption-varianter med olika krok-vinklar att jämföra.
+  const suggestCaptionVariants = useCallback(async () => {
+    setError(""); setLoadingVariants(true); setCaptionVariants([]);
+    try {
+      const r = await fetch("/api/studio/suggest-caption", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, variants: 3 }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte skapa varianter");
+      setCaptionVariants(Array.isArray(d.variants) ? d.variants : []);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoadingVariants(false);
     }
   }, [headline1, headline2, body, topic, slides, postType]);
 
@@ -1221,12 +1242,47 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={4} color={STEG_FARGER[3]} /> Bildtext</h2>
                   <p className="text-xs text-gray-500 mt-0.5 ml-9">Texten <strong>under inlägget</strong> på Instagram (caption) — krok, värde, uppmaning, hashtags.</p>
                 </div>
-                <button onClick={suggestCaption} disabled={suggestingCaption}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40 shrink-0"
-                  style={{ background: primary }}>
-                  {suggestingCaption ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} {caption ? "Skriv om" : "Föreslå bildtext"}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={suggestCaptionVariants} disabled={loadingVariants || suggestingCaption}
+                    title="Få 3 varianter med olika krokar att jämföra"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border shadow-sm hover:bg-gray-50 disabled:opacity-40"
+                    style={{ borderColor: `${primary}55`, color: primary }}>
+                    {loadingVariants ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />} A/B-varianter
+                  </button>
+                  <button onClick={suggestCaption} disabled={suggestingCaption || loadingVariants}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    style={{ background: primary }}>
+                    {suggestingCaption ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} {caption ? "Skriv om" : "Föreslå bildtext"}
+                  </button>
+                </div>
               </div>
+
+              {/* A/B-varianter — jämför krokar, välj en */}
+              {captionVariants.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant — jämför krokarna</span>
+                    <button onClick={() => setCaptionVariants([])} className="text-xs text-gray-400 hover:text-gray-700">Dölj</button>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    {captionVariants.map((v, i) => {
+                      const vald = caption.trim() === v.caption.trim();
+                      return (
+                        <button key={i} onClick={() => { setCaption(v.caption); }}
+                          className={`text-left rounded-xl border p-3 transition-all hover:shadow-sm ${vald ? "ring-2" : ""}`}
+                          style={vald ? { borderColor: primary, boxShadow: `0 0 0 2px ${primary}` } : { borderColor: "#e5e7eb" }}>
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${primary}1a`, color: primary }}>{v.angle}</span>
+                            {vald && <span className="text-[10px] font-semibold text-emerald-600">✓ vald</span>}
+                          </div>
+                          <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-[10] leading-relaxed">{v.caption}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <SmartTextarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={7}
                 placeholder="Skriv bildtexten här, eller låt AI föreslå en ur inläggets innehåll och din röst…"
                 className={`${inputCls} leading-relaxed`} style={{ whiteSpace: "pre-wrap" }} />

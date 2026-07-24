@@ -82,15 +82,36 @@ export async function POST(req: NextRequest) {
       "\nSkriv captionen nu — strukturerad enligt reglerna.",
     ].filter(Boolean).join("\n");
 
-    // Generera + grinda mot AI-språk. Regenerera upp till 2 ggr med hårdare instruktion.
-    let caption = "";
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const sys = attempt === 0 ? system : `${system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
-      caption = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? 0.85 : 0.7, maxOutputTokens: longer ? 700 : 500 })).trim();
-      if (!hasBanned(caption)) break;
+    // Generera EN caption med given krok-vinkel + grinda mot AI-språk (regenerera 2 ggr).
+    const genOne = async (vinkelInstruktion: string): Promise<string> => {
+      const base = vinkelInstruktion ? `${system}\n\n=== KROK-VINKEL ===\n${vinkelInstruktion}` : system;
+      let out = "";
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const sys = attempt === 0 ? base : `${base}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
+        out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? 0.9 : 0.7, maxOutputTokens: longer ? 700 : 500 })).trim();
+        if (!hasBanned(out)) break;
+      }
+      return hasBanned(out) ? sanitizeCaption(out) : out;
+    };
+
+    // A/B-läge: distinkta krok-vinklar så varianterna faktiskt skiljer sig (spec Fas D).
+    const ANGLAR: { angle: string; instruktion: string }[] = [
+      { angle: "Fråga", instruktion: "Öppna med en rak, nyfiken FRÅGA som träffar målgruppens vardag." },
+      { angle: "Påstående", instruktion: "Öppna med ett djärvt, konkret PÅSTÅENDE (en sanning eller en vanlig myt du motbevisar)." },
+      { angle: "Berättelse", instruktion: "Öppna med en kort BERÄTTELSE/scen (en kund, en situation) i första person." },
+      { angle: "Siffra", instruktion: "Öppna med en konkret SIFFRA eller ett resultat som skapar nyfikenhet (hitta inte på — bara om innehållet ger det, annars en tydlig observation)." },
+    ];
+
+    const n = Math.min(4, Math.max(0, Number((b as { variants?: number }).variants) || 0));
+    if (n >= 2) {
+      const valda = ANGLAR.slice(0, n);
+      const variants = await Promise.all(
+        valda.map(async (v) => ({ angle: v.angle, caption: await genOne(v.instruktion) })),
+      );
+      return NextResponse.json({ variants: variants.filter((v) => v.caption) });
     }
-    // Sista säkerhet: byt mekaniskt ut ev. kvarvarande kliché (modellen släpper inte "handlar om").
-    if (hasBanned(caption)) caption = sanitizeCaption(caption);
+
+    const caption = await genOne("");
     return NextResponse.json({ caption });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
