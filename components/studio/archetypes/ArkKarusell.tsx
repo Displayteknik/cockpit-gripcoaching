@@ -26,18 +26,23 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0 }: { payloa
   // Bakgrund + textfärg per kind.
   const isHook = slide.kind === "hook";
   const isCta = slide.kind === "cta";
+  const hasImg = Boolean(slide.imageUrl);
   const bg = isHook ? c.primary : isCta ? c.primaryDeep : c.paper;
-  const ink = isHook ? onPrimary : isCta ? onDeep : c.ink;
+  // Point-slide med bild: texten ligger över ett mörkt scrim nedtill → vit text.
+  const ink = isHook ? onPrimary : isCta ? onDeep : hasImg ? c.paper : c.ink;
   const dim = isHook || isCta ? 0.9 : 0.82;
 
   return (
     <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, background: bg }}>
-      {/* Valfri bild på hook/cta som fullbleed-bakgrund med scrim */}
-      {slide.imageUrl && (isHook || isCta) ? (
+      {/* Valfri bild som fullbleed-bakgrund med scrim. Point = mörkt scrim nedtill (text där);
+          hook/cta = jämnare scrim i bakgrundsfärgen. */}
+      {hasImg ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={slide.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, ${bg}cc 0%, ${bg}dd 100%)` }} />
+          <div style={{ position: "absolute", inset: 0, background: slide.kind === "point"
+            ? "linear-gradient(180deg, rgba(15,13,11,0.15) 0%, rgba(15,13,11,0.32) 45%, rgba(15,13,11,0.9) 100%)"
+            : `linear-gradient(180deg, ${bg}cc 0%, ${bg}dd 100%)` }} />
         </>
       ) : null}
 
@@ -50,7 +55,7 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0 }: { payloa
 
       {/* Point-nummer */}
       {slide.kind === "point" ? (
-        <div style={{ position: "absolute", top: 120, left: 80, fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 900, fontSize: 120, lineHeight: 1, color: c.accent, zIndex: 2 }}>
+        <div style={{ position: "absolute", top: 120, left: 80, fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 900, fontSize: 120, lineHeight: 1, color: c.accent, zIndex: 2, textShadow: hasImg ? "0 2px 16px rgba(0,0,0,0.5)" : undefined }}>
           {String(pointNo).padStart(2, "0")}
         </div>
       ) : null}
@@ -83,7 +88,7 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0 }: { payloa
 
       {/* Diskret varumärke nere — föredra alltid loggan (rätt version per faktisk bakgrundsljushet) före text */}
       {(() => {
-        const bgLight = isLightColor(bg);
+        const bgLight = isLightColor(bg) && !hasImg;
         const chosenLogo = bgLight ? brand.assets.logo || brand.assets.logoOnDark : brand.assets.logoOnDark || brand.assets.logo;
         return (
           <div style={{ position: "absolute", bottom: 56, left: 80, right: 80, display: "flex", alignItems: "center", zIndex: 2 }}>

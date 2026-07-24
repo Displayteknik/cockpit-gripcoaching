@@ -1359,22 +1359,24 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </a>
                 </div>
               </div>
-              <div className="relative mx-auto rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
-                <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined} />
+              <div className={`relative mx-auto ${isCarousel && slideCount > 1 ? "px-11" : ""}`}>
+                <div className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
+                  <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined} />
+                  {!imageUrl && !videoUrl && !headline1.trim() && !body.trim() && (!isCarousel || slides.every((s) => !s.headline?.trim() && !s.body?.trim())) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 p-6 bg-white/85 backdrop-blur-sm">
+                      <span className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
+                        <Wand2 className="w-5 h-5" style={{ color: primary }} />
+                      </span>
+                      <div className="text-sm font-semibold text-gray-800">Ditt inlägg visas här</div>
+                      <p className="text-xs text-gray-500 max-w-[220px]">Skriv text i <strong>steg 3</strong> eller tryck <strong>Föreslå text</strong> — så ser du resultatet direkt.</p>
+                    </div>
+                  )}
+                </div>
                 {isCarousel && slideCount > 1 && (
                   <>
-                    <button onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0} className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-white disabled:opacity-30 z-10" title="Föregående slide">‹</button>
-                    <button onClick={() => setSlideIdx((i) => Math.min(slideCount - 1, i + 1))} disabled={slideIdx >= slideCount - 1} className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-white disabled:opacity-30 z-10" title="Nästa slide">›</button>
+                    <button onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0} className="absolute left-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-gray-50 disabled:opacity-30 z-10" title="Föregående slide">‹</button>
+                    <button onClick={() => setSlideIdx((i) => Math.min(slideCount - 1, i + 1))} disabled={slideIdx >= slideCount - 1} className="absolute right-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-gray-50 disabled:opacity-30 z-10" title="Nästa slide">›</button>
                   </>
-                )}
-                {!imageUrl && !videoUrl && !headline1.trim() && !body.trim() && (!isCarousel || slides.every((s) => !s.headline?.trim() && !s.body?.trim())) && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 p-6 bg-white/85 backdrop-blur-sm">
-                    <span className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
-                      <Wand2 className="w-5 h-5" style={{ color: primary }} />
-                    </span>
-                    <div className="text-sm font-semibold text-gray-800">Ditt inlägg visas här</div>
-                    <p className="text-xs text-gray-500 max-w-[220px]">Skriv text i <strong>steg 3</strong> eller tryck <strong>Föreslå text</strong> — så ser du resultatet direkt.</p>
-                  </div>
                 )}
               </div>
               {payload.imageUrl && (
