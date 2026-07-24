@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     });
     if (!variants.length) return NextResponse.json({ error: "Kunde inte skapa inlägg ur artikeln" }, { status: 500 });
 
-    const slug = client?.slug || "opticur";
+    const slug = client?.slug || ""; // ALDRIG defaulta till en riktig klient (opticur-läcka)
     // Format-medvetet arketypval ur klientens contentProfile. Faller tillbaka på statement.
     const { formats } = await getKitDirectives(clientId);
     const has = (f: string) => !formats.length || formats.includes(f);

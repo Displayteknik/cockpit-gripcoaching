@@ -102,8 +102,10 @@ export function normalizePayload(raw: Partial<StudioPayload>): StudioPayload {
     raw.format === "1080x1080" ? "1080x1080" : raw.format === "1080x1920" ? "1080x1920" : "1080x1350";
   const badge = raw.badge ?? { enabled: false, line1: "", line2: "" };
   return {
-    clientId: raw.clientId || "opticur",
-    templateId: raw.templateId || "opticur-foto-gul-ruta",
+    // ALDRIG defaulta till en riktig klient (opticur) — det läcker den klientens brand/footer
+    // in i andras inlägg. Tom clientId → neutral brand. Neutral generisk mall, ej klient-exklusiv.
+    clientId: raw.clientId || "",
+    templateId: raw.templateId || "ark-textkort",
     format,
     headline1: raw.headline1 ?? "",
     headline2: raw.headline2 ?? "",

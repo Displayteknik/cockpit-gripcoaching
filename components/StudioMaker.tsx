@@ -169,7 +169,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
   const primary = client?.primary_color || DEFAULT_COLOR;
-  const slug = client?.slug || "opticur";
+  // ALDRIG falla tillbaka på en riktig klients slug — då läcker den klientens brand/footer
+  // in i andras inlägg (loadBrand läser clients/<slug>/brand.json). Tom slug = neutral brand.
+  const slug = client?.slug || "";
   // Mall-väljaren: använd RIKTIGA slugen (tom när klienten ännu inte laddats) så klient-exklusiva
   // mallar (t.ex. Opticur) ALDRIG visas för fel klient under laddning. Rot-fix mot footer-läckan.
   const availableTemplates = useMemo(() => templatesForClient(client?.slug || "", contentFormats as never), [client?.slug, contentFormats]);

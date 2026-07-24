@@ -13,7 +13,9 @@ export async function GET() {
 
   try {
     const client = await getActiveClient();
-    const slug = client?.slug || "opticur";
+    // ALDRIG defaulta till en riktig klient (opticur) — då får editorn den klientens brand/footer.
+    // Oresolverad klient → neutral brand (tom slug).
+    const slug = client?.slug || "";
     const brand = await loadBrand(slug);
     return NextResponse.json({ brand });
   } catch (e) {

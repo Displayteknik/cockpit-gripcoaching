@@ -82,6 +82,9 @@ const ALLOWED_FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display
 // ── Publik ingång ────────────────────────────────────────────────
 export async function loadBrand(slug: string): Promise<StudioBrand> {
   const safeSlug = slug.replace(/[^a-z0-9_-]/gi, "");
+  // Tom slug → neutral brand direkt. Aldrig fil-/DB-slå på en fallback-slug (skydd mot
+  // att en riktig klients brand/footer läcker in i ett inlägg utan giltig klient).
+  if (!safeSlug) return neutralBrand("");
   const file = path.join(process.cwd(), "clients", safeSlug, "brand.json");
 
   let brand: StudioBrand;
