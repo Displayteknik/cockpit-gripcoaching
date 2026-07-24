@@ -62,7 +62,7 @@ interface Board {
   };
   planering?: Record<string, Planering>;
   attGoraIdag?: string[];
-  stegKarta?: Record<string, { aktuellId: string; steg: { id: string; namn: string }[] }>;
+  stegKarta?: Record<string, { aktuellId: string; pipelineNamn: string; steg: { id: string; namn: string }[] }>;
 }
 
 // "idag" / "imorgon" / "18 jul" ur ett ISO-datum.
@@ -365,7 +365,7 @@ function DragKort({
   locationId?: string;
   planering?: Planering;
   attGora?: boolean;
-  stegInfo?: { aktuellId: string; steg: { id: string; namn: string }[] };
+  stegInfo?: { aktuellId: string; pipelineNamn: string; steg: { id: string; namn: string }[] };
   onCoacha: () => void;
   onSaved: () => void;
 }) {
@@ -583,12 +583,13 @@ function StegRad({
   onMoved,
 }: {
   oppId: string;
-  stegInfo: { aktuellId: string; steg: { id: string; namn: string }[] };
+  stegInfo: { aktuellId: string; pipelineNamn: string; steg: { id: string; namn: string }[] };
   primaryColor: string;
   onMoved: () => void;
 }) {
   const [flyttar, setFlyttar] = useState<string | null>(null);
   const aktuellIndex = stegInfo.steg.findIndex((s) => s.id === stegInfo.aktuellId);
+  const aktuellNamn = stegInfo.steg[aktuellIndex]?.namn || "";
 
   const flytta = async (stegId: string, stegNamn: string) => {
     if (stegId === stegInfo.aktuellId || flyttar) return;
@@ -609,8 +610,21 @@ function StegRad({
     }
   };
 
+  const antal = stegInfo.steg.length;
   return (
     <div className="mt-3">
+      {/* Förklarande rubrik över stegraden */}
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+          <TrendingUp className="w-3.5 h-3.5" />
+          Var i pipelinen{stegInfo.pipelineNamn ? ` · ${stegInfo.pipelineNamn}` : ""}
+        </div>
+        {aktuellIndex >= 0 && (
+          <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap">
+            Steg {aktuellIndex + 1} av {antal}
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-1 overflow-x-auto pb-1.5 -mx-0.5 px-0.5">
         {stegInfo.steg.map((s, i) => {
           const aktuell = i === aktuellIndex;
@@ -645,7 +659,7 @@ function StegRad({
           );
         })}
       </div>
-      <p className="text-[11px] text-gray-400 mt-0.5">Klicka ett steg för att flytta affären i MySales.</p>
+      <p className="text-[11px] text-gray-400 mt-0.5">Klicka ett steg för att flytta affären i MySales{aktuellNamn ? ` (nu: ${aktuellNamn})` : ""}.</p>
     </div>
   );
 }

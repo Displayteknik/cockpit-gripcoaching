@@ -97,7 +97,7 @@ export async function GET() {
   // Grafisk pipeline-stegrad: hela pipelinen (steg i ordning) från GHL, per affär.
   // GHL-stegets id är globalt unikt → hitta pipelinen som innehåller affärens steg.
   // Best-effort: utan detta renderas kortet ändå (bara utan stegrad).
-  const stegKarta: Record<string, { aktuellId: string; steg: { id: string; namn: string }[] }> = {};
+  const stegKarta: Record<string, { aktuellId: string; pipelineNamn: string; steg: { id: string; namn: string }[] }> = {};
   try {
     const { token, locationId: loc } = await resolveCoachGhl(clientId);
     if (token && loc) {
@@ -105,16 +105,16 @@ export async function GET() {
       const pr = await fetch(`https://services.leadconnectorhq.com/opportunities/pipelines?locationId=${loc}`, { headers: gh });
       if (pr.ok) {
         const pd = await pr.json();
-        const pipelines: Array<{ stages: Array<{ id: string; name: string }> }> = pd?.pipelines ?? [];
-        const stegForSteg = new Map<string, { id: string; namn: string }[]>();
+        const pipelines: Array<{ name: string; stages: Array<{ id: string; name: string }> }> = pd?.pipelines ?? [];
+        const stegForSteg = new Map<string, { pipelineNamn: string; lista: { id: string; namn: string }[] }>();
         for (const p of pipelines) {
           const lista = (p.stages || []).map((s) => ({ id: s.id, namn: s.name }));
-          for (const s of lista) stegForSteg.set(s.id, lista);
+          for (const s of lista) stegForSteg.set(s.id, { pipelineNamn: p.name || "", lista });
         }
         for (const r of deduped) {
           const sid = r.steg_id;
-          const lista = sid ? stegForSteg.get(sid) : undefined;
-          if (sid && lista) stegKarta[r.ghl_opportunity_id] = { aktuellId: sid, steg: lista };
+          const match = sid ? stegForSteg.get(sid) : undefined;
+          if (sid && match) stegKarta[r.ghl_opportunity_id] = { aktuellId: sid, pipelineNamn: match.pipelineNamn, steg: match.lista };
         }
       }
     }
