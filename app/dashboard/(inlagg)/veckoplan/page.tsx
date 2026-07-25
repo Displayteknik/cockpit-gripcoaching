@@ -12,7 +12,9 @@ import {
   ChevronUp,
   Save,
   CalendarPlus,
+  Pencil,
 } from "lucide-react";
+import KnowledgeText from "@/components/KnowledgeText";
 import { CompassBadges } from "@/components/content-compass/badges";
 
 interface DayPlan {
@@ -303,6 +305,7 @@ function DayCard({
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editing, setEditing] = useState(false); // läsläge (highlighting) ⇄ redigeringsläge
 
   async function saveDay(e: React.MouseEvent) {
     e.stopPropagation();
@@ -386,47 +389,61 @@ function DayCard({
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 bg-white/80 border-t border-gray-200/60">
-          <div className="pt-3">
+          <div className="flex items-center justify-end pt-2">
+            <button
+              onClick={() => setEditing((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-white"
+              title={editing ? "Visa med kunskaps-highlighting" : "Redigera texten direkt"}
+            >
+              {editing ? <><Check className="w-3.5 h-3.5" /> Klar</> : <><Pencil className="w-3.5 h-3.5" /> Redigera</>}
+            </button>
+          </div>
+
+          <div>
             <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Hook</div>
-            <AutoTextarea
-              value={day.hook}
-              onChange={(v) => onChange({ hook: v })}
-              placeholder="Skriv en krok som stoppar scrollen"
-              className="text-base font-display font-bold text-gray-900 leading-snug"
-            />
+            {editing ? (
+              <AutoTextarea value={day.hook} onChange={(v) => onChange({ hook: v })} placeholder="Skriv en krok som stoppar scrollen" className="text-base font-display font-bold text-gray-900 leading-snug" />
+            ) : (
+              <div className="text-base font-display font-bold text-gray-900 leading-snug">
+                {day.hook ? <KnowledgeText text={day.hook} /> : <span className="text-gray-400 font-normal">(saknar hook)</span>}
+              </div>
+            )}
           </div>
 
-          <div>
-            <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Body</div>
-            <AutoTextarea
-              value={day.body}
-              onChange={(v) => onChange({ body: v })}
-              placeholder="Brödtext — känsla, igenkänning och kundens resultat"
-              className="text-sm text-gray-800 leading-relaxed"
-            />
-          </div>
+          {(editing || day.body) && (
+            <div>
+              <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Body</div>
+              {editing ? (
+                <AutoTextarea value={day.body} onChange={(v) => onChange({ body: v })} placeholder="Brödtext — känsla, igenkänning och kundens resultat" className="text-sm text-gray-800 leading-relaxed" />
+              ) : (
+                <div className="text-sm text-gray-800 leading-relaxed"><KnowledgeText text={day.body} /></div>
+              )}
+            </div>
+          )}
 
-          <div>
-            <div className="text-xs uppercase text-gray-400 font-semibold mb-1">CTA</div>
-            <AutoTextarea
-              value={day.cta}
-              onChange={(v) => onChange({ cta: v })}
-              placeholder="En tydlig uppmaning"
-              className="text-sm font-medium text-gray-900"
-            />
-          </div>
+          {(editing || day.cta) && (
+            <div>
+              <div className="text-xs uppercase text-gray-400 font-semibold mb-1">CTA</div>
+              {editing ? (
+                <AutoTextarea value={day.cta} onChange={(v) => onChange({ cta: v })} placeholder="En tydlig uppmaning" className="text-sm font-medium text-gray-900" />
+              ) : (
+                <div className="text-sm font-medium text-gray-900">{day.cta}</div>
+              )}
+            </div>
+          )}
 
-          <div>
-            <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Hashtags</div>
-            <AutoTextarea
-              value={day.hashtags.map((h) => `#${h.replace(/^#/, "")}`).join(" ")}
-              onChange={(v) => onChange({ hashtags: v.split(/\s+/).map((h) => h.replace(/^#/, "")).filter(Boolean) })}
-              placeholder="#taggar #separerade #med #mellanslag"
-              className="text-xs text-blue-700 font-mono"
-            />
-          </div>
+          {(editing || day.hashtags.length > 0) && (
+            <div>
+              {editing && <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Hashtags</div>}
+              {editing ? (
+                <AutoTextarea value={day.hashtags.map((h) => `#${h.replace(/^#/, "")}`).join(" ")} onChange={(v) => onChange({ hashtags: v.split(/\s+/).map((h) => h.replace(/^#/, "")).filter(Boolean) })} placeholder="#taggar #separerade #med #mellanslag" className="text-xs text-blue-700 font-mono" />
+              ) : (
+                <div className="text-xs text-blue-700 font-mono">{day.hashtags.map((h) => `#${h.replace(/^#/, "")}`).join(" ")}</div>
+              )}
+            </div>
+          )}
 
-          <p className="text-[11px] text-gray-400">Redigera fritt. Spara eller Spara hela veckan använder din text.</p>
+          {editing && <p className="text-[11px] text-gray-400">Redigera fritt. Spara eller Spara hela veckan använder din text.</p>}
         </div>
       )}
     </div>
