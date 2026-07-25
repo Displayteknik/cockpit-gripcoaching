@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { moduleIcon } from "@/lib/module-icons";
+import { featureByKey } from "@/lib/customer-features";
 import type { EffectiveModule } from "@/lib/entitlements";
 
 // Kundvyns "Dina verktyg" — ett kort per köpt modul, kundvänligt namn + en rad.
@@ -12,9 +13,12 @@ export default function CustomerModuleCards({
   modules: EffectiveModule[];
   primaryColor: string;
 }) {
-  // Kundvyn visar bara kund-verktyg (/k-hrefs). Admin-moduler (t.ex. Content Compass,
-  // href /dashboard/...) är agency-verktyg och ska aldrig bli ett kort i /k.
-  const shown = modules.filter((m) => !((m.href || "/k").startsWith("/dashboard")));
+  // Kundvyn visar bara kund-verktyg. Moduler med en kund-motsvarighet (CUSTOMER_FEATURES,
+  // t.ex. Content Compass → /k/kalender, Nyhetsbrev → /k/nyhetsbrev) länkas om till sin
+  // /k-href så de blir kort. Rena admin-moduler (kvar med /dashboard-href) döljs.
+  const shown = modules
+    .map((m) => ({ ...m, href: featureByKey(m.id)?.href || m.href }))
+    .filter((m) => !((m.href || "/k").startsWith("/dashboard")));
   if (!shown.length) return null;
   return (
     <section className="space-y-3">
