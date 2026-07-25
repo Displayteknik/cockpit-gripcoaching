@@ -61,9 +61,15 @@ export default function IdeasList({
           Väntar på dig ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800">
-            Alla utkast granskade. Bra jobbat!
-          </div>
+          approved.length === 0 ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-500">
+              Inga förslag än. När Skrivhjälpen skapat idéer dyker de upp här för dig att godkänna eller avvisa.
+            </div>
+          ) : (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800">
+              Alla utkast granskade. Bra jobbat!
+            </div>
+          )
         ) : (
           <div className="space-y-3">
             {pending.map((i) => {

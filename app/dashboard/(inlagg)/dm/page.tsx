@@ -163,6 +163,12 @@ function PipelineView() {
 
       {loading && <div className="text-sm text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Laddar...</div>}
 
+      {!loading && contacts.length === 0 && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
+          Inga kontakter än. Lägg till din första — t.ex. någon som kommenterat eller skickat ett DM — så följer du resan från första kontakt till bokad kund. Klicka <strong>Lägg till kontakt</strong> uppe till höger.
+        </div>
+      )}
+
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {STAGES.map((stage) => {

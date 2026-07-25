@@ -73,7 +73,7 @@ export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: st
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${color}1a`, color }}>{list.length}</span>
       </div>
       <p className="text-xs text-gray-400 mb-3">{hint}</p>
-      {list.length === 0 ? <div className="text-sm text-gray-400">Inget här ännu.</div> : <div className="divide-y divide-gray-100">{list.map((it) => <Row key={`${it.source}-${it.id}`} it={it} />)}</div>}
+      {list.length === 0 ? <div className="text-sm text-gray-400">Inget här ännu. Skapa veckans innehåll högst upp så dyker det upp här.</div> : <div className="divide-y divide-gray-100">{list.map((it) => <Row key={`${it.source}-${it.id}`} it={it} />)}</div>}
     </section>
   );
 

@@ -276,6 +276,12 @@ export default async function CustomerHome() {
                 <Sparkline data={spark} color={primary} />
               </div>
             </div>
+            {visits30 === 0 && (
+              <p className="text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
+                Ingen trafik än. När din sajt har MySales-pixeln och Google är kopplat börjar besöken dyka upp här.{" "}
+                <Link href="/k/besokare" className="font-medium underline" style={{ color: primary }}>Kom igång med Statistik →</Link>
+              </p>
+            )}
           </div>
         </section>
       )}
