@@ -1051,11 +1051,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {/* Mallen visar en bild — mjuk hjälp, inte varning */}
               {needsImage && !curImg && (
                 <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
-                  <div className="text-xs text-gray-600">Den här mallen visar en bild. Ladda upp din egen nedan — eller låt oss skapa en on-brand bild ur innehållet.</div>
+                  <div className="text-xs text-gray-600">Den här mallen visar en bild. Ladda upp din egen nedan — eller låt oss skapa en bild i din stil ur innehållet.</div>
                   <button onClick={generateOnBrandImage} disabled={searchingImg === "ai"}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     style={{ background: primary }}>
-                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Skapa on-brand bild
+                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Skapa bild i din stil
                   </button>
                 </div>
               )}

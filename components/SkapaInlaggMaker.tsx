@@ -559,7 +559,7 @@ function VoiceStatus({
     <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
       <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
       <span className="text-sm text-emerald-800 flex-1">
-        Voice fingerprint aktiv — {count} källor
+        Din röst är inlärd — {count} exempel
       </span>
       <button
         onClick={onRebuild}
@@ -1225,7 +1225,7 @@ function OwnPostReview() {
       <div>
         <h2 className="font-display font-bold text-lg text-gray-900">Skriv ditt eget inlägg</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Skrivhjälpen granskar mot din voice fingerprint, brand-profil och hook-reglerna — och föreslår en
+          Skrivhjälpen granskar mot din röst, din brand-profil och krok-reglerna — och föreslår en
           konkret omskrivning om något inte håller.
         </p>
       </div>
