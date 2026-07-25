@@ -97,15 +97,23 @@ export default function BesokareClient({
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Mest besökta sidor</h2>
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+                      <MousePointer className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+                    </span>
+                    <h2 className="font-display font-bold text-gray-900 text-lg">Mest besökta sidor</h2>
+                  </div>
                   {!traffic || traffic.top_paths.length === 0 ? (
                     <p className="text-xs text-gray-400">Ingen data än</p>
                   ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-1">
                       {traffic.top_paths.slice(0, 8).map((p, i) => (
-                        <li key={i} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-700 truncate font-mono text-xs" title={p.key}>{p.key || "/"}</span>
-                          <span className="text-gray-500 font-semibold tabular-nums">{p.count}</span>
+                        <li key={i} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors">
+                          <span className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-semibold tabular-nums flex-shrink-0" style={{ color: primaryColor, background: `${primaryColor}14` }}>{i + 1}</span>
+                            <span className="text-gray-700 truncate font-mono text-xs" title={p.key}>{p.key || "/"}</span>
+                          </span>
+                          <span className="text-gray-900 font-semibold tabular-nums text-sm">{p.count}</span>
                         </li>
                       ))}
                     </ul>
@@ -113,19 +121,24 @@ export default function BesokareClient({
                 </section>
 
                 <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Var trafiken kommer ifrån</h2>
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+                      <ExternalLink className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+                    </span>
+                    <h2 className="font-display font-bold text-gray-900 text-lg">Var trafiken kommer ifrån</h2>
+                  </div>
                   {!traffic || traffic.top_referrers.length === 0 ? (
                     <p className="text-xs text-gray-400">Ingen data än — eller så är alla besök direkta</p>
                   ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-1">
                       {traffic.top_referrers.slice(0, 8).map((r, i) => {
                         const host = r.key.replace(/^https?:\/\//, "").split("/")[0];
                         return (
-                          <li key={i} className="flex items-center justify-between text-sm">
-                            <span className="text-gray-700 truncate flex items-center gap-1.5" title={r.key}>
-                              <ExternalLink className="w-3 h-3 text-gray-400" /> {host || r.key}
+                          <li key={i} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors">
+                            <span className="text-gray-700 truncate flex items-center gap-2 text-sm min-w-0" title={r.key}>
+                              <ExternalLink className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" /> <span className="truncate">{host || r.key}</span>
                             </span>
-                            <span className="text-gray-500 font-semibold tabular-nums">{r.count}</span>
+                            <span className="text-gray-900 font-semibold tabular-nums text-sm">{r.count}</span>
                           </li>
                         );
                       })}
@@ -136,10 +149,15 @@ export default function BesokareClient({
 
               {traffic && traffic.recent.length > 0 && (
                 <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Senaste besöken</h2>
-                  <ul className="space-y-1.5 text-xs">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+                      <Globe className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+                    </span>
+                    <h2 className="font-display font-bold text-gray-900 text-lg">Senaste besöken</h2>
+                  </div>
+                  <ul className="space-y-0.5 text-xs">
                     {traffic.recent.slice(0, 10).map((v, i) => (
-                      <li key={i} className="flex items-center gap-2 text-gray-600">
+                      <li key={i} className="flex items-center gap-2 text-gray-600 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors">
                         <span className="text-gray-400 tabular-nums w-12 shrink-0">
                           {new Date(v.ts).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}
                         </span>
@@ -166,14 +184,16 @@ export default function BesokareClient({
 
 function KPI({ label, value, color }: { label: string; value: number | string; color: string }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-      <span className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ color, background: `${color}1a` }}>
-        <MousePointer className="w-[18px] h-[18px]" />
-      </span>
-      <div className="text-3xl font-bold font-display text-gray-900 tabular-nums">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-xs text-gray-500 uppercase font-medium tracking-wide">{label}</span>
+        <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ color, background: `${color}1a` }}>
+          <MousePointer className="w-[18px] h-[18px]" />
+        </span>
+      </div>
+      <div className="text-3xl font-bold font-display text-gray-900 tabular-nums mt-3">
         {typeof value === "number" ? value.toLocaleString("sv-SE") : value}
       </div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
     </div>
   );
 }

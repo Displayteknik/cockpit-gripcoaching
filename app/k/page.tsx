@@ -182,8 +182,11 @@ export default async function CustomerHome() {
       {focusInsights.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
-              <Zap className="w-5 h-5" style={{ color: primary }} /> Att göra nu
+            <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+                <Zap className="w-[18px] h-[18px]" style={{ color: primary }} />
+              </span>
+              Att göra nu
             </h2>
             {showVisitors && (
               <Link
@@ -229,7 +232,12 @@ export default async function CustomerHome() {
       {showSeo && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display font-bold text-gray-900 text-lg">Din SEO &amp; AEO</h2>
+            <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+                <Search className="w-[18px] h-[18px]" style={{ color: primary }} />
+              </span>
+              Din SEO &amp; AEO
+            </h2>
             <Link
               href="/k/seo"
               className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm transition-opacity hover:opacity-90"
@@ -255,7 +263,12 @@ export default async function CustomerHome() {
       {showVisitors && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display font-bold text-gray-900 text-lg">Din trafik</h2>
+            <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+                <Eye className="w-[18px] h-[18px]" style={{ color: primary }} />
+              </span>
+              Din trafik
+            </h2>
             <Link
               href="/k/besokare"
               className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm transition-opacity hover:opacity-90"
@@ -289,7 +302,12 @@ export default async function CustomerHome() {
       {/* Social-statistik */}
       {showSocialStats && (
         <section className="space-y-3">
-          <h2 className="font-display font-bold text-gray-900 text-lg">Ditt innehåll</h2>
+          <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+              <FileText className="w-[18px] h-[18px]" style={{ color: primary }} />
+            </span>
+            Ditt innehåll
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="Inlägg totalt" value={totalPosts} icon={FileText} hint="Alla sociala inlägg du skapat i verktyget (utkast + publicerade)." />
             <StatCard label="Utkast" value={drafts} icon={Sparkles} accent="amber" hint="Inlägg som är skapade men inte publicerade än." />

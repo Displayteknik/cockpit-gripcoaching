@@ -261,8 +261,10 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
         >
           SEO &amp; AEO
         </span>
-        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2 mt-1">
-          <TrendingUp className="w-6 h-6" style={{ color: primaryColor }} />
+        <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2.5 mt-1.5">
+          <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+            <TrendingUp className="w-[22px] h-[22px]" style={{ color: primaryColor }} />
+          </span>
           Syns du i Google + AI-sökmotorer?
         </h1>
         <p className="text-gray-600 text-sm mt-1 max-w-2xl">
@@ -319,7 +321,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           <button
             onClick={generateDeepAudit}
             disabled={startingAudit || deepGenerating.length > 0}
-            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-50 flex-shrink-0"
+            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
             style={{ background: primaryColor }}
           >
             {startingAudit || deepGenerating.length > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -340,16 +342,21 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
               </div>
             )}
             {deepReports.map((r) => (
-              <div key={r.id} className="flex items-center justify-between gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3">
-                <div className="min-w-0">
-                  <div className="font-medium text-gray-900 text-sm truncate">
-                    SEO &amp; AEO-djupgranskning{r.metadata?.url ? ` — ${r.metadata.url.replace(/^https?:\/\/(www\.)?/, "")}` : ""}
+              <div key={r.id} className="flex items-center justify-between gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+                    <FileText className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-gray-900 text-sm truncate">
+                      SEO &amp; AEO-djupgranskning{r.metadata?.url ? ` — ${r.metadata.url.replace(/^https?:\/\/(www\.)?/, "")}` : ""}
+                    </div>
+                    <div className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString("sv-SE", { year: "numeric", month: "long", day: "numeric" })}</div>
                   </div>
-                  <div className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString("sv-SE", { year: "numeric", month: "long", day: "numeric" })}</div>
                 </div>
                 <button
                   onClick={() => setOpenReport(r)}
-                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white flex-shrink-0"
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 transition-opacity flex-shrink-0"
                   style={{ background: primaryColor }}
                 >
                   <FileText className="w-4 h-4" /> Läs rapporten
@@ -371,16 +378,16 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
             value={auditUrl}
             onChange={(e) => setAuditUrl(e.target.value)}
             placeholder="https://din-sajt.se/sida"
-            className="flex-1 min-w-[260px] px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400"
+            className="flex-1 min-w-[260px] px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
           />
-          <label className="flex items-center gap-2 text-xs text-gray-600 px-2">
-            <input type="checkbox" checked={skipPagespeed} onChange={(e) => setSkipPagespeed(e.target.checked)} className="rounded" />
+          <label className="flex items-center gap-2 text-xs text-gray-600 px-3 rounded-lg border border-gray-200 bg-gray-50">
+            <input type="checkbox" checked={skipPagespeed} onChange={(e) => setSkipPagespeed(e.target.checked)} className="rounded" style={{ accentColor: primaryColor }} />
             Hoppa PageSpeed (snabbt)
           </label>
           <button
             onClick={runAudit}
             disabled={auditing || !auditUrl.trim()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             style={{ background: primaryColor }}
           >
             {auditing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSearch className="w-4 h-4" />}
@@ -393,8 +400,8 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
         ) : (
           <div className="space-y-3">
             {audits.slice(0, 10).map((a) => (
-              <details key={a.id} className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-                <summary className="cursor-pointer px-4 py-3 hover:bg-gray-100 flex items-center justify-between gap-3">
+              <details key={a.id} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <summary className="cursor-pointer px-4 py-3.5 hover:bg-gray-50 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-gray-900 truncate">{a.title || a.url}</div>
                     <div className="text-xs text-gray-500 truncate">{a.url}</div>
@@ -461,7 +468,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           tips={["Använd den innan du publicerar ny text.", "Fokusera på det den flaggar som robot-känsla och svaga avslut.", "Skriv om i din egen röst — kör igen och jämför."]} />}>
         <button
           onClick={() => setShowAiAudit(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
           style={{ background: primaryColor }}
         >
           <Sparkles className="w-4 h-4" />
@@ -481,12 +488,12 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
             placeholder="Något särskilt du vill synas för? (valfritt)"
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400"
+            className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
           />
           <button
             onClick={generateIdeas}
             disabled={ideasLoading}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             style={{ background: primaryColor }}
           >
             {ideasLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -502,21 +509,24 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           <div className="space-y-4">
             {ideas.groups.map((g, gi) => (
               <div key={gi}>
-                <div className="font-semibold text-gray-900 text-sm">{g.title}</div>
-                {g.note && <div className="text-xs text-gray-500 mb-2">{g.note}</div>}
-                <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="font-semibold text-gray-900 text-sm">{g.title}</div>
+                  <span className="text-xs font-semibold tabular-nums px-1.5 py-0.5 rounded-full" style={{ background: `${primaryColor}14`, color: primaryColor }}>{g.keywords.length}</span>
+                </div>
+                {g.note && <div className="text-xs text-gray-500 mb-2 mt-0.5">{g.note}</div>}
+                <div className="space-y-1.5 mt-2">
                   {g.keywords.map((k, ki) => {
                     const added = addedKw.has(k.keyword);
                     return (
-                      <div key={ki} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
+                      <div key={ki} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-3.5 py-2.5 hover:bg-white hover:shadow-sm transition">
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-gray-900 text-sm">{k.keyword}</div>
-                          {k.why && <div className="text-xs text-gray-500">{k.why}</div>}
+                          {k.why && <div className="text-xs text-gray-500 mt-0.5">{k.why}</div>}
                         </div>
                         <button
                           onClick={() => addSuggested(k.keyword, k.intent)}
                           disabled={added}
-                          className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap disabled:opacity-60"
+                          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap transition-opacity hover:opacity-90 disabled:opacity-60"
                           style={added ? { background: "#ecfdf5", color: "#059669" } : { background: `${primaryColor}15`, color: primaryColor }}
                         >
                           {added ? <><CheckCircle2 className="w-3.5 h-3.5" /> Tillagd</> : <><Plus className="w-3.5 h-3.5" /> Lägg till</>}
@@ -568,26 +578,26 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           {importMsg && <span className="text-xs text-gray-500">{importMsg}</span>}
         </div>
         {keywords.length === 0 ? <Empty text="Lägg till ditt första sökord ovan." /> : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-gray-100">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-gray-500 border-b border-gray-100">
-                  <th className="text-left py-2 px-2">Sökord</th>
-                  <th className="text-right py-2 px-2">Volym</th>
-                  <th className="text-right py-2 px-2">Position</th>
-                  <th className="text-right py-2 px-2">Bästa</th>
-                  <th></th>
+                <tr className="text-xs text-gray-500 bg-gray-50/70 border-b border-gray-100">
+                  <th className="text-left font-semibold uppercase tracking-wide py-2.5 px-3">Sökord</th>
+                  <th className="text-right font-semibold uppercase tracking-wide py-2.5 px-3">Volym</th>
+                  <th className="text-right font-semibold uppercase tracking-wide py-2.5 px-3">Position</th>
+                  <th className="text-right font-semibold uppercase tracking-wide py-2.5 px-3">Bästa</th>
+                  <th className="px-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {keywords.map((k) => (
                   <tr key={k.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                    <td className="py-2 px-2">
+                    <td className="py-2.5 px-3">
                       <div className="font-medium text-gray-900">{k.keyword}</div>
                       {k.target_url && <div className="text-xs text-gray-400 truncate max-w-xs">{k.target_url}</div>}
                     </td>
-                    <td className="py-2 px-2 text-right tabular-nums text-gray-600">{k.search_volume ?? "—"}</td>
-                    <td className="py-2 px-2 text-right">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-gray-600">{k.search_volume ?? "—"}</td>
+                    <td className="py-2.5 px-3 text-right">
                       {k.gsc_position != null ? (
                         <span className="inline-flex items-center gap-1.5 justify-end" title="Hämtad automatiskt från Google Search Console — din snittplacering på exakt det här ordet.">
                           <span className="tabular-nums font-semibold text-gray-900">{k.gsc_position}</span>
@@ -612,10 +622,10 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                         />
                       )}
                     </td>
-                    <td className="py-2 px-2 text-right tabular-nums text-emerald-700 font-medium">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-emerald-700 font-medium">
                       {(() => { const vals = [k.best_rank, k.gsc_position].filter((v): v is number => typeof v === "number"); return vals.length ? Math.min(...vals) : "—"; })()}
                     </td>
-                    <td className="py-2 px-2">
+                    <td className="py-2.5 px-3">
                       <div className="flex items-center gap-1">
                         <a href={`https://www.google.com/search?q=${encodeURIComponent(k.keyword)}&gl=se&hl=sv`} target="_blank" rel="noopener" className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Sök på Google">
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -634,8 +644,8 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </Card>
 
       {/* AEO-tips */}
-      <div className="rounded-xl p-5 border" style={{ background: `${primaryColor}08`, borderColor: `${primaryColor}25` }}>
-        <h3 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-2">
+      <div className="rounded-2xl p-5 border" style={{ background: `${primaryColor}08`, borderColor: `${primaryColor}25` }}>
+        <h3 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2 mb-2">
           <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
             <Lightbulb className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
           </span>
@@ -721,9 +731,9 @@ function AiAuditModal({ primaryColor, onClose }: { primaryColor: string; onClose
         </div>
         <div className="overflow-y-auto p-5">
           <div className="text-sm text-gray-600 mb-3">Klistra in en URL eller texten direkt. Skrivhjälpen bedömer kvalitet, ton, robot-känsla och konvertering.</div>
-          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="URL (eller klistra text nedan)" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-2 outline-none focus:border-gray-400" />
-          <SmartTextarea value={text} onChange={(e) => setText(e.target.value)} placeholder="...eller klistra in text direkt" rows={5} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-3 outline-none focus:border-gray-400" />
-          <button onClick={run} disabled={loading || (!url && !text)} className="text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center gap-2" style={{ background: primaryColor }}>
+          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="URL (eller klistra text nedan)" className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm mb-2 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100" />
+          <SmartTextarea value={text} onChange={(e) => setText(e.target.value)} placeholder="...eller klistra in text direkt" rows={5} className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm mb-3 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100" />
+          <button onClick={run} disabled={loading || (!url && !text)} className="text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2" style={{ background: primaryColor }}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             Granska
           </button>
@@ -771,8 +781,8 @@ function AiAuditModal({ primaryColor, onClose }: { primaryColor: string; onClose
 
 
 function ScoreBox({ label, v }: { label: string; v: number }) {
-  const c = v >= 80 ? "text-emerald-700 bg-emerald-50" : v >= 60 ? "text-amber-700 bg-amber-50" : "text-red-700 bg-red-50";
-  return <div className={`rounded-lg p-2 text-center ${c}`}><div className="text-xl font-bold tabular-nums">{v}</div><div className="text-xs opacity-70">{label}</div></div>;
+  const color = v >= 80 ? "#059669" : v >= 60 ? "#d97706" : "#dc2626";
+  return <div className="rounded-xl p-2.5 text-center border" style={{ background: `${color}0f`, borderColor: `${color}26`, color }}><div className="text-xl font-bold tabular-nums">{v}</div><div className="text-xs opacity-70">{label}</div></div>;
 }
 
 function Card({ title, subtitle, children, guide }: { title: string; subtitle?: string; children: React.ReactNode; guide?: React.ReactNode }) {
@@ -788,7 +798,14 @@ function Card({ title, subtitle, children, guide }: { title: string; subtitle?: 
 }
 
 function Empty({ text }: { text: string }) {
-  return <div className="text-center text-sm text-gray-400 py-6">{text}</div>;
+  return (
+    <div className="flex flex-col items-center gap-2.5 text-center py-8">
+      <span className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100">
+        <Sparkles className="w-[18px] h-[18px] text-gray-400" />
+      </span>
+      <div className="text-sm text-gray-500 max-w-xs">{text}</div>
+    </div>
+  );
 }
 
 // Liten etikett som ärligt visar vem som gör steget: kunden själv eller byrån (eller båda).
@@ -799,10 +816,10 @@ function WhoBadge({ who, primaryColor }: { who: "du" | "vi" | "duvi"; primaryCol
 }
 
 function ScoreBadge({ label, value }: { label: string; value: number }) {
-  const color = value >= 80 ? "bg-emerald-100 text-emerald-700" : value >= 60 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700";
+  const color = value >= 80 ? "#059669" : value >= 60 ? "#d97706" : "#dc2626";
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold tabular-nums ${color}`}>
-      <span className="opacity-70">{label}</span>
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tabular-nums" style={{ background: `${color}14`, color }}>
+      <span className="opacity-70 font-semibold">{label}</span>
       <span>{value}</span>
     </span>
   );

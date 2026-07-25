@@ -4,7 +4,7 @@
 // skapa hela veckans innehåll, se balansen, och överblicka allt planerat innehåll.
 // Tenant-låst via kund-sessionen (API:erna resolvar kundens egen klient).
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, FileEdit, CheckCircle2, RefreshCw, Loader2, LayoutGrid, List as ListIcon, ImageIcon } from "lucide-react";
+import { CalendarClock, FileEdit, CheckCircle2, RefreshCw, Loader2, LayoutGrid, List as ListIcon, ImageIcon, ArrowRight } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 import { CompassBadges, funnelTintClass } from "@/components/content-compass/badges";
@@ -47,33 +47,34 @@ export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: st
     // Studio-utkast öppnas i kundens Studio; övriga länkar till respektive verkstad.
     const href = it.source === "studio" ? `/k/studio?post=${it.id}` : it.source === "linkedin" ? "/k/linkedin" : "/k/studio";
     return (
-      <a href={href} className={`flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors ${funnelTintClass(it.funnel_level)}`}>
-        <div className="w-11 h-11 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
+      <a href={href} className={`group flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-3 px-3 rounded-xl transition-colors ${funnelTintClass(it.funnel_level)}`}>
+        <div className="w-11 h-11 rounded-xl bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center ring-1 ring-black/5">
           {it.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={it.imageUrl} alt="" className="w-full h-full object-cover" />
-          ) : <ImageIcon className="w-4 h-4 text-gray-300" />}
+          ) : <ImageIcon className="w-[18px] h-[18px] text-gray-300" />}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-gray-900 truncate">{it.title}</div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <div className="text-xs text-gray-400 truncate">{SOURCE_LABEL[it.source] || it.source} · {it.channel}{it.when ? ` · ${fmt(it.when)}` : ""}</div>
+          <div className="text-sm font-semibold text-gray-900 truncate">{it.title}</div>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="text-xs text-gray-400 truncate tabular-nums">{SOURCE_LABEL[it.source] || it.source} · {it.channel}{it.when ? ` · ${fmt(it.when)}` : ""}</div>
             <CompassBadges funnel={it.funnel_level} four_a={it.four_a} disc={it.disc} />
           </div>
         </div>
+        <ArrowRight className="w-4 h-4 text-gray-300 shrink-0 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" style={{ color: primary }} />
       </a>
     );
   };
 
   const Section = ({ title, icon, color, list, hint }: { title: string; icon: React.ReactNode; color: string; list: ContentItem[]; hint: string }) => (
     <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-1">
-        {icon}
+      <div className="flex items-center gap-3 mb-1">
+        <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}1a` }}>{icon}</span>
         <h2 className="font-display font-bold text-gray-900 text-lg">{title}</h2>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${color}1a`, color }}>{list.length}</span>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full tabular-nums" style={{ background: `${color}1a`, color }}>{list.length}</span>
       </div>
-      <p className="text-xs text-gray-400 mb-3">{hint}</p>
-      {list.length === 0 ? <div className="text-sm text-gray-400">Inget här ännu. Skapa veckans innehåll högst upp så dyker det upp här.</div> : <div className="divide-y divide-gray-100">{list.map((it) => <Row key={`${it.source}-${it.id}`} it={it} />)}</div>}
+      <p className="text-xs text-gray-400 mb-3 pl-12">{hint}</p>
+      {list.length === 0 ? <div className="text-center text-sm text-gray-400 py-8">Inget här ännu. Skapa veckans innehåll högst upp så dyker det upp här.</div> : <div className="divide-y divide-gray-100">{list.map((it) => <Row key={`${it.source}-${it.id}`} it={it} />)}</div>}
     </section>
   );
 
@@ -104,9 +105,9 @@ export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: st
         <BalanceMeter reloadKey={reloadKey} />
       </div>
 
-      <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
-        <button onClick={() => setView("calendar")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium ${view === "calendar" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={view === "calendar" ? { background: primary } : {}}><LayoutGrid className="w-4 h-4" /> Kalender</button>
-        <button onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium ${view === "list" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={view === "list" ? { background: primary } : {}}><ListIcon className="w-4 h-4" /> Lista</button>
+      <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+        <button onClick={() => setView("calendar")} className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === "calendar" ? "text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`} style={view === "calendar" ? { background: primary } : {}}><LayoutGrid className="w-4 h-4" /> Kalender</button>
+        <button onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === "list" ? "text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`} style={view === "list" ? { background: primary } : {}}><ListIcon className="w-4 h-4" /> Lista</button>
       </div>
 
       {view === "calendar" ? (
