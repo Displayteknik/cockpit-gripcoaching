@@ -18,7 +18,7 @@ interface Job {
   error: string | null;
 }
 
-const CHANNEL_LABEL: Record<string, string> = { "ig-graph": "Instagram", "ghl-social": "GHL", "cockpit-blog": "Blogg" };
+const CHANNEL_LABEL: Record<string, string> = { "ig-graph": "Instagram", "ghl-social": "Facebook/LinkedIn", "cockpit-blog": "Blogg" };
 const STATUS: Record<Job["status"], { label: string; color: string }> = {
   queued: { label: "Schemalagt", color: "#2563eb" },
   processing: { label: "Publicerar…", color: "#d97706" },
@@ -131,7 +131,7 @@ export default function ScheduleQueue({ primary, refreshKey = 0 }: { primary: st
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Uppdatera
         </button>
       </div>
-      <p className="text-xs text-gray-400 mb-2">Dina inlägg och bloggar som publiceras automatiskt. Instagram & blogg schemaläggs nativt (utan GHL); Facebook/LinkedIn styrs i GHL.</p>
+      <p className="text-xs text-gray-400 mb-2">Dina inlägg och bloggar som publiceras automatiskt vid vald tid.</p>
 
       {upcoming.length === 0 && done.length === 0 ? (
         <div className="text-sm text-gray-400 py-4">Inget schemalagt ännu. Sätt en tid i <strong>steg 5</strong> när du publicerar.</div>

@@ -1665,7 +1665,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
               {postType === "reel" ? "Reel" : postType === "story" ? "Story" : isCarousel ? "Karusell" : "Inlägg"}
             </span>
-            <span className="ml-auto text-xs text-gray-500">Skriv en gång — se och anpassa per plattform, som i GHL.</span>
+            <span className="ml-auto text-xs text-gray-500">Skriv en gång — se och anpassa för varje plattform.</span>
           </div>
 
           {/* Kanalväljare — förikryssad efter vad klienten kopplat */}
@@ -1771,7 +1771,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                         style={{ background: brand.gradient }}>
                         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                        {res === "ok" ? (scheduleDate ? "Schemalagt i GHL ✓" : "Utkast skapat i GHL ✓") : (scheduleDate ? `Schemalägg ${label} i GHL` : `Skapa ${label}-utkast i GHL`)}
+                        {res === "ok" ? (scheduleDate ? `Schemalagt på ${label} ✓` : `Utkast skapat på ${label} ✓`) : (scheduleDate ? `Schemalägg på ${label}` : `Skapa utkast på ${label}`)}
                       </button>
                     ) : (
                       // Fallback: ingen direktväg (t.ex. LinkedIn utan GHL, eller kundläge) → kopiera + öppna.
