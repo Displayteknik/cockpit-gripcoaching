@@ -94,7 +94,7 @@ export default function ProfilPage() {
     const el = document.getElementById(targets[key] || "");
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-    el.style.boxShadow = "0 0 0 3px rgba(37, 99, 235, 0.45)";
+    el.style.boxShadow = "0 0 0 3px rgba(29, 92, 168, 0.45)";
     window.setTimeout(() => { el.style.boxShadow = ""; }, 1800);
   }
 
@@ -145,6 +145,7 @@ export default function ProfilPage() {
         title="Din profil"
         subtitle="Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du — och desto bättre förslag får du."
         icon={User}
+        accent="#1d5ca8"
         eyebrow={<LivePill label="Profil" />}
         right={
           <button
@@ -162,16 +163,17 @@ export default function ProfilPage() {
 
       <button
         onClick={() => setShowIntakeAgent(true)}
-        className="w-full text-left bg-gradient-to-r from-purple-600 via-purple-700 to-blue-700 hover:from-purple-700 hover:to-blue-800 text-white rounded-xl p-5 shadow-sm transition flex items-center gap-4"
+        style={{ background: "linear-gradient(135deg, var(--color-brand-blue-light) 0%, var(--color-brand-blue) 55%, var(--color-brand-blue-dark) 100%)" }}
+        className="group w-full text-left text-white rounded-2xl p-6 shadow-sm ring-1 ring-black/5 transition hover:opacity-95 flex items-center gap-4"
       >
-        <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0 ring-1 ring-white/20">
           <Sparkles className="w-6 h-6" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="font-display font-bold text-lg leading-tight">Fyll i från ett samtal</div>
-          <div className="text-sm opacity-90 mt-0.5">Spela in eller klistra in ett samtal, en intervju eller ljud. AI:n jämför med din profil, frågar bara när något är oklart och föreslår uppdateringar som du godkänner.</div>
+          <div className="text-sm text-white/85 mt-1">Spela in eller klistra in ett samtal, en intervju eller ljud. AI:n jämför med din profil, frågar bara när något är oklart och föreslår uppdateringar som du godkänner.</div>
         </div>
-        <div className="flex-shrink-0 text-xs opacity-90 font-medium px-3 py-1.5 rounded-lg bg-white/15 hidden md:block">Öppna →</div>
+        <div className="flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/15 ring-1 ring-white/20 transition group-hover:bg-white/25 hidden md:block">Öppna →</div>
       </button>
 
       <IntakeAgent
@@ -194,24 +196,24 @@ export default function ProfilPage() {
         <KnowledgeBank onChange={() => setQualityRefresh((n) => n + 1)} />
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2.5 flex-wrap">
         <button
           onClick={() => setShowIcpWizard(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
+          className="inline-flex items-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition"
         >
           <Wand2 className="w-4 h-4" />
           Hitta din målgrupp
         </button>
         <button
           onClick={() => setShowToneWizard(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition"
         >
           <MessageSquare className="w-4 h-4" />
           Hitta din ton
         </button>
         <button
           onClick={() => setShowVocExtractor(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition"
         >
           <Quote className="w-4 h-4" />
           Kundernas egna ord
@@ -464,7 +466,7 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
         onChange={(e) => setQuotes(e.target.value)}
         rows={10}
         placeholder='"Jag var helt slut innan jag kom hit..."&#10;"Det skulle ta evigheter att fixa själv..."&#10;Recensioner / mejl / DM hit'
-        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-body leading-relaxed focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-body leading-relaxed text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition"
       />
       <div className="flex justify-end mt-4">
         <button
@@ -482,10 +484,12 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
 
 function Section({ title, icon: Icon, children, id, onSave, saving, savedAt }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; id?: string; onSave?: () => void; saving?: boolean; savedAt?: Date | null }) {
   return (
-    <div id={id} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 scroll-mt-20 transition-shadow">
+    <div id={id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4 scroll-mt-20 transition-shadow">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display font-bold text-gray-900 flex items-center gap-2">
-          <Icon className="w-5 h-5 text-brand-blue" />
+        <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-blue/10">
+            <Icon className="w-[18px] h-[18px] text-brand-blue" />
+          </span>
           {title}
         </h2>
         {onSave && (
@@ -511,13 +515,13 @@ function Row({ children }: { children: React.ReactNode }) {
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-600 mb-1.5">{label}</label>
       <input
         type="text"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none"
+        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition"
       />
     </div>
   );
@@ -529,25 +533,25 @@ function TextArea({ label, hint, value, onChange, onAssist, assisting, rows = 4 
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <label className="text-sm font-medium text-gray-600">{label}</label>
         {onAssist && (
           <button
             onClick={onAssist}
             disabled={assisting}
-            className="flex items-center gap-1 text-xs text-purple-600 hover:bg-purple-50 px-2 py-1 rounded disabled:opacity-50 font-medium"
+            className="inline-flex items-center gap-1 text-xs font-medium text-brand-blue hover:bg-brand-blue/10 px-2 py-1 rounded-md disabled:opacity-50 transition"
           >
             {assisting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             AI-fyll
           </button>
         )}
       </div>
-      {hint && <div className="text-xs text-gray-400 mb-1">{hint}</div>}
+      {hint && <div className="text-xs text-gray-400 mb-1.5 leading-relaxed">{hint}</div>}
       <SmartTextarea
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none font-body leading-relaxed"
+        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none font-body leading-relaxed transition"
       />
     </div>
   );
@@ -601,19 +605,19 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
 
   return (
     <Modal onClose={onClose} title="Hitta din målgrupp">
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex items-center gap-1.5">
         {questions.map((_, i) => (
-          <div key={i} className={`h-1 flex-1 rounded ${i <= step ? "bg-purple-600" : "bg-gray-200"}`} />
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? "bg-brand-blue" : "bg-gray-200"}`} />
         ))}
       </div>
-      <div className="text-xs text-gray-400 mb-1">Fråga {step + 1} av {questions.length}</div>
+      <div className="text-xs font-medium text-gray-400 mb-1">Fråga {step + 1} av {questions.length}</div>
       <div className="text-lg font-display font-bold text-gray-900 mb-3">{q.label}</div>
       <SmartTextarea
         value={inputs[q.key]}
         onChange={(e) => setInputs({ ...inputs, [q.key]: e.target.value })}
         placeholder={q.placeholder}
         rows={3}
-        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none"
+        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition"
       />
       <div className="flex justify-between mt-4">
         <button
@@ -627,7 +631,7 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
           <button
             onClick={run}
             disabled={loading}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:opacity-90 disabled:opacity-50 transition"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
             Skapa målgrupp
@@ -635,7 +639,7 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
         ) : (
           <button
             onClick={() => setStep(step + 1)}
-            className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700"
+            className="px-4 py-2.5 bg-brand-blue text-white text-sm font-medium rounded-lg shadow-sm hover:opacity-90 transition"
           >
             Nästa →
           </button>
@@ -676,7 +680,7 @@ function ToneWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: stri
         onChange={(e) => setExamples(e.target.value)}
         rows={6}
         placeholder='t.ex. "Hej! Jag har hjälpt mina kunder sedan 2010. Hör av dig så hittar vi en tid."'
-        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none mb-3"
+        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition mb-3"
       />
       <div className="text-sm text-gray-600 mb-2">Ord/uttryck du undviker?</div>
       <SmartTextarea
@@ -684,7 +688,7 @@ function ToneWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: stri
         onChange={(e) => setAvoid(e.target.value)}
         rows={2}
         placeholder="t.ex. 'kraftfull', 'banbrytande', storstadsslang"
-        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"
       />
       <div className="flex justify-end mt-4">
         <button

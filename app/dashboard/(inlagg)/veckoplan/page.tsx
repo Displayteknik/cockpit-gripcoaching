@@ -50,6 +50,10 @@ const FOURA_BADGE: Record<string, string> = {
   authentic: "bg-amber-600",
 };
 
+// Varumarkesaccent (violett) — samma fargfamilj som tidigare hardkodade purple/blue.
+// Ingen klientfarg nas i denna fil utan att lagga till hamtning (forbjudet), sa denna konstant behalls.
+const ACCENT = "#7c3aed";
+
 export default function VeckoplanPage() {
   const [theme, setTheme] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -168,16 +172,24 @@ export default function VeckoplanPage() {
 
   return (
     <div className="max-w-5xl space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-gray-900">Veckoplan</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Sju inlägg på en gång — ett per dag, med rätt ton och syfte för varje veckodag. Veckan varvar automatiskt mellan fakta, inspiration, handling och det personliga så den känns levande.
-        </p>
+      <div className="flex items-start gap-3">
+        <span
+          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: `${ACCENT}1a` }}
+        >
+          <Calendar className="w-[22px] h-[22px]" style={{ color: ACCENT }} />
+        </span>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-gray-900">Veckoplan</h1>
+          <p className="text-gray-500 text-sm mt-1 max-w-2xl leading-relaxed">
+            Sju inlägg på en gång — ett per dag, med rätt ton och syfte för varje veckodag. Veckan varvar automatiskt mellan fakta, inspiration, handling och det personliga så den känns levande.
+          </p>
+        </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Veckotema — vad ska veckans inlägg kretsa kring?
           </label>
           <input
@@ -185,13 +197,13 @@ export default function VeckoplanPage() {
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
             placeholder="t.ex. Vintersäsongen — säkerhet och förberedelser inför kallt väder"
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none"
+            className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-colors"
           />
         </div>
 
         {error && (
           <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-sm text-rose-700 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
         )}
@@ -199,7 +211,8 @@ export default function VeckoplanPage() {
         <button
           onClick={generate}
           disabled={generating || !theme.trim()}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:opacity-90 disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-lg font-semibold shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+          style={{ background: ACCENT }}
         >
           {generating ? (
             <>
@@ -223,17 +236,24 @@ export default function VeckoplanPage() {
 
       {response && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="text-sm text-gray-500 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <strong className="text-gray-900">{response.theme}</strong>
-              {response.voice_source_count > 0 && (
-                <span className="text-emerald-600">
-                  · röst byggd från {response.voice_source_count} källor
-                </span>
-              )}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-sm text-gray-500 flex items-center gap-2.5 min-w-0">
+              <span
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${ACCENT}1a` }}
+              >
+                <Sparkles className="w-[18px] h-[18px]" style={{ color: ACCENT }} />
+              </span>
+              <span className="min-w-0">
+                <strong className="text-gray-900">{response.theme}</strong>
+                {response.voice_source_count > 0 && (
+                  <span className="text-emerald-600">
+                    {" "}· röst byggd från {response.voice_source_count} källor
+                  </span>
+                )}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
                 <input
                   type="checkbox"
@@ -248,18 +268,18 @@ export default function VeckoplanPage() {
                   type="datetime-local"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="px-2 py-1 border border-gray-200 rounded text-xs outline-none focus:border-purple-500"
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-colors tabular-nums"
                 />
               )}
               <button
                 onClick={saveAll}
                 disabled={savingAll}
-                className="flex items-center gap-2 bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
+                className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-colors"
               >
                 {savingAll ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Sparar {savedCount}/7...
+                    Sparar <span className="tabular-nums">{savedCount}/7</span>...
                   </>
                 ) : savedCount === 7 ? (
                   <>
@@ -277,14 +297,15 @@ export default function VeckoplanPage() {
           </div>
 
           {saveResult && (
-            <div className={`rounded-lg border p-3 text-sm flex items-center gap-2 flex-wrap ${saveResult.scheduled ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+            <div className={`rounded-xl border p-3.5 text-sm flex items-center gap-2 flex-wrap ${saveResult.scheduled ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
               <Check className="w-4 h-4 shrink-0" />
               {saveResult.scheduled ? (
-                <span>{saveResult.count} inlägg schemalagda {saveResult.from} till {saveResult.to}.</span>
+                <span><strong className="tabular-nums">{saveResult.count}</strong> inlägg schemalagda {saveResult.from} till {saveResult.to}.</span>
               ) : (
-                <span>{saveResult.count} inlägg sparade som utkast (dagens datum). Vill du lägga dem på framtida datum: bocka i <strong>Schemalägg från</strong> ovan och spara igen.</span>
+                <span><strong className="tabular-nums">{saveResult.count}</strong> inlägg sparade som utkast (dagens datum). Vill du lägga dem på framtida datum: bocka i <strong>Schemalägg från</strong> ovan och spara igen.</span>
               )}
-              <a href={calHref} className="ml-auto inline-flex items-center gap-1 font-semibold underline hover:no-underline">
+              <a href={calHref} className="ml-auto inline-flex items-center gap-1.5 font-semibold underline hover:no-underline">
+                <CalendarPlus className="w-3.5 h-3.5" />
                 Öppna kalendern
               </a>
             </div>
@@ -318,7 +339,7 @@ function AutoTextarea({ value, onChange, className = "", placeholder }: { value:
       onChange={(e) => { onChange(e.target.value); }}
       onInput={fit}
       rows={1}
-      className={`w-full resize-none bg-transparent outline-none rounded-md px-2 py-1 -mx-2 hover:bg-white focus:bg-white focus:ring-2 focus:ring-purple-500/30 transition-colors ${className}`}
+      className={`w-full resize-none bg-transparent outline-none rounded-lg px-2 py-1 -mx-2 hover:bg-white focus:bg-white focus:ring-2 focus:ring-gray-200 transition-colors ${className}`}
     />
   );
 }
@@ -380,39 +401,39 @@ function DayCard({
   const badgeColor = FOURA_BADGE[day.fourA] || "bg-gray-500";
 
   return (
-    <div className={`border-2 rounded-xl overflow-hidden ${colorClass}`}>
+    <div className={`border rounded-2xl overflow-hidden shadow-sm ${colorClass}`}>
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/40"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-white/40 transition-colors"
       >
         <div className="flex items-center gap-3 flex-1 min-w-0 text-left">
-          <div className={`${badgeColor} text-white text-xs font-bold px-2 py-1 rounded uppercase`}>
+          <div className={`${badgeColor} text-white text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide flex-shrink-0`}>
             {day.day}
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-display font-semibold text-sm text-gray-900 truncate">
               {day.hook || "(saknar hook)"}
             </div>
-            <div className="text-xs text-gray-600 mt-0.5">
+            <div className="text-xs text-gray-600 mt-1">
               <CompassBadges funnel={day.funnel.toLowerCase()} four_a={day.fourA} disc={[day.disc]} /> <span className="text-gray-400">· {FORMAT_LABELS[day.format as Format] || day.format}</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={saveDay}
             disabled={saving}
-            className="text-xs text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded hover:bg-white/80 flex items-center gap-1 disabled:opacity-50 font-medium"
+            className="text-xs text-emerald-700 hover:text-emerald-900 px-2.5 py-1.5 rounded-lg hover:bg-white/80 flex items-center gap-1.5 disabled:opacity-50 font-medium transition-colors"
             title="Spara som utkast"
           >
-            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : saved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
             {saved ? "Sparad" : "Spara"}
           </button>
           <button
             onClick={copy}
-            className="text-xs text-gray-700 hover:text-gray-900 px-2 py-1 rounded hover:bg-white/80 flex items-center gap-1"
+            className="text-xs text-gray-700 hover:text-gray-900 px-2.5 py-1.5 rounded-lg hover:bg-white/80 flex items-center gap-1.5 transition-colors"
           >
-            {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? "Kopierat" : "Kopiera"}
           </button>
           {expanded ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
