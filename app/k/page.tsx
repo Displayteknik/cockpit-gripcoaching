@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCustomerSession } from "@/lib/customer-context";
 import { getEffectiveModules } from "@/lib/entitlements";
 import CustomerModuleCards from "@/components/CustomerModuleCards";
+import CustomerSteps, { type Step } from "@/components/CustomerSteps";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import { supabaseService } from "@/lib/supabase-admin";
 import { buildDashboardData } from "@/lib/dashboard-data";
@@ -98,6 +99,17 @@ export default async function CustomerHome() {
     } catch {}
   }
 
+  // "Kom igång"-steg: pedagogiskt flöde ur kundens riktiga läge. Visas bara tills
+  // grunden är på plats (alla steg klara → göms, ingen nag för vana användare).
+  const steps: Step[] = [];
+  if (has("profil")) steps.push({ title: "Fyll i din Brand-profil", desc: "Din röst, dina kunder och ditt erbjudande — grunden allt annat bygger på.", href: "/k/profil", cta: "Fyll i", done: profileFilled >= 4 });
+  if (has("skapa")) steps.push({ title: "Skapa ditt första inlägg", desc: "Låt Skrivhjälpen föreslå text i din röst, lägg till en bild och du är klar.", href: "/k/studio", cta: "Skapa", done: totalPosts > 0 });
+  if (has("compass")) steps.push({ title: "Planera din vecka", desc: "Få en hel veckas innehåll färdigt att granska och lägga i kalendern.", href: "/k/kalender", cta: "Planera", done: published > 0 });
+  else if (has("veckoplan")) steps.push({ title: "Planera din vecka", desc: "Sju färdiga inlägg enligt veckorytmen, redo att granska.", href: "/k/veckoplan", cta: "Planera", done: published > 0 });
+  if (has("seo")) steps.push({ title: "Följ din synlighet", desc: "Se hur du syns i Google och AI-sök, och vad som kan bli bättre.", href: "/k/seo", cta: "Öppna", done: kwCount > 0 || !!audit });
+  else if (has("besokare")) steps.push({ title: "Följ din trafik", desc: "Se besök, kanaler och trender på ett ställe.", href: "/k/besokare", cta: "Öppna", done: visits30 > 0 });
+  const showSteps = steps.length > 0 && steps.filter((s) => s.done).length < steps.length;
+
   // Dagens datum till hero-bandet (stor bokstav).
   const todayRaw = new Date().toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
   const today = todayRaw.charAt(0).toUpperCase() + todayRaw.slice(1);
@@ -155,6 +167,9 @@ export default async function CustomerHome() {
           )}
         </div>
       </div>
+
+      {/* KOM IGÅNG — pedagogiskt stegflöde, först av allt tills grunden är på plats */}
+      {showSteps && <CustomerSteps steps={steps} primaryColor={primary} />}
 
       {/* DINA VERKTYG — kundens köpta moduler som kort, med ev. kampanjbadge */}
       <CustomerModuleCards modules={effectiveModules} primaryColor={primary} />

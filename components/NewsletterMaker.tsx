@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mail, Loader2, Sparkles, Save, Copy, Check, Send, Trash2, FileText } from "lucide-react";
 import { renderNewsletterHtml, type NewsletterContent } from "@/lib/newsletter-render";
+import Select from "@/components/ui/Select";
 
 interface ClientInfo { name: string; primary_color: string }
 interface BlogItem { id: string; title: string; text: string }
@@ -155,10 +156,10 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
             <AutoTextarea value={pasteText} onChange={setPasteText} placeholder="Klistra in artikeltext eller innehåll att göra nyhetsbrev av." rows={4} />
           </div>
         ) : (
-          <select value={blogId} onChange={(e) => setBlogId(e.target.value)} className={inputCls}>
+          <Select value={blogId} onChange={(e) => setBlogId(e.target.value)}>
             <option value="">Välj ett blogginlägg.</option>
             {blogs.map((b) => <option key={b.id} value={b.id}>{b.title}</option>)}
-          </select>
+          </Select>
         )}
 
         <button onClick={generate} disabled={generating} className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50" style={{ background: primary }}>
