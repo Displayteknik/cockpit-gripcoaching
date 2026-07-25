@@ -108,7 +108,11 @@ export default async function CustomerHome() {
   else if (has("veckoplan")) steps.push({ title: "Planera din vecka", desc: "Sju färdiga inlägg enligt veckorytmen, redo att granska.", href: "/k/veckoplan", cta: "Planera", done: published > 0 });
   if (has("seo")) steps.push({ title: "Följ din synlighet", desc: "Se hur du syns i Google och AI-sök, och vad som kan bli bättre.", href: "/k/seo", cta: "Öppna", done: kwCount > 0 || !!audit });
   else if (has("besokare")) steps.push({ title: "Följ din trafik", desc: "Se besök, kanaler och trender på ett ställe.", href: "/k/besokare", cta: "Öppna", done: visits30 > 0 });
-  const showSteps = steps.length > 0 && steps.filter((s) => s.done).length < steps.length;
+  // Grinda till nya-plattforms-tenants (compass/newsletter på). Skyddar live-klienter
+  // (CF/Ledarskapskultur har inte dessa moduler → ser aldrig stegflödet). Se
+  // feedback_live_client_no_disruption. Göms när alla steg är klara.
+  const onNewPlatform = has("compass") || has("newsletter");
+  const showSteps = onNewPlatform && steps.length > 0 && steps.filter((s) => s.done).length < steps.length;
 
   // Dagens datum till hero-bandet (stor bokstav).
   const todayRaw = new Date().toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
