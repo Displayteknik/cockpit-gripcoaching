@@ -2,7 +2,7 @@
 
 import SmartTextarea from "@/components/SmartTextarea";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle, Quote, Users, Award, ShoppingBag } from "lucide-react";
 import QualityMeter from "@/components/profile/QualityMeter";
 import KnowledgeBank from "@/components/profile/KnowledgeBank";
@@ -56,6 +56,12 @@ export default function ProfilPage() {
   const [showIntakeAgent, setShowIntakeAgent] = useState(false);
   const [intakeSessionId, setIntakeSessionId] = useState<string | null>(null);
   const [qualityRefresh, setQualityRefresh] = useState(0);
+  // Alltid kundens färg: aktiv klient (kundens egen i /k, vald i admin) → överrida brand-blue-accenten.
+  const [accent, setAccent] = useState("#1d5ca8");
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => (r.ok ? r.json() : null)).then((c) => { if (c?.primary_color) setAccent(c.primary_color); }).catch(() => {});
+  }, []);
+  const accentVars = { "--color-brand-blue": accent, "--color-brand-blue-light": accent, "--color-brand-blue-dark": accent } as CSSProperties;
 
   // Deep-link från Ikigai-motorn: /dashboard/profil?intake=<session_id> öppnar granska-vyn direkt.
   useEffect(() => {
@@ -140,12 +146,12 @@ export default function ProfilPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6" style={accentVars}>
       <DashHero
         title="Din profil"
         subtitle="Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du — och desto bättre förslag får du."
         icon={User}
-        accent="#1d5ca8"
+        accent={accent}
         eyebrow={<LivePill label="Profil" />}
         right={
           <button

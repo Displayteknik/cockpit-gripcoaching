@@ -2,7 +2,7 @@
 
 import SmartTextarea from "@/components/SmartTextarea";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   UserPlus,
   Handshake,
@@ -68,9 +68,18 @@ const STAGE_STYLES: Record<Stage, { tile: string; icon: string }> = {
 
 export default function DMPage() {
   const [tab, setTab] = useState<"pipeline" | "automation">("pipeline");
+  // Alltid kundens färg: aktiv klient (kundens egen i /k, vald i admin) → överrida purple-accenten.
+  const [accent, setAccent] = useState("#7c3aed");
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => (r.ok ? r.json() : null)).then((c) => { if (c?.primary_color) setAccent(c.primary_color); }).catch(() => {});
+  }, []);
+  const accentVars = {
+    "--color-purple-50": `${accent}14`, "--color-purple-100": `${accent}26`, "--color-purple-300": accent,
+    "--color-purple-500": accent, "--color-purple-600": accent, "--color-purple-700": accent,
+  } as CSSProperties;
 
   return (
-    <div className="max-w-7xl space-y-6">
+    <div className="max-w-7xl space-y-6" style={accentVars}>
       <div>
         <h1 className="font-display text-2xl font-bold text-gray-900">DM & Pipeline</h1>
         <p className="text-gray-500 text-sm mt-1">

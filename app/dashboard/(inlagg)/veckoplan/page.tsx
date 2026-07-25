@@ -50,11 +50,12 @@ const FOURA_BADGE: Record<string, string> = {
   authentic: "bg-amber-600",
 };
 
-// Varumarkesaccent (violett) — samma fargfamilj som tidigare hardkodade purple/blue.
-// Ingen klientfarg nas i denna fil utan att lagga till hamtning (forbjudet), sa denna konstant behalls.
-const ACCENT = "#7c3aed";
-
 export default function VeckoplanPage() {
+  // Alltid kundens färg: hämta aktiv klient (kundens egen i /k, vald klient i admin).
+  const [accent, setAccent] = useState("#7c3aed");
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => (r.ok ? r.json() : null)).then((c) => { if (c?.primary_color) setAccent(c.primary_color); }).catch(() => {});
+  }, []);
   const [theme, setTheme] = useState("");
   const [generating, setGenerating] = useState(false);
   const [response, setResponse] = useState<WeekResponse | null>(null);
@@ -175,9 +176,9 @@ export default function VeckoplanPage() {
       <div className="flex items-start gap-3">
         <span
           className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `${ACCENT}1a` }}
+          style={{ background: `${accent}1a` }}
         >
-          <Calendar className="w-[22px] h-[22px]" style={{ color: ACCENT }} />
+          <Calendar className="w-[22px] h-[22px]" style={{ color: accent }} />
         </span>
         <div>
           <h1 className="font-display text-2xl font-bold text-gray-900">Veckoplan</h1>
@@ -212,7 +213,7 @@ export default function VeckoplanPage() {
           onClick={generate}
           disabled={generating || !theme.trim()}
           className="w-full flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-lg font-semibold shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
-          style={{ background: ACCENT }}
+          style={{ background: accent }}
         >
           {generating ? (
             <>
@@ -240,9 +241,9 @@ export default function VeckoplanPage() {
             <div className="text-sm text-gray-500 flex items-center gap-2.5 min-w-0">
               <span
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: `${ACCENT}1a` }}
+                style={{ background: `${accent}1a` }}
               >
-                <Sparkles className="w-[18px] h-[18px]" style={{ color: ACCENT }} />
+                <Sparkles className="w-[18px] h-[18px]" style={{ color: accent }} />
               </span>
               <span className="min-w-0">
                 <strong className="text-gray-900">{response.theme}</strong>
