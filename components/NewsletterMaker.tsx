@@ -19,7 +19,7 @@ function AutoTextarea({ value, onChange, className = "", placeholder, rows = 1 }
   return (
     <textarea ref={ref} value={value} placeholder={placeholder} rows={rows}
       onChange={(e) => onChange(e.target.value)} onInput={fit}
-      className={`w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-400 ${className}`} />
+      className={`w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 ${className}`} />
   );
 }
 
@@ -136,16 +136,20 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
     } catch (e) { setTestMsg((e as Error).message); } finally { setTesting(false); }
   };
 
-  const inputCls = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-400";
+  const inputCls = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100";
 
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <Mail className="w-5 h-5" style={{ color: primary }} />
-          <h1 className="font-display font-bold text-gray-900 text-lg">Nyhetsbrev</h1>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+            <Mail className="w-[22px] h-[22px]" style={{ color: primary }} />
+          </span>
+          <div>
+            <h1 className="font-display font-bold text-gray-900 text-xl">Nyhetsbrev</h1>
+            <p className="text-sm text-gray-500">Skriv eller klistra in din text{blogs.length > 0 ? " — eller utgå från ett blogginlägg" : ""}, så gör Skrivhjälpen ett nyhetsbrev i din röst.</p>
+          </div>
         </div>
-        <p className="text-xs text-gray-500 mb-4">Skriv eller klistra in din text{blogs.length > 0 ? " — eller utgå från ett blogginlägg" : ""}, så gör Skrivhjälpen ett nyhetsbrev i din röst. Förhandsgranska, redigera och skicka ett testmejl till dig själv.</p>
 
         {/* Blogg-fliken visas bara om det finns blogginlägg — annars bara skriv/klistra in. */}
         {blogs.length > 0 && (
@@ -184,7 +188,8 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
                 {content.subjects.length > 1 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {content.subjects.map((s, i) => (
-                      <button key={i} onClick={() => { setSubject(s); setSaved(false); }} className={`text-xs px-2 py-1 rounded-lg border ${subject === s ? "border-violet-400 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>{s}</button>
+                      <button key={i} onClick={() => { setSubject(s); setSaved(false); }} className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-gray-50"
+                        style={subject === s ? { borderColor: primary, background: `${primary}14`, color: primary } : { borderColor: "#e5e7eb", color: "#6b7280" }}>{s}</button>
                     ))}
                   </div>
                 )}
@@ -237,7 +242,7 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
-                <input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="din@epost.se" className="flex-1 min-w-[160px] rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-400" />
+                <input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="din@epost.se" className="flex-1 min-w-[160px] rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100" />
                 <button onClick={sendTest} disabled={testing || !testTo} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
                   {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Skicka test
                 </button>
@@ -259,14 +264,16 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
       {/* Sparade utkast */}
       {drafts.length > 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <FileText className="w-4 h-4 text-gray-400" />
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+              <FileText className="w-4 h-4" style={{ color: primary }} />
+            </span>
             <h2 className="font-display font-bold text-gray-900 text-base">Sparade utkast</h2>
           </div>
           <div className="divide-y divide-gray-100">
             {drafts.map((d) => (
               <div key={d.id} className="flex items-center gap-3 py-2">
-                <button onClick={() => loadDraft(d.id)} className="flex-1 text-left text-sm text-gray-800 hover:text-violet-700 truncate">{d.subject || "Utan ämnesrad"}</button>
+                <button onClick={() => loadDraft(d.id)} className="flex-1 text-left text-sm text-gray-800 hover:text-gray-900 font-medium truncate">{d.subject || "Utan ämnesrad"}</button>
                 <button onClick={() => deleteDraft(d.id)} className="text-gray-300 hover:text-red-500" title="Ta bort"><Trash2 className="w-4 h-4" /></button>
               </div>
             ))}
