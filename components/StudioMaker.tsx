@@ -1770,83 +1770,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </button>
             </section>
 
-            {/* Redigera — tweak-lager */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display font-bold text-gray-900 text-sm uppercase tracking-wide text-gray-500">Redigera</h2>
-                <button onClick={() => { setOverrides(DEFAULT_OVERRIDES); }} className="text-xs text-gray-400 hover:text-gray-700">Återställ</button>
-              </div>
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-500">Textstorlek — per ruta</div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Rubrik ({Math.round(overrides.h1Scale * 100)}%)</label>
-                  <input type="range" min={0.5} max={2} step={0.05} value={overrides.h1Scale} onChange={(e) => setOv({ h1Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Underrubrik ({Math.round(overrides.h2Scale * 100)}%)</label>
-                  <input type="range" min={0.5} max={2} step={0.05} value={overrides.h2Scale} onChange={(e) => setOv({ h2Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Brödtext ({Math.round(overrides.bodyScale * 100)}%)</label>
-                  <input type="range" min={0.5} max={2} step={0.05} value={overrides.bodyScale} onChange={(e) => setOv({ bodyScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Radavstånd ({Math.round(overrides.lineScale * 100)}%)</label>
-                  <input type="range" min={0.8} max={1.8} step={0.05} value={overrides.lineScale} onChange={(e) => setOv({ lineScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Rubrikfärg</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" value={overrides.headlineColor || "#1A1A1A"} onChange={(e) => setOv({ headlineColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
-                    <button onClick={() => setOv({ headlineColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.headlineColor ? "Auto" : "Standard"}</button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Textfärg</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" value={overrides.bodyColor || "#1A1A1A"} onChange={(e) => setOv({ bodyColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
-                    <button onClick={() => setOv({ bodyColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.bodyColor ? "Auto" : "Standard"}</button>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Typsnitt</label>
-                  <select value={overrides.fontFamily} onChange={(e) => setOv({ fontFamily: e.target.value })} className={inputCls} style={{ fontFamily: overrides.fontFamily ? `${overrides.fontFamily}, sans-serif` : undefined }}>
-                    <option value="">Standard (mall)</option>
-                    {STUDIO_FONTS.map((f) => <option key={f} value={f} style={{ fontFamily: `${f}, sans-serif` }}>{f}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Textbakgrund</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" value={overrides.textBg || "#000000"} onChange={(e) => setOv({ textBg: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
-                    <button onClick={() => setOv({ textBg: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.textBg ? "Ta bort" : "Ingen"}</button>
-                  </div>
-                </div>
-              </div>
-              {payload.imageUrl && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Bildzoom ({Math.round(overrides.imageScale * 100)}%)</label>
-                  <input type="range" min={1} max={3} step={0.05} value={overrides.imageScale} onChange={(e) => setOv({ imageScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
-                </div>
-              )}
-              {(meta.fields.brush || meta.fields.badge) && (
-                <div className="flex flex-wrap gap-4 pt-1">
-                  {meta.fields.brush && (
-                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                      <input type="checkbox" checked={!overrides.hideBrush} onChange={(e) => setOv({ hideBrush: !e.target.checked })} style={{ accentColor: primary }} /> Penselruta
-                    </label>
-                  )}
-                  {meta.fields.badge && (
-                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                      <input type="checkbox" checked={!overrides.hideBadge} onChange={(e) => setOv({ hideBadge: !e.target.checked })} style={{ accentColor: primary }} /> Badge
-                    </label>
-                  )}
-                </div>
-              )}
+            {/* Redigera — tweak-lager (delad EditControls, samma i modalen) */}
+            <section className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+              <EditControls overrides={overrides} setOv={setOv} onReset={() => setOverrides(DEFAULT_OVERRIDES)}
+                primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} />
             </section>
 
             {/* Spara i biblioteket (återanvändbar skapelse) */}
@@ -2142,11 +2069,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         {editOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditOpen(false)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-[94vw] max-h-[94vh] overflow-auto p-5">
-              <div className="flex items-start justify-between gap-6 mb-3">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-6 p-5 border-b border-gray-100">
                 <div>
                   <h3 className="font-display font-bold text-gray-900 text-lg">Redigera direkt</h3>
-                  <p className="text-xs text-gray-500 max-w-md">Klicka en <strong>text</strong> och skriv direkt · klicka <strong>bilden</strong> för att byta. Ändringar sparas när du klickar bort (Enter för rubriker).</p>
+                  <p className="text-sm text-gray-500 max-w-md">Klicka en <strong>text</strong> och skriv direkt · klicka <strong>bilden</strong> för att byta. Justera typsnitt, storlek och färg till höger.</p>
                 </div>
                 <button onClick={() => setEditOpen(false)}
                   className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm hover:opacity-90"
@@ -2154,25 +2082,34 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <Check className="w-4 h-4" /> Klar
                 </button>
               </div>
-              {(() => { const editScale = Math.min(440 / w, 620 / h); return (
-                <div className="mx-auto rounded-xl overflow-hidden border border-gray-200 bg-gray-100" style={{ width: w * editScale }}>
-                  <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={editScale}
-                    onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined}
-                    editMode onEditField={onEditField} onEditImage={() => fileRef.current?.click()} editColor={primary} />
+              {/* Kropp: bild till vänster, full redigering till höger. Vänster scrollar → aldrig klippt botten. */}
+              <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-auto bg-gray-50 p-5 flex flex-col items-center gap-3">
+                  {(() => { const editScale = Math.min(420 / w, 560 / h); return (
+                    <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-100 shadow-sm flex-shrink-0" style={{ width: w * editScale }}>
+                      <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={editScale}
+                        onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined}
+                        editMode onEditField={onEditField} onEditImage={() => fileRef.current?.click()} editColor={primary} />
+                    </div>
+                  ); })()}
+                  {isCarousel && (
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {slides.map((s, i) => (
+                        <button key={i} onClick={() => setSlideIdx(i)}
+                          className="rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors"
+                          style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                          {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-400 text-center">Byter du bild öppnas filväljaren. Fler bildval finns i <strong>steg 3 · Bild</strong>.</p>
                 </div>
-              ); })()}
-              {isCarousel && (
-                <div className="flex flex-wrap justify-center gap-1.5 mt-3">
-                  {slides.map((s, i) => (
-                    <button key={i} onClick={() => setSlideIdx(i)}
-                      className="rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors"
-                      style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                      {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
-                    </button>
-                  ))}
+                <div className="w-full lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 overflow-auto p-5">
+                  <EditControls overrides={overrides} setOv={setOv} onReset={() => setOverrides(DEFAULT_OVERRIDES)}
+                    primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} />
                 </div>
-              )}
-              <p className="text-xs text-gray-400 text-center mt-3">Byter du bild öppnas filväljaren. Fler bildval (Mina bilder, genererad, stock) finns i <strong>steg 3 · Bild</strong>.</p>
+              </div>
             </div>
           </div>
         )}
@@ -2196,5 +2133,98 @@ function StegNr({ n, color }: { n: number; color: string }) {
       style={{ background: color, boxShadow: `0 2px 8px -2px ${color}80` }}>
       {n}
     </span>
+  );
+}
+
+// Full redigering av text (typsnitt, storlek, färg, radavstånd) + bildzoom. Delas mellan
+// mall-lägets högerkolumn OCH "Redigera direkt"-modalen (bild vänster, detta till höger).
+function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush, showBadge }: {
+  overrides: StudioOverrides;
+  setOv: (patch: Partial<StudioOverrides>) => void;
+  onReset: () => void;
+  primary: string;
+  hasImage: boolean;
+  showBrush: boolean;
+  showBadge: boolean;
+}) {
+  const inputCls = "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display font-bold text-sm uppercase tracking-wide text-gray-500">Typsnitt &amp; storlek</h3>
+        <button onClick={onReset} className="text-xs text-gray-400 hover:text-gray-700">Återställ</button>
+      </div>
+      <div className="space-y-2.5">
+        <div className="text-sm font-medium text-gray-600">Textstorlek — per ruta</div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-0.5">Rubrik ({Math.round(overrides.h1Scale * 100)}%)</label>
+          <input type="range" min={0.5} max={2} step={0.05} value={overrides.h1Scale} onChange={(e) => setOv({ h1Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-0.5">Underrubrik ({Math.round(overrides.h2Scale * 100)}%)</label>
+          <input type="range" min={0.5} max={2} step={0.05} value={overrides.h2Scale} onChange={(e) => setOv({ h2Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-0.5">Brödtext ({Math.round(overrides.bodyScale * 100)}%)</label>
+          <input type="range" min={0.5} max={2} step={0.05} value={overrides.bodyScale} onChange={(e) => setOv({ bodyScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-0.5">Radavstånd ({Math.round(overrides.lineScale * 100)}%)</label>
+          <input type="range" min={0.8} max={1.8} step={0.05} value={overrides.lineScale} onChange={(e) => setOv({ lineScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">Rubrikfärg</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={overrides.headlineColor || "#1A1A1A"} onChange={(e) => setOv({ headlineColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
+            <button onClick={() => setOv({ headlineColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.headlineColor ? "Auto" : "Standard"}</button>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">Textfärg</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={overrides.bodyColor || "#1A1A1A"} onChange={(e) => setOv({ bodyColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
+            <button onClick={() => setOv({ bodyColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.bodyColor ? "Auto" : "Standard"}</button>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">Typsnitt</label>
+          <select value={overrides.fontFamily} onChange={(e) => setOv({ fontFamily: e.target.value })} className={inputCls} style={{ fontFamily: overrides.fontFamily ? `${overrides.fontFamily}, sans-serif` : undefined }}>
+            <option value="">Standard (mall)</option>
+            {STUDIO_FONTS.map((f) => <option key={f} value={f} style={{ fontFamily: `${f}, sans-serif` }}>{f}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">Textbakgrund</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={overrides.textBg || "#000000"} onChange={(e) => setOv({ textBg: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
+            <button onClick={() => setOv({ textBg: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.textBg ? "Ta bort" : "Ingen"}</button>
+          </div>
+        </div>
+      </div>
+      {hasImage && (
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">Bildzoom ({Math.round(overrides.imageScale * 100)}%)</label>
+          <input type="range" min={1} max={3} step={0.05} value={overrides.imageScale} onChange={(e) => setOv({ imageScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+        </div>
+      )}
+      {(showBrush || showBadge) && (
+        <div className="flex flex-wrap gap-4 pt-1">
+          {showBrush && (
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" checked={!overrides.hideBrush} onChange={(e) => setOv({ hideBrush: !e.target.checked })} style={{ accentColor: primary }} /> Penselruta
+            </label>
+          )}
+          {showBadge && (
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" checked={!overrides.hideBadge} onChange={(e) => setOv({ hideBadge: !e.target.checked })} style={{ accentColor: primary }} /> Badge
+            </label>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
