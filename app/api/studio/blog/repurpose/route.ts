@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClient, getActiveClientId } from "@/lib/client-context";
+import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { repurposeToSocial } from "@/lib/studio/blog";
 import { getKitDirectives } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -12,7 +12,7 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const client = await getActiveClient();
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const b = await req.json().catch(() => ({}));
     const title = (b.title || "").toString().trim();
     const articleText = (b.articleText || "").toString();

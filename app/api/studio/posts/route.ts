@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -14,7 +14,7 @@ export async function GET() {
   if (denied) return denied;
 
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const sb = supabaseService();
     const { data, error } = await sb
       .from("studio_posts")
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
 
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const body = await req.json().catch(() => ({}));
     const payload = body.payload;
     if (!payload || typeof payload !== "object") {

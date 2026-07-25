@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 
@@ -10,7 +10,7 @@ export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const sb = supabaseService();
     const { data } = await sb
       .from("hm_blog")

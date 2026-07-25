@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { getGhlConfig, ghlBlogMeta } from "@/lib/studio/ghl";
 
 export const runtime = "nodejs";
@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 // GET /api/studio/blog/meta — bloggsajter/författare/kategorier för aktiv klients GHL.
 export async function GET() {
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const cfg = await getGhlConfig(clientId);
     if (!cfg) return NextResponse.json({ connected: false });
     const { meta, error } = await ghlBlogMeta(cfg);

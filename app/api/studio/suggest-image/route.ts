@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClient, getActiveClientId } from "@/lib/client-context";
+import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { searchStockPhotos, generateImagen } from "@/lib/images";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
 
     if (body.mode === "ai") {
       const ar = body.aspect === "story" ? "9:16" : body.aspect === "portrait" ? "3:4" : body.aspect === "square" ? "1:1" : "4:3";
-      const directives = await getKitDirectives(await getActiveClientId());
+      const directives = await getKitDirectives(await resolveClientId());
       const gen = await generateImagen(`${topic}. Branch: ${niche}. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
       if (gen.error || !m) return NextResponse.json({ error: gen.error || "Bildgenerering misslyckades" }, { status: 500 });
 
-      const clientId = await getActiveClientId();
+      const clientId = await resolveClientId();
       const sb = supabaseService();
       const { data: buckets } = await sb.storage.listBuckets();
       if (!buckets?.some((b) => b.name === BUCKET)) await sb.storage.createBucket(BUCKET, { public: true });

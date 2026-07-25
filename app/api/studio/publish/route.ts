@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { derivePostType, type StudioFormat } from "@/lib/studio/payload";
 import { publishContent } from "@/lib/publish";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
 
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const body = await req.json().catch(() => ({}));
     const channel = body.channel === "ig-graph" ? "ig-graph" : "ghl-social";
     const accountIds: string[] = Array.isArray(body.accountIds) ? body.accountIds.filter(Boolean) : [];

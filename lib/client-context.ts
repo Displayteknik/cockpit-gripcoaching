@@ -26,6 +26,22 @@ export async function getActiveClientId(): Promise<string> {
     const secret = process.env.ADMIN_SESSION_SECRET;
     const adminToken = c.get(ADMIN_COOKIE)?.value;
 
+    // 0. Anrop som HÄRRÖR från kundportalen (/k, via referer) + giltig kund-session →
+    //    kundens EGEN klient, ÄVEN om en admin-cookie ligger kvar i browsern (t.ex. när
+    //    Håkan är inloggad som admin och förhandsvisar en kunds /k). Detta hindrar att
+    //    admins aktiva klient (namn/brand/färg/data) läcker in i kundportalen. Referern
+    //    är den pålitliga signalen för vilken YTA som gjorde anropet (API-fetch från /k).
+    try {
+      const h = await headers();
+      let fromPortal = false;
+      try { fromPortal = /^\/k(\/|$)/.test(new URL(h.get("referer") || "").pathname); } catch { /* ingen/ogiltig referer */ }
+      if (fromPortal && c.get("customer_token")?.value) {
+        const { getCustomerSession } = await import("./customer-context");
+        const cs = await getCustomerSession();
+        if (cs) return cs.client_id;
+      }
+    } catch { /* faller igenom till admin/kund-logiken nedan */ }
+
     // 1. Giltig admin-session vinner. Klient-scopad admin (t.ex. HM Motor) pinnas till
     //    sin klient; full admin styr via active_client_id-cookien (server-only, ej manipulerbar).
     if (secret && adminToken && (await verifyAdminSession(adminToken, secret))) {
@@ -84,7 +100,10 @@ export async function setActiveClientId(id: string): Promise<void> {
 }
 
 export async function getActiveClient(): Promise<Client | null> {
-  const id = await getActiveClientId();
+  // Referer-medveten: anrop från /k resolvar kundens EGEN klient även om en admin-cookie
+  // ligger kvar (förhandsvisning). Från /dashboard = admins aktiva klient. Detta hindrar
+  // att fel klients namn/brand/färg läcker in i genererat innehåll i kundportalen.
+  const id = await resolveClientId();
   const sb = supabaseService();
   const { data } = await sb.from("clients").select("*").eq("id", id).single();
   return (data as Client) || null;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
 
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const { filename, mime, size, bucket: reqBucket } = await req.json();
     const isVideo = typeof mime === "string" && OK_VIDEO.has(mime);
     const BUCKET = isVideo ? VIDEO_BUCKET : ALLOWED_BUCKETS.has(reqBucket) ? reqBucket : DEFAULT_BUCKET;

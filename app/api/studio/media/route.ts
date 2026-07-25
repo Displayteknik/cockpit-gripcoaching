@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -16,7 +16,7 @@ export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const sb = supabaseService();
     const { data, error } = await sb.storage
       .from(BUCKET)
@@ -40,7 +40,7 @@ export async function DELETE(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const body = await req.json().catch(() => ({}));
     const path = (body.path || "").toString();
     // Tenant-lås: bara filer i den egna mappen får raderas (aldrig cross-tenant via manipulerad path).

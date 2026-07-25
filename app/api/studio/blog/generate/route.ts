@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClient, getActiveClientId } from "@/lib/client-context";
+import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generateBlogArticle, buildFaqJsonLd, type InternalLink } from "@/lib/studio/blog";
 import { getGhlConfig, ghlBlogMeta, ghlListBlogPosts, resolveBlogPostBase } from "@/lib/studio/ghl";
 import { generateImagen, searchStockPhotos } from "@/lib/images";
@@ -16,7 +16,7 @@ const BUCKET = "studio-images";
 export async function POST(req: NextRequest) {
   try {
     const client = await getActiveClient();
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const b = await req.json().catch(() => ({}));
     const topic = (b.topic || "").toString().trim();
     if (!topic) return NextResponse.json({ error: "Ange ett ämne" }, { status: 400 });

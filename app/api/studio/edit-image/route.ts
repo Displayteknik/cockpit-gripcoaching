@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { editImagen } from "@/lib/images";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: gen.error || "Bildändring misslyckades" }, { status: 500 });
     }
 
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const sb = supabaseService();
     const { data: buckets } = await sb.storage.listBuckets();
     if (!buckets?.some((b) => b.name === BUCKET)) await sb.storage.createBucket(BUCKET, { public: true });

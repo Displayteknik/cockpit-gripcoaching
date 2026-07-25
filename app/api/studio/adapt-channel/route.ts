@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClient, getActiveClientId } from "@/lib/client-context";
+import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     const wanted = channels.length ? channels : [...CHANNEL_KEYS];
 
     const profile = await getProfileAsMarkdown().catch(() => "");
-    const directives = await getKitDirectives(await getActiveClientId());
+    const directives = await getKitDirectives(await resolveClientId());
     const compassText = b.compass && typeof b.compass === "object" ? contentCompassBlock(b.compass) : "";
     const isCarousel = slides.length > 0;
 

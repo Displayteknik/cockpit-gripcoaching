@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 // För klienter vars blogg ligger på Cockpit-sajten (t.ex. HM Motor) i stället för GHL.
 export async function POST(req: NextRequest) {
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const b = await req.json().catch(() => ({}));
     const title = (b.title || "").toString().trim();
     const html = (b.html || "").toString();

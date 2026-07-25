@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -15,7 +15,7 @@ export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const sb = supabaseService();
     const { data, error } = await sb
       .from("studio_scheduled")
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const b = await req.json().catch(() => ({}));
     const channel = (b.channel || "ig-graph").toString();
     const scheduledAt = b.scheduledAt ? new Date(b.scheduledAt) : null;
@@ -92,7 +92,7 @@ export async function PATCH(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const b = await req.json().catch(() => ({}));
     const id = (b.id || "").toString();
     const when = b.scheduledAt ? new Date(b.scheduledAt) : null;
@@ -120,7 +120,7 @@ export async function DELETE(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id krävs" }, { status: 400 });
     const sb = supabaseService();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClient, getActiveClientId } from "@/lib/client-context";
+import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generateCarousel } from "@/lib/studio/carousel";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = await getActiveClient();
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const body = await req.json().catch(() => ({}));
     const topic = String(body.topic || "").slice(0, 300);
     if (!topic) return NextResponse.json({ error: "Ämne saknas" }, { status: 400 });

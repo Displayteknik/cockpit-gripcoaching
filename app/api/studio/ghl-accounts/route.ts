@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getActiveClientId } from "@/lib/client-context";
+import { resolveClientId } from "@/lib/client-context";
 import { getGhlConfig, ghlListAccounts } from "@/lib/studio/ghl";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -12,7 +12,7 @@ export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
-    const clientId = await getActiveClientId();
+    const clientId = await resolveClientId();
     const cfg = await getGhlConfig(clientId);
     if (!cfg) return NextResponse.json({ connected: false, accounts: [] });
     const { accounts, error } = await ghlListAccounts(cfg);
