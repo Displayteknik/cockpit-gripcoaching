@@ -1123,7 +1123,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </button>
                   <button onClick={() => suggestImage("ai")} disabled={!!searchingImg}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Generera bild
+                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Skapa bild åt mig
                   </button>
                 </div>
                 {imgResults.length > 0 && (
@@ -1148,11 +1148,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   style={{ background: primary }}>
                   {savingDesign ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Spara färdig bild i biblioteket
                 </button>
-                <p className="text-xs text-gray-400 -mt-1">Renderar hela inlägget (bild + ram + text) till en färdig bild — samma bild som publiceras. Dyker upp nedan.</p>
+                <p className="text-xs text-gray-400 -mt-1">Sätter ihop bild, ram och text till en färdig bild — samma som publiceras. Dyker upp nedan.</p>
 
                 <button onClick={toggleMedia}
                   className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
-                  <FolderOpen className="w-4 h-4" /> {showMedia ? "Dölj mediabibliotek" : "Mina bilder (mediabibliotek)"}
+                  <FolderOpen className="w-4 h-4" /> {showMedia ? "Dölj mina bilder" : "Mina bilder"}
                 </button>
                 {showMedia && (
                   loadingMedia ? (
@@ -1384,14 +1384,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={4} color={STEG_FARGER[3]} /> Bildtext</h2>
-                  <p className="text-xs text-gray-500 mt-0.5 ml-9">Texten <strong>under inlägget</strong> på Instagram (caption) — krok, värde, uppmaning, hashtags.</p>
+                  <p className="text-xs text-gray-500 mt-0.5 ml-9">Texten <strong>under bilden</strong> på Instagram — kroken som fångar, värdet, en uppmaning och några hashtags.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={suggestCaptionVariants} disabled={loadingVariants || suggestingCaption}
                     title="Få 3 varianter med olika krokar att jämföra"
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border shadow-sm hover:bg-gray-50 disabled:opacity-40"
                     style={{ borderColor: `${primary}55`, color: primary }}>
-                    {loadingVariants ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />} A/B-varianter
+                    {loadingVariants ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />} Ge mig 3 att välja på
                   </button>
                   <button onClick={suggestCaption} disabled={suggestingCaption || loadingVariants}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
@@ -1640,7 +1640,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <button onClick={exportPng} disabled={exporting}
               className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-3 rounded-xl text-white shadow-sm hover:opacity-90 disabled:opacity-40"
               style={{ background: primary }}>
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Exportera PNG
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Ladda ner bilden
             </button>
             {!customerMode && (
               <>
@@ -1715,7 +1715,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {scheduleDate ? (
                 <button onClick={() => setScheduleDate("")} className="text-xs text-gray-400 hover:text-gray-600">Rensa (publicera direkt)</button>
               ) : (
-                <span className="text-xs text-gray-400">Lämna tom för direkt. "Bästa tid" = branschstandard per plattform (ej din egen data än).</span>
+                <span className="text-xs text-gray-400">Lämna tom för direkt. "Bästa tid" föreslår de tider folk oftast är aktiva (inte din egen statistik än).</span>
               )}
             </div>
           )}
@@ -1754,7 +1754,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         </button>
                       </div>
                       <textarea value={channelCaptions[key]} onChange={(e) => setChannelCap(key, e.target.value)}
-                        rows={4} placeholder={caption.trim() ? "Använder grund-captionen — anpassa via knappen eller skriv här." : "Ingen bildtext än (steg 4)."}
+                        rows={4} placeholder={caption.trim() ? "Använder grundtexten — ändra via knappen eller skriv här." : "Ingen bildtext än (steg 4)."}
                         className="w-full rounded-lg border border-gray-200 px-2.5 py-2 text-xs leading-relaxed focus:border-gray-400 outline-none bg-white" style={{ whiteSpace: "pre-wrap" }} />
                     </div>
 
@@ -1780,7 +1780,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           className="w-full inline-flex items-center justify-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                           {copied === key ? <Check className="w-4 h-4 text-emerald-600" /> : <ExternalLink className="w-4 h-4" />} Kopiera text &amp; öppna {label}
                         </a>
-                        <p className="text-xs text-gray-400">{label} saknar direktpublicering här — ladda ner PNG:en ovan, kopiera texten och lägg upp manuellt{customerMode ? "" : ", eller koppla GHL nedan"}.</p>
+                        <p className="text-xs text-gray-400">{label} kan inte publiceras direkt härifrån — ladda ner bilden ovan, kopiera texten och lägg upp den själv{customerMode ? "" : ", eller koppla FB/LI nedan"}.</p>
                       </div>
                     )}
                     {res === "err" && <p className="text-xs text-red-500">Publicering misslyckades — se felrutan högst upp.</p>}

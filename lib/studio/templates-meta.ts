@@ -25,7 +25,7 @@ export interface TemplateMeta {
 export const TEMPLATE_META: TemplateMeta[] = [
   // ── Brand-kit-arketyper (alla klienter) ──
   {
-    id: "ark-overlay", name: "Foto + overlay", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 22, archetype: true, formatKey: "overlay",
+    id: "ark-overlay", name: "Foto med text ovanpå", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 22, archetype: true, formatKey: "overlay",
     fields: { headline1: "Rubrik (på bilden)", headline2: "Etikett (valfri)", body: "Text på bilden", badge: false, brush: false },
   },
   {
@@ -37,7 +37,7 @@ export const TEMPLATE_META: TemplateMeta[] = [
     fields: { headline1: "Rubrik (versaler)", headline2: "Underrubrik", body: "Text i rutan", badge: true, brush: true },
   },
   {
-    id: "ark-statement", name: "Statement", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 20, archetype: true, formatKey: "statement",
+    id: "ark-statement", name: "Stort budskap", formats: ["1080x1350", "1080x1080", "1080x1920"], headlineSoftMax: 20, archetype: true, formatKey: "statement",
     fields: { headline1: "Jätterubrik", headline2: "Underrubrik", body: "Kort text (valfri)", badge: false, brush: false },
   },
   {

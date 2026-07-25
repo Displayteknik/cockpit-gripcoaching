@@ -5,9 +5,9 @@ export type StudioFormat = "1080x1350" | "1080x1080" | "1080x1920";
 
 // Etikett för formatväljaren (client-säker).
 export const FORMAT_LABELS: Record<StudioFormat, string> = {
-  "1080x1350": "Porträtt 4:5",
-  "1080x1080": "Kvadrat 1:1",
-  "1080x1920": "Story 9:16",
+  "1080x1350": "Porträtt",
+  "1080x1080": "Kvadrat",
+  "1080x1920": "Story",
 };
 
 // Stående format (visar fot, mer vertikal luft). 1:1 är det enda icke-stående.
