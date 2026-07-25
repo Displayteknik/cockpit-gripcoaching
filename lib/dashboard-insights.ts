@@ -44,7 +44,7 @@ export function computeFocusInsights(data: InsightInput): FocusInsight[] {
   if (totClicks >= 5 && bClicks / totClicks > 0.7) insights.push({ icon: "repeat", accent: "purple", title: `${Math.round((bClicks / totClicks) * 100)}% av klicken kommer från ditt eget namn`, detail: `Du hittas mest av folk som redan känner till dig. Mer innehåll om det du erbjuder når nya kunder.` });
   if (hasGa4 && data.ga4!.ai.sessions === 0) insights.push({ icon: "sparkles", accent: "violet", title: "Inga besök från AI-sökmotorer än", detail: "ChatGPT, Copilot och Perplexity skickar inga besök ännu. Tydliga svar, jämförelser och konkreta siffror gör att de börjar tipsa om dig." });
   // Säkerställ alltid minst ett konkret nästa steg.
-  if (insights.length === 0) insights.push({ icon: "sparkles", accent: "emerald", title: "Fyll i din Brand-profil", detail: "Ju mer ifylld din profil är (din röst, ditt erbjudande, dina kunder), desto skarpare blir sökords-förslagen och allt AI skapar åt dig." });
+  if (insights.length === 0) insights.push({ icon: "sparkles", accent: "emerald", title: "Fyll i din Brand-profil", detail: "Ju mer ifylld din profil är (din röst, ditt erbjudande, dina kunder), desto skarpare blir sökords-förslagen och allt Skrivhjälpen skapar åt dig." });
 
   return insights;
 }

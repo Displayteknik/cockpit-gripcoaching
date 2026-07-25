@@ -299,7 +299,7 @@ export default function BlogDashboardPage() {
               {generatingCover || uploading ? (
                 <>
                   <div className="w-6 h-6 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm text-gray-500">{generatingCover ? "AI skapar omslagsbild..." : "Laddar upp..."}</span>
+                  <span className="text-sm text-gray-500">{generatingCover ? "Bildhjälpen skapar omslagsbild..." : "Laddar upp..."}</span>
                 </>
               ) : (
                 <>
