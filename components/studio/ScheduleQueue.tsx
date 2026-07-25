@@ -122,8 +122,10 @@ export default function ScheduleQueue({ primary, refreshKey = 0 }: { primary: st
   return (
     <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="w-5 h-5" style={{ color: primary }} />
+        <div className="flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+            <CalendarClock className="w-[18px] h-[18px]" style={{ color: primary }} />
+          </span>
           <h2 className="font-display font-bold text-gray-900 text-lg">Schemalagt</h2>
           {upcoming.length > 0 && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>{upcoming.length}</span>}
         </div>
@@ -134,7 +136,7 @@ export default function ScheduleQueue({ primary, refreshKey = 0 }: { primary: st
       <p className="text-xs text-gray-400 mb-2">Dina inlägg och bloggar som publiceras automatiskt vid vald tid.</p>
 
       {upcoming.length === 0 && done.length === 0 ? (
-        <div className="text-sm text-gray-400 py-4">Inget schemalagt ännu. Sätt en tid i <strong>steg 5</strong> när du publicerar.</div>
+        <div className="text-sm text-gray-400 py-4">Inget schemalagt ännu. Välj en tid under <strong>Publicera</strong> så hamnar inlägget här.</div>
       ) : (
         <div className="divide-y divide-gray-100">
           {upcoming.map((j) => <Row key={j.id} j={j} />)}

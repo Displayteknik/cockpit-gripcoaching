@@ -27,7 +27,9 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
   const [client, setClient] = useState<ClientInfo | null>(null);
   const [blogs, setBlogs] = useState<BlogItem[]>([]);
   const [blogId, setBlogId] = useState("");
-  const [pasteMode, setPasteMode] = useState(false);
+  // Default = skriv/klistra in text. Blogg-vägen erbjuds bara om det faktiskt finns
+  // blogginlägg (annars leder fliken till en tom lista → förvirrande).
+  const [pasteMode, setPasteMode] = useState(true);
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteText, setPasteText] = useState("");
 
@@ -143,17 +145,20 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
           <Mail className="w-5 h-5" style={{ color: primary }} />
           <h1 className="font-display font-bold text-gray-900 text-lg">Nyhetsbrev</h1>
         </div>
-        <p className="text-xs text-gray-500 mb-4">Gör ett nyhetsbrev av ett blogginlägg i din röst. Förhandsgranska, redigera och skicka ett testmejl till dig själv.</p>
+        <p className="text-xs text-gray-500 mb-4">Skriv eller klistra in din text{blogs.length > 0 ? " — eller utgå från ett blogginlägg" : ""}, så gör Skrivhjälpen ett nyhetsbrev i din röst. Förhandsgranska, redigera och skicka ett testmejl till dig själv.</p>
 
-        <div className="flex items-center gap-2 mb-3">
-          <button onClick={() => setPasteMode(false)} className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${!pasteMode ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`} style={!pasteMode ? { background: primary } : {}}>Från blogginlägg</button>
-          <button onClick={() => setPasteMode(true)} className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${pasteMode ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`} style={pasteMode ? { background: primary } : {}}>Klistra in text</button>
-        </div>
+        {/* Blogg-fliken visas bara om det finns blogginlägg — annars bara skriv/klistra in. */}
+        {blogs.length > 0 && (
+          <div className="flex items-center gap-2 mb-3">
+            <button onClick={() => setPasteMode(true)} className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${pasteMode ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`} style={pasteMode ? { background: primary } : {}}>Skriv / klistra in text</button>
+            <button onClick={() => setPasteMode(false)} className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${!pasteMode ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`} style={!pasteMode ? { background: primary } : {}}>Från blogginlägg</button>
+          </div>
+        )}
 
         {pasteMode ? (
           <div className="space-y-2">
             <input value={pasteTitle} onChange={(e) => setPasteTitle(e.target.value)} placeholder="Rubrik (valfritt)" className={inputCls} />
-            <AutoTextarea value={pasteText} onChange={setPasteText} placeholder="Klistra in artikeltext eller innehåll att göra nyhetsbrev av." rows={4} />
+            <AutoTextarea value={pasteText} onChange={setPasteText} placeholder="Skriv eller klistra in det du vill skicka — ett erbjudande, en nyhet, veckans tips…" rows={4} />
           </div>
         ) : (
           <Select value={blogId} onChange={(e) => setBlogId(e.target.value)}>

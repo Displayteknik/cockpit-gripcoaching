@@ -167,7 +167,7 @@ export default function SmartTextarea({
           <button
             type="button"
             onClick={stoppaRost}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200"
           >
             <Square className="w-3 h-3 fill-current" /> Stoppa
             <span className="tabular-nums">
@@ -179,7 +179,7 @@ export default function SmartTextarea({
             type="button"
             onClick={startaRost}
             disabled={upptagen}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
           >
             {jobbar === "röst" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mic className="w-3 h-3" />}
             {jobbar === "röst" ? "Skriver…" : "Prata in"}
@@ -205,8 +205,8 @@ export default function SmartTextarea({
             e.target.value = "";
           }}
         />
-        {hint && <span className="text-xs text-gray-400">eller klistra in en skärmbild (Ctrl+V)</span>}
-        {fel && <span className="text-xs text-red-600">{fel}</span>}
+        {hint && <span className="text-sm text-gray-500">eller klistra in en skärmbild (Ctrl+V)</span>}
+        {fel && <span className="text-sm text-red-600">{fel}</span>}
       </div>
     </div>
   );

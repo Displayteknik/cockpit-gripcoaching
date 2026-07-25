@@ -18,7 +18,7 @@ alter table newsletters enable row level security;
 
 -- Registrera modulen (default AV, PÅ per tenant via tenant_modules).
 insert into platform_modules (id, label, description, href, icon, owner_area, sort_order, active, in_pro_default)
-values ('newsletter', 'Nyhetsbrev', 'Gör nyhetsbrev av dina blogginlägg och skicka.', '/dashboard/nyhetsbrev', 'Mail', 'content', 62, true, false)
+values ('newsletter', 'Nyhetsbrev', 'Gör ett nyhetsbrev av din text (eller ett blogginlägg) och skicka i din röst.', '/dashboard/nyhetsbrev', 'Mail', 'content', 62, true, false)
 on conflict (id) do nothing;
 
 notify pgrst, 'reload schema';

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { LogOut, ArrowLeft, Menu, X } from "lucide-react";
 import CustomerNav from "./CustomerNav";
 
@@ -13,6 +14,11 @@ export default function CustomerChrome({
 }) {
   const [open, setOpen] = useState(false);
   const initial = (clientName || "?").trim().charAt(0).toUpperCase();
+  // Studio (Skapa inlägg) behöver bredden — form + förhandsvisning sida vid sida.
+  // Bara den sidan vidgas; alla andra /k-sidor står kvar på max-w-5xl så live-klienter
+  // (som inte har Studio) ser exakt samma portal som förut. Se feedback_live_client_no_disruption.
+  const pathname = usePathname();
+  const wide = pathname === "/k/studio";
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -54,7 +60,7 @@ export default function CustomerChrome({
           </div>
         </header>
         <main className="overflow-y-auto">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 md:py-8">{children}</div>
+          <div className={`${wide ? "max-w-7xl" : "max-w-5xl"} mx-auto px-4 sm:px-6 py-6 md:py-8`}>{children}</div>
         </main>
       </div>
     </div>

@@ -70,9 +70,11 @@ interface Props {
   handle?: string | null;
   primary: string;
   mediaWidth?: number;
+  // Skriv eget-läget: visa råfotot direkt (ingen mall-render). Tomt → placeholder.
+  imageSrc?: string;
 }
 
-export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264 }: Props) {
+export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc }: Props) {
   const { w, h } = FORMAT_DIMENSIONS[format] ?? FORMAT_DIMENSIONS["1080x1350"];
   const MW = mediaWidth;
   const MH = Math.round((MW * h) / w);
@@ -81,7 +83,17 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
   const brand = CHANNEL_BRAND[channel];
   const { Icon } = brand;
 
-  const Media = (
+  // imageSrc satt = Skriv eget: råfotot (eller en tom platshållare) istället för mall-iframe.
+  const Media = imageSrc !== undefined ? (
+    <div className="overflow-hidden bg-gray-100 flex items-center justify-center" style={{ width: MW, height: MH }}>
+      {imageSrc ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageSrc} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-xs text-gray-400">Ingen bild (valfritt)</span>
+      )}
+    </div>
+  ) : (
     <div className="overflow-hidden bg-gray-100" style={{ width: MW, height: MH }}>
       <iframe title={`${channel}-preview`} scrolling="no" src={renderSrc}
         style={{ width: w, height: h, border: 0, transform: `scale(${MW / w})`, transformOrigin: "top left", pointerEvents: "none" }} />

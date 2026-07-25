@@ -99,7 +99,7 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     label: "Nyhetsbrev",
     href: "/k/nyhetsbrev",
     icon: Mail,
-    description: "Gör nyhetsbrev av dina blogginlägg i din röst. Förhandsgranska, redigera och skicka ett testmejl.",
+    description: "Gör ett nyhetsbrev av din text eller ett blogginlägg, i din röst. Förhandsgranska, redigera och skicka ett testmejl.",
   },
   {
     key: "dm",
