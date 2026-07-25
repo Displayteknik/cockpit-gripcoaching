@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Sparkles,
   Loader2,
@@ -13,7 +13,6 @@ import {
   Save,
   CalendarPlus,
 } from "lucide-react";
-import KnowledgeText from "@/components/KnowledgeText";
 import { CompassBadges } from "@/components/content-compass/badges";
 
 interface DayPlan {
@@ -136,6 +135,17 @@ export default function VeckoplanPage() {
     setExpanded(next);
   }
 
+  // Inline-redigering: uppdatera ett dygns fält i state. Spara/Spara hela veckan
+  // läser response.days → dina ändringar följer med automatiskt.
+  function updateDay(i: number, patch: Partial<DayPlan>) {
+    setResponse((prev) => {
+      if (!prev) return prev;
+      const days = prev.days.slice();
+      days[i] = { ...days[i], ...patch };
+      return { ...prev, days };
+    });
+  }
+
   return (
     <div className="max-w-5xl space-y-6">
       <div>
@@ -252,6 +262,7 @@ export default function VeckoplanPage() {
               day={day}
               expanded={expanded.has(i)}
               onToggle={() => toggle(i)}
+              onChange={(patch) => updateDay(i, patch)}
             />
           ))}
         </div>
@@ -260,14 +271,34 @@ export default function VeckoplanPage() {
   );
 }
 
+// Auto-växande textruta som ser ut som text tills man klickar. Håller höjden efter innehåll.
+function AutoTextarea({ value, onChange, className = "", placeholder }: { value: string; onChange: (v: string) => void; className?: string; placeholder?: string }) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const fit = () => { const el = ref.current; if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; } };
+  useEffect(fit, [value]);
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => { onChange(e.target.value); }}
+      onInput={fit}
+      rows={1}
+      className={`w-full resize-none bg-transparent outline-none rounded-md px-2 py-1 -mx-2 hover:bg-white focus:bg-white focus:ring-2 focus:ring-purple-500/30 transition-colors ${className}`}
+    />
+  );
+}
+
 function DayCard({
   day,
   expanded,
   onToggle,
+  onChange,
 }: {
   day: DayPlan;
   expanded: boolean;
   onToggle: () => void;
+  onChange: (patch: Partial<DayPlan>) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -357,32 +388,45 @@ function DayCard({
         <div className="px-4 pb-4 space-y-3 bg-white/80 border-t border-gray-200/60">
           <div className="pt-3">
             <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Hook</div>
-            <div className="text-base font-display font-bold text-gray-900 leading-snug">
-              <KnowledgeText text={day.hook} />
-            </div>
+            <AutoTextarea
+              value={day.hook}
+              onChange={(v) => onChange({ hook: v })}
+              placeholder="Skriv en krok som stoppar scrollen"
+              className="text-base font-display font-bold text-gray-900 leading-snug"
+            />
           </div>
 
-          {day.body && (
-            <div>
-              <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Body</div>
-              <div className="text-sm text-gray-800 leading-relaxed">
-                <KnowledgeText text={day.body} />
-              </div>
-            </div>
-          )}
+          <div>
+            <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Body</div>
+            <AutoTextarea
+              value={day.body}
+              onChange={(v) => onChange({ body: v })}
+              placeholder="Brödtext — känsla, igenkänning och kundens resultat"
+              className="text-sm text-gray-800 leading-relaxed"
+            />
+          </div>
 
-          {day.cta && (
-            <div>
-              <div className="text-xs uppercase text-gray-400 font-semibold mb-1">CTA</div>
-              <div className="text-sm font-medium text-gray-900">{day.cta}</div>
-            </div>
-          )}
+          <div>
+            <div className="text-xs uppercase text-gray-400 font-semibold mb-1">CTA</div>
+            <AutoTextarea
+              value={day.cta}
+              onChange={(v) => onChange({ cta: v })}
+              placeholder="En tydlig uppmaning"
+              className="text-sm font-medium text-gray-900"
+            />
+          </div>
 
-          {day.hashtags.length > 0 && (
-            <div className="text-xs text-blue-700 font-mono">
-              {day.hashtags.map((h) => `#${h.replace(/^#/, "")}`).join(" ")}
-            </div>
-          )}
+          <div>
+            <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Hashtags</div>
+            <AutoTextarea
+              value={day.hashtags.map((h) => `#${h.replace(/^#/, "")}`).join(" ")}
+              onChange={(v) => onChange({ hashtags: v.split(/\s+/).map((h) => h.replace(/^#/, "")).filter(Boolean) })}
+              placeholder="#taggar #separerade #med #mellanslag"
+              className="text-xs text-blue-700 font-mono"
+            />
+          </div>
+
+          <p className="text-[11px] text-gray-400">Redigera fritt. Spara eller Spara hela veckan använder din text.</p>
         </div>
       )}
     </div>
