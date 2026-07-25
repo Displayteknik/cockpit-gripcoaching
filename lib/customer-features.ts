@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail } from "lucide-react";
 import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
@@ -93,6 +93,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     href: "/k/kalender",
     icon: Compass,
     description: "Din innehållskalender med Content Compass. Skapa hela veckans innehåll färdigprofilerat och se din balans.",
+  },
+  {
+    key: "newsletter",
+    label: "Nyhetsbrev",
+    href: "/k/nyhetsbrev",
+    icon: Mail,
+    description: "Gör nyhetsbrev av dina blogginlägg i din röst. Förhandsgranska, redigera och skicka ett testmejl.",
   },
   {
     key: "dm",

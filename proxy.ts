@@ -86,6 +86,9 @@ function isCustomerServedApi(path: string): boolean {
   if (path === "/api/content-compass") return true;
   if (path.startsWith("/api/content/")) return true;
   if (path === "/api/generate/week") return true;
+  // Kund-vänd Nyhetsbrev-modul (/k/nyhetsbrev). Varje route grindas in-route
+  // (requireAdminOrCustomer + hasModule 'newsletter') och tenant-låses via getActiveClientId.
+  if (path.startsWith("/api/newsletter")) return true;
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||

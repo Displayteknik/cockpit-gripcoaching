@@ -55,6 +55,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar },
         { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon },
         { href: "/dashboard/mejl", label: "Mejl", icon: Mail },
+        { href: "/dashboard/nyhetsbrev", label: "Nyhetsbrev", icon: Mail },
         { href: "/dashboard/agents", label: "Idé-bank", icon: Bot },
       ],
     },
