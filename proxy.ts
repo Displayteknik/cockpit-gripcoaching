@@ -79,6 +79,13 @@ function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/ai/")) return true;
   // Kund-vänd Ikigai-motor (/k/ikigai): sessions + generate (public-varianten hanteras i isPublicApi).
   if (path === "/api/ikigai/sessions" || path === "/api/ikigai/generate") return true;
+  // Content Compass (/k/kalender): schema-läsning, innehålls-översikt, balansmätare,
+  // auto-klassning och granskning. Varje route grindas in-route (requireAdminOrCustomer)
+  // och tenant-låses via getActiveClientId. "Skapa veckans innehåll" grindas dessutom
+  // på compass-modulen i routen.
+  if (path === "/api/content-compass") return true;
+  if (path.startsWith("/api/content/")) return true;
+  if (path === "/api/generate/week") return true;
   return (
     path === "/api/seo/analytics" ||
     path === "/api/seo/audit" ||

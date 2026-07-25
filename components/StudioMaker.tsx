@@ -8,7 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
-  ExternalLink, CalendarClock,
+  ExternalLink, CalendarClock, ClipboardCheck, X,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
@@ -162,6 +162,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [compassSchedule, setCompassSchedule] = useState<CompassSchedule | null>(null);
   const [compassEnabled, setCompassEnabled] = useState(false);
   const [compass, setCompass] = useState<{ funnel: FunnelLevel | null; four_a: FourA | null; disc: DiscLetter[] }>({ funnel: null, four_a: null, disc: [] });
+  // CC-3: auto-klassa (fyll chips ur texten) + granska mot inläggsanatomin.
+  const [compassBusy, setCompassBusy] = useState<"" | "classify" | "review">("");
+  const [reviewResult, setReviewResult] = useState<{ passed: boolean; brister: string[]; sammanfattning: string } | null>(null);
   const [igConn, setIgConn] = useState<{ connected: boolean; handle: string | null } | null>(null);
   // Fas B — multi-kanal: valda kanaler (förikryssade efter koppling), per-kanal-caption,
   // per-kanal publiceringsstatus. Grund-captionen (steg 4) är källa; kanal-caption faller
@@ -506,7 +509,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       const r = await fetch("/api/studio/carousel/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topic || headline1, points: 3 }),
+        body: JSON.stringify({ topic: topic || headline1, points: 3, compass }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Karusell-generering misslyckades");
@@ -516,7 +519,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setGenCarousel(false);
     }
-  }, [topic, headline1]);
+  }, [topic, headline1, compass]);
 
   // Skapa en on-brand AI-bild per slide (ämne = slidens egen text). Sekventiellt så
   // Gemini/Fal-kvoten inte spränger, med synlig progress. Sätter bilden direkt på varje slide.
@@ -740,6 +743,32 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }
   }, [headline1, headline2, body, topic, slides, postType, compass]);
 
+  // CC-3: auto-klassa inläggets text → fyll Content Compass-chips (redigerbara efteråt).
+  const autoClassify = useCallback(async () => {
+    const text = (caption || [headline1, body].filter(Boolean).join("\n\n")).trim();
+    if (text.length < 20) { setError("Skriv lite text först så kan jag klassa den."); return; }
+    setError(""); setCompassBusy("classify");
+    try {
+      const r = await fetch("/api/content/classify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte klassa texten");
+      setCompass({ funnel: (d.funnel || null) as FunnelLevel | null, four_a: (d.four_a || null) as FourA | null, disc: Array.isArray(d.disc) ? (d.disc as DiscLetter[]) : [] });
+    } catch (e) { setError((e as Error).message); } finally { setCompassBusy(""); }
+  }, [caption, headline1, body]);
+
+  // CC-3: granska texten mot inläggsanatomin (hook, känsla, kund-nytta, exakt en CTA).
+  const reviewText = useCallback(async () => {
+    const text = (caption || [headline1, body].filter(Boolean).join("\n\n")).trim();
+    if (text.length < 20) { setError("Skriv lite text först så kan jag granska den."); return; }
+    setError(""); setCompassBusy("review"); setReviewResult(null);
+    try {
+      const r = await fetch("/api/content/review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, funnel: compass.funnel || undefined }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte granska texten");
+      setReviewResult({ passed: !!d.passed, brister: Array.isArray(d.brister) ? d.brister : [], sammanfattning: d.sammanfattning || "" });
+    } catch (e) { setError((e as Error).message); } finally { setCompassBusy(""); }
+  }, [caption, headline1, body, compass.funnel]);
+
   // Fas D: A/B — generera 3 caption-varianter med olika krok-vinklar att jämföra.
   const suggestCaptionVariants = useCallback(async () => {
     setError(""); setLoadingVariants(true); setCaptionVariants([]);
@@ -808,7 +837,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       const r = await fetch("/api/studio/adapt-channel", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caption, headline: headline1, headline2, body, topic, slides, postType, channels: targets }),
+        body: JSON.stringify({ caption, headline: headline1, headline2, body, topic, slides, postType, channels: targets, compass }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte anpassa per kanal");
@@ -818,7 +847,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setAdapting(false);
     }
-  }, [selectedChannels, caption, headline1, headline2, body, topic, slides, postType]);
+  }, [selectedChannels, caption, headline1, headline2, body, topic, slides, postType, compass]);
 
   const copyChannelText = useCallback((k: ChannelKey) => {
     navigator.clipboard?.writeText(capFor(k)).then(() => { setCopied(k); setTimeout(() => setCopied(""), 1500); }).catch(() => {});
@@ -1394,7 +1423,34 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       );
                     })}
                   </div>
-                  <span className="text-[11px] text-violet-600 ml-auto">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt.</span>
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <button type="button" onClick={autoClassify} disabled={!!compassBusy}
+                      title="Läs texten och fyll i funnel, 4A och DISC automatiskt"
+                      className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-violet-200 bg-white text-violet-700 hover:bg-violet-50 disabled:opacity-40">
+                      {compassBusy === "classify" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />} Auto-klassa
+                    </button>
+                    <button type="button" onClick={reviewText} disabled={!!compassBusy}
+                      title="Granska texten mot inläggsanatomin: hook, känsla, kund-nytta och exakt en CTA"
+                      className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-violet-200 bg-white text-violet-700 hover:bg-violet-50 disabled:opacity-40">
+                      {compassBusy === "review" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ClipboardCheck className="w-3.5 h-3.5" />} Granska
+                    </button>
+                  </div>
+                  <span className="w-full text-[11px] text-violet-600">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt.</span>
+                  {reviewResult && (
+                    <div className={`w-full rounded-lg border p-3 mt-1 ${reviewResult.passed ? "border-emerald-200 bg-emerald-50/60" : "border-amber-200 bg-amber-50/60"}`}>
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
+                        {reviewResult.passed ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <X className="w-3.5 h-3.5 text-amber-600" />}
+                        {reviewResult.passed ? "Följer anatomin" : "Kan bli bättre"}
+                        <button type="button" onClick={() => setReviewResult(null)} className="ml-auto text-gray-400 hover:text-gray-700">Dölj</button>
+                      </div>
+                      {reviewResult.brister.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5 text-[11px] text-amber-800">
+                          {reviewResult.brister.map((b, i) => <li key={i}>· {b}</li>)}
+                        </ul>
+                      )}
+                      {reviewResult.sammanfattning && <p className="mt-1 text-[11px] text-gray-500">{reviewResult.sammanfattning}</p>}
+                    </div>
+                  )}
                 </div>
               )}
 

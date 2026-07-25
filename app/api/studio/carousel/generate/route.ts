@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { generateCarousel } from "@/lib/studio/carousel";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { contentCompassBlock } from "@/lib/content-compass/prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
     const topic = String(body.topic || "").slice(0, 300);
     if (!topic) return NextResponse.json({ error: "Ämne saknas" }, { status: 400 });
     const points = Number(body.points) || 3;
+    const compass = body.compass && typeof body.compass === "object" ? contentCompassBlock(body.compass) : "";
 
     const slides = await generateCarousel({
       clientId,
@@ -26,6 +28,7 @@ export async function POST(req: NextRequest) {
       points,
       brandName: client?.name,
       industry: client?.industry || undefined,
+      compass,
     });
     if (!slides.length) return NextResponse.json({ error: "Kunde inte generera karusell" }, { status: 500 });
     return NextResponse.json({ slides });

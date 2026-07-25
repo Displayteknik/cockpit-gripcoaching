@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Save, RotateCcw, Check } from "lucide-react";
 import { DashHero } from "@/components/ui/dash";
 import { CompassBadges } from "@/components/content-compass/badges";
+import ContentToolbox from "@/components/content-compass/ContentToolbox";
 import { STANDARD_SCHEDULE, DAY_KEYS, DAY_LABEL, type CompassDay, type CompassSchedule, type DayKey, type Cadence, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
 import type { FourA } from "@/lib/content-framework";
 
@@ -127,6 +128,8 @@ export default function ContentCompassPage() {
           </div>
         )}
       </section>
+
+      <ContentToolbox accent="#7c3aed" />
     </div>
   );
 }

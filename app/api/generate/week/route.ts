@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
-import { generate } from "@/lib/gemini";
+import { generate, generateWithUsage } from "@/lib/gemini";
 import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 import {
   WEEK_ROLES,
@@ -12,6 +12,11 @@ import {
   FORMAT_LABELS,
   type Format,
 } from "@/lib/content-framework";
+import { getCompassSchedule } from "@/lib/content-compass/schedule";
+import { planWeek } from "@/lib/content-compass/rules";
+import { contentCompassBlock } from "@/lib/content-compass/prompt";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { hasModule } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -32,11 +37,27 @@ interface DayPlan {
 // { theme: string, week_starts?: ISO-date, formats?: { [day: string]: Format } }
 export async function POST(req: NextRequest) {
   try {
+    // Både admin-dashboarden (veckoplan) och kundportalen (/k/kalender) anropar denna.
+    // Grinden sker här (proxy släpper igenom kund-betjänade rutter). Tenant-låst nedan.
+    const denied = await requireAdminOrCustomer();
+    if (denied) return denied;
+
     const clientId = await getActiveClientId();
     const body = await req.json();
     const theme = String(body.theme || "").trim();
     if (!theme || theme.length < 5) {
       return NextResponse.json({ error: "Veckotema krävs (minst 5 tecken)" }, { status: 400 });
+    }
+
+    // CC-4: "Skapa veckans innehåll" — profilerar hela veckan enligt tenantens
+    // Content Compass-schema, sparar som utkast i kalendern med bästa-tid. Den
+    // befintliga veckoplan-vägen (utan body.compass) är helt orörd nedan.
+    // Grindas dessutom på compass-modulen (skydd även om UI:t skulle slinka förbi).
+    if (body.compass) {
+      if (!(await hasModule(clientId, "compass").catch(() => false))) {
+        return NextResponse.json({ error: "Content Compass ingår inte i ditt paket" }, { status: 403 });
+      }
+      return await generateCompassWeek(clientId, theme);
     }
 
     const sb = supabaseService();
@@ -180,4 +201,154 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
+}
+
+// ── CC-4: Skapa veckans innehåll ──────────────────────────────────────────────
+// Läser tenantens Compass-schema, planerar en giltig vecka (kadens + hårda regler),
+// genererar alla inlägg i EN token-effektiv call med Compass-blocket per dag, och
+// sparar dem som utkast i kalendern med föreslagen bästa-tid. Inget publiceras.
+async function generateCompassWeek(clientId: string, theme: string) {
+  const sb = supabaseService();
+  const { data: profile } = await sb
+    .from("hm_brand_profile")
+    .select("*")
+    .eq("client_id", clientId)
+    .maybeSingle();
+  if (!profile) return NextResponse.json({ error: "Brand-profil saknas" }, { status: 400 });
+
+  const schedule = await getCompassSchedule(clientId);
+  const { posts, notes } = planWeek(schedule);
+  if (!posts.length) return NextResponse.json({ error: "Schemat har inga aktiva dagar" }, { status: 400 });
+
+  const fp = await getVoiceFingerprint(clientId);
+  const voiceBlock = fingerprintToPromptBlock(fp);
+
+  // Ett block per planerad dag: dagens Compass-profil styr ton, form och CTA.
+  const dayBlocks = posts
+    .map((p, i) => {
+      const dateLabel = new Date(p.date).toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
+      const compass = contentCompassBlock({ funnel: p.funnel, four_a: p.four_a, disc: p.disc });
+      return `── INLÄGG ${i + 1} (${p.dayLabel}, ${dateLabel}) ──\n${compass}`;
+    })
+    .join("\n\n");
+
+  const system = `Du är världsklass copywriter. Du skriver en hel veckas innehåll enligt kundens Content Compass. Varje inlägg har sin egen roll (funnel, 4A, DISC) och sin egen anatomi nedan. Följ anatomin för varje inlägg exakt.
+
+═══ KUND ═══
+Företag: ${profile.company_name || "(saknas)"}
+Plats: ${profile.location || "(saknas)"}
+USP: ${profile.usp || "(saknas)"}
+Differentiatorer: ${profile.differentiators || "(saknas)"}
+ICP primär: ${profile.icp_primary || "(saknas)"}
+Smärtpunkter: ${profile.pain_points || "(saknas)"}
+Tjänster: ${profile.services || "(saknas)"}
+Bokningslänk: ${profile.booking_url || "(saknas)"}
+
+═══ VECKANS INLÄGG (följ Compass-blocket för varje) ═══
+${dayBlocks}
+
+═══ HOOK-REGLER ═══
+${KANE_HOOK_RULES}
+
+${voiceBlock}
+
+═══ KVALITETSKRAV ═══
+- Veckan ska ha progression och kännas som en serie, inte lösryckta inlägg.
+- Varje inlägg: en tydlig hook, känsla och igenkänning, kundens resultat, exakt EN CTA som matchar funnel-nivån.
+- ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "skalbar", "holistisk".
+- Skriv på svenska som personen själv hade skrivit.
+
+═══ OUTPUT JSON ═══
+{
+  "days": [
+    { "hook": "...", "body": "...", "cta": "...", "hashtags": ["..."] }
+  ]
+}
+Exakt ${posts.length} inlägg i "days", i samma ordning som INLÄGG 1..${posts.length} ovan.`;
+
+  const userPrompt = `Veckotema: ${theme}\n\nSkriv ${posts.length} inlägg som tillsammans tar målgruppen från medvetenhet till handling. Returnera enbart JSON.`;
+
+  const { text: raw, usage } = await generateWithUsage({
+    model: "gemini-2.5-pro",
+    systemInstruction: system,
+    prompt: userPrompt,
+    temperature: 0.85,
+    maxOutputTokens: 8000,
+    jsonMode: true,
+  });
+
+  let parsed: { days?: { hook?: string; body?: unknown; cta?: string; hashtags?: unknown }[] } = {};
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) parsed = JSON.parse(m[0]);
+  }
+  if (!parsed.days || !Array.isArray(parsed.days) || parsed.days.length === 0) {
+    return NextResponse.json({ error: "AI returnerade inga inlägg" }, { status: 500 });
+  }
+
+  const toStr = (v: unknown): string => {
+    if (typeof v === "string") return v;
+    if (Array.isArray(v)) return v.map(toStr).join("\n\n");
+    if (v && typeof v === "object") return JSON.stringify(v);
+    return v == null ? "" : String(v);
+  };
+  const firstLine = (s: string) => (s.split("\n")[0] || "").slice(0, 120).trim() || "Veckoinlägg";
+
+  // Spara varje planerad dag som ett utkast (studio_posts) med Compass-metadata + bästa-tid.
+  const nowIso = new Date().toISOString();
+  const rows = posts.map((p, i) => {
+    const ai = parsed.days![i] || {};
+    const hook = toStr(ai.hook);
+    const bodyTxt = toStr(ai.body);
+    const cta = toStr(ai.cta);
+    const hashtags = Array.isArray(ai.hashtags) ? ai.hashtags.map((h) => String(h).replace(/^#/, "")) : [];
+    const caption = [hook, bodyTxt, cta, hashtags.map((h) => `#${h}`).join(" ")].filter(Boolean).join("\n\n");
+    return {
+      client_id: clientId,
+      template_id: "ark-textkort",
+      format: "1080x1350",
+      title: firstLine(hook || bodyTxt),
+      caption,
+      payload: {
+        templateId: "ark-textkort",
+        format: "1080x1350",
+        headline1: hook,
+        body: bodyTxt,
+        caption,
+        compass: { funnel: p.funnel, four_a: p.four_a, disc: p.disc },
+      },
+      image_url: null,
+      funnel_level: p.funnel,
+      four_a: p.four_a,
+      disc: p.disc,
+      compass_source: "schedule",
+      scheduled_at: p.date,
+      created_at: nowIso,
+      updated_at: nowIso,
+    };
+  });
+
+  const { data: inserted, error } = await sb.from("studio_posts").insert(rows).select("id, title, scheduled_at, funnel_level, four_a, disc");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Faktisk token-användning per körning (förberett för credit-system). Fallback till
+  // grovt estimat (tecken / 4) om API:t inte rapporterade usageMetadata.
+  const tokenTotal = usage.total || Math.round((system.length + userPrompt.length + raw.length) / 4);
+  console.log(`[compass-week] client=${clientId} inlägg=${rows.length} tokens_in=${usage.input} tokens_out=${usage.output} tokens_total=${tokenTotal}`);
+
+  return NextResponse.json({
+    saved: inserted?.length || 0,
+    notes,
+    token_estimate: tokenTotal,
+    posts: (inserted || []).map((r) => ({
+      id: r.id,
+      title: r.title,
+      when: r.scheduled_at,
+      funnel_level: r.funnel_level,
+      four_a: r.four_a,
+      disc: r.disc,
+    })),
+  });
 }

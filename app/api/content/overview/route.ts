@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { getContentOverview } from "@/lib/content/overview";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 // GET /api/content/overview — enhetlig vy över allt innehåll för aktiv klient.
-// Admin-grindad av proxy.ts. Läser alla verkstäders tabeller (service-role).
+// Admin ELLER kund (/k/kalender). Grindas här, tenant-låst via getActiveClientId.
 export async function GET() {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
     if (!clientId) return NextResponse.json({ error: "Ingen aktiv klient" }, { status: 400 });

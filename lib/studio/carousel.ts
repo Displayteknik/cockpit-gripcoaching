@@ -16,7 +16,7 @@ function str(v: unknown): string {
 
 // Antal PUNKT-slides (utöver hook + cta). points=3 → 5 slides totalt.
 export async function generateCarousel(opts: {
-  clientId: string; topic: string; points?: number; brandName?: string; industry?: string;
+  clientId: string; topic: string; points?: number; brandName?: string; industry?: string; compass?: string;
 }): Promise<StudioSlide[]> {
   const points = Math.min(Math.max(2, opts.points ?? 3), MAX_SLIDES - 2);
   const [playbook, profile, directives] = await Promise.all([
@@ -31,6 +31,7 @@ export async function generateCarousel(opts: {
     playbook ? `\n=== HOOK-PLAYBOOK (grunda kroken på detta) ===\n${playbook.slice(0, 2500)}` : "",
     dontsRule(directives.donts),
     profile ? `\n=== VARUMÄRKESPROFIL — grunda röst/målgrupp/ord på denna ===\n${profile.slice(0, 3500)}` : "",
+    opts.compass ? `\n${opts.compass}` : "",
     "\n=== REGLER ===",
     "- hook.headline: krok, MAX ~34 tecken, hel fras (aldrig fragment). hook.body: kort löfte, MAX ~70 tecken.",
     "- point.headline: punktens kärna, MAX ~34 tecken. point.body: 1–2 meningar, MAX ~120 tecken, konkret och användbart.",

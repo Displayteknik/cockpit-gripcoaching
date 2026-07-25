@@ -60,6 +60,51 @@ export async function generate(opts: GenerateOptions): Promise<string> {
   return out;
 }
 
+export interface GenerateUsage { input: number; output: number; total: number }
+export interface GenerateWithUsageResult { text: string; usage: GenerateUsage }
+
+// Som generate(), men returnerar även faktisk token-användning (usageMetadata) för
+// kostnadsloggning. Delad kropp med generate() vore snyggare, men detta håller
+// generate()-signaturen orörd (många anropare) — medveten liten duplicering.
+export async function generateWithUsage(opts: GenerateOptions): Promise<GenerateWithUsageResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY saknas i env");
+
+  const model = opts.model ?? "gemini-2.5-flash";
+  const contents: GeminiMessage[] = opts.messages ?? [{ role: "user", parts: [{ text: opts.prompt ?? "" }] }];
+  const isPro = model === "gemini-2.5-pro";
+  const body: Record<string, unknown> = {
+    contents,
+    generationConfig: {
+      temperature: opts.temperature ?? 0.8,
+      maxOutputTokens: opts.maxOutputTokens ?? (isPro ? 8192 : 4096),
+      thinkingConfig: isPro ? { thinkingBudget: 1024 } : { thinkingBudget: 0 },
+      ...(opts.jsonMode ? { responseMimeType: "application/json" } : {}),
+    },
+  };
+  if (opts.systemInstruction) body.systemInstruction = { parts: [{ text: opts.systemInstruction }] };
+
+  const res = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+
+  const data = await res.json();
+  const out = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!out) throw new Error("Gemini: tomt svar");
+  const u = data?.usageMetadata || {};
+  return {
+    text: out,
+    usage: {
+      input: Number(u.promptTokenCount) || 0,
+      output: Number(u.candidatesTokenCount) || 0,
+      total: Number(u.totalTokenCount) || 0,
+    },
+  };
+}
+
 export interface GroundedResult {
   text: string;
   sources: { title: string; uri: string }[];

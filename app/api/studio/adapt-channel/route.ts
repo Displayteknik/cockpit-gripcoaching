@@ -4,6 +4,7 @@ import { generate } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { contentCompassBlock } from "@/lib/content-compass/prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
 
     const profile = await getProfileAsMarkdown().catch(() => "");
     const directives = await getKitDirectives(await getActiveClientId());
+    const compassText = b.compass && typeof b.compass === "object" ? contentCompassBlock(b.compass) : "";
     const isCarousel = slides.length > 0;
 
     const sourceBlock = baseCaption
@@ -73,6 +75,7 @@ export async function POST(req: NextRequest) {
       `Du anpassar en social-caption per plattform för ${client?.name || "kunden"} (${postType === "reel" ? "reel" : postType === "story" ? "story" : isCarousel ? "karusell" : "inlägg med bild"}).`,
       "Samma kärnbudskap — men krok, längd, ton och hashtags formas efter varje plattforms sätt att läsa.",
       profile ? `\n=== VARUMÄRKESPROFIL — grunda röst, målgrupp och ord på denna ===\n${profile.slice(0, 5000)}` : "",
+      compassText ? `\n${compassText}` : "",
       "\n=== ANPASSNING PER KANAL ===",
       ...wanted.map((c) => `- ${CHANNEL_LABEL[c]} → ${CHANNEL_GUIDE[c]}`),
       "\n=== SPRÅK ===",

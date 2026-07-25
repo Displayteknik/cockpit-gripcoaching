@@ -88,6 +88,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     description: "Sju färdiga inlägg enligt 4A-rytmen.",
   },
   {
+    key: "compass",
+    label: "Kalender",
+    href: "/k/kalender",
+    icon: Compass,
+    description: "Din innehållskalender med Content Compass. Skapa hela veckans innehåll färdigprofilerat och se din balans.",
+  },
+  {
     key: "dm",
     label: "DM & Pipeline",
     href: "/k/dm",

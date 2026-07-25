@@ -1,15 +1,16 @@
 "use client";
 
+// Kundvyn av innehållskalendern (/k/kalender). Content Compass i kundens röst:
+// skapa hela veckans innehåll, se balansen, och överblicka allt planerat innehåll.
+// Tenant-låst via kund-sessionen (API:erna resolvar kundens egen klient).
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, FileEdit, CheckCircle2, Lightbulb, RefreshCw, Loader2, ExternalLink, ImageIcon, LayoutGrid, List as ListIcon } from "lucide-react";
+import { CalendarClock, FileEdit, CheckCircle2, RefreshCw, Loader2, LayoutGrid, List as ListIcon, ImageIcon } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 import { CompassBadges, funnelTintClass } from "@/components/content-compass/badges";
 import ContentCalendar from "@/components/content-compass/ContentCalendar";
 import WeekGenerator from "@/components/content-compass/WeekGenerator";
 import BalanceMeter from "@/components/content-compass/BalanceMeter";
-
-interface ClientInfo { name: string; primary_color: string }
 
 const SOURCE_LABEL: Record<string, string> = { studio: "Studio", social: "Inlägg", linkedin: "LinkedIn", blog: "Blogg" };
 const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669" };
@@ -20,17 +21,11 @@ function fmt(d: string | null): string {
   catch { return d; }
 }
 
-export default function KalenderPage() {
-  const [client, setClient] = useState<ClientInfo | null>(null);
+export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: string }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [reloadKey, setReloadKey] = useState(0);
-  const primary = client?.primary_color || "#10B981";
-
-  useEffect(() => {
-    fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
-  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -40,35 +35,35 @@ export default function KalenderPage() {
       if (r.ok) setItems(Array.isArray(d.items) ? d.items : []);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, []);
-  useEffect(() => { refresh(); }, [refresh, client]);
+  useEffect(() => { refresh(); }, [refresh]);
 
   const groups = useMemo(() => ({
     scheduled: items.filter((i) => i.status === "scheduled").sort((a, b) => (a.when || "").localeCompare(b.when || "")),
     draft: items.filter((i) => i.status === "draft"),
     published: items.filter((i) => i.status === "published"),
-    idea: items.filter((i) => i.status === "idea"),
   }), [items]);
 
-  const Row = ({ it }: { it: ContentItem }) => (
-    <a href={it.editHref} className={`flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors ${funnelTintClass(it.funnel_level)}`}>
-      <div className="w-11 h-11 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
-        {it.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={it.imageUrl} alt="" className="w-full h-full object-cover" />
-        ) : <ImageIcon className="w-4 h-4 text-gray-300" />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-gray-900 truncate">{it.title}</div>
-        <div className="flex items-center gap-2 mt-0.5">
-          <div className="text-xs text-gray-400 truncate">{SOURCE_LABEL[it.source] || it.source} · {it.channel}{it.when ? ` · ${fmt(it.when)}` : ""}</div>
-          <CompassBadges funnel={it.funnel_level} four_a={it.four_a} disc={it.disc} />
+  const Row = ({ it }: { it: ContentItem }) => {
+    // Studio-utkast öppnas i kundens Studio; övriga länkar till respektive verkstad.
+    const href = it.source === "studio" ? `/k/studio?post=${it.id}` : it.source === "linkedin" ? "/k/linkedin" : "/k/studio";
+    return (
+      <a href={href} className={`flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors ${funnelTintClass(it.funnel_level)}`}>
+        <div className="w-11 h-11 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
+          {it.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={it.imageUrl} alt="" className="w-full h-full object-cover" />
+          ) : <ImageIcon className="w-4 h-4 text-gray-300" />}
         </div>
-      </div>
-      <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 capitalize" style={{ background: `${STATUS_COLOR[it.status]}1a`, color: STATUS_COLOR[it.status] }}>
-        {it.source}
-      </span>
-    </a>
-  );
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-gray-900 truncate">{it.title}</div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <div className="text-xs text-gray-400 truncate">{SOURCE_LABEL[it.source] || it.source} · {it.channel}{it.when ? ` · ${fmt(it.when)}` : ""}</div>
+            <CompassBadges funnel={it.funnel_level} four_a={it.four_a} disc={it.disc} />
+          </div>
+        </div>
+      </a>
+    );
+  };
 
   const Section = ({ title, icon, color, list, hint }: { title: string; icon: React.ReactNode; color: string; list: ContentItem[]; hint: string }) => (
     <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
@@ -86,10 +81,10 @@ export default function KalenderPage() {
     <div className="space-y-6">
       <DashHero
         title="Kalender"
-        subtitle={`Allt innehåll — Studio, inlägg, LinkedIn och blogg — samlat.${client ? ` · ${client.name}` : ""}`}
+        subtitle="Skapa hela veckans innehåll färdigprofilerat och se allt planerat på ett ställe."
         accent={primary}
         icon={CalendarClock}
-        eyebrow={<LivePill label="Publiceringsöversikt" />}
+        eyebrow={<LivePill label="Content Compass" />}
         chips={(
           <>
             <HeroChip icon={CalendarClock} label={`${groups.scheduled.length} schemalagt`} />
@@ -102,7 +97,6 @@ export default function KalenderPage() {
         </button>}
       />
 
-      {/* CC-4 Skapa veckans innehåll + CC-3 balansmätare (grindade på compass-modulen) */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <WeekGenerator accent={primary} onDone={() => { setReloadKey((k) => k + 1); refresh(); }} />
@@ -110,32 +104,22 @@ export default function KalenderPage() {
         <BalanceMeter reloadKey={reloadKey} />
       </div>
 
-      {/* Vy-växlare + månadsnavigering */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
-          <button onClick={() => setView("calendar")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium ${view === "calendar" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={view === "calendar" ? { background: primary } : {}}><LayoutGrid className="w-4 h-4" /> Kalender</button>
-          <button onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium ${view === "list" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={view === "list" ? { background: primary } : {}}><ListIcon className="w-4 h-4" /> Lista</button>
-        </div>
+      <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
+        <button onClick={() => setView("calendar")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium ${view === "calendar" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={view === "calendar" ? { background: primary } : {}}><LayoutGrid className="w-4 h-4" /> Kalender</button>
+        <button onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium ${view === "list" ? "text-white" : "text-gray-500 hover:text-gray-800"}`} style={view === "list" ? { background: primary } : {}}><ListIcon className="w-4 h-4" /> Lista</button>
       </div>
 
       {view === "calendar" ? (
         <section className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-          <ContentCalendar items={items} primary={primary} />
+          <ContentCalendar items={items} primary={primary} hrefFor={(it) => (it.source === "studio" ? `/k/studio?post=${it.id}` : it.source === "linkedin" ? "/k/linkedin" : "/k/studio")} />
         </section>
       ) : (
         <>
           <Section title="Schemalagt" color={STATUS_COLOR.scheduled} icon={<CalendarClock className="w-5 h-5" style={{ color: STATUS_COLOR.scheduled }} />} list={groups.scheduled} hint="På väg ut, sorterat efter tid." />
-          <Section title="Utkast" color={STATUS_COLOR.draft} icon={<FileEdit className="w-5 h-5" style={{ color: STATUS_COLOR.draft }} />} list={groups.draft} hint="Skapade, ej publicerade — öppna i verkstaden." />
+          <Section title="Utkast" color={STATUS_COLOR.draft} icon={<FileEdit className="w-5 h-5" style={{ color: STATUS_COLOR.draft }} />} list={groups.draft} hint="Skapade, ej publicerade. Öppna i Studio för att lägga bild och publicera." />
           <Section title="Publicerat" color={STATUS_COLOR.published} icon={<CheckCircle2 className="w-5 h-5" style={{ color: STATUS_COLOR.published }} />} list={groups.published} hint="Ute nu." />
-          {groups.idea.length > 0 && (
-            <Section title="Idéer" color={STATUS_COLOR.idea} icon={<Lightbulb className="w-5 h-5" style={{ color: STATUS_COLOR.idea }} />} list={groups.idea} hint="Uppslag att utveckla." />
-          )}
         </>
       )}
-
-      <p className="text-xs text-gray-400 flex items-center gap-1">
-        <ExternalLink className="w-3.5 h-3.5" /> Klicka på ett inlägg för att öppna det i rätt verkstad. Slutlig publicering sker där (GHL / IG / blogg).
-      </p>
     </div>
   );
 }

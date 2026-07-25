@@ -6,8 +6,10 @@ import type { ContentItem } from "@/lib/content/overview";
 import { funnelTintClass, FourALabel, FunnelLabel, DiscDots } from "@/components/content-compass/badges";
 
 // Delad månadskalender: brickor per dag med Content Compass-färgkodning.
-// Används av både Kalender-sidan och Innehålls-navet (håll i synk).
-export default function ContentCalendar({ items, primary = "#10B981" }: { items: ContentItem[]; primary?: string }) {
+// Används av både admin-Kalendern, Innehålls-navet och kundvyn (/k/kalender).
+// hrefFor låter kundvyn peka brickorna till /k istället för /dashboard (default = editHref).
+export default function ContentCalendar({ items, primary = "#10B981", hrefFor }: { items: ContentItem[]; primary?: string; hrefFor?: (it: ContentItem) => string }) {
+  const linkOf = (it: ContentItem) => (hrefFor ? hrefFor(it) : it.editHref);
   const [cursor, setCursor] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
 
   const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -56,7 +58,7 @@ export default function ContentCalendar({ items, primary = "#10B981" }: { items:
                   <div className={`text-xs mb-1 ${isToday ? "font-bold text-white inline-flex items-center justify-center w-5 h-5 rounded-full" : inMonth ? "text-gray-500" : "text-gray-300"}`} style={isToday ? { background: primary } : {}}>{d.getDate()}</div>
                   <div className="space-y-1">
                     {dayItems.slice(0, 4).map((it) => (
-                      <a key={`${it.source}-${it.id}`} href={it.editHref} title={it.title} className={`block rounded px-1.5 py-1 text-[11px] leading-tight hover:opacity-80 ${funnelTintClass(it.funnel_level) || "border-l-4 border-l-gray-200 bg-gray-50"}`}>
+                      <a key={`${it.source}-${it.id}`} href={linkOf(it)} title={it.title} className={`block rounded px-1.5 py-1 text-[11px] leading-tight hover:opacity-80 ${funnelTintClass(it.funnel_level) || "border-l-4 border-l-gray-200 bg-gray-50"}`}>
                         <div className="flex items-center gap-1"><FourALabel value={it.four_a} compact /><span className="truncate flex-1 text-gray-700">{it.title}</span></div>
                         {(it.funnel_level || (it.disc && it.disc.length)) && <div className="flex items-center gap-1 mt-0.5"><FunnelLabel level={it.funnel_level} /><DiscDots disc={it.disc} size={12} /></div>}
                       </a>
