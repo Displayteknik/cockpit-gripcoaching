@@ -656,6 +656,16 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [applyPayload]);
 
+  // Djuplänk från kalendern: /dashboard/studio?post=<id> öppnar inlägget med alla inställningar.
+  const openedFromUrl = useRef(false);
+  useEffect(() => {
+    if (openedFromUrl.current || posts.length === 0) return;
+    const id = new URLSearchParams(window.location.search).get("post");
+    if (!id) { openedFromUrl.current = true; return; }
+    const p = posts.find((x) => String(x.id) === id);
+    if (p) { openPost(p); openedFromUrl.current = true; }
+  }, [posts, openPost]);
+
   const deletePost = useCallback(async (id: string) => {
     try {
       const r = await fetch(`/api/studio/posts/${id}`, { method: "DELETE" });

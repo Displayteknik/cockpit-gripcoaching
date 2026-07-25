@@ -65,7 +65,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     const status = normStatus({ scheduled: p.ghl_status === "scheduled", published: p.ghl_status === "published", raw: p.ghl_status });
     items.push({
       id: String(p.id), source: "studio", title: firstLine(p.title || p.caption, "Studio-inlägg"),
-      channel: "social", status, when: p.scheduled_at || p.created_at, imageUrl: p.image_url, editHref: WORKSHOP.studio,
+      channel: "social", status, when: p.scheduled_at || p.created_at, imageUrl: p.image_url, editHref: `${WORKSHOP.studio}?post=${p.id}`,
       funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
