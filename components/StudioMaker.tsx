@@ -14,6 +14,7 @@ import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsIm
 import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
 import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, STUDIO_FONTS } from "@/lib/studio/payload";
 import { profileForDate, type CompassSchedule, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
+import { FUNNEL_LABEL_SV, FOURA_LABEL_SV, DISC_LABEL_SV } from "@/lib/content-compass/labels";
 import type { FourA } from "@/lib/content-framework";
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
@@ -1402,20 +1403,20 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
               {compassEnabled && (
                 <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-violet-700">Content Compass</span>
-                  <select value={compass.four_a || ""} onChange={(e) => setCompass((c) => ({ ...c, four_a: (e.target.value || null) as FourA | null }))} className="rounded-lg border border-violet-200 bg-white px-2 py-1 text-xs capitalize">
-                    <option value="">4A</option>
-                    {(["analytical", "aspirational", "actionable", "authentic"] as FourA[]).map((o) => <option key={o} value={o}>{o}</option>)}
+                  <span className="text-xs font-semibold text-violet-700" title="Ger inlägget rätt ton och syfte utan att du behöver kunna teorin.">Innehållsprofil</span>
+                  <select value={compass.four_a || ""} onChange={(e) => setCompass((c) => ({ ...c, four_a: (e.target.value || null) as FourA | null }))} title="Berättarform" className="rounded-lg border border-violet-200 bg-white px-2 py-1 text-xs">
+                    <option value="">Berättarform</option>
+                    {(["analytical", "aspirational", "actionable", "authentic"] as FourA[]).map((o) => <option key={o} value={o}>{FOURA_LABEL_SV[o]}</option>)}
                   </select>
-                  <select value={compass.funnel || ""} onChange={(e) => setCompass((c) => ({ ...c, funnel: (e.target.value || null) as FunnelLevel | null }))} className="rounded-lg border border-violet-200 bg-white px-2 py-1 text-xs uppercase">
-                    <option value="">Funnel</option>
-                    {(["tofu", "mofu", "bofu"] as FunnelLevel[]).map((o) => <option key={o} value={o}>{o.toUpperCase()}</option>)}
+                  <select value={compass.funnel || ""} onChange={(e) => setCompass((c) => ({ ...c, funnel: (e.target.value || null) as FunnelLevel | null }))} title="Var i kundresan inlägget hör hemma" className="rounded-lg border border-violet-200 bg-white px-2 py-1 text-xs">
+                    <option value="">Steg i kundresan</option>
+                    {(["tofu", "mofu", "bofu"] as FunnelLevel[]).map((o) => <option key={o} value={o}>{FUNNEL_LABEL_SV[o]}</option>)}
                   </select>
                   <div className="flex items-center gap-1">
                     {(["D", "I", "S", "C"] as DiscLetter[]).map((letter) => {
                       const on = compass.disc.includes(letter);
                       return (
-                        <button key={letter} type="button" onClick={() => setCompass((c) => ({ ...c, disc: c.disc.includes(letter) ? c.disc.filter((x) => x !== letter) : [...c.disc, letter] }))}
+                        <button key={letter} type="button" title={DISC_LABEL_SV[letter]} onClick={() => setCompass((c) => ({ ...c, disc: c.disc.includes(letter) ? c.disc.filter((x) => x !== letter) : [...c.disc, letter] }))}
                           className={`w-7 h-7 rounded-md text-xs font-bold border transition-colors ${on ? "text-white border-transparent" : "text-gray-400 border-gray-200 hover:bg-white"}`}
                           style={on ? { background: letter === "D" ? "#ef4444" : letter === "I" ? "#f59e0b" : letter === "S" ? "#10b981" : "#3b82f6" } : {}}>
                           {letter}

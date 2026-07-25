@@ -174,7 +174,7 @@ export default function StudioBloggPage() {
         {savedBlogs.length > 0 && (
           <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
             <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><Layers className="w-5 h-5" style={{ color: primary }} /> Skapa sociala inlägg från ett sparat blogginlägg</h2>
-            <p className="text-sm text-gray-500">Välj ett befintligt blogginlägg, så gör AI:n om det till färdiga sociala inlägg i din röst. Sparas i Studio-biblioteket.</p>
+            <p className="text-sm text-gray-500">Välj ett befintligt blogginlägg, så gör Skrivhjälpen om det till färdiga sociala inlägg i din röst. Sparas i Studio-biblioteket.</p>
             <div className="flex flex-wrap items-center gap-2">
               <select value={selBlog} onChange={(e) => setSelBlog(e.target.value)} className={`${inputCls} max-w-md`}>
                 <option value="">Välj blogginlägg</option>
@@ -338,7 +338,7 @@ export default function StudioBloggPage() {
             {/* Repurposing: blogg → sociala inlägg */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
               <h2 className="font-display font-bold text-gray-900 text-lg">4. Gör om till sociala inlägg</h2>
-              <p className="text-sm text-gray-500">Skapa 3 färdiga social-inlägg ur artikeln (olika hooks) — sparas i Studio-biblioteket, redo att lägga bild på och publicera/schemalägga.</p>
+              <p className="text-sm text-gray-500">Skapa 3 färdiga social-inlägg ur artikeln (olika krokar) — sparas i Studio-biblioteket, redo att lägga bild på och publicera/schemalägga.</p>
               <div className="flex items-center gap-3">
                 <button onClick={repurpose} disabled={repurposing}
                   className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
