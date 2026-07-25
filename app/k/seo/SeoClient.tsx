@@ -81,8 +81,8 @@ const FLOW: { n: number; who: "du" | "vi" | "duvi"; title: string; desc: string;
   {
     n: 3, who: "duvi", title: "Skriv så du syns",
     desc: "Kvalitetskolla texten och skriv så att Google och AI-sökmotorer citerar dig. Vi hjälper vid behov.",
-    what: "En AI bedömer din text (ton, AI-känsla, om den får läsaren att höra av sig) och pekar ut vad som kan bli bättre. Plus konkreta tips för att synas i AI-sökmotorer som ChatGPT och Perplexity.",
-    how: "Kör \"AI-granskning av text\" och skriv om det den flaggar. Följ AI-tipsen längst ner på sidan — eller hör av dig så hjälper vi till med omskrivningen.",
+    what: "Skrivhjälpen bedömer din text (ton, robot-känsla, om den får läsaren att höra av sig) och pekar ut vad som kan bli bättre. Plus konkreta tips för att synas i AI-sökmotorer som ChatGPT och Perplexity.",
+    how: "Kör \"Textgranskning\" och skriv om det den flaggar. Följ AI-tipsen längst ner på sidan — eller hör av dig så hjälper vi till med omskrivningen.",
     tips: ["Skriv rubriker som frågor dina kunder faktiskt ställer.", "Ge ett direkt svar i första meningen efter varje rubrik — det är det AI citerar.", "Skriv i din egen röst; kör granskningen igen och jämför."],
   },
   {
@@ -454,11 +454,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </Card>
 
       {/* AI-granskning */}
-      <Card title="AI-granskning av text" subtitle="Klistra in en text eller URL — AI:n bedömer kvalitet, ton, AI-känsla och om texten leder till handling. Hård men ärlig."
-        guide={<FunctionGuide primaryColor={primaryColor} title="AI-granskning av text"
-          what="Låter en AI läsa din text och ge en ärlig bedömning: är den välskriven, har den rätt ton, känns den AI-genererad, och får den läsaren att göra något (boka, höra av sig)?"
-          how="Klistra in texten eller en sidadress. AI:n läser och poängsätter, pekar ut svaga formuleringar och 'AI-klyschor', och föreslår hur du skriver om dem. Den är medvetet hård för att höja kvaliteten."
-          tips={["Använd den innan du publicerar ny text.", "Fokusera på det den flaggar som AI-känsla och svaga avslut.", "Skriv om i din egen röst — kör igen och jämför."]} />}>
+      <Card title="Textgranskning" subtitle="Klistra in en text eller URL — Skrivhjälpen bedömer kvalitet, ton, robot-känsla och om texten leder till handling. Hård men ärlig."
+        guide={<FunctionGuide primaryColor={primaryColor} title="Textgranskning"
+          what="Låter Skrivhjälpen läsa din text och ge en ärlig bedömning: är den välskriven, har den rätt ton, har den robot-känsla, och får den läsaren att göra något (boka, höra av sig)?"
+          how="Klistra in texten eller en sidadress. Skrivhjälpen läser och poängsätter, pekar ut svaga formuleringar och 'AI-klyschor', och föreslår hur du skriver om dem. Den är medvetet hård för att höja kvaliteten."
+          tips={["Använd den innan du publicerar ny text.", "Fokusera på det den flaggar som robot-känsla och svaga avslut.", "Skriv om i din egen röst — kör igen och jämför."]} />}>
         <button
           onClick={() => setShowAiAudit(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
@@ -474,7 +474,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       <Card title="Vad ska du ranka på?" subtitle="Vet du inte vilka sökord du ska synas på? Vi läser din verksamhet och föreslår sökord som dina kunder faktiskt söker på. Lägg till dem i trackern med ett klick."
         guide={<FunctionGuide primaryColor={primaryColor} title="Vad ska du ranka på?"
           what="Föreslår sökord du borde synas på i Google — korta, vassa ord som dina kunder faktiskt skriver, grupperade efter köp, jämför och info."
-          how="Den läser din Brand-profil (vad du erbjuder, dina kunder, din röst) och låter AI:n föreslå relevanta sökord. Du kan också skriva något särskilt du vill synas för. Varje förslag lägger du till i Sökords-trackern med ett klick."
+          how="Den läser din Brand-profil (vad du erbjuder, dina kunder, din röst) och låter Skrivhjälpen föreslå relevanta sökord. Du kan också skriva något särskilt du vill synas för. Varje förslag lägger du till i Sökords-trackern med ett klick."
           tips={["Ju mer ifylld din Brand-profil är, desto bättre förslag.", "Fyll i fältet om du vill styra mot ett visst tema.", "Lägg till de mest relevanta i trackern och följ dem över tid."]} />}>
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <input
@@ -591,15 +591,15 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                       {k.gsc_position != null ? (
                         <span className="inline-flex items-center gap-1.5 justify-end" title="Hämtad automatiskt från Google Search Console — din snittplacering på exakt det här ordet.">
                           <span className="tabular-nums font-semibold text-gray-900">{k.gsc_position}</span>
-                          <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-blue-50 text-blue-600">Google</span>
+                          <span className="text-xs font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-blue-50 text-blue-600">Google</span>
                         </span>
                       ) : k.gsc_related_position != null ? (
                         <span className="inline-flex flex-col items-end" title={`Du syns inte på exakt det här ordet, men på en liknande sökning: "${k.gsc_related_query}" (plats ${k.gsc_related_position}). Siffran gäller den sökningen.`}>
                           <span className="inline-flex items-center gap-1.5">
                             <span className="tabular-nums font-medium text-gray-500">~{k.gsc_related_position}</span>
-                            <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-amber-50 text-amber-600">liknande</span>
+                            <span className="text-xs font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-amber-50 text-amber-600">liknande</span>
                           </span>
-                          <span className="text-[10px] text-gray-400 truncate max-w-[140px]">”{k.gsc_related_query}”</span>
+                          <span className="text-xs text-gray-400 truncate max-w-[140px]">”{k.gsc_related_query}”</span>
                         </span>
                       ) : (
                         <input
@@ -716,11 +716,11 @@ function AiAuditModal({ primaryColor, onClose }: { primaryColor: string; onClose
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-display font-bold text-lg">AI-granskning av text</h3>
+          <h3 className="font-display font-bold text-lg">Textgranskning</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 text-xl leading-none">×</button>
         </div>
         <div className="overflow-y-auto p-5">
-          <div className="text-sm text-gray-600 mb-3">Klistra in en URL eller texten direkt. AI:n bedömer kvalitet, ton, AI-känsla och konvertering.</div>
+          <div className="text-sm text-gray-600 mb-3">Klistra in en URL eller texten direkt. Skrivhjälpen bedömer kvalitet, ton, robot-känsla och konvertering.</div>
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="URL (eller klistra text nedan)" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-2 outline-none focus:border-gray-400" />
           <SmartTextarea value={text} onChange={(e) => setText(e.target.value)} placeholder="...eller klistra in text direkt" rows={5} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-3 outline-none focus:border-gray-400" />
           <button onClick={run} disabled={loading || (!url && !text)} className="text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center gap-2" style={{ background: primaryColor }}>
@@ -732,12 +732,12 @@ function AiAuditModal({ primaryColor, onClose }: { primaryColor: string; onClose
               <div className="grid grid-cols-4 gap-2">
                 <ScoreBox label="Total" v={result.overall_score} />
                 <ScoreBox label="Röst" v={result.voice_match_score} />
-                <ScoreBox label="Ingen AI" v={result.ai_smell_score} />
+                <ScoreBox label="Låg robot-känsla" v={result.ai_smell_score} />
                 <ScoreBox label="Konv." v={result.conversion_score} />
               </div>
               {result.ai_smell_phrases?.length > 0 && (
                 <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
-                  <div className="text-xs font-bold text-red-700 mb-1">AI-fraser hittade:</div>
+                  <div className="text-xs font-bold text-red-700 mb-1">AI-klyschor hittade:</div>
                   <div className="flex flex-wrap gap-1">{result.ai_smell_phrases.map((p, i) => <span key={i} className="text-xs bg-white text-red-700 px-2 py-0.5 rounded border border-red-200">{p}</span>)}</div>
                 </div>
               )}
@@ -793,9 +793,9 @@ function Empty({ text }: { text: string }) {
 
 // Liten etikett som ärligt visar vem som gör steget: kunden själv eller byrån (eller båda).
 function WhoBadge({ who, primaryColor }: { who: "du" | "vi" | "duvi"; primaryColor: string }) {
-  if (who === "du") return <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${primaryColor}15`, color: primaryColor }}>Du gör</span>;
-  if (who === "vi") return <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Vi gör</span>;
-  return <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Du &amp; vi</span>;
+  if (who === "du") return <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${primaryColor}15`, color: primaryColor }}>Du gör</span>;
+  if (who === "vi") return <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Vi gör</span>;
+  return <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Du &amp; vi</span>;
 }
 
 function ScoreBadge({ label, value }: { label: string; value: number }) {

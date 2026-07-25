@@ -88,7 +88,7 @@ export default function ScheduleQueue({ primary, refreshKey = 0 }: { primary: st
           <div className="text-xs text-gray-400 flex items-center gap-1.5">
             <span>{CHANNEL_LABEL[j.channel] || j.channel}</span> · <Clock className="w-3 h-3" /> {fmt(j.scheduled_at)}
           </div>
-          {j.status === "failed" && j.error && <div className="text-[11px] text-red-500 truncate">{j.error}</div>}
+          {j.status === "failed" && j.error && <div className="text-xs text-red-500 truncate">{j.error}</div>}
         </div>
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: `${st.color}1a`, color: st.color }}>{st.label}</span>
         {j.status === "queued" && (
@@ -140,7 +140,7 @@ export default function ScheduleQueue({ primary, refreshKey = 0 }: { primary: st
           {upcoming.map((j) => <Row key={j.id} j={j} />)}
           {done.length > 0 && (
             <>
-              <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1">Nyligen</div>
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1">Nyligen</div>
               {done.map((j) => <Row key={j.id} j={j} />)}
             </>
           )}

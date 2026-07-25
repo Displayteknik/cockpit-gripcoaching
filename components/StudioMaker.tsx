@@ -488,7 +488,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         body: JSON.stringify({ templateId, format, topic }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "AI-förslag misslyckades");
+      if (!r.ok) throw new Error(d.error || "Förslag misslyckades");
       setSuggestions(Array.isArray(d.suggestions) ? d.suggestions : []);
     } catch (e) {
       setError((e as Error).message);
@@ -962,7 +962,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   primaryColor={primary}
                   title="Skapa inlägg"
                   what="Bygger färdiga inlägg till Instagram, Facebook och LinkedIn — bild, text på bilden och bildtext i din röst, utan Canva."
-                  how="Välj mall och format, lägg till en bild (egen, sök eller AI), skriv eller låt AI föreslå rubrik och bildtext, förhandsgranska per kanal och schemalägg eller publicera."
+                  how="Välj mall och format, lägg till en bild (egen, sök eller genererad), skriv eller låt Skrivhjälpen föreslå rubrik och bildtext, förhandsgranska per kanal och schemalägg eller publicera."
                   tips={["Fyll i din brand-profil först så låter texten mer som du.", "Klicka 'Få 3 varianter' för att jämföra olika krokar.", "Schemalägg direkt så hamnar inlägget i kalendern."]}
                 />
               </div>
@@ -1017,7 +1017,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       style={active ? { borderColor: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb" }}>
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-semibold text-gray-900">{t.name}</span>
-                        {rec && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>Föreslås</span>}
+                        {rec && <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>Föreslås</span>}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">{t.formats.map((f) => FORMAT_LABELS[f]).join(" · ")}</div>
                     </button>
@@ -1122,7 +1122,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </button>
                   <button onClick={() => suggestImage("ai")} disabled={!!searchingImg}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Generera (AI)
+                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Generera bild
                   </button>
                 </div>
                 {imgResults.length > 0 && (
@@ -1147,7 +1147,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   style={{ background: primary }}>
                   {savingDesign ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Spara färdig bild i biblioteket
                 </button>
-                <p className="text-[11px] text-gray-400 -mt-1">Renderar hela inlägget (bild + ram + text) till en färdig bild — samma bild som publiceras. Dyker upp nedan.</p>
+                <p className="text-xs text-gray-400 -mt-1">Renderar hela inlägget (bild + ram + text) till en färdig bild — samma bild som publiceras. Dyker upp nedan.</p>
 
                 <button onClick={toggleMedia}
                   className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
@@ -1226,7 +1226,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </button>
                 )}
               </div>
-              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={isCarousel ? "Ämne för karusellen — t.ex. 3 misstag att undvika, 5 tips" : "Ämne för AI-förslag (valfritt) — t.ex. ett erbjudande, en nyhet, en fråga"} className={inputCls} />
+              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={isCarousel ? "Ämne för karusellen — t.ex. 3 misstag att undvika, 5 tips" : "Ämne för förslag (valfritt) — t.ex. ett erbjudande, en nyhet, en fråga"} className={inputCls} />
 
               {isCarousel && slideCount > 0 && (
                 <div>
@@ -1235,14 +1235,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     style={{ borderColor: `${primary}55`, color: primary }}>
                     {genSlideImgs ? <><Loader2 className="w-4 h-4 animate-spin" /> Genererar bild {genSlideImgs}…</> : <><ImageIcon className="w-4 h-4" /> Skapa bilder till alla slides</>}
                   </button>
-                  <p className="text-[11px] text-gray-400 mt-1">On-brand AI-bild per slide (utifrån varje slides text). Vill du en egen bild på en slide: bläddra dit med pilarna och ladda upp under <strong>Bild</strong>.</p>
+                  <p className="text-xs text-gray-400 mt-1">On-brand genererad bild per slide (utifrån varje slides text). Vill du en egen bild på en slide: bläddra dit med pilarna och ladda upp under <strong>Bild</strong>.</p>
                 </div>
               )}
 
               {/* Klistra in eget utkast (ej karusell) */}
               {!isCarousel && (
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
-                <label className="block text-xs font-medium text-gray-600">Har du ett eget utkast? Klistra in — AI delar upp i rubrik och text</label>
+                <label className="block text-xs font-medium text-gray-600">Har du ett eget utkast? Klistra in — Skrivhjälpen delar upp i rubrik och text</label>
                 <SmartTextarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={2} placeholder="Klistra in din egen text här…" className={inputCls} />
                 <button onClick={applyPaste} disabled={applyingPaste || !pasteText.trim()}
                   className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
@@ -1368,7 +1368,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       );
                     })}
                     <label className="w-8 h-8 rounded-full border border-dashed border-gray-300 flex items-center justify-center cursor-pointer relative overflow-hidden" title="Egen färg">
-                      <span className="text-[10px] text-gray-500">+</span>
+                      <span className="text-xs text-gray-500">+</span>
                       <input type="color" value={brushColor} onChange={(e) => setBrushColor(e.target.value)}
                         className="absolute inset-0 opacity-0 cursor-pointer" />
                     </label>
@@ -1435,7 +1435,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       {compassBusy === "review" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ClipboardCheck className="w-3.5 h-3.5" />} Granska
                     </button>
                   </div>
-                  <span className="w-full text-[11px] text-violet-600">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt.</span>
+                  <span className="w-full text-xs text-violet-600">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt.</span>
                   {reviewResult && (
                     <div className={`w-full rounded-lg border p-3 mt-1 ${reviewResult.passed ? "border-emerald-200 bg-emerald-50/60" : "border-amber-200 bg-amber-50/60"}`}>
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
@@ -1444,11 +1444,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         <button type="button" onClick={() => setReviewResult(null)} className="ml-auto text-gray-400 hover:text-gray-700">Dölj</button>
                       </div>
                       {reviewResult.brister.length > 0 && (
-                        <ul className="mt-1.5 space-y-0.5 text-[11px] text-amber-800">
+                        <ul className="mt-1.5 space-y-0.5 text-xs text-amber-800">
                           {reviewResult.brister.map((b, i) => <li key={i}>· {b}</li>)}
                         </ul>
                       )}
-                      {reviewResult.sammanfattning && <p className="mt-1 text-[11px] text-gray-500">{reviewResult.sammanfattning}</p>}
+                      {reviewResult.sammanfattning && <p className="mt-1 text-xs text-gray-500">{reviewResult.sammanfattning}</p>}
                     </div>
                   )}
                 </div>
@@ -1469,8 +1469,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           className={`text-left rounded-xl border p-3 transition-all hover:shadow-sm ${vald ? "ring-2" : ""}`}
                           style={vald ? { borderColor: primary, boxShadow: `0 0 0 2px ${primary}` } : { borderColor: "#e5e7eb" }}>
                           <div className="flex items-center gap-1.5 mb-1.5">
-                            <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${primary}1a`, color: primary }}>{v.angle}</span>
-                            {vald && <span className="text-[10px] font-semibold text-emerald-600">✓ vald</span>}
+                            <span className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${primary}1a`, color: primary }}>{v.angle}</span>
+                            {vald && <span className="text-xs font-semibold text-emerald-600">✓ vald</span>}
                           </div>
                           <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-[10] leading-relaxed">{v.caption}</p>
                         </button>
@@ -1481,7 +1481,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               )}
 
               <SmartTextarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={7}
-                placeholder="Skriv bildtexten här, eller låt AI föreslå en ur inläggets innehåll och din röst…"
+                placeholder="Skriv bildtexten här, eller låt Skrivhjälpen föreslå en ur inläggets innehåll och din röst…"
                 className={`${inputCls} leading-relaxed`} style={{ whiteSpace: "pre-wrap" }} />
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{caption.trim() ? `${caption.length} tecken` : "Ingen bildtext än"}</span>
@@ -1532,7 +1532,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 )}
               </div>
               {payload.imageUrl && (
-                <p className="text-[11px] text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma</p>
+                <p className="text-xs text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma</p>
               )}
               <button onClick={() => setEditOpen(true)} disabled={!brand}
                 className="w-full mt-3 inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
@@ -1550,19 +1550,19 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="space-y-2">
                 <div className="text-xs font-medium text-gray-500">Textstorlek — per ruta</div>
                 <div>
-                  <label className="block text-[11px] text-gray-500 mb-0.5">Rubrik ({Math.round(overrides.h1Scale * 100)}%)</label>
+                  <label className="block text-xs text-gray-500 mb-0.5">Rubrik ({Math.round(overrides.h1Scale * 100)}%)</label>
                   <input type="range" min={0.5} max={2} step={0.05} value={overrides.h1Scale} onChange={(e) => setOv({ h1Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-gray-500 mb-0.5">Underrubrik ({Math.round(overrides.h2Scale * 100)}%)</label>
+                  <label className="block text-xs text-gray-500 mb-0.5">Underrubrik ({Math.round(overrides.h2Scale * 100)}%)</label>
                   <input type="range" min={0.5} max={2} step={0.05} value={overrides.h2Scale} onChange={(e) => setOv({ h2Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-gray-500 mb-0.5">Brödtext ({Math.round(overrides.bodyScale * 100)}%)</label>
+                  <label className="block text-xs text-gray-500 mb-0.5">Brödtext ({Math.round(overrides.bodyScale * 100)}%)</label>
                   <input type="range" min={0.5} max={2} step={0.05} value={overrides.bodyScale} onChange={(e) => setOv({ bodyScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-gray-500 mb-0.5">Radavstånd ({Math.round(overrides.lineScale * 100)}%)</label>
+                  <label className="block text-xs text-gray-500 mb-0.5">Radavstånd ({Math.round(overrides.lineScale * 100)}%)</label>
                   <input type="range" min={0.8} max={1.8} step={0.05} value={overrides.lineScale} onChange={(e) => setOv({ lineScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
                 </div>
               </div>
@@ -1682,7 +1682,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     <Icon className="w-3 h-3" />
                   </span>
                   {brand.label}
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
                     style={conn ? { background: "#dcfce7", color: "#15803d" } : { background: "#f3f4f6", color: "#9ca3af" }}>
                     {conn ? "kopplad" : "ej kopplad"}
                   </span>
@@ -1696,7 +1696,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </button>
           </div>
           {!caption.trim() && (
-            <div className="text-xs text-gray-500">Tips: skriv eller föreslå en bildtext i <strong>steg 4</strong> först — den blir grunden AI anpassar per kanal.</div>
+            <div className="text-xs text-gray-500">Tips: skriv eller föreslå en bildtext i <strong>steg 4</strong> först — den blir grunden Skrivhjälpen anpassar per kanal.</div>
           )}
 
           {/* Schemalägg (valfritt) — gäller alla kanaler. IG schemaläggs nativt (utan GHL); FB/LI via GHL. */}
@@ -1742,13 +1742,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     {/* Per-kanal-caption (redigerbar) — faller tillbaka på grund-captionen */}
                     <div className="rounded-xl border bg-gray-50 p-2.5 space-y-1.5" style={{ borderColor: `${brand.color}26` }}>
                       <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: brand.color }}>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide" style={{ color: brand.color }}>
                           <span className="w-4 h-4 rounded flex items-center justify-center text-white" style={{ background: brand.gradient }}>
                             <Icon className="w-2.5 h-2.5" />
                           </span>
                           {label}-text
                         </span>
-                        <button onClick={() => copyChannelText(key)} className="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-800">
+                        <button onClick={() => copyChannelText(key)} className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800">
                           {copied === key ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />} Kopiera
                         </button>
                       </div>
@@ -1779,10 +1779,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           className="w-full inline-flex items-center justify-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                           {copied === key ? <Check className="w-4 h-4 text-emerald-600" /> : <ExternalLink className="w-4 h-4" />} Kopiera text &amp; öppna {label}
                         </a>
-                        <p className="text-[11px] text-gray-400">{label} saknar direktpublicering här — ladda ner PNG:en ovan, kopiera texten och lägg upp manuellt{customerMode ? "" : ", eller koppla GHL nedan"}.</p>
+                        <p className="text-xs text-gray-400">{label} saknar direktpublicering här — ladda ner PNG:en ovan, kopiera texten och lägg upp manuellt{customerMode ? "" : ", eller koppla GHL nedan"}.</p>
                       </div>
                     )}
-                    {res === "err" && <p className="text-[11px] text-red-500">Publicering misslyckades — se felrutan högst upp.</p>}
+                    {res === "err" && <p className="text-xs text-red-500">Publicering misslyckades — se felrutan högst upp.</p>}
                   </div>
                 );
               })}
@@ -1923,7 +1923,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   ))}
                 </div>
               )}
-              <p className="text-[11px] text-gray-400 text-center mt-3">Byter du bild öppnas filväljaren. Fler bildval (Mina bilder, AI, stock) finns i <strong>steg 2 · Bild</strong>.</p>
+              <p className="text-xs text-gray-400 text-center mt-3">Byter du bild öppnas filväljaren. Fler bildval (Mina bilder, genererad, stock) finns i <strong>steg 2 · Bild</strong>.</p>
             </div>
           </div>
         )}

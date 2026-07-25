@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import KnowledgeText from "@/components/KnowledgeText";
 import { CompassBadges } from "@/components/content-compass/badges";
+import { FORMAT_LABELS, type Format } from "@/lib/content-framework";
 
 interface DayPlan {
   day: string;
@@ -170,7 +171,7 @@ export default function VeckoplanPage() {
       <div>
         <h1 className="font-display text-2xl font-bold text-gray-900">Veckoplan</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Sju inlägg på en gång — ett per dag enligt 4A-veckorytmen. Måndag/Tisdag = analytical, Onsdag/Torsdag = aspirational, Fredag/Lördag = actionable, Söndag = authentic.
+          Sju inlägg på en gång — ett per dag, med rätt ton och syfte för varje veckodag. Veckan varvar automatiskt mellan fakta, inspiration, handling och det personliga så den känns levande.
         </p>
       </div>
 
@@ -215,7 +216,7 @@ export default function VeckoplanPage() {
 
         {generating && (
           <div className="text-xs text-gray-500 text-center italic">
-            AI:n läser din voice fingerprint, brand-profil och 4A-rollerna för varje dag — ge det en stund.
+            Skrivhjälpen läser din röst, din brand-profil och veckans upplägg för varje dag — ge det en stund.
           </div>
         )}
       </div>
@@ -393,7 +394,7 @@ function DayCard({
               {day.hook || "(saknar hook)"}
             </div>
             <div className="text-xs text-gray-600 mt-0.5">
-              <CompassBadges funnel={day.funnel.toLowerCase()} four_a={day.fourA} disc={[day.disc]} /> <span className="text-gray-400">· {day.format}</span>
+              <CompassBadges funnel={day.funnel.toLowerCase()} four_a={day.fourA} disc={[day.disc]} /> <span className="text-gray-400">· {FORMAT_LABELS[day.format as Format] || day.format}</span>
             </div>
           </div>
         </div>

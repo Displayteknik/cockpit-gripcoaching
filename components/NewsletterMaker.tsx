@@ -178,7 +178,7 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
                 {content.subjects.length > 1 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {content.subjects.map((s, i) => (
-                      <button key={i} onClick={() => { setSubject(s); setSaved(false); }} className={`text-[11px] px-2 py-1 rounded-lg border ${subject === s ? "border-violet-400 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>{s}</button>
+                      <button key={i} onClick={() => { setSubject(s); setSaved(false); }} className={`text-xs px-2 py-1 rounded-lg border ${subject === s ? "border-violet-400 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>{s}</button>
                     ))}
                   </div>
                 )}
@@ -268,7 +268,7 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
         </div>
       )}
 
-      {customerMode && <p className="text-[11px] text-gray-400">Testmejlet går bara till adressen du anger. Massutskick till en lista kommer i nästa version.</p>}
+      {customerMode && <p className="text-xs text-gray-400">Testmejlet går bara till adressen du anger. Massutskick till en lista kommer i nästa version.</p>}
     </div>
   );
 }

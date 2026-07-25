@@ -443,7 +443,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                     <Mic className="w-5 h-5 mb-1.5 text-purple-600" />
                     <div className="font-medium text-gray-900 text-sm">Spela in nu</div>
                     <div className="text-xs text-gray-500">
-                      {uploadFile?.name?.includes("intake-inspelning") ? `Klar (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "Prata rakt in i mikrofonen — AI:n skriver av"}
+                      {uploadFile?.name?.includes("intake-inspelning") ? `Klar (${(uploadFile.size / 1024 / 1024).toFixed(1)} MB)` : "Prata rakt in i mikrofonen — Skrivhjälpen skriver av"}
                     </div>
                   </button>
                 )}
@@ -516,13 +516,13 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <h3 className="font-display font-bold text-gray-900 text-lg mb-1">
-                {step === "transcribing" ? (uploadProgress > 0 && uploadProgress < 100 ? `Laddar upp… ${uploadProgress}%` : "Läser och skriver av…") : "AI:n tänker…"}
+                {step === "transcribing" ? (uploadProgress > 0 && uploadProgress < 100 ? `Laddar upp… ${uploadProgress}%` : "Läser och skriver av…") : "Skrivhjälpen tänker…"}
               </h3>
               <p className="text-sm text-gray-600 max-w-md mx-auto">
                 {step === "transcribing"
                   ? (uploadProgress > 0 && uploadProgress < 100
                       ? "Filen laddas upp säkert."
-                      : "AI:n läser ljud, video, PDF eller Word-text. Stora filer (över 18 MB) tar 30–90 sek extra.")
+                      : "Skrivhjälpen läser ljud, video, PDF eller Word-text. Stora filer (över 18 MB) tar 30–90 sek extra.")
                   : "Läser texten, jämför med din profil, sorterar varje insikt och visar var den kommer ifrån. ~30–60 sek."}
               </p>
               {step === "transcribing" && uploadProgress > 0 && uploadProgress < 100 && (

@@ -78,7 +78,7 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     label: "Idé-bank",
     href: "/k/ideer",
     icon: Lightbulb,
-    description: "Granska och godkänn AI-genererade utkast.",
+    description: "Granska och godkänn utkast från Skrivhjälpen.",
   },
   {
     key: "veckoplan",

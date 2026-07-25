@@ -344,7 +344,7 @@ function HeroKpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-white/15 px-3 py-2.5 backdrop-blur-sm">
       <div className="text-lg font-bold text-white tabular-nums leading-tight">{value}</div>
-      <div className="text-[11px] text-white/70 uppercase tracking-wide mt-0.5">{label}</div>
+      <div className="text-xs text-white/70 uppercase tracking-wide mt-0.5">{label}</div>
     </div>
   );
 }
@@ -460,7 +460,7 @@ function InflodeSektion({ primaryColor }: { primaryColor: string }) {
             })}
           </div>
         )}
-        <p className="text-[11px] text-gray-400 mt-3">
+        <p className="text-xs text-gray-400 mt-3">
           Klicka kanalnamnet för veckomål · <b>+1</b> loggar en aktivitet · bärnstensfärgad stapel = under nivå. KPI:erna räknas ur din pipeline och lobby.
         </p>
       </div>
@@ -472,7 +472,7 @@ function KpiRuta({ label, value, tone }: { label: string; value: number; tone: s
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
       <div className="text-2xl font-bold text-gray-900 tabular-nums" style={{ color: tone }}>{value}</div>
-      <div className="text-[11px] text-gray-500 uppercase tracking-wide mt-0.5">{label}</div>
+      <div className="text-xs text-gray-500 uppercase tracking-wide mt-0.5">{label}</div>
     </div>
   );
 }
@@ -572,7 +572,7 @@ function DragKort({
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-display font-bold text-gray-900 truncate">{c.namn || "Namnlös affär"}</span>
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${z.chip}`}>{z.namn}</span>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${z.chip}`}>{z.namn}</span>
           </div>
           {c.foretag && c.foretag !== c.namn && (
             <div className="text-sm text-gray-500 truncate mt-0.5">{c.foretag}</div>
@@ -580,7 +580,7 @@ function DragKort({
         </div>
         <div className="text-right flex-shrink-0">
           <div className="text-lg font-bold text-gray-900 tabular-nums">{c.okantVarde ? "—" : kr(c.varde)}</div>
-          <div className="text-[11px] text-gray-400">prioritet {c.prioritet}</div>
+          <div className="text-xs text-gray-400">prioritet {c.prioritet}</div>
         </div>
       </div>
 
@@ -1027,7 +1027,7 @@ function CoachContextInput({
           {jobbar === "bild" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
           {jobbar === "bild" ? "Analyserar…" : "Bild"}
         </button>
-        {!compact && <span className="text-[11px] text-gray-400">eller klistra in en skärmbild direkt (Ctrl+V)</span>}
+        {!compact && <span className="text-xs text-gray-400">eller klistra in en skärmbild direkt (Ctrl+V)</span>}
         <div className="flex-1" />
         <button
           onClick={onSubmit}
@@ -1038,7 +1038,7 @@ function CoachContextInput({
           <Sparkles className="w-4 h-4" /> {submitLabel}
         </button>
       </div>
-      {fel && <div className="text-[11px] text-red-600">{fel}</div>}
+      {fel && <div className="text-xs text-red-600">{fel}</div>}
     </div>
   );
 }

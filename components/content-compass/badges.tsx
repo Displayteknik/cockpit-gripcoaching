@@ -3,6 +3,7 @@
 import { BarChart3, Sparkles, CheckCircle2, Heart } from "lucide-react";
 import { DISC_GUIDE, FOURA_GUIDE, FUNNEL_GUIDE, type FourA } from "@/lib/content-framework";
 import type { DiscLetter, FunnelLevel } from "@/lib/content-compass/data";
+import { FUNNEL_LABEL_SV, FOURA_LABEL_SV, DISC_LABEL_SV } from "@/lib/content-compass/labels";
 
 // DISC: D röd, I gul, S grön, C blå.
 const DISC_DOT: Record<DiscLetter, string> = {
@@ -16,8 +17,9 @@ export function DiscDots({ disc, size = 16 }: { disc?: string[] | null; size?: n
       {disc.map((d) => {
         const letter = d as DiscLetter;
         const bg = DISC_DOT[letter] || "bg-gray-400";
+        const label = DISC_LABEL_SV[letter];
         return (
-          <span key={d} title={DISC_GUIDE[letter] || d}
+          <span key={d} title={label ? `${label}. ${DISC_GUIDE[letter] || ""}` : d}
             className={`inline-flex items-center justify-center rounded-full text-white font-bold leading-none ${bg}`}
             style={{ width: size, height: size, fontSize: Math.round(size * 0.6) }}>
             {letter}
@@ -41,31 +43,32 @@ export function funnelTintClass(level?: string | null): string {
 }
 
 export function FunnelLabel({ level }: { level?: string | null }) {
-  if (!level || !FUNNEL_UP[level as FunnelLevel]) return null;
-  const up = FUNNEL_UP[level as FunnelLevel];
+  const lv = level as FunnelLevel;
+  if (!level || !FUNNEL_UP[lv]) return null;
+  const up = FUNNEL_UP[lv];
   return (
-    <span title={FUNNEL_GUIDE[up]} className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-600 align-middle">
-      {up}
+    <span title={`${FUNNEL_LABEL_SV[lv]} (${up}). ${FUNNEL_GUIDE[up]}`} className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-600 align-middle whitespace-nowrap">
+      {FUNNEL_LABEL_SV[lv]}
     </span>
   );
 }
 
 // 4A: distinkt ikon + färg + etikett.
-const FOURA: Record<FourA, { Icon: typeof BarChart3; bg: string; label: string }> = {
-  analytical: { Icon: BarChart3, bg: "bg-blue-600", label: "Analytical" },
-  aspirational: { Icon: Sparkles, bg: "bg-purple-600", label: "Aspirational" },
-  actionable: { Icon: CheckCircle2, bg: "bg-emerald-600", label: "Actionable" },
-  authentic: { Icon: Heart, bg: "bg-amber-600", label: "Authentic" },
+const FOURA: Record<FourA, { Icon: typeof BarChart3; bg: string }> = {
+  analytical: { Icon: BarChart3, bg: "bg-blue-600" },
+  aspirational: { Icon: Sparkles, bg: "bg-purple-600" },
+  actionable: { Icon: CheckCircle2, bg: "bg-emerald-600" },
+  authentic: { Icon: Heart, bg: "bg-amber-600" },
 };
 
 export function FourALabel({ value, compact = false }: { value?: string | null; compact?: boolean }) {
   const meta = value ? FOURA[value as FourA] : null;
   if (!meta) return null;
-  const { Icon, bg, label } = meta;
+  const { Icon, bg } = meta;
   return (
     <span title={FOURA_GUIDE[value as FourA]}
-      className={`inline-flex items-center gap-1 rounded-full text-white ${bg} align-middle ${compact ? "p-1" : "px-2 py-0.5 text-[10px] font-semibold"}`}>
-      <Icon className="w-3 h-3" />{!compact && label}
+      className={`inline-flex items-center gap-1 rounded-full text-white ${bg} align-middle ${compact ? "p-1" : "px-2 py-0.5 text-xs font-semibold"}`}>
+      <Icon className="w-3 h-3" />{!compact && FOURA_LABEL_SV[value as FourA]}
     </span>
   );
 }

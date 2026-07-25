@@ -196,7 +196,7 @@ export default function LinkedinMaker({ customerMode = false }: { customerMode?:
             primaryColor="#0A66C2"
             title="LinkedIn-motorn"
             what="Hjälper dig hitta idéer, skriva och samla LinkedIn-inlägg i din röst — byggd på metodiken 'Från Okänd till Kund'. Allt du behöver för att synas och bygga förtroende på LinkedIn på ett ställe."
-            how="Börja med idéer utifrån ditt ämne, låt AI:n skriva ett utkast i din ton, finjustera i redigeraren och spara till din post-bank. Du kan också importera din LinkedIn-historik så förslagen låter mer som du."
+            how="Börja med idéer utifrån ditt ämne, låt Skrivhjälpen skriva ett utkast i din ton, finjustera i redigeraren och spara till din post-bank. Du kan också importera din LinkedIn-historik så förslagen låter mer som du."
             tips={[
               "Skriv i din brand-profil först — då blir inläggen mer lika din röst.",
               "Spara det som fungerar i post-banken och återanvänd vinklarna.",
@@ -234,7 +234,7 @@ export default function LinkedinMaker({ customerMode = false }: { customerMode?:
       {tab === "pillars" && (
         <section className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-600">Content-pelare = de teman du driver i 6-12 månader. AI:n fördelar idéer mellan dem.</p>
+            <p className="text-sm text-gray-600">Content-pelare = de teman du driver i 6-12 månader. Skrivhjälpen fördelar idéer mellan dem.</p>
             <div className="flex gap-2">
               {pillars.length === 0 && (
                 <button onClick={seedPillars} disabled={seedingPillars} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm px-4 py-2 rounded-lg flex items-center gap-2">
@@ -251,7 +251,7 @@ export default function LinkedinMaker({ customerMode = false }: { customerMode?:
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
               <BookOpen className="w-10 h-10 text-blue-600 mx-auto mb-3" />
               <h3 className="font-semibold text-gray-900 mb-1">Inga pelare ännu</h3>
-              <p className="text-sm text-gray-600 mb-4">Klicka "Generera pelare från brand-profil" — AI:n läser klientens brand-profil och föreslår 4-6 pelare.</p>
+              <p className="text-sm text-gray-600 mb-4">Klicka "Generera pelare från brand-profil" — Skrivhjälpen läser klientens brand-profil och föreslår 4-6 pelare.</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-3">
@@ -295,7 +295,7 @@ export default function LinkedinMaker({ customerMode = false }: { customerMode?:
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
               <Lightbulb className="w-10 h-10 text-amber-600 mx-auto mb-3" />
               <h3 className="font-semibold text-gray-900 mb-1">Inga idéer ännu</h3>
-              <p className="text-sm text-gray-600">Generera 10 idéer ovan så fyller AI:n bankenban med pelar-fördelade hooks.</p>
+              <p className="text-sm text-gray-600">Generera 10 idéer ovan så fyller Skrivhjälpen bankenban med pelar-fördelade hooks.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -532,7 +532,7 @@ function FreeWriter({ pillars, onCreated }: { pillars: Pillar[]; onCreated: () =
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-6 max-w-3xl">
       <h2 className="text-lg font-display font-bold text-gray-900 mb-1">Fri-skrivaren</h2>
-      <p className="text-sm text-gray-600 mb-5">Skriv en hook eller vinkel — AI:n bygger ett färdigt LinkedIn-inlägg i klientens röst.</p>
+      <p className="text-sm text-gray-600 mb-5">Skriv en hook eller vinkel — Skrivhjälpen bygger ett färdigt LinkedIn-inlägg i klientens röst.</p>
       <div className="space-y-4">
         <div>
           <label className="text-xs font-medium text-gray-700 block mb-1">Hook eller utgångspunkt (valfritt)</label>

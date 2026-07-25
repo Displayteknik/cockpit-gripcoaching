@@ -62,7 +62,7 @@ export default function QualityMeter({ refreshKey, onNavigate }: { refreshKey?: 
             Hur komplett är din profil?
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            AI:n blir bara så bra som det du fyller i. När alla fem är gröna skapas texterna i full kvalitet.
+            Skrivhjälpen blir bara så bra som det du fyller i. När alla fem är gröna skapas texterna i full kvalitet.
           </p>
         </div>
         <div className="flex items-center gap-3">

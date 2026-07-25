@@ -198,7 +198,7 @@ export default function SkapaPage() {
       <div>
         <h1 className="font-display text-2xl font-bold text-gray-900">Skapa inlägg</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Två sätt: låt AI generera tre varianter — eller skriv eget och låt AI granska och föreslå.
+          Två sätt: låt Skrivhjälpen generera tre varianter — eller skriv eget och låt Skrivhjälpen granska och föreslå.
         </p>
       </div>
 
@@ -209,7 +209,7 @@ export default function SkapaPage() {
             mode === "generate" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          ✨ Låt AI generera
+          ✨ Låt Skrivhjälpen generera
         </button>
         <button
           onClick={() => setMode("review")}
@@ -217,7 +217,7 @@ export default function SkapaPage() {
             mode === "review" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          ✏️ Skriv eget — låt AI granska
+          ✏️ Skriv eget — låt Skrivhjälpen granska
         </button>
       </div>
 
@@ -362,7 +362,7 @@ export default function SkapaPage() {
                   }`}
                 >
                   {isRecommended && format !== f.value && (
-                    <span className="absolute -top-1 -right-1 text-[10px] bg-purple-600 text-white rounded-full px-1.5 py-0.5">
+                    <span className="absolute -top-1 -right-1 text-xs bg-purple-600 text-white rounded-full px-1.5 py-0.5">
                       tips
                     </span>
                   )}
@@ -513,7 +513,7 @@ function VoiceStatus({
       <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-start gap-3">
         <Mic className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <div className="font-semibold text-rose-900 text-sm">AI:n saknar exempel på din röst</div>
+          <div className="font-semibold text-rose-900 text-sm">Skrivhjälpen saknar exempel på din röst</div>
           <div className="text-sm text-rose-700 mt-1">
             Utan exempel blir innehållet generiskt. Lägg till minst 5
             egna inlägg eller en ljudinspelning på{" "}
@@ -536,7 +536,7 @@ function VoiceStatus({
             Tunn röst-data ({count} källor)
           </div>
           <div className="text-sm text-amber-700 mt-1">
-            AI:n har bara {count} exempel att lära från. Lägg till fler på{" "}
+            Skrivhjälpen har bara {count} exempel att lära från. Lägg till fler på{" "}
             <a href="/dashboard/profil" className="font-medium underline">
               Brand-profil
             </a>{" "}
@@ -1004,7 +1004,7 @@ function VariantCard({ variant, format }: { variant: Variant; format: Format }) 
             onClick={regenerateHashtags}
             disabled={hashtagBusy}
             className="text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-0.5 rounded flex items-center gap-1 disabled:opacity-50 flex-shrink-0"
-            title="Generera nya hashtags via AI"
+            title="Generera nya hashtags via Skrivhjälpen"
           >
             {hashtagBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Hash className="w-3 h-3" />}
             Smart hashtags
@@ -1225,7 +1225,7 @@ function OwnPostReview() {
       <div>
         <h2 className="font-display font-bold text-lg text-gray-900">Skriv ditt eget inlägg</h2>
         <p className="text-sm text-gray-500 mt-1">
-          AI:n granskar mot din voice fingerprint, brand-profil och hook-reglerna — och föreslår en
+          Skrivhjälpen granskar mot din voice fingerprint, brand-profil och hook-reglerna — och föreslår en
           konkret omskrivning om något inte håller.
         </p>
       </div>

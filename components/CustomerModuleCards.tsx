@@ -16,8 +16,10 @@ export default function CustomerModuleCards({
   // Kundvyn visar bara kund-verktyg. Moduler med en kund-motsvarighet (CUSTOMER_FEATURES,
   // t.ex. Content Compass → /k/kalender, Nyhetsbrev → /k/nyhetsbrev) länkas om till sin
   // /k-href så de blir kort. Rena admin-moduler (kvar med /dashboard-href) döljs.
+  // Använd kundmodulens etikett (samma som i menyn) så kort och meny alltid heter lika —
+  // annars tror kunden att "Innehållsstudio"-kortet och "Skapa inlägg"-menyn är olika saker.
   const shown = modules
-    .map((m) => ({ ...m, href: featureByKey(m.id)?.href || m.href }))
+    .map((m) => { const f = featureByKey(m.id); return { ...m, href: f?.href || m.href, label: f?.label || m.label }; })
     .filter((m) => !((m.href || "/k").startsWith("/dashboard")));
   if (!shown.length) return null;
   return (
@@ -34,7 +36,7 @@ export default function CustomerModuleCards({
             >
               {m.campaign && (
                 <span
-                  className="absolute top-3 right-3 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full"
+                  className="absolute top-3 right-3 inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full"
                   style={{ background: `${primaryColor}1a`, color: primaryColor }}
                 >
                   ✨ Ingår just nu

@@ -105,7 +105,7 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
               </div>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-gray-400">Token-estimat denna körning: ca {result.token_estimate.toLocaleString("sv-SE")}. Öppna ett utkast i Studio för att lägga bild och publicera.</p>
+          <p className="mt-2 text-xs text-gray-400">Token-estimat denna körning: ca {result.token_estimate.toLocaleString("sv-SE")}. Öppna ett utkast i Studio för att lägga bild och publicera.</p>
         </div>
       )}
     </section>

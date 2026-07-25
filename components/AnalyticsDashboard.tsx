@@ -718,7 +718,7 @@ export default function AnalyticsDashboard() {
               <div key={i} className="bg-white border border-violet-100 rounded-lg p-3">
                 <div className="text-xs font-medium text-gray-800 mb-1.5">{r.question}</div>
                 <div className="mb-1.5">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${r.mentioned ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${r.mentioned ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
                     {r.mentioned ? "Du nämns ✓" : "Du nämns inte"}
                   </span>
                 </div>
@@ -726,7 +726,7 @@ export default function AnalyticsDashboard() {
                   <div className="text-xs text-gray-600"><strong className="text-gray-800">Nämns i stället:</strong> {r.competitors.join(", ")}</div>
                 )}
                 {r.sources.length > 0 && (
-                  <div className="text-[11px] text-gray-400 mt-1 truncate">Källor: {r.sources.map((s) => s.title).join(" · ")}</div>
+                  <div className="text-xs text-gray-400 mt-1 truncate">Källor: {r.sources.map((s) => s.title).join(" · ")}</div>
                 )}
               </div>
             ))}
@@ -861,7 +861,7 @@ export default function AnalyticsDashboard() {
                       <tr key={i} className="border-b border-gray-50">
                         <td className="py-2 px-2 text-gray-900 font-medium">{q.query}</td>
                         <td className="py-2 px-2">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${brand ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>{brand ? "Brand" : "Ny kund"}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${brand ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>{brand ? "Brand" : "Ny kund"}</span>
                         </td>
                         <td className="py-2 px-2 text-right tabular-nums font-semibold text-gray-900">{q.clicks}</td>
                         <td className="py-2 px-2 text-right tabular-nums text-gray-600">{q.impressions.toLocaleString("sv-SE")}</td>
@@ -942,7 +942,7 @@ export default function AnalyticsDashboard() {
             <ol className="list-decimal pl-5 mt-2 space-y-1.5">
               <li><strong>Välj 1 sökord per vecka</strong> — högst potential först (sortat så).</li>
               <li><strong>Öppna sidan som rankar</strong> (URL-länken nedan). Läs igenom den med sökordet i åtanke.</li>
-              <li><strong>Klicka &quot;Optimera&quot;</strong> — det öppnar GEO/AEO-specialisten med sökord + sida ifyllt. AI:n skriver om sidan så att den svarar bättre på frågan.</li>
+              <li><strong>Klicka &quot;Optimera&quot;</strong> — det öppnar GEO/AEO-specialisten med sökord + sida ifyllt. Skrivhjälpen skriver om sidan så att den svarar bättre på frågan.</li>
               <li><strong>Klistra resultatet på sajten</strong>, publicera.</li>
               <li><strong>Vänta 1–4 veckor</strong> — Google indexerar om. Position klättrar.</li>
               <li><strong>Mät igen</strong> — kom tillbaka hit och se hur sökordet flyttat sig.</li>
@@ -1289,8 +1289,8 @@ function KPI({ icon: Icon, color, label, value, sub, hint }: { icon: React.Compo
         <Icon className="w-3.5 h-3.5" />
       </div>
       <div className="text-xl font-bold text-gray-900 tabular-nums leading-tight">{typeof value === "number" ? value.toLocaleString("sv-SE") : value}</div>
-      <div className="text-[11px] text-gray-500 mt-0.5">{label}{hint && <Hint text={hint} />}</div>
-      {sub && <div className="text-[10px] text-gray-400 mt-0.5">{sub}</div>}
+      <div className="text-xs text-gray-500 mt-0.5">{label}{hint && <Hint text={hint} />}</div>
+      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -1317,7 +1317,7 @@ function BandKeywords({ queries }: { queries: Array<{ query: string; clicks: num
   if (queries.length === 0) return <div className="mt-2 mb-1 text-xs text-gray-400 px-1">Inga sökord i detta band.</div>;
   return (
     <div className="mt-2 mb-2 border border-gray-100 rounded-lg bg-gray-50/50 p-2">
-      <div className="text-[11px] text-gray-500 mb-1 px-1">{queries.length} sökord — störst möjlighet (flest visningar) först</div>
+      <div className="text-xs text-gray-500 mb-1 px-1">{queries.length} sökord — störst möjlighet (flest visningar) först</div>
       <div className="max-h-64 overflow-y-auto">
         <table className="w-full text-xs">
           <thead className="text-gray-400 sticky top-0 bg-gray-50">
@@ -1357,7 +1357,7 @@ function TrendChart({ id, label, color, data, invert, fmt }: { id: string; label
     return (
       <div>
         <div className="text-xs font-medium text-gray-700 mb-1">{label}</div>
-        <div className="h-24 flex items-center justify-center text-[11px] text-gray-400 bg-gray-50 rounded-lg">För få datapunkter ännu</div>
+        <div className="h-24 flex items-center justify-center text-xs text-gray-400 bg-gray-50 rounded-lg">För få datapunkter ännu</div>
       </div>
     );
   }
@@ -1392,7 +1392,7 @@ function TrendChart({ id, label, color, data, invert, fmt }: { id: string; label
         <path d={line} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         <circle cx={xAt(pts.length - 1)} cy={yAt(last.value)} r="2.6" fill={color} />
       </svg>
-      <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400">
+      <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
         <span>{shortDate(first.date)}</span>
         <span className={`flex items-center gap-0.5 font-medium ${flat ? "text-gray-400" : improved ? "text-emerald-600" : "text-red-500"}`}>
           {!flat && (improved ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />)}

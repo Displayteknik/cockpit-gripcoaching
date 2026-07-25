@@ -205,8 +205,8 @@ export default function SmartTextarea({
             e.target.value = "";
           }}
         />
-        {hint && <span className="text-[11px] text-gray-400">eller klistra in en skärmbild (Ctrl+V)</span>}
-        {fel && <span className="text-[11px] text-red-600">{fel}</span>}
+        {hint && <span className="text-xs text-gray-400">eller klistra in en skärmbild (Ctrl+V)</span>}
+        {fel && <span className="text-xs text-red-600">{fel}</span>}
       </div>
     </div>
   );

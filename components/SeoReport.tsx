@@ -182,7 +182,7 @@ function ReportView({
             {report.teknik.checkar?.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {report.teknik.checkar.map((c, i) => (
-                  <span key={i} className={`text-[11px] px-2 py-0.5 rounded-full ${c.pass ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`} title={c.detail}>
+                  <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${c.pass ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`} title={c.detail}>
                     {c.pass ? "✓" : "✕"} {c.label}
                   </span>
                 ))}
@@ -293,7 +293,7 @@ function ScoreCell({ label, v, comment }: { label: string; v?: number; comment?:
     <div className="p-3 border-r border-b border-gray-100 last:border-r-0">
       <div className="text-xs text-gray-500 uppercase tracking-wide leading-tight">{label}</div>
       <div className={`text-2xl font-bold tabular-nums ${color}`}>{val ?? "—"}</div>
-      {comment && <div className="text-[11px] text-gray-500 leading-snug mt-0.5">{comment}</div>}
+      {comment && <div className="text-xs text-gray-500 leading-snug mt-0.5">{comment}</div>}
     </div>
   );
 }

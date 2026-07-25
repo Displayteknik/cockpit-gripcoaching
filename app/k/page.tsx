@@ -131,7 +131,7 @@ export default async function CustomerHome() {
               title="Din översikt"
               what="Startsidan i MySales Pro — dina verktyg, ditt innehåll och läget för din synlighet på ett ställe."
               how="Korten under 'Dina verktyg' är modulerna som ingår i ditt paket. Klicka in på en för att jobba, eller följ 'Att göra nu' för nästa steg."
-              tips={["Börja med Brand-profil så blir allt AI skriver mer likt dig."]}
+              tips={["Börja med Brand-profil så blir allt Skrivhjälpen skriver mer likt dig."]}
             />
           </div>
           <p className="text-white/80 mt-2 max-w-xl text-sm md:text-base">
@@ -199,7 +199,7 @@ export default async function CustomerHome() {
           <div className="flex-1">
             <div className="font-semibold text-amber-900 text-sm">Din profil behöver kompletteras</div>
             <div className="text-sm text-amber-800 mt-1">
-              Ju mer din profil är ifylld, desto bättre blir AI:n på att skriva i din röst.{" "}
+              Ju mer din profil är ifylld, desto bättre blir Skrivhjälpen på att skriva i din röst.{" "}
               <Link href="/k/profil" className="underline font-medium">Komplettera nu →</Link>
             </div>
           </div>

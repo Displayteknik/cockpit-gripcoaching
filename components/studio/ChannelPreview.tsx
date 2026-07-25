@@ -89,7 +89,7 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
   );
 
   const Avatar = (
-    <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: primary }}>
+    <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: primary }}>
       {initials(clientName)}
     </span>
   );
@@ -110,7 +110,7 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
         <Icon className="w-[18px] h-[18px]" />
       </span>
       <span className="text-sm font-bold tracking-tight" style={{ color: brand.color }}>{brand.label}</span>
-      <span className="ml-auto text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: `${brand.color}14`, color: brand.color }}>
+      <span className="ml-auto text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: `${brand.color}14`, color: brand.color }}>
         Förhandsvisning
       </span>
     </div>
@@ -160,7 +160,7 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
           {Avatar}
           <div className="min-w-0">
             <div className="text-[13px] font-semibold text-gray-900 truncate">{clientName}</div>
-            <div className="text-[11px] text-gray-400 flex items-center gap-1">Nyss · <Globe className="w-3 h-3" /></div>
+            <div className="text-xs text-gray-400 flex items-center gap-1">Nyss · <Globe className="w-3 h-3" /></div>
           </div>
         </div>
         <div className="px-3 pb-2.5">{caption.trim() ? CaptionText : EmptyCaption}</div>
@@ -180,7 +180,7 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
           {Avatar}
           <div className="min-w-0">
             <div className="text-[13px] font-semibold text-gray-900 truncate">{clientName}</div>
-            <div className="text-[11px] text-gray-400 truncate">Företagssida · Nyss</div>
+            <div className="text-xs text-gray-400 truncate">Företagssida · Nyss</div>
           </div>
         </div>
         <div className="px-3 pb-2.5">{caption.trim() ? CaptionText : EmptyCaption}</div>

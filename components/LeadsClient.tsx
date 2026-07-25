@@ -436,7 +436,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
                 primaryColor={primaryColor}
                 title="Nya leads"
                 what="Samlar nya kontakter från Instagram, Facebook, LinkedIn, mejl och webb i en värme-trappa — från ny till redo för offert."
-                how="Varje lead får ett steg (Ny → Kontaktad → Dialog → Redo). Du kan skapa ett lead från en inklistrad skärmbild eller inspelad röst, och få AI-förslag på svar."
+                how="Varje lead får ett steg (Ny → Kontaktad → Dialog → Redo). Du kan skapa ett lead från en inklistrad skärmbild eller inspelad röst, och få förslag på svar från Skrivhjälpen."
                 tips={["Flytta lead framåt i trappan när dialogen utvecklas.", "Använd AI-svarsförslaget som utkast, inte facit.", "Redo-leads går vidare till Fokus som affär."]}
               />
             </div>

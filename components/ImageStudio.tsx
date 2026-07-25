@@ -382,7 +382,7 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
                           }`}
                         >
                           {s.image_url && <img src={s.image_url} alt={s.headline} className="w-full h-full object-cover" />}
-                          <div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] rounded px-1.5 py-0.5">
+                          <div className="absolute top-1 left-1 bg-black/70 text-white text-xs rounded px-1.5 py-0.5">
                             {i + 1}
                           </div>
                         </button>
@@ -529,7 +529,7 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
             {tab === "pexels" && (
               <div className="space-y-3">
                 <div className="text-sm text-gray-600">
-                  Sök riktiga stockfoton från Pexels — gratis, hög kvalitet. AI-curaterad query
+                  Sök riktiga stockfoton från Pexels — gratis, hög kvalitet. Automatiskt curaterad query
                   baserat på inläggets innehåll.
                 </div>
                 <div className="flex gap-2">
@@ -564,7 +564,7 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
                         title={p.photographer}
                       >
                         <img src={p.srcMedium} alt={p.alt} className="w-full h-full object-cover" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 truncate">
                           {p.photographer}
                         </div>
                       </button>
@@ -629,7 +629,7 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
                           />
                         )}
                         {p.image_engine && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 truncate">
                             {p.image_engine}
                           </div>
                         )}
@@ -675,11 +675,11 @@ function SmartPromptHeader({ meta, loading, onRegenerate }: { meta: { scene_desc
   return (
     <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-900 space-y-1.5">
       <div className="flex justify-between items-start gap-2">
-        <span className="font-bold uppercase text-[10px] tracking-wider">Smart prompt aktiv</span>
-        <button onClick={onRegenerate} className="text-[10px] underline hover:no-underline text-emerald-700 hover:text-emerald-900">↻ Bygg ny</button>
+        <span className="font-bold uppercase text-xs tracking-wider">Smart prompt aktiv</span>
+        <button onClick={onRegenerate} className="text-xs underline hover:no-underline text-emerald-700 hover:text-emerald-900">↻ Bygg ny</button>
       </div>
       {meta.scene_description && <div><strong>Scen:</strong> {meta.scene_description}</div>}
-      <div className="flex gap-3 text-[11px] opacity-80">
+      <div className="flex gap-3 text-xs opacity-80">
         {meta.visual_style && <span><strong>Stil:</strong> {meta.visual_style}</span>}
         {meta.mood && <span><strong>Mood:</strong> {meta.mood}</span>}
       </div>

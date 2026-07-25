@@ -43,7 +43,7 @@ interface Asset {
 }
 
 const TABS: { key: AssetType; label: string; icon: React.ComponentType<{ className?: string }>; hint: string; minRecommended: number }[] = [
-  { key: "post", label: "Egna inlägg", icon: FileText, hint: "Klistra in 5–10 av dina egna inlägg. AI:n imiterar din röst.", minRecommended: 5 },
+  { key: "post", label: "Egna inlägg", icon: FileText, hint: "Klistra in 5–10 av dina egna inlägg. Skrivhjälpen imiterar din röst.", minRecommended: 5 },
   { key: "photo", label: "Foton", icon: ImageIcon, hint: "Person, lokal, process, kunder. Slår alla stockfoton.", minRecommended: 5 },
   { key: "audio", label: "Ljud", icon: Mic, hint: "Inspelningar där du pratar. Skrivs av automatiskt.", minRecommended: 1 },
   { key: "video", label: "Video", icon: Video, hint: "Korta klipp där du är i bild. Skrivs av automatiskt.", minRecommended: 1 },
@@ -98,7 +98,7 @@ export default function KnowledgeBank({ onChange }: { onChange?: () => void }) {
               Kunskapsbank — ditt råmaterial
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Allt du lägger in här används när AI:n skriver, så att texterna låter exakt som
+              Allt du lägger in här används när Skrivhjälpen skriver, så att texterna låter exakt som
               du — sparas på ditt konto och stannar där.
             </p>
           </div>

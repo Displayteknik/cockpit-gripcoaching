@@ -42,7 +42,7 @@ export default async function CustomerIdeasPage() {
           Förslag att granska
         </h1>
         <p className="text-gray-600 text-sm mt-1">
-          Här är AI-genererade utkast — godkänn det du gillar, avvisa resten. Det godkända blir mall för framtida förslag.
+          Här är utkast från Skrivhjälpen — godkänn det du gillar, avvisa resten. Det godkända blir mall för framtida förslag.
         </p>
       </div>
 
