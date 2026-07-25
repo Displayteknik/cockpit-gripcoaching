@@ -255,7 +255,7 @@ export default function ImagePicker({ postId, slideIndex, contextText, currentIm
                     <button key={p.id} onClick={() => applyStock(p)} disabled={busy} className="group relative rounded-lg overflow-hidden bg-gray-100 aspect-square hover:ring-2 hover:ring-blue-400 disabled:opacity-50">
                       <img src={p.srcMedium} alt={p.alt} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end">
-                        <div className="text-white text-[10px] p-1.5 truncate w-full bg-black/50 opacity-0 group-hover:opacity-100">📸 {p.photographer}</div>
+                        <div className="text-white text-xs p-1.5 truncate w-full bg-black/50 opacity-0 group-hover:opacity-100">📸 {p.photographer}</div>
                       </div>
                     </button>
                   ))}

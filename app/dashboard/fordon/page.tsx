@@ -634,7 +634,7 @@ export default function DashboardPage() {
                           <div key={i} className="relative group rounded-xl overflow-hidden bg-gray-100 aspect-[4/3]">
                             <img src={url} alt="" className="w-full h-full object-cover" />
                             {i === 0 && (
-                              <span className="absolute top-2 left-2 bg-brand-blue text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              <span className="absolute top-2 left-2 bg-brand-blue text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                 HUVUDBILD
                               </span>
                             )}

@@ -150,7 +150,7 @@ export default function UtstallningarPage() {
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${statusOpt?.color || ""}`}>{statusOpt?.label}</span>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${statusOpt?.color || ""}`}>{statusOpt?.label}</span>
                           {it.url && <a href={it.url} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:text-gray-700">Extern länk →</a>}
                         </div>
                         <div className="font-semibold text-gray-900 truncate">{it.title}</div>

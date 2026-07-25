@@ -1171,7 +1171,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                             className="absolute top-1 right-1 w-6 h-6 rounded-md bg-white/90 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100">
                             {deletingPath === m.path ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                           </button>
-                          {curImg === m.url && <span className="absolute bottom-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded text-white" style={{ background: primary }}>Vald</span>}
+                          {curImg === m.url && <span className="absolute bottom-1 left-1 text-xs font-bold px-1.5 py-0.5 rounded text-white" style={{ background: primary }}>Vald</span>}
                         </div>
                       ))}
                     </div>

@@ -475,7 +475,7 @@ function DayCard({
             </div>
           )}
 
-          {editing && <p className="text-[11px] text-gray-400">Redigera fritt. Spara eller Spara hela veckan använder din text.</p>}
+          {editing && <p className="text-xs text-gray-400">Redigera fritt. Spara eller Spara hela veckan använder din text.</p>}
         </div>
       )}
     </div>

@@ -177,7 +177,7 @@ export default function BrandKitPage() {
                     <input type="color" value={colors[role.key] || (role.key === "primary" ? clientPrimary : "#ffffff")} onChange={(e) => set(`colors.${role.key}`, e.target.value)} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="text-xs font-semibold text-gray-800">{role.label}</div>
-                      <div className="text-[11px] text-gray-400 truncate">{role.hint}</div>
+                      <div className="text-xs text-gray-400 truncate">{role.hint}</div>
                     </div>
                   </div>
                 ))}
@@ -312,7 +312,7 @@ export default function BrandKitPage() {
                 {Object.entries(previewColors).map(([k, v]) => (
                   <div key={k} className="text-center">
                     <div className="w-full aspect-square rounded-lg border border-gray-100" style={{ background: v as string }} />
-                    <div className="text-[10px] text-gray-400 mt-1">{k}</div>
+                    <div className="text-xs text-gray-400 mt-1">{k}</div>
                   </div>
                 ))}
               </div>

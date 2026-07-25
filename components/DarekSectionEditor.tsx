@@ -354,7 +354,7 @@ function ImageInput({ value, onChange }: { value: string; onChange: (v: string) 
         </div>
       ) : (
         <div onClick={() => inputRef.current?.click()} className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-900 hover:bg-gray-50">
-          {up ? <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" /> : <><Upload className="w-4 h-4 text-gray-400" /><span className="text-[10px] text-gray-500 mt-1">Ladda upp</span></>}
+          {up ? <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" /> : <><Upload className="w-4 h-4 text-gray-400" /><span className="text-xs text-gray-500 mt-1">Ladda upp</span></>}
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />

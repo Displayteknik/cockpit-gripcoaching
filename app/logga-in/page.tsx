@@ -42,7 +42,7 @@ function LoginForm() {
           </div>
           <div className="leading-tight">
             <div className="font-display font-bold text-base text-gray-900">Cockpit</div>
-            <div className="text-[11px] text-gray-500">GripCoaching</div>
+            <div className="text-xs text-gray-500">GripCoaching</div>
           </div>
         </div>
 

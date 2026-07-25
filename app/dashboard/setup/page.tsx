@@ -104,7 +104,7 @@ export default function SetupAgentPage() {
     <div className="flex flex-col h-[calc(100vh-6rem)] pb-4">
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
             Setup-agent
           </span>
         </div>

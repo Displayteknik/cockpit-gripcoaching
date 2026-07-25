@@ -495,7 +495,7 @@ export default function SocialPage() {
                   {p.image_url && editingId !== p.id && (
                     <div className="mb-3 relative inline-block group/img">
                       <img src={p.image_url} alt="" className="rounded-lg max-w-xs max-h-64 border border-gray-200" />
-                      <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">{p.image_engine || "Bild"}</span>
+                      <span className="absolute bottom-2 left-2 text-xs bg-black/70 text-white px-1.5 py-0.5 rounded">{p.image_engine || "Bild"}</span>
                       <button onClick={() => openImagePicker(p)} className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-700 px-2 py-1 rounded text-xs font-medium opacity-0 group-hover/img:opacity-100 transition-opacity">
                         Byt bild
                       </button>
@@ -536,7 +536,7 @@ export default function SocialPage() {
                           {edits.slides.map((s, i) => (
                             <div key={i} className="bg-white rounded p-2 border border-amber-200">
                               <div className="flex items-center justify-between mb-1">
-                                <div className="text-[10px] text-gray-500">Slide {s.number}</div>
+                                <div className="text-xs text-gray-500">Slide {s.number}</div>
                                 <button onClick={() => openImagePicker(p, i)} className="text-xs text-purple-600 hover:bg-purple-50 px-2 py-0.5 rounded flex items-center gap-1">
                                   <ImageIcon className="w-3 h-3" />
                                   {s.image_url ? "Byt slide-bild" : "Lägg till bild"}
@@ -545,7 +545,7 @@ export default function SocialPage() {
                               {s.image_url && <img src={s.image_url} alt="" className="rounded mb-1 max-h-24" />}
                               <input value={s.headline} onChange={(e) => updateSlide(i, "headline", e.target.value)} placeholder="Rubrik" className="w-full px-2 py-1 rounded border border-gray-200 text-sm font-bold mb-1" />
                               <textarea value={s.body} onChange={(e) => updateSlide(i, "body", e.target.value)} rows={2} placeholder="Brödtext" className="w-full px-2 py-1 rounded border border-gray-200 text-xs" />
-                              <input value={s.image_hint} onChange={(e) => updateSlide(i, "image_hint", e.target.value)} placeholder="Bildidé" className="w-full mt-1 px-2 py-1 rounded border border-gray-200 text-[11px] italic text-gray-600" />
+                              <input value={s.image_hint} onChange={(e) => updateSlide(i, "image_hint", e.target.value)} placeholder="Bildidé" className="w-full mt-1 px-2 py-1 rounded border border-gray-200 text-xs italic text-gray-600" />
                             </div>
                           ))}
                         </div>
@@ -582,7 +582,7 @@ export default function SocialPage() {
                             </div>
                             <div className="text-sm font-bold text-gray-900 mt-0.5">{s.headline}</div>
                             <div className="text-xs text-gray-700 mt-1">{s.body}</div>
-                            <div className="text-[11px] text-gray-500 italic mt-1">📷 {s.image_hint}</div>
+                            <div className="text-xs text-gray-500 italic mt-1">📷 {s.image_hint}</div>
                           </div>
                         ))}
                       </div>

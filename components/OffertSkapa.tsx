@@ -172,7 +172,7 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
                       <input value={r.name} onChange={(e) => uppdatera(i, { name: e.target.value })} placeholder="Benämning" className="flex-1 min-w-0 text-sm bg-transparent outline-none" />
                       <input value={String(r.qty)} onChange={(e) => uppdatera(i, { qty: Number(nOrNull(e.target.value)) || 0 })} className="w-12 text-sm text-center bg-white rounded border border-gray-200 px-1 py-1" title="Antal" />
                       <input value={r.unit_price ?? ""} onChange={(e) => uppdatera(i, { unit_price: nOrNull(e.target.value) })} placeholder="à-pris" className="w-20 text-sm text-right bg-white rounded border border-gray-200 px-1.5 py-1" title="Pris/st" />
-                      <span className={`text-[11px] w-16 text-right ${tbKr < 0 ? "text-red-500" : "text-gray-400"}`} title="TB/st">{r.cost != null ? `TB ${Math.round(tbKr)}` : ""}</span>
+                      <span className={`text-xs w-16 text-right ${tbKr < 0 ? "text-red-500" : "text-gray-400"}`} title="TB/st">{r.cost != null ? `TB ${Math.round(tbKr)}` : ""}</span>
                       <button onClick={() => taBort(i)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   );
@@ -184,9 +184,9 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
           {/* Summering */}
           {rows.length > 0 && (
             <div className="rounded-2xl border border-gray-100 p-4 grid grid-cols-3 gap-3" style={{ background: `${primaryColor}0a` }}>
-              <div><div className="text-[11px] text-gray-500 uppercase">Ordervärde</div><div className="text-lg font-bold text-gray-900 tabular-nums">{kr(totals.total)}</div></div>
-              <div><div className="text-[11px] text-gray-500 uppercase">TB</div><div className="text-lg font-bold tabular-nums" style={{ color: golvOk ? "#059669" : "#dc2626" }}>{kr(totals.tbKr)}</div></div>
-              <div><div className="text-[11px] text-gray-500 uppercase">Marginal</div><div className="text-lg font-bold tabular-nums" style={{ color: golvOk ? "#059669" : "#dc2626" }}>{totals.marginPct}%</div></div>
+              <div><div className="text-xs text-gray-500 uppercase">Ordervärde</div><div className="text-lg font-bold text-gray-900 tabular-nums">{kr(totals.total)}</div></div>
+              <div><div className="text-xs text-gray-500 uppercase">TB</div><div className="text-lg font-bold tabular-nums" style={{ color: golvOk ? "#059669" : "#dc2626" }}>{kr(totals.tbKr)}</div></div>
+              <div><div className="text-xs text-gray-500 uppercase">Marginal</div><div className="text-lg font-bold tabular-nums" style={{ color: golvOk ? "#059669" : "#dc2626" }}>{totals.marginPct}%</div></div>
               {!golvOk && totals.costTotal > 0 && <div className="col-span-3 text-xs text-red-600">⚠ Under 30 % golv — se över priser eller pålägg.</div>}
             </div>
           )}
@@ -208,7 +208,7 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
                 {marknad.sources.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {marknad.sources.slice(0, 4).map((s, i) => (
-                      <a key={i} href={s.uri} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-900 border border-gray-100 rounded-lg px-2 py-0.5">
+                      <a key={i} href={s.uri} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 border border-gray-100 rounded-lg px-2 py-0.5">
                         {s.title.slice(0, 30)} <ExternalLink className="w-3 h-3" />
                       </a>
                     ))}

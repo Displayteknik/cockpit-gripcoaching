@@ -121,7 +121,7 @@ export default function KonkurrenterPage() {
                   {c.audit_data?.seo_score && <ScoreBadge label="SEO" value={c.audit_data.seo_score} />}
                   {c.audit_data?.aeo_score && <ScoreBadge label="AEO" value={c.audit_data.aeo_score} />}
                   {c.audit_data?.pagespeed_mobile != null && <ScoreBadge label="📱" value={c.audit_data.pagespeed_mobile} />}
-                  {!c.url && <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">URL saknas</span>}
+                  {!c.url && <span className="text-xs uppercase font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">URL saknas</span>}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
                   {c.url && <a href={c.url} target="_blank" rel="noopener" className="hover:text-blue-600 flex items-center gap-1">{c.url} <ExternalLink className="w-3 h-3" /></a>}

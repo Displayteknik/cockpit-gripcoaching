@@ -32,7 +32,7 @@ export default async function CustomerIdeasPage() {
     <div className="pb-12">
       <div className="mb-6">
         <span
-          className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded"
+          className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded"
           style={{ background: `${session.primary_color}15`, color: session.primary_color }}
         >
           Idé-bank

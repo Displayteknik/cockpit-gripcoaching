@@ -118,13 +118,13 @@ export default function MySalesKunderPage() {
           <table className="w-full">
             <thead className="bg-gray-50/50 border-b border-gray-100">
               <tr>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pionjär</th>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
-                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Lobby</th>
-                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Prospekt</th>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Senaste import</th>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pipeline</th>
-                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Öppna som</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pionjär</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
+                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Lobby</th>
+                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Prospekt</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Senaste import</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pipeline</th>
+                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Öppna som</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -151,12 +151,12 @@ export default function MySalesKunderPage() {
                           <div className="text-sm font-semibold text-gray-900 truncate">
                             {u.brand && u.display_name ? `${u.brand} · ${u.display_name}` : name}
                           </div>
-                          <div className="text-[11px] text-gray-400 font-mono truncate" title={u.id}>{u.id.slice(0, 18)}…</div>
+                          <div className="text-xs text-gray-400 font-mono truncate" title={u.id}>{u.id.slice(0, 18)}…</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-[10px] px-2 py-0.5 rounded ring-1 font-semibold uppercase tracking-wider ${s.cls}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded ring-1 font-semibold uppercase tracking-wider ${s.cls}`}>
                         {s.label}
                       </span>
                     </td>
@@ -173,7 +173,7 @@ export default function MySalesKunderPage() {
                         href={`${COACH_BASE}/?coach=${u.id}`}
                         target="_blank"
                         rel="noopener"
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-teal-500/15 text-teal-700 border border-teal-500/30 hover:bg-teal-500/25 transition"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-teal-500/15 text-teal-700 border border-teal-500/30 hover:bg-teal-500/25 transition"
                       >
                         <ExternalLink className="w-3 h-3" />
                         Coach

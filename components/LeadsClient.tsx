@@ -519,7 +519,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
                   <span className="w-2.5 h-2.5 rounded-full" style={{ background: steg.farg }} />
                   <h2 className="font-display font-bold text-gray-900 text-lg">{steg.label}</h2>
                   <span className="text-xs text-gray-400">({kontakter.length})</span>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${steg.farg}1a`, color: steg.farg }}>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${steg.farg}1a`, color: steg.farg }}>
                     {steg.varme}
                   </span>
                 </div>
@@ -558,7 +558,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
 function HeroKpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-white/15 px-3 py-2.5 backdrop-blur ring-1 ring-white/10">
-      <div className="text-[11px] uppercase tracking-wider text-white/70 font-semibold">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-white/70 font-semibold">{label}</div>
       <div className="text-xl font-bold text-white tabular-nums mt-0.5">{value}</div>
     </div>
   );
@@ -599,7 +599,7 @@ function LeadPipelineTratt({
             >
               <div className="flex items-center justify-between gap-1">
                 <span className="text-2xl font-bold tabular-nums leading-none" style={{ color: steg.farg }}>{n}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${steg.farg}1a`, color: steg.farg }}>
+                <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${steg.farg}1a`, color: steg.farg }}>
                   {steg.varme}
                 </span>
               </div>
@@ -707,7 +707,7 @@ function NyttLeadForm({
       <div className="grid grid-cols-2 gap-3">
         <Falt etikett="Företag" varde={company} onChange={setCompany} placeholder="Företagsnamn…" />
         <label className="block">
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400">Kanal</span>
+          <span className="text-xs uppercase tracking-wider font-semibold text-gray-400">Kanal</span>
           <select value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-800 outline-none focus:border-gray-400 bg-white">
             {PLATFORMS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
@@ -787,7 +787,7 @@ function Rad(props: {
             {c.company && <span className="text-sm text-gray-500 truncate">· {c.company}</span>}
             {c.name_match_stage && (
               <span title={`En affär med samma namn finns i pipelinen (${c.name_match_stage}). Kolla att det inte är samma person.`}
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                 kan redan vara i pipeline
               </span>
             )}
@@ -837,7 +837,7 @@ function Rad(props: {
         <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-3" onPaste={kortPaste}>
           {/* Bygg på-verktyg */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mr-1">Bygg på detta case:</span>
+            <span className="text-xs uppercase tracking-wider font-semibold text-gray-400 mr-1">Bygg på detta case:</span>
             <label className={`inline-flex items-center gap-1.5 text-xs font-medium border rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors ${bygger ? "opacity-50 border-gray-200" : "border-gray-200 text-gray-700 hover:bg-white"}`}>
               {bygger ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
               Klistra in bild
@@ -861,7 +861,7 @@ function Rad(props: {
               {forslag.map((s, i) => (
                 <div key={i} className="rounded-lg border border-violet-100 bg-violet-50/50 p-3">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-violet-700">{s.ton}</span>
+                    <span className="text-xs uppercase tracking-wider font-semibold text-violet-700">{s.ton}</span>
                     <button onClick={() => kopiera(s.text, i)} className="inline-flex items-center gap-1 text-xs text-violet-700 hover:underline">
                       {kopierad === i ? <><Check className="w-3.5 h-3.5" /> Kopierat</> : <><Copy className="w-3.5 h-3.5" /> Kopiera</>}
                     </button>
@@ -886,7 +886,7 @@ function Rad(props: {
 
           {c.last_message && (
             <div>
-              <div className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mb-1">Senaste meddelande</div>
+              <div className="text-xs uppercase tracking-wider font-semibold text-gray-400 mb-1">Senaste meddelande</div>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{c.last_message}</p>
             </div>
           )}
@@ -901,7 +901,7 @@ function Rad(props: {
 
           {c.notes && (
             <div>
-              <div className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mb-1">Anteckningar</div>
+              <div className="text-xs uppercase tracking-wider font-semibold text-gray-400 mb-1">Anteckningar</div>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{c.notes}</p>
             </div>
           )}
@@ -954,7 +954,7 @@ function Falt({
   useEffect(() => { setUtkast(varde); }, [varde]);
   return (
     <label className="block">
-      <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400">{etikett}</span>
+      <span className="text-xs uppercase tracking-wider font-semibold text-gray-400">{etikett}</span>
       <input type={typ} value={utkast} placeholder={placeholder}
         onChange={(e) => { setUtkast(e.target.value); if (!commitOnBlur) onChange(e.target.value); }}
         onBlur={() => { if (commitOnBlur && utkast !== varde) onChange(utkast); }}

@@ -76,7 +76,7 @@ export function GradientColorField({ value, onChange }: GradientColorFieldProps)
       {/* Color picker popup */}
       {open && (
         <div className="absolute z-50 top-12 left-0 bg-white rounded-xl shadow-2xl border border-gray-200 p-3" style={{ width: 280 }}>
-          <div className="text-[11px] font-medium text-gray-500 mb-2 flex items-center justify-between">
+          <div className="text-xs font-medium text-gray-500 mb-2 flex items-center justify-between">
             <span>{isGradient ? "Gradient" : "Enfärgad"}</span>
             <button
               type="button"

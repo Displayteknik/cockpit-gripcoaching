@@ -139,7 +139,7 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
               <ol className="space-y-1.5">
                 {bp.sektioner.map((s, i) => (
                   <li key={i} className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-md text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+                    <span className="w-5 h-5 rounded-md text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
                       style={{ background: `${primaryColor}14`, color: primaryColor }}>{i + 1}</span>
                     <div>
                       <span className="text-sm font-medium text-gray-800">{s.rubrik}</span>
@@ -216,7 +216,7 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-gray-900 text-sm">{q.quote_number || "Offert"}</span>
-                      {st && <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>}
+                      {st && <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5 truncate">
                       {q.customer_company || q.customer_name || "—"}{q.updated_at ? ` · ${datum(q.updated_at)}` : ""}

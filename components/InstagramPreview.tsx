@@ -44,7 +44,7 @@ export default function InstagramPreview({ platform, format, username, hook, cap
         </div>
         <div className="flex-1">
           <div className="text-sm font-semibold text-gray-900">{username}</div>
-          <div className="text-[11px] text-gray-500">{platform === "instagram" ? (isStory ? "Story · nu" : "Sponsrat") : "1 min sedan"}</div>
+          <div className="text-xs text-gray-500">{platform === "instagram" ? (isStory ? "Story · nu" : "Sponsrat") : "1 min sedan"}</div>
         </div>
       </div>
 

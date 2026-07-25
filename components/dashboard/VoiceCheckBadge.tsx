@@ -112,7 +112,7 @@ export function VoiceCheckBadge({ text, surface, clientId, onScore, autoCheck = 
           >
             <Icon className="w-3.5 h-3.5" />
             {score.score}/100
-            <span className="text-[10px] uppercase tracking-wider opacity-70">
+            <span className="text-xs uppercase tracking-wider opacity-70">
               {score.verdict === "pass" ? "OK" : score.verdict === "warn" ? "Justera" : "Block"}
             </span>
           </button>

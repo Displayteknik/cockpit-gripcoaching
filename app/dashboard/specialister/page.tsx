@@ -91,13 +91,13 @@ export default function SpecialisterPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span
-                      className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                      className={`text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded border ${
                         CATEGORY_COLOR[s.category] ?? CATEGORY_COLOR.general
                       }`}
                     >
                       {CATEGORY_LABEL[s.category] ?? s.category}
                     </span>
-                    <span className="text-[10px] text-gray-400">v{s.version}</span>
+                    <span className="text-xs text-gray-400">v{s.version}</span>
                   </div>
                   <h3 className="font-semibold text-gray-900 group-hover:text-purple-700 transition">
                     {s.name}

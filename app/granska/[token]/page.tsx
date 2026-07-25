@@ -164,7 +164,7 @@ export default function GranskaPage({ params }: { params: Promise<{ token: strin
                           <>
                             <input value={s.headline} onChange={(e) => { const next = [...editedSlides!]; next[i] = { ...next[i], headline: e.target.value }; setEditedSlides(next); }} className="w-full mt-1 px-2 py-1 rounded border border-blue-300 text-sm font-bold" />
                             <textarea value={s.body} onChange={(e) => { const next = [...editedSlides!]; next[i] = { ...next[i], body: e.target.value }; setEditedSlides(next); }} rows={2} className="w-full mt-1 px-2 py-1 rounded border border-blue-300 text-xs" />
-                            <input value={s.image_hint} onChange={(e) => { const next = [...editedSlides!]; next[i] = { ...next[i], image_hint: e.target.value }; setEditedSlides(next); }} className="w-full mt-1 px-2 py-1 rounded border border-blue-200 text-[11px] italic text-gray-600" />
+                            <input value={s.image_hint} onChange={(e) => { const next = [...editedSlides!]; next[i] = { ...next[i], image_hint: e.target.value }; setEditedSlides(next); }} className="w-full mt-1 px-2 py-1 rounded border border-blue-200 text-xs italic text-gray-600" />
                           </>
                         ) : (
                           <>

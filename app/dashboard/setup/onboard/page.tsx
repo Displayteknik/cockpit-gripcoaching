@@ -132,7 +132,7 @@ function OnboardInner() {
     return (
       <div className="max-w-5xl mx-auto pb-12">
         <div className="mb-6">
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
             Onboarding
           </span>
           <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2 mt-1">
@@ -214,7 +214,7 @@ function OnboardInner() {
 
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
             Onboarding
           </span>
           <h1 className="font-display text-2xl font-bold text-gray-900 mt-1">{status.client.name}</h1>

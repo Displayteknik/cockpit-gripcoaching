@@ -75,7 +75,7 @@ export function TypographyField({ value, onChange }: Props) {
     return () => document.removeEventListener("mousedown", handle);
   }, [showColor]);
 
-  const btnBase = "px-1.5 py-1 text-[11px] rounded border transition-all ";
+  const btnBase = "px-1.5 py-1 text-xs rounded border transition-all ";
   const btnActive = "bg-blue-500 text-white border-blue-500 ";
   const btnInactive = "bg-white text-gray-600 border-gray-200 hover:border-gray-400 ";
 
@@ -86,7 +86,7 @@ export function TypographyField({ value, onChange }: Props) {
         <select
           value={v.fontFamily}
           onChange={(e) => set("fontFamily", e.target.value)}
-          className="flex-1 px-2 py-1.5 rounded border border-gray-200 text-[11px] bg-white focus:border-blue-400 focus:outline-none"
+          className="flex-1 px-2 py-1.5 rounded border border-gray-200 text-xs bg-white focus:border-blue-400 focus:outline-none"
           style={{ fontFamily: v.fontFamily || undefined }}
         >
           {FONTS.map((f) => (
@@ -98,7 +98,7 @@ export function TypographyField({ value, onChange }: Props) {
         <select
           value={v.fontSize}
           onChange={(e) => set("fontSize", e.target.value)}
-          className="w-[70px] px-2 py-1.5 rounded border border-gray-200 text-[11px] bg-white focus:border-blue-400 focus:outline-none"
+          className="w-[70px] px-2 py-1.5 rounded border border-gray-200 text-xs bg-white focus:border-blue-400 focus:outline-none"
         >
           <option value="">Auto</option>
           {SIZES.map((s) => (
@@ -140,7 +140,7 @@ export function TypographyField({ value, onChange }: Props) {
           {showColor && (
             <div className="absolute top-8 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3" style={{ width: "280px" }}>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-[11px] font-medium text-gray-700">Textfärg</span>
+                <span className="text-xs font-medium text-gray-700">Textfärg</span>
                 <button type="button" onClick={() => setShowColor(false)} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
               </div>
               {/* Brand presets */}

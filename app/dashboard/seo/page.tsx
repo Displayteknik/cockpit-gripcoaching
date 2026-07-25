@@ -688,7 +688,7 @@ function AiAuditModal({ onClose }: { onClose: () => void }) {
 
 function ScoreBox({ label, v }: { label: string; v: number }) {
   const c = v >= 80 ? "text-emerald-700 bg-emerald-50" : v >= 60 ? "text-amber-700 bg-amber-50" : "text-red-700 bg-red-50";
-  return <div className={`rounded-lg p-2 text-center ${c}`}><div className="text-xl font-bold tabular-nums">{v}</div><div className="text-[10px] opacity-70">{label}</div></div>;
+  return <div className={`rounded-lg p-2 text-center ${c}`}><div className="text-xl font-bold tabular-nums">{v}</div><div className="text-xs opacity-70">{label}</div></div>;
 }
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
@@ -758,7 +758,7 @@ function IntentBadge({ intent }: { intent: string | null }) {
 function Mini({ label, value, ok }: { label: string; value: string | number; ok: boolean }) {
   return (
     <div className={`px-3 py-2 rounded-lg border ${ok ? "bg-emerald-50 border-emerald-100" : "bg-amber-50 border-amber-100"}`}>
-      <div className="text-[10px] text-gray-500 uppercase tracking-wide">{label}</div>
+      <div className="text-xs text-gray-500 uppercase tracking-wide">{label}</div>
       <div className={`text-sm font-medium ${ok ? "text-emerald-700" : "text-amber-700"}`}>{value}</div>
     </div>
   );

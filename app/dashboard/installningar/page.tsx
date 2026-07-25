@@ -238,9 +238,9 @@ export default function InstallningarPage() {
                   <c.icon className="w-4 h-4 flex-shrink-0" />
                   <div className="flex-1">
                     <div>{c.label}</div>
-                    <div className={`text-[10px] ${activeCat === c.id ? "text-brand-blue/70" : "text-gray-400"}`}>{c.desc}</div>
+                    <div className={`text-xs ${activeCat === c.id ? "text-brand-blue/70" : "text-gray-400"}`}>{c.desc}</div>
                   </div>
-                  <span className={`text-[10px] tabular-nums ${activeCat === c.id ? "text-brand-blue/70" : "text-gray-400"}`}>{counts[c.id]}</span>
+                  <span className={`text-xs tabular-nums ${activeCat === c.id ? "text-brand-blue/70" : "text-gray-400"}`}>{counts[c.id]}</span>
                 </div>
               </button>
             ))}

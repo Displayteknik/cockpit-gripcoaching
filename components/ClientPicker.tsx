@@ -84,7 +84,7 @@ export default function ClientPicker() {
         <span className="w-2.5 h-2.5 rounded-full" style={{ background: active.primary_color || "#94a3b8" }} />
         <div className="text-left">
           <div className="text-sm font-semibold text-gray-900 leading-tight">{active.name}</div>
-          {active.industry && <div className="text-[10px] text-gray-500 leading-tight">{active.industry}</div>}
+          {active.industry && <div className="text-xs text-gray-500 leading-tight">{active.industry}</div>}
         </div>
       </div>
     );
@@ -102,7 +102,7 @@ export default function ClientPicker() {
         />
         <div className="text-left">
           <div className="text-sm font-semibold text-gray-900 leading-tight">{active?.name || "—"}</div>
-          {active?.industry && <div className="text-[10px] text-gray-500 leading-tight">{active.industry}</div>}
+          {active?.industry && <div className="text-xs text-gray-500 leading-tight">{active.industry}</div>}
         </div>
         <ChevronDown className="w-4 h-4 text-gray-400" />
       </button>

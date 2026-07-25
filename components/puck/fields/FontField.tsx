@@ -45,7 +45,7 @@ export function FontField({ value, onChange }: FontFieldProps) {
             key={font.value}
             type="button"
             onClick={() => { onChange(font.value); setShowPicker(false); }}
-            className={`px-2 py-1 rounded text-[11px] transition-all ${
+            className={`px-2 py-1 rounded text-xs transition-all ${
               value === font.value
                 ? "bg-blue-100 text-blue-700 border border-blue-300"
                 : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
@@ -61,7 +61,7 @@ export function FontField({ value, onChange }: FontFieldProps) {
       <button
         type="button"
         onClick={() => setShowPicker(!showPicker)}
-        className={`text-[11px] px-2 py-1 rounded transition-all ${
+        className={`text-xs px-2 py-1 rounded transition-all ${
           showPicker ? "bg-blue-50 text-blue-600 border border-blue-200" : "text-gray-500 hover:text-gray-700 border border-gray-200"
         }`}
       >
@@ -93,7 +93,7 @@ export function FontField({ value, onChange }: FontFieldProps) {
           <button
             type="button"
             onClick={() => onChange("")}
-            className="text-gray-400 hover:text-red-500 text-[11px]"
+            className="text-gray-400 hover:text-red-500 text-xs"
           >
             Återställ
           </button>

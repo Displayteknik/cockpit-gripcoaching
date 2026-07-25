@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
             <h2 className="font-display font-bold text-gray-900">Sajttrafik (pixel)</h2>
           </div>
           {traffic && traffic.visits_30d === 0 && (
-            <span className="text-[11px] text-gray-400">Inga besök än — pixeln väntar på trafik</span>
+            <span className="text-xs text-gray-400">Inga besök än — pixeln väntar på trafik</span>
           )}
         </div>
 

@@ -410,7 +410,7 @@ export default function VerkPage() {
                           <div key={i} className="relative group rounded-xl overflow-hidden bg-gray-100 aspect-square">
                             <img src={url} alt="" className="w-full h-full object-cover" />
                             {i === 0 && (
-                              <span className="absolute top-2 left-2 bg-gray-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">HUVUDBILD</span>
+                              <span className="absolute top-2 left-2 bg-gray-900 text-white text-xs font-bold px-2 py-0.5 rounded-full">HUVUDBILD</span>
                             )}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                               {i !== 0 && (

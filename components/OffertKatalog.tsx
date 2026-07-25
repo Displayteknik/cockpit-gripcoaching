@@ -197,7 +197,7 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-gray-900 text-sm truncate">{p.name}</span>
-                    {p.category && <span className="text-[11px] bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{p.category}</span>}
+                    {p.category && <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{p.category}</span>}
                   </div>
                   <div className="flex items-center gap-x-3 gap-y-0.5 flex-wrap text-xs text-gray-500 mt-1">
                     {p.supplier_name && <span>{p.supplier_name}</span>}
@@ -211,7 +211,7 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="text-right">
                     <div className="font-bold text-gray-900 tabular-nums">{pris != null ? kr(pris) : "—"}</div>
-                    <div className="text-[11px] text-gray-400">prisförslag</div>
+                    <div className="text-xs text-gray-400">prisförslag</div>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => setForm(p)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><Pencil className="w-4 h-4" /></button>

@@ -48,14 +48,14 @@ export function SizeField({ value, onChange }: SizeFieldProps) {
     <div className="space-y-2.5">
       {/* Width */}
       <div>
-        <span className="text-[11px] font-medium text-gray-500 block mb-1">Bredd</span>
+        <span className="text-xs font-medium text-gray-500 block mb-1">Bredd</span>
         <div className="flex flex-wrap gap-1 mb-1">
           {WIDTH_PRESETS.map((p) => (
             <button
               key={p.value}
               type="button"
               onClick={() => update("width", p.value)}
-              className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
+              className={`px-1.5 py-0.5 rounded text-xs border transition-all ${
                 size.width === p.value
                   ? "bg-blue-100 text-blue-700 border-blue-300"
                   : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
@@ -76,14 +76,14 @@ export function SizeField({ value, onChange }: SizeFieldProps) {
 
       {/* Height */}
       <div>
-        <span className="text-[11px] font-medium text-gray-500 block mb-1">Höjd</span>
+        <span className="text-xs font-medium text-gray-500 block mb-1">Höjd</span>
         <div className="flex flex-wrap gap-1 mb-1">
           {HEIGHT_PRESETS.map((p) => (
             <button
               key={p.value}
               type="button"
               onClick={() => update("height", p.value)}
-              className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
+              className={`px-1.5 py-0.5 rounded text-xs border transition-all ${
                 size.height === p.value
                   ? "bg-blue-100 text-blue-700 border-blue-300"
                   : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
@@ -105,23 +105,23 @@ export function SizeField({ value, onChange }: SizeFieldProps) {
       {/* Min/Max width */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <span className="text-[10px] text-gray-400 block mb-0.5">Min bredd</span>
+          <span className="text-xs text-gray-400 block mb-0.5">Min bredd</span>
           <input
             type="text"
             value={size.minWidth}
             onChange={(e) => update("minWidth", e.target.value)}
             placeholder="—"
-            className="w-full px-1.5 py-0.5 rounded border border-gray-200 text-[11px] font-mono focus:border-blue-400 focus:outline-none"
+            className="w-full px-1.5 py-0.5 rounded border border-gray-200 text-xs font-mono focus:border-blue-400 focus:outline-none"
           />
         </div>
         <div>
-          <span className="text-[10px] text-gray-400 block mb-0.5">Max bredd</span>
+          <span className="text-xs text-gray-400 block mb-0.5">Max bredd</span>
           <input
             type="text"
             value={size.maxWidth}
             onChange={(e) => update("maxWidth", e.target.value)}
             placeholder="—"
-            className="w-full px-1.5 py-0.5 rounded border border-gray-200 text-[11px] font-mono focus:border-blue-400 focus:outline-none"
+            className="w-full px-1.5 py-0.5 rounded border border-gray-200 text-xs font-mono focus:border-blue-400 focus:outline-none"
           />
         </div>
       </div>

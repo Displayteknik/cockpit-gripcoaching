@@ -55,12 +55,12 @@ export default function PipelineStegRad({
     <div className="mt-3">
       {/* Förklarande rubrik */}
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400">
           <TrendingUp className="w-3.5 h-3.5" />
           Var i pipelinen{stegInfo.pipelineNamn ? ` · ${stegInfo.pipelineNamn}` : ""}
         </div>
         {aktuellIndex >= 0 && (
-          <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap">
+          <span className="text-xs font-medium text-gray-400 whitespace-nowrap">
             Steg {aktuellIndex + 1} av {antal}
           </span>
         )}
@@ -116,7 +116,7 @@ export default function PipelineStegRad({
           );
         })}
       </div>
-      <p className="text-[11px] text-gray-400 mt-0.5">
+      <p className="text-xs text-gray-400 mt-0.5">
         Dra det markerade steget eller klicka ett steg för att flytta affären i MySales{aktuellNamn ? ` (nu: ${aktuellNamn})` : ""}.
       </p>
     </div>

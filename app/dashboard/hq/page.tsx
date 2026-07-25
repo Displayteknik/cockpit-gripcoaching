@@ -255,7 +255,7 @@ function CopyBtn({ text }: { text: string }) {
           setTimeout(() => setOk(false), 1200);
         } catch {}
       }}
-      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition"
+      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition"
     >
       {ok ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
       {ok ? "Kopierad" : "Copy"}
@@ -271,7 +271,7 @@ function CardGrid({ cards }: { cards: Card[] }) {
           <div className="flex items-center justify-between gap-2 mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">{card.title}</h3>
             {card.tag && (
-              <span className={`text-[10px] px-2 py-0.5 rounded ring-1 font-semibold uppercase tracking-wider ${TAG_STYLES[card.tag.kind]}`}>
+              <span className={`text-xs px-2 py-0.5 rounded ring-1 font-semibold uppercase tracking-wider ${TAG_STYLES[card.tag.kind]}`}>
                 {card.tag.label}
               </span>
             )}
@@ -286,7 +286,7 @@ function CardGrid({ cards }: { cards: Card[] }) {
                 <div className="flex gap-1.5 shrink-0">
                   {row.copy && <CopyBtn text={row.copy} />}
                   {row.href && (
-                    <a href={row.href} target="_blank" rel="noopener" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25">
+                    <a href={row.href} target="_blank" rel="noopener" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25">
                       <ExternalLink className="w-3 h-3" />
                       {row.hrefLabel || "Öppna"}
                     </a>
@@ -388,7 +388,7 @@ export default function HQPage() {
                 <a href={COACH_LINK("/customers")} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs hover:bg-slate-700">Kunder</a>
                 <a href={COACH_LINK("/invoice")} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-lg bg-emerald-500 text-emerald-950 text-xs font-semibold hover:bg-emerald-400">📄 Skapa faktura (DOCX)</a>
               </div>
-              <p className="text-[11px] text-slate-500 mt-2">Faktura skapas som DOCX (Avtalsstil) — ladda upp till Spiris för bokföring.</p>
+              <p className="text-xs text-slate-500 mt-2">Faktura skapas som DOCX (Avtalsstil) — ladda upp till Spiris för bokföring.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -464,7 +464,7 @@ export default function HQPage() {
                   <div key={b.name} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col">
                     <div className="flex items-baseline justify-between mb-2">
                       <h3 className="text-base font-bold">{b.name}</h3>
-                      <a href={`https://${b.url}`} target="_blank" rel="noopener" className="text-[11px] text-teal-400 hover:text-teal-300">{b.url}</a>
+                      <a href={`https://${b.url}`} target="_blank" rel="noopener" className="text-xs text-teal-400 hover:text-teal-300">{b.url}</a>
                     </div>
                     <div className="text-xs text-slate-500 mb-1">{b.fokus}</div>
                     <div className="text-xs text-slate-400 mb-3">Målgrupp: {b.målgrupp}</div>

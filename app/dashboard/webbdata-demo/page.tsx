@@ -449,7 +449,7 @@ function Kpi({ i, icon: Icon, label, value, delta, deltaInvert, color, spark, sp
           <Icon className="h-4.5 w-4.5" style={{ color }} />
         </span>
         {delta !== undefined && delta !== 0 && (
-          <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${good ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
+          <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${good ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
             {delta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {Math.abs(delta)}%
           </span>
@@ -707,7 +707,7 @@ function QueriesTable({ queries }: { queries: QueryRow[] }) {
               <tr key={r.query} className="border-b border-white/5 transition hover:bg-white/[0.04]">
                 <td className="px-3 py-2.5 font-medium">{r.query}</td>
                 <td className="px-3 py-2.5">
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                  <span className="rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide"
                     style={r.brand ? { background: `${C.visningar}26`, color: "#7db6f2" } : { background: `${C.klick}26`, color: "#4ade80" }}>
                     {r.brand ? "Brand" : "Ny kund"}
                   </span>

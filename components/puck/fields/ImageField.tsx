@@ -114,7 +114,7 @@ export function ImageField({ value, onChange, bucket = "page-images" }: ImageFie
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`px-3 py-1.5 text-[11px] font-medium border-b-2 transition-all ${
+            className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-all ${
               tab === t ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -154,7 +154,7 @@ export function ImageField({ value, onChange, bucket = "page-images" }: ImageFie
             <>
               <div className="text-2xl mb-1">📁</div>
               <p className="text-xs text-gray-500">Dra hit en bild eller klicka</p>
-              <p className="text-[10px] text-gray-400 mt-1">JPG, PNG, WebP, SVG</p>
+              <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP, SVG</p>
             </>
           )}
           <input
@@ -205,14 +205,14 @@ export function ImageField({ value, onChange, bucket = "page-images" }: ImageFie
                     className="w-full h-16 object-cover hover:scale-110 transition-transform"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                    <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Välj</span>
+                    <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">Välj</span>
                   </div>
                 </button>
               ))}
             </div>
           )}
 
-          <p className="text-[9px] text-gray-400 text-center">Bilder från Pixabay (gratis att använda)</p>
+          <p className="text-xs text-gray-400 text-center">Bilder från Pixabay (gratis att använda)</p>
         </div>
       )}
     </div>

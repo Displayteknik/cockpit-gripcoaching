@@ -21,7 +21,7 @@ export default function CustomerChrome({
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-display font-bold flex-shrink-0" style={{ background: primaryColor }}>{initial}</div>
             <div className="min-w-0">
-              <div className="text-[11px] uppercase tracking-wider font-bold" style={{ color: primaryColor }}>MySales Pro</div>
+              <div className="text-xs uppercase tracking-wider font-bold" style={{ color: primaryColor }}>MySales Pro</div>
               <div className="font-display font-bold text-gray-900 text-sm leading-tight truncate">{clientName}</div>
             </div>
           </div>

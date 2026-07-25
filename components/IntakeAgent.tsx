@@ -391,7 +391,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                     <div key={s.id} className="border border-gray-200 rounded-lg p-3 hover:border-purple-300 hover:bg-purple-50/50 transition cursor-pointer" onClick={() => loadSession(s.id)}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase ${
                             s.status === "committed" ? "bg-emerald-100 text-emerald-800" :
                             s.status === "reviewing" || s.status === "clarifying" ? "bg-blue-100 text-blue-800" :
                             s.status === "analyzing" ? "bg-amber-100 text-amber-800" :
@@ -479,7 +479,7 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                     <span className="opacity-70">{(uploadFile.size / 1024 / 1024).toFixed(1)} MB · {uploadFile.type || "okänd typ"}</span>
                   </div>
                   {uploadFile.size > 18 * 1024 * 1024 && (
-                    <div className="mt-1 text-purple-700 text-[11px]">Stor fil — kan ta 30–90 sek att läsa in.</div>
+                    <div className="mt-1 text-purple-700 text-xs">Stor fil — kan ta 30–90 sek att läsa in.</div>
                   )}
                 </div>
               )}
@@ -655,10 +655,10 @@ function ProposalRow({ p, editing, editValue, onEdit, onEditChange, onSaveEdit, 
       "border-gray-200 hover:border-purple-300"
     }`}>
       <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${ACTION_BADGE[p.action].cls}`}>{ACTION_BADGE[p.action].label}</span>
-        <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">{TARGET_LABEL[p.target] ?? p.target}{p.field ? `: ${p.field}` : ""}</span>
-        <span className={`text-[10px] px-2 py-0.5 rounded ${CONF_BADGE[p.confidence]}`}>{p.confidence}</span>
-        {p.decision === "edited" && <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-800">justerad</span>}
+        <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase border ${ACTION_BADGE[p.action].cls}`}>{ACTION_BADGE[p.action].label}</span>
+        <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">{TARGET_LABEL[p.target] ?? p.target}{p.field ? `: ${p.field}` : ""}</span>
+        <span className={`text-xs px-2 py-0.5 rounded ${CONF_BADGE[p.confidence]}`}>{p.confidence}</span>
+        {p.decision === "edited" && <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800">justerad</span>}
       </div>
 
       {editing ? (
@@ -677,7 +677,7 @@ function ProposalRow({ p, editing, editValue, onEdit, onEditChange, onSaveEdit, 
           <span>{p.evidence.slice(0, 250)}{p.evidence.length > 250 ? "..." : ""}</span>
         </div>
       )}
-      {p.reasoning && <p className="text-[11px] text-purple-700 mt-1">→ {p.reasoning}</p>}
+      {p.reasoning && <p className="text-xs text-purple-700 mt-1">→ {p.reasoning}</p>}
 
       <div className="flex gap-1 mt-2">
         {editing ? (
