@@ -57,6 +57,7 @@ export default function VeckoplanPage() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set([0, 1, 2, 3, 4, 5, 6]));
   const [savingAll, setSavingAll] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
+  const [saveResult, setSaveResult] = useState<{ scheduled: boolean; count: number; from: string; to: string } | null>(null);
   const [scheduleAll, setScheduleAll] = useState(false);
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
@@ -74,7 +75,9 @@ export default function VeckoplanPage() {
     if (!response) return;
     setSavingAll(true);
     setSavedCount(0);
+    setSaveResult(null);
     const startMs = scheduleAll ? new Date(startDate).getTime() : 0;
+    let ok = 0;
     for (let i = 0; i < response.days.length; i++) {
       const day = response.days[i];
       const payload: Record<string, unknown> = {
@@ -95,12 +98,22 @@ export default function VeckoplanPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        setSavedCount(i + 1);
+        ok = i + 1;
+        setSavedCount(ok);
       } catch {
         // fortsätt även om en dag fallerar
       }
     }
     setSavingAll(false);
+    if (ok > 0) {
+      const fmt = (ms: number) => new Date(ms).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
+      setSaveResult({
+        scheduled: scheduleAll,
+        count: ok,
+        from: scheduleAll ? fmt(startMs) : "",
+        to: scheduleAll ? fmt(startMs + (ok - 1) * 24 * 3600 * 1000) : "",
+      });
+    }
   }
 
   async function generate() {
@@ -147,6 +160,10 @@ export default function VeckoplanPage() {
       return { ...prev, days };
     });
   }
+
+  // Kalenderlänk beror på var sidan visas (kundportal vs admin). Beräknas på klienten;
+  // återkopplingsrutan renderas bara efter en sparning (client-only) så ingen SSR-mismatch.
+  const calHref = typeof window !== "undefined" && window.location.pathname.startsWith("/k") ? "/k/kalender" : "/dashboard/studio/kalender";
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -257,6 +274,20 @@ export default function VeckoplanPage() {
               </button>
             </div>
           </div>
+
+          {saveResult && (
+            <div className={`rounded-lg border p-3 text-sm flex items-center gap-2 flex-wrap ${saveResult.scheduled ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+              <Check className="w-4 h-4 shrink-0" />
+              {saveResult.scheduled ? (
+                <span>{saveResult.count} inlägg schemalagda {saveResult.from} till {saveResult.to}.</span>
+              ) : (
+                <span>{saveResult.count} inlägg sparade som utkast (dagens datum). Vill du lägga dem på framtida datum: bocka i <strong>Schemalägg från</strong> ovan och spara igen.</span>
+              )}
+              <a href={calHref} className="ml-auto inline-flex items-center gap-1 font-semibold underline hover:no-underline">
+                Öppna kalendern
+              </a>
+            </div>
+          )}
 
           {response.days.map((day, i) => (
             <DayCard

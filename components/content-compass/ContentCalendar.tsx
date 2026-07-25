@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ContentItem } from "@/lib/content/overview";
 import { funnelTintClass, FourALabel, FunnelLabel, DiscDots } from "@/components/content-compass/badges";
@@ -33,6 +33,23 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor }:
   }, [cursor]);
   const monthLabel = cursor.toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
   const todayKey = dayKey(new Date());
+
+  // När innehållet laddats: om innevarande månad är tom men det finns innehåll i en annan
+  // månad (t.ex. schemalagt framåt i tiden), hoppa en gång till närmaste månad med innehåll.
+  // Så användaren ser sina schemalagda inlägg utan att bläddra manuellt.
+  const didAutoJump = useRef(false);
+  useEffect(() => {
+    if (didAutoJump.current || items.length === 0) return;
+    didAutoJump.current = true;
+    const dated = items.map((it) => (it.when ? new Date(it.when).getTime() : NaN)).filter((t) => !Number.isNaN(t));
+    if (!dated.length) return;
+    const now = new Date();
+    const hasThisMonth = dated.some((t) => { const d = new Date(t); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); });
+    if (hasThisMonth) return;
+    const upcoming = dated.filter((t) => t >= now.getTime()).sort((a, b) => a - b);
+    const target = new Date(upcoming.length ? upcoming[0] : Math.max(...dated));
+    setCursor(new Date(target.getFullYear(), target.getMonth(), 1));
+  }, [items]);
 
   return (
     <div>
