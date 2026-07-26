@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { LogOut, ArrowLeft, Menu, X } from "lucide-react";
+import { LogOut, ExternalLink, Menu, X } from "lucide-react";
 import CustomerNav from "./CustomerNav";
 
 // Responsiv kundportal-chrome: sidomeny som kollapsar till hamburger på mobil
@@ -36,8 +36,8 @@ export default function CustomerChrome({
         <CustomerNav features={features} primaryColor={primaryColor} onNavigate={() => setOpen(false)} />
 
         <div className="p-4 border-t border-gray-100">
-          <a href="https://app.mysales.se" className="w-full flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors mb-1">
-            <ArrowLeft className="w-4 h-4" /> Tillbaka till MySales
+          <a href="https://app.mysales.se" target="_blank" rel="noopener noreferrer" title="Öppnas i en ny flik" className="w-full flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors mb-1">
+            <ExternalLink className="w-4 h-4" /> Öppna MySales
           </a>
           <form action="/k-logout" method="post">
             <button type="submit" className="w-full flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
