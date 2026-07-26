@@ -269,6 +269,33 @@ export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16"
   return { error: lastError };
 }
 
+// Gör om ett ämne/en bildtext (ofta prosa) till EN kort, konkret VISUELL scen som
+// bildmodellen kan rita. Bildmodellen svarar "NO_IMAGE" på prosa/meddelanden — den
+// behöver ett motiv. thinkingBudget:0 (annars bränns token-budgeten på tänk → avhugget).
+// Faller tillbaka på ämnet självt om det inte går.
+export async function visualScene(topic: string, niche: string): Promise<string> {
+  if (!GEMINI_KEY || !topic.trim()) return topic;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text:
+          `Föreslå ETT konkret visuellt bildmotiv (ett riktigt foto) som passar detta inlägg för en ${niche}. ` +
+          `Svara med EN kort mening: vad som syns, stämning, ljus. Inga texter/bokstäver i bilden. ` +
+          `Undvik vapen, knivar, blod eller något känsligt. Inlägg: "${topic.slice(0, 300)}"` }] }],
+        generationConfig: { temperature: 0.6, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    });
+    if (!r.ok) return topic;
+    const data = await r.json();
+    const t = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text?.trim();
+    return t && t.length > 8 ? t : topic;
+  } catch {
+    return topic;
+  }
+}
+
 // Redigera en befintlig bild via textinstruktion (bild-till-bild, "Nano Banana").
 // Ex: "visa bara barnet, inte optikern, annars lika". Behåller komposition/stil/ljus
 // och ändrar bara det instruktionen ber om. Returnerar data-URL (PNG/JPEG base64).

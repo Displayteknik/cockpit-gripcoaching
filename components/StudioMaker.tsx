@@ -636,10 +636,6 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   // ── Utkast (localStorage) ──
   const draftKey = `studio-draft:${slug}`;
-  const saveDraft = useCallback(() => {
-    localStorage.setItem(draftKey, JSON.stringify(payload));
-    setSaved(true); setTimeout(() => setSaved(false), 1500);
-  }, [draftKey, payload]);
   // Fyller hela editorn från en payload (delas av utkast + bibliotek).
   const applyPayload = useCallback((d: Record<string, unknown>) => {
     const badge = (d.badge ?? {}) as { enabled?: boolean; line1?: string; line2?: string };
@@ -678,7 +674,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const savePost = useCallback(async (asNew = false): Promise<string | null> => {
     setError(""); setSavingPost(true);
     try {
-      const title = headline1 || body.slice(0, 40) || "Namnlöst inlägg";
+      const title = headline1 || caption.slice(0, 40) || body.slice(0, 40) || "Namnlöst inlägg";
       const r = await fetch("/api/studio/posts", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption }, compass }),
@@ -696,6 +692,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       setSavingPost(false);
     }
   }, [headline1, body, caption, loadedPostId, payload, refreshPosts, compass]);
+
+  // "Spara utkast" = spara lokalt (snabb återuppta) OCH i biblioteket så det syns i
+  // "Tidigare skapelser" längst ner. Tidigare sparade "Spara utkast" bara localStorage →
+  // utkastet dök aldrig upp i listan, vilket förvirrade.
+  const saveDraftPersistent = useCallback(async () => {
+    try { localStorage.setItem(draftKey, JSON.stringify(payload)); } catch { /* ignore */ }
+    const id = await savePost(false);
+    if (id) { setSaved(true); setTimeout(() => setSaved(false), 1500); }
+  }, [draftKey, payload, savePost]);
 
   // Öppna en sparad skapelse i editorn för återanvändning/redigering.
   const openPost = useCallback((p: StudioPost) => {
@@ -1022,7 +1027,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <button onClick={loadDraft} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                 <FolderOpen className="w-4 h-4" /> Återuppta utkast
               </button>
-              <button onClick={saveDraft} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+              <button onClick={saveDraftPersistent} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                 {saved ? <Check className="w-4 h-4 text-emerald-600" /> : <Save className="w-4 h-4" />} Spara utkast
               </button>
             </div>
@@ -1828,6 +1833,24 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <span className="ml-auto text-xs text-gray-500">Skriv en gång — se och anpassa för varje plattform.</span>
           </div>
 
+          {/* Greta-tydlig avslutning: EN självklar primär-åtgärd + guide anpassad efter läget */}
+          <div className="rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3" style={{ borderColor: `${primary}33`, background: `${primary}08` }}>
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900">Klar med inlägget?</div>
+              <div className="text-sm text-gray-600 mt-0.5">
+                {CHANNELS.some((c) => channelConnected[c.key])
+                  ? "Spara det så du hittar det senare — eller publicera/schemalägg direkt nedan."
+                  : "Spara det i Mina inlägg. Sen postar du enkelt: kopiera texten och ladda ner bilden nedan (eller koppla Instagram för att posta direkt härifrån)."}
+              </div>
+            </div>
+            <button onClick={saveDraftPersistent} disabled={savingPost}
+              className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40 flex-shrink-0"
+              style={{ background: primary }}>
+              {savingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {saved ? "Sparat i Mina inlägg ✓" : "Spara i Mina inlägg"}
+            </button>
+          </div>
+
           {/* Kanalväljare — förikryssad efter vad klienten kopplat */}
           <div className="flex flex-wrap items-center gap-2">
             {CHANNELS.map(({ key }) => {
@@ -2011,7 +2034,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
                   <FolderOpen className="w-[18px] h-[18px]" style={{ color: primary }} />
                 </span>
-                <h2 className="font-display font-bold text-gray-900 text-lg">Tidigare skapelser</h2>
+                <h2 className="font-display font-bold text-gray-900 text-lg">Mina inlägg</h2>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 tabular-nums">{visiblePosts.length}</span>
               </div>
               <div className="flex items-center gap-2">

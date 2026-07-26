@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
-import { searchStockPhotos, generateImagen } from "@/lib/images";
+import { searchStockPhotos, generateImagen, visualScene } from "@/lib/images";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
@@ -26,9 +26,16 @@ export async function POST(req: NextRequest) {
     if (body.mode === "ai") {
       const ar = body.aspect === "story" ? "9:16" : body.aspect === "portrait" ? "3:4" : body.aspect === "square" ? "1:1" : "4:3";
       const directives = await getKitDirectives(await resolveClientId());
-      const gen = await generateImagen(`${topic}. Branch: ${niche}. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
+      // Två steg: gör om ämnet/bildtexten (ofta prosa) till en visuell scen först — annars
+      // svarar bildmodellen NO_IMAGE på ett meddelande/råd.
+      const scene = await visualScene(topic, niche);
+      const gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
-      if (gen.error || !m) return NextResponse.json({ error: gen.error || "Bildgenerering misslyckades" }, { status: 500 });
+      if (gen.error || !m) {
+        // Snäll, handlingsbar text (t.ex. vid känsligt motiv som nekas) — peka mot Sök foto.
+        // 500 → klientens felruta visar meddelandet.
+        return NextResponse.json({ error: "Kunde inte skapa en bild för det här ämnet. Prova “Sök foto”, eller skriv kort i “vad det handlar om” vad bilden ska föreställa." }, { status: 500 });
+      }
 
       const clientId = await resolveClientId();
       const sb = supabaseService();

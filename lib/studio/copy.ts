@@ -75,8 +75,8 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     userPrompt,
     clientId: opts.clientId,
     category: "studio_copy",
-    variants: 5,
-    temperature: 0.85,
+    variants: 7, // fler råförslag → större chans att ≥3 distinkta överlever filter + dedup
+    temperature: 0.9,
     maxTokens: 400,
   });
 
@@ -97,13 +97,36 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     if ([s.headline1, s.headline2, s.body].some(hasEmojiOrList)) continue; // affisch-format: rent
     if (hasContactInfo(s.body)) continue; // telefon/URL finns redan i mallens fot
     if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 150) continue;
-    const key = s.headline1.toLowerCase();
-    if (seen.has(key)) continue;
+    // Likhets-dedup: normalisera bort småord/skiljetecken så nästan-dubbletter
+    // ("Vad säger blommorna?" vs "Vad säger dina blommor?") räknas som samma.
+    const key = normalizeHeadline(s.headline1);
+    if (!key || seen.has(key)) continue;
     seen.add(key);
     out.push({ s, score: v.score?.total ?? 0 });
   }
   out.sort((a, b) => b.score - a.score);
-  return out.slice(0, 3).map((p) => p.s);
+  // Topp 3 men prioritera OLIKA hook-typer så de tre känns distinkta, inte tre likadana frågor.
+  const picked: StudioCopySuggestion[] = [];
+  const usedHooks = new Set<string>();
+  for (const p of out) {
+    if (picked.length >= 3) break;
+    if (!usedHooks.has(p.s.hookType)) { picked.push(p.s); usedHooks.add(p.s.hookType); }
+  }
+  for (const p of out) {
+    if (picked.length >= 3) break;
+    if (!picked.includes(p.s)) picked.push(p.s);
+  }
+  return picked;
+}
+
+// Normalisera en rubrik för likhets-jämförelse: gemener, bort skiljetecken + vanliga småord.
+function normalizeHeadline(h: string): string {
+  return h
+    .toLowerCase()
+    .replace(/[^a-zåäö0-9\s]/gi, " ")
+    .replace(/\b(din|ditt|dina|en|ett|den|det|de|vi|er|ert|era|min|mitt|mina|och|som|är|för|på|att)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function str(v: unknown): string {
