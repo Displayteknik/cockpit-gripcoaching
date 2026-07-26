@@ -87,6 +87,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/setup/onboard", label: "Onboarding", icon: Rocket },
         { href: "/dashboard/setup", label: "Setup-agent", icon: Wrench },
         { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
+        { href: "/dashboard/sms-paminnelse", label: "SMS-påminnelse", icon: MessageSquare },
         { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
         { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
       ],
