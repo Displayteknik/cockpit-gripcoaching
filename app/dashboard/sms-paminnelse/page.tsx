@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { MessageSquare, Upload, Send, ShieldCheck, AlertTriangle, Users, Layers, Coins, TestTube2, X, CheckCircle2, XCircle } from "lucide-react";
 import { DashHero, LivePill, HeroChip, StatTile } from "@/components/ui/dash";
 import { parseContacts } from "@/lib/sms/parse";
-import { buildRecipients, type Recipient } from "@/lib/sms/phone";
+import { buildRecipients, firstNameOf, type Recipient } from "@/lib/sms/phone";
 import { countSms } from "@/lib/sms/gsm";
 import { renderMessage } from "@/lib/sms/message";
 
@@ -106,6 +106,11 @@ export default function SmsReminderPage() {
       if (next.has(i)) next.delete(i); else next.add(i);
       return next;
     });
+  }
+
+  // Manuell namnredigering i tabellen — uppdaterar även förnamn för [förnamn].
+  function updateName(i: number, value: string) {
+    setRecipients((prev) => prev.map((r, idx) => (idx === i ? { ...r, name: value, firstName: firstNameOf(value) } : r)));
   }
 
   async function sendTest() {
@@ -261,7 +266,14 @@ export default function SmsReminderPage() {
                       <td className="px-3 py-2">
                         <input type="checkbox" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} className="h-4 w-4 accent-indigo-600" />
                       </td>
-                      <td className="px-3 py-2 font-medium text-gray-900">{r.name}</td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          value={r.name}
+                          onChange={(e) => updateName(i, e.target.value)}
+                          placeholder="Skriv namn"
+                          className="w-full rounded-md border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-gray-900 hover:border-gray-200 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                        />
+                      </td>
                       <td className="px-3 py-2 text-gray-400">{r.rawPhone}</td>
                       <td className="px-3 py-2 font-mono text-gray-700">{r.e164}</td>
                     </tr>
@@ -279,7 +291,7 @@ export default function SmsReminderPage() {
                     <tbody>
                       {flagged.map(({ r, i }) => (
                         <tr key={i} className="border-b border-gray-50">
-                          <td className="px-3 py-1.5 text-gray-700">{r.name}</td>
+                          <td className="px-3 py-1.5 text-gray-700">{r.name || "(namn saknas)"}</td>
                           <td className="px-3 py-1.5 font-mono text-gray-400">{r.rawPhone || "(tomt)"}</td>
                           <td className="px-3 py-1.5">
                             <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">{r.reason}</span>
@@ -345,7 +357,7 @@ export default function SmsReminderPage() {
           <div className="mt-4 space-y-3">
             {preview.map(({ r, i }) => (
               <div key={i} className="rounded-xl bg-gray-50 p-4">
-                <div className="mb-1 text-xs font-medium text-gray-500">{r.name} · {r.e164}</div>
+                <div className="mb-1 text-xs font-medium text-gray-500">{r.name || "(namn saknas)"} · {r.e164}</div>
                 <div className="text-sm text-gray-900">{renderMessage(message, r.firstName)}</div>
               </div>
             ))}

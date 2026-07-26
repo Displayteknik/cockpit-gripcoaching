@@ -71,7 +71,7 @@ export function buildRecipients(contacts: RawContact[]): Recipient[] {
     const { e164, valid, reason } = normalizePhone(c.phone);
     const base: Recipient = {
       id: c.id,
-      name: name || "(namn saknas)",
+      name, // tomt tillåtet — kan fyllas i manuellt i UI:t
       firstName: firstNameOf(name),
       rawPhone: (c.phone || "").trim(),
       e164,
