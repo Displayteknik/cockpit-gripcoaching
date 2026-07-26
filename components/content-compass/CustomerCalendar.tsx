@@ -21,7 +21,7 @@ function fmt(d: string | null): string {
   catch { return d; }
 }
 
-export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: string }) {
+export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true, canLinkedin = true }: { primary?: string; canStudio?: boolean; canLinkedin?: boolean }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"calendar" | "list">("calendar");
@@ -43,9 +43,13 @@ export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: st
     published: items.filter((i) => i.status === "published"),
   }), [items]);
 
+  // Länka bara till en modul kunden faktiskt har — annars blir det en spärrad sida.
+  // Saknas modulen faller vi tillbaka till översikten (/k) som alla har.
+  const linkFor = (it: ContentItem): string =>
+    it.source === "linkedin" ? (canLinkedin ? "/k/linkedin" : "/k") : (canStudio ? `/k/studio?post=${it.id}` : "/k");
+
   const Row = ({ it }: { it: ContentItem }) => {
-    // Studio-utkast öppnas i kundens Studio; övriga länkar till respektive verkstad.
-    const href = it.source === "studio" ? `/k/studio?post=${it.id}` : it.source === "linkedin" ? "/k/linkedin" : "/k/studio";
+    const href = linkFor(it);
     return (
       <a href={href} className={`group flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-3 px-3 rounded-xl transition-colors ${funnelTintClass(it.funnel_level)}`}>
         <div className="w-11 h-11 rounded-xl bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center ring-1 ring-black/5">
@@ -112,7 +116,7 @@ export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: st
 
       {view === "calendar" ? (
         <section className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-          <ContentCalendar items={items} primary={primary} hrefFor={(it) => (it.source === "studio" ? `/k/studio?post=${it.id}` : it.source === "linkedin" ? "/k/linkedin" : "/k/studio")} />
+          <ContentCalendar items={items} primary={primary} hrefFor={linkFor} />
         </section>
       ) : (
         <>

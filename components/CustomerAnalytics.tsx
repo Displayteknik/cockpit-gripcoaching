@@ -373,8 +373,8 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
                     </div>
                     <div className="flex items-end justify-between">
                       <div>
-                        <div className="text-2xl font-bold font-display text-emerald-600 tabular-nums leading-none">+{Math.round(q.impressions * 0.25)}</div>
-                        <div className="text-xs text-gray-400 mt-1">möjliga besök/mån</div>
+                        <div className="text-2xl font-bold font-display text-emerald-600 tabular-nums leading-none">~{Math.round(q.impressions * 0.25)}</div>
+                        <div className="text-xs text-gray-400 mt-1">möjliga besök/mån (grov uppskattning)</div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-semibold text-gray-700 tabular-nums">{q.impressions.toLocaleString("sv-SE")}</div>

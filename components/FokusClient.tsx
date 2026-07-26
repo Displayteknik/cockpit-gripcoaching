@@ -402,10 +402,14 @@ function InflodeSektion({ primaryColor }: { primaryColor: string }) {
   const totMal = kanaler.reduce((s, k) => s + k.mal, 0);
   const totUtfall = kanaler.reduce((s, k) => s + k.utfall, 0);
 
-  const sattMal = async (kanal: string, nuvarande: number) => {
-    const v = window.prompt(`Veckomål för ${kanal} (aktiviteter/vecka)?`, String(nuvarande));
-    if (v === null) return;
-    await ladda("setMal", kanal, parseInt(v, 10) || 0);
+  // Inline-redigering av veckomål (istället för window.prompt som känns trasig för kunden).
+  const [editKanal, setEditKanal] = useState<string | null>(null);
+  const [editVal, setEditVal] = useState("");
+  const oppnaMal = (kanal: string, nuvarande: number) => { setEditKanal(kanal); setEditVal(String(nuvarande)); };
+  const sparaMal = async (kanal: string) => {
+    const n = parseInt(editVal, 10);
+    setEditKanal(null);
+    await ladda("setMal", kanal, isNaN(n) ? 0 : Math.max(0, n));
   };
 
   if (!visa && !laddar) return null;
@@ -449,7 +453,7 @@ function InflodeSektion({ primaryColor }: { primaryColor: string }) {
               return (
                 <div key={k.kanal} className="flex items-center gap-3">
                   <button
-                    onClick={() => sattMal(k.kanal, k.mal)}
+                    onClick={() => oppnaMal(k.kanal, k.mal)}
                     className="w-20 sm:w-24 text-left text-[13px] text-gray-600 hover:text-gray-900 truncate"
                     title="Klicka för att ändra veckomål"
                   >
@@ -461,9 +465,30 @@ function InflodeSektion({ primaryColor }: { primaryColor: string }) {
                       style={{ width: `${pct}%`, background: k.underNiva ? "#f59e0b" : "#10b981" }}
                     />
                   </div>
-                  <span className={`text-xs tabular-nums w-14 text-right ${k.underNiva ? "text-amber-600" : "text-emerald-600"}`}>
-                    {k.utfall} / {k.mal}
-                  </span>
+                  {editKanal === k.kanal ? (
+                    <span className="text-xs tabular-nums w-20 text-right flex items-center justify-end gap-0.5">
+                      {k.utfall}/
+                      <input
+                        autoFocus
+                        type="number"
+                        min={0}
+                        value={editVal}
+                        onChange={(e) => setEditVal(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") sparaMal(k.kanal); if (e.key === "Escape") setEditKanal(null); }}
+                        onBlur={() => sparaMal(k.kanal)}
+                        className="w-11 rounded border border-gray-300 px-1 py-0.5 text-right outline-none focus:border-gray-500"
+                        aria-label={`Veckomål för ${k.kanal}`}
+                      />
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => oppnaMal(k.kanal, k.mal)}
+                      title="Klicka för att ändra veckomål"
+                      className={`text-xs tabular-nums w-14 text-right hover:underline ${k.underNiva ? "text-amber-600" : "text-emerald-600"}`}
+                    >
+                      {k.utfall} / {k.mal}
+                    </button>
+                  )}
                   <button
                     onClick={() => ladda("log", k.kanal)}
                     className="text-xs px-2 py-1 rounded-md font-semibold flex items-center gap-1 shrink-0 hover:opacity-80"
@@ -715,10 +740,12 @@ function DragKort({
             href={`https://mysales-coach.netlify.app/offertmotorn?webblead=${encodeURIComponent(c.namn || c.foretag || "")}`}
             target="_blank"
             rel="noopener noreferrer"
+            title="Öppnar offertverktyget i en ny flik"
             className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-white border shadow-sm hover:bg-gray-50"
             style={{ borderColor: `${primaryColor}55`, color: primaryColor }}
           >
             <FileText className="w-4 h-4" /> Skapa offert
+            <ExternalLink className="w-3.5 h-3.5 opacity-60" />
           </a>
         )}
         {deeplink && (

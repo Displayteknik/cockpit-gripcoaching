@@ -547,6 +547,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setHeadline1(s.headline1 || "");
     setHeadline2(s.headline2 || "");
     setBody(s.body || "");
+    setSuggestions([]); // dölj listan efter val — annars ligger samma förslag kvar i både steg 1 och steg 4
   }, []);
 
   // Generera hela karusellen (hook → punkter → cta) ur ämne + varumärkesröst.

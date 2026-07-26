@@ -20,6 +20,7 @@ import {
   Trophy,
   XCircle,
   Pencil,
+  RotateCcw,
 } from "lucide-react";
 
 type Stage = "new" | "acknowledge" | "connect" | "offer" | "won" | "lost";
@@ -250,6 +251,32 @@ function PipelineView() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Bokade & förlorade — annars försvinner kontakten spårlöst när man markerar den. */}
+      {!loading && (won > 0 || lost > 0) && (
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+          <div className="flex flex-wrap items-center gap-2.5 mb-3">
+            <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <Trophy className="w-[18px] h-[18px] text-gray-500" />
+            </div>
+            <h3 className="font-display font-bold text-sm text-gray-900">Bokade &amp; förlorade</h3>
+            <span className="text-xs text-gray-400">avslutade kontakter — klicka för att ta tillbaka till pipeline</span>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {contacts.filter((c) => c.stage === "won" || c.stage === "lost").map((c) => (
+              <div key={c.id} className="flex items-center gap-3 py-2">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${c.stage === "won" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>
+                  {c.stage === "won" ? "Bokad" : "Förlorad"}
+                </span>
+                <span className="text-sm text-gray-800 font-medium truncate flex-1">{c.display_name || c.ig_username}</span>
+                <button onClick={() => moveStage(c.id, "offer")} className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-800 flex-shrink-0">
+                  <RotateCcw className="w-3.5 h-3.5" /> Tillbaka till pipeline
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

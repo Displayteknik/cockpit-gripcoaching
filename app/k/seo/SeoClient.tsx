@@ -108,6 +108,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
   const [addedKw, setAddedKw] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [gscReady, setGscReady] = useState<boolean | null>(null); // null=okänt, false=Google ej kopplat, true=redo
   const [deepReports, setDeepReports] = useState<DeepReport[]>([]);
   const [openReport, setOpenReport] = useState<DeepReport | null>(null);
   const [deepGenerating, setDeepGenerating] = useState<string[]>([]);
@@ -155,6 +156,13 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       setStartingAudit(false);
     }
   }
+
+  // Är Google (Search Console) kopplat? Styr om "Hämta sökord"-knappen är aktiv.
+  useEffect(() => {
+    fetch("/api/google/status").then((r) => (r.ok ? r.json() : null))
+      .then((d) => setGscReady(!!(d?.connected && d?.connection?.gsc_site)))
+      .catch(() => setGscReady(false));
+  }, []);
 
   // "Hämta mina sökord från Google" — importerar orden du faktiskt syns på (GSC) till trackern.
   async function importFromGsc() {
@@ -317,6 +325,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
               som bromsar dig, och färdiga texter du kan klistra in direkt. Tar ~5–10 minuter; du kan
               lämna sidan under tiden.
             </p>
+            <p className="text-xs text-gray-400 mt-1.5 max-w-2xl">Ny här? Börja gärna med en snabb <strong>Sid-analys</strong> längre ner — den tar bara en sida. Djupgranskningen går igenom hela sajten.</p>
           </div>
           <button
             onClick={generateDeepAudit}
@@ -566,16 +575,24 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-2 mb-4 -mt-1">
-          <button
-            onClick={importFromGsc}
-            disabled={importing}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border disabled:opacity-50 transition-colors"
-            style={{ borderColor: `${primaryColor}40`, color: primaryColor, background: `${primaryColor}0a` }}
-          >
-            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            Hämta mina sökord från Google
-          </button>
-          {importMsg && <span className="text-xs text-gray-500">{importMsg}</span>}
+          {gscReady === false ? (
+            <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed" title="Google Search Console är inte kopplat än">
+              <Sparkles className="w-4 h-4" /> Hämta sökord från Google — inte kopplat än
+            </span>
+          ) : (
+            <button
+              onClick={importFromGsc}
+              disabled={importing || gscReady === null}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border disabled:opacity-50 transition-colors"
+              style={{ borderColor: `${primaryColor}40`, color: primaryColor, background: `${primaryColor}0a` }}
+            >
+              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Hämta mina sökord från Google
+            </button>
+          )}
+          {gscReady === false
+            ? <span className="text-xs text-gray-500">Google är inte kopplat än — hör av dig så kopplar vi på det, sen hämtas orden du syns på automatiskt.</span>
+            : importMsg && <span className="text-xs text-gray-500">{importMsg}</span>}
         </div>
         {keywords.length === 0 ? <Empty text="Lägg till ditt första sökord ovan." /> : (
           <div className="overflow-x-auto rounded-xl border border-gray-100">
