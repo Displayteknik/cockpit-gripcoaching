@@ -28,7 +28,9 @@ function plainToHtml(t: string): string {
     .join("\n");
 }
 
-export default function StudioBloggPage() {
+export default function StudioBloggPage({ customer = false }: { customer?: boolean }) {
+  // I kundvyn (/k/blogg) leder "öppna i Studio" till /k/studio (admin-Studion är spärrad).
+  const studioHref = customer ? "/k/studio" : "/dashboard/studio";
   const [client, setClient] = useState<ClientInfo | null>(null);
   const primary = client?.primary_color || DEFAULT_COLOR;
 
@@ -381,7 +383,7 @@ export default function StudioBloggPage() {
                 </button>
                 {repurposed > 0 && (
                   <span className="inline-flex items-center gap-1.5 text-sm text-emerald-700">
-                    <Check className="w-4 h-4" /> {repurposed} inlägg sparade — <a href="/dashboard/studio" className="underline">öppna i Studio</a>
+                    <Check className="w-4 h-4" /> {repurposed} inlägg sparade — <a href={studioHref} className="underline">öppna i Studio</a>
                   </span>
                 )}
               </div>
@@ -407,7 +409,7 @@ export default function StudioBloggPage() {
                 {repurposing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />} Skapa sociala inlägg
               </button>
             </div>
-            {repurposed > 0 && <div className="text-sm text-emerald-600 flex items-center gap-1.5"><Check className="w-4 h-4" /> {repurposed} inlägg sparade. <a href="/dashboard/studio" className="underline">Öppna i Studio</a></div>}
+            {repurposed > 0 && <div className="text-sm text-emerald-600 flex items-center gap-1.5"><Check className="w-4 h-4" /> {repurposed} inlägg sparade. <a href={studioHref} className="underline">Öppna i Studio</a></div>}
           </section>
         )}
       </div>

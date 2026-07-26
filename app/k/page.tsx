@@ -111,6 +111,7 @@ export default async function CustomerHome() {
     const starters: TodoCard[] = [];
     if (has("profil") && profileFilled < 4) starters.push({ icon: Target, accent: "emerald", title: "Fyll i din Brand-profil", detail: "Din röst, ditt erbjudande och dina kunder — grunden allt annat bygger på.", href: "/k/profil" });
     if (has("skapa")) starters.push({ icon: Sparkles, accent: "amber", title: totalPosts === 0 ? "Skapa ditt första inlägg" : "Skapa ett nytt inlägg", detail: totalPosts === 0 ? "Låt Skrivhjälpen föreslå text i din röst — och en bild på köpet." : "Håll flödet igång. Skrivhjälpen ger dig text och bild på minuter.", href: "/k/studio" });
+    if (has("blog")) starters.push({ icon: BookOpen, accent: "violet", title: "Skriv ett blogginlägg", detail: "Längre texter som rankar i Google — Skrivhjälpen skriver i din röst.", href: "/k/blogg" });
     if (has("newsletter")) starters.push({ icon: Mail, accent: "blue", title: "Gör ett nyhetsbrev", detail: "Förvandla din text eller ett blogginlägg till ett nyhetsbrev i din röst.", href: "/k/nyhetsbrev" });
     if (has("compass")) starters.push({ icon: Calendar, accent: "purple", title: "Planera din vecka", detail: "Få en hel veckas innehåll färdigt att granska och lägga i kalendern.", href: "/k/kalender" });
     else if (has("veckoplan")) starters.push({ icon: Calendar, accent: "purple", title: "Planera din vecka", detail: "Sju färdiga inlägg enligt veckorytmen, redo att granska.", href: "/k/veckoplan" });

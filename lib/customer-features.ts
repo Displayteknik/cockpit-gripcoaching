@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail, BookOpen } from "lucide-react";
 import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
@@ -43,6 +43,13 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     href: "/k/studio", // premium-Studion (utrullad); gamla /k/skapa kvar som fallback
     icon: Sparkles,
     description: "Skapa on-brand inlägg, bilder, karuseller och reels i din röst.",
+  },
+  {
+    key: "blog",
+    label: "Blogg",
+    href: "/k/blogg",
+    icon: BookOpen,
+    description: "Skriv och publicera blogginlägg i din röst — längre texter som rankar i Google. Skrivhjälpen hjälper dig.",
   },
   {
     key: "linkedin",
