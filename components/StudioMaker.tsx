@@ -1467,7 +1467,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={4} color={STEG_FARGER[3]} /> {isCarousel ? "Karusell" : "Text på bilden"}</h2>
-                  {!isCarousel && <p className="text-xs text-gray-500 mt-0.5 ml-9">Rubrik och text som syns i <strong>själva bilden</strong>. Idéer får du i <strong>steg 1</strong>.</p>}
+                  {!isCarousel && <p className="text-xs text-gray-500 mt-0.5 ml-9">Rubrik och text som syns i <strong>själva bilden</strong>.</p>}
                 </div>
                 {isCarousel && (
                   <button onClick={generateCarouselNow} disabled={genCarousel}
@@ -1487,6 +1487,37 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </button>
                   <p className="text-xs text-gray-400 mt-1">On-brand genererad bild per slide (utifrån varje slides text). Vill du en egen bild på en slide: bläddra dit med pilarna och ladda upp under <strong>Bild</strong>.</p>
                 </div>
+              )}
+
+              {/* Föreslå rubrik & text direkt här — Greta ska inte behöva gå tillbaka till steg 1 (ej karusell) */}
+              {!isCarousel && (
+              <div className="rounded-xl border p-3 space-y-3" style={{ borderColor: `${STEG_FARGER[3]}33`, background: `${STEG_FARGER[3]}0a` }}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <p className="text-sm text-gray-600">Vet du inte vad du ska skriva? Låt <strong>Skrivhjälpen</strong> föreslå rubrik och text{topic ? " utifrån ditt ämne" : ""}.</p>
+                  <button onClick={suggest} disabled={suggesting}
+                    className="shrink-0 inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    style={{ background: STEG_FARGER[3] }}>
+                    {suggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Föreslå rubrik &amp; text
+                  </button>
+                </div>
+                {suggestions.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-gray-500">Klicka ett förslag — då fylls rubrik och text i nedan:</div>
+                    {suggestions.map((s, i) => (
+                      <button key={i} onClick={() => applySuggestion(s)}
+                        className="w-full text-left rounded-xl border border-gray-200 hover:border-gray-300 bg-white/70 hover:bg-white p-3 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
+                            {HOOK_LABEL[s.hookType] || "Hook"}
+                          </span>
+                          <span className="text-sm font-bold text-gray-900 truncate">{s.headline1}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 line-clamp-2">{s.headline2} — {s.body}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               )}
 
               {/* Klistra in eget utkast (ej karusell) */}
