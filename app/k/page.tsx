@@ -130,9 +130,13 @@ export default async function CustomerHome() {
   else if (has("besokare")) steps.push({ title: "Följ din trafik", desc: "Se besök, kanaler och trender på ett ställe.", href: "/k/besokare", cta: "Öppna", done: visits30 > 0 });
   // Grinda till nya-plattforms-tenants (compass/newsletter på). Skyddar live-klienter
   // (CF/Ledarskapskultur har inte dessa moduler → ser aldrig stegflödet). Se
-  // feedback_live_client_no_disruption. Göms när alla steg är klara.
+  // feedback_live_client_no_disruption.
   const onNewPlatform = has("compass") || has("newsletter");
-  const showSteps = onNewPlatform && steps.length > 0 && steps.filter((s) => s.done).length < steps.length;
+  // "Kom igång" är onboarding — göm den så snart kontot är IGÅNG: profil ifylld + minst
+  // ett inlägg skapat. "Följ synlighet" är löpande (kan aldrig bli klart utan SEO-data) och
+  // ska inte hålla kvar rutan för ett aktivt konto. Nya konton (inget gjort än) ser den ännu.
+  const activated = profileOK && totalPosts > 0;
+  const showSteps = onNewPlatform && steps.length > 0 && !activated && steps.filter((s) => s.done).length < steps.length;
 
   // Dagens datum till hero-bandet (stor bokstav).
   const todayRaw = new Date().toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
@@ -192,14 +196,11 @@ export default async function CustomerHome() {
         </div>
       </div>
 
-      {/* KOM IGÅNG — pedagogiskt stegflöde, först av allt tills grunden är på plats */}
+      {/* KOM IGÅNG — pedagogiskt stegflöde, bara tills kontot är igång */}
       {showSteps && <CustomerSteps steps={steps} primaryColor={primary} />}
 
-      {/* DINA VERKTYG — kundens köpta moduler som kort, med ev. kampanjbadge */}
-      <CustomerModuleCards modules={effectiveModules} primaryColor={primary} />
-
-      {/* ATT GÖRA NU — 1–3 konkreta, KLICKBARA nästa steg. Datadrivna tillväxt-tips när
-          det finns sök/trafik-data, annars kom-vidare-actions ur kundens moduler. */}
+      {/* ATT GÖRA NU — leder sidan: 1–3 konkreta, KLICKBARA nästa steg. Datadrivna
+          tillväxt-tips när det finns sök/trafik-data, annars kom-vidare-actions ur modulerna. */}
       {todos.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
@@ -238,6 +239,9 @@ export default async function CustomerHome() {
           </div>
         </section>
       )}
+
+      {/* DINA VERKTYG — kundens köpta moduler som kort, med ev. kampanjbadge */}
+      <CustomerModuleCards modules={effectiveModules} primaryColor={primary} />
 
       {!profileOK && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
