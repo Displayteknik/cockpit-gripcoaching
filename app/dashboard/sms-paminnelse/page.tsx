@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, Upload, Send, ShieldCheck, AlertTriangle, Users, Layers, Coins, TestTube2, X, CheckCircle2, XCircle } from "lucide-react";
+import { MessageSquare, Upload, Send, ShieldCheck, AlertTriangle, Users, Layers, Coins, TestTube2, X, CheckCircle2, XCircle, Trash2, Save } from "lucide-react";
 import { DashHero, LivePill, HeroChip, StatTile } from "@/components/ui/dash";
 import { parseContacts } from "@/lib/sms/parse";
 import { buildRecipients, firstNameOf, type Recipient } from "@/lib/sms/phone";
@@ -11,6 +11,9 @@ import { renderMessage } from "@/lib/sms/message";
 
 const DEFAULT_MSG =
   "Hej [förnamn]! Om 30 min kör vi SalesChallenge kväll 1. Häng med från start 18.30: [LÄNK] Vi ses! /Håkan";
+
+// Utkastet sparas i webbläsaren så listan överlever en omladdning.
+const DRAFT_KEY = "sms_paminnelse_draft_v1";
 
 interface SmsConfig {
   configured: boolean;
@@ -38,6 +41,8 @@ export default function SmsReminderPage() {
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [testInfo, setTestInfo] = useState<string | null>(null);
   const [result, setResult] = useState<{ mode: string; dryrun: boolean; sender: string; total: number; ok: number; fail: number; results: SendResultRow[] } | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -46,7 +51,8 @@ export default function SmsReminderPage() {
       .then((c: SmsConfig & { error?: string }) => {
         if (c.error) { setToast({ kind: "err", text: c.error }); return; }
         setCfg(c);
-        setSender(c.sender || "");
+        // Behåll ev. sparad avsändare från utkastet; annars default från config.
+        setSender((prev) => prev || c.sender || "");
       })
       .catch(() => setToast({ kind: "err", text: "Kunde inte läsa inställningar" }));
   }, []);
@@ -56,6 +62,49 @@ export default function SmsReminderPage() {
     const t = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Återställ sparat utkast vid inladdning (mottagare, namn, ur-bockningar, text).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (Array.isArray(d.recipients)) setRecipients(d.recipients);
+        if (Array.isArray(d.excluded)) setExcluded(new Set<number>(d.excluded));
+        if (typeof d.rawInput === "string") setRawInput(d.rawInput);
+        if (typeof d.message === "string") setMessage(d.message);
+        if (typeof d.sender === "string" && d.sender) setSender(d.sender);
+        if (typeof d.source === "string") setSource(d.source);
+        if (typeof d.savedAt === "string") setSavedAt(d.savedAt);
+      }
+    } catch { /* trasigt utkast ignoreras */ }
+    setHydrated(true);
+  }, []);
+
+  // Spara löpande — men först efter att ev. sparat utkast lästs in (undviker att
+  // skriva över det med tomma defaults vid första renderingen).
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const ts = new Date().toISOString();
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ recipients, excluded: [...excluded], rawInput, message, sender, source, savedAt: ts })
+      );
+      setSavedAt(ts);
+    } catch { /* full/blockerad storage ignoreras */ }
+  }, [hydrated, recipients, excluded, rawInput, message, sender, source]);
+
+  function clearList() {
+    setRecipients([]);
+    setExcluded(new Set());
+    setRawInput("");
+    setSkipped(0);
+    setTestDone(false);
+    setResult(null);
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+    setSavedAt(null);
+  }
 
   function doParse(text: string, src: "paste" | "csv" | "manual") {
     const { contacts, skipped } = parseContacts(text);
@@ -231,11 +280,23 @@ export default function SmsReminderPage() {
             <Upload className="h-4 w-4" /> Ladda upp CSV
           </button>
           {recipients.length > 0 && (
-            <span className="text-sm text-gray-500">
-              {included.length} giltiga, {flagged.length} borttagna{skipped > 0 ? `, ${skipped} rader utan nummer` : ""}
-            </span>
+            <>
+              <span className="text-sm text-gray-500">
+                {included.length} giltiga, {flagged.length} borttagna{skipped > 0 ? `, ${skipped} rader utan nummer` : ""}
+              </span>
+              <button
+                onClick={clearList}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-rose-600"
+              >
+                <Trash2 className="h-4 w-4" /> Rensa lista
+              </button>
+            </>
           )}
         </div>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
+          <Save className="h-3.5 w-3.5" />
+          {savedAt ? "Sparas automatiskt i denna webbläsare. Listan finns kvar efter omladdning." : "Listan sparas automatiskt i denna webbläsare när du läser in mottagare."}
+        </p>
       </section>
 
       {recipients.length > 0 && (
