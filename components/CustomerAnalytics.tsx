@@ -155,6 +155,22 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
         </div>
       )}
 
+      {/* Tomt läge UTAN kod-snutt — annars blir sidan helt blank (t.ex. innan mätningen
+          är påkopplad). Visa alltid ett vänligt nästa-steg istället för en tom yta. */}
+      {empty && !snippet && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+              <TrendingUp className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+            </span>
+            <h2 className="font-display font-bold text-gray-900 text-lg">Din statistik sätts igång</h2>
+          </div>
+          <p className="text-sm text-gray-500">
+            Här kommer du se besök, kanaler och hur du syns i Google och AI-sökmotorer. Så snart mätningen och Google är kopplade fylls allt i automatiskt — hör av dig så hjälper vi dig att koppla på det.
+          </p>
+        </div>
+      )}
+
       {!empty && (
         <>
           {/* KPI-RAD — anpassad efter vilken data som faktiskt finns (inga tomma nollor) */}
@@ -177,7 +193,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub="senaste 30 dagarna" hint="Antal besök på din sajt under perioden (mätt via spårningspixeln)." />
+                <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub={`senaste ${period} dagarna`} hint="Antal besök på din sajt under perioden (mätt via spårningspixeln)." />
                 <KPI icon={Eye} accent="blue" label="Sidvisningar" value={k.pageviews ?? k.visits} sub="totalt" hint="Hur många sidor som visats totalt — en besökare kan titta på flera sidor." />
                 <KPI icon={Repeat} accent="purple" label="Återkommande" value={k.visits_returning} sub="kom tillbaka" hint="Besökare som varit inne hos dig tidigare och kommit tillbaka." />
               </div>

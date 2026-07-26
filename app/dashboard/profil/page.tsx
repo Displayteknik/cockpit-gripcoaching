@@ -104,12 +104,14 @@ export default function ProfilPage() {
     window.setTimeout(() => { el.style.boxShadow = ""; }, 1800);
   }
 
-  async function save() {
+  // payload valfritt: wizardarna skickar in det sammanslagna objektet direkt så vi
+  // slipper spara mot en stale profile-state (annars försvinner wizard-resultatet tyst).
+  async function save(payload?: Profile) {
     setSaving(true);
     const r = await fetch("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile),
+      body: JSON.stringify(payload ?? profile),
     });
     setSaving(false);
     if (r.ok) {
@@ -148,14 +150,14 @@ export default function ProfilPage() {
   return (
     <div className="max-w-4xl space-y-6" style={accentVars}>
       <DashHero
-        title="Din profil"
+        title="Din Brand-profil"
         subtitle="Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du — och desto bättre förslag får du."
         icon={User}
         accent={accent}
-        eyebrow={<LivePill label="Profil" />}
+        eyebrow={<LivePill label="Brand-profil" />}
         right={
           <button
-            onClick={save}
+            onClick={() => save()}
             disabled={saving}
             className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50"
           >
@@ -177,7 +179,7 @@ export default function ProfilPage() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-display font-bold text-lg leading-tight">Fyll i från ett samtal</div>
-          <div className="text-sm text-white/85 mt-1">Spela in eller klistra in ett samtal, en intervju eller ljud. AI:n jämför med din profil, frågar bara när något är oklart och föreslår uppdateringar som du godkänner.</div>
+          <div className="text-sm text-white/85 mt-1">Spela in eller klistra in ett samtal, en intervju eller ljud. Skrivhjälpen jämför med din profil, frågar bara när något är oklart och föreslår uppdateringar som du godkänner.</div>
         </div>
         <div className="flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/15 ring-1 ring-white/20 transition group-hover:bg-white/25 hidden md:block">Öppna →</div>
       </button>
@@ -330,7 +332,7 @@ export default function ProfilPage() {
       <Section title="Kundernas egna ord" icon={Quote} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Kundord & recensioner"
-          hint="Klistra in riktiga recensioner, mejl och samtalsanteckningar från dina kunder. AI:n plockar ut deras sätt att prata så texterna känns igen."
+          hint="Klistra in riktiga recensioner, mejl och samtalsanteckningar från dina kunder. Skrivhjälpen plockar ut deras sätt att prata så texterna känns igen."
           value={profile.customer_quotes}
           onChange={(v) => update("customer_quotes", v)}
           rows={6}
@@ -405,14 +407,16 @@ export default function ProfilPage() {
         <IcpWizard
           seed={profile}
           onDone={(result) => {
-            setProfile((p) => ({
-              ...p,
+            const next: Profile = {
+              ...profile,
               icp_primary: result.primary,
               icp_secondary: result.secondary,
               pain_points: result.pain_points,
               hashtags_base: result.hashtags_base,
-            }));
+            };
+            setProfile(next);
             setShowIcpWizard(false);
+            save(next); // auto-spara så resultatet inte försvinner om kunden byter sida
           }}
           onClose={() => setShowIcpWizard(false)}
         />
@@ -422,8 +426,10 @@ export default function ProfilPage() {
         <ToneWizard
           seed={profile}
           onDone={(tone_rules) => {
-            update("tone_rules", tone_rules);
+            const next: Profile = { ...profile, tone_rules };
+            setProfile(next);
             setShowToneWizard(false);
+            save(next); // auto-spara
           }}
           onClose={() => setShowToneWizard(false)}
         />
@@ -435,8 +441,10 @@ export default function ProfilPage() {
           onDone={(result) => {
             // Sammanställ till tone_rules + lägg råa quotes
             const summary = `${result.summary_for_brand || ""}\n\nVANLIGA FRASER (kundens egna):\n${result.common_phrases || ""}\n\nSMÄRTORD: ${result.pain_words || ""}\nGLÄDJEORD: ${result.joy_words || ""}\nINVÄNDNINGAR: ${result.objections || ""}\nSTILMÖNSTER: ${result.tone_patterns || ""}`;
-            update("tone_rules", (profile.tone_rules ? profile.tone_rules + "\n\n--- Voice of Customer ---\n" : "") + summary);
+            const next: Profile = { ...profile, tone_rules: (profile.tone_rules ? profile.tone_rules + "\n\n--- Voice of Customer ---\n" : "") + summary };
+            setProfile(next);
             setShowVocExtractor(false);
+            save(next); // auto-spara
           }}
           onClose={() => setShowVocExtractor(false)}
         />
@@ -465,7 +473,7 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
   return (
     <Modal onClose={onClose} title="Kundernas egna ord">
       <div className="text-sm text-gray-600 mb-3">
-        Klistra in 3–10 verkliga citat från dina kunder (recensioner, mejl, chatt, samtalsanteckningar). AI:n plockar ut exakta fraser, vad de oroar sig för och hur de uttrycker sig — och väver in det i dina tonregler.
+        Klistra in 3–10 verkliga citat från dina kunder (recensioner, mejl, chatt, samtalsanteckningar). Skrivhjälpen plockar ut exakta fraser, vad de oroar sig för och hur de uttrycker sig — och väver in det i dina tonregler.
       </div>
       <SmartTextarea
         value={quotes}
@@ -548,7 +556,7 @@ function TextArea({ label, hint, value, onChange, onAssist, assisting, rows = 4 
             className="inline-flex items-center gap-1 text-xs font-medium text-brand-blue hover:bg-brand-blue/10 px-2 py-1 rounded-md disabled:opacity-50 transition"
           >
             {assisting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-            AI-fyll
+            Fyll i åt mig
           </button>
         )}
       </div>

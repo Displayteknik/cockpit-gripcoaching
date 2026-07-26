@@ -237,10 +237,11 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
                 <button onClick={saveDraft} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50" style={{ background: primary }}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />} {saved ? "Sparat" : loadedId ? "Uppdatera utkast" : "Spara utkast"}
                 </button>
-                <button onClick={copyHtml} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50">
-                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />} {copied ? "Kopierat" : "Kopiera HTML"}
+                <button onClick={copyHtml} title="Klistra in i ditt e-postverktyg (t.ex. Mailchimp) för att skicka till din lista." className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50">
+                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />} {copied ? "Kopierat" : "Kopiera för utskick"}
                 </button>
               </div>
+              <p className="text-xs text-gray-500">Så här skickar du: tryck <strong>Skicka test</strong> för att se brevet i din egen inkorg — eller <strong>Kopiera för utskick</strong> och klistra in i ditt e-postverktyg för att nå hela din lista.</p>
               <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
                 <input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="din@epost.se" className="flex-1 min-w-[160px] rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100" />
                 <button onClick={sendTest} disabled={testing || !testTo} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50">

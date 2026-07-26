@@ -391,12 +391,12 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
             style={{ background: primaryColor }}
           >
             {auditing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSearch className="w-4 h-4" />}
-            Auditera
+            Analysera sidan
           </button>
         </div>
 
         {audits.length === 0 ? (
-          <Empty text="Ingen audit än. Klistra in en URL ovan och kör." />
+          <Empty text="Ingen analys än. Klistra in en sidadress ovan och kör." />
         ) : (
           <div className="space-y-3">
             {audits.slice(0, 10).map((a) => (
@@ -409,7 +409,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <ScoreBadge label="Teknisk SEO" value={a.seo_score} />
                     <ScoreBadge label="Teknisk AEO" value={a.aeo_score} />
-                    {a.pagespeed_mobile != null && <ScoreBadge label="📱" value={a.pagespeed_mobile} />}
+                    {a.pagespeed_mobile != null && <ScoreBadge label="📱 Mobil" value={a.pagespeed_mobile} />}
                   </div>
                 </summary>
                 <div className="px-4 py-3 border-t border-gray-200 bg-white space-y-3">
@@ -450,7 +450,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                       </ul>
                     </div>
                   )}
-                  <div className="text-xs text-gray-400">Auditerad {new Date(a.audited_at).toLocaleString("sv-SE")}</div>
+                  <div className="text-xs text-gray-400">Analyserad {new Date(a.audited_at).toLocaleString("sv-SE")}</div>
                     </div>
                   </details>
                 </div>
@@ -464,7 +464,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       <Card title="Textgranskning" subtitle="Klistra in en text eller URL — Skrivhjälpen bedömer kvalitet, ton, robot-känsla och om texten leder till handling. Hård men ärlig."
         guide={<FunctionGuide primaryColor={primaryColor} title="Textgranskning"
           what="Låter Skrivhjälpen läsa din text och ge en ärlig bedömning: är den välskriven, har den rätt ton, har den robot-känsla, och får den läsaren att göra något (boka, höra av sig)?"
-          how="Klistra in texten eller en sidadress. Skrivhjälpen läser och poängsätter, pekar ut svaga formuleringar och 'AI-klyschor', och föreslår hur du skriver om dem. Den är medvetet hård för att höja kvaliteten."
+          how="Klistra in texten eller en sidadress. Skrivhjälpen läser och poängsätter, pekar ut svaga formuleringar och 'robot-klyschor', och föreslår hur du skriver om dem. Den är medvetet hård för att höja kvaliteten."
           tips={["Använd den innan du publicerar ny text.", "Fokusera på det den flaggar som robot-känsla och svaga avslut.", "Skriv om i din egen röst — kör igen och jämför."]} />}>
         <button
           onClick={() => setShowAiAudit(true)}
@@ -740,14 +740,14 @@ function AiAuditModal({ primaryColor, onClose }: { primaryColor: string; onClose
           {result && (
             <div className="mt-4 space-y-3">
               <div className="grid grid-cols-4 gap-2">
-                <ScoreBox label="Total" v={result.overall_score} />
-                <ScoreBox label="Röst" v={result.voice_match_score} />
+                <ScoreBox label="Totalt" v={result.overall_score} />
+                <ScoreBox label="Din röst" v={result.voice_match_score} />
                 <ScoreBox label="Låg robot-känsla" v={result.ai_smell_score} />
-                <ScoreBox label="Konv." v={result.conversion_score} />
+                <ScoreBox label="Konvertering" v={result.conversion_score} />
               </div>
               {result.ai_smell_phrases?.length > 0 && (
                 <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
-                  <div className="text-xs font-bold text-red-700 mb-1">AI-klyschor hittade:</div>
+                  <div className="text-xs font-bold text-red-700 mb-1">Robot-klyschor hittade:</div>
                   <div className="flex flex-wrap gap-1">{result.ai_smell_phrases.map((p, i) => <span key={i} className="text-xs bg-white text-red-700 px-2 py-0.5 rounded border border-red-200">{p}</span>)}</div>
                 </div>
               )}

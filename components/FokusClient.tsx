@@ -146,7 +146,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
         <div className="relative flex items-start justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold text-white/80 mb-2">
-              <Zap className="w-3.5 h-3.5" /> Fokusmotor
+              <Zap className="w-3.5 h-3.5" /> Fokus idag
             </div>
             <div className="flex items-center gap-2">
               <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Idag — dina viktigaste affärer</h1>

@@ -149,6 +149,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [suggesting, setSuggesting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false); // finns ett sparat utkast i webbläsaren? styr "Återuppta utkast"
   const [error, setError] = useState("");
   const [imgResults, setImgResults] = useState<{ url: string; thumb: string; credit: string }[]>([]);
   const [searchingImg, setSearchingImg] = useState<"stock" | "ai" | "">("");
@@ -655,9 +656,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   const loadDraft = useCallback(() => {
     const raw = localStorage.getItem(draftKey);
-    if (!raw) return;
+    if (!raw) { setHasDraft(false); return; }
     try { applyPayload(JSON.parse(raw)); setLoadedPostId(null); } catch { /* ignore */ }
   }, [draftKey, applyPayload]);
+  // Visa "Återuppta utkast" bara när det faktiskt finns ett sparat utkast (annars gjorde knappen tyst intet).
+  useEffect(() => { try { setHasDraft(!!localStorage.getItem(draftKey)); } catch { /* ignore */ } }, [draftKey]);
 
   // ── Bibliotek: tidigare skapelser (studio_posts) ──
   const refreshPosts = useCallback(async () => {
@@ -697,7 +700,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // "Tidigare skapelser" längst ner. Tidigare sparade "Spara utkast" bara localStorage →
   // utkastet dök aldrig upp i listan, vilket förvirrade.
   const saveDraftPersistent = useCallback(async () => {
-    try { localStorage.setItem(draftKey, JSON.stringify(payload)); } catch { /* ignore */ }
+    try { localStorage.setItem(draftKey, JSON.stringify(payload)); setHasDraft(true); } catch { /* ignore */ }
     const id = await savePost(false);
     if (id) { setSaved(true); setTimeout(() => setSaved(false), 1500); }
   }, [draftKey, payload, savePost]);
@@ -1017,16 +1020,18 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     title="Skapa inlägg"
                     what="Bygger färdiga inlägg till Instagram, Facebook och LinkedIn — bild, text på bilden och bildtext i din röst, utan Canva."
                     how="Välj mall och format, lägg till en bild (egen, sök eller genererad), skriv eller låt Skrivhjälpen föreslå rubrik och bildtext, förhandsgranska per kanal och schemalägg eller publicera."
-                    tips={["Fyll i din brand-profil först så låter texten mer som du.", "Klicka 'Få 3 varianter' för att jämföra olika krokar.", "Schemalägg direkt så hamnar inlägget i kalendern."]}
+                    tips={["Fyll i din brand-profil först så låter texten mer som du.", "Klicka 'Ge mig 3 idéer' för att jämföra olika krokar.", "Schemalägg direkt så hamnar inlägget i kalendern."]}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5">Färdiga inlägg till Instagram, Facebook och LinkedIn — i din röst, utan Canva.{client ? ` · ${client.name}` : ""}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button onClick={loadDraft} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
-                <FolderOpen className="w-4 h-4" /> Återuppta utkast
-              </button>
+              {hasDraft && (
+                <button onClick={loadDraft} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                  <FolderOpen className="w-4 h-4" /> Återuppta utkast
+                </button>
+              )}
               <button onClick={saveDraftPersistent} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                 {saved ? <Check className="w-4 h-4 text-emerald-600" /> : <Save className="w-4 h-4" />} Spara utkast
               </button>
@@ -1369,15 +1374,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
               {/* Bildförslag: riktiga foton (Pexels) eller AI-genererat */}
               <div className="pt-3 border-t border-gray-100 space-y-3">
-                <div className="text-xs font-medium text-gray-500">Ingen egen bild? Låt verktyget föreslå — utifrån ämnet {topic ? `"${topic}"` : "(fyll i under Text)"}.</div>
+                <div className="text-xs font-medium text-gray-500">Ingen egen bild? Låt verktyget föreslå — utifrån ämnet {topic ? `"${topic}"` : "(fyll i i steg 1 · Ämne)"}.</div>
                 <div className="flex gap-2">
                   <button onClick={() => suggestImage("stock")} disabled={!!searchingImg}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                    {searchingImg === "stock" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Sök riktiga foton
+                    {searchingImg === "stock" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Sök foto
                   </button>
                   <button onClick={() => suggestImage("ai")} disabled={!!searchingImg}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Skapa bild åt mig
+                    {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Skapa en bild
                   </button>
                 </div>
                 {imgResults.length > 0 && (
@@ -1400,7 +1405,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <button onClick={saveDesignToLibrary} disabled={savingDesign || !brand}
                   className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                   style={{ background: primary }}>
-                  {savingDesign ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Spara färdig bild i biblioteket
+                  {savingDesign ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Spara bild i Mina bilder
                 </button>
                 <p className="text-xs text-gray-400 -mt-1">Sätter ihop bild, ram och text till en färdig bild — samma som publiceras. Dyker upp nedan.</p>
 
@@ -1817,7 +1822,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <button onClick={() => savePost(false)} disabled={savingPost}
                 className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                 style={{ background: primary }}>
-                {savingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {loadedPostId ? "Uppdatera i biblioteket" : "Spara i biblioteket"}
+                {savingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {loadedPostId ? "Uppdatera i Mina inlägg" : "Spara i Mina inlägg"}
               </button>
               {loadedPostId && (
                 <button onClick={() => savePost(true)} disabled={savingPost}
@@ -1948,6 +1953,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 const igDirect = key === "ig" && !!igConn?.connected;
                 const ghlAccs = ghlFor(key === "fb" ? "facebook" : key === "li" ? "linkedin" : "instagram");
                 const canPublish = igDirect || (!igDirect && ghlAccs.some((a) => selectedAccounts.includes(a.id)));
+                // Instagram/sociala kräver media. Mall-läget renderar alltid en design, men
+                // i Skriv eget publiceras råfotot → utan bild dör publiceringen med kryptiskt
+                // fel. Reel kräver video. Guarda knappen istället för att låta det spricka.
+                const missingMedia = postType === "reel" ? !videoUrl : (mode === "simple" && !imageUrl);
                 const openUrl = key === "li" ? "https://www.linkedin.com/feed/" : key === "fb" ? "https://www.facebook.com/" : "https://www.instagram.com/";
                 return (
                   <div key={key} className="space-y-3">
@@ -1975,19 +1984,25 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
                     {/* Publiceringsrouting per kanal */}
                     {igDirect ? (
-                      <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
+                      <>
+                      <button onClick={() => publishTo(key)} disabled={busy || !eff.trim() || missingMedia}
                         className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                         style={{ background: brand.gradient }}>
                         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : scheduleDate ? <CalendarClock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                         {res === "ok" ? (scheduleDate ? "Schemalagt på Instagram ✓" : "Publicerat på Instagram ✓") : (scheduleDate ? "Schemalägg på Instagram" : "Publicera nu på Instagram")}
                       </button>
+                      {missingMedia && <p className="text-xs text-amber-600">{postType === "reel" ? "Lägg till en video för att publicera en reel." : "Lägg till en bild för att publicera på Instagram."}</p>}
+                      </>
                     ) : canPublish ? (
-                      <button onClick={() => publishTo(key)} disabled={busy || !eff.trim()}
+                      <>
+                      <button onClick={() => publishTo(key)} disabled={busy || !eff.trim() || missingMedia}
                         className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                         style={{ background: brand.gradient }}>
                         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                         {res === "ok" ? (scheduleDate ? `Schemalagt på ${label} ✓` : `Utkast skapat på ${label} ✓`) : (scheduleDate ? `Schemalägg på ${label}` : `Skapa utkast på ${label}`)}
                       </button>
+                      {missingMedia && <p className="text-xs text-amber-600">{postType === "reel" ? "Lägg till en video för att kunna publicera." : "Lägg till en bild för att kunna publicera."}</p>}
+                      </>
                     ) : (
                       // Fallback: ingen direktväg (t.ex. LinkedIn utan GHL, eller kundläge) → kopiera + öppna.
                       <div className="space-y-1.5">
@@ -2057,7 +2072,18 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         {/* ── Schemalagt & kö (native IG + blogg) — avboka/ändra tid. Admin + kund. ── */}
         <ScheduleQueue primary={primary} refreshKey={scheduleRefresh} />
 
-        {/* ── Tidigare skapelser (återanvänd & redigera) ── */}
+        {/* ── Mina inlägg (återanvänd & redigera) ── */}
+        {posts.length === 0 && (
+          <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-2.5 mb-2">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+                <FolderOpen className="w-[18px] h-[18px]" style={{ color: primary }} />
+              </span>
+              <h2 className="font-display font-bold text-gray-900 text-lg">Mina inlägg</h2>
+            </div>
+            <p className="text-sm text-gray-500">Här samlas inläggen du sparar. Skapa ett inlägg ovan och tryck <strong>Spara i Mina inlägg</strong> — sen hittar du det här när du vill återanvända eller redigera.</p>
+          </section>
+        )}
         {posts.length > 0 && (
           <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">

@@ -25,7 +25,7 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
   },
   {
     key: "seo",
-    label: "SEO & AEO",
+    label: "Sök-synlighet",
     href: "/k/seo",
     icon: TrendingUp,
     description: "Sid-audit (SEO + AEO-score), åtgärdslista och sökords-tracker för sin egen sajt.",

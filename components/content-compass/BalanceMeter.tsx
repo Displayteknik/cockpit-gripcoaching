@@ -46,7 +46,7 @@ export default function BalanceMeter({ reloadKey = 0 }: { reloadKey?: number }) 
         <h2 className="font-display font-bold text-gray-900 text-base">Balans</h2>
         {data && <span className="text-xs text-gray-400">senaste 30 dagarna · {classified} klassade inlägg</span>}
       </div>
-      <p className="text-xs text-gray-400 mb-4">Din mix mot Content Compass-målet. Bygg räckvidd (TOFU) innan du säljer (BOFU).</p>
+      <p className="text-xs text-gray-400 mb-4">Din mix mot målet. Bygg först räckvidd och intresse — sälj sedan.</p>
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-3"><Loader2 className="w-4 h-4 animate-spin" /> Räknar.</div>

@@ -88,7 +88,7 @@ export default function IdeasList({
                       {TYPE_LABELS[i.type] ?? i.type}
                     </span>
                     {i.voice_score !== null && (
-                      <span className="text-xs font-semibold bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">
+                      <span className="text-xs font-semibold bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 cursor-help" title="Hur mycket förslaget låter som du — din egen röst. 100 = träffar din ton perfekt.">
                         Röst {i.voice_score}/100
                       </span>
                     )}

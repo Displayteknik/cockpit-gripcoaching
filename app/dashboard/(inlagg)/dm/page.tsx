@@ -51,9 +51,9 @@ interface Rule {
 
 const STAGES: { id: Stage; label: string; icon: React.ComponentType<{ className?: string }>; color: string; desc: string }[] = [
   { id: "new", label: "Ny", icon: UserPlus, color: "bg-blue-500", desc: "Första kontakten — ej besvarad" },
-  { id: "acknowledge", label: "Acknowledge", icon: Handshake, color: "bg-amber-500", desc: "Första svaret skickat — gett värde" },
-  { id: "connect", label: "Connect", icon: MessageCircle, color: "bg-purple-500", desc: "Dialog pågår — behov identifierat" },
-  { id: "offer", label: "Offer", icon: Target, color: "bg-emerald-500", desc: "Erbjudande presenterat" },
+  { id: "acknowledge", label: "Bekräftad", icon: Handshake, color: "bg-amber-500", desc: "Första svaret skickat — gett värde" },
+  { id: "connect", label: "Dialog", icon: MessageCircle, color: "bg-purple-500", desc: "Dialog pågår — behov identifierat" },
+  { id: "offer", label: "Erbjudande", icon: Target, color: "bg-emerald-500", desc: "Erbjudande presenterat" },
 ];
 
 // Rent visuellt: mjuka färgbrickor per steg (matchar STAGES-färgerna, ändrar ingen logik).
@@ -83,7 +83,7 @@ export default function DMPage() {
       <div>
         <h1 className="font-display text-2xl font-bold text-gray-900">DM & Pipeline</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Från första kommentar till bokad kund — ACO-flödet (Acknowledge / Connect / Offer).
+          Från första kommentar till bokad kund: Ny → Bekräftad → Dialog → Erbjudande.
         </p>
       </div>
 
@@ -147,7 +147,7 @@ function PipelineView() {
     const r = await fetch(`/api/dm/contacts/${id}/sync-ghl`, { method: "POST" });
     const d = await r.json();
     if (d.error) {
-      alert("GHL-synk: " + d.error);
+      alert("Kunde inte spara i kundregistret: " + d.error);
     } else {
       load();
     }
@@ -387,10 +387,10 @@ function ContactCard({
               ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
-          title={contact.synced_to_ghl ? "Synkad till GHL" : "Skicka till GHL"}
+          title={contact.synced_to_ghl ? "Sparad i kundregister" : "Spara i kundregister"}
         >
           {contact.synced_to_ghl ? <Check className="w-3 h-3" /> : <Send className="w-3 h-3" />}
-          GHL
+          Kundregister
         </button>
       </div>
     </div>

@@ -85,7 +85,7 @@ export default function CustomerCalendar({ primary = "#1A6B3C" }: { primary?: st
         subtitle="Skapa hela veckans innehåll färdigprofilerat och se allt planerat på ett ställe."
         accent={primary}
         icon={CalendarClock}
-        eyebrow={<LivePill label="Content Compass" />}
+        eyebrow={<LivePill label="Din innehållsplan" />}
         chips={(
           <>
             <HeroChip icon={CalendarClock} label={`${groups.scheduled.length} schemalagt`} />

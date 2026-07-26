@@ -62,7 +62,7 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">{cadenceLabel}/vecka</span>
       </div>
       <p className="text-xs text-gray-500 mb-3">
-        Hela veckan färdigprofilerad enligt din Content Compass, som utkast i kalendern med föreslagen bästa-tid. Inget publiceras, du granskar och godkänner varje inlägg.
+        Hela veckan färdigprofilerad enligt din innehållsplan, som utkast i kalendern med föreslagen bästa-tid. Inget publiceras, du granskar och godkänner varje inlägg.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-2">
