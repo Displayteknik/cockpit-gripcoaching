@@ -7,7 +7,7 @@ import { FunctionGuide } from "@/components/FunctionGuide";
 import { supabaseService } from "@/lib/supabase-admin";
 import { buildDashboardData } from "@/lib/dashboard-data";
 import { computeFocusInsights, type FocusIcon, type FocusInsight } from "@/lib/dashboard-insights";
-import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight, Eye, Search, Bot, BookOpen, Zap, MousePointerClick, Repeat } from "lucide-react";
+import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight, Eye, Search, Bot, BookOpen, Zap, MousePointerClick, Repeat, Mail, Calendar } from "lucide-react";
 
 // Token → ikon för "Att göra nu" (delad insikts-motor).
 const FOCUS_ICON: Record<FocusIcon, React.ComponentType<{ className?: string }>> = {
@@ -99,6 +99,26 @@ export default async function CustomerHome() {
     } catch {}
   }
 
+  // "Att göra nu" → alltid klickbara nästa-steg. Har kunden riktig sök/trafik-data
+  // visar vi de datadrivna tillväxt-tipsen (→ Statistik). Annars konkreta kom-vidare-
+  // actions ur kundens EGNA moduler — aldrig en återvändsgränd (t.ex. "fyll i profil"
+  // när den redan är ifylld). Se pedagogik-granskning Annas Blommor.
+  type TodoCard = { icon: React.ComponentType<{ className?: string }>; accent: string; title: string; detail: string; href: string };
+  let todos: TodoCard[];
+  if (focusInsights.length > 0) {
+    todos = focusInsights.map((a) => ({ icon: FOCUS_ICON[a.icon], accent: a.accent, title: a.title, detail: a.detail, href: "/k/besokare" }));
+  } else {
+    const starters: TodoCard[] = [];
+    if (has("profil") && profileFilled < 4) starters.push({ icon: Target, accent: "emerald", title: "Fyll i din Brand-profil", detail: "Din röst, ditt erbjudande och dina kunder — grunden allt annat bygger på.", href: "/k/profil" });
+    if (has("skapa")) starters.push({ icon: Sparkles, accent: "amber", title: totalPosts === 0 ? "Skapa ditt första inlägg" : "Skapa ett nytt inlägg", detail: totalPosts === 0 ? "Låt Skrivhjälpen föreslå text i din röst — och en bild på köpet." : "Håll flödet igång. Skrivhjälpen ger dig text och bild på minuter.", href: "/k/studio" });
+    if (has("newsletter")) starters.push({ icon: Mail, accent: "blue", title: "Gör ett nyhetsbrev", detail: "Förvandla din text eller ett blogginlägg till ett nyhetsbrev i din röst.", href: "/k/nyhetsbrev" });
+    if (has("compass")) starters.push({ icon: Calendar, accent: "purple", title: "Planera din vecka", detail: "Få en hel veckas innehåll färdigt att granska och lägga i kalendern.", href: "/k/kalender" });
+    else if (has("veckoplan")) starters.push({ icon: Calendar, accent: "purple", title: "Planera din vecka", detail: "Sju färdiga inlägg enligt veckorytmen, redo att granska.", href: "/k/veckoplan" });
+    if (has("seo")) starters.push({ icon: Search, accent: "blue", title: "Följ din synlighet", detail: "Se hur du syns i Google och AI-sök — och vad som lyfter dig.", href: "/k/seo" });
+    else if (has("besokare")) starters.push({ icon: Eye, accent: "blue", title: "Följ din trafik", detail: "Se besök, kanaler och trender på ett ställe.", href: "/k/besokare" });
+    todos = starters.slice(0, 3);
+  }
+
   // "Kom igång"-steg: pedagogiskt flöde ur kundens riktiga läge. Visas bara tills
   // grunden är på plats (alla steg klara → göms, ingen nag för vana användare).
   const steps: Step[] = [];
@@ -178,8 +198,9 @@ export default async function CustomerHome() {
       {/* DINA VERKTYG — kundens köpta moduler som kort, med ev. kampanjbadge */}
       <CustomerModuleCards modules={effectiveModules} primaryColor={primary} />
 
-      {/* ATT GÖRA NU — det första kunden ser: 1–3 konkreta nästa steg ur egen data */}
-      {focusInsights.length > 0 && (
+      {/* ATT GÖRA NU — 1–3 konkreta, KLICKBARA nästa steg. Datadrivna tillväxt-tips när
+          det finns sök/trafik-data, annars kom-vidare-actions ur kundens moduler. */}
+      {todos.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2.5">
@@ -188,7 +209,7 @@ export default async function CustomerHome() {
               </span>
               Att göra nu
             </h2>
-            {showVisitors && (
+            {showVisitors && focusInsights.length > 0 && (
               <Link
                 href="/k/besokare"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white shadow-sm transition-opacity hover:opacity-90"
@@ -199,16 +220,19 @@ export default async function CustomerHome() {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {focusInsights.map((a, i) => {
-              const Icon = FOCUS_ICON[a.icon];
+            {todos.map((a, i) => {
+              const Icon = a.icon;
               return (
-                <div key={i} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <Link key={i} href={a.href} className="group block bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
                   <span className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${ACCENTS[a.accent] || ACCENTS.gray}`}>
                     <Icon className="w-[18px] h-[18px]" />
                   </span>
                   <div className="text-sm font-semibold text-gray-900">{a.title}</div>
                   <div className="text-xs text-gray-600 mt-1 leading-relaxed">{a.detail}</div>
-                </div>
+                  <div className="mt-3 text-sm font-semibold inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: primary }}>
+                    Öppna <ArrowRight className="w-4 h-4" />
+                  </div>
+                </Link>
               );
             })}
           </div>
