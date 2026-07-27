@@ -20,6 +20,8 @@ export async function GET() {
       .limit(50);
     const posts = (data || []).map((p) => ({
       id: p.id, title: p.title, excerpt: p.excerpt || "",
+      // Råinnehållet (HTML) behövs när inlägget öppnas för redigering.
+      content: String(p.content || ""),
       // plocka bort HTML → ren text för repurpose-prompten
       text: String(p.content || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
       published: !!p.published,

@@ -22,6 +22,28 @@ export async function POST(req: NextRequest) {
 
     const sb = supabaseService();
     const { data: clientRow } = await sb.from("clients").select("name").eq("id", clientId).maybeSingle();
+
+    // Befintligt inlägg öppnat från kalendern → uppdatera det istället för att skapa nytt.
+    const befintligId = (b.id || "").toString().trim();
+    if (befintligId) {
+      const { data: upd, error: uppErr } = await sb
+        .from("hm_blog")
+        .update({
+          slug,
+          title,
+          content: html,
+          excerpt: (b.description || "").toString().slice(0, 300),
+          ...(scheduled ? { published_at: scheduledAt!.toISOString() } : {}),
+        })
+        .eq("id", befintligId)
+        .eq("client_id", clientId) // tenant-lås
+        .select("id, slug")
+        .maybeSingle();
+      if (uppErr) return NextResponse.json({ error: uppErr.message }, { status: 500 });
+      if (!upd) return NextResponse.json({ error: "Inlägget hittades inte" }, { status: 404 });
+      return NextResponse.json({ ok: true, id: upd.id, slug: upd.slug, destination: "native", scheduled, updated: true });
+    }
+
     const { data, error } = await sb
       .from("hm_blog")
       .insert({

@@ -2,7 +2,7 @@
 
 import SmartTextarea from "@/components/SmartTextarea";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Wand2, Send, Check, Eye, Code, Link2, Layers, Image as ImageIcon, PenLine } from "lucide-react";
 import { DashHero, LivePill } from "@/components/ui/dash";
 
@@ -56,7 +56,8 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
   const [repurposing, setRepurposing] = useState(false);
   const [repurposed, setRepurposed] = useState(0);
   // Gör om ett BEFINTLIGT sparat blogginlägg till sociala inlägg (genväg).
-  const [savedBlogs, setSavedBlogs] = useState<{ id: string; title: string; text: string; published: boolean }[]>([]);
+  const [savedBlogs, setSavedBlogs] = useState<{ id: string; title: string; text: string; content?: string; excerpt?: string; published: boolean }[]>([]);
+  const [loadedBlogId, setLoadedBlogId] = useState(""); // satt när ett befintligt inlägg redigeras
   const [selBlog, setSelBlog] = useState("");
 
   // Publicerings-mål (GHL-bloggen eller din egen sajt)
@@ -78,6 +79,25 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
     fetch("/api/studio/blog/list").then((r) => r.json()).then((d) => setSavedBlogs(Array.isArray(d.posts) ? d.posts : [])).catch(() => {});
   }, []);
+
+  // Djuplänk från kalendern: /k/blogg?post=<id> öppnar inlägget i editorn för redigering.
+  const oppnadFranUrl = useRef(false);
+  useEffect(() => {
+    if (oppnadFranUrl.current || savedBlogs.length === 0) return;
+    const id = new URLSearchParams(window.location.search).get("post");
+    if (!id) { oppnadFranUrl.current = true; return; }
+    const b = savedBlogs.find((x) => String(x.id) === id);
+    if (!b) return;
+    oppnadFranUrl.current = true;
+    setLoadedBlogId(b.id);
+    setTitle(b.title || "");
+    setHtml(b.content || b.text || "");
+    setMetaDescription(b.excerpt || "");
+    setHasArticle(true);
+    setManualMode(false);
+    setDestination("native");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [savedBlogs]);
 
   useEffect(() => {
     fetch("/api/studio/blog/meta").then((r) => r.json()).then((d) => {
@@ -129,7 +149,7 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
       if (destination === "native") {
         const r = await fetch("/api/studio/blog/publish-native", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, html, urlSlug, description: metaDescription, scheduledAt: blogSchedule || undefined }),
+          body: JSON.stringify({ id: loadedBlogId || undefined, title, html, urlSlug, description: metaDescription, scheduledAt: blogSchedule || undefined }),
         });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
@@ -153,7 +173,7 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
     } finally {
       setPublishing(false);
     }
-  }, [destination, blogId, title, html, metaDescription, urlSlug, authorId, categoryId, coverImageUrl, coverImageAlt, blogSchedule]);
+  }, [destination, blogId, title, html, metaDescription, urlSlug, authorId, categoryId, coverImageUrl, coverImageAlt, blogSchedule, loadedBlogId]);
 
   const doRepurpose = useCallback(async (t: string, text: string, topicHint: string) => {
     setError(""); setRepurposing(true); setRepurposed(0);
@@ -229,7 +249,9 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
             {/* STEG 2 — skriv/granska */}
             <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="font-display font-bold text-gray-900 text-lg">{manualMode ? "2. Skriv din artikel" : "2. Granska och finslipa"}</h2>
+                <h2 className="font-display font-bold text-gray-900 text-lg">
+                  {loadedBlogId ? "Redigera inlägget" : manualMode ? "2. Skriv din artikel" : "2. Granska och finslipa"}
+                </h2>
                 {!manualMode && (
                   <button onClick={() => setShowHtml((v) => !v)} className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700">
                     {showHtml ? <><Eye className="w-3.5 h-3.5" /> Förhandsvisning</> : <><Code className="w-3.5 h-3.5" /> Avancerad redigering</>}

@@ -51,13 +51,13 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
   // Bara studio_posts kan djuplänkas med id (Studion slår upp posten på ?post=).
   const linkFor = (it: ContentItem): string | null => {
     if (it.source === "studio") return canStudio ? `/k/studio?post=${it.id}` : null;
-    if (it.source === "blog") return canBlog ? "/k/blogg" : null;
+    if (it.source === "blog") return canBlog ? `/k/blogg?post=${it.id}` : null;
     // LinkedIn-inlägg går att jobba med i Studio (LinkedIn är en kanal där) om egen modul saknas.
     if (it.source === "linkedin") return canLinkedin ? "/k/linkedin" : canStudio ? "/k/studio" : null;
     return canStudio ? "/k/studio" : null; // hm_social_posts: verkstaden, utan djuplänk
   };
   // Öppnas posten exakt, eller bara verkstaden? Styr texten i detaljvyn.
-  const oppnasExakt = (it: ContentItem) => it.source === "studio" && canStudio;
+  const oppnasExakt = (it: ContentItem) => (it.source === "studio" && canStudio) || (it.source === "blog" && canBlog);
 
   // Listraden öppnar samma detaljvy som kalenderbrickan, så beteendet är likadant överallt.
   const Row = ({ it }: { it: ContentItem }) => {
