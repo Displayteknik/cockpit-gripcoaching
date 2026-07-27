@@ -11,7 +11,9 @@ import {
   fallbackRad,
   validateCoachSvar,
   DEFAULT_VERKSAMHET,
+  vetJagRedan,
   type Aktivitet,
+  type AutoKontext,
   type CoachSvar,
   type Verksamhet,
 } from "@/lib/fokus/coach";
@@ -95,16 +97,54 @@ export async function POST(req: Request) {
       });
   }
 
-  // Kvalitetsvakt (§4.5): ingen historik + ingen fråga → be om EN mening, gissa inte.
-  if (historik.length === 0 && !fraga) {
-    const namn = (kort.namn || "kunden").split(" ")[0];
+  // ── Automatisk kontext (spec Jobb 3a): läs DM-kontakten och planerade uppföljningar
+  // själv istället för att fråga användaren om sådant som redan står i systemet. ──
+  const DM_STEG: Record<string, string> = { new: "Ny", acknowledge: "Bekräftad", connect: "Dialog", offer: "Erbjudande", won: "Bokad", lost: "Förlorad" };
+  let autoKontext: AutoKontext | undefined;
+  try {
+    const { data: dm } = await sb
+      .from("cockpit_dm_contacts")
+      .select("display_name, ig_username, source, stage, notes, next_action, next_action_at")
+      .eq("client_id", clientId)
+      .ilike("display_name", (kort.namn || "").trim())
+      .maybeSingle();
+
+    const { data: plan } = uuid
+      ? await sb.from("fokus_planering").select("kanal, due_at, note").eq("opportunity_id", uuid).eq("status", "open").order("due_at", { ascending: true }).limit(1).maybeSingle()
+      : { data: null };
+
+    const d = dm as { source?: string; stage?: string; notes?: string; next_action?: string; next_action_at?: string } | null;
+    const p = plan as { kanal?: string; due_at?: string; note?: string } | null;
+    if (d || p) {
+      const konv = d?.notes || "";
+      // Räkna turer: rader på formen "… · Namn: text" (så här sparas DM-konversationer).
+      const turer = (konv.match(/·\s*[^:\n]{1,40}:/g) || []).length;
+      autoKontext = {
+        kanal: d?.source || (p?.kanal === "dm" ? "DM" : p?.kanal || null),
+        dm_konversation: turer > 0 ? konv : null,
+        antal_meddelanden: turer,
+        anteckningar: turer > 0 ? null : konv || null, // är det inte en konversation är det anteckningar
+        nasta_steg: d?.next_action || null,
+        planerad_uppfoljning: p?.due_at ? `${p.note || "uppföljning"} (${p.due_at.slice(0, 10)}${p.kanal ? `, ${p.kanal}` : ""})` : null,
+        erbjudande: kort.foretag || null,
+        pipelinesteg_dm: d?.stage ? DM_STEG[d.stage] || d.stage : null,
+      };
+    }
+  } catch { /* best-effort: coachen funkar även utan DM-kontext */ }
+
+  const vetRedan = vetJagRedan(kort, autoKontext, historik);
+  const harKontext = historik.length > 0 || (autoKontext?.antal_meddelanden ?? 0) > 0 || !!autoKontext?.anteckningar;
+
+  // Kvalitetsvakt (§4.5): bara när det verkligen INTE finns någon kontext alls.
+  if (!harKontext && !fraga) {
     return NextResponse.json({
-      insamlingsfraga: `Innan jag ger ett skarpt råd — vad vet du om ${namn} sedan sist? Ett möte, ett samtal, en invändning eller vad som sagts. En mening räcker.`,
+      insamlingsfraga: "Jag har ingen historik än, berätta kort om läget.",
+      vetRedan,
       fallback: false,
     });
   }
 
-  const dk = buildDatakontrakt(kort, verksamhet, historik, fraga, tidigareCoachrad);
+  const dk = buildDatakontrakt(kort, verksamhet, historik, fraga, tidigareCoachrad, autoKontext);
   const system = byggSystemprompt(verksamhet);
   const bas = `Här är säljcaset (JSON):\n${JSON.stringify(dk.case, null, 2)}`;
   const krav =
@@ -131,12 +171,12 @@ export async function POST(req: Request) {
           await sb
             .from("fokus_coachrad")
             .insert({ tenant_id: memTenant, opportunity_id: uuid, input_json: dk.case, svar_json: parsed });
-        return NextResponse.json({ svar: parsed as CoachSvar, provider: "gemini", fallback: false });
+        return NextResponse.json({ svar: parsed as CoachSvar, vetRedan, provider: "gemini", fallback: false });
       }
     } catch (err) {
       if (forsok === 1)
-        return NextResponse.json({ svar: fallbackRad(kort), provider: "gemini", fallback: true, orsak: String(err) });
+        return NextResponse.json({ svar: fallbackRad(kort), vetRedan, provider: "gemini", fallback: true, orsak: String(err) });
     }
   }
-  return NextResponse.json({ svar: fallbackRad(kort), provider: "gemini", fallback: true });
+  return NextResponse.json({ svar: fallbackRad(kort), vetRedan, provider: "gemini", fallback: true });
 }

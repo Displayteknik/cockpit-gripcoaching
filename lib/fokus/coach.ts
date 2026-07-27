@@ -17,6 +17,18 @@ export interface Aktivitet {
   notering: string;
 }
 
+/** Kontext som hämtas automatiskt ur systemet (DM, anteckningar, planering) — spec Jobb 3a. */
+export interface AutoKontext {
+  kanal: string | null;              // "Instagram-DM", "mejl", "telefon" …
+  dm_konversation: string | null;    // hela konversationen med tidsstämplar, ordagrant
+  antal_meddelanden: number;         // antal turer i konversationen
+  anteckningar: string | null;
+  nasta_steg: string | null;
+  planerad_uppfoljning: string | null;
+  erbjudande: string | null;
+  pipelinesteg_dm: string | null;    // steget i DM-pipelinen (Ny/Bekräftad/Dialog/Erbjudande)
+}
+
 export interface Datakontrakt {
   verksamhet: Verksamhet;
   case: {
@@ -30,6 +42,7 @@ export interface Datakontrakt {
     kalla: string;
     historik: Aktivitet[];
     tidigare_coachrad: unknown[];
+    auto_kontext?: AutoKontext;
   };
   anvandarens_fraga: string | null;
 }
@@ -59,6 +72,7 @@ export function buildDatakontrakt(
   historik: Aktivitet[] = [],
   fraga: string | null = null,
   tidigareCoachrad: unknown[] = [],
+  autoKontext?: AutoKontext,
 ): Datakontrakt {
   return {
     verksamhet,
@@ -70,12 +84,39 @@ export function buildDatakontrakt(
       dagar_i_steget: kort.dagarISteget,
       sla: kort.sla,
       varde: kort.varde,
-      kalla: "",
+      kalla: autoKontext?.kanal || "",
       historik,
       tidigare_coachrad: tidigareCoachrad,
+      ...(autoKontext ? { auto_kontext: autoKontext } : {}),
     },
     anvandarens_fraga: fraga,
   };
+}
+
+/**
+ * "Det här vet jag redan" — deterministisk sammanfattning ur datat (spec Jobb 3b).
+ * Aldrig AI: raderna får bara påstå sådant som faktiskt står i systemet.
+ */
+export function vetJagRedan(kort: ScoredCard, k: AutoKontext | undefined, historik: Aktivitet[] = []): string[] {
+  const rader: string[] = [];
+  const fornamn = (kort.namn || "Kunden").split(" ")[0];
+  if (!k) return rader;
+
+  if (k.kanal || k.pipelinesteg_dm) {
+    const via = k.kanal ? ` via ${k.kanal.toLowerCase()}` : "";
+    const steg = k.pipelinesteg_dm ? `, står i steget ${k.pipelinesteg_dm}` : "";
+    rader.push(`${fornamn} kom in${via}${steg}.`);
+  }
+  if (k.antal_meddelanden > 0) {
+    const dagar = kort.dagarISteget;
+    const tid = dagar > 0 ? `, senaste rörelsen för ${dagar} ${dagar === 1 ? "dag" : "dagar"} sedan` : "";
+    rader.push(`Ni har utbytt ${k.antal_meddelanden} meddelanden${tid}.`);
+  }
+  if (k.nasta_steg) rader.push(`Nästa steg du satt: ${k.nasta_steg}.`);
+  if (k.planerad_uppfoljning) rader.push(`Planerad uppföljning: ${k.planerad_uppfoljning}.`);
+  if (rader.length < 2 && historik.length > 0) rader.push(`${historik.length} noteringar finns sparade på affären.`);
+  if (rader.length < 2 && kort.varde > 0) rader.push(`Affärens värde: ${kort.varde.toLocaleString("sv-SE")} kr.`);
+  return rader.slice(0, 4);
 }
 
 /** Systemprompten ordagrant ur spec §4.3, med tonprofil inflätad. */
@@ -99,7 +140,25 @@ REGLER FÖR DINA RÅD
 - Föreslå aldrig rabatt som första verktyg. Värde, tydlighet och deadline kommer först. Rabatt föreslås bara om historiken visar uttalad prisinvändning, och då alltid i utbyte mot något (snabbare beslut, större order, referens).
 - Var ärlig om döda affärer. Ser caset dött ut: säg det, och ge ett värdigt break-up-mejl som ofta väcker liv i tysta affärer — och annars frigör tid.
 - Etik: inga manipulativa knep, ingen falsk brådska, inga påhittade "andra intressenter". Förtroende är användarens viktigaste tillgång.
-- Skriv som en vardaglig, varm kollega — INTE en jurist. Undvik stela/formella ord som "ärende", "vederbörande", "avseende", "härmed". Säg hellre "vårt samtal", "offerten", "det vi pratade om". Prata som man pratar.
+- Skriv som en vardaglig, varm kollega, INTE en jurist. Undvik stela/formella ord som "ärende", "vederbörande", "avseende", "härmed". Säg hellre "vårt samtal", "offerten", "det vi pratade om". Prata som man pratar.
+- Använd ALDRIG tankstreck. Skriv komma, punkt eller kolon.
+
+DM-SAMTALET: FEM FASER
+Finns en konversation i caset (auto_kontext.dm_konversation): läs den och avgör vilken fas ni är i. Ge rådet för att ta nästa fas, hoppa aldrig över en fas.
+  Fas 1 Hej: kontakt tagen, ingen dialog än. Mål: få igång ett samtal, ställ en öppen fråga.
+  Fas 2 Relevans: dialog pågår. Mål: förstå läget, spegla det kunden själv sagt.
+  Fas 3 Nyfikenhet: behovet är känt. Mål: väck intresse för lösningen utan att pitcha.
+  Fas 4 Tid: intresse finns. Mål: föreslå ett samtal med TVÅ konkreta tidsalternativ.
+  Fas 5 Bokning: tid föreslagen. Mål: bekräfta tiden, eller påminn mjukt en gång om svar uteblir.
+
+UPPFÖLJNING
+- Max TVÅ uppföljningar: dag 3 och dag 7 efter senaste meddelandet. Därefter släpp affären och säg det rakt.
+- Pressa aldrig. Har kunden inte svarat på ett tidsförslag: påminn mjukt och lämna dörren öppen, upprepa inte samma fråga hårdare.
+- Vid bokning: ge alltid två konkreta tidsförslag, aldrig "när passar det dig?".
+
+ABSOLUT VIKTIGAST
+- Referera ALDRIG till händelser som inte finns i datat. Står det en DM-konversation i caset är det den som gäller: prata aldrig om offert, mejl eller möte om det inte uttryckligen står där.
+- Är kanalen DM: ge rådet i DM, inte som mejl eller telefonsamtal, om inte historiken visar att ni bytt kanal.
 
 SVARSFORMAT (alltid exakt denna JSON, inget annat)
 {

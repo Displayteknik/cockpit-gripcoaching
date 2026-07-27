@@ -101,7 +101,20 @@ export async function POST(req: NextRequest) {
 
     const profile = await getProfileAsMarkdown().catch(() => "");
     const directives = await getKitDirectives(await resolveClientId());
-    const profilBlock = profile ? `\n=== VARUMÄRKESPROFIL (kontext: röst, målgrupp, erbjudande) ===\n${profile.slice(0, 5000)}` : "";
+    // Brand-profilen används VILLKORAT: inlägget självt är primär källa. Passar profilen
+    // inläggets bransch/röst är den förstärkande kontext, annars ignoreras den helt så
+    // tenantens bransch aldrig blöder in i ett inlägg från en annan värld.
+    const profilBlock = profile
+      ? [
+          "\n=== TENANTENS BRAND-PROFIL (villkorad referens, INTE facit) ===",
+          profile.slice(0, 5000),
+          "\n=== SÅ ANVÄNDER DU PROFILEN ===",
+          "1. Härled FÖRST bransch, målgrupp, erbjudande, ton och tilltal ur det inklistrade inlägget. Det är din primära källa.",
+          "2. Jämför sedan med profilen ovan. Samma bransch och röst: använd profilen som förstärkning (ton, målgruppsdetaljer).",
+          "3. Olika bransch eller röst: IGNORERA profilen helt för den här körningen och arbeta enbart utifrån inlägget.",
+          "4. Blanda ALDRIG in tenantens bransch, produkter, tjänster eller exempel i ett inlägg som handlar om något annat.",
+        ].join("\n")
+      : "";
 
     // ── Läge DISC: fyra varianter av samma inlägg, en per personlighetstyp ──
     if (mode === "disc") {
@@ -123,6 +136,7 @@ export async function POST(req: NextRequest) {
             `Ton: ${DISC_TONE[letter]}.`,
             `Krok: ${krok}.`,
             "\nBehåll budskapet, erbjudandet och svarsordet identiskt. Ändra bara tilltal, krok och rytm så det passar typen.",
+            "Inlägget självt styr bransch, målgrupp och erbjudande. Handlar det om något annat än profilen ovan: ignorera profilen helt och blanda aldrig in tenantens bransch eller produkter.",
             REGLER,
             "- Uppfinn ALDRIG statistik, procenttal, forskningsresultat eller studier. Inga siffror som inte står i originalet.",
             dontsRule(directives.donts),
@@ -152,12 +166,13 @@ export async function POST(req: NextRequest) {
       dontsRule(directives.donts),
       "\n=== SVARSFORMAT (exakt) ===",
       "Returnera ENDAST giltig JSON, inget annat:",
-      '{"analysis":["punkt 1","punkt 2"],"improved":"hela det förbättrade inlägget med radbrytningar"}',
+      '{"profileMatch":true,"analysis":["punkt 1","punkt 2"],"improved":"hela det förbättrade inlägget med radbrytningar"}',
+      'Sätt "profileMatch" till true om du använde Brand-profilen (samma bransch och röst), annars false.',
     ].filter(Boolean).join("\n");
 
     const raw = await genGuarded(system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text, false);
     const jsonStr = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-    let parsed: { analysis?: unknown; improved?: unknown } = {};
+    let parsed: { analysis?: unknown; improved?: unknown; profileMatch?: unknown } = {};
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
@@ -171,7 +186,9 @@ export async function POST(req: NextRequest) {
     const improved = typeof parsed.improved === "string" ? stripInventedStats(sanitize(parsed.improved), text).trim() : "";
     if (!improved) return NextResponse.json({ error: "Kunde inte förbättra inlägget just nu. Prova igen." }, { status: 502 });
 
-    return NextResponse.json({ analysis, improved });
+    // Utan profil finns inget att matcha mot → visa ingen infotext alls.
+    const profileMatch = profile ? parsed.profileMatch === true : null;
+    return NextResponse.json({ analysis, improved, profileMatch });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

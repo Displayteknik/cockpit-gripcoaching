@@ -904,6 +904,7 @@ function CoachContextInput({
   primaryColor,
   rows = 3,
   compact = false,
+  allowEmpty = false, // true = knappen är aktiv utan text (kontexten finns redan i systemet)
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -913,6 +914,7 @@ function CoachContextInput({
   primaryColor: string;
   rows?: number;
   compact?: boolean;
+  allowEmpty?: boolean;
 }) {
   const [recording, setRecording] = useState(false);
   const [sekunder, setSekunder] = useState(0);
@@ -1094,7 +1096,7 @@ function CoachContextInput({
         <div className="flex-1" />
         <button
           onClick={onSubmit}
-          disabled={!value.trim() || upptagen || recording}
+          disabled={(!allowEmpty && !value.trim()) || upptagen || recording}
           className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-40"
           style={{ background: primaryColor }}
         >
@@ -1121,6 +1123,7 @@ function CoachPanel({
   const [loading, setLoading] = useState(true);
   const [svar, setSvar] = useState<CoachSvar | null>(null);
   const [insamling, setInsamling] = useState<string | null>(null);
+  const [vetRedan, setVetRedan] = useState<string[]>([]); // "Det här vet jag redan" — ur systemets data
   const [fraga, setFraga] = useState("");
   const [kopierad, setKopierad] = useState(false);
   const [kontakt, setKontakt] = useState<{ namn?: string; email?: string; telefon?: string; foretag?: string } | null>(null);
@@ -1146,6 +1149,7 @@ function CoachPanel({
           body: JSON.stringify({ kort, fraga: medFraga || null }),
         });
         const d = await r.json();
+        if (Array.isArray(d.vetRedan)) setVetRedan(d.vetRedan);
         if (d.insamlingsfraga) setInsamling(d.insamlingsfraga);
         else if (d.svar) setSvar(d.svar);
       } catch {
@@ -1225,27 +1229,48 @@ function CoachPanel({
         </div>
 
         <div className="px-6 py-5 space-y-4">
+          {/* Det här vet jag redan — hämtat ur systemet, aldrig gissat. Coachen frågar
+              inte om sådant som redan står i DM-historiken eller på affären. */}
+          {vetRedan.length > 0 && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: `${primaryColor}33`, background: `${primaryColor}0a` }}>
+              <div className="text-xs uppercase tracking-wide font-semibold mb-2" style={{ color: primaryColor }}>
+                Det här vet jag redan
+              </div>
+              <ul className="space-y-1.5">
+                {vetRedan.map((rad, i) => (
+                  <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: primaryColor }} />
+                    {rad}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex items-center gap-2 text-gray-500 py-8">
               <Loader2 className="w-4 h-4 animate-spin" /> Coachen tänker…
             </div>
           ) : insamling ? (
             <div className="space-y-3">
-              <p className="text-sm text-gray-700">{insamling}</p>
+              <p className="text-sm text-gray-700">
+                {vetRedan.length > 0
+                  ? "Har något hänt utanför systemet? Ett samtal, ett möte, en invändning. Lämna tomt om allt står i historiken."
+                  : insamling}
+              </p>
               <CoachContextInput
                 value={fraga}
                 onChange={setFraga}
                 onSubmit={() => {
                   const q = fraga.trim();
-                  if (q) {
-                    kor(q);
-                    setFraga("");
-                  }
+                  kor(q || undefined); // fritexten är valfri när kontext redan finns
+                  setFraga("");
                 }}
                 submitLabel="Ge mig ett råd"
                 placeholder="Skriv, prata in eller klistra in en skärmbild av vad som hänt sedan sist…"
                 primaryColor={primaryColor}
                 rows={3}
+                allowEmpty={vetRedan.length > 0}
               />
             </div>
           ) : svar ? (

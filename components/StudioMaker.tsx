@@ -152,6 +152,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [impDisc, setImpDisc] = useState<{ letter: string; label: string; color: string; text: string }[]>([]);
   const [impDiscBusy, setImpDiscBusy] = useState(false);
   const [impCopied, setImpCopied] = useState("");
+  const [impProfileMatch, setImpProfileMatch] = useState<boolean | null>(null); // null = ingen profil att matcha mot
 
   const [uploading, setUploading] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -546,6 +547,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       if (!r.ok) throw new Error(d.error || "Kunde inte förbättra inlägget");
       setImpAnalysis(Array.isArray(d.analysis) ? d.analysis : []);
       setImpImproved(d.improved || "");
+      setImpProfileMatch(typeof d.profileMatch === "boolean" ? d.profileMatch : null);
     } catch (e) { setError((e as Error).message); } finally { setImpBusy(false); }
   }, [impText]);
 
@@ -1169,6 +1171,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </button>
                     </div>
                     <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{impImproved}</p>
+                    {impProfileMatch !== null && (
+                      <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
+                        {impProfileMatch
+                          ? "Förbättrat med stöd av din Brand-profil."
+                          : "Förbättrat utifrån inläggets egen röst och målgrupp."}
+                      </p>
+                    )}
                   </section>
                 </div>
 
