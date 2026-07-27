@@ -94,6 +94,57 @@ export async function GET() {
     .filter(([, p]) => (p.dueAt || "").slice(0, 10) <= todayStr)
     .map(([oppId]) => oppId);
 
+  // ── DM-berikning: kontextspecifika förslag + bokade tider ──────────────────────
+  // Förslagsraden ska komma ur kontaktens verkliga läge (steg, anteckning, nästa steg),
+  // inte generiska fraser. Bokade kontakter ska INTE föreslås som drag. Samma datakälla
+  // som Säljcoachen läser, så vyerna aldrig motsäger varandra.
+  const { data: dmRows } = await sb
+    .from("cockpit_dm_contacts")
+    .select("display_name, stage, notes, next_action, next_action_at")
+    .eq("client_id", clientId);
+
+  type DmRad = { display_name: string | null; stage: string | null; notes: string | null; next_action: string | null; next_action_at: string | null };
+  const dmByNamn = new Map<string, DmRad>();
+  for (const d of (dmRows as DmRad[] | null) || []) {
+    if (d.display_name) dmByNamn.set(d.display_name.trim().toLowerCase(), d);
+  }
+
+  const DM_ETIKETT: Record<string, string> = { new: "Ny", acknowledge: "Bekräftad", connect: "Dialog", offer: "Erbjudande", won: "Bokad", lost: "Förlorad" };
+  const tidText = (iso: string) => {
+    const d = new Date(iso);
+    const dag = d.toISOString().slice(0, 10) === todayStr ? "idag" : new Date(Date.now() + 86400000).toISOString().slice(0, 10) === d.toISOString().slice(0, 10) ? "imorgon" : d.toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
+    return `${dag} ${d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}`;
+  };
+
+  // Per affär: etikett ur DM-steget, förslag ur kontexten, och bokad tid när den finns.
+  const dmInfo: Record<string, { etikett: string | null; forslag: string | null; bokad: string | null; bokadNot: string | null }> = {};
+  for (const o of opps) {
+    const d = dmByNamn.get((o.namn || "").trim().toLowerCase());
+    if (!d) continue;
+    const etikett = d.stage ? DM_ETIKETT[d.stage] || null : null;
+    const bokadTid = d.stage === "won" && d.next_action_at ? tidText(d.next_action_at) : null;
+    // Bokad kontakt: ingen åtgärdsrad, bara den bokade tiden.
+    if (bokadTid) {
+      dmInfo[o.id] = { etikett: "Bokad", forslag: null, bokad: bokadTid, bokadNot: (d.notes || "").split("\n")[0] || null };
+      continue;
+    }
+    // Har kontakten redan en planerad uppgift är den uppgiften sanningen (visas i Att göra idag).
+    let forslag: string | null = planering[o.id] ? null : d.next_action || null;
+    if (!forslag && !planering[o.id]) {
+      const dagar = Math.max(0, Math.floor((Date.now() - new Date(o.lastStageChangeAt || o.updatedAt || Date.now()).getTime()) / 86400000));
+      // Max 2 uppföljningar (dag 3 och dag 7), aldrig pressa.
+      if (d.stage === "offer") {
+        const kvar = 3 - dagar;
+        forslag = kvar > 0
+          ? `Invänta svar på erbjudandet, mjuk påminnelse om ${kvar} ${kvar === 1 ? "dag" : "dagar"}`
+          : dagar < 7 ? "Skicka en mjuk påminnelse om erbjudandet" : "Sista mjuka påminnelsen, annars släpp";
+      } else if (d.stage === "connect") forslag = "Fortsätt dialogen, föreslå nästa steg";
+      else if (d.stage === "acknowledge") forslag = "Ställ en öppen fråga om läget";
+      else if (d.stage === "new") forslag = "Svara och starta samtalet";
+    }
+    dmInfo[o.id] = { etikett, forslag, bokad: null, bokadNot: null };
+  }
+
   // Grafisk pipeline-stegrad: hela pipelinen (steg i ordning) från GHL, per affär.
   // GHL-stegets id är globalt unikt → hitta pipelinen som innehåller affärens steg.
   // Best-effort: utan detta renderas kortet ändå (bara utan stegrad).
@@ -129,5 +180,6 @@ export async function GET() {
     planering,
     attGoraIdag,
     stegKarta,
+    dmInfo,
   });
 }

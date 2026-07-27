@@ -12,6 +12,12 @@ function norm(s: string): string {
  * Ordningen spelar roll: första matchande regel vinner.
  */
 const PILOT_REGLER: Array<{ test: RegExp; regel: StegRegel }> = [
+  // DM-pipelinens steg (Ny → Bekräftad → Dialog → Erbjudande) matchas FÖRST så etiketten
+  // speglar kontaktens verkliga läge. "erbjudande" får inte falla i offert-regeln nedan
+  // (den skulle säga "Offert skickad" om något som är ett DM-erbjudande).
+  { test: /^erbjudande$/, regel: { typ: "uppfoljning", namn: "Erbjudande", vikt: 3.0, sla: 7 } },
+  { test: /^dialog$/, regel: { typ: "kontakt", namn: "Dialog", vikt: 2.0, sla: 7 } },
+  { test: /^bekraftad$/, regel: { typ: "kontakt", namn: "Bekräftad", vikt: 1.5, sla: 7 } },
   { test: /offert skickad|forslag|offert ut/, regel: { typ: "offert", namn: "Offert skickad", vikt: 3.0, sla: 3 } },
   { test: /uppfoljning|follow/, regel: { typ: "uppfoljning", namn: "Uppföljning", vikt: 3.5, sla: 7 } },
   { test: /forhandling|andring|forhandl/, regel: { typ: "uppfoljning", namn: "Förhandling", vikt: 3.5, sla: 3 } },

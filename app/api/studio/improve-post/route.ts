@@ -25,7 +25,11 @@ function sanitize(t: string): string {
     .replace(/\bnästa\s+nivå\b/gi, "längre")
     .replace(/\bholistiskt?\b/gi, "helhet").replace(/\bholistiska\b/gi, "helhets")
     .replace(/\bskalbar[t]?\b/gi, "lätt att växa")
-    .replace(/\s+—\s+/g, ", ").replace(/—/g, ",");
+    // Tankstreck i alla former (em-dash — och en-dash –) → komma. Både omgivet av
+    // mellanslag och hopskrivet, annars slinker "gör – men" igenom.
+    .replace(/\s*[—–]\s*/g, ", ")
+    .replace(/,\s*,/g, ",")
+    .replace(/\s+,/g, ",");
 }
 
 // Gemensamma järnregler: aldrig hitta på, behåll rösten, aldrig tankstreck.

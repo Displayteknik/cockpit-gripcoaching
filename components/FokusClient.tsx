@@ -76,6 +76,8 @@ interface Board {
   };
   planering?: Record<string, Planering>;
   attGoraIdag?: string[];
+  // Kontaktens verkliga läge ur DM: etikett, kontextspecifikt förslag, bokad tid.
+  dmInfo?: Record<string, { etikett: string | null; forslag: string | null; bokad: string | null; bokadNot: string | null }>;
   stegKarta?: Record<string, { aktuellId: string; pipelineNamn: string; steg: { id: string; namn: string }[] }>;
 }
 
@@ -138,9 +140,13 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
   const pl = p?.pengalinjen;
   const planering = b.planering || {};
   const attSet = new Set(b.attGoraIdag || []);
+  const dmInfo = b.dmInfo || {};
   const attGoraKort = [...drag, ...avgor].filter((c) => attSet.has(c.id));
-  const dragKvar = drag.filter((c) => !attSet.has(c.id));
-  const avgorKvar = avgor.filter((c) => !attSet.has(c.id));
+  // Bokade kontakter lyfts UT ur Dagens drag: en bokad tid är inget "drag" att göra.
+  const bokade = [...drag, ...avgor].filter((c) => !attSet.has(c.id) && dmInfo[c.id]?.bokad);
+  const arBokad = (id: string) => !!dmInfo[id]?.bokad;
+  const dragKvar = drag.filter((c) => !attSet.has(c.id) && !arBokad(c.id));
+  const avgorKvar = avgor.filter((c) => !attSet.has(c.id) && !arBokad(c.id));
   // "Väntar på offert": möte hållet men offert ej skickad (typ 'mote'). Lyfts UT ur
   // Dagens drag/Avgör till egen sektion — nästa steg mot offert/order i pipelinen.
   const vantarOffert = [...dragKvar, ...avgorKvar].filter((c) => c.typ === "mote");
@@ -224,13 +230,46 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     c={c}
                     primaryColor={primaryColor}
                     locationId={b.locationId}
-                    planering={planering[c.id]}
+                    planering={planering[c.id]} dm={dmInfo[c.id]}
                     stegInfo={b.stegKarta?.[c.id]}
                     attGora
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
                   />
                 ))}
+              </div>
+            </section>
+          )}
+
+          {/* Bokat — tider som redan är satta. Ingen åtgärd, bara överblick. */}
+          {bokade.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}1a` }}>
+                  <CalendarPlus className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
+                </span>
+                <h2 className="font-display font-bold text-gray-900 text-lg">Bokat</h2>
+                <span className="text-xs text-gray-400 tabular-nums">({bokade.length})</span>
+              </div>
+              <div className="bg-white border border-gray-100 rounded-2xl shadow-sm divide-y divide-gray-100">
+                {bokade.map((c) => {
+                  const info = dmInfo[c.id];
+                  return (
+                    <div key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3.5">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 flex-shrink-0">Bokad</span>
+                      <span className="font-semibold text-gray-900">{c.namn}</span>
+                      <span className="text-sm text-gray-700">{info?.bokad}</span>
+                      {info?.bokadNot && <span className="text-sm text-gray-500 truncate">{info.bokadNot}</span>}
+                      <a
+                        href={b.locationId ? `https://app.mysales.se/v2/location/${b.locationId}/contacts/detail/${c.ghlContactId || ""}` : "#"}
+                        target="_blank" rel="noopener noreferrer"
+                        className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 flex-shrink-0"
+                      >
+                        Öppna <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}
@@ -279,7 +318,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     c={c}
                     primaryColor={primaryColor}
                     locationId={b.locationId}
-                    planering={planering[c.id]}
+                    planering={planering[c.id]} dm={dmInfo[c.id]}
                     stegInfo={b.stegKarta?.[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
@@ -310,7 +349,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     c={c}
                     primaryColor={primaryColor}
                     locationId={b.locationId}
-                    planering={planering[c.id]}
+                    planering={planering[c.id]} dm={dmInfo[c.id]}
                     stegInfo={b.stegKarta?.[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
@@ -340,7 +379,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                     c={c}
                     primaryColor={primaryColor}
                     locationId={b.locationId}
-                    planering={planering[c.id]}
+                    planering={planering[c.id]} dm={dmInfo[c.id]}
                     stegInfo={b.stegKarta?.[c.id]}
                     onCoacha={() => setCoachKort(c)}
                     onSaved={ladda}
@@ -551,11 +590,13 @@ function DragKort({
   primaryColor,
   locationId,
   planering,
+  dm,
   attGora,
   stegInfo,
   onCoacha,
   onSaved,
 }: {
+  dm?: { etikett: string | null; forslag: string | null; bokad: string | null; bokadNot: string | null };
   c: ScoredCard;
   primaryColor: string;
   locationId?: string;
@@ -638,10 +679,16 @@ function DragKort({
         </div>
       </div>
 
+      {/* Etiketten speglar kontaktens VERKLIGA läge (DM-steget). "X dagar utan nästa steg"
+          döljs när en planerad uppgift eller bokad tid finns: då är det inte sant. */}
       <div className="mt-3 flex items-center gap-2 text-xs">
-        <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-medium">{c.stegNamn}</span>
-        <span className="text-gray-400">·</span>
-        <span className="text-gray-500">{c.lagesText}</span>
+        <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-medium">{dm?.etikett || c.stegNamn}</span>
+        {!planering && !dm?.bokad && (
+          <>
+            <span className="text-gray-400">·</span>
+            <span className="text-gray-500">{c.lagesText}</span>
+          </>
+        )}
       </div>
 
       {/* Planerad kontakt — uppgiftstexten (note) leder, kanalen speglar kontaktens verkliga kanal */}
@@ -675,8 +722,9 @@ function DragKort({
         </div>
       ) : null}
 
-      {/* Rekommenderat drag — säljcoachning. Irrelevant för innehållsuppgifter (posta inlägg). */}
-      {planering?.kanal !== "innehall" && (
+      {/* Förslagsraden: kontextspecifik ur DM-läget när den finns, annars den regelbaserade.
+          Irrelevant för innehållsuppgifter, och bokade kontakter får ingen åtgärdsrad alls. */}
+      {planering?.kanal !== "innehall" && !dm?.bokad && (dm?.forslag || c.rekommenderatDrag) && (
       <div className="mt-3 flex items-start gap-2 rounded-xl bg-gray-50 px-3 py-2.5">
         <span
           className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -684,7 +732,7 @@ function DragKort({
         >
           <Sparkles className="w-3.5 h-3.5" style={{ color: primaryColor }} />
         </span>
-        <span className="text-sm text-gray-700">{c.rekommenderatDrag}</span>
+        <span className="text-sm text-gray-700">{dm?.forslag || c.rekommenderatDrag}</span>
       </div>
       )}
 
