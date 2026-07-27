@@ -257,8 +257,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       clientId: slug, templateId, format, headline1, headline2, body,
       badge: { enabled: meta.fields.badge && badgeEnabled, line1: badgeLine1, line2: badgeLine2 },
       imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl,
+      // Spara läget så inlägget öppnas i samma vy det skapades i (mall vs skriv eget).
+      mode,
     }),
-    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl],
+    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, mode],
   );
 
   const isCarousel = Boolean(meta.carousel);
@@ -698,6 +700,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setSlideIdx(0);
     setVideoUrl((d.videoUrl as string) ?? "");
     setPrevImageUrl("");
+    // Öppna i rätt vy: sparat läge först, annars härlett. Ett inlägg med rubriktext på
+    // bilden är ett mall-inlägg och måste visas i mall-läget, annars ser man inget.
+    const sparatLage = d.mode === "template" || d.mode === "simple" ? (d.mode as "template" | "simple") : null;
+    const harMallText = !!((d.headline1 as string) || (d.headline2 as string) || (d.body as string) || (Array.isArray(d.slides) && d.slides.length));
+    setMode(sparatLage ?? (harMallText ? "template" : "simple"));
   }, []);
 
   const loadDraft = useCallback(() => {
