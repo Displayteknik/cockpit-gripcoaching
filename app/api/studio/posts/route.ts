@@ -52,6 +52,10 @@ export async function POST(req: NextRequest) {
           compass_source: c.funnel || c.four_a ? "manual" : null,
         }
       : {};
+    // Valfri schemalagd tid (Veckoplan sparar hela veckan på framtida datum).
+    const schemalagd = typeof body.scheduledAt === "string" && !Number.isNaN(Date.parse(body.scheduledAt))
+      ? new Date(body.scheduledAt).toISOString()
+      : null;
     const row = {
       client_id: clientId,
       template_id: String(payload.templateId || "ark-textkort"),
@@ -60,6 +64,7 @@ export async function POST(req: NextRequest) {
       payload,
       image_url: payload.imageUrl || null,
       updated_at: new Date().toISOString(),
+      ...(schemalagd ? { scheduled_at: schemalagd } : {}),
       ...compassCols,
     };
     const sb = supabaseService();

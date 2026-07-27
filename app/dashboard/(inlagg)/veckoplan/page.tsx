@@ -84,33 +84,45 @@ export default function VeckoplanPage() {
     setSaveResult(null);
     const startMs = scheduleAll ? new Date(startDate).getTime() : 0;
     let ok = 0;
+    let fel = "";
     for (let i = 0; i < response.days.length; i++) {
       const day = response.days[i];
-      const payload: Record<string, unknown> = {
-        hook: day.hook,
-        body: day.body,
-        cta: day.cta,
-        hashtags: day.hashtags,
-        format: day.format,
-        platform: "instagram",
+      const hashtags = (day.hashtags || []).map((h: string) => (h.startsWith("#") ? h : `#${h}`)).join(" ");
+      const caption = [day.hook, day.body, day.cta, hashtags].filter(Boolean).join("\n\n");
+      // Spara som Studio-inlägg: då hamnar de på rätt datum i kalendern, kan öppnas
+      // och redigeras i inläggsverktyget, och kan få en bild.
+      const body: Record<string, unknown> = {
+        title: (day.hook || day.body || "Inlägg").split("\n")[0].slice(0, 120),
+        payload: {
+          templateId: "ark-textkort",
+          format: day.format || "1080x1350",
+          headline1: day.hook || "",
+          headline2: "",
+          body: day.body || "",
+          caption,
+          mode: "template",
+        },
       };
-      if (scheduleAll) {
-        const d = new Date(startMs + i * 24 * 3600 * 1000);
-        payload.scheduled_for = d.toISOString();
-      }
+      if (scheduleAll) body.scheduledAt = new Date(startMs + i * 24 * 3600 * 1000).toISOString();
       try {
-        await fetch("/api/posts", {
+        const r = await fetch("/api/studio/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(body),
         });
-        ok = i + 1;
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          fel = d.error || `Kunde inte spara dag ${i + 1}`;
+          continue; // hoppa dagen, men rapportera sanningen
+        }
+        ok += 1;
         setSavedCount(ok);
-      } catch {
-        // fortsätt även om en dag fallerar
+      } catch (e) {
+        fel = (e as Error).message;
       }
     }
     setSavingAll(false);
+    if (fel) setError(ok > 0 ? `${ok} inlägg sparades, men något gick fel: ${fel}` : `Inget sparades: ${fel}`);
     if (ok > 0) {
       const fmt = (ms: number) => new Date(ms).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
       setSaveResult({
@@ -301,7 +313,7 @@ export default function VeckoplanPage() {
             <div className={`rounded-xl border p-3.5 text-sm flex items-center gap-2 flex-wrap ${saveResult.scheduled ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
               <Check className="w-4 h-4 shrink-0" />
               {saveResult.scheduled ? (
-                <span><strong className="tabular-nums">{saveResult.count}</strong> inlägg schemalagda {saveResult.from} till {saveResult.to}.</span>
+                <span><strong className="tabular-nums">{saveResult.count}</strong> inlägg schemalagda {saveResult.from} till {saveResult.to}. Klicka ett inlägg i kalendern för att lägga bild och redigera.</span>
               ) : (
                 <span><strong className="tabular-nums">{saveResult.count}</strong> inlägg sparade som utkast (dagens datum). Vill du lägga dem på framtida datum: bocka i <strong>Schemalägg från</strong> ovan och spara igen.</span>
               )}
