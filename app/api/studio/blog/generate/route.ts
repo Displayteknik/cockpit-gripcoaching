@@ -57,7 +57,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 4) Sätt ihop body: FAQ-schema (best-effort) i slutet.
-    const html = article.html + buildFaqJsonLd(article.faq);
+    // Tankstreck ska aldrig nå kundtext. Rör bara brödtexten, inte HTML-taggar.
+    const utanTankstreck = (t: string) => String(t || "").replace(/\s*[—–]\s*/g, ", ").replace(/,\s*,/g, ",");
+    const html = utanTankstreck(article.html) + buildFaqJsonLd(article.faq);
+    article.title = utanTankstreck(article.title);
+    article.metaTitle = utanTankstreck(article.metaTitle);
+    article.metaDescription = utanTankstreck(article.metaDescription);
 
     return NextResponse.json({
       article: { ...article, html, coverImageUrl, blogId },
