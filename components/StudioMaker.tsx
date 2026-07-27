@@ -658,7 +658,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setError(""); setExporting(true);
     try {
       const blob = await captureDesignBlob();
-      if (!blob) throw new Error("Kunde inte skapa bilden — prova igen om en stund.");
+      if (!blob) throw new Error("Kunde inte skapa bilden, prova igen om en stund.");
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = `${slug}-${templateId}-${format}.png`;
@@ -979,7 +979,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setError(""); setSavingDesign(true);
     try {
       const url = await renderDesignPng();
-      if (!url) throw new Error("Kunde inte skapa den färdiga bilden — prova igen om en stund.");
+      if (!url) throw new Error("Kunde inte skapa den färdiga bilden, prova igen om en stund.");
       setShowMedia(true);
       await loadMedia();
     } catch (e) { setError((e as Error).message); } finally { setSavingDesign(false); }
@@ -1062,12 +1062,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <FunctionGuide
                     primaryColor={primary}
                     title="Skapa inlägg"
-                    what="Bygger färdiga inlägg till Instagram, Facebook och LinkedIn — bild, text på bilden och bildtext i din röst, utan Canva."
+                    what="Bygger färdiga inlägg till Instagram, Facebook och LinkedIn: bild, text på bilden och bildtext i din röst, utan Canva."
                     how="Välj mall och format, lägg till en bild (egen, sök eller genererad), skriv eller låt Skrivhjälpen föreslå rubrik och bildtext, förhandsgranska per kanal och schemalägg eller publicera."
                     tips={["Fyll i din brand-profil först så låter texten mer som du.", "Klicka 'Ge mig 3 idéer' för att jämföra olika krokar.", "Schemalägg direkt så hamnar inlägget i kalendern."]}
                   />
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">Färdiga inlägg till Instagram, Facebook och LinkedIn — i din röst, utan Canva.{client ? ` · ${client.name}` : ""}</p>
+                <p className="text-sm text-gray-500 mt-0.5">Färdiga inlägg till Instagram, Facebook och LinkedIn. I din röst, utan Canva.{client ? ` · ${client.name}` : ""}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -1245,7 +1245,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
                     <ImageIcon className="w-[18px] h-[18px]" style={{ color: primary }} />
                   </span>
-                  Bild <span className="text-sm font-normal text-gray-400">— valfritt</span>
+                  Bild <span className="text-sm font-normal text-gray-400">(valfritt)</span>
                 </h2>
                 {imageUrl && (
                   <button onClick={() => setImageUrl("")} className="text-xs text-gray-400 hover:text-red-600 inline-flex items-center gap-1">
@@ -1363,11 +1363,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <section className="bg-white border rounded-2xl p-6 space-y-4" style={stegRam(STEG_FARGER[0])}>
               <div>
                 <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={1} color={STEG_FARGER[0]} /> Ämne</h2>
-                <p className="text-sm text-gray-500 mt-0.5 ml-9">Vad ska inlägget handla om? Skriv en rad — eller få 3 idéer att välja bland.</p>
+                <p className="text-sm text-gray-500 mt-0.5 ml-9">Vad ska inlägget handla om? Skriv en rad, eller få 3 idéer att välja bland.</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
                 <input value={topic} onChange={(e) => setTopic(e.target.value)}
-                  placeholder={isCarousel ? "Ämne för karusellen — t.ex. 3 misstag att undvika, 5 tips" : "t.ex. ett erbjudande, en nyhet, veckans bukett"}
+                  placeholder={isCarousel ? "Ämne för karusellen, t.ex. 3 misstag att undvika, 5 tips" : "t.ex. ett erbjudande, en nyhet, veckans bukett"}
                   className={inputCls} />
                 {!isCarousel && (
                   <button onClick={suggest} disabled={suggesting}
@@ -1379,7 +1379,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
               {!isCarousel && suggestions.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs font-medium text-gray-500">Välj en idé — klicka för att fylla i rubrik och text:</div>
+                  <div className="text-xs font-medium text-gray-500">Välj en idé, klicka för att fylla i rubrik och text:</div>
                   {suggestions.map((s, i) => (
                     <button key={i} onClick={() => applySuggestion(s)}
                       className="w-full text-left rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 p-3 transition-colors">
@@ -1389,12 +1389,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         </span>
                         <span className="text-sm font-bold text-gray-900 truncate">{s.headline1}</span>
                       </div>
-                      <div className="text-xs text-gray-500 line-clamp-2">{s.headline2} — {s.body}</div>
+                      <div className="text-xs text-gray-500 line-clamp-2">{s.headline2}: {s.body}</div>
                     </button>
                   ))}
                 </div>
               )}
-              {isCarousel && <p className="text-xs text-gray-400">Skriv ämnet för karusellen här — du bygger och genererar själva bilderna i steg 4.</p>}
+              {isCarousel && <p className="text-xs text-gray-400">Skriv ämnet för karusellen här. Du bygger och genererar själva bilderna i steg 4.</p>}
             </section>
 
             {/* Steg 2 & 3 sida vid sida på breda skärmar (≥1536px) — använd bredden, kortare
@@ -1442,14 +1442,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
               {isCarousel && (
                 <div className="rounded-xl border p-3 text-xs text-gray-600" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
-                  Bilden läggs på <strong>slide {slideIdx + 1}/{slideCount}</strong> (den du ser i förhandsvisningen). Bläddra med pilarna för att sätta bild på fler slides — eller använd <strong>Skapa bilder till alla slides</strong> i steg 4.
+                  Bilden läggs på <strong>slide {slideIdx + 1}/{slideCount}</strong> (den du ser i förhandsvisningen). Bläddra med pilarna för att sätta bild på fler slides, eller använd <strong>Skapa bilder till alla slides</strong> i steg 4.
                 </div>
               )}
 
               {/* Mallen visar en bild — mjuk hjälp, inte varning */}
               {needsImage && !curImg && (
                 <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
-                  <div className="text-xs text-gray-600">Den här mallen visar en bild. Ladda upp din egen nedan — eller låt oss skapa en bild i din stil ur innehållet.</div>
+                  <div className="text-xs text-gray-600">Den här mallen visar en bild. Ladda upp din egen nedan, eller låt oss skapa en bild i din stil ur innehållet.</div>
                   <button onClick={generateOnBrandImage} disabled={searchingImg === "ai"}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     style={{ background: primary }}>
@@ -1489,7 +1489,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {/* Ändra bilden via kommentar (AI redigerar den befintliga bilden) */}
               {curImg && (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
-                  <label className="block text-xs font-medium text-gray-600">Ändra bilden — skriv vad du vill</label>
+                  <label className="block text-xs font-medium text-gray-600">Ändra bilden: skriv vad du vill</label>
                   <SmartTextarea value={imgComment} onChange={(e) => setImgComment(e.target.value)} rows={2}
                     placeholder='T.ex. "ljusare bakgrund", "visa produkten större" eller "ta bort personen i bakgrunden"'
                     className={inputCls} />
@@ -1506,13 +1506,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </button>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400">Behåller komposition och stil — ändrar bara det du ber om.</p>
+                  <p className="text-xs text-gray-400">Behåller komposition och stil, ändrar bara det du ber om.</p>
                 </div>
               )}
 
               {/* Bildförslag: riktiga foton (Pexels) eller AI-genererat */}
               <div className="pt-3 border-t border-gray-100 space-y-3">
-                <div className="text-xs font-medium text-gray-500">Ingen egen bild? Låt verktyget föreslå — utifrån ämnet {topic ? `"${topic}"` : "(fyll i i steg 1 · Ämne)"}.</div>
+                <div className="text-xs font-medium text-gray-500">Ingen egen bild? Låt verktyget föreslå, utifrån ämnet {topic ? `"${topic}"` : "(fyll i i steg 1 · Ämne)"}.</div>
                 <div className="flex gap-2">
                   <button onClick={() => suggestImage("stock")} disabled={!!searchingImg}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
@@ -1545,7 +1545,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   style={{ background: primary }}>
                   {savingDesign ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Spara bild i Mina bilder
                 </button>
-                <p className="text-xs text-gray-400 -mt-1">Sätter ihop bild, ram och text till en färdig bild — samma som publiceras. Dyker upp nedan.</p>
+                <p className="text-xs text-gray-400 -mt-1">Sätter ihop bild, ram och text till en färdig bild, samma som publiceras. Dyker upp nedan.</p>
 
                 <button onClick={toggleMedia}
                   className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
@@ -1587,7 +1587,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     {postType === "reel" ? "Blir reel" : "Blir story"}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">Ladda upp en video så publiceras inlägget som <strong>reel</strong> — Studio-bilden ovan blir omslag/cover. Utan video blir 9:16-inlägget en <strong>story</strong>.</p>
+                <p className="text-xs text-gray-500">Ladda upp en video så publiceras inlägget som <strong>reel</strong>. Studio-bilden ovan blir omslag/cover. Utan video blir 9:16-inlägget en <strong>story</strong>.</p>
                 {videoUrl ? (
                   <div className="flex items-center gap-3">
                     <video src={videoUrl} className="w-24 rounded-lg border border-gray-100" style={{ aspectRatio: "9/16", objectFit: "cover" }} muted />
@@ -1645,7 +1645,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </div>
                 {suggestions.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-gray-500">Klicka ett förslag — då fylls rubrik och text i nedan:</div>
+                    <div className="text-xs font-medium text-gray-500">Klicka ett förslag, då fylls rubrik och text i nedan:</div>
                     {suggestions.map((s, i) => (
                       <button key={i} onClick={() => applySuggestion(s)}
                         className="w-full text-left rounded-xl border border-gray-200 hover:border-gray-300 bg-white/70 hover:bg-white p-3 transition-colors">
@@ -1655,7 +1655,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           </span>
                           <span className="text-sm font-bold text-gray-900 truncate">{s.headline1}</span>
                         </div>
-                        <div className="text-xs text-gray-500 line-clamp-2">{s.headline2} — {s.body}</div>
+                        <div className="text-xs text-gray-500 line-clamp-2">{s.headline2}: {s.body}</div>
                       </button>
                     ))}
                   </div>
@@ -1666,7 +1666,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {/* Klistra in eget utkast (ej karusell) */}
               {!isCarousel && (
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
-                <label className="block text-sm font-medium text-gray-600">Har du ett eget utkast? Klistra in — Skrivhjälpen delar upp i rubrik och text</label>
+                <label className="block text-sm font-medium text-gray-600">Har du ett eget utkast? Klistra in. Skrivhjälpen delar upp i rubrik och text</label>
                 <SmartTextarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={2} placeholder="Klistra in din egen text här…" className={inputCls} />
                 <button onClick={applyPaste} disabled={applyingPaste || !pasteText.trim()}
                   className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
@@ -1729,7 +1729,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     <label className="block text-sm font-medium text-gray-600 mb-1.5">{meta.fields.headline1}</label>
                     <input value={headline1} onChange={(e) => setHeadline1(e.target.value)} className={inputCls} />
                     {headline1.length > meta.headlineSoftMax && (
-                      <div className="text-xs text-amber-600 mt-1">Rubriken är {headline1.length} tecken — bryter troligen till 2 rader i denna mall (ryms ~{meta.headlineSoftMax}).</div>
+                      <div className="text-xs text-amber-600 mt-1">Rubriken är {headline1.length} tecken, bryter troligen till 2 rader i denna mall (ryms ~{meta.headlineSoftMax}).</div>
                     )}
                   </div>
                   <div>
@@ -1791,7 +1791,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={5} color={STEG_FARGER[4]} /> Bildtext</h2>
-                  <p className="text-xs text-gray-500 mt-0.5 ml-9">Texten <strong>under bilden</strong> på Instagram — kroken som fångar, värdet, en uppmaning och några hashtags.</p>
+                  <p className="text-xs text-gray-500 mt-0.5 ml-9">Texten <strong>under bilden</strong> på Instagram: kroken som fångar, värdet, en uppmaning och några hashtags.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={suggestCaptionVariants} disabled={loadingVariants || suggestingCaption}
@@ -1866,7 +1866,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {captionVariants.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant — jämför krokarna</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant, jämför krokarna</span>
                     <button onClick={() => setCaptionVariants([])} className="text-xs text-gray-400 hover:text-gray-700">Dölj</button>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-2">
@@ -1928,7 +1928,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         <Wand2 className="w-5 h-5" style={{ color: primary }} />
                       </span>
                       <div className="text-sm font-semibold text-gray-800">Ditt inlägg visas här</div>
-                      <p className="text-xs text-gray-500 max-w-[220px]">Skriv text i <strong>steg 4</strong> — eller få idéer i <strong>steg 1</strong>. Då ser du resultatet direkt.</p>
+                      <p className="text-xs text-gray-500 max-w-[220px]">Skriv text i <strong>steg 4</strong>, eller få idéer i <strong>steg 1</strong>. Då ser du resultatet direkt.</p>
                     </div>
                   )}
                 </div>
@@ -1968,7 +1968,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <Copy className="w-4 h-4" /> Spara som ny
                 </button>
               )}
-              {loadedPostId && <p className="text-xs text-gray-400 text-center">Redigerar en sparad skapelse — uppdatera den eller spara som ny.</p>}
+              {loadedPostId && <p className="text-xs text-gray-400 text-center">Redigerar en sparad skapelse, uppdatera den eller spara som ny.</p>}
             </div>
 
             <button onClick={exportPng} disabled={exporting}
@@ -1987,7 +1987,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </>
             )}
 
-            <p className="text-xs text-gray-400 text-center px-2">Kanaler, förhandsvisning och publicering — <strong>steg 6</strong> längre ner.</p>
+            <p className="text-xs text-gray-400 text-center px-2">Kanaler, förhandsvisning och publicering: <strong>steg 6</strong> längre ner.</p>
           </div>
         </div>
         </>)}
@@ -2005,7 +2005,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>
               {mode === "simple" ? "Inlägg" : postType === "reel" ? "Reel" : postType === "story" ? "Story" : isCarousel ? "Karusell" : "Inlägg"}
             </span>
-            <span className="ml-auto text-xs text-gray-500">Skriv en gång — se och anpassa för varje plattform.</span>
+            <span className="ml-auto text-xs text-gray-500">Skriv en gång, se och anpassa för varje plattform.</span>
           </div>
 
           {/* Greta-tydlig avslutning: EN självklar primär-åtgärd + guide anpassad efter läget */}
@@ -2014,7 +2014,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="font-semibold text-gray-900">Klar med inlägget?</div>
               <div className="text-sm text-gray-600 mt-0.5">
                 {CHANNELS.some((c) => channelConnected[c.key])
-                  ? "Spara det så du hittar det senare — eller publicera/schemalägg direkt nedan."
+                  ? "Spara det så du hittar det senare, eller publicera/schemalägg direkt nedan."
                   : "Spara det i Mina inlägg. Sen postar du enkelt: kopiera texten och ladda ner bilden nedan (eller koppla Instagram för att posta direkt härifrån)."}
               </div>
             </div>
@@ -2055,7 +2055,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </button>
           </div>
           {!caption.trim() && (
-            <div className="text-xs text-gray-500">Tips: {mode === "simple" ? <>skriv ditt inlägg ovan först</> : <>skriv eller föreslå en bildtext i <strong>steg 5</strong> först</>} — den blir grunden Skrivhjälpen anpassar per kanal.</div>
+            <div className="text-xs text-gray-500">Tips: {mode === "simple" ? <>skriv ditt inlägg ovan först</> : <>skriv eller föreslå en bildtext i <strong>steg 5</strong> först</>}, den blir grunden Skrivhjälpen anpassar per kanal.</div>
           )}
 
           {/* Schemalägg (valfritt) — gäller alla kanaler. IG schemaläggs nativt (utan GHL); FB/LI via GHL. */}
@@ -2117,7 +2117,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         </button>
                       </div>
                       <textarea value={channelCaptions[key]} onChange={(e) => setChannelCap(key, e.target.value)}
-                        rows={4} placeholder={caption.trim() ? "Använder grundtexten — ändra via knappen eller skriv här." : (mode === "simple" ? "Ingen text än — skriv ovan." : "Ingen bildtext än (steg 5).")}
+                        rows={4} placeholder={caption.trim() ? "Använder grundtexten, ändra via knappen eller skriv här." : (mode === "simple" ? "Ingen text än, skriv ovan." : "Ingen bildtext än (steg 5).")}
                         className="w-full rounded-lg border border-gray-200 px-2.5 py-2 text-xs leading-relaxed focus:border-gray-400 outline-none bg-white" style={{ whiteSpace: "pre-wrap" }} />
                     </div>
 
@@ -2149,10 +2149,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           className="w-full inline-flex items-center justify-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                           {copied === key ? <Check className="w-4 h-4 text-emerald-600" /> : <ExternalLink className="w-4 h-4" />} Kopiera text &amp; öppna {label}
                         </a>
-                        <p className="text-xs text-gray-400">{label} kan inte publiceras direkt härifrån — ladda ner bilden ovan, kopiera texten och lägg upp den själv{customerMode ? "" : ", eller koppla FB/LI nedan"}.</p>
+                        <p className="text-xs text-gray-400">{label} kan inte publiceras direkt härifrån. Ladda ner bilden ovan, kopiera texten och lägg upp den själv{customerMode ? "" : ", eller koppla FB/LI nedan"}.</p>
                       </div>
                     )}
-                    {res === "err" && <p className="text-xs text-red-500">Publicering misslyckades — se felrutan högst upp.</p>}
+                    {res === "err" && <p className="text-xs text-red-500">Publicering misslyckades. Se felrutan högst upp.</p>}
                   </div>
                 );
               })}
@@ -2202,8 +2202,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
           {customerMode && (selectedChannels.includes("fb") || selectedChannels.includes("li")) && (
             <p className="text-xs text-gray-400">
               {ghlConnected
-                ? "Är kanalen kopplad via MySales publicerar du direkt härifrån. Är den inte kopplad — kopiera texten och lägg upp manuellt, eller be din byrå koppla den."
-                : "Facebook och LinkedIn förhandsvisas här. När de kopplats via MySales kan du publicera direkt — annars kopiera texten och lägg upp manuellt."}
+                ? "Är kanalen kopplad via MySales publicerar du direkt härifrån. Är den inte kopplad, kopiera texten och lägg upp manuellt, eller be din byrå koppla den."
+                : "Facebook och LinkedIn förhandsvisas här. När de kopplats via MySales kan du publicera direkt, annars kopiera texten och lägg upp manuellt."}
             </p>
           )}
         </section>
@@ -2221,7 +2221,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </span>
               <h2 className="font-display font-bold text-gray-900 text-lg">Mina inlägg</h2>
             </div>
-            <p className="text-sm text-gray-500">Här samlas inläggen du sparar. Skapa ett inlägg ovan och tryck <strong>Spara i Mina inlägg</strong> — sen hittar du det här när du vill återanvända eller redigera.</p>
+            <p className="text-sm text-gray-500">Här samlas inläggen du sparar. Skapa ett inlägg ovan och tryck <strong>Spara i Mina inlägg</strong>, sen hittar du det här när du vill återanvända eller redigera.</p>
           </section>
         )}
         {mode !== "improve" && posts.length > 0 && (
@@ -2375,7 +2375,7 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
         <button onClick={onReset} className="text-xs text-gray-400 hover:text-gray-700">Återställ</button>
       </div>
       <div className="space-y-2.5">
-        <div className="text-sm font-medium text-gray-600">Textstorlek — per ruta</div>
+        <div className="text-sm font-medium text-gray-600">Textstorlek: per ruta</div>
         <div>
           <label className="block text-xs text-gray-500 mb-0.5">Rubrik ({Math.round(overrides.h1Scale * 100)}%)</label>
           <input type="range" min={0.5} max={2} step={0.05} value={overrides.h1Scale} onChange={(e) => setOv({ h1Scale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />

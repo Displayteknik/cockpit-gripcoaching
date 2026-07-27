@@ -40,12 +40,20 @@ const REGLER = [
   "- FÖRBJUDNA ord: kraftfull, banbrytande, game-changer, handlar om, nästa nivå, holistisk, skalbar.",
 ].join("\n");
 
-async function genGuarded(system: string, prompt: string, temperature = 0.7, maxOutputTokens = 900): Promise<string> {
+// Påhittad statistik är den farligaste hallucinationen här (t.ex. "85% av alla upplever…").
+// Flagga procenttal/studie-språk som INTE finns i originalet → generera om.
+function inventedStats(out: string, original: string): boolean {
+  const pct = out.match(/\d+\s?%/g) || [];
+  if (pct.some((p) => !original.includes(p.replace(/\s/g, "")) && !original.includes(p))) return true;
+  return /\b(studier|forskning|undersökning(ar)?|enligt en rapport|visar att \d)/i.test(out) && !/\b(studier|forskning|undersökning)/i.test(original);
+}
+
+async function genGuarded(system: string, prompt: string, temperature = 0.7, maxOutputTokens = 900, original = ""): Promise<string> {
   let out = "";
   for (let attempt = 0; attempt < 3; attempt++) {
-    const sys = attempt === 0 ? system : `${system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående svar innehöll ett förbjudet uttryck. Skriv om helt och undvik dem.`;
+    const sys = attempt === 0 ? system : `${system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående svar bröt mot reglerna (förbjudet uttryck eller påhittad statistik). Skriv om helt. Använd inga siffror, procenttal eller studier som inte står i originalet.`;
     out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? temperature : 0.6, maxOutputTokens })).trim();
-    if (!hasBanned(out)) break;
+    if (!hasBanned(out) && !(original && inventedStats(out, original))) break;
   }
   return sanitize(out);
 }
@@ -75,18 +83,26 @@ export async function POST(req: NextRequest) {
       const COLOR: Record<DiscLetter, string> = { D: "röd", I: "gul", S: "grön", C: "blå" };
       const variants = await Promise.all(
         LETTERS.map(async (letter) => {
+          // Krokarna för D och C ("rak siffra", "överraskande fakta") lockar modellen att
+          // uppfinna statistik. Styr om dem till siffror/detaljer som FINNS i originalet.
+          const krok = letter === "C"
+            ? "konkret, strukturerad ingång (t.ex. en tydlig frågeställning eller en uppräkning). Använd ALDRIG statistik, procenttal eller studier."
+            : letter === "D"
+              ? "rakt, kort påstående. Använd bara siffror som redan finns i originalet, hitta aldrig på nya."
+              : DISC_HOOK[letter];
           const system = [
             `Du skriver om ett socialt inlägg för ${client?.name || "kunden"} så att det talar till EN personlighetstyp.`,
             profilBlock,
             `\n=== MÅLGRUPPSTYP: ${COLOR[letter]} (${DISC_LABEL_SV[letter]}) ===`,
             `Ton: ${DISC_TONE[letter]}.`,
-            `Krok: ${DISC_HOOK[letter]}.`,
+            `Krok: ${krok}.`,
             "\nBehåll budskapet, erbjudandet och svarsordet identiskt. Ändra bara tilltal, krok och rytm så det passar typen.",
             REGLER,
+            "- Uppfinn ALDRIG statistik, procenttal, forskningsresultat eller studier. Inga siffror som inte står i originalet.",
             dontsRule(directives.donts),
             "\nReturnera ENDAST det omskrivna inlägget, ingen rubrik och ingen förklaring.",
           ].filter(Boolean).join("\n");
-          const t = await genGuarded(system, `Originalinlägg:\n${text}\n\nSkriv om det för ${COLOR[letter]} nu.`, 0.75, 800);
+          const t = await genGuarded(system, `Originalinlägg:\n${text}\n\nSkriv om det för ${COLOR[letter]} nu.`, 0.75, 800, text);
           return { letter, label: DISC_LABEL_SV[letter], color: COLOR[letter], text: t };
         }),
       );
@@ -113,7 +129,7 @@ export async function POST(req: NextRequest) {
       '{"analysis":["punkt 1","punkt 2"],"improved":"hela det förbättrade inlägget med radbrytningar"}',
     ].filter(Boolean).join("\n");
 
-    const raw = await genGuarded(system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400);
+    const raw = await genGuarded(system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text);
     const jsonStr = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
     let parsed: { analysis?: unknown; improved?: unknown } = {};
     try {
