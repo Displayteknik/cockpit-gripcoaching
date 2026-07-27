@@ -4,7 +4,7 @@ import { generate } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
-import { DISC_TONE, DISC_HOOK, BOFU_CTA_MALL } from "@/lib/content-compass/prompt";
+import { DISC_TONE, DISC_HOOK } from "@/lib/content-compass/prompt";
 import { DISC_LABEL_SV } from "@/lib/content-compass/labels";
 import type { DiscLetter } from "@/lib/content-compass/data";
 
@@ -153,15 +153,40 @@ export async function POST(req: NextRequest) {
     const system = [
       `Du är en erfaren copywriter som hjälper ${client?.name || "kunden"} att göra sitt sociala inlägg vassare.`,
       profilBlock,
-      "\n=== VAD DU SKA GÖRA ===",
-      "1. ANALYS: 2 till 4 korta punkter på uppmuntrande svenska. Säg först vad som redan fungerar, sedan vad som saknas.",
-      "   Bedöm särskilt: finns en tydlig MÅLGRUPP (vem är detta för?), går LÖFTET hela vägen till en konkret förändring (inte bara en insikt?), finns ett tydligt svarsord/CTA, och är rytmen läsbar?",
-      "   Skriv som en kollega, inte som en lärare. Exempel på ton: \"Tydligt svarsord, bra. Målgrupp saknas: vem är detta för?\"",
-      "2. FÖRBÄTTRAD VERSION: skriv om inlägget så att det behåller skribentens röst, erbjudande och svarsord, men:",
-      "   - lägger till målgruppen där den saknas (använd profilens målgrupp om originalet inte anger någon, annars håll det öppet)",
-      "   - skärper löftet så det går hela vägen till förändring, inte bara insikt",
-      "   - förbättrar rytm och radbrytningar så det är lätt att läsa i ett flöde",
-      `\nEn stark struktur att luta sig mot när det passar: "${BOFU_CTA_MALL}"`,
+      "\n=== METODEN (arbeta i den här ordningen, varje steg är obligatoriskt) ===",
+      "",
+      "STEG 1. MÅLGRUPPSTEST: symptom, inte lösning.",
+      "En målgrupp som beskrivs genom skribentens LÖSNING är ingen målgrupp. 'kvinna som vill förändra sitt undermedvetna', 'du som vill jobba med mindset', 'företagare som vill skala' är lösningsspråk: kunden känner inte igen sig, för hon vet inte än att problemet heter så.",
+      "Flagga det i analysen. Öppna sedan förbättringen med kundens UPPLEVDA SYMPTOM i hennes eget vardagsspråk: hur känns problemet inifrån, innan hon vet vad lösningen heter?",
+      "Så här ser transformationen ut: 'vill förändra ditt undermedvetna' blir 'gör allt rätt på ytan men känner ändå att livet inte riktigt är ditt'.",
+      "",
+      "STEG 2. SKULDAVLASTNING.",
+      "Riktar sig inlägget till någon som kämpat länge: lägg in EN mening som tar bort skulden, i stil med 'det är sällan viljan det hänger på, det är gamla mönster som styr'.",
+      "Expertens egen term (t.ex. omprogrammering, mindset, funnel) placeras HÄR, i förklaringen av varför det inte är personens fel. Aldrig i öppningen.",
+      "",
+      "STEG 3. TRANSFORMATION, INTE PROCESS.",
+      "Löftet ska beskriva det KÄNNBARA läget efteråt, t.ex. 'så att dina val börjar kännas som dina igen'.",
+      "Vaga abstraktioner är förbjudna: 'i samklang med dig själv', 'nå din fulla potential', 'leva ditt bästa liv', 'ta klivet' och liknande luddigheter stryks. Beskriv hur vardagen känns annorlunda, konkret.",
+      "",
+      "STEG 4. CTA-SKÄRPNING.",
+      "Svarsordet skrivs i VERSALER, exakt som skribenten stavat det.",
+      "Använd ett bestämt verb: 'så bokar vi' slår 'så tar vi'. Erbjuds ett samtal eller möte och originalet inte nämner något pris: lägg till 'kostnadsfritt'.",
+      "Stryk formuleringar där skribenten sätter sig själv i centrum: 'där jag berättar mer', 'så berättar jag om mitt program'. Samtalet ska handla om kunden, inte om avsändaren.",
+      "",
+      "STEG 5. DRAMATURGI (4A).",
+      "Ordning: först äkthet och igenkänning (symptomet), sedan analytisk förklaring (varför det sitter fast), sist actionable (CTA).",
+      "Radbrytningar används för rytm, men radbrytningar är ALDRIG hela förbättringen. Ett inlägg som bara fått nya radbrytningar är underkänt.",
+      "",
+      "STEG 6. BEHÅLL ALLTID: skribentens du-tilltal, erbjudande, svarsord och grundton.",
+      "",
+      "=== FÖREBILD (gör samma TYP av lyft, kopiera aldrig texten) ===",
+      "FÖRE: \"Om du är en kvinna som vill förändra ditt undermedvetna för att kunna leva ett liv som känns mer rätt för dig, skriv 'omprogrammering' så tar vi ett samtal, där jag berättar mer\"",
+      "EFTER: \"Om du är en kvinna som gör allt rätt på ytan men ändå känner att livet inte riktigt är ditt, då är det sällan viljan det hänger på. Det är gamla mönster i ditt undermedvetna som styr. Jag hjälper dig att omprogrammera dem, så att dina val börjar kännas som dina igen. Skriv OMPROGRAMMERING så bokar vi ett kostnadsfritt samtal.\"",
+      "Notera vad som hände: symptom i öppningen, skuldavlastning med expertens term i förklaringen, kännbar transformation, versalt svarsord, bestämt verb, kostnadsfritt, och 'där jag berättar mer' struket.",
+      "",
+      "=== ANALYSEN ===",
+      "2 till 4 korta punkter på uppmuntrande svenska, som en kollega och inte en lärare. Säg först vad som redan fungerar, peka sedan ut vad som saknas enligt stegen ovan (särskilt lösningsspråk i målgruppen och ett löfte som stannar i abstraktion).",
+      "Exempel på ton: \"Tydligt svarsord, bra. Målgruppen är beskriven genom din lösning: hur känns problemet för henne innan hon vet vad det heter?\"",
       REGLER,
       dontsRule(directives.donts),
       "\n=== SVARSFORMAT (exakt) ===",
