@@ -143,7 +143,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [topic, setTopic] = useState("");
   // Två lägen: "simple" = Skriv eget (GHL-enkelt: text + klistra in bild + posta),
   // "template" = Mallar & guide (det stegvisa mall-flödet). Default = enkelt.
-  const [mode, setMode] = useState<"simple" | "template">("simple");
+  // "improve" = Förbättra befintligt (klistra in ett inlägg → analys + skarpare version + DISC-varianter).
+  const [mode, setMode] = useState<"simple" | "template" | "improve">("simple");
+  const [impText, setImpText] = useState("");
+  const [impBusy, setImpBusy] = useState(false);
+  const [impAnalysis, setImpAnalysis] = useState<string[]>([]);
+  const [impImproved, setImpImproved] = useState("");
+  const [impDisc, setImpDisc] = useState<{ letter: string; label: string; color: string; text: string }[]>([]);
+  const [impDiscBusy, setImpDiscBusy] = useState(false);
+  const [impCopied, setImpCopied] = useState("");
 
   const [uploading, setUploading] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -524,6 +532,41 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       setPasteText("");
     } catch (e) { setError((e as Error).message); } finally { setApplyingPaste(false); }
   }, [pasteText, templateId]);
+
+  // ── Förbättra befintligt inlägg: analys + skarpare version (Brand-profilen som kontext) ──
+  const improvePost = useCallback(async () => {
+    if (!impText.trim()) return;
+    setImpBusy(true); setError(""); setImpAnalysis([]); setImpImproved(""); setImpDisc([]);
+    try {
+      const r = await fetch("/api/studio/improve-post", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: impText }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte förbättra inlägget");
+      setImpAnalysis(Array.isArray(d.analysis) ? d.analysis : []);
+      setImpImproved(d.improved || "");
+    } catch (e) { setError((e as Error).message); } finally { setImpBusy(false); }
+  }, [impText]);
+
+  // Kör den förbättrade versionen genom DISC (röd/gul/grön/blå).
+  const improveDisc = useCallback(async () => {
+    if (!impImproved.trim()) return;
+    setImpDiscBusy(true); setError("");
+    try {
+      const r = await fetch("/api/studio/improve-post", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: impImproved, mode: "disc" }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte skapa varianter");
+      setImpDisc(Array.isArray(d.variants) ? d.variants : []);
+    } catch (e) { setError((e as Error).message); } finally { setImpDiscBusy(false); }
+  }, [impImproved]);
+
+  const copyText = useCallback(async (key: string, t: string) => {
+    try { await navigator.clipboard.writeText(t); setImpCopied(key); setTimeout(() => setImpCopied(""), 1500); } catch { /* ignore */ }
+  }, []);
 
   // ── AI-textförslag (3 hook-drivna varianter) ──
   const suggest = useCallback(async () => {
@@ -1051,6 +1094,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             {([
               { k: "simple", label: "Skriv eget", hint: "Text + bild, klart", icon: Pencil },
               { k: "template", label: "Mallar & guide", hint: "Steg för steg", icon: LayoutGrid },
+              { k: "improve", label: "Förbättra befintligt", hint: "Klistra in, få skarpare", icon: Wand2 },
             ] as const).map((m) => {
               const on = mode === m.k;
               const Icon = m.icon;
@@ -1071,6 +1115,99 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             })}
           </div>
         </div>
+
+        {/* ── FÖRBÄTTRA BEFINTLIGT — klistra in ett inlägg, få analys + skarpare version + DISC ── */}
+        {mode === "improve" && (
+          <div className="space-y-6">
+            <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
+              <div>
+                <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+                    <Wand2 className="w-[18px] h-[18px]" style={{ color: primary }} />
+                  </span>
+                  Klistra in ditt inlägg
+                </h2>
+                <p className="text-sm text-gray-500 mt-1 ml-12">Skrivhjälpen läser det, säger vad som redan är bra och vad som saknas, och skriver en skarpare version i din röst.</p>
+              </div>
+              <SmartTextarea value={impText} onChange={(e) => setImpText(e.target.value)} rows={7}
+                placeholder="Klistra in inlägget du vill förbättra, eller prata in det." className={inputCls} />
+              <button onClick={improvePost} disabled={impBusy || !impText.trim()}
+                className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                style={{ background: primary }}>
+                {impBusy ? <><Loader2 className="w-4 h-4 animate-spin" /> Läser och skriver om…</> : <><Wand2 className="w-4 h-4" /> Förbättra</>}
+              </button>
+            </section>
+
+            {impAnalysis.length > 0 && (
+              <section className="rounded-2xl border p-5 shadow-sm" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
+                <h3 className="font-display font-bold text-gray-900 text-base flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4" style={{ color: primary }} /> Så här läser jag inlägget
+                </h3>
+                <ul className="space-y-1.5">
+                  {impAnalysis.map((a, i) => (
+                    <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: primary }} />{a}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {impImproved && (
+              <>
+                <div className="grid lg:grid-cols-2 gap-6 items-start">
+                  <section className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Ditt original</h3>
+                    <p className="text-sm text-gray-500 whitespace-pre-wrap leading-relaxed">{impText}</p>
+                  </section>
+                  <section className="bg-white border rounded-2xl p-5 shadow-sm" style={{ borderColor: `${primary}55` }}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: primary }}>Förbättrad version</h3>
+                      <button onClick={() => copyText("main", impImproved)}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800">
+                        {impCopied === "main" ? <><Check className="w-3.5 h-3.5 text-emerald-600" /> Kopierad</> : <><Copy className="w-3.5 h-3.5" /> Kopiera</>}
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{impImproved}</p>
+                  </section>
+                </div>
+
+                <div>
+                  <button onClick={improveDisc} disabled={impDiscBusy}
+                    className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg bg-white border-2 hover:bg-gray-50 disabled:opacity-40"
+                    style={{ borderColor: `${primary}55`, color: primary }}>
+                    {impDiscBusy ? <><Loader2 className="w-4 h-4 animate-spin" /> Skapar fyra varianter…</> : <><LayoutGrid className="w-4 h-4" /> Skapa fyra varianter</>}
+                  </button>
+                  <p className="text-xs text-gray-400 mt-1.5">En version per personlighetstyp, så du når fler med samma budskap.</p>
+                </div>
+              </>
+            )}
+
+            {impDisc.length > 0 && (
+              <div className="grid md:grid-cols-2 gap-4">
+                {impDisc.map((v) => {
+                  const dot: Record<string, string> = { röd: "#dc2626", gul: "#f59e0b", grön: "#059669", blå: "#2563eb" };
+                  return (
+                    <section key={v.letter} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="inline-flex items-center gap-2 text-sm font-bold text-gray-900">
+                          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: dot[v.color] || "#9ca3af" }} />
+                          {v.color.charAt(0).toUpperCase() + v.color.slice(1)}
+                          <span className="text-xs font-normal text-gray-400">{v.label}</span>
+                        </span>
+                        <button onClick={() => copyText(v.letter, v.text)}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800">
+                          {impCopied === v.letter ? <><Check className="w-3.5 h-3.5 text-emerald-600" /> Kopierad</> : <><Copy className="w-3.5 h-3.5" /> Kopiera</>}
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{v.text}</p>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── SKRIV EGET (enkelt läge) — text + bild, publicera. Ingen mall. ── */}
         {mode === "simple" && (
@@ -1855,7 +1992,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         </div>
         </>)}
 
-        {/* ── Kanaler & publicera — delas av båda lägena (steg 5 i mall-läget) ── */}
+        {/* ── Kanaler & publicera — delas av Skriv eget + Mallar (steg 6). Ej i Förbättra-läget. ── */}
+        {mode !== "improve" && (
         <section className="bg-white border rounded-2xl p-6 space-y-5" style={stegRam(STEG_FARGER[5])}>
           <div className="flex items-center gap-2.5 flex-wrap">
             {mode === "template" ? <StegNr n={6} color={STEG_FARGER[5]} /> : (
@@ -2069,12 +2207,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </p>
           )}
         </section>
+        )}
 
         {/* ── Schemalagt & kö (native IG + blogg) — avboka/ändra tid. Admin + kund. ── */}
-        <ScheduleQueue primary={primary} refreshKey={scheduleRefresh} />
+        {mode !== "improve" && <ScheduleQueue primary={primary} refreshKey={scheduleRefresh} />}
 
         {/* ── Mina inlägg (återanvänd & redigera) ── */}
-        {posts.length === 0 && (
+        {mode !== "improve" && posts.length === 0 && (
           <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-2.5 mb-2">
               <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
@@ -2085,7 +2224,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             <p className="text-sm text-gray-500">Här samlas inläggen du sparar. Skapa ett inlägg ovan och tryck <strong>Spara i Mina inlägg</strong> — sen hittar du det här när du vill återanvända eller redigera.</p>
           </section>
         )}
-        {posts.length > 0 && (
+        {mode !== "improve" && posts.length > 0 && (
           <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
               <div className="flex items-center gap-2.5">
