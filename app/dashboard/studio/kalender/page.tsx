@@ -12,7 +12,7 @@ import BalanceMeter from "@/components/content-compass/BalanceMeter";
 interface ClientInfo { name: string; primary_color: string }
 
 const SOURCE_LABEL: Record<string, string> = { studio: "Studio", social: "Inlägg", linkedin: "LinkedIn", blog: "Blogg" };
-const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669" };
+const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669", failed: "#dc2626" };
 
 function fmt(d: string | null): string {
   if (!d) return "";

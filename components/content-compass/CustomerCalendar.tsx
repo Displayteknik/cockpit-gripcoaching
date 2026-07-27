@@ -13,8 +13,8 @@ import WeekGenerator from "@/components/content-compass/WeekGenerator";
 import BalanceMeter from "@/components/content-compass/BalanceMeter";
 
 const SOURCE_LABEL: Record<string, string> = { studio: "Studio", social: "Inlägg", linkedin: "LinkedIn", blog: "Blogg" };
-const STATUS_LABEL: Record<string, string> = { idea: "Idé", draft: "Utkast", scheduled: "Schemalagt", published: "Publicerat" };
-const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669" };
+const STATUS_LABEL: Record<string, string> = { idea: "Idé", draft: "Utkast", scheduled: "Schemalagt", published: "Publicerat", failed: "Misslyckad publicering" };
+const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669", failed: "#dc2626" };
 
 function fmt(d: string | null): string {
   if (!d) return "";
@@ -152,6 +152,11 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
                   {STATUS_LABEL[vald.status]}{vald.when ? ` · ${fmt(vald.when)}` : ""} · {vald.channel}
                 </div>
                 <div className="mt-2"><CompassBadges funnel={vald.funnel_level} four_a={vald.four_a} disc={vald.disc} /></div>
+                {vald.status === "failed" && (
+                  <div className="mt-2.5 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                    <strong>Publiceringen misslyckades.</strong> {vald.error || ""}
+                  </div>
+                )}
               </div>
               <button onClick={() => setVald(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 flex-shrink-0" title="Stäng">✕</button>
             </div>

@@ -14,8 +14,8 @@ import { FunctionGuide } from "@/components/FunctionGuide";
 interface ClientInfo { name: string; primary_color: string }
 
 const SOURCE_LABEL: Record<string, string> = { studio: "Studio", social: "Inlägg", linkedin: "LinkedIn", blog: "Blogg" };
-const STATUS_LABEL: Record<ContentStatus, string> = { idea: "Idé", draft: "Utkast", scheduled: "Schemalagd", published: "Publicerad" };
-const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669" };
+const STATUS_LABEL: Record<ContentStatus, string> = { idea: "Idé", draft: "Utkast", scheduled: "Schemalagd", published: "Publicerad", failed: "Misslyckad" };
+const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669", failed: "#dc2626" };
 
 const STEPS: { key: ContentStatus; label: string; icon: React.ComponentType<{ className?: string }>; tone: Tone }[] = [
   { key: "idea", label: "Idéer", icon: Lightbulb, tone: "slate" },
@@ -34,7 +34,7 @@ const CREATE = [
 export default function InnehallPage() {
   const [client, setClient] = useState<ClientInfo | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
-  const [counts, setCounts] = useState<Record<ContentStatus, number>>({ idea: 0, draft: 0, scheduled: 0, published: 0 });
+  const [counts, setCounts] = useState<Record<ContentStatus, number>>({ idea: 0, draft: 0, scheduled: 0, published: 0, failed: 0 });
   const [loading, setLoading] = useState(true);
   const [navView, setNavView] = useState<"calendar" | "list">("calendar");
   const primary = client?.primary_color || "#6366f1";

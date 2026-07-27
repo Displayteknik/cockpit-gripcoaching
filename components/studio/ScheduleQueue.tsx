@@ -89,6 +89,16 @@ export default function ScheduleQueue({ primary, refreshKey = 0 }: { primary: st
             <span>{CHANNEL_LABEL[j.channel] || j.channel}</span> · <Clock className="w-3 h-3" /> {fmt(j.scheduled_at)}
           </div>
           {j.status === "failed" && j.error && <div className="text-xs text-red-500 truncate">{j.error}</div>}
+          {/* Försenad publicering: schemaläggaren triggas av en extern cron som kan dröja.
+              Visa det istället för att låtsas att tiden hölls. */}
+          {(() => {
+            const forsening = j.status === "queued" ? Math.floor((Date.now() - new Date(j.scheduled_at).getTime()) / 60000) : 0;
+            return forsening > 20 ? (
+              <div className="text-xs text-amber-600">
+                Väntar på publicering sedan {forsening < 120 ? `${forsening} min` : `${Math.floor(forsening / 60)} h`}
+              </div>
+            ) : null;
+          })()}
         </div>
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: `${st.color}1a`, color: st.color }}>{st.label}</span>
         {j.status === "queued" && (

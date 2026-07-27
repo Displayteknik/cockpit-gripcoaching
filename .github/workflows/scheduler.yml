@@ -1,21 +1,42 @@
 name: Native schemaläggare
 
-# Kör den native schemaläggaren var 15:e minut (Vercel Hobby tillåter bara dagliga crons,
-# så GitHub Actions är den täta triggern). Endpointen är idempotent och hämtar köade
-# studio_scheduled-jobb vars tid passerat. Kräver repo-secret CRON_SECRET = samma värde
-# som Vercels CRON_SECRET-env. Vercels dagliga cron finns kvar som reserv.
+# Kör den native schemaläggaren så tätt som möjligt. Endpointen är idempotent och hämtar
+# köade studio_scheduled-jobb vars tid passerat. Kräver repo-secret CRON_SECRET = samma
+# värde som Vercels CRON_SECRET-env. Vercels dagliga cron finns kvar som reserv.
+#
+# OBS om precisionen: GitHub kör schemalagda workflows "best effort" på delade runners.
+# Uppmätt 2026-07-27 över 30 körningar: snitt 102 min mellan körningar trots */15,
+# värsta lucka 3,8 h. Därför två åtgärder här:
+#   1) Fyra separata scheman över timmen (0, 15, 30, 45) istället för ett */15. En missad
+#      tid drar då inte med sig hela timmen.
+#   2) Varje körning pingar endpointen tre gånger med 100 sekunders mellanrum, vilket ger
+#      fler publiceringsfönster per faktisk körning.
+# För minutexakt publicering krävs en extern pinger (t.ex. cron-job.org var 5:e minut)
+# eller Vercel Pro. Se statusrapporten i handoff-minnet.
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 * * * *"
+    - cron: "15 * * * *"
+    - cron: "30 * * * *"
+    - cron: "45 * * * *"
   workflow_dispatch: {}
+
+# Låt inte två körningar överlappa (endpointen är idempotent, men i onödan).
+concurrency:
+  group: native-schemalaggare
+  cancel-in-progress: false
 
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigga /api/scheduler/cron
+      - name: Trigga /api/scheduler/cron (3 pass)
         run: |
-          curl -fsS -X GET "https://cockpit.gripcoaching.se/api/scheduler/cron" \
-            -H "Authorization: Bearer ${CRON_SECRET}"
+          for i in 1 2 3; do
+            echo "Pass $i $(date -u +%H:%M:%SZ)"
+            curl -fsS -X GET "https://cockpit.gripcoaching.se/api/scheduler/cron" \
+              -H "Authorization: Bearer ${CRON_SECRET}" || echo "pass $i misslyckades"
+            if [ "$i" -lt 3 ]; then sleep 100; fi
+          done
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}

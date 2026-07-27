@@ -83,7 +83,10 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
                           {(it.funnel_level || (it.disc && it.disc.length)) && <div className="flex items-center gap-1 mt-0.5"><FunnelLabel level={it.funnel_level} /><DiscDots disc={it.disc} size={12} /></div>}
                         </>
                       );
-                      const cls = `block w-full text-left rounded px-1.5 py-1 text-xs leading-tight hover:opacity-80 ${funnelTintClass(it.funnel_level) || "border-l-4 border-l-gray-200 bg-gray-50"}`;
+                      // Misslyckad publicering ska synas direkt i kalendern, inte bara i kö-panelen.
+                      const cls = it.status === "failed"
+                        ? "block w-full text-left rounded px-1.5 py-1 text-xs leading-tight hover:opacity-80 border-l-4 border-l-red-500 bg-red-50"
+                        : `block w-full text-left rounded px-1.5 py-1 text-xs leading-tight hover:opacity-80 ${funnelTintClass(it.funnel_level) || "border-l-4 border-l-gray-200 bg-gray-50"}`;
                       return onSelect ? (
                         <button key={`${it.source}-${it.id}`} onClick={() => onSelect(it)} title={it.title} className={cls}>{innehall}</button>
                       ) : (

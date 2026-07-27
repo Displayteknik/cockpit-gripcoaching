@@ -4,7 +4,7 @@
 
 import { supabaseService } from "@/lib/supabase-admin";
 
-export type ContentStatus = "idea" | "draft" | "scheduled" | "published";
+export type ContentStatus = "idea" | "draft" | "scheduled" | "published" | "failed";
 export type ContentSource = "studio" | "social" | "linkedin" | "blog";
 
 export interface ContentItem {
@@ -16,6 +16,7 @@ export interface ContentItem {
   when: string | null; // ISO: schemalagt → publicerat → skapat
   imageUrl: string | null;
   excerpt: string | null; // kort textutdrag, så en post kan visas utan att öppna verkstaden
+  error?: string | null;  // felmeddelande när en publicering misslyckats (syns i kalendern)
   editHref: string; // länk till verkstaden
   // Content Compass-profil (null = oklassat). Tillagt CC-1, additivt.
   funnel_level: string | null;
@@ -60,11 +61,13 @@ function normStatus(opts: { published?: boolean; scheduled?: boolean; raw?: stri
 export async function getContentOverview(clientId: string): Promise<ContentOverview> {
   const sb = supabaseService();
 
-  const [studio, social, linkedin, blog] = await Promise.all([
+  const [studio, social, linkedin, blog, kon] = await Promise.all([
     sb.from("studio_posts").select("id, title, caption, image_url, format, ghl_status, scheduled_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("updated_at", { ascending: false }).limit(100),
     sb.from("hm_social_posts").select("id, platform, hook, caption, image_url, status, scheduled_for, published_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
     sb.from("linkedin_posts").select("id, hook, body, status, scheduled_for, posted_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
     sb.from("hm_blog").select("id, title, image_url, published, published_at, created_at, funnel_level, four_a, disc").eq("client_id", clientId).order("created_at", { ascending: false }).limit(100),
+    // Schemakön: misslyckade publiceringar MÅSTE synas i kalendern, inte bara i kö-panelen.
+    sb.from("studio_scheduled").select("id, title, caption, media_url, channel, status, scheduled_at, error").eq("client_id", clientId).eq("status", "failed").order("scheduled_at", { ascending: false }).limit(50),
   ]);
 
   const items: ContentItem[] = [];
@@ -104,10 +107,21 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     });
   }
 
+  // Misslyckade schemalagda publiceringar → egna poster med felet synligt.
+  for (const j of kon.data || []) {
+    items.push({
+      id: String(j.id), source: "studio", title: firstLine(j.title || j.caption, "Schemalagt inlägg"),
+      channel: String(j.channel || "").includes("blog") ? "blogg" : "social",
+      status: "failed", when: j.scheduled_at, imageUrl: j.media_url, excerpt: utdrag(j.caption),
+      error: j.error || "Publiceringen misslyckades", editHref: WORKSHOP.studio,
+      funnel_level: null, four_a: null, disc: null,
+    });
+  }
+
   // Sortera: schemalagt/kommande först (närmast i tiden), sedan senaste.
   items.sort((a, b) => (b.when || "").localeCompare(a.when || ""));
 
-  const counts: Record<ContentStatus, number> = { idea: 0, draft: 0, scheduled: 0, published: 0 };
+  const counts: Record<ContentStatus, number> = { idea: 0, draft: 0, scheduled: 0, published: 0, failed: 0 };
   for (const it of items) counts[it.status]++;
 
   return { items, counts };

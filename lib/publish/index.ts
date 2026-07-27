@@ -90,6 +90,11 @@ async function publishIgGraph(req: PublishRequest): Promise<PublishResult> {
   const accId = conn.ig_account_id;
   const token = conn.ig_access_token;
   const caption = req.caption || "";
+  // Hård spärr: en bildpost utan text är alltid ett misstag, aldrig ett val.
+  // Avbryt hellre med begripligt fel än att publicera tomt (gäller även köade jobb).
+  if (!caption.trim()) {
+    return fail("ig-graph", "Ingen text på inlägget. Skriv en bildtext innan du publicerar till Instagram.");
+  }
   try {
     // Karusell (2–10 bilder) — varje bild säkras till JPEG.
     if (req.slideUrls && req.slideUrls.length >= 2) {
