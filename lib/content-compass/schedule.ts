@@ -15,7 +15,11 @@ export async function getCompassSchedule(clientId: string): Promise<CompassSched
       .eq("client_id", clientId)
       .maybeSingle();
     if (data?.schedule?.days) {
-      return { days: data.schedule.days as Record<DayKey, CompassDay>, cadence: (data.cadence as Cadence) || "7" };
+      return {
+        days: data.schedule.days as Record<DayKey, CompassDay>,
+        cadence: (data.cadence as Cadence) || "7",
+        activeDays: (data.schedule.activeDays as DayKey[] | undefined) ?? undefined,
+      };
     }
   } catch {
     /* fallthrough till standard */

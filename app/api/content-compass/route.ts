@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer, requireAdmin } from "@/lib/api-auth";
-import { getCompassSchedule, type Cadence } from "@/lib/content-compass/schedule";
+import { getCompassSchedule, activeDaysOf, DAY_KEYS, type Cadence, type DayKey } from "@/lib/content-compass/schedule";
 import { hasModule } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ export async function GET() {
     const { data } = await sb.from("content_compass_schedules").select("schedule, cadence").eq("client_id", clientId).maybeSingle();
     const cc = await getCompassSchedule(clientId);
     const enabled = await hasModule(clientId, "compass").catch(() => false);
-    return NextResponse.json({ schedule: cc.days, cadence: cc.cadence, clientName: client?.name || "", isDefault: !data, enabled });
+    return NextResponse.json({ schedule: cc.days, cadence: cc.cadence, activeDays: activeDaysOf(cc), clientName: client?.name || "", isDefault: !data, enabled });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
@@ -36,9 +36,13 @@ export async function PUT(req: NextRequest) {
     const days = b.schedule && typeof b.schedule === "object" ? b.schedule : null;
     const cadence: Cadence = ["7", "4", "2-3"].includes(b.cadence) ? b.cadence : "7";
     if (!days) return NextResponse.json({ error: "schedule krävs" }, { status: 400 });
+    // Fritt valda publiceringsdagar. Tom lista = anvand kadensens standarddagar.
+    const activeDays: DayKey[] | undefined = Array.isArray(b.activeDays)
+      ? DAY_KEYS.filter((d) => (b.activeDays as string[]).includes(d))
+      : undefined;
     const sb = supabaseService();
     const { error } = await sb.from("content_compass_schedules").upsert(
-      { client_id: clientId, schedule: { days }, cadence, source: "manuell", updated_at: new Date().toISOString() },
+      { client_id: clientId, schedule: { days, ...(activeDays && activeDays.length ? { activeDays } : {}) }, cadence, source: "manuell", updated_at: new Date().toISOString() },
       { onConflict: "client_id" },
     );
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

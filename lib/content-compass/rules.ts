@@ -2,7 +2,7 @@
 // Används av "Skapa veckans innehåll" (bygg en giltig vecka) och balansmätaren (varna).
 // Trösklarna ligger som konstanter överst, inte utspridda i logiken.
 import {
-  CADENCE_DAYS, DAY_KEYS, DAY_LABEL,
+  CADENCE_DAYS, DAY_KEYS, DAY_LABEL, activeDaysOf,
   type CompassSchedule, type DayKey, type FunnelLevel, type DiscLetter,
 } from "./data";
 import type { FourA } from "@/lib/content-framework";
@@ -69,7 +69,7 @@ export interface PlannedPost {
 // varje aktiv veckodag på sitt nästa datum. Applicerar hårda regler och returnerar
 // noteringar i klarspråk om något justerades.
 export function planWeek(schedule: CompassSchedule, from: Date = new Date()): { posts: PlannedPost[]; notes: string[] } {
-  const active = CADENCE_DAYS[schedule.cadence];
+  const active = activeDaysOf(schedule);
   const notes: string[] = [];
   const start = new Date(from);
   start.setDate(start.getDate() + 1); // börja imorgon, aldrig i dåtid

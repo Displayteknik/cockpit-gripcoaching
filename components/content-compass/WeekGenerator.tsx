@@ -18,7 +18,7 @@ function fmt(d: string | null): string {
 
 export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?: string; onDone?: () => void }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [cadence, setCadence] = useState<string>("7");
+  const [dagar, setDagar] = useState<number>(7); // antal valda publiceringsdagar
   const [theme, setTheme] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -27,7 +27,7 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
   useEffect(() => {
     fetch("/api/content-compass")
       .then((r) => r.json())
-      .then((d) => { setEnabled(!!d.enabled); setCadence(d.cadence || "7"); })
+      .then((d) => { setEnabled(!!d.enabled); if (Array.isArray(d.activeDays) && d.activeDays.length) setDagar(d.activeDays.length); })
       .catch(() => setEnabled(false));
   }, []);
 
@@ -52,7 +52,7 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
     }
   };
 
-  const cadenceLabel = cadence === "7" ? "7 inlägg" : cadence === "4" ? "4 inlägg" : "2 till 3 inlägg";
+  const cadenceLabel = `${dagar} inlägg`;
 
   return (
     <section className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/60 to-white p-5 shadow-sm">

@@ -8,5 +8,12 @@ export const dynamic = "force-dynamic";
 
 export default async function KKalender() {
   const session = await requireCustomerFeature("compass");
-  return <CustomerCalendar primary={session.primary_color} canStudio={session.features.includes("skapa")} canLinkedin={session.features.includes("linkedin")} />;
+  return (
+    <CustomerCalendar
+      primary={session.primary_color}
+      canStudio={session.features.includes("skapa")}
+      canLinkedin={session.features.includes("linkedin")}
+      canBlog={session.features.includes("blog")}
+    />
+  );
 }

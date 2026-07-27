@@ -4,7 +4,7 @@
 // skapa hela veckans innehåll, se balansen, och överblicka allt planerat innehåll.
 // Tenant-låst via kund-sessionen (API:erna resolvar kundens egen klient).
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, FileEdit, CheckCircle2, RefreshCw, Loader2, LayoutGrid, List as ListIcon, ImageIcon, ArrowRight } from "lucide-react";
+import { CalendarClock, FileEdit, CheckCircle2, RefreshCw, Loader2, LayoutGrid, List as ListIcon, ImageIcon, ArrowRight, Trash2 } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 import { CompassBadges, funnelTintClass } from "@/components/content-compass/badges";
@@ -13,6 +13,7 @@ import WeekGenerator from "@/components/content-compass/WeekGenerator";
 import BalanceMeter from "@/components/content-compass/BalanceMeter";
 
 const SOURCE_LABEL: Record<string, string> = { studio: "Studio", social: "Inlägg", linkedin: "LinkedIn", blog: "Blogg" };
+const STATUS_LABEL: Record<string, string> = { idea: "Idé", draft: "Utkast", scheduled: "Schemalagt", published: "Publicerat" };
 const STATUS_COLOR: Record<ContentStatus, string> = { idea: "#6b7280", draft: "#d97706", scheduled: "#2563eb", published: "#059669" };
 
 function fmt(d: string | null): string {
@@ -21,7 +22,9 @@ function fmt(d: string | null): string {
   catch { return d; }
 }
 
-export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true, canLinkedin = true }: { primary?: string; canStudio?: boolean; canLinkedin?: boolean }) {
+export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true, canLinkedin = true, canBlog = true }: { primary?: string; canStudio?: boolean; canLinkedin?: boolean; canBlog?: boolean }) {
+  const [vald, setVald] = useState<ContentItem | null>(null); // öppnad post i detaljvyn
+  const [raderar, setRaderar] = useState(false);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"calendar" | "list">("calendar");
@@ -43,10 +46,15 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
     published: items.filter((i) => i.status === "published"),
   }), [items]);
 
-  // Länka bara till en modul kunden faktiskt har — annars blir det en spärrad sida.
-  // Saknas modulen faller vi tillbaka till översikten (/k) som alla har.
-  const linkFor = (it: ContentItem): string =>
-    it.source === "linkedin" ? (canLinkedin ? "/k/linkedin" : "/k") : (canStudio ? `/k/studio?post=${it.id}` : "/k");
+  // Länka till rätt verkstad per källa, och bara till moduler kunden faktiskt har.
+  // Ett blogginlägg ska öppnas i Blogg, inte i Studio med ett id Studion inte känner igen.
+  const linkFor = (it: ContentItem): string => {
+    if (it.source === "linkedin") return canLinkedin ? "/k/linkedin" : "/k";
+    if (it.source === "blog") return canBlog ? "/k/blogg" : "/k";
+    if (!canStudio) return "/k";
+    // Bara studio_posts kan djuplänkas med id (Studion slår upp posten på ?post=).
+    return it.source === "studio" ? `/k/studio?post=${it.id}` : "/k/studio";
+  };
 
   const Row = ({ it }: { it: ContentItem }) => {
     const href = linkFor(it);
@@ -116,7 +124,7 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
 
       {view === "calendar" ? (
         <section className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-          <ContentCalendar items={items} primary={primary} hrefFor={linkFor} />
+          <ContentCalendar items={items} primary={primary} hrefFor={linkFor} onSelect={setVald} />
         </section>
       ) : (
         <>
@@ -124,6 +132,55 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
           <Section title="Utkast" color={STATUS_COLOR.draft} icon={<FileEdit className="w-5 h-5" style={{ color: STATUS_COLOR.draft }} />} list={groups.draft} hint="Skapade, ej publicerade. Öppna i Studio för att lägga bild och publicera." />
           <Section title="Publicerat" color={STATUS_COLOR.published} icon={<CheckCircle2 className="w-5 h-5" style={{ color: STATUS_COLOR.published }} />} list={groups.published} hint="Ute nu." />
         </>
+      )}
+
+      {/* Detaljvy: klick på en post i kalendern öppnar den så den går att redigera eller radera. */}
+      {vald && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4" onClick={() => setVald(null)}>
+          <div className="bg-white w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4 border-b border-gray-100 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: primary }}>
+                  {SOURCE_LABEL[vald.source] || vald.source}
+                </div>
+                <div className="font-display font-bold text-gray-900 leading-tight">{vald.title}</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {STATUS_LABEL[vald.status]}{vald.when ? ` · ${fmt(vald.when)}` : ""} · {vald.channel}
+                </div>
+                <div className="mt-2"><CompassBadges funnel={vald.funnel_level} four_a={vald.four_a} disc={vald.disc} /></div>
+              </div>
+              <button onClick={() => setVald(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 flex-shrink-0" title="Stäng">✕</button>
+            </div>
+            {vald.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={vald.imageUrl} alt="" className="w-full max-h-52 object-cover" />
+            )}
+            <div className="p-6 space-y-2.5">
+              <a
+                href={linkFor(vald)}
+                className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90"
+                style={{ background: primary }}
+              >
+                Öppna och redigera <ArrowRight className="w-4 h-4" />
+              </a>
+              <button
+                onClick={async () => {
+                  if (!confirm(`Radera "${vald.title}"? Det går inte att ångra.`)) return;
+                  setRaderar(true);
+                  try {
+                    const r = await fetch(`/api/content/item?source=${vald.source}&id=${encodeURIComponent(vald.id)}`, { method: "DELETE" });
+                    if (r.ok) { setVald(null); await refresh(); }
+                    else alert("Kunde inte radera posten.");
+                  } finally { setRaderar(false); }
+                }}
+                disabled={raderar}
+                className="w-full inline-flex items-center justify-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-white border border-gray-200 text-red-600 hover:bg-red-50 disabled:opacity-40"
+              >
+                {raderar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Radera
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

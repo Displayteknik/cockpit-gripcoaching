@@ -7,7 +7,9 @@ export type Cadence = "7" | "4" | "2-3";
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
 export interface CompassDay { four_a: FourA; funnel: FunnelLevel; disc: DiscLetter[] }
-export interface CompassSchedule { days: Record<DayKey, CompassDay>; cadence: Cadence }
+// activeDays: fritt valda publiceringsdagar (t.ex. mån/ons/fre). Saknas den används
+// kadensens standarddagar, så gamla scheman fungerar precis som förut.
+export interface CompassSchedule { days: Record<DayKey, CompassDay>; cadence: Cadence; activeDays?: DayKey[] }
 
 export const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 export const DAY_LABEL: Record<DayKey, string> = {
@@ -41,9 +43,17 @@ export function dayKeyOf(date: Date): DayKey {
   return (["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as DayKey[])[date.getDay()];
 }
 
-// Profilen för ett datum. null om dagen inte är aktiv i kadensen.
+// Veckans aktiva publiceringsdagar: egna valda dagar först, annars kadensens standard.
+// EN källa för alla som behöver veta vilka dagar som gäller (planering, balans, kalender).
+export function activeDaysOf(schedule: CompassSchedule): DayKey[] {
+  const egna = schedule.activeDays?.filter((d) => DAY_KEYS.includes(d)) ?? [];
+  if (egna.length > 0) return DAY_KEYS.filter((d) => egna.includes(d)); // alltid mån→sön
+  return CADENCE_DAYS[schedule.cadence] ?? DAY_KEYS;
+}
+
+// Profilen för ett datum. null om dagen inte är en aktiv publiceringsdag.
 export function profileForDate(schedule: CompassSchedule, date: Date): CompassDay | null {
   const key = dayKeyOf(date);
-  if (!CADENCE_DAYS[schedule.cadence].includes(key)) return null;
+  if (!activeDaysOf(schedule).includes(key)) return null;
   return schedule.days[key] || null;
 }

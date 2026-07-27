@@ -8,7 +8,9 @@ import { funnelTintClass, FourALabel, FunnelLabel, DiscDots } from "@/components
 // Delad månadskalender: brickor per dag med Content Compass-färgkodning.
 // Används av både admin-Kalendern, Innehålls-navet och kundvyn (/k/kalender).
 // hrefFor låter kundvyn peka brickorna till /k istället för /dashboard (default = editHref).
-export default function ContentCalendar({ items, primary = "#10B981", hrefFor }: { items: ContentItem[]; primary?: string; hrefFor?: (it: ContentItem) => string }) {
+// onSelect: när den finns öppnar brickan en detaljvy (redigera/radera) istället för att
+// länka direkt till verkstaden. Utan den beter sig kalendern precis som förut.
+export default function ContentCalendar({ items, primary = "#10B981", hrefFor, onSelect }: { items: ContentItem[]; primary?: string; hrefFor?: (it: ContentItem) => string; onSelect?: (it: ContentItem) => void }) {
   const linkOf = (it: ContentItem) => (hrefFor ? hrefFor(it) : it.editHref);
   const [cursor, setCursor] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
 
@@ -74,12 +76,20 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor }:
                 <div key={i} className={`min-h-[96px] rounded-lg border p-1.5 ${inMonth ? "bg-white border-gray-100" : "bg-gray-50/60 border-gray-50"}`}>
                   <div className={`text-xs mb-1 ${isToday ? "font-bold text-white inline-flex items-center justify-center w-5 h-5 rounded-full" : inMonth ? "text-gray-500" : "text-gray-300"}`} style={isToday ? { background: primary } : {}}>{d.getDate()}</div>
                   <div className="space-y-1">
-                    {dayItems.slice(0, 4).map((it) => (
-                      <a key={`${it.source}-${it.id}`} href={linkOf(it)} title={it.title} className={`block rounded px-1.5 py-1 text-xs leading-tight hover:opacity-80 ${funnelTintClass(it.funnel_level) || "border-l-4 border-l-gray-200 bg-gray-50"}`}>
-                        <div className="flex items-center gap-1"><FourALabel value={it.four_a} compact /><span className="truncate flex-1 text-gray-700">{it.title}</span></div>
-                        {(it.funnel_level || (it.disc && it.disc.length)) && <div className="flex items-center gap-1 mt-0.5"><FunnelLabel level={it.funnel_level} /><DiscDots disc={it.disc} size={12} /></div>}
-                      </a>
-                    ))}
+                    {dayItems.slice(0, 4).map((it) => {
+                      const innehall = (
+                        <>
+                          <div className="flex items-center gap-1"><FourALabel value={it.four_a} compact /><span className="truncate flex-1 text-gray-700">{it.title}</span></div>
+                          {(it.funnel_level || (it.disc && it.disc.length)) && <div className="flex items-center gap-1 mt-0.5"><FunnelLabel level={it.funnel_level} /><DiscDots disc={it.disc} size={12} /></div>}
+                        </>
+                      );
+                      const cls = `block w-full text-left rounded px-1.5 py-1 text-xs leading-tight hover:opacity-80 ${funnelTintClass(it.funnel_level) || "border-l-4 border-l-gray-200 bg-gray-50"}`;
+                      return onSelect ? (
+                        <button key={`${it.source}-${it.id}`} onClick={() => onSelect(it)} title={it.title} className={cls}>{innehall}</button>
+                      ) : (
+                        <a key={`${it.source}-${it.id}`} href={linkOf(it)} title={it.title} className={cls}>{innehall}</a>
+                      );
+                    })}
                     {dayItems.length > 4 && <div className="text-xs text-gray-400 pl-1">+{dayItems.length - 4} till</div>}
                   </div>
                 </div>

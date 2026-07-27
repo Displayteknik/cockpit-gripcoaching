@@ -11,15 +11,11 @@ import type { FourA } from "@/lib/content-framework";
 const FOURA_OPTS: FourA[] = ["analytical", "aspirational", "actionable", "authentic"];
 const FUNNEL_OPTS: FunnelLevel[] = ["tofu", "mofu", "bofu"];
 const DISC_OPTS: DiscLetter[] = ["D", "I", "S", "C"];
-const CADENCE_OPTS: { v: Cadence; label: string }[] = [
-  { v: "7", label: "7 inlägg i veckan" },
-  { v: "4", label: "4 inlägg i veckan" },
-  { v: "2-3", label: "2 till 3 inlägg i veckan" },
-];
 
 export default function ContentCompassPage() {
   const [days, setDays] = useState<Record<DayKey, CompassDay>>(STANDARD_SCHEDULE);
   const [cadence, setCadence] = useState<Cadence>("7");
+  const [activeDays, setActiveDays] = useState<DayKey[]>(DAY_KEYS); // fritt valda publiceringsdagar
   const [clientName, setClientName] = useState("");
   const [isDefault, setIsDefault] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -34,6 +30,7 @@ export default function ContentCompassPage() {
       if (r.ok) {
         setDays(d.schedule || STANDARD_SCHEDULE);
         setCadence(d.cadence || "7");
+        if (Array.isArray(d.activeDays) && d.activeDays.length) setActiveDays(d.activeDays as DayKey[]);
         setClientName(d.clientName || "");
         setIsDefault(!!d.isDefault);
       }
@@ -59,11 +56,11 @@ export default function ContentCompassPage() {
     try {
       const r = await fetch("/api/content-compass", {
         method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schedule: days, cadence }),
+        body: JSON.stringify({ schedule: days, cadence, activeDays }),
       });
       if (r.ok) { setSaved(true); setIsDefault(false); }
     } finally { setSaving(false); }
-  }, [days, cadence]);
+  }, [days, cadence, activeDays]);
 
   const selCls = "rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm capitalize";
 
@@ -77,11 +74,32 @@ export default function ContentCompassPage() {
 
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">Publiceringstakt:</label>
-            <select value={cadence} onChange={(e) => { setCadence(e.target.value as Cadence); setSaved(false); }} className={selCls}>
-              {CADENCE_OPTS.map((c) => <option key={c.v} value={c.v}>{c.label}</option>)}
-            </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm font-medium text-gray-600">Publiceringsdagar:</label>
+            {/* Fritt dagval: valfritt antal, valfria dagar (t.ex. mandag, onsdag, fredag). */}
+            <div className="inline-flex flex-wrap gap-1">
+              {DAY_KEYS.map((k) => {
+                const pa = activeDays.includes(k);
+                return (
+                  <button
+                    key={k}
+                    onClick={() => {
+                      setActiveDays((prev) => {
+                        const next = prev.includes(k) ? prev.filter((d) => d !== k) : [...prev, k];
+                        return next.length ? DAY_KEYS.filter((d) => next.includes(d)) : prev; // minst en dag
+                      });
+                      setSaved(false);
+                    }}
+                    title={DAY_LABEL[k]}
+                    className={`w-10 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${pa ? "text-white border-transparent" : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"}`}
+                    style={pa ? { background: "#7c3aed" } : {}}
+                  >
+                    {DAY_LABEL[k].slice(0, 3)}
+                  </button>
+                );
+              })}
+            </div>
+            <span className="text-xs text-gray-500">{activeDays.length} inlägg/vecka</span>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => { setDays(STANDARD_SCHEDULE); setSaved(false); }} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
