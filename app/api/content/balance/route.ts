@@ -3,7 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { getContentOverview } from "@/lib/content/overview";
 import { getCompassSchedule } from "@/lib/content-compass/schedule";
 import { CADENCE_DAYS } from "@/lib/content-compass/data";
-import { analyzeMix, warningsFor } from "@/lib/content-compass/rules";
+import { analyzeMix, warningsFor, RULES } from "@/lib/content-compass/rules";
 import { hasModule } from "@/lib/entitlements";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -29,19 +29,14 @@ export async function GET() {
     const mix = analyzeMix(items, 30);
     const warnings = warningsFor(items);
 
-    // Mål-mix ur schemat (aktiva dagar per kadens).
+    // Mål-mix enligt den undervisade modellen (RULES), inte härledd ur kadensen:
+    // TOFU 70 %, MOFU 25 %, BOFU styrs av max 1 säljinlägg per vecka.
     const active = CADENCE_DAYS[schedule.cadence];
-    let tTofu = 0, tMofu = 0, tBofu = 0;
-    for (const dk of active) {
-      const f = schedule.days[dk]?.funnel;
-      if (f === "tofu") tTofu++; else if (f === "mofu") tMofu++; else if (f === "bofu") tBofu++;
-    }
-    const tTotal = tTofu + tMofu + tBofu || 1;
     const target = {
       perWeek: active.length,
-      tofuShare: tTofu / tTotal,
-      mofuShare: tMofu / tTotal,
-      bofuShare: tBofu / tTotal,
+      tofuShare: RULES.targetTofuShare,
+      mofuShare: RULES.targetMofuShare,
+      bofuMaxPerWeek: RULES.maxBofuPerWeek,
     };
 
     return NextResponse.json({ enabled, cadence: schedule.cadence, mix, warnings, target });

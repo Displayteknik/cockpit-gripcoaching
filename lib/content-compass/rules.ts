@@ -11,6 +11,10 @@ import type { FourA } from "@/lib/content-framework";
 export const RULES = {
   maxBofuPerWeek: 1, // max ett rent säljinlägg (BOFU) per vecka
   minTofuShare: 0.6, // minst 60 % TOFU över rullande månad
+  // Målmix enligt den undervisade modellen. Visas i Balans-panelen.
+  // BOFU styrs av maxBofuPerWeek (max 1/vecka), inte av en procentandel.
+  targetTofuShare: 0.7,
+  targetMofuShare: 0.25,
   authenticGapDays: 21, // varna om ingen personlig (Authentic) post på 3 veckor
   sellWindowDays: 7, // fönster för "för många säljinlägg samma vecka"
 } as const;

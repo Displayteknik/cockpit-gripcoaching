@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Gauge, AlertTriangle, Loader2 } from "lucide-react";
 
 interface Mix { total: number; tofu: number; mofu: number; bofu: number; tofuShare: number }
-interface Target { perWeek: number; tofuShare: number; mofuShare: number; bofuShare: number }
+interface Target { perWeek: number; tofuShare: number; mofuShare: number; bofuMaxPerWeek?: number }
 interface BalanceData { enabled: boolean; cadence: string; mix: Mix; warnings: string[]; target: Target }
 
 const FUNNEL_BAR: Record<string, string> = { tofu: "bg-slate-400", mofu: "bg-amber-400", bofu: "bg-emerald-500" };
@@ -56,12 +56,15 @@ export default function BalanceMeter({ reloadKey = 0 }: { reloadKey?: number }) 
         <div className="space-y-2.5">
           {rows.map(({ key, count }) => {
             const actual = pct(count);
-            const goal = Math.round((data!.target[`${key}Share` as "tofuShare" | "mofuShare" | "bofuShare"] || 0) * 100);
+            // BOFU styrs av ett takvärde per vecka, inte av en procentandel.
+            const malText = key === "bofu"
+              ? `max ${data!.target.bofuMaxPerWeek ?? 1}/vecka`
+              : `mål ${Math.round((data!.target[`${key}Share` as "tofuShare" | "mofuShare"] || 0) * 100)}%`;
             return (
               <div key={key}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="font-medium text-gray-700">{FUNNEL_LABEL[key]}</span>
-                  <span className="text-gray-400">{actual}% · mål {goal}%</span>
+                  <span className="text-gray-400">{actual}% · {malText}</span>
                 </div>
                 <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                   <div className={`h-full rounded-full ${FUNNEL_BAR[key]}`} style={{ width: `${actual}%` }} />
