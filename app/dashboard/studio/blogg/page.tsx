@@ -58,6 +58,8 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
   // Gör om ett BEFINTLIGT sparat blogginlägg till sociala inlägg (genväg).
   const [savedBlogs, setSavedBlogs] = useState<{ id: string; title: string; text: string; content?: string; excerpt?: string; imageUrl?: string; publishedAt?: string; published: boolean }[]>([]);
   const [loadedBlogId, setLoadedBlogId] = useState(""); // satt när ett befintligt inlägg redigeras
+  const [bildJobb, setBildJobb] = useState<"" | "ai" | "stock">(""); // pågående bildhämtning
+  const [bildFel, setBildFel] = useState("");
   const [selBlog, setSelBlog] = useState("");
 
   // Publicerings-mål (GHL-bloggen eller din egen sajt)
@@ -141,6 +143,28 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
       setGenerating(false);
     }
   }, [topic, wordCount]);
+
+  // Omslagsbild: skapa en ny (Bildhjälpen) eller sök ett foto, utifrån rubriken.
+  // Liggande format (4:3) passar en artikeltopp bäst.
+  const hamtaBild = useCallback(async (mode: "ai" | "stock") => {
+    if (!title.trim()) return;
+    setBildJobb(mode); setBildFel("");
+    try {
+      const r = await fetch("/api/studio/suggest-image", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, topic: title.trim(), aspect: "landscape" }),
+      });
+      const d = await r.json();
+      const url = d.photos?.[0]?.url;
+      if (!r.ok || !url) { setBildFel(d.error || "Ingen bild hittades. Prova en tydligare rubrik eller sök foto."); return; }
+      setCoverImageUrl(url);
+      setCoverImageAlt(title.trim());
+    } catch (e) {
+      setBildFel((e as Error).message);
+    } finally {
+      setBildJobb("");
+    }
+  }, [title]);
 
   // Skriv helt själv: öppnar tomma fält i editorn, samma publicerings-flöde.
   const startManual = useCallback(() => {
@@ -274,12 +298,40 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
                 </div>
               )}
 
-              {coverImageUrl && (
-                <div className="rounded-xl overflow-hidden border border-gray-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={coverImageUrl} alt={coverImageAlt} className="w-full max-h-64 object-cover" />
+              {/* Omslagsbild: finns alltid som val, även när ett gammalt inlägg öppnas. */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2.5">
+                {coverImageUrl ? (
+                  <div className="rounded-lg overflow-hidden border border-gray-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={coverImageUrl} alt={coverImageAlt} className="w-full max-h-64 object-cover" />
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500">Ingen omslagsbild än. Låt Bildhjälpen skapa en ur rubriken, eller sök ett foto.</p>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => hamtaBild("ai")}
+                    disabled={!!bildJobb || !title.trim()}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+                    style={{ background: primary }}
+                  >
+                    {bildJobb === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                    {coverImageUrl ? "Skapa ny bild" : "Skapa bild"}
+                  </button>
+                  <button
+                    onClick={() => hamtaBild("stock")}
+                    disabled={!!bildJobb || !title.trim()}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    {bildJobb === "stock" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />} Sök foto
+                  </button>
+                  {coverImageUrl && (
+                    <button onClick={() => setCoverImageUrl("")} className="text-xs text-gray-400 hover:text-gray-700">Ta bort bilden</button>
+                  )}
+                  {!title.trim() && <span className="text-xs text-gray-400">Skriv en rubrik först</span>}
                 </div>
-              )}
+                {bildFel && <p className="text-xs text-amber-600">{bildFel}</p>}
+              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Rubrik</label>
                 <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={manualMode ? "Ge artikeln en rubrik" : ""} className={inputCls} />
