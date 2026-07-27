@@ -689,7 +689,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const applyPayload = useCallback((d: Record<string, unknown>) => {
     const badge = (d.badge ?? {}) as { enabled?: boolean; line1?: string; line2?: string };
     setTemplateId((d.templateId as string) ?? TEMPLATE_META[0].id);
-    setFormat((d.format as StudioFormat) ?? "1080x1350");
+    // Bara giltiga bildformat: sparad data kan innehålla annat (t.ex. veckoplanens
+    // innehållsformat), och ett okänt värde kraschar mått-uppslagningen.
+    const sparatFormat = d.format as StudioFormat;
+    setFormat(sparatFormat && FORMAT_DIMENSIONS[sparatFormat] ? sparatFormat : "1080x1350");
     setHeadline1((d.headline1 as string) ?? ""); setHeadline2((d.headline2 as string) ?? ""); setBody((d.body as string) ?? "");
     setBadgeEnabled(!!badge.enabled); setBadgeLine1(badge.line1 ?? "FRÅN"); setBadgeLine2(badge.line2 ?? "0 KR");
     setImageUrl((d.imageUrl as string) ?? ""); setImageFocusY((d.imageFocusY as number) ?? 40);

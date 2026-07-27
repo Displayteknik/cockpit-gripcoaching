@@ -95,7 +95,9 @@ export default function VeckoplanPage() {
         title: (day.hook || day.body || "Inlägg").split("\n")[0].slice(0, 120),
         payload: {
           templateId: "ark-textkort",
-          format: day.format || "1080x1350",
+          // day.format är veckoplanens innehållsformat (t.ex. big_stat), INTE ett bildmått.
+          // Studion slår upp måtten på format, så här måste ett giltigt bildformat stå.
+          format: "1080x1350",
           headline1: day.hook || "",
           headline2: "",
           body: day.body || "",
