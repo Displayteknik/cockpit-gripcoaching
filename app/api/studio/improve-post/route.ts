@@ -48,14 +48,40 @@ function inventedStats(out: string, original: string): boolean {
   return /\b(studier|forskning|undersökning(ar)?|enligt en rapport|visar att \d)/i.test(out) && !/\b(studier|forskning|undersökning)/i.test(original);
 }
 
-async function genGuarded(system: string, prompt: string, temperature = 0.7, maxOutputTokens = 900, original = ""): Promise<string> {
+// Deterministisk sista utväg: ta bort meningar som innehåller statistik/studier som INTE
+// finns i originalet. Modellen kan envisas trots omgenerering, och en påhittad siffra live
+// i en demo är värre än en mening mindre.
+function stripInventedStats(out: string, original: string): string {
+  if (!original) return out;
+  const kept = out
+    .split(/\n/)
+    .map((rad) => {
+      const meningar = rad.match(/[^.!?]+[.!?]*/g) || [rad];
+      return meningar
+        .filter((m) => {
+          const pct = m.match(/\d+\s?%/g) || [];
+          if (pct.some((p) => !original.includes(p) && !original.includes(p.replace(/\s/g, "")))) return false;
+          if (/\b(studier|forskning|undersökning(ar)?|enligt en rapport)\b/i.test(m) && !/\b(studier|forskning|undersökning)\b/i.test(original)) return false;
+          return true;
+        })
+        .join("")
+        .trim();
+    })
+    .join("\n");
+  // Föll allt bort (osannolikt) → behåll originalsvaret hellre än att returnera tomt.
+  return kept.replace(/\n{3,}/g, "\n\n").trim() || out;
+}
+
+// strip=false när svaret är JSON (Förbättra-läget) — då strippas texten efter parsning istället.
+async function genGuarded(system: string, prompt: string, temperature = 0.7, maxOutputTokens = 900, original = "", strip = true): Promise<string> {
   let out = "";
   for (let attempt = 0; attempt < 3; attempt++) {
     const sys = attempt === 0 ? system : `${system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående svar bröt mot reglerna (förbjudet uttryck eller påhittad statistik). Skriv om helt. Använd inga siffror, procenttal eller studier som inte står i originalet.`;
     out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? temperature : 0.6, maxOutputTokens })).trim();
     if (!hasBanned(out) && !(original && inventedStats(out, original))) break;
   }
-  return sanitize(out);
+  const clean = sanitize(out);
+  return strip ? stripInventedStats(clean, original) : clean;
 }
 
 // POST /api/studio/improve-post
@@ -129,7 +155,7 @@ export async function POST(req: NextRequest) {
       '{"analysis":["punkt 1","punkt 2"],"improved":"hela det förbättrade inlägget med radbrytningar"}',
     ].filter(Boolean).join("\n");
 
-    const raw = await genGuarded(system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text);
+    const raw = await genGuarded(system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text, false);
     const jsonStr = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
     let parsed: { analysis?: unknown; improved?: unknown } = {};
     try {
@@ -142,7 +168,7 @@ export async function POST(req: NextRequest) {
     const analysis = Array.isArray(parsed.analysis)
       ? parsed.analysis.map((x) => sanitize(String(x))).filter(Boolean).slice(0, 4)
       : [];
-    const improved = typeof parsed.improved === "string" ? sanitize(parsed.improved).trim() : "";
+    const improved = typeof parsed.improved === "string" ? stripInventedStats(sanitize(parsed.improved), text).trim() : "";
     if (!improved) return NextResponse.json({ error: "Kunde inte förbättra inlägget just nu. Prova igen." }, { status: 502 });
 
     return NextResponse.json({ analysis, improved });
