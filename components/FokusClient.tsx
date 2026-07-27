@@ -1336,7 +1336,11 @@ export function CoachPanel({
                 </div>
                 <div className="font-semibold text-gray-900"><GlossText text={svar.drag.vad} /></div>
                 <p className="text-sm text-gray-600"><GlossText text={svar.drag.varfor} /></p>
-                <p className="text-sm text-gray-800 italic">”{svar.drag.oppning}”</p>
+                {/* Öppningen är en fristående citatrad. Står samma inledning redan i utkastet
+                    nedanför blir den bara en dubblering ("Hej Karin!") och göms. */}
+                {svar.drag.oppning && !dubbleradOppning(svar.drag.oppning, svar.utkast.text) && (
+                  <p className="text-sm text-gray-800 italic">”{svar.drag.oppning}”</p>
+                )}
               </div>
               <div className="rounded-2xl border border-gray-100 p-4 space-y-2">
                 <div className="flex items-center justify-between">
@@ -1385,6 +1389,18 @@ export function CoachPanel({
     </div>,
     document.body,
   );
+}
+
+// Är öppningen bara en upprepning av utkastets inledning? Normalisera och jämför de
+// första orden: "Hej Karin!" vs utkast som startar "Hej Karin! ..." = dubblering.
+function dubbleradOppning(oppning: string, utkast: string): boolean {
+  const norm = (s: string) => s.toLowerCase().replace(/[”"'!?.,:;]/g, "").replace(/\s+/g, " ").trim();
+  const o = norm(oppning);
+  const u = norm(utkast);
+  if (!o || !u) return false;
+  if (u.startsWith(o)) return true;
+  // Kort öppning (typ "Hej Karin") som återkommer någonstans i utkastet räknas också.
+  return o.split(" ").length <= 4 && u.includes(o);
 }
 
 function Block({ titel, children }: { titel: string; children: React.ReactNode }) {

@@ -173,7 +173,9 @@ export async function POST(req: Request) {
         prompt: extraUser,
         jsonMode: true,
         maxOutputTokens: 2000,
-        temperature: 0.4,
+        // Låg temperatur: samma kontaktdata ska ge samma DISC-bedömning varje gång.
+        // Coachen är en analys, inte en kreativ text.
+        temperature: 0.1,
       });
       const parsed = extractJson(raw);
       const fel = validateCoachSvar(parsed);
