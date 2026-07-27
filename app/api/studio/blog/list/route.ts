@@ -14,12 +14,13 @@ export async function GET() {
     const sb = supabaseService();
     const { data } = await sb
       .from("hm_blog")
-      .select("id, title, excerpt, content, published, created_at")
+      .select("id, title, excerpt, content, image_url, published, published_at, created_at")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false })
       .limit(50);
     const posts = (data || []).map((p) => ({
-      id: p.id, title: p.title, excerpt: p.excerpt || "",
+      id: p.id, title: p.title, excerpt: p.excerpt || "", imageUrl: p.image_url || "",
+      publishedAt: p.published_at || p.created_at,
       // Råinnehållet (HTML) behövs när inlägget öppnas för redigering.
       content: String(p.content || ""),
       // plocka bort HTML → ren text för repurpose-prompten

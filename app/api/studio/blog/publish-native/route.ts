@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
           title,
           content: html,
           excerpt: (b.description || "").toString().slice(0, 300),
+          ...(b.coverImageUrl ? { image_url: String(b.coverImageUrl) } : {}),
           ...(scheduled ? { published_at: scheduledAt!.toISOString() } : {}),
         })
         .eq("id", befintligId)
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
         title,
         content: html,
         excerpt: (b.description || "").toString().slice(0, 300),
+        image_url: b.coverImageUrl ? String(b.coverImageUrl) : null,
         author: clientRow?.name || "Redaktionen",
         published: false,
         published_at: scheduled ? scheduledAt!.toISOString() : new Date().toISOString(),

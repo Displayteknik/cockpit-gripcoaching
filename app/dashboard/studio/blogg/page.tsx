@@ -56,7 +56,7 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
   const [repurposing, setRepurposing] = useState(false);
   const [repurposed, setRepurposed] = useState(0);
   // Gör om ett BEFINTLIGT sparat blogginlägg till sociala inlägg (genväg).
-  const [savedBlogs, setSavedBlogs] = useState<{ id: string; title: string; text: string; content?: string; excerpt?: string; published: boolean }[]>([]);
+  const [savedBlogs, setSavedBlogs] = useState<{ id: string; title: string; text: string; content?: string; excerpt?: string; imageUrl?: string; publishedAt?: string; published: boolean }[]>([]);
   const [loadedBlogId, setLoadedBlogId] = useState(""); // satt när ett befintligt inlägg redigeras
   const [selBlog, setSelBlog] = useState("");
 
@@ -80,6 +80,20 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
     fetch("/api/studio/blog/list").then((r) => r.json()).then((d) => setSavedBlogs(Array.isArray(d.posts) ? d.posts : [])).catch(() => {});
   }, []);
 
+  // Öppna ett sparat inlägg i editorn (från listan nedan eller djuplänk från kalendern).
+  const oppnaBlogg = useCallback((b: { id: string; title: string; text: string; content?: string; excerpt?: string; imageUrl?: string }) => {
+    setLoadedBlogId(b.id);
+    setTitle(b.title || "");
+    setHtml(b.content || b.text || "");
+    setMetaDescription(b.excerpt || "");
+    setCoverImageUrl(b.imageUrl || "");
+    setHasArticle(true);
+    setManualMode(false);
+    setDestination("native");
+    setPublishedUrl("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   // Djuplänk från kalendern: /k/blogg?post=<id> öppnar inlägget i editorn för redigering.
   const oppnadFranUrl = useRef(false);
   useEffect(() => {
@@ -89,15 +103,8 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
     const b = savedBlogs.find((x) => String(x.id) === id);
     if (!b) return;
     oppnadFranUrl.current = true;
-    setLoadedBlogId(b.id);
-    setTitle(b.title || "");
-    setHtml(b.content || b.text || "");
-    setMetaDescription(b.excerpt || "");
-    setHasArticle(true);
-    setManualMode(false);
-    setDestination("native");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [savedBlogs]);
+    oppnaBlogg(b);
+  }, [savedBlogs, oppnaBlogg]);
 
   useEffect(() => {
     fetch("/api/studio/blog/meta").then((r) => r.json()).then((d) => {
@@ -149,7 +156,7 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
       if (destination === "native") {
         const r = await fetch("/api/studio/blog/publish-native", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: loadedBlogId || undefined, title, html, urlSlug, description: metaDescription, scheduledAt: blogSchedule || undefined }),
+          body: JSON.stringify({ id: loadedBlogId || undefined, title, html, urlSlug, description: metaDescription, coverImageUrl: coverImageUrl || undefined, scheduledAt: blogSchedule || undefined }),
         });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
@@ -434,6 +441,52 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
             {repurposed > 0 && <div className="text-sm text-emerald-600 flex items-center gap-1.5"><Check className="w-4 h-4" /> {repurposed} inlägg sparade. <a href={studioHref} className="underline">Öppna i Studio</a></div>}
           </section>
         )}
+
+        {/* MINA BLOGGINLÄGG — klicka för att öppna och redigera igen. */}
+        <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>
+              <FileText className="w-[18px] h-[18px]" style={{ color: primary }} />
+            </span>
+            <h2 className="font-display font-bold text-gray-900 text-lg">Mina blogginlägg</h2>
+            {savedBlogs.length > 0 && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 tabular-nums">{savedBlogs.length}</span>
+            )}
+          </div>
+          {savedBlogs.length === 0 ? (
+            <p className="text-sm text-gray-500 mt-2">Här samlas dina blogginlägg. Skapa ett ovan så hittar du det här när du vill ändra eller publicera det.</p>
+          ) : (
+            <>
+              <p className="text-xs text-gray-400 mb-3">Klicka ett inlägg för att öppna det och redigera.</p>
+              <div className="divide-y divide-gray-100">
+                {savedBlogs.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => oppnaBlogg(b)}
+                    className={`w-full text-left flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-xl hover:bg-gray-50 transition-colors ${loadedBlogId === b.id ? "bg-gray-50" : ""}`}
+                  >
+                    <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center ring-1 ring-black/5">
+                      {b.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={b.imageUrl} alt="" className="w-full h-full object-cover" />
+                      ) : <ImageIcon className="w-4 h-4 text-gray-300" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-gray-900 truncate">{b.title || "Utan rubrik"}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        {b.published ? "Publicerad" : "Utkast"}
+                        {b.publishedAt ? ` · ${new Date(b.publishedAt).toLocaleDateString("sv-SE", { day: "numeric", month: "short", year: "numeric" })}` : ""}
+                      </div>
+                    </div>
+                    <span className="text-xs font-semibold shrink-0" style={{ color: primary }}>
+                      {loadedBlogId === b.id ? "Öppen" : "Öppna"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
       </div>
     </div>
   );
