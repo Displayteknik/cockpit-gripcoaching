@@ -682,7 +682,10 @@ function DragKort({
       {/* Etiketten speglar kontaktens VERKLIGA läge (DM-steget). "X dagar utan nästa steg"
           döljs när en planerad uppgift eller bokad tid finns: då är det inte sant. */}
       <div className="mt-3 flex items-center gap-2 text-xs">
-        <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-medium">{dm?.etikett || c.stegNamn}</span>
+        {/* Innehållsuppgifter har inget säljsteg — visa "Innehåll" istället för en falsk etikett. */}
+        <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-medium">
+          {planering?.kanal === "innehall" ? "Innehåll" : dm?.etikett || c.stegNamn}
+        </span>
         {!planering && !dm?.bokad && (
           <>
             <span className="text-gray-400">·</span>

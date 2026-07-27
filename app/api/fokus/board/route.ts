@@ -110,10 +110,16 @@ export async function GET() {
   }
 
   const DM_ETIKETT: Record<string, string> = { new: "Ny", acknowledge: "Bekräftad", connect: "Dialog", offer: "Erbjudande", won: "Bokad", lost: "Förlorad" };
+  // Tid alltid i svensk tidszon: servern kör UTC, annars visas 14.00 som 12:00.
+  const TZ = "Europe/Stockholm";
+  const dagIStockholm = (d: Date) => d.toLocaleDateString("sv-SE", { timeZone: TZ });
   const tidText = (iso: string) => {
     const d = new Date(iso);
-    const dag = d.toISOString().slice(0, 10) === todayStr ? "idag" : new Date(Date.now() + 86400000).toISOString().slice(0, 10) === d.toISOString().slice(0, 10) ? "imorgon" : d.toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
-    return `${dag} ${d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}`;
+    const idag = dagIStockholm(new Date());
+    const imorgon = dagIStockholm(new Date(Date.now() + 86400000));
+    const dStr = dagIStockholm(d);
+    const dag = dStr === idag ? "idag" : dStr === imorgon ? "imorgon" : d.toLocaleDateString("sv-SE", { timeZone: TZ, day: "numeric", month: "short" });
+    return `${dag} ${d.toLocaleTimeString("sv-SE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" })}`;
   };
 
   // Per affär: etikett ur DM-steget, förslag ur kontexten, och bokad tid när den finns.
@@ -129,18 +135,25 @@ export async function GET() {
       continue;
     }
     // Har kontakten redan en planerad uppgift är den uppgiften sanningen (visas i Att göra idag).
-    let forslag: string | null = planering[o.id] ? null : d.next_action || null;
-    if (!forslag && !planering[o.id]) {
+    let forslag: string | null = null;
+    if (!planering[o.id]) {
       const dagar = Math.max(0, Math.floor((Date.now() - new Date(o.lastStageChangeAt || o.updatedAt || Date.now()).getTime()) / 86400000));
-      // Max 2 uppföljningar (dag 3 och dag 7), aldrig pressa.
+      // Erbjudande: uppföljningsdisciplinen vinner över en generisk anteckning, så vi
+      // aldrig råder till att tjata. Max 2 uppföljningar (dag 3 och dag 7), aldrig pressa.
       if (d.stage === "offer") {
         const kvar = 3 - dagar;
         forslag = kvar > 0
           ? `Invänta svar på erbjudandet, mjuk påminnelse om ${kvar} ${kvar === 1 ? "dag" : "dagar"}`
           : dagar < 7 ? "Skicka en mjuk påminnelse om erbjudandet" : "Sista mjuka påminnelsen, annars släpp";
-      } else if (d.stage === "connect") forslag = "Fortsätt dialogen, föreslå nästa steg";
-      else if (d.stage === "acknowledge") forslag = "Ställ en öppen fråga om läget";
-      else if (d.stage === "new") forslag = "Svara och starta samtalet";
+      } else {
+        // Övriga steg: kundens egen anteckning om nästa steg är mest konkret.
+        forslag = d.next_action || null;
+        if (!forslag) {
+          if (d.stage === "connect") forslag = "Fortsätt dialogen, föreslå nästa steg";
+          else if (d.stage === "acknowledge") forslag = "Ställ en öppen fråga om läget";
+          else if (d.stage === "new") forslag = "Svara och starta samtalet";
+        }
+      }
     }
     dmInfo[o.id] = { etikett, forslag, bokad: null, bokadNot: null };
   }
