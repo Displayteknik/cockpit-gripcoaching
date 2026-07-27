@@ -345,11 +345,11 @@ function ContactCard({
 
       {editing ? (
         <div className="mt-2 space-y-2">
-          <textarea
+          <SmartTextarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            placeholder="Anteckningar..."
+            rows={3}
+            placeholder="Anteckningar, eller klistra in en skärmdump av DM:et / prata in det"
             className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
           />
           <input
@@ -475,7 +475,7 @@ function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="Anteckningar (valfritt)"
+            placeholder="Anteckningar, eller klistra in en skärmdump av DM:et / prata in det (valfritt)"
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
           />
           <div className="flex justify-end gap-2 pt-2">
