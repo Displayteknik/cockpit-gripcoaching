@@ -115,6 +115,13 @@ export default function ScheduleQueue({ primary, refreshKey = 0 }: { primary: st
             )}
           </div>
         )}
+        {/* Misslyckade och klara poster går att städa bort ur listan. */}
+        {(j.status === "failed" || j.status === "published") && (
+          <button onClick={() => cancel(j.id)} disabled={busy === j.id} title="Ta bort ur listan"
+            className="p-1.5 rounded-lg text-gray-300 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 shrink-0">
+            {busy === j.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+          </button>
+        )}
       </div>
     );
   };

@@ -125,10 +125,13 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id krävs" }, { status: 400 });
     const sb = supabaseService();
     // Läs jobbet först (för att kunna återställa speglingen).
-    const { data: job } = await sb.from("studio_scheduled").select("studio_post_id, blog_id, channel").eq("id", id).eq("client_id", clientId).maybeSingle();
-    const { error } = await sb.from("studio_scheduled").delete().eq("id", id).eq("client_id", clientId).eq("status", "queued");
+    const { data: job } = await sb.from("studio_scheduled").select("studio_post_id, blog_id, channel, status").eq("id", id).eq("client_id", clientId).maybeSingle();
+    // Köade jobb avbokas, misslyckade och klara städas bort ur listan. Alla tenant-låsta.
+    const { error } = await sb.from("studio_scheduled").delete().eq("id", id).eq("client_id", clientId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (job?.studio_post_id) {
+    // Återställ bara spegling för ett jobb som faktiskt låg i kö: ett publicerat
+    // inlägg ska inte plötsligt bli utkast igen.
+    if (job?.status === "queued" && job?.studio_post_id) {
       await sb.from("studio_posts").update({ ghl_status: "draft", scheduled_at: null }).eq("id", job.studio_post_id).eq("client_id", clientId);
     }
     return NextResponse.json({ ok: true });
