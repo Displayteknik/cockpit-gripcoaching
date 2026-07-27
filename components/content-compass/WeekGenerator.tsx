@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles, Loader2, Check, CalendarClock } from "lucide-react";
 import { CompassBadges } from "@/components/content-compass/badges";
+import { DAY_KEYS, DAY_LABEL, type DayKey } from "@/lib/content-compass/data";
 
 interface GenPost { id: string; title: string; when: string | null; funnel_level: string | null; four_a: string | null; disc: string[] | null }
 interface GenResult { saved: number; notes: string[]; token_estimate: number; posts: GenPost[] }
@@ -18,7 +19,9 @@ function fmt(d: string | null): string {
 
 export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?: string; onDone?: () => void }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [dagar, setDagar] = useState<number>(7); // antal valda publiceringsdagar
+  const [aktivaDagar, setAktivaDagar] = useState<DayKey[]>(DAY_KEYS); // valda publiceringsdagar
+  const [sparardagar, setSpararDagar] = useState(false);
+  const dagar = aktivaDagar.length;
   const [theme, setTheme] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -27,9 +30,28 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
   useEffect(() => {
     fetch("/api/content-compass")
       .then((r) => r.json())
-      .then((d) => { setEnabled(!!d.enabled); if (Array.isArray(d.activeDays) && d.activeDays.length) setDagar(d.activeDays.length); })
+      .then((d) => { setEnabled(!!d.enabled); if (Array.isArray(d.activeDays) && d.activeDays.length) setAktivaDagar(d.activeDays as DayKey[]); })
       .catch(() => setEnabled(false));
   }, []);
+
+  // Spara valda dagar direkt: badge, balansmätare och genereringen följer valet.
+  const sparaDagar = async (dagarVal: DayKey[]) => {
+    if (dagarVal.length === 0) return;
+    const forra = aktivaDagar;
+    setAktivaDagar(dagarVal);
+    setSpararDagar(true);
+    try {
+      const r = await fetch("/api/content-compass/days", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activeDays: dagarVal }),
+      });
+      if (!r.ok) setAktivaDagar(forra); // gick det inte: visa sanningen igen
+    } catch {
+      setAktivaDagar(forra);
+    } finally {
+      setSpararDagar(false);
+    }
+  };
 
   if (enabled === false) return null; // modul av → visa inget
 
@@ -64,6 +86,47 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
       <p className="text-xs text-gray-500 mb-3">
         Hela veckan färdigprofilerad enligt din innehållsplan, som utkast i kalendern med föreslagen bästa-tid. Inget publiceras, du granskar och godkänner varje inlägg.
       </p>
+
+      {/* Publiceringsdagar: snabbval eller egna dagar. Styr både antal och vilka. */}
+      <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-violet-100/70">
+        <span className="text-xs font-medium text-gray-600">Publicera:</span>
+        {([
+          { etikett: "7 dagar", dagar: DAY_KEYS },
+          { etikett: "3 dagar", dagar: ["tue", "thu", "sun"] as DayKey[] },
+        ]).map((v) => {
+          const vald = v.dagar.length === aktivaDagar.length && v.dagar.every((d) => aktivaDagar.includes(d));
+          return (
+            <button
+              key={v.etikett}
+              onClick={() => sparaDagar(v.dagar)}
+              disabled={sparardagar}
+              className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${vald ? "text-white border-transparent" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+              style={vald ? { background: accent } : {}}
+            >
+              {v.etikett}
+            </button>
+          );
+        })}
+        <span className="text-xs text-gray-300">|</span>
+        <div className="inline-flex flex-wrap gap-1">
+          {DAY_KEYS.map((k) => {
+            const pa = aktivaDagar.includes(k);
+            return (
+              <button
+                key={k}
+                onClick={() => sparaDagar(pa ? aktivaDagar.filter((d) => d !== k) : DAY_KEYS.filter((d) => aktivaDagar.includes(d) || d === k))}
+                disabled={sparardagar || (pa && aktivaDagar.length === 1)}
+                title={DAY_LABEL[k]}
+                className={`w-9 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-50 ${pa ? "text-white border-transparent" : "bg-white text-gray-400 border-gray-200 hover:bg-gray-50"}`}
+                style={pa ? { background: accent } : {}}
+              >
+                {DAY_LABEL[k].slice(0, 3)}
+              </button>
+            );
+          })}
+        </div>
+        {sparardagar && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
         <input
