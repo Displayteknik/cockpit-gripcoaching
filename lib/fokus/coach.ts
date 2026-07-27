@@ -51,7 +51,7 @@ export interface CoachSvar {
   lagesbild: string;
   disc_hypotes: string;
   drag: { vad: string; varfor: string; oppning: string };
-  utkast: { kanal: "telefon" | "mejl" | "sms"; amnesrad: string | null; text: string };
+  utkast: { kanal: "telefon" | "mejl" | "sms" | "dm"; amnesrad: string | null; text: string };
   riskflagga: string | null;
   nasta_kontroll: number;
 }
@@ -124,10 +124,10 @@ export function byggSystemprompt(v: Verksamhet): string {
   return `Du är en erfaren säljcoach inbyggd i ett säljverktyg. Din användare är ${v.namn} som säljer ${v.erbjudande}. Typisk affär: ${v.typisk_affar}. All kommunikation sker på ${v.sprak} och i den här tonen: ${v.ton}.
 
 DIN UPPGIFT
-Du får ett säljcase med full historik. Du ska hjälpa användaren att flytta affären ETT konkret steg framåt — idag. Inte ge en föreläsning. Inte lista alternativ i onödan. Du är den kollega som sett tusen affärer och säger "gör så här, och säg så här".
+Du får ett säljcase med full historik. Du ska hjälpa användaren att flytta affären ETT konkret steg framåt, idag. Inte ge en föreläsning. Inte lista alternativ i onödan. Du är den kollega som sett tusen affärer och säger "gör så här, och säg så här".
 
 SÅ ANALYSERAR DU (internt, visa inte stegen)
-1. Var i köpresan är kunden känslomässigt? (nyfiken / jämför / tvekar / har glömt / undviker) — läs det ur tempot i historiken, inte bara stegen.
+1. Var i köpresan är kunden känslomässigt? (nyfiken / jämför / tvekar / har glömt / undviker), läs det ur tempot i historiken, inte bara stegen.
 2. DISC-hypotes ur beteendedata: svarar snabbt och kort = trolig D (var rak, ge beslutsunderlag). Frågar mycket om detaljer/drift = trolig C (ge fakta, riskreducering, referenser). Varm och relationell = trolig I/S (bygg relation, förenkla beslutet, ta bort press). Markera alltid hypotesen som just en hypotes.
 3. Vad är det verkliga hindret? Tystnad efter offert betyder oftast en av: priset kändes fel / beslutet involverar fler personer / behovet var inte akut / offerten var svår att förstå. Välj den mest sannolika ur historiken och adressera DEN, inte alla fyra.
 4. Vilket enskilt drag har högst sannolikhet att skapa rörelse inom 48 h? Ring slår mejl när det gått mer än en påminnelse. Ett mejl med en enda fråga slår ett mejl med tre. En deadline med ärlig anledning slår en konstlad rabatt.
@@ -138,7 +138,7 @@ REGLER FÖR DINA RÅD
 - Utkast skrivs i användarens ton, kort (mejl max 90 ord, sms max 30), slutar alltid i EN tydlig fråga eller ETT tydligt nästa steg.
 - Hitta aldrig på fakta om kunden, produkten eller priser. Saknas något viktigt: säg det, och ge rådet villkorat ("Om priset var stötestenen: ...").
 - Föreslå aldrig rabatt som första verktyg. Värde, tydlighet och deadline kommer först. Rabatt föreslås bara om historiken visar uttalad prisinvändning, och då alltid i utbyte mot något (snabbare beslut, större order, referens).
-- Var ärlig om döda affärer. Ser caset dött ut: säg det, och ge ett värdigt break-up-mejl som ofta väcker liv i tysta affärer — och annars frigör tid.
+- Var ärlig om döda affärer. Ser caset dött ut: säg det, och ge ett värdigt break-up-mejl som ofta väcker liv i tysta affärer, och annars frigör tid.
 - Etik: inga manipulativa knep, ingen falsk brådska, inga påhittade "andra intressenter". Förtroende är användarens viktigaste tillgång.
 - Skriv som en vardaglig, varm kollega, INTE en jurist. Undvik stela/formella ord som "ärende", "vederbörande", "avseende", "härmed". Säg hellre "vårt samtal", "offerten", "det vi pratade om". Prata som man pratar.
 - Använd ALDRIG tankstreck. Skriv komma, punkt eller kolon.
@@ -165,7 +165,7 @@ SVARSFORMAT (alltid exakt denna JSON, inget annat)
   "lagesbild": "1–2 meningar. Vad som troligen pågår hos kunden just nu.",
   "disc_hypotes": "En mening.",
   "drag": { "vad": "Imperativ mening.", "varfor": "1–2 meningar som förklarar logiken så användaren lär sig.", "oppning": "Exakt formulering att inleda samtalet/mejlet med." },
-  "utkast": { "kanal": "telefon | mejl | sms", "amnesrad": "endast vid mejl", "text": "Färdig text i användarens ton. Vid telefon: punktmanus, max 5 punkter." },
+  "utkast": { "kanal": "telefon | mejl | sms | dm", "amnesrad": "endast vid mejl", "text": "Färdig text i användarens ton. Vid telefon: punktmanus, max 5 punkter." },
   "riskflagga": "En mening om största risken med draget, eller null.",
   "nasta_kontroll": 3
 }`;
@@ -182,7 +182,7 @@ export function validateCoachSvar(obj: unknown): string[] {
   if (!d || typeof d.vad !== "string" || typeof d.varfor !== "string" || typeof d.oppning !== "string")
     fel.push("drag ofullständig (vad/varfor/oppning)");
   const u = o.utkast as Record<string, unknown> | undefined;
-  if (!u || !["telefon", "mejl", "sms"].includes(u.kanal as string)) fel.push("utkast.kanal ogiltig");
+  if (!u || !["telefon", "mejl", "sms", "dm"].includes(u.kanal as string)) fel.push("utkast.kanal ogiltig");
   if (!u || typeof u.text !== "string" || !u.text) fel.push("utkast.text saknas");
   if (o.riskflagga !== null && typeof o.riskflagga !== "string") fel.push("riskflagga måste vara text eller null");
   if (!Number.isInteger(o.nasta_kontroll)) fel.push("nasta_kontroll måste vara heltal");
@@ -194,14 +194,14 @@ export function fallbackRad(kort: ScoredCard): CoachSvar {
   const dott = kort.dagarOverSla >= 15;
   return {
     lagesbild: kort.lagesText + ".",
-    disc_hypotes: "Ingen AI-hypotes tillgänglig — regelbaserat råd.",
+    disc_hypotes: "Ingen hypotes tillgänglig, regelbaserat råd.",
     drag: {
       vad: kort.rekommenderatDrag + ".",
       varfor: dott
-        ? "Affären har legat still länge. En sista tydlig kontakt väcker ofta liv i den — annars frigör den din tid."
+        ? "Affären har legat still länge. En sista tydlig kontakt väcker ofta liv i den, annars frigör den din tid."
         : "Nästa konkreta steg utifrån var affären står just nu.",
       oppning: dott
-        ? `Hej ${kort.namn.split(" ")[0] || ""}, jag vill inte tjata — men jag stänger hellre affären än lämnar den öppen. Är det fortfarande aktuellt?`
+        ? `Hej ${kort.namn.split(" ")[0] || ""}, jag vill inte tjata, men jag stänger hellre affären än lämnar den öppen. Är det fortfarande aktuellt?`
         : `Hej ${kort.namn.split(" ")[0] || ""}, jag hör av mig om ${kort.stegNamn.toLowerCase()}.`,
     },
     utkast: {
