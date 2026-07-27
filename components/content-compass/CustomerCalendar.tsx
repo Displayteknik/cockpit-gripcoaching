@@ -46,20 +46,23 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
     published: items.filter((i) => i.status === "published"),
   }), [items]);
 
-  // Länka till rätt verkstad per källa, och bara till moduler kunden faktiskt har.
-  // Ett blogginlägg ska öppnas i Blogg, inte i Studio med ett id Studion inte känner igen.
-  const linkFor = (it: ContentItem): string => {
-    if (it.source === "linkedin") return canLinkedin ? "/k/linkedin" : "/k";
-    if (it.source === "blog") return canBlog ? "/k/blogg" : "/k";
-    if (!canStudio) return "/k";
-    // Bara studio_posts kan djuplänkas med id (Studion slår upp posten på ?post=).
-    return it.source === "studio" ? `/k/studio?post=${it.id}` : "/k/studio";
+  // Var öppnas posten? null = ingen väg dit (saknad modul), då visar vi en förklaring
+  // istället för en knapp som skickar kunden till startsidan.
+  // Bara studio_posts kan djuplänkas med id (Studion slår upp posten på ?post=).
+  const linkFor = (it: ContentItem): string | null => {
+    if (it.source === "studio") return canStudio ? `/k/studio?post=${it.id}` : null;
+    if (it.source === "blog") return canBlog ? "/k/blogg" : null;
+    // LinkedIn-inlägg går att jobba med i Studio (LinkedIn är en kanal där) om egen modul saknas.
+    if (it.source === "linkedin") return canLinkedin ? "/k/linkedin" : canStudio ? "/k/studio" : null;
+    return canStudio ? "/k/studio" : null; // hm_social_posts: verkstaden, utan djuplänk
   };
+  // Öppnas posten exakt, eller bara verkstaden? Styr texten i detaljvyn.
+  const oppnasExakt = (it: ContentItem) => it.source === "studio" && canStudio;
 
+  // Listraden öppnar samma detaljvy som kalenderbrickan, så beteendet är likadant överallt.
   const Row = ({ it }: { it: ContentItem }) => {
-    const href = linkFor(it);
     return (
-      <a href={href} className={`group flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-3 px-3 rounded-xl transition-colors ${funnelTintClass(it.funnel_level)}`}>
+      <button onClick={() => setVald(it)} className={`group w-full text-left flex items-center gap-3 py-2.5 hover:bg-gray-50 -mx-3 px-3 rounded-xl transition-colors ${funnelTintClass(it.funnel_level)}`}>
         <div className="w-11 h-11 rounded-xl bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center ring-1 ring-black/5">
           {it.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -74,7 +77,7 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
           </div>
         </div>
         <ArrowRight className="w-4 h-4 text-gray-300 shrink-0 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" style={{ color: primary }} />
-      </a>
+      </button>
     );
   };
 
@@ -124,7 +127,7 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
 
       {view === "calendar" ? (
         <section className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-          <ContentCalendar items={items} primary={primary} hrefFor={linkFor} onSelect={setVald} />
+          <ContentCalendar items={items} primary={primary} hrefFor={(it) => linkFor(it) ?? "#"} onSelect={setVald} />
         </section>
       ) : (
         <>
@@ -156,13 +159,26 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
               <img src={vald.imageUrl} alt="" className="w-full max-h-52 object-cover" />
             )}
             <div className="p-6 space-y-2.5">
-              <a
-                href={linkFor(vald)}
-                className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90"
-                style={{ background: primary }}
-              >
-                Öppna och redigera <ArrowRight className="w-4 h-4" />
-              </a>
+              {linkFor(vald) ? (
+                <>
+                  <a
+                    href={linkFor(vald) as string}
+                    className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90"
+                    style={{ background: primary }}
+                  >
+                    {oppnasExakt(vald) ? "Öppna och redigera" : "Öppna verkstaden"} <ArrowRight className="w-4 h-4" />
+                  </a>
+                  {!oppnasExakt(vald) && (
+                    <p className="text-xs text-gray-400 text-center">
+                      Den här posten öppnas i sin verkstad, där hittar du den i listan.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-1">
+                  Den här posten hör till en modul du inte har, så den går inte att öppna härifrån.
+                </p>
+              )}
               <button
                 onClick={async () => {
                   if (!confirm(`Radera "${vald.title}"? Det går inte att ångra.`)) return;
