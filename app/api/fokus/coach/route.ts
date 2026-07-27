@@ -56,7 +56,18 @@ export async function POST(req: Request) {
     .in("tenant_id", ctx.ids)
     .eq("ghl_opportunity_id", kort.id)
     .order("tenant_id", { ascending: true });
-  const canon = (oppRows as { id: string; tenant_id: string }[] | null)?.[0] || null;
+  let canon = (oppRows as { id: string; tenant_id: string }[] | null)?.[0] || null;
+  // Öppnas coachen från ett DM-pipelinekort finns inget opportunity-id: matcha på
+  // kontaktnamn istället, så samma affärsminne och planering hittas som från Fokus idag.
+  if (!canon && kort.namn) {
+    const { data: viaNamn } = await sb
+      .from("fokus_opportunities")
+      .select("id, tenant_id")
+      .in("tenant_id", ctx.ids)
+      .ilike("kontakt", kort.namn.trim())
+      .order("tenant_id", { ascending: true });
+    canon = (viaNamn as { id: string; tenant_id: string }[] | null)?.[0] || null;
+  }
   const memTenant = canon?.tenant_id || null;
   const uuid = canon?.id || null;
 

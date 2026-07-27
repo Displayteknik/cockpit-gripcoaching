@@ -41,7 +41,7 @@ const kanalUi = (k: string) => KANAL_UI[k] || KANAL_UI.ring;
 
 // ── Typer speglar /api/fokus/board (prioriteringsmotorn) ──
 type Farg = "neutral" | "amber" | "red" | "cold";
-interface ScoredCard {
+export interface ScoredCard {
   id: string;
   namn: string;
   foretag: string;
@@ -1160,7 +1160,9 @@ function CoachContextInput({
 }
 
 // ── Coach-panel (portal till body — /k-layoutens transform bryter annars position:fixed) ──
-function CoachPanel({
+// Exporterad så DM & Pipeline kan öppna EXAKT samma säljcoach-dialog för ett pipelinekort.
+// Samma dataväg (/api/fokus/coach) och samma automatiska kontext, ingen parallell logik.
+export function CoachPanel({
   kort,
   primaryColor,
   onClose,

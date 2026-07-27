@@ -1,6 +1,7 @@
 "use client";
 
 import SmartTextarea from "@/components/SmartTextarea";
+import { CoachPanel, type ScoredCard } from "@/components/FokusClient";
 
 import { useEffect, useState, type CSSProperties } from "react";
 import {
@@ -21,6 +22,7 @@ import {
   XCircle,
   Pencil,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
 
 type Stage = "new" | "acknowledge" | "connect" | "offer" | "won" | "lost";
@@ -117,6 +119,12 @@ function PipelineView() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [coachKontakt, setCoachKontakt] = useState<Contact | null>(null);
+  // Kundens färg till coach-dialogen (samma accent som resten av vyn).
+  const [coachAccent, setCoachAccent] = useState("#7c3aed");
+  useEffect(() => {
+    fetch("/api/clients/active").then((r) => (r.ok ? r.json() : null)).then((c) => { if (c?.primary_color) setCoachAccent(c.primary_color); }).catch(() => {});
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -244,6 +252,7 @@ function PipelineView() {
                         onDelete={() => remove(c.id)}
                         onSyncGhl={() => syncGhl(c.id)}
                         onMoveTo={(s) => moveStage(c.id, s)}
+                        onCoacha={() => setCoachKontakt(c)}
                       />
                     ))
                   )}
@@ -281,8 +290,41 @@ function PipelineView() {
       )}
 
       {showAdd && <AddContactModal onClose={() => setShowAdd(false)} onAdded={load} />}
+
+      {/* Säljcoachen: samma dialog som i Fokus idag. Coachen hämtar själv kontakten,
+          DM-konversationen och planerade uppföljningar via /api/fokus/coach. */}
+      {coachKontakt && (
+        <CoachPanel
+          kort={kortFranKontakt(coachKontakt)}
+          primaryColor={coachAccent}
+          onClose={() => setCoachKontakt(null)}
+          onRefresh={load}
+        />
+      )}
     </div>
   );
+}
+
+// DM-kontakt → det kort-format Säljcoachen redan talar. Värden coachen inte har på
+// DM-sidan (affärsvärde, prioritet) lämnas neutrala: routen berikar själv ur databasen.
+function kortFranKontakt(c: Contact): ScoredCard {
+  const dagar = Math.max(0, Math.floor((Date.now() - new Date(c.updated_at || c.created_at).getTime()) / 86400000));
+  return {
+    id: c.id,
+    namn: c.display_name || c.ig_username,
+    foretag: "",
+    varde: 0,
+    stegNamn: STAGES.find((s) => s.id === c.stage)?.label || (c.stage === "won" ? "Bokad" : c.stage === "lost" ? "Förlorad" : ""),
+    typ: "kontakt",
+    dagarISteget: dagar,
+    dagarOverSla: 0,
+    prioritet: 0,
+    farg: "neutral",
+    okantVarde: true,
+    ghlContactId: c.ghl_contact_id || undefined,
+    lagesText: `${dagar} ${dagar === 1 ? "dag" : "dagar"} sedan senaste rörelsen`,
+    rekommenderatDrag: c.next_action || "",
+  };
 }
 
 function ContactCard({
@@ -292,6 +334,7 @@ function ContactCard({
   onDelete,
   onSyncGhl,
   onMoveTo,
+  onCoacha,
 }: {
   contact: Contact;
   onDragStart: () => void;
@@ -299,6 +342,7 @@ function ContactCard({
   onDelete: () => void;
   onSyncGhl: () => void;
   onMoveTo: (s: Stage) => void;
+  onCoacha: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [notes, setNotes] = useState(contact.notes || "");
@@ -406,6 +450,15 @@ function ContactCard({
               <XCircle className="w-3.5 h-3.5" />
             </button>
           )}
+          {/* Säljcoach: exakt samma dialog och kontext som från Fokus idag. */}
+          <button
+            onClick={onCoacha}
+            className="text-xs p-1.5 rounded-lg font-medium transition-colors hover:bg-purple-50"
+            style={{ color: "var(--color-purple-600)" }}
+            title="Coacha affären"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+          </button>
         </div>
         <button
           onClick={onSyncGhl}
