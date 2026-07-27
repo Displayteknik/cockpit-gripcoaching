@@ -29,7 +29,13 @@ export async function POST(req: Request) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
 
-  let body: { kort?: ScoredCard; fraga?: string | null };
+  let body: {
+    kort?: ScoredCard;
+    fraga?: string | null;
+    chatt?: boolean;                                  // följdfråga → kort samtalssvar, inte ny analys
+    tidigareRad?: unknown;                            // rådet som redan visas
+    historikChatt?: { roll: string; text: string }[];  // tidigare turer i samtalet
+  };
   try {
     body = await req.json();
   } catch {
@@ -38,6 +44,7 @@ export async function POST(req: Request) {
   const kort = body.kort;
   if (!kort || !kort.id) return NextResponse.json({ error: "kort krävs" }, { status: 400 });
   const fraga = (body.fraga || "").trim() || null;
+  const chattLage = !!body.chatt && !!fraga;
 
   const clientId = await getActiveClientId();
   const ctx = await resolveCoachContext(clientId);
@@ -76,7 +83,8 @@ export async function POST(req: Request) {
 
   if (uuid && memTenant) {
     // Användarens fritextsvar är case-kontext → spara som aktivitet (bygger minnet).
-    if (fraga)
+    // En följdfråga i chatten är däremot ingen händelse i affären och sparas inte.
+    if (fraga && !chattLage)
       await sb
         .from("fokus_aktiviteter")
         .insert({ tenant_id: memTenant, opportunity_id: uuid, typ: "note", notering: fraga, kalla: "coachpanel" });
@@ -157,6 +165,41 @@ export async function POST(req: Request) {
 
   const dk = buildDatakontrakt(kort, verksamhet, historik, fraga, tidigareCoachrad, autoKontext);
   const system = byggSystemprompt(verksamhet);
+
+  // ── Chatt-läge: en följdfråga ska BESVARAS, inte generera om hela analysen. ──
+  if (chattLage) {
+    const turer = (body.historikChatt || [])
+      .map((t) => `${t.roll === "coach" ? "Coach" : "Användaren"}: ${t.text}`)
+      .join("\n");
+    const chattSystem = [
+      system,
+      "\n=== NU: FÖLJDFRÅGA I ETT SAMTAL ===",
+      "Användaren har redan fått rådet nedan och ställer nu en följdfråga. Svara som en kollega i ett samtal:",
+      "- Svara på FRÅGAN, upprepa inte hela analysen.",
+      "- Kort: 1 till 4 meningar, eller en färdig formulering om användaren ber om det.",
+      "- Håll dig till det som står i caset och historiken. Hitta aldrig på nya händelser.",
+      "- Ren löpande text, ingen JSON, inga rubriker, inga tankstreck.",
+    ].join("\n");
+    const chattPrompt = [
+      `Säljcaset (JSON):\n${JSON.stringify(dk.case, null, 2)}`,
+      body.tidigareRad ? `\nRådet användaren redan fått:\n${JSON.stringify(body.tidigareRad)}` : "",
+      turer ? `\nSamtalet hittills:\n${turer}` : "",
+      `\nAnvändarens följdfråga: ${fraga}`,
+    ].filter(Boolean).join("\n");
+    try {
+      const text = await generate({
+        model: "gemini-2.5-flash",
+        systemInstruction: chattSystem,
+        prompt: chattPrompt,
+        maxOutputTokens: 600,
+        temperature: 0.3,
+      });
+      const rent = (text || "").trim().replace(/\s*[—–]\s*/g, ", ");
+      if (rent) return NextResponse.json({ chattSvar: rent, vetRedan });
+    } catch { /* faller igenom till vanlig analys nedan */ }
+    return NextResponse.json({ chattSvar: "Jag kunde inte svara just nu, prova igen om en stund.", vetRedan });
+  }
+
   const bas = `Här är säljcaset (JSON):\n${JSON.stringify(dk.case, null, 2)}`;
   const krav =
     "Svara med EXAKT det angivna JSON-formatet. ALLA fält krävs — särskilt utkast.text (vid telefon: punktmanus som en enda textsträng med radbrytningar).";

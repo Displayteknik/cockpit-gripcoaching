@@ -1178,6 +1178,8 @@ export function CoachPanel({
   const [insamling, setInsamling] = useState<string | null>(null);
   const [vetRedan, setVetRedan] = useState<string[]>([]); // "Det här vet jag redan" — ur systemets data
   const [fraga, setFraga] = useState("");
+  const [chatt, setChatt] = useState<{ roll: "du" | "coach"; text: string }[]>([]); // följdfrågor som samtal
+  const [chattar, setChattar] = useState(false);
   const [kopierad, setKopierad] = useState(false);
   const [kontakt, setKontakt] = useState<{ namn?: string; email?: string; telefon?: string; foretag?: string } | null>(null);
 
@@ -1217,6 +1219,25 @@ export function CoachPanel({
   useEffect(() => {
     kor();
   }, [kor]);
+
+  // Följdfråga = samtal. Rådet ovan står kvar, svaret läggs till i chatten.
+  const stallFraga = useCallback(async (q: string) => {
+    setChatt((prev) => [...prev, { roll: "du", text: q }]);
+    setChattar(true);
+    try {
+      const r = await fetch("/api/fokus/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kort, fraga: q, chatt: true, tidigareRad: svar, historikChatt: chatt.map((t) => ({ roll: t.roll === "coach" ? "coach" : "du", text: t.text })) }),
+      });
+      const d = await r.json();
+      setChatt((prev) => [...prev, { roll: "coach", text: d.chattSvar || "Jag kunde inte svara just nu." }]);
+    } catch {
+      setChatt((prev) => [...prev, { roll: "coach", text: "Kunde inte nå coachen just nu." }]);
+    } finally {
+      setChattar(false);
+    }
+  }, [kort, svar, chatt]);
 
   const kopiera = (text: string) => {
     navigator.clipboard?.writeText(text).then(() => {
@@ -1365,13 +1386,37 @@ export function CoachPanel({
               )}
               <div className="pt-1 border-t border-gray-100">
                 <div className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-2 mt-3">Följdfråga</div>
+
+                {/* Samtalet: rådet ovan står kvar, frågor och svar staplas här. */}
+                {chatt.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {chatt.map((t, i) => (
+                      <div key={i} className={t.roll === "du" ? "flex justify-end" : "flex justify-start"}>
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap ${t.roll === "du" ? "text-white" : "bg-gray-100 text-gray-800"}`}
+                          style={t.roll === "du" ? { background: primaryColor } : undefined}
+                        >
+                          {t.text}
+                        </div>
+                      </div>
+                    ))}
+                    {chattar && (
+                      <div className="flex justify-start">
+                        <div className="rounded-2xl bg-gray-100 px-3.5 py-2 text-sm text-gray-500 inline-flex items-center gap-2">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Coachen skriver…
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <CoachContextInput
                   value={fraga}
                   onChange={setFraga}
                   onSubmit={() => {
                     const q = fraga.trim();
-                    if (q) {
-                      kor(q);
+                    if (q && !chattar) {
+                      stallFraga(q);
                       setFraga("");
                     }
                   }}
