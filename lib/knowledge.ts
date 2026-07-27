@@ -38,13 +38,12 @@ export async function getKnowledge(...names: string[]): Promise<string> {
 
 export async function getProfileAsMarkdown(): Promise<string> {
   try {
-    const { createClient } = await import("@supabase/supabase-js");
+    // Service-role: hm_brand_profile har strikt RLS → anon får "permission denied" och
+    // profilen föll tyst bort ur ALL AI-generering. Läsningen är alltid tenant-låst via
+    // resolveClientId nedan, så service-role läcker inget mellan klienter.
+    const { supabaseService } = await import("./supabase-admin");
     const { resolveClientId } = await import("./client-context");
-    const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false } }
-    );
+    const sb = supabaseService();
     // resolveClientId: kund-session (httpOnly-token) vinner → rätt klients brand i /k-kontext
     const clientId = await resolveClientId();
     const { data } = await sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle();
