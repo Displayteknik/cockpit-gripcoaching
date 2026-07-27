@@ -15,6 +15,7 @@ export interface ContentItem {
   status: ContentStatus;
   when: string | null; // ISO: schemalagt → publicerat → skapat
   imageUrl: string | null;
+  excerpt: string | null; // kort textutdrag, så en post kan visas utan att öppna verkstaden
   editHref: string; // länk till verkstaden
   // Content Compass-profil (null = oklassat). Tillagt CC-1, additivt.
   funnel_level: string | null;
@@ -41,6 +42,13 @@ function firstLine(s: string | null | undefined, fallback: string): string {
   return line.length > 80 ? line.slice(0, 77) + "…" : line;
 }
 
+// Kort, läsbart utdrag (HTML bortstädat) för detaljvyn i kalendern.
+function utdrag(t: string | null | undefined): string | null {
+  const rent = String(t || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (!rent) return null;
+  return rent.length > 400 ? rent.slice(0, 397) + "…" : rent;
+}
+
 function normStatus(opts: { published?: boolean; scheduled?: boolean; raw?: string | null }): ContentStatus {
   const r = (opts.raw || "").toLowerCase();
   if (opts.published || r === "published" || r === "posted") return "published";
@@ -65,7 +73,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     const status = normStatus({ scheduled: p.ghl_status === "scheduled", published: p.ghl_status === "published", raw: p.ghl_status });
     items.push({
       id: String(p.id), source: "studio", title: firstLine(p.title || p.caption, "Studio-inlägg"),
-      channel: "social", status, when: p.scheduled_at || p.created_at, imageUrl: p.image_url, editHref: `${WORKSHOP.studio}?post=${p.id}`,
+      channel: "social", status, when: p.scheduled_at || p.created_at, imageUrl: p.image_url, excerpt: utdrag(p.caption), editHref: `${WORKSHOP.studio}?post=${p.id}`,
       funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
@@ -73,7 +81,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     const status = normStatus({ published: !!p.published_at, scheduled: !!p.scheduled_for, raw: p.status });
     items.push({
       id: String(p.id), source: "social", title: firstLine(p.hook || p.caption, "Inlägg"),
-      channel: (p.platform || "social").toLowerCase(), status, when: p.scheduled_for || p.published_at || p.created_at, imageUrl: p.image_url, editHref: WORKSHOP.social,
+      channel: (p.platform || "social").toLowerCase(), status, when: p.scheduled_for || p.published_at || p.created_at, imageUrl: p.image_url, excerpt: utdrag(p.caption), editHref: WORKSHOP.social,
       funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
@@ -81,7 +89,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     const status = normStatus({ published: !!p.posted_at, scheduled: !!p.scheduled_for, raw: p.status });
     items.push({
       id: String(p.id), source: "linkedin", title: firstLine(p.hook || p.body, "LinkedIn-inlägg"),
-      channel: "linkedin", status, when: p.scheduled_for || p.posted_at || p.created_at, imageUrl: null, editHref: WORKSHOP.linkedin,
+      channel: "linkedin", status, when: p.scheduled_for || p.posted_at || p.created_at, imageUrl: null, excerpt: utdrag(p.body), editHref: WORKSHOP.linkedin,
       funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }
@@ -91,7 +99,7 @@ export async function getContentOverview(clientId: string): Promise<ContentOverv
     const status = normStatus({ published: !!p.published, scheduled: scheduledBlog });
     items.push({
       id: String(p.id), source: "blog", title: firstLine(p.title, "Bloggartikel"),
-      channel: "blogg", status, when: p.published_at || p.created_at, imageUrl: p.image_url, editHref: WORKSHOP.blog,
+      channel: "blogg", status, when: p.published_at || p.created_at, imageUrl: p.image_url, excerpt: null, editHref: WORKSHOP.blog,
       funnel_level: p.funnel_level ?? null, four_a: p.four_a ?? null, disc: p.disc ?? null,
     });
   }

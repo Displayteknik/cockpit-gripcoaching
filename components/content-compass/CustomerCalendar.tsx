@@ -4,7 +4,7 @@
 // skapa hela veckans innehåll, se balansen, och överblicka allt planerat innehåll.
 // Tenant-låst via kund-sessionen (API:erna resolvar kundens egen klient).
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, FileEdit, CheckCircle2, RefreshCw, Loader2, LayoutGrid, List as ListIcon, ImageIcon, ArrowRight, Trash2 } from "lucide-react";
+import { CalendarClock, FileEdit, CheckCircle2, RefreshCw, Loader2, LayoutGrid, List as ListIcon, ImageIcon, ArrowRight, Trash2, Copy } from "lucide-react";
 import type { ContentItem, ContentStatus } from "@/lib/content/overview";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 import { CompassBadges, funnelTintClass } from "@/components/content-compass/badges";
@@ -52,8 +52,9 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
   const linkFor = (it: ContentItem): string | null => {
     if (it.source === "studio") return canStudio ? `/k/studio?post=${it.id}` : null;
     if (it.source === "blog") return canBlog ? `/k/blogg?post=${it.id}` : null;
-    // LinkedIn-inlägg går att jobba med i Studio (LinkedIn är en kanal där) om egen modul saknas.
-    if (it.source === "linkedin") return canLinkedin ? "/k/linkedin" : canStudio ? "/k/studio" : null;
+    // Saknas LinkedIn-modulen finns ingen vettig verkstad: visa texten i vyn istället
+    // för att skicka kunden till en tom Studio.
+    if (it.source === "linkedin") return canLinkedin ? "/k/linkedin" : null;
     return canStudio ? "/k/studio" : null; // hm_social_posts: verkstaden, utan djuplänk
   };
   // Öppnas posten exakt, eller bara verkstaden? Styr texten i detaljvyn.
@@ -158,6 +159,20 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
               // eslint-disable-next-line @next/next/no-img-element
               <img src={vald.imageUrl} alt="" className="w-full max-h-52 object-cover" />
             )}
+            {/* Innehållet i klartext: posten går att läsa utan att öppna verkstaden. */}
+            {vald.excerpt && (
+              <div className="px-6 pt-4">
+                <div className="rounded-xl bg-gray-50 border border-gray-100 p-3.5 max-h-44 overflow-y-auto">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{vald.excerpt}</p>
+                </div>
+                <button
+                  onClick={() => navigator.clipboard?.writeText(vald.excerpt || "")}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Kopiera texten
+                </button>
+              </div>
+            )}
             <div className="p-6 space-y-2.5">
               {linkFor(vald) ? (
                 <>
@@ -175,8 +190,10 @@ export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true
                   )}
                 </>
               ) : (
-                <p className="text-sm text-gray-500 text-center py-1">
-                  Den här posten hör till en modul du inte har, så den går inte att öppna härifrån.
+                <p className="text-xs text-gray-400 text-center py-1">
+                  {vald.excerpt
+                    ? "Texten står ovan. Kopiera den och lägg upp den där du publicerar."
+                    : "Den här posten hör till en modul du inte har, så den går inte att öppna härifrån."}
                 </p>
               )}
               <button
