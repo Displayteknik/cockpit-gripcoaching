@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generate, generateJSON } from "@/lib/gemini";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { sanitizeGenerated } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -109,7 +110,7 @@ Skriv tonreglerna nu.`;
         prompt,
         temperature: 0.6,
       });
-      return NextResponse.json({ tone_rules: text });
+      return NextResponse.json({ tone_rules: sanitizeGenerated(text, { hashtags: false }) });
     }
 
     // default: section assist
@@ -135,7 +136,7 @@ Skriv förbättrat innehåll för fältet "${field}" nu.`;
       prompt,
       temperature: 0.7,
     });
-    return NextResponse.json({ text });
+    return NextResponse.json({ text: sanitizeGenerated(text, { hashtags: false }) });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

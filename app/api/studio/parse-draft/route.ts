@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generate } from "@/lib/gemini";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { sanitizeGenerated } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -37,10 +38,11 @@ export async function POST(req: NextRequest) {
         jsonMode: true,
       });
       const obj = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}");
+      const r = (t: string) => sanitizeGenerated(t, { hashtags: false });
       return NextResponse.json({
-        headline1: typeof obj.headline1 === "string" ? obj.headline1 : fallback.headline1,
-        headline2: typeof obj.headline2 === "string" ? obj.headline2 : fallback.headline2,
-        body: typeof obj.body === "string" ? obj.body : fallback.body,
+        headline1: r(typeof obj.headline1 === "string" ? obj.headline1 : fallback.headline1),
+        headline2: r(typeof obj.headline2 === "string" ? obj.headline2 : fallback.headline2),
+        body: r(typeof obj.body === "string" ? obj.body : fallback.body),
       });
     } catch {
       return NextResponse.json(fallback);

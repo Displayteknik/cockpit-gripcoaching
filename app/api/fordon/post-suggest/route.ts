@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
 import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
+import { sanitizeGenerated } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -126,10 +127,10 @@ Skriv ETT inlägg i JSON-formatet. Inget annat.`;
 
     const gallery = Array.isArray(v.gallery) ? (v.gallery as string[]) : [];
     return NextResponse.json({
-      hook,
-      body,
-      cta,
-      hashtags,
+      hook: sanitizeGenerated(hook, { hashtags: false }),
+      body: sanitizeGenerated(body, { hashtags: false }),
+      cta: sanitizeGenerated(cta, { hashtags: false }),
+      hashtags: Array.isArray(hashtags) ? hashtags.slice(0, 5) : hashtags,
       image_url: v.image_url || gallery[0] || null,
       gallery,
       vehicle: { id: v.id, title: v.title, price: v.price, brand: v.brand, model: v.model },

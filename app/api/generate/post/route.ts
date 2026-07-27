@@ -4,6 +4,7 @@ import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
 import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 import { getWinningPatterns, patternsToPromptBlock } from "@/lib/insights";
+import { sanitizeGenerated } from "@/lib/content/writing-rules";
 import {
   WEEK_ROLES,
   DISC_GUIDE,
@@ -222,6 +223,14 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
       voice_issues?: string[];
     };
     const { scoreText } = await import("@/lib/voice-enforce");
+    // Skyddsnät före scoring, så poängen speglar exakt den text användaren ser.
+    for (const v of variants) {
+      v.hook = sanitizeGenerated(v.hook, { hashtags: false });
+      v.body = sanitizeGenerated(v.body, { hashtags: false });
+      v.cta = sanitizeGenerated(v.cta, { hashtags: false });
+      if (Array.isArray(v.hashtags)) v.hashtags = v.hashtags.slice(0, 5);
+    }
+
     const scoredVariants: ScoredVariant[] = await Promise.all(
       variants.map(async (v): Promise<ScoredVariant> => {
         const full = [v.hook, v.body, v.cta].filter(Boolean).join("\n\n");

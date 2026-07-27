@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
 import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
+import { sanitizeGenerated } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -83,7 +84,10 @@ Generera om enligt instruktionen. Returnera bara JSON.`;
       voice_score = { score: s.total, verdict: s.total >= 70 ? "pass" : s.total >= 55 ? "warn" : "block", issues: s.issues.slice(0, 5) };
     } catch {}
 
-    return NextResponse.json({ ...output, voice_score });
+    // Skyddsnät: samma skrivregler som vid nygenerering.
+    const rent = (v: unknown) => (typeof v === "string" ? sanitizeGenerated(v, { hashtags: false }) : v);
+    const sanerad = Object.fromEntries(Object.entries(output as Record<string, unknown>).map(([k, v]) => [k, rent(v)]));
+    return NextResponse.json({ ...sanerad, voice_score });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
