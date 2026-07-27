@@ -134,10 +134,17 @@ export async function GET() {
       dmInfo[o.id] = { etikett: "Bokad", forslag: null, bokad: bokadTid, bokadNot: (d.notes || "").split("\n")[0] || null };
       continue;
     }
-    // Har kontakten redan en planerad uppgift är den uppgiften sanningen (visas i Att göra idag).
+    const dagar = Math.max(0, Math.floor((Date.now() - new Date(o.lastStageChangeAt || o.updatedAt || Date.now()).getTime()) / 86400000));
     let forslag: string | null = null;
-    if (!planering[o.id]) {
-      const dagar = Math.max(0, Math.floor((Date.now() - new Date(o.lastStageChangeAt || o.updatedAt || Date.now()).getTime()) / 86400000));
+    if (planering[o.id]) {
+      // Uppgiften förfaller nu ("Att göra idag"): säg vad draget ÄR, utifrån var i
+      // samtalet kontakten står. Aldrig avslutspress, aldrig generiska fraser.
+      if (d.stage === "offer") forslag = "Påminn mjukt om tiderna du föreslog, lämna dörren öppen för andra tider.";
+      else if (d.stage === "acknowledge") forslag = `Hör av dig mjukt och fråga om ${d.notes && /\bhon\b/i.test(d.notes) ? "hon" : "han"} vill boka.`;
+      else if (d.stage === "connect") forslag = "Fortsätt dialogen och föreslå ett nästa steg.";
+      else if (d.stage === "new") forslag = "Svara och starta samtalet.";
+      else forslag = d.next_action || null;
+    } else {
       // Erbjudande: uppföljningsdisciplinen vinner över en generisk anteckning, så vi
       // aldrig råder till att tjata. Max 2 uppföljningar (dag 3 och dag 7), aldrig pressa.
       if (d.stage === "offer") {
