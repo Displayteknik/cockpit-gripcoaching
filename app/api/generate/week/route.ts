@@ -146,10 +146,9 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
 
     let parsed: { days?: { day: string; hook: string; body: unknown; cta: string; hashtags: string[] }[] } = {};
     try {
-      parsed = JSON.parse(raw);
+      parsed = tolkaJson(raw);
     } catch {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (m) parsed = JSON.parse(m[0]);
+      return NextResponse.json({ error: "Kunde inte tolka veckans innehåll. Prova att generera igen." }, { status: 502 });
     }
 
     if (!parsed.days || !Array.isArray(parsed.days) || parsed.days.length === 0) {
@@ -279,10 +278,9 @@ Exakt ${posts.length} inlägg i "days", i samma ordning som INLÄGG 1..${posts.l
 
   let parsed: { days?: { hook?: string; body?: unknown; cta?: string; hashtags?: unknown }[] } = {};
   try {
-    parsed = JSON.parse(raw);
+    parsed = tolkaJson(raw);
   } catch {
-    const m = raw.match(/\{[\s\S]*\}/);
-    if (m) parsed = JSON.parse(m[0]);
+    return NextResponse.json({ error: "Kunde inte tolka veckans innehåll. Prova att generera igen." }, { status: 502 });
   }
   if (!parsed.days || !Array.isArray(parsed.days) || parsed.days.length === 0) {
     return NextResponse.json({ error: "AI returnerade inga inlägg" }, { status: 500 });
@@ -351,4 +349,26 @@ Exakt ${posts.length} inlägg i "days", i samma ordning som INLÄGG 1..${posts.l
       disc: r.disc,
     })),
   });
+}
+
+// Tolkar modellsvar som JSON och reparerar de vanligaste avvikelserna.
+// Modellen skriver ibland hashtags som bara tecken i en array: ["#jul", #blommor]
+// vilket inte är giltig JSON. Vi citerar sådana element och tar bort släpande komman.
+// Rör bara array-positioner, aldrig text inuti strängar.
+function tolkaJson<T>(raw: string): T {
+  const rensad = String(raw || "").replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
+  const kandidat = rensad.startsWith("{") ? rensad : (rensad.match(/\{[\s\S]*\}/)?.[0] ?? rensad);
+  try {
+    return JSON.parse(kandidat) as T;
+  } catch {
+    let fixad = kandidat;
+    // Citera obeklädda #taggar som står som egna element i en array.
+    for (let i = 0; i < 40; i++) {
+      const nasta = fixad.replace(/([[,]\s*)(#[^\s",\]}]+)(\s*[,\]])/g, '$1"$2"$3');
+      if (nasta === fixad) break;
+      fixad = nasta;
+    }
+    fixad = fixad.replace(/,(\s*[}\]])/g, "$1"); // släpande komma
+    return JSON.parse(fixad) as T;
+  }
 }

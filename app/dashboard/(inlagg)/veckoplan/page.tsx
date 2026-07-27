@@ -197,7 +197,7 @@ export default function VeckoplanPage() {
         <div>
           <h1 className="font-display text-2xl font-bold text-gray-900">Veckoplan</h1>
           <p className="text-gray-500 text-sm mt-1 max-w-2xl leading-relaxed">
-            Sju inlägg på en gång — ett per dag, med rätt ton och syfte för varje veckodag. Veckan varvar automatiskt mellan fakta, inspiration, handling och det personliga så den känns levande.
+            Sju inlägg på en gång, ett per dag, med rätt ton och syfte för varje veckodag. Veckan varvar automatiskt mellan fakta, inspiration, handling och det personliga så den känns levande.
           </p>
         </div>
       </div>
@@ -205,13 +205,13 @@ export default function VeckoplanPage() {
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Veckotema — vad ska veckans inlägg kretsa kring?
+            Veckotema: vad ska veckans inlägg kretsa kring?
           </label>
           <input
             type="text"
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
-            placeholder="t.ex. Vintersäsongen — säkerhet och förberedelser inför kallt väder"
+            placeholder="t.ex. Vintersäsongen, säkerhet och förberedelser inför kallt väder"
             className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-colors"
           />
         </div>
@@ -244,7 +244,7 @@ export default function VeckoplanPage() {
 
         {generating && (
           <div className="text-xs text-gray-500 text-center italic">
-            Skrivhjälpen läser din röst, din brand-profil och veckans upplägg för varje dag — ge det en stund.
+            Skrivhjälpen läser din röst, din brand-profil och veckans upplägg för varje dag, ge det en stund.
           </div>
         )}
       </div>
@@ -482,7 +482,7 @@ function DayCard({
             <div>
               <div className="text-xs uppercase text-gray-400 font-semibold mb-1">Body</div>
               {editing ? (
-                <AutoTextarea value={day.body} onChange={(v) => onChange({ body: v })} placeholder="Brödtext — känsla, igenkänning och kundens resultat" className="text-sm text-gray-800 leading-relaxed" />
+                <AutoTextarea value={day.body} onChange={(v) => onChange({ body: v })} placeholder="Brödtext: känsla, igenkänning och kundens resultat" className="text-sm text-gray-800 leading-relaxed" />
               ) : (
                 <div className="text-sm text-gray-800 leading-relaxed"><KnowledgeText text={day.body} /></div>
               )}
