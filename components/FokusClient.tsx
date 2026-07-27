@@ -25,7 +25,19 @@ import {
   Mail,
   CheckCircle2,
   FileText,
+  MessageCircle,
+  Send,
 } from "lucide-react";
+
+// Kanal på en planerad uppgift → ikon + verb. Kanalen ska spegla kontaktens VERKLIGA kanal
+// (en DM-kontakt ska aldrig säga "Ring nu"). Okänd kanal faller till ring.
+const KANAL_UI: Record<string, { Icon: React.ComponentType<{ className?: string }>; verb: string; kort: string }> = {
+  dm: { Icon: MessageCircle, verb: "Svara i DM", kort: "DM" },
+  mejl: { Icon: Mail, verb: "Mejla nu", kort: "mejl" },
+  ring: { Icon: Phone, verb: "Ring nu", kort: "ring" },
+  innehall: { Icon: Send, verb: "Publicera nu", kort: "innehåll" },
+};
+const kanalUi = (k: string) => KANAL_UI[k] || KANAL_UI.ring;
 
 // ── Typer speglar /api/fokus/board (prioriteringsmotorn) ──
 type Farg = "neutral" | "amber" | "red" | "cold";
@@ -149,13 +161,13 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
               <Zap className="w-3.5 h-3.5" /> Fokus idag
             </div>
             <div className="flex items-center gap-2">
-              <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Idag — dina viktigaste affärer</h1>
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-white">Idag: dina viktigaste affärer</h1>
               <FunctionGuide
                 primaryColor={primaryColor}
                 title="Fokus idag"
-                what="Visar dina viktigaste affärer just nu — prioriterade efter värde, brådska och hur nära pengarna de står."
+                what="Visar dina viktigaste affärer just nu, prioriterade efter värde, brådska och hur nära pengarna de står."
                 how="Systemet räknar en prioritet per affär och lägger de mest brådskande överst med nästa drag och en säljcoach. 'Inflödet' håller koll på aktiviteterna som skapar nästa månads affärer."
-                tips={["Ta toppen först — 'I risk' betyder att något väntat för länge.", "Klicka 'Coacha affären' för konkret nästa steg.", "Logga aktiviteter i Inflödet så pipelinen aldrig sinar."]}
+                tips={["Ta toppen först. 'I risk' betyder att något väntat för länge.", "Klicka 'Coacha affären' för konkret nästa steg.", "Logga aktiviteter i Inflödet så pipelinen aldrig sinar."]}
               />
             </div>
             <p className="text-white/80 mt-1.5 text-sm max-w-lg">
@@ -319,7 +331,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                 <span className="text-xs text-gray-400 tabular-nums">({avgorUtanOffert.length})</span>
               </div>
               <p className="text-xs text-gray-500 -mt-1">
-                Legat still länge. Ge sista stöten eller släpp — de blockerar toppen.
+                Legat still länge. Ge sista stöten eller släpp, de blockerar toppen.
               </p>
               <div className="space-y-3">
                 {avgorUtanOffert.map((c) => (
@@ -632,16 +644,17 @@ function DragKort({
         <span className="text-gray-500">{c.lagesText}</span>
       </div>
 
-      {/* Planerad kontakt */}
+      {/* Planerad kontakt — uppgiftstexten (note) leder, kanalen speglar kontaktens verkliga kanal */}
       {attGora && planering ? (
         <div
           className="mt-3 flex items-center justify-between gap-2 rounded-xl px-3 py-2.5"
           style={{ background: `${primaryColor}12` }}
         >
-          <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: primaryColor }}>
-            {planering.kanal === "mejl" ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
-            {planering.kanal === "mejl" ? "Mejla" : "Ring"} nu
-            <span className="text-xs font-normal text-gray-500">· planerat {planText(planering.dueAt)}</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: primaryColor }}>
+              {(() => { const { Icon, verb } = kanalUi(planering.kanal); return (<><Icon className="w-4 h-4" /> {planering.note || verb}</>); })()}
+            </div>
+            <div className="text-xs text-gray-500 mt-0.5">Planerat {planText(planering.dueAt)} · {kanalUi(planering.kanal).kort}</div>
           </div>
           <button
             onClick={markKlar}
@@ -658,11 +671,12 @@ function DragKort({
           style={{ background: `${primaryColor}14`, color: primaryColor }}
         >
           <CalendarClock className="w-3.5 h-3.5" />
-          Planerat {planText(planering.dueAt)} · {planering.kanal === "mejl" ? "mejl" : "ring"}
+          Planerat {planText(planering.dueAt)} · {kanalUi(planering.kanal).kort}
         </div>
       ) : null}
 
-      {/* Rekommenderat drag */}
+      {/* Rekommenderat drag — säljcoachning. Irrelevant för innehållsuppgifter (posta inlägg). */}
+      {planering?.kanal !== "innehall" && (
       <div className="mt-3 flex items-start gap-2 rounded-xl bg-gray-50 px-3 py-2.5">
         <span
           className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -672,14 +686,15 @@ function DragKort({
         </span>
         <span className="text-sm text-gray-700">{c.rekommenderatDrag}</span>
       </div>
+      )}
 
       {/* Pipeline-stegrad — se & flytta affären i GHL direkt (klick eller dra) */}
       {stegInfo && stegInfo.steg.length > 1 && (
         <PipelineStegRad oppId={c.id} stegInfo={stegInfo} primaryColor={primaryColor} onMoved={onSaved} />
       )}
 
-      {/* Sätt värde för 0 kr-affärer */}
-      {c.okantVarde && (
+      {/* Sätt värde för 0 kr-affärer (ej för innehållsuppgifter, de har inget kr-värde) */}
+      {c.okantVarde && planering?.kanal !== "innehall" && (
         <div className="mt-3">
           {!sattVarde ? (
             <button

@@ -109,13 +109,13 @@ export default async function CustomerHome() {
     todos = focusInsights.map((a) => ({ icon: FOCUS_ICON[a.icon], accent: a.accent, title: a.title, detail: a.detail, href: "/k/besokare" }));
   } else {
     const starters: TodoCard[] = [];
-    if (has("profil") && profileFilled < 4) starters.push({ icon: Target, accent: "emerald", title: "Fyll i din Brand-profil", detail: "Din röst, ditt erbjudande och dina kunder — grunden allt annat bygger på.", href: "/k/profil" });
-    if (has("skapa")) starters.push({ icon: Sparkles, accent: "amber", title: totalPosts === 0 ? "Skapa ditt första inlägg" : "Skapa ett nytt inlägg", detail: totalPosts === 0 ? "Låt Skrivhjälpen föreslå text i din röst — och en bild på köpet." : "Håll flödet igång. Skrivhjälpen ger dig text och bild på minuter.", href: "/k/studio" });
-    if (has("blog")) starters.push({ icon: BookOpen, accent: "violet", title: "Skriv ett blogginlägg", detail: "Längre texter som rankar i Google — Skrivhjälpen skriver i din röst.", href: "/k/blogg" });
+    if (has("profil") && profileFilled < 4) starters.push({ icon: Target, accent: "emerald", title: "Fyll i din Brand-profil", detail: "Din röst, ditt erbjudande och dina kunder, grunden allt annat bygger på.", href: "/k/profil" });
+    if (has("skapa")) starters.push({ icon: Sparkles, accent: "amber", title: totalPosts === 0 ? "Skapa ditt första inlägg" : "Skapa ett nytt inlägg", detail: totalPosts === 0 ? "Låt Skrivhjälpen föreslå text i din röst, och en bild på köpet." : "Håll flödet igång. Skrivhjälpen ger dig text och bild på minuter.", href: "/k/studio" });
+    if (has("blog")) starters.push({ icon: BookOpen, accent: "violet", title: "Skriv ett blogginlägg", detail: "Längre texter som rankar i Google. Skrivhjälpen skriver i din röst.", href: "/k/blogg" });
     if (has("newsletter")) starters.push({ icon: Mail, accent: "blue", title: "Gör ett nyhetsbrev", detail: "Förvandla din text eller ett blogginlägg till ett nyhetsbrev i din röst.", href: "/k/nyhetsbrev" });
     if (has("compass")) starters.push({ icon: Calendar, accent: "purple", title: "Planera din vecka", detail: "Få en hel veckas innehåll färdigt att granska och lägga i kalendern.", href: "/k/kalender" });
     else if (has("veckoplan")) starters.push({ icon: Calendar, accent: "purple", title: "Planera din vecka", detail: "Sju färdiga inlägg enligt veckorytmen, redo att granska.", href: "/k/veckoplan" });
-    if (has("seo")) starters.push({ icon: Search, accent: "blue", title: "Följ din synlighet", detail: "Se hur du syns i Google och AI-sök — och vad som lyfter dig.", href: "/k/seo" });
+    if (has("seo")) starters.push({ icon: Search, accent: "blue", title: "Följ din synlighet", detail: "Se hur du syns i Google och AI-sök, och vad som lyfter dig.", href: "/k/seo" });
     else if (has("besokare")) starters.push({ icon: Eye, accent: "blue", title: "Följ din trafik", detail: "Se besök, kanaler och trender på ett ställe.", href: "/k/besokare" });
     todos = starters.slice(0, 3);
   }
@@ -123,7 +123,7 @@ export default async function CustomerHome() {
   // "Kom igång"-steg: pedagogiskt flöde ur kundens riktiga läge. Visas bara tills
   // grunden är på plats (alla steg klara → göms, ingen nag för vana användare).
   const steps: Step[] = [];
-  if (has("profil")) steps.push({ title: "Fyll i din Brand-profil", desc: "Din röst, dina kunder och ditt erbjudande — grunden allt annat bygger på.", href: "/k/profil", cta: "Fyll i", done: profileFilled >= 4 });
+  if (has("profil")) steps.push({ title: "Fyll i din Brand-profil", desc: "Din röst, dina kunder och ditt erbjudande, grunden allt annat bygger på.", href: "/k/profil", cta: "Fyll i", done: profileFilled >= 4 });
   if (has("skapa")) steps.push({ title: "Skapa ditt första inlägg", desc: "Låt Skrivhjälpen föreslå text i din röst, lägg till en bild och du är klar.", href: "/k/studio", cta: "Skapa", done: totalPosts > 0 });
   if (has("compass")) steps.push({ title: "Planera din vecka", desc: "Få en hel veckas innehåll färdigt att granska och lägga i kalendern.", href: "/k/kalender", cta: "Planera", done: published > 0 });
   else if (has("veckoplan")) steps.push({ title: "Planera din vecka", desc: "Sju färdiga inlägg enligt veckorytmen, redo att granska.", href: "/k/veckoplan", cta: "Planera", done: published > 0 });
@@ -170,7 +170,7 @@ export default async function CustomerHome() {
             <FunctionGuide
               primaryColor={primary}
               title="Din översikt"
-              what="Startsidan i MySales Pro — dina verktyg, ditt innehåll och läget för din synlighet på ett ställe."
+              what="Startsidan i MySales Pro: dina verktyg, ditt innehåll och läget för din synlighet på ett ställe."
               how="Korten under 'Dina verktyg' är modulerna som ingår i ditt paket. Klicka in på en för att jobba, eller följ 'Att göra nu' för nästa steg."
               tips={["Börja med Brand-profil så blir allt Skrivhjälpen skriver mer likt dig."]}
             />
@@ -276,14 +276,14 @@ export default async function CustomerHome() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <ScoreStat label="Teknisk SEO" value={audit?.seo_score} hint="Hur välbyggd sidan är tekniskt (titel, rubriker, schema, laddtid). Säger INTE hur högt du rankar — din riktiga placering ser du under Statistik." />
+            <ScoreStat label="Teknisk SEO" value={audit?.seo_score} hint="Hur välbyggd sidan är tekniskt (titel, rubriker, schema, laddtid). Säger INTE hur högt du rankar. Din riktiga placering ser du under Statistik." />
             <ScoreStat label="Teknisk AEO" value={audit?.aeo_score} hint="Hur väl sidan är förberedd för AI-svar (tydliga svar, FAQ, struktur). Inte ett mått på trafik." />
             <StatCard label="Sökord du följer" value={kwCount} icon={Target} accent="purple" hint="Antal sökord du själv lagt till i din bevakningslista. (Sökord du faktiskt syns på i Google ser du under Statistik.)" />
             <StatCard label="Topp 10 på Google" value={top10} icon={Trophy} accent="amber" hint="Hur många av dina bevakade sökord som ligger på Googles första sida (plats 1–10)." />
           </div>
           <p className="text-xs text-gray-400">
-            Poängen mäter sidans tekniska kvalitet — din faktiska synlighet (placering, klick, visningar) ser du under <strong>Statistik</strong>.
-            {auditDate ? ` Senaste analys ${auditDate}.` : " Du har inte kört någon analys än — gör din första på SEO-sidan."}
+            Poängen mäter sidans tekniska kvalitet. Din faktiska synlighet (placering, klick, visningar) ser du under <strong>Statistik</strong>.
+            {auditDate ? ` Senaste analys ${auditDate}.` : " Du har inte kört någon analys än. Gör din första på SEO-sidan."}
           </p>
         </section>
       )}

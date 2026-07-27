@@ -39,10 +39,10 @@ export default async function CustomerIdeasPage() {
         </span>
         <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2 mt-1">
           <Lightbulb className="w-6 h-6" style={{ color: session.primary_color }} />
-          Idé-bank — förslag att granska
+          Idé-bank: förslag att granska
         </h1>
         <p className="text-gray-600 text-sm mt-1">
-          Här är utkast från Skrivhjälpen — godkänn det du gillar, avvisa resten. Det godkända blir mall för framtida förslag.
+          Här är utkast från Skrivhjälpen. Godkänn det du gillar, avvisa resten. Det godkända blir mall för framtida förslag.
         </p>
       </div>
 

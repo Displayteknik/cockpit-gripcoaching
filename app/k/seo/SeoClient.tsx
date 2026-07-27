@@ -66,10 +66,10 @@ interface ContentAudit {
 const FLOW: { n: number; who: "du" | "vi" | "duvi"; title: string; desc: string; what: string; how: string; tips: string[] }[] = [
   {
     n: 1, who: "du", title: "Analysera din sida",
-    desc: "Kör sid-analysen och se hur välbyggd sidan är — plus de viktigaste fixarna.",
+    desc: "Kör sid-analysen och se hur välbyggd sidan är, plus de viktigaste fixarna.",
     what: "Verktyget hämtar din sida och läser hur den är byggd: titel, rubriker, om den har FAQ, interna länkar, bilder utan alt-text och laddtid (Googles PageSpeed).",
     how: "Klistra in sidans adress i \"Sid-analys\" nedan och kör. Du får två tekniska poäng 0–100 (SEO + AEO) och en lista på vad som kan förbättras.",
-    tips: ["Poängen mäter sidans uppbyggnad — inte hur högt du rankar.", "Börja med din viktigaste sida.", "Följ åtgärdslistan uppifrån; de översta ger mest effekt."],
+    tips: ["Poängen mäter sidans uppbyggnad, inte hur högt du rankar.", "Börja med din viktigaste sida.", "Följ åtgärdslistan uppifrån; de översta ger mest effekt."],
   },
   {
     n: 2, who: "du", title: "Hitta dina sökord",
@@ -82,15 +82,15 @@ const FLOW: { n: number; who: "du" | "vi" | "duvi"; title: string; desc: string;
     n: 3, who: "duvi", title: "Skriv så du syns",
     desc: "Kvalitetskolla texten och skriv så att Google och AI-sökmotorer citerar dig. Vi hjälper vid behov.",
     what: "Skrivhjälpen bedömer din text (ton, robot-känsla, om den får läsaren att höra av sig) och pekar ut vad som kan bli bättre. Plus konkreta tips för att synas i AI-sökmotorer som ChatGPT och Perplexity.",
-    how: "Kör \"Textgranskning\" och skriv om det den flaggar. Följ AI-tipsen längst ner på sidan — eller hör av dig så hjälper vi till med omskrivningen.",
-    tips: ["Skriv rubriker som frågor dina kunder faktiskt ställer.", "Ge ett direkt svar i första meningen efter varje rubrik — det är det AI citerar.", "Skriv i din egen röst; kör granskningen igen och jämför."],
+    how: "Kör \"Textgranskning\" och skriv om det den flaggar. Följ AI-tipsen längst ner på sidan, eller hör av dig så hjälper vi till med omskrivningen.",
+    tips: ["Skriv rubriker som frågor dina kunder faktiskt ställer.", "Ge ett direkt svar i första meningen efter varje rubrik. Det är det AI citerar.", "Skriv i din egen röst; kör granskningen igen och jämför."],
   },
   {
     n: 4, who: "du", title: "Följ resultatet",
-    desc: "Se i Statistik om du klättrar — besök, placeringar och synlighet i AI-sök.",
+    desc: "Se i Statistik om du klättrar: besök, placeringar och synlighet i AI-sök.",
     what: "Statistik visar din riktiga synlighet: besök på sajten, vilka sökord du syns på, var du rankar i Google och om AI-sökmotorer börjar skicka besök.",
     how: "Öppna Statistik och titta vecka för vecka. \"Var rankar du på Google\" och \"Dina snabbaste möjligheter\" visar var nästa insats ger mest.",
-    tips: ["Sökdatan kommer från Google Search Console — riktiga siffror, inga gissningar.", "Kolla \"sida 2\"-orden — de är närmast att nå sida 1.", "Jämför perioder (7 / 28 / 90 dagar) för att se trenden."],
+    tips: ["Sökdatan kommer från Google Search Console: riktiga siffror, inga gissningar.", "Kolla \"sida 2\"-orden, de är närmast att nå sida 1.", "Jämför perioder (7 / 28 / 90 dagar) för att se trenden."],
   },
 ];
 
@@ -149,7 +149,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
         setDeepGenerating(Array.isArray(refresh?.generating) ? refresh.generating : []);
         if (!refresh?.generating?.length) return;
       }
-      setAuditNote("Granskningen körs fortfarande i bakgrunden — den dyker upp här inom några minuter. Du kan lämna sidan under tiden.");
+      setAuditNote("Granskningen körs fortfarande i bakgrunden. Den dyker upp här inom några minuter. Du kan lämna sidan under tiden.");
     } catch (e) {
       setAuditNote((e as Error).message);
     } finally {
@@ -291,7 +291,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
           Så jobbar vi med din synlighet
         </h2>
         <p className="text-sm text-gray-600 mt-1 mb-4 max-w-2xl">
-          Fyra steg — allt finns här på sidan. Så syns du bättre i både Google och AI-sökmotorer. Behöver du hjälp med en omskrivning är vi ett mejl bort.
+          Fyra steg, allt finns här på sidan. Så syns du bättre i både Google och AI-sökmotorer. Behöver du hjälp med en omskrivning är vi ett mejl bort.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {FLOW.map((s) => (
@@ -321,11 +321,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
               Din djupgranskning
             </h2>
             <p className="text-sm text-gray-600 mt-1 max-w-2xl">
-              En komplett genomgång av hela din sajt och Googles sökdata — vad som redan fungerar, vad
+              En komplett genomgång av hela din sajt och Googles sökdata: vad som redan fungerar, vad
               som bromsar dig, och färdiga texter du kan klistra in direkt. Tar ~5–10 minuter; du kan
               lämna sidan under tiden.
             </p>
-            <p className="text-xs text-gray-400 mt-1.5 max-w-2xl">Ny här? Börja gärna med en snabb <strong>Sid-analys</strong> längre ner — den tar bara en sida. Djupgranskningen går igenom hela sajten.</p>
+            <p className="text-xs text-gray-400 mt-1.5 max-w-2xl">Ny här? Börja gärna med en snabb <strong>Sid-analys</strong> längre ner. Den tar bara en sida. Djupgranskningen går igenom hela sajten.</p>
           </div>
           <button
             onClick={generateDeepAudit}
@@ -347,7 +347,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
             {deepGenerating.length > 0 && (
               <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-500">
                 <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" style={{ color: primaryColor }} />
-                Granskar sajten just nu — dyker upp här automatiskt när den är klar.
+                Granskar sajten just nu. Den dyker upp här automatiskt när den är klar.
               </div>
             )}
             {deepReports.map((r) => (
@@ -358,7 +358,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                   </span>
                   <div className="min-w-0">
                     <div className="font-semibold text-gray-900 text-sm truncate">
-                      SEO &amp; AEO-djupgranskning{r.metadata?.url ? ` — ${r.metadata.url.replace(/^https?:\/\/(www\.)?/, "")}` : ""}
+                      SEO &amp; AEO-djupgranskning{r.metadata?.url ? `: ${r.metadata.url.replace(/^https?:\/\/(www\.)?/, "")}` : ""}
                     </div>
                     <div className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString("sv-SE", { year: "numeric", month: "long", day: "numeric" })}</div>
                   </div>
@@ -377,11 +377,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </div>
 
       {/* Sid-audit */}
-      <Card title="Sid-analys (teknisk SEO + AEO)" subtitle="Klistra in en URL. Vi analyserar sidans uppbyggnad (titel, struktur, schema, laddtid) och ger en poäng + åtgärdslista. OBS: poängen mäter hur välbyggd sidan är — INTE hur högt den rankar i Google."
+      <Card title="Sid-analys (teknisk SEO + AEO)" subtitle="Klistra in en URL. Vi analyserar sidans uppbyggnad (titel, struktur, schema, laddtid) och ger en poäng + åtgärdslista. OBS: poängen mäter hur välbyggd sidan är, INTE hur högt den rankar i Google."
         guide={<FunctionGuide primaryColor={primaryColor} title="Sid-analys (teknisk SEO + AEO)"
           what="Granskar en enskild sida och ger en teknisk poäng (0–100) för både vanlig Google-sök (SEO) och AI-sökmotorer (AEO), plus en lista på vad som kan förbättras."
-          how="Klistra in sidans adress. Vi hämtar sidan, läser dess uppbyggnad (sidtitel, rubriker, text, schema, bilder) och kör Googles PageSpeed. Poängen säger hur välbyggd sidan är — inte hur högt den rankar (det ser du under Statistik)."
-          tips={["Kör en sida i taget — börja med din viktigaste.", "Följ åtgärdslistan uppifrån; de översta ger mest effekt.", "Hög poäng = tekniskt redo. Ranking byggs sen med innehåll och tid."]} />}>
+          how="Klistra in sidans adress. Vi hämtar sidan, läser dess uppbyggnad (sidtitel, rubriker, text, schema, bilder) och kör Googles PageSpeed. Poängen säger hur välbyggd sidan är, inte hur högt den rankar (det ser du under Statistik)."
+          tips={["Kör en sida i taget, börja med din viktigaste.", "Följ åtgärdslistan uppifrån; de översta ger mest effekt.", "Hög poäng = tekniskt redo. Ranking byggs sen med innehåll och tid."]} />}>
         <div className="flex gap-2 mb-4 flex-wrap">
           <input
             value={auditUrl}
@@ -470,11 +470,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </Card>
 
       {/* AI-granskning */}
-      <Card title="Textgranskning" subtitle="Klistra in en text eller URL — Skrivhjälpen bedömer kvalitet, ton, robot-känsla och om texten leder till handling. Hård men ärlig."
+      <Card title="Textgranskning" subtitle="Klistra in en text eller URL. Skrivhjälpen bedömer kvalitet, ton, robot-känsla och om texten leder till handling. Hård men ärlig."
         guide={<FunctionGuide primaryColor={primaryColor} title="Textgranskning"
           what="Låter Skrivhjälpen läsa din text och ge en ärlig bedömning: är den välskriven, har den rätt ton, har den robot-känsla, och får den läsaren att göra något (boka, höra av sig)?"
           how="Klistra in texten eller en sidadress. Skrivhjälpen läser och poängsätter, pekar ut svaga formuleringar och 'robot-klyschor', och föreslår hur du skriver om dem. Den är medvetet hård för att höja kvaliteten."
-          tips={["Använd den innan du publicerar ny text.", "Fokusera på det den flaggar som robot-känsla och svaga avslut.", "Skriv om i din egen röst — kör igen och jämför."]} />}>
+          tips={["Använd den innan du publicerar ny text.", "Fokusera på det den flaggar som robot-känsla och svaga avslut.", "Skriv om i din egen röst, kör igen och jämför."]} />}>
         <button
           onClick={() => setShowAiAudit(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
@@ -489,7 +489,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       {showKeywordIdeas && (
       <Card title="Vad ska du ranka på?" subtitle="Vet du inte vilka sökord du ska synas på? Vi läser din verksamhet och föreslår sökord som dina kunder faktiskt söker på. Lägg till dem i trackern med ett klick."
         guide={<FunctionGuide primaryColor={primaryColor} title="Vad ska du ranka på?"
-          what="Föreslår sökord du borde synas på i Google — korta, vassa ord som dina kunder faktiskt skriver, grupperade efter köp, jämför och info."
+          what="Föreslår sökord du borde synas på i Google: korta, vassa ord som dina kunder faktiskt skriver, grupperade efter köp, jämför och info."
           how="Den läser din Brand-profil (vad du erbjuder, dina kunder, din röst) och låter Skrivhjälpen föreslå relevanta sökord. Du kan också skriva något särskilt du vill synas för. Varje förslag lägger du till i Sökords-trackern med ett klick."
           tips={["Ju mer ifylld din Brand-profil är, desto bättre förslag.", "Fyll i fältet om du vill styra mot ett visst tema.", "Lägg till de mest relevanta i trackern och följ dem över tid."]} />}>
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -511,7 +511,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
         </div>
 
         {ideas && ideas.groups.length === 0 && (
-          <Empty text="Inga förslag den här gången — fyll i fältet ovan och försök igen." />
+          <Empty text="Inga förslag den här gången. Fyll i fältet ovan och försök igen." />
         )}
 
         {ideas && ideas.groups.length > 0 && (
@@ -552,11 +552,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       )}
 
       {/* Sökords-tracker */}
-      <Card title="Sökords-tracker" subtitle="Lägg in de sökord du vill ranka på. Placeringen hämtas automatiskt från Google (Search Console) för de ord du redan syns på — du behöver inte fylla i den själv."
+      <Card title="Sökords-tracker" subtitle="Lägg in de sökord du vill ranka på. Placeringen hämtas automatiskt från Google (Search Console) för de ord du redan syns på, du behöver inte fylla i den själv."
         guide={<FunctionGuide primaryColor={primaryColor} title="Sökords-tracker"
           what="Din egen bevakningslista över de sökord du vill ranka på. För ord du redan syns på hämtas din placering automatiskt från Google Search Console, så du ser utvecklingen över tid."
-          how="Skriv in ett sökord och lägg till det. Syns du redan på ordet fylls din snittplacering i automatiskt från Google. Ord du inte rankar på än får ingen placering — då kan du skriva in en själv om du vill."
-          tips={["Lägg till de viktigaste orden från 'Vad ska du ranka på?'.", "Placeringen kommer från Google automatiskt för ord du redan syns på.", "Ord utan siffra rankar du inte på än — skriv mer innehåll om dem så börjar de synas."]} />}>
+          how="Skriv in ett sökord och lägg till det. Syns du redan på ordet fylls din snittplacering i automatiskt från Google. Ord du inte rankar på än får ingen placering. Då kan du skriva in en själv om du vill."
+          tips={["Lägg till de viktigaste orden från 'Vad ska du ranka på?'.", "Placeringen kommer från Google automatiskt för ord du redan syns på.", "Ord utan siffra rankar du inte på än. Skriv mer innehåll om dem så börjar de synas."]} />}>
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <input
             value={newKw.keyword}
@@ -577,7 +577,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
         <div className="flex flex-wrap items-center gap-2 mb-4 -mt-1">
           {gscReady === false ? (
             <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed" title="Google Search Console är inte kopplat än">
-              <Sparkles className="w-4 h-4" /> Hämta sökord från Google — inte kopplat än
+              <Sparkles className="w-4 h-4" /> Hämta sökord från Google: inte kopplat än
             </span>
           ) : (
             <button
@@ -591,7 +591,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
             </button>
           )}
           {gscReady === false
-            ? <span className="text-xs text-gray-500">Google är inte kopplat än — hör av dig så kopplar vi på det, sen hämtas orden du syns på automatiskt.</span>
+            ? <span className="text-xs text-gray-500">Google är inte kopplat än. Hör av dig så kopplar vi på det, sen hämtas orden du syns på automatiskt.</span>
             : importMsg && <span className="text-xs text-gray-500">{importMsg}</span>}
         </div>
         {keywords.length === 0 ? <Empty text="Lägg till ditt första sökord ovan." /> : (
@@ -616,7 +616,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                     <td className="py-2.5 px-3 text-right tabular-nums text-gray-600">{k.search_volume ?? "—"}</td>
                     <td className="py-2.5 px-3 text-right">
                       {k.gsc_position != null ? (
-                        <span className="inline-flex items-center gap-1.5 justify-end" title="Hämtad automatiskt från Google Search Console — din snittplacering på exakt det här ordet.">
+                        <span className="inline-flex items-center gap-1.5 justify-end" title="Hämtad automatiskt från Google Search Console: din snittplacering på exakt det här ordet.">
                           <span className="tabular-nums font-semibold text-gray-900">{k.gsc_position}</span>
                           <span className="text-xs font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-blue-50 text-blue-600">Google</span>
                         </span>
@@ -671,8 +671,8 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
         <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-5">
           <li>Skriv rubriker (H2/H3) som <strong>frågor</strong> dina kunder faktiskt ställer</li>
           <li>Lägg en <strong>FAQ-sektion</strong> i slutet av varje sida (4–6 frågor)</li>
-          <li>Ge ett <strong>direkt svar i första meningen</strong> efter varje rubrik — det är det AI citerar</li>
-          <li>Använd punktlistor och tabeller — de citeras oftare</li>
+          <li>Ge ett <strong>direkt svar i första meningen</strong> efter varje rubrik, det är det AI citerar</li>
+          <li>Använd punktlistor och tabeller, de citeras oftare</li>
           <li>Visa <strong>uppdaterad-datum</strong> och vem som skrivit (erfarenhet bygger förtroende)</li>
         </ul>
       </div>

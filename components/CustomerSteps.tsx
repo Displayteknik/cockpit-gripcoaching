@@ -27,7 +27,7 @@ export default function CustomerSteps({ steps, primaryColor }: { steps: Step[]; 
             <Rocket className="w-[18px] h-[18px]" style={{ color: primaryColor }} />
           </span>
           <div>
-            <h2 className="font-display font-bold text-gray-900 text-lg leading-tight">{allDone ? "Allt uppsatt — snyggt jobbat!" : "Kom igång"}</h2>
+            <h2 className="font-display font-bold text-gray-900 text-lg leading-tight">{allDone ? "Allt uppsatt, snyggt jobbat!" : "Kom igång"}</h2>
             <p className="text-xs text-gray-500">{allDone ? "Du har grunden på plats. Fortsätt skapa och följ resultatet." : "Följ stegen så är du igång på några minuter."}</p>
           </div>
         </div>

@@ -120,7 +120,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
             </span>
             Din statistik
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Besök, synlighet i Google och AI-sökmotorer — allt på ett ställe.</p>
+          <p className="text-gray-500 text-sm mt-1">Besök, synlighet i Google och AI-sökmotorer, allt på ett ställe.</p>
         </div>
         {!empty && (
           <div className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl p-1 shadow-sm">
@@ -144,14 +144,14 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
             </span>
             <h2 className="font-display font-bold text-gray-900 text-lg">Så får du igång din statistik</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">Lägg in den här lilla koden i <code className="px-1 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">&lt;head&gt;</code> på din sajt — en gång. Sen fylls allt i automatiskt.</p>
+          <p className="text-sm text-gray-500 mb-4">Lägg in den här lilla koden i <code className="px-1 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">&lt;head&gt;</code> på din sajt, en gång. Sen fylls allt i automatiskt.</p>
           <div className="relative">
             <pre className="bg-gray-900 text-gray-100 text-xs rounded-xl p-4 overflow-x-auto leading-relaxed">{snippet}</pre>
             <button onClick={copySnippet} className="absolute top-3 right-3 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors">
               {copied ? <><Check className="w-3.5 h-3.5" /> Kopierad</> : <><Copy className="w-3.5 h-3.5" /> Kopiera</>}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-3">Vet du inte var koden ska in? Skicka den till den som sköter din hemsida — eller hör av dig så hjälper vi till.</p>
+          <p className="text-xs text-gray-400 mt-3">Vet du inte var koden ska in? Skicka den till den som sköter din hemsida, eller hör av dig så hjälper vi till.</p>
         </div>
       )}
 
@@ -166,7 +166,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
             <h2 className="font-display font-bold text-gray-900 text-lg">Din statistik sätts igång</h2>
           </div>
           <p className="text-sm text-gray-500">
-            Här kommer du se besök, kanaler och hur du syns i Google och AI-sökmotorer. Så snart mätningen och Google är kopplade fylls allt i automatiskt — hör av dig så hjälper vi dig att koppla på det.
+            Här kommer du se besök, kanaler och hur du syns i Google och AI-sökmotorer. Så snart mätningen och Google är kopplade fylls allt i automatiskt. Hör av dig så hjälper vi dig att koppla på det.
           </p>
         </div>
       )}
@@ -181,7 +181,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
               <KPI icon={Sparkles} accent="violet" label="Från AI-sök" value={data.ga4!.ai.sessions} sub="ChatGPT m.fl." hint="Besök från AI-tjänster som ChatGPT, Copilot och Perplexity." />
               <KPI icon={Eye} accent="blue" label="Visningar i Google" value={k.gsc_impressions} sub={`${k.gsc_keyword_count} sökord`} hint="Hur många gånger din sajt visats i Googles sökresultat." />
               <KPI icon={Award} accent="amber" label="Snitt-plats Google" value={k.gsc_avg_position ?? "—"} sub="lägre = bättre" hint="Din genomsnittliga placering i Google. Lägre siffra = högre upp = bättre. Plats 1–10 = sida 1." />
-              <KPI icon={Zap} accent="teal" label="Engagemang" value={`${data.ga4!.engagementRate}%`} sub={`${Math.floor(data.ga4!.avgSessionSec / 60)}m ${data.ga4!.avgSessionSec % 60}s i snitt`} hint="Andel besök där någon faktiskt läste eller klickade — inte bara stängde direkt." />
+              <KPI icon={Zap} accent="teal" label="Engagemang" value={`${data.ga4!.engagementRate}%`} sub={`${Math.floor(data.ga4!.avgSessionSec / 60)}m ${data.ga4!.avgSessionSec % 60}s i snitt`} hint="Andel besök där någon faktiskt läste eller klickade, inte bara stängde direkt." />
             </div>
           ) : hasGsc ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -194,7 +194,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <KPI icon={TrendingUp} primary={primaryColor} label="Besök" value={k.visits} sub={`senaste ${period} dagarna`} hint="Antal besök på din sajt under perioden (mätt via spårningspixeln)." />
-                <KPI icon={Eye} accent="blue" label="Sidvisningar" value={k.pageviews ?? k.visits} sub="totalt" hint="Hur många sidor som visats totalt — en besökare kan titta på flera sidor." />
+                <KPI icon={Eye} accent="blue" label="Sidvisningar" value={k.pageviews ?? k.visits} sub="totalt" hint="Hur många sidor som visats totalt. En besökare kan titta på flera sidor." />
                 <KPI icon={Repeat} accent="purple" label="Återkommande" value={k.visits_returning} sub="kom tillbaka" hint="Besökare som varit inne hos dig tidigare och kommit tillbaka." />
               </div>
               <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
@@ -212,7 +212,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {topInsights.length > 0 && (
             <section className="space-y-3">
               <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
-                <Zap className="w-5 h-5" style={{ color: primaryColor }} /> Att fokusera på<Hint text="De viktigaste sakerna att jobba med just nu — uträknat ur din egen data." />
+                <Zap className="w-5 h-5" style={{ color: primaryColor }} /> Att fokusera på<Hint text="De viktigaste sakerna att jobba med just nu, uträknat ur din egen data." />
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {topInsights.map((a, i) => {
@@ -362,7 +362,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {/* SNABBASTE VINSTERNA — premium kort-rutnät */}
           {data.quick_wins.length > 0 && (
             <div className="bg-gradient-to-br from-amber-50/60 to-white border border-amber-100 rounded-2xl p-6 shadow-sm">
-              <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Trophy className="w-4 h-4 text-amber-600" /> Dina snabbaste möjligheter<Hint text="Sökord där du redan syns men ligger precis utanför topp 3. Lyfts sidan klättrar du oftast flera placeringar — störst effekt för minst jobb." /></h2>
+              <h2 className="font-display font-bold text-gray-900 flex items-center gap-2 mb-1"><Trophy className="w-4 h-4 text-amber-600" /> Dina snabbaste möjligheter<Hint text="Sökord där du redan syns men ligger precis utanför topp 3. Lyfts sidan klättrar du oftast flera placeringar, störst effekt för minst jobb." /></h2>
               <p className="text-xs text-gray-500 mb-4">Sökord där du redan syns men ligger precis utanför topp 3. Lyfts sidan klättrar du oftast flera placeringar.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {data.quick_wins.slice(0, 9).map((q, i) => (
@@ -394,7 +394,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {/* SIDOR SOM RANKAR BÄST */}
           {data.top_pages.length > 0 && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-              <h2 className="font-display font-bold text-gray-900 mb-3">Sidor som syns bäst i Google<Hint text="Vilka av dina sidor som får flest visningar och klick från Google-sök. Hjälper dig se vilket innehåll som drar — och var det är värt att lägga krut." /></h2>
+              <h2 className="font-display font-bold text-gray-900 mb-3">Sidor som syns bäst i Google<Hint text="Vilka av dina sidor som får flest visningar och klick från Google-sök. Hjälper dig se vilket innehåll som drar, och var det är värt att lägga krut." /></h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-100">
@@ -437,7 +437,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
                 </div>
                 <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
                   <h2 className="font-display font-bold text-gray-900 mb-4">Var trafiken kommer ifrån<Hint text="Vilka sajter dina besökare kom från (länkar, sociala medier, andra sidor). 'Direkt' betyder att de skrev in din adress eller hade dig sparad." /></h2>
-                  {data.top_referrers.length === 0 ? <p className="text-sm text-gray-400 py-4">Mest direkta besök än så länge — folk skriver in din adress eller har dig sparad.</p> : (
+                  {data.top_referrers.length === 0 ? <p className="text-sm text-gray-400 py-4">Mest direkta besök än så länge. Folk skriver in din adress eller har dig sparad.</p> : (
                     <ul className="space-y-3">
                       {data.top_referrers.slice(0, 8).map((r, i) => (
                         <li key={i}>
@@ -459,7 +459,7 @@ export default function CustomerAnalytics({ primaryColor, clientName, snippet = 
           {hasGsc && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2"><Search className="w-4 h-4 text-emerald-600" /> Alla dina sökord ({data.queries_all_count})<Hint text="Alla sökord folk faktiskt sökte på i Google och då fick se din sajt — hämtat direkt från Google Search Console. Klick = antal som klickade in, Visningar = hur ofta du visades, CTR = andel som klickade, Plats = din snittplacering (lägre = bättre). Skiljer sig från Sökords-trackern på SEO & AEO-sidan, där du själv lägger till ord att följa." /></h2>
+                <h2 className="font-display font-bold text-gray-900 flex items-center gap-2"><Search className="w-4 h-4 text-emerald-600" /> Alla dina sökord ({data.queries_all_count})<Hint text="Alla sökord folk faktiskt sökte på i Google och då fick se din sajt, hämtat direkt från Google Search Console. Klick = antal som klickade in, Visningar = hur ofta du visades, CTR = andel som klickade, Plats = din snittplacering (lägre = bättre). Skiljer sig från Sökords-trackern på SEO & AEO-sidan, där du själv lägger till ord att följa." /></h2>
                 <div className="flex items-center gap-2">
                   <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök i listan…" className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none w-48" />
                   <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white">
@@ -543,7 +543,7 @@ function BandKeywords({ queries }: { queries: Array<{ query: string; clicks: num
   if (queries.length === 0) return <div className="mt-2 mb-1 text-xs text-gray-400 px-1">Inga sökord i detta band.</div>;
   return (
     <div className="mt-2 mb-2 border border-gray-100 rounded-lg bg-gray-50/50 p-2">
-      <div className="text-xs text-gray-500 mb-1 px-1">{queries.length} sökord — störst möjlighet först</div>
+      <div className="text-xs text-gray-500 mb-1 px-1">{queries.length} sökord, störst möjlighet först</div>
       <div className="max-h-64 overflow-y-auto">
         <table className="w-full text-xs">
           <thead className="text-gray-400 sticky top-0 bg-gray-50"><tr>

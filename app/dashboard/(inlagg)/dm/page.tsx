@@ -51,9 +51,9 @@ interface Rule {
 }
 
 const STAGES: { id: Stage; label: string; icon: React.ComponentType<{ className?: string }>; color: string; desc: string }[] = [
-  { id: "new", label: "Ny", icon: UserPlus, color: "bg-blue-500", desc: "Första kontakten — ej besvarad" },
-  { id: "acknowledge", label: "Bekräftad", icon: Handshake, color: "bg-amber-500", desc: "Första svaret skickat — gett värde" },
-  { id: "connect", label: "Dialog", icon: MessageCircle, color: "bg-purple-500", desc: "Dialog pågår — behov identifierat" },
+  { id: "new", label: "Ny", icon: UserPlus, color: "bg-blue-500", desc: "Första kontakten, ej besvarad" },
+  { id: "acknowledge", label: "Bekräftad", icon: Handshake, color: "bg-amber-500", desc: "Första svaret skickat, gett värde" },
+  { id: "connect", label: "Dialog", icon: MessageCircle, color: "bg-purple-500", desc: "Dialog pågår, behov identifierat" },
   { id: "offer", label: "Erbjudande", icon: Target, color: "bg-emerald-500", desc: "Erbjudande presenterat" },
 ];
 
@@ -191,7 +191,7 @@ function PipelineView() {
           </div>
           <div className="font-display font-bold text-gray-900">Inga kontakter än</div>
           <p className="text-sm text-gray-500 mt-1.5 max-w-md mx-auto leading-relaxed">
-            Lägg till din första — t.ex. någon som kommenterat eller skickat ett DM — så följer du resan från första kontakt till bokad kund. Klicka <strong className="text-gray-700">Lägg till kontakt</strong> uppe till höger.
+            Lägg till din första, t.ex. någon som kommenterat eller skickat ett DM, så följer du resan från första kontakt till bokad kund. Klicka <strong className="text-gray-700">Lägg till kontakt</strong> uppe till höger.
           </p>
         </div>
       )}
@@ -262,7 +262,7 @@ function PipelineView() {
               <Trophy className="w-[18px] h-[18px] text-gray-500" />
             </div>
             <h3 className="font-display font-bold text-sm text-gray-900">Bokade &amp; förlorade</h3>
-            <span className="text-xs text-gray-400">avslutade kontakter — klicka för att ta tillbaka till pipeline</span>
+            <span className="text-xs text-gray-400">avslutade kontakter, klicka för att ta tillbaka till pipeline</span>
           </div>
           <div className="divide-y divide-gray-100">
             {contacts.filter((c) => c.stage === "won" || c.stage === "lost").map((c) => (
@@ -590,7 +590,7 @@ function AutomationView() {
           value={response}
           onChange={(e) => setResponse(e.target.value)}
           rows={3}
-          placeholder="Auto-svar — skriv som du själv hade svarat. Använd {namn} för att ge personen deras egna namn."
+          placeholder="Auto-svar: skriv som du själv hade svarat. Använd {namn} för att ge personen deras egna namn."
           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-100 focus:border-amber-300"
         />
         <button

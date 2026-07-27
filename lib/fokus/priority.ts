@@ -32,16 +32,17 @@ function dagarSedan(dateStr: string | null | undefined, now: number): number {
 
 /** Deterministisk lägesbild ur data — alltid sann, ingen AI (spec §3.4 p.3). */
 function lagesText(typ: StegTyp, dagar: number, over: number): string {
+  const d = `${dagar} ${dagar === 1 ? "dag" : "dagar"}`; // "1 dag", inte "1 dagar"
   switch (typ) {
     case "offert":
-      return `Offert skickad för ${dagar} dagar sedan${over > 0 ? ", ingen rörelse sedan dess" : ""}`;
+      return `Offert skickad för ${d} sedan${over > 0 ? ", ingen rörelse sedan dess" : ""}`;
     case "mote":
-      return `Möte genomfört för ${dagar} dagar sedan${over > 0 ? " — offert väntar" : ""}`;
+      return `Möte genomfört för ${d} sedan${over > 0 ? ", offert väntar" : ""}`;
     case "uppfoljning":
-      return `I uppföljning sedan ${dagar} dagar`;
+      return `I uppföljning sedan ${d}`;
     case "kontakt":
     default:
-      return `${dagar} dagar utan nästa steg`;
+      return `${d} utan nästa steg`;
   }
 }
 

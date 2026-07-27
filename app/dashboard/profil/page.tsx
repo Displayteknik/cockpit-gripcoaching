@@ -151,7 +151,7 @@ export default function ProfilPage() {
     <div className="max-w-4xl space-y-6" style={accentVars}>
       <DashHero
         title="Din Brand-profil"
-        subtitle="Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du — och desto bättre förslag får du."
+        subtitle="Grunden för allt som skapas åt dig. Ju mer du fyller i, desto mer låter texterna som du, och desto bättre förslag får du."
         icon={User}
         accent={accent}
         eyebrow={<LivePill label="Brand-profil" />}
@@ -246,7 +246,7 @@ export default function ProfilPage() {
       <Section id="sec-berattelse" title="Berättelsen" icon={User} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Brand story"
-          hint="2–4 stycken — varför företaget finns, hur det började, vad som gör det speciellt."
+          hint="2–4 stycken: varför företaget finns, hur det började, vad som gör det speciellt."
           value={profile.brand_story}
           onChange={(v) => update("brand_story", v)}
           onAssist={() => assistField("brand_story")}
@@ -255,7 +255,7 @@ export default function ProfilPage() {
         />
         <TextArea
           label="Det som gör dig unik"
-          hint="Det konkurrenterna inte har eller gör — varför någon väljer just dig."
+          hint="Det konkurrenterna inte har eller gör, varför någon väljer just dig."
           value={profile.usp}
           onChange={(v) => update("usp", v)}
           onAssist={() => assistField("usp")}
@@ -267,7 +267,7 @@ export default function ProfilPage() {
       <Section title="Differentiering" icon={Award} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Tre saker bara du kan säga"
-          hint="Det som ger dig tyngd — år av erfarenhet, certifieringar, lokal koppling, en metod ingen annan har. En per rad."
+          hint="Det som ger dig tyngd: år av erfarenhet, certifieringar, lokal koppling, en metod ingen annan har. En per rad."
           value={profile.differentiators}
           onChange={(v) => update("differentiators", v)}
           onAssist={() => assistField("differentiators")}
@@ -286,7 +286,7 @@ export default function ProfilPage() {
         />
         <TextArea
           label="Prisnotiser (valfritt)"
-          hint="Om priser ska användas i inlägg — exakt som de ska skrivas."
+          hint="Om priser ska användas i inlägg, exakt som de ska skrivas."
           value={profile.pricing_notes}
           onChange={(v) => update("pricing_notes", v)}
           rows={2}
@@ -302,7 +302,7 @@ export default function ProfilPage() {
       <Section id="sec-malgrupp" title="Målgrupp" icon={Target} onSave={save} saving={saving} savedAt={savedAt}>
         <TextArea
           label="Din viktigaste målgrupp"
-          hint="Dina bästa kunder — vilka de är, var de finns, vad de oroar sig för, hur de köper och vad som får dem att höra av sig."
+          hint="Dina bästa kunder: vilka de är, var de finns, vad de oroar sig för, hur de köper och vad som får dem att höra av sig."
           value={profile.icp_primary}
           onChange={(v) => update("icp_primary", v)}
           onAssist={() => assistField("icp_primary")}
@@ -320,7 +320,7 @@ export default function ProfilPage() {
         />
         <TextArea
           label="Smärtpunkter"
-          hint="Vad kunden oroar sig för — formulerat som de själva skulle säga det."
+          hint="Vad kunden oroar sig för, formulerat som de själva skulle säga det."
           value={profile.pain_points}
           onChange={(v) => update("pain_points", v)}
           onAssist={() => assistField("pain_points")}
@@ -473,7 +473,7 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
   return (
     <Modal onClose={onClose} title="Kundernas egna ord">
       <div className="text-sm text-gray-600 mb-3">
-        Klistra in 3–10 verkliga citat från dina kunder (recensioner, mejl, chatt, samtalsanteckningar). Skrivhjälpen plockar ut exakta fraser, vad de oroar sig för och hur de uttrycker sig — och väver in det i dina tonregler.
+        Klistra in 3–10 verkliga citat från dina kunder (recensioner, mejl, chatt, samtalsanteckningar). Skrivhjälpen plockar ut exakta fraser, vad de oroar sig för och hur de uttrycker sig, och väver in det i dina tonregler.
       </div>
       <SmartTextarea
         value={quotes}
@@ -587,7 +587,7 @@ function IcpWizard({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { pri
 
   const questions = [
     { key: "industry", label: "Bransch?", placeholder: "t.ex. coaching, redovisning, bygg, frisör" },
-    { key: "offer", label: "Vad säljer du — kort?", placeholder: "t.ex. ledarskapsutbildning, takläggning, behandlingar" },
+    { key: "offer", label: "Vad säljer du, kort?", placeholder: "t.ex. ledarskapsutbildning, takläggning, behandlingar" },
     { key: "current_buyers", label: "Vem köper mest idag?", placeholder: "ålder, kön, plats, yrke" },
     { key: "dream_buyers", label: "Vem vill du gärna sälja MER till?", placeholder: "dröm-kunden" },
     { key: "price_range", label: "Prisklass?", placeholder: "t.ex. 1 000–10 000 kr" },
