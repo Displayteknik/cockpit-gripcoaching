@@ -5,6 +5,7 @@ import { getGhlConfig, ghlBlogMeta, ghlListBlogPosts, resolveBlogPostBase } from
 import { generateImagen, searchStockPhotos } from "@/lib/images";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
+import { sanitizeGenerated, WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -58,11 +59,12 @@ export async function POST(req: NextRequest) {
 
     // 4) Sätt ihop body: FAQ-schema (best-effort) i slutet.
     // Tankstreck ska aldrig nå kundtext. Rör bara brödtexten, inte HTML-taggar.
-    const utanTankstreck = (t: string) => String(t || "").replace(/\s*[—–]\s*/g, ", ").replace(/,\s*,/g, ",");
-    const html = utanTankstreck(article.html) + buildFaqJsonLd(article.faq);
-    article.title = utanTankstreck(article.title);
-    article.metaTitle = utanTankstreck(article.metaTitle);
-    article.metaDescription = utanTankstreck(article.metaDescription);
+    // Globala skrivregler (hashtags rörs inte i en artikel).
+    const rent = (t: string) => sanitizeGenerated(t, { hashtags: false });
+    const html = rent(article.html) + buildFaqJsonLd(article.faq);
+    article.title = rent(article.title);
+    article.metaTitle = rent(article.metaTitle);
+    article.metaDescription = rent(article.metaDescription);
 
     return NextResponse.json({
       article: { ...article, html, coverImageUrl, blogId },

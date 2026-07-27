@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient } from "@/lib/client-context";
 import { generateStudioCopy } from "@/lib/studio/copy";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -31,6 +32,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Kunde inte skapa förslag — försök igen." }, { status: 502 });
     }
 
+    // Skyddsnät: modellen kan slarva trots promptreglerna.
+    if (await skrivreglerPa((await getActiveClient().catch(() => null))?.id)) {
+      for (const s of suggestions) {
+        s.headline1 = sanitizeGenerated(s.headline1, { hashtags: false });
+        s.headline2 = sanitizeGenerated(s.headline2, { hashtags: false });
+        s.body = sanitizeGenerated(s.body, { hashtags: false });
+      }
+    }
     const top = suggestions[0];
     // Bakåtkompatibelt: toppförslagets fält direkt + hela listan i suggestions.
     return NextResponse.json({

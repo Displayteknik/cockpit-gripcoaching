@@ -6,6 +6,7 @@
 import { generate } from "@/lib/gemini";
 import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 
 export interface InternalLink { title: string; url: string }
 

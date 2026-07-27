@@ -5,6 +5,7 @@ import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
+import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -111,11 +112,13 @@ export async function POST(req: NextRequest) {
       const variants = await Promise.all(
         valda.map(async (v) => ({ angle: v.angle, caption: await genOne(v.instruktion) })),
       );
-      return NextResponse.json({ variants: variants.filter((v) => v.caption) });
+      const pa = await skrivreglerPa(client?.id);
+      return NextResponse.json({ variants: variants.filter((v) => v.caption).map((v) => (pa ? { ...v, caption: sanitizeGenerated(v.caption) } : v)) });
     }
 
     const caption = await genOne("");
-    return NextResponse.json({ caption });
+    const reglerPa = await skrivreglerPa(client?.id);
+    return NextResponse.json({ caption: reglerPa ? sanitizeGenerated(caption) : caption });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

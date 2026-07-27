@@ -47,6 +47,20 @@ function fail(channel: PublishChannel, error: string): PublishResult {
 }
 
 export async function publishContent(req: PublishRequest): Promise<PublishResult> {
+  // SKYDDSNÄT: sista stationen före publicering, gäller även jobb som redan låg i kön
+  // när reglerna infördes. Kanalen styr hashtag-taket (LinkedIn max 3, övriga max 5).
+  try {
+    const { sanitizeGenerated, skrivreglerPa } = await import("@/lib/content/writing-rules");
+    if (req.caption && (await skrivreglerPa(req.clientId))) {
+      const kanal = req.channel === "ghl-social" && (req.accountIds || []).some((a) => /linkedin/i.test(a))
+        ? "linkedin"
+        : req.channel === "ig-graph"
+          ? "instagram"
+          : "default";
+      req = { ...req, caption: sanitizeGenerated(req.caption, { kanal }) };
+    }
+  } catch { /* saneringen får aldrig blockera en publicering */ }
+
   switch (req.channel) {
     case "ghl-social":
       return publishGhlSocial(req);

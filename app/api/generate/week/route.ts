@@ -17,6 +17,7 @@ import { planWeek } from "@/lib/content-compass/rules";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
+import { sanitizeGenerated, skrivreglerPa, WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -117,6 +118,8 @@ ${voiceBlock}
 - Skriv på svenska som personen själv hade skrivit
 - Varje CTA är EN sak att göra — varierande över veckan
 
+${WRITING_RULES_BLOCK}
+
 ═══ OUTPUT JSON ═══
 {
   "days": [
@@ -178,6 +181,16 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
         hashtags: Array.isArray(aiDay.hashtags) ? aiDay.hashtags.map((h) => String(h).replace(/^#/, "")) : [],
       };
     });
+
+    // Skyddsnät före visning: tankstreck, floskler och hashtag-tak.
+    if (await skrivreglerPa(clientId)) {
+      for (const d of days) {
+        d.hook = sanitizeGenerated(d.hook, { hashtags: false });
+        d.body = sanitizeGenerated(d.body, { hashtags: false });
+        d.cta = sanitizeGenerated(d.cta, { hashtags: false });
+        d.hashtags = d.hashtags.slice(0, 5);
+      }
+    }
 
     // Auto voice-score varje dag — användaren ser score per inlägg.
     let scoredDays = days;
@@ -302,7 +315,10 @@ Exakt ${posts.length} inlägg i "days", i samma ordning som INLÄGG 1..${posts.l
     const bodyTxt = toStr(ai.body);
     const cta = toStr(ai.cta);
     const hashtags = Array.isArray(ai.hashtags) ? ai.hashtags.map((h) => String(h).replace(/^#/, "")) : [];
-    const caption = [hook, bodyTxt, cta, hashtags.map((h) => `#${h}`).join(" ")].filter(Boolean).join("\n\n");
+    // Skyddsnät: skrivreglerna gäller även den färdigprofilerade veckan.
+    const caption = sanitizeGenerated(
+      [hook, bodyTxt, cta, hashtags.slice(0, 5).map((h) => `#${h}`).join(" ")].filter(Boolean).join("\n\n"),
+    );
     return {
       client_id: clientId,
       template_id: "ark-textkort",

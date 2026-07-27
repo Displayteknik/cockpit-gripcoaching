@@ -4,6 +4,7 @@ import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generateNewsletter, renderNewsletterHtml, renderNewsletterText } from "@/lib/newsletter";
+import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -58,7 +59,10 @@ export async function POST(req: NextRequest) {
     const html = renderNewsletterHtml(content, { brandName, primaryColor: client?.primary_color, ctaUrl });
     const text = renderNewsletterText(content, { brandName, ctaUrl });
 
-    return NextResponse.json({ content, subject, html, text, ctaUrl: ctaUrl || null, sourceBlogId: b.blogId || null });
+    // Skyddsnät: skrivreglerna gäller även nyhetsbrev (inga hashtags i mejl).
+    const pa = await skrivreglerPa(clientId);
+    const r = (x: string) => (pa ? sanitizeGenerated(x, { hashtags: false }) : x);
+    return NextResponse.json({ content, subject: r(subject), html: r(html), text: r(text), ctaUrl: ctaUrl || null, sourceBlogId: b.blogId || null });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

@@ -5,6 +5,7 @@ import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
+import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -106,6 +107,14 @@ export async function POST(req: NextRequest) {
     }
     if (!Object.keys(captions).length) {
       return NextResponse.json({ error: "Kunde inte anpassa per kanal — försök igen." }, { status: 502 });
+    }
+    const pa = await skrivreglerPa(await resolveClientId().catch(() => null));
+    if (pa) {
+      for (const k of Object.keys(captions) as (keyof typeof captions)[]) {
+        const kanal = k === "li" ? "linkedin" : k === "fb" ? "facebook" : "instagram";
+        const t = captions[k];
+        if (t) captions[k] = sanitizeGenerated(t, { kanal });
+      }
     }
     return NextResponse.json({ captions });
   } catch (e) {

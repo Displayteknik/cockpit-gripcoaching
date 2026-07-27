@@ -2,6 +2,7 @@
 // Lager 1 (klientens röst) ligger kvar i knowledge/iterate. Detta bygger blocket som
 // vävs in efter rösten och före guardrails. Ren data → ok att importera var som helst.
 import { DISC_GUIDE, FOURA_GUIDE, FUNNEL_GUIDE, type FourA } from "@/lib/content-framework";
+import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 import type { FunnelLevel, DiscLetter } from "./data";
 
 export interface CompassParams {
@@ -81,6 +82,9 @@ export function contentCompassBlock(p: CompassParams): string {
   if (disc.length) lines.push(`DISC-TON: ${discTone}. ${disc.map((d) => DISC_GUIDE[d]).join(" ")}`);
   // BOFU-CTA-mall
   if (funnel === "bofu") lines.push(`BOFU-CTA-MALL: ${BOFU_CTA_MALL}`);
+
+  // Lager 6 — globala skrivregler. Sist så de väger tyngst av allt ovanför.
+  lines.push("", WRITING_RULES_BLOCK);
 
   return lines.join("\n");
 }

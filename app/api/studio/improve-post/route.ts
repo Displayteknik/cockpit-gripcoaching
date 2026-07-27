@@ -7,6 +7,7 @@ import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { DISC_TONE, DISC_HOOK } from "@/lib/content-compass/prompt";
 import { DISC_LABEL_SV } from "@/lib/content-compass/labels";
 import type { DiscLetter } from "@/lib/content-compass/data";
+import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -219,7 +220,12 @@ export async function POST(req: NextRequest) {
 
     // Utan profil finns inget att matcha mot → visa ingen infotext alls.
     const profileMatch = profile ? parsed.profileMatch === true : null;
-    return NextResponse.json({ analysis, improved, profileMatch });
+    const reglerPa = await skrivreglerPa(await resolveClientId().catch(() => null));
+    return NextResponse.json({
+      analysis: reglerPa ? analysis.map((a) => sanitizeGenerated(a, { hashtags: false })) : analysis,
+      improved: reglerPa ? sanitizeGenerated(improved) : improved,
+      profileMatch,
+    });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
