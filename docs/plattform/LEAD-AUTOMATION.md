@@ -61,7 +61,7 @@ GET /{media_id}/comments?fields=id,text,username,timestamp  → 200
 | Delflöde | Går att bygga nu? |
 |---|---|
 | Läsa kommentarer på våra inlägg | **Ja** |
-| Svara publikt på en kommentar | Troligen ja (samma scope). **Otestat** — ett POST lägger en publik kommentar på Displaytekniks riktiga konto, så det körs inte utan Håkans klartecken. |
+| Svara publikt på en kommentar | **Ja.** Verifierat utan att lägga någon publik kommentar, se nedan. |
 | Skicka DM automatiskt | **Nej.** Blockerat på app-nivå. |
 | Ta emot DM med bild via webhook | **Nej.** Samma blockering, plus att webhook-fältet `messages` kräver samma förmåga. |
 
@@ -148,8 +148,27 @@ som antar att fönstret är öppet.
 | L2c | Uppladdningssida → studio_media → lead → DM-kort → L1-avisering | L2b |
 | L2d | DM in och ut (Väg A) | Metas godkännande |
 
-### Öppen fråga till Håkan
+### Hur kommentarsförmågan verifierades utan publik kommentar
 
-Ska jag testa ett publikt kommentarssvar skarpt på ett av Displaytekniks inlägg? Det är
-enda sättet att veta om `instagram_manage_comments` räcker för POST, men det lägger en
-riktig, publik kommentar på kontot. Jag gör det inte utan klartecken.
+`scratchpad/ig-kommentar-kapacitet.mjs`. POST mot ett syntaktiskt giltigt men obefintligt
+kommentar-id: ingen kommentar kan skapas, men felkoden avslöjar vilken grind vi träffar.
+
+```
+POST /17800000000000000/replies
+→ HTTP 400  kod=100 sub=33
+   "Object with ID ... does not exist, cannot be loaded due to missing permissions,
+    or does not support this operation."
+```
+
+**Kod 100, inte kod 3.** Jämför med Messaging, som ger ren `(#3) Application does not have
+the capability`. Anropet passerar alltså kapacitetsgrinden och stoppas först på att
+objektet inte finns, vilket var meningen.
+
+Reservation: felmeddelandet nämner även "missing permissions" som en av flera möjliga
+orsaker, så detta är starkt indicium snarare än absolut bevis. Full säkerhet kräver ett
+svar på en riktig kommentar. Bygg L2b med felhantering som fångar `(#3)` och rapporterar
+tydligt, i stället för att anta att det aldrig händer.
+
+**Metod värd att återanvända:** vill man veta om ett skrivande API är tillgängligt, skicka
+anropet mot ett obefintligt objekt och läs felkoden. Kapacitetsfel kommer före
+objektfel, så man får svaret utan att skapa något.
