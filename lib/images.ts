@@ -485,7 +485,17 @@ export async function ensureJpegUrl(url: string): Promise<{ url?: string; error?
 // Pexels stock photos
 export interface StockPhoto { id: number; url: string; src: string; srcMedium: string; photographer: string; alt: string }
 
-export async function searchStockPhotos(topic: string, niche?: string, count = 12): Promise<{ photos: StockPhoto[]; query: string; error?: string }> {
+export type StockOrientation = "square" | "portrait" | "landscape";
+
+// orientation är valfri och defaultar till "square" så alla befintliga anropare beter sig
+// exakt som förut. Reels behöver "portrait" — utan den parametern gick det inte att hitta
+// stående foton alls, vilket gjorde stock-spåret oanvändbart för 9:16.
+export async function searchStockPhotos(
+  topic: string,
+  niche?: string,
+  count = 12,
+  orientation: StockOrientation = "square",
+): Promise<{ photos: StockPhoto[]; query: string; error?: string }> {
   if (!PEXELS_KEY) return { photos: [], query: "", error: "PEXELS_API_KEY saknas" };
 
   let q = topic;
@@ -508,7 +518,7 @@ export async function searchStockPhotos(topic: string, niche?: string, count = 1
   }
 
   try {
-    const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${count}&orientation=square`, { headers: { Authorization: PEXELS_KEY } });
+    const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${count}&orientation=${orientation}`, { headers: { Authorization: PEXELS_KEY } });
     if (!r.ok) return { photos: [], query: q, error: `Pexels-fel: ${r.status}` };
     const data = await r.json();
     const photos: StockPhoto[] = (data.photos || []).map((p: { id: number; url: string; src: { large2x?: string; large?: string; original?: string; medium?: string }; photographer: string; alt: string }) => ({

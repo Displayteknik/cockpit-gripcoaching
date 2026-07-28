@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Film, Sparkles, AlertTriangle, Clock, Copy, CheckCircle2, Loader2, Image as ImageIcon, Type, ShieldAlert } from "lucide-react";
+import { Film, Sparkles, AlertTriangle, Clock, Copy, CheckCircle2, Loader2, Image as ImageIcon, Type, ShieldAlert, Save } from "lucide-react";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
-import { REEL_TEMPLATE_LIST, MAX_WORDS_PER_LINE, SAFE_ZONE, ordCount, type ReelStoryboard, type ReelTemplateKey, type ReelSceneKind } from "@/lib/studio/reels";
+import ReelSceneMedia from "@/components/studio/ReelSceneMedia";
+import { REEL_TEMPLATE_LIST, MAX_WORDS_PER_LINE, SAFE_ZONE, ordCount, type ReelStoryboard, type ReelTemplateKey, type ReelSceneKind, type ReelMediaSource } from "@/lib/studio/reels";
 
 const KIND_LABEL: Record<ReelSceneKind, string> = {
   hook: "Krok",
@@ -34,8 +35,49 @@ export default function ReelsPage() {
   const [error, setError] = useState<string | null>(null);
   const [board, setBoard] = useState<ReelStoryboard | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [reelId, setReelId] = useState<string | null>(null);
+  const [sparar, setSparar] = useState(false);
+  const [sparad, setSparad] = useState(false);
+  const [aiBekraftad, setAiBekraftad] = useState(false);
 
   const mall = REEL_TEMPLATE_LIST.find((m) => m.key === templateKey);
+
+  // Äkthetsregeln: bekräftelse krävs bara när mallen påstår en verklig förändring OCH
+  // någon scen faktiskt bär en AI-bild. Eget material passerar alltid fritt.
+  const harAiBild = Boolean(board?.scenes.some((s) => s.source === "ai"));
+  const kraverBekraftelse = Boolean(board?.aiBekraftelseKravs) && harAiBild;
+  const antalMedMaterial = board?.scenes.filter((s) => s.mediaUrl).length ?? 0;
+  const alltMaterialKlart = Boolean(board) && antalMedMaterial === board!.scenes.length;
+
+  function sattMaterial(index: number, url: string, source: ReelMediaSource) {
+    setBoard((prev) => {
+      if (!prev) return prev;
+      const scenes = prev.scenes.map((s, i) => (i === index ? { ...s, mediaUrl: url, source } : s));
+      return { ...prev, scenes };
+    });
+    setSparad(false);
+  }
+
+  async function sparaReel() {
+    if (!board) return;
+    setSparar(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/studio/reels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: reelId, storyboard: board }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Kunde inte spara");
+      setReelId(data.id);
+      setSparad(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kunde inte spara");
+    } finally {
+      setSparar(false);
+    }
+  }
 
   function toggleDisc(letter: string) {
     setDisc((prev) => {
@@ -64,6 +106,9 @@ export default function ReelsPage() {
     setBusy(true);
     setError(null);
     setBoard(null);
+    setReelId(null);
+    setSparad(false);
+    setAiBekraftad(false);
     try {
       const res = await fetch("/api/studio/reels/generate", {
         method: "POST",
@@ -197,14 +242,38 @@ export default function ReelsPage() {
                   Mall {board.templateName}, {board.scenes.length} scener, {(board.durationMs / 1000).toFixed(1)} sekunder totalt.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => kopiera(JSON.stringify(board, null, 2), "json")}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:text-gray-900"
-              >
-                {copied === "json" ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied === "json" ? "Kopierat" : "Kopiera JSON"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => kopiera(JSON.stringify(board, null, 2), "json")}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:text-gray-900"
+                >
+                  {copied === "json" ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied === "json" ? "Kopierat" : "Kopiera JSON"}
+                </button>
+                <button
+                  type="button"
+                  onClick={sparaReel}
+                  disabled={sparar}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {sparar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : sparad ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <Save className="h-3.5 w-3.5" />}
+                  {sparar ? "Sparar..." : sparad ? "Sparad" : reelId ? "Uppdatera" : "Spara reel"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-gray-50 px-4 py-3 text-xs">
+              <span className={alltMaterialKlart ? "font-semibold text-emerald-700" : "font-medium text-gray-700"}>
+                {antalMedMaterial} av {board.scenes.length} scener har bild
+              </span>
+              <span className="text-gray-400">
+                {alltMaterialKlart
+                  ? kraverBekraftelse && !aiBekraftad
+                    ? "Bekräfta AI-bilderna nedan innan rendering."
+                    : "Klart för rendering. Renderaren byggs i nästa etapp."
+                  : "Välj material för varje scen nedan."}
+              </span>
             </div>
 
             {board.varningar.length > 0 && (
@@ -218,14 +287,22 @@ export default function ReelsPage() {
               </div>
             )}
 
-            {board.aiBekraftelseKravs && (
-              <div className="mt-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 p-3.5 text-xs text-blue-800">
-                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  Den här mallen kräver bekräftelse innan rendering om någon scen använder en AI-bild. AI-bilder får visa koncept och
-                  visualiseringar, inte utges för verkliga kundinstallationer.
+            {kraverBekraftelse && (
+              <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50 p-3.5 text-xs text-blue-800">
+                <input
+                  type="checkbox"
+                  checked={aiBekraftad}
+                  onChange={(e) => setAiBekraftad(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-blue-600"
+                />
+                <span className="flex items-start gap-2">
+                  <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    Jag bekräftar att AI-bilderna i den här reelen visar koncept och visualiseringar, och inte utges för verkliga
+                    kundinstallationer.
+                  </span>
                 </span>
-              </div>
+              </label>
             )}
           </div>
 
@@ -261,6 +338,13 @@ export default function ReelsPage() {
                 <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
                 <span className="italic">{s.imagePrompt}</span>
               </div>
+
+              <ReelSceneMedia
+                mediaUrl={s.mediaUrl}
+                source={s.source}
+                imagePrompt={s.imagePrompt}
+                onValj={(url, source) => sattMaterial(i, url, source)}
+              />
             </div>
           ))}
 
