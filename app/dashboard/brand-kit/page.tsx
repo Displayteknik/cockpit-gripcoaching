@@ -218,8 +218,112 @@ export default function BrandKitPage() {
             </section>
 
             {/* Bildstil */}
+            {/* S1 — signaturstilen. Ligger FÖRE bildstilen eftersom den väger tyngre:
+                bildstilen är ett förslag, signaturen appliceras alltid. */}
+            <section className={card}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" style={{ color: previewColors.primary }} />
+                  <h2 className="font-display font-bold text-gray-900 text-lg">Signaturstil</h2>
+                </div>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={kit.signature?.enabled ?? false}
+                    onChange={(e) => set("signature.enabled", e.target.checked)}
+                    style={{ accentColor: previewColors.primary }}
+                  />
+                  Aktiv
+                </label>
+              </div>
+              <p className="mt-1.5 text-sm text-gray-500">
+                Det här är en regel, inte ett förslag. När den är aktiv får varje bild och varje reel samma look automatiskt,
+                och den går inte att välja bort när man skapar innehåll.
+              </p>
+
+              {kit.signature?.enabled && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Utseende</label>
+                    <select
+                      value={kit.signature?.preset || ""}
+                      onChange={(e) => {
+                        const p = e.target.value;
+                        set("signature.preset", p);
+                        // Nollställ egna värden så presetens gäller direkt.
+                        set("signature.grade", undefined);
+                        set("signature.bildprompt", "");
+                        set("signature.bildNegativ", "");
+                      }}
+                      className={inputCls}
+                    >
+                      <option value="">Välj</option>
+                      <option value="mork-kontrast">Mörk och kontrastrik (skyltning, teknik)</option>
+                      <option value="ljus-luftig">Ljus och luftig (coaching, tjänst)</option>
+                      <option value="neutral">Neutral (ingen gradering)</option>
+                    </select>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="flex items-start gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={kit.signature?.hookVersal ?? false}
+                        onChange={(e) => set("signature.hookVersal", e.target.checked)}
+                        className="mt-0.5"
+                        style={{ accentColor: previewColors.primary }}
+                      />
+                      <span>Hook-raden i versaler<br /><span className="text-xs text-gray-400">Gäller första scenen, inte hela filmen</span></span>
+                    </label>
+                    <label className="flex items-start gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={kit.signature?.accentlinje !== false}
+                        onChange={(e) => set("signature.accentlinje", e.target.checked)}
+                        className="mt-0.5"
+                        style={{ accentColor: previewColors.primary }}
+                      />
+                      <span>Accentlinje över rubriken<br /><span className="text-xs text-gray-400">Gör att allt läses som samma avsändare</span></span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Logga i hörn</label>
+                    <select
+                      value={kit.signature?.loggaHorn || ""}
+                      onChange={(e) => set("signature.loggaHorn", e.target.value)}
+                      className={inputCls}
+                    >
+                      <option value="">Ingen logga i bilden</option>
+                      <option value="top-left">Uppe till vänster</option>
+                      <option value="top-right">Uppe till höger</option>
+                      <option value="bottom-left">Nere till vänster</option>
+                      <option value="bottom-right">Nere till höger</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-400">Samma hörn i varje reel. Kräver att en logotyp är uppladdad ovan.</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Egen stilprompt (valfritt)</label>
+                    <input
+                      value={kit.signature?.bildprompt || ""}
+                      onChange={(e) => set("signature.bildprompt", e.target.value)}
+                      placeholder="Lämna tom så används utseendets standard"
+                      className={inputCls}
+                    />
+                    <p className="mt-1 text-xs text-gray-400">Skrivs på engelska och vävs in i varje AI-bild för kunden.</p>
+                  </div>
+                </div>
+              )}
+            </section>
+
             <section className={card}>
               <div className="flex items-center gap-2"><ImageIcon className="w-5 h-5" style={{ color: previewColors.primary }} /><h2 className="font-display font-bold text-gray-900 text-lg">Bildstil</h2></div>
+              {kit.signature?.enabled && (
+                <p className="mt-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Signaturstilen är aktiv och väger tyngst. Det du skriver här läggs till efter den.
+                </p>
+              )}
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Typ</label>
