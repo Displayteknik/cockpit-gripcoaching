@@ -36,17 +36,21 @@ export async function getKnowledge(...names: string[]): Promise<string> {
   return profile ? `${profile}\n\n${staticPart}` : staticPart;
 }
 
-export async function getProfileAsMarkdown(): Promise<string> {
+// clientId är valfritt och bakåtkompatibelt: utan argument härleds klienten ur sessionen
+// som förut. Anropare som REDAN vet vilken klient de arbetar för (t.ex. reels-manusmotorn)
+// ska skicka in den — annars faller läsningen tillbaka på standardklienten i kontexter
+// utan session (skript, cron), vilket tyst ger fel varumärkesröst.
+export async function getProfileAsMarkdown(clientId?: string): Promise<string> {
   try {
     // Service-role: hm_brand_profile har strikt RLS → anon får "permission denied" och
     // profilen föll tyst bort ur ALL AI-generering. Läsningen är alltid tenant-låst via
-    // resolveClientId nedan, så service-role läcker inget mellan klienter.
+    // klient-id nedan, så service-role läcker inget mellan klienter.
     const { supabaseService } = await import("./supabase-admin");
     const { resolveClientId } = await import("./client-context");
     const sb = supabaseService();
     // resolveClientId: kund-session (httpOnly-token) vinner → rätt klients brand i /k-kontext
-    const clientId = await resolveClientId();
-    const { data } = await sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle();
+    const id = clientId || (await resolveClientId());
+    const { data } = await sb.from("hm_brand_profile").select("*").eq("client_id", id).maybeSingle();
     if (!data) return "";
 
     const sections: [string, string | null][] = [
@@ -80,7 +84,7 @@ export async function getProfileAsMarkdown(): Promise<string> {
       const { data: cv } = await sb
         .from("customer_voice")
         .select("phrase, category, context")
-        .eq("client_id", clientId)
+        .eq("client_id", id)
         .eq("archived", false)
         .order("created_at", { ascending: false })
         .limit(40);
@@ -114,7 +118,7 @@ export async function getProfileAsMarkdown(): Promise<string> {
       const { data: stories } = await sb
         .from("linkedin_posts")
         .select("hook, idea_seed, notes, pillar")
-        .eq("client_id", clientId)
+        .eq("client_id", id)
         .eq("source_module", "intake")
         .in("status", ["idea", "draft", "approved", "posted"])
         .order("created_at", { ascending: false })
@@ -134,7 +138,7 @@ export async function getProfileAsMarkdown(): Promise<string> {
       const { data: wins } = await sb
         .from("client_assets")
         .select("title, body")
-        .eq("client_id", clientId)
+        .eq("client_id", id)
         .eq("category", "winning_example")
         .eq("status", "active")
         .order("voice_score", { ascending: false, nullsFirst: false })
@@ -154,7 +158,7 @@ export async function getProfileAsMarkdown(): Promise<string> {
       const { data: voice } = await sb
         .from("client_voice_profile")
         .select("signature_phrases, forbidden_words, pain_words, joy_words, tone_summary, rhythm_notes")
-        .eq("client_id", clientId)
+        .eq("client_id", id)
         .maybeSingle();
       if (voice) {
         const lines: string[] = [];
