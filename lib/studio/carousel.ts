@@ -4,7 +4,7 @@
 
 import { generate } from "@/lib/gemini";
 import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import type { StudioSlide } from "@/lib/studio/payload";
 import { MAX_SLIDES } from "@/lib/studio/payload";
 
@@ -22,7 +22,7 @@ export async function generateCarousel(opts: {
   const [playbook, profile, directives] = await Promise.all([
     getKnowledge("hook-playbook").catch(() => ""),
     getProfileAsMarkdown().catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [] as string[], colors: {}, formats: [] as string[] })),
+    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
   ]);
   const brand = opts.brandName || "kunden";
 

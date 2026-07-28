@@ -5,7 +5,7 @@
 
 import { generate } from "@/lib/gemini";
 import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 
 export interface InternalLink { title: string; url: string }
@@ -37,7 +37,7 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
   const [playbook, profile, directives] = await Promise.all([
     getKnowledge("hook-playbook").catch(() => ""),
     getProfileAsMarkdown().catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [] as string[], colors: {}, formats: [] as string[] })),
+    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
   ]);
   const brand = opts.brandName || "kunden";
   const words = Math.min(Math.max(opts.wordCount || 900, 400), 2200);
@@ -117,7 +117,7 @@ export async function repurposeToSocial(opts: {
   clientId: string; title: string; articleText: string; brandName?: string; industry?: string;
 }): Promise<SocialFromArticle[]> {
   const profile = await getProfileAsMarkdown().catch(() => "");
-  const directives = await getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [] as string[], colors: {}, formats: [] as string[] }));
+  const directives = await getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES);
   const brand = opts.brandName || "kunden";
 
   const system = [

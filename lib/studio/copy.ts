@@ -6,7 +6,7 @@
 import { iterateGenerate } from "@/lib/iterate";
 import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
-import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 
 export interface StudioCopySuggestion {
   hookType: string;
@@ -37,7 +37,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   const [playbook, profile, directives] = await Promise.all([
     getKnowledge("hook-playbook").catch(() => ""),
     getProfileAsMarkdown().catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [], colors: {}, formats: [] })),
+    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
   ]);
   const brand = opts.brandName || "kunden";
   const industry = opts.industry ? ` (${opts.industry})` : "";

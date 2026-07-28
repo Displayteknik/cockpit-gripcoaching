@@ -91,6 +91,9 @@ export default function ReelsPage() {
           accent: b.colors?.accent || NEUTRAL_BRAND.accent,
           ink: b.colors?.ink || NEUTRAL_BRAND.ink,
           paper: b.colors?.paper || NEUTRAL_BRAND.paper,
+          // S1: signaturen kommer från Grafisk profil och går inte att välja bort här.
+          signature: b.signature || NEUTRAL_BRAND.signature,
+          logoUrl: b.assets?.logoOnDark || b.assets?.logo || "",
         });
       })
       .catch(() => {});

@@ -16,6 +16,7 @@
 
 import { BufferTarget, CanvasSource, Mp4OutputFormat, Output } from "mediabunny";
 import { REEL_SIZE, SAFE_ZONE, type ReelScene, type ReelStoryboard } from "./reels";
+import { NEUTRAL_SIGNATURE, gradeFilter, type BrandSignature } from "./signature";
 
 export const FPS = 30;
 const TRANSITION_MS = 400;
@@ -28,6 +29,10 @@ export interface RenderBrand {
   accent: string;
   ink: string;
   paper: string;
+  /** S1 — signaturstilen. Styr gradering, versal hook, accentlinje och logga. */
+  signature: BrandSignature;
+  /** Logga som ritas i signaturens hörn. Tom = ingen logga. */
+  logoUrl: string;
 }
 
 export const NEUTRAL_BRAND: RenderBrand = {
@@ -36,6 +41,8 @@ export const NEUTRAL_BRAND: RenderBrand = {
   accent: "#ec4899",
   ink: "#111111",
   paper: "#ffffff",
+  signature: NEUTRAL_SIGNATURE,
+  logoUrl: "",
 };
 
 /** Kan den här webbläsaren koda reels? Svaret styr om knappen ska visas. */
@@ -71,14 +78,54 @@ function laddaBild(url: string): Promise<HTMLImageElement> {
 
 // Ken Burns: bilden är redan exakt 1080x1920, så zoom betyder att vi ritar den större
 // än ramen och låter kanterna hamna utanför. Aldrig statiska bilder.
-function ritaBild(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scene: ReelScene, p: number) {
+function ritaBild(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scene: ReelScene, p: number, sig: BrandSignature) {
   const kb = scene.kenBurns;
   const s = kb.from + (kb.to - kb.from) * p;
   const w = REEL_SIZE.w * s;
   const h = REEL_SIZE.h * s;
   const dx = (REEL_SIZE.w - w) / 2 + (kb.panX / 100) * REEL_SIZE.w * p;
   const dy = (REEL_SIZE.h - h) / 2 + (kb.panY / 100) * REEL_SIZE.h * p;
+
+  // S1: signaturens färggradering. Sätts på ctx.filter FÖRE drawImage och nollställs
+  // direkt efter, annars färgas även texten och loggan av graderingen.
+  const f = gradeFilter(sig);
+  if (f) ctx.filter = f;
   ctx.drawImage(img, dx, dy, w, h);
+  if (f) ctx.filter = "none";
+
+  // Vinjett: mörkar kanterna så blicken dras mot mitten där budskapet står.
+  if (sig.enabled && sig.grade.vignette > 0) {
+    const g = ctx.createRadialGradient(
+      REEL_SIZE.w / 2, REEL_SIZE.h / 2, REEL_SIZE.h * 0.28,
+      REEL_SIZE.w / 2, REEL_SIZE.h / 2, REEL_SIZE.h * 0.72,
+    );
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, `rgba(0,0,0,${sig.grade.vignette})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, REEL_SIZE.w, REEL_SIZE.h);
+  }
+}
+
+// S1: loggan i ett FAST hörn, samma på varje scen och i varje reel. Subtil, aldrig
+// vattenstämpel. Ritas efter texten så den aldrig hamnar under scrimmen.
+function ritaLogga(ctx: CanvasRenderingContext2D, logga: HTMLImageElement | null, sig: BrandSignature) {
+  if (!logga || !sig.enabled || !sig.loggaHorn) return;
+  const maxB = 210;
+  const maxH = 76;
+  const skala = Math.min(maxB / logga.width, maxH / logga.height, 1);
+  const b = logga.width * skala;
+  const h = logga.height * skala;
+  const m = 56;
+  // Nedre hörn hålls ovanför Instagrams UI-zon, inte bara innanför bildkanten.
+  const x = sig.loggaHorn.endsWith("right") ? REEL_SIZE.w - m - b : m;
+  const y = sig.loggaHorn.startsWith("top") ? m : REEL_SIZE.h - SAFE_ZONE.bottom - h - 24;
+
+  ctx.save();
+  ctx.globalAlpha = sig.loggaOpacitet;
+  ctx.shadowColor = "rgba(0,0,0,0.45)";
+  ctx.shadowBlur = 16;
+  ctx.drawImage(logga, x, y, b, h);
+  ctx.restore();
 }
 
 function radbryt(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
@@ -101,7 +148,12 @@ function radbryt(ctx: CanvasRenderingContext2D, text: string, maxW: number): str
 // Texten hålls innanför Instagrams säkra zoner: topp 220 px (profilbild, följ-indikator),
 // botten 450 px (caption, användarnamn, ljudetikett), sidor 35 px (knapparna).
 function ritaText(ctx: CanvasRenderingContext2D, scene: ReelScene, brand: RenderBrand) {
-  const { line1, line2 } = scene.overlay;
+  const sig = brand.signature;
+  // S1: hook-raden i versaler. Gäller scenen som öppnar reelen, inte all text —
+  // en hel film i versaler blir skrikig och tappar den lugna tonen.
+  const arHook = scene.kind === "hook" || scene.kind === "problem";
+  const line1 = sig.enabled && sig.hookVersal && arHook ? scene.overlay.line1.toUpperCase() : scene.overlay.line1;
+  const { line2 } = scene.overlay;
   if (!line1 && !line2) return;
 
   const marginal = Math.max(SAFE_ZONE.side, 64);
@@ -141,9 +193,12 @@ function ritaText(ctx: CanvasRenderingContext2D, scene: ReelScene, brand: Render
   ctx.fillStyle = grad;
   ctx.fillRect(0, scrimTop, REEL_SIZE.w, scrimH);
 
-  // Varumärkesstreck i kundens accentfärg.
-  ctx.fillStyle = brand.accent;
-  ctx.fillRect(marginal, y, 96, barH);
+  // S1: accentlinjen är obligatorisk när signaturen är på. Den är det som gör att en
+  // reel läses som samma avsändare även när fotot är helt annorlunda.
+  if (!sig.enabled || sig.accentlinje) {
+    ctx.fillStyle = brand.accent;
+    ctx.fillRect(marginal, y, 96, barH);
+  }
   y += barH + 22;
 
   ctx.textBaseline = "top";
@@ -201,6 +256,13 @@ export async function renderReel(
 
   const bilder = await Promise.all(scener.map((s) => laddaBild(s.mediaUrl)));
 
+  // Loggan är valfri: saknas den eller går den inte att hämta ritas ingen, men
+  // renderingen stoppas aldrig av det.
+  let logga: HTMLImageElement | null = null;
+  if (brand.signature.enabled && brand.signature.loggaHorn && brand.logoUrl) {
+    logga = await laddaBild(brand.logoUrl).catch(() => null);
+  }
+
   const canvas = document.createElement("canvas");
   canvas.width = REEL_SIZE.w;
   canvas.height = REEL_SIZE.h;
@@ -240,12 +302,12 @@ export async function renderReel(
 
     if (iOvergang) {
       // Föregående scen ligger kvar i sitt slutläge medan den nya kommer in.
-      ritaBild(ctx, bilder[i - 1], scener[i - 1], 1);
+      ritaBild(ctx, bilder[i - 1], scener[i - 1], 1, brand.signature);
       ritaText(ctx, scener[i - 1], brand);
       const k = lokal / TRANSITION_MS;
       if (overgang === "overton") {
         ctx.globalAlpha = k;
-        ritaBild(ctx, bilder[i], scener[i], p);
+        ritaBild(ctx, bilder[i], scener[i], p, brand.signature);
         ritaText(ctx, scener[i], brand);
         ctx.globalAlpha = 1;
       } else {
@@ -253,14 +315,17 @@ export async function renderReel(
         ctx.beginPath();
         ctx.rect(0, 0, REEL_SIZE.w * k, REEL_SIZE.h);
         ctx.clip();
-        ritaBild(ctx, bilder[i], scener[i], p);
+        ritaBild(ctx, bilder[i], scener[i], p, brand.signature);
         ritaText(ctx, scener[i], brand);
         ctx.restore();
       }
     } else {
-      ritaBild(ctx, bilder[i], scener[i], p);
+      ritaBild(ctx, bilder[i], scener[i], p, brand.signature);
       ritaText(ctx, scener[i], brand);
     }
+
+    // Loggan ritas SIST, på varje frame och i samma hörn genom hela filmen.
+    ritaLogga(ctx, logga, brand.signature);
 
     // MÅSTE inväntas. add() returnerar ett löfte som resolvar först när kodaren är redo
     // för fler frames. Utan await växer kodarkön obegränsat och renderingen stannar helt

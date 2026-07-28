@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import { existsSync } from "fs";
 import path from "path";
+import { normalizeSignature, NEUTRAL_SIGNATURE, type BrandSignature } from "@/lib/studio/signature";
 
 // Studio brand v2 — ROLL-baserade tokens (inte kulörnamn). Mallar refererar aldrig
 // "gul", alltid en roll (accent/primary/…). Källa i prioritet:
@@ -52,6 +53,7 @@ export interface StudioBrand {
   elements: BrandElements;
   imageStyle: BrandImageStyle;
   content: BrandContent;
+  signature: BrandSignature; // S1 — signaturstil, alltid ifylld (neutral när avstängd)
   footer: { show: boolean; tagline: string; address: string; ctaLabel: string; ctaUrl: string; qrUrl: string };
   donts: string[];
   assets: {
@@ -128,6 +130,7 @@ export function brandFromKit(slug: string, name: string, primary: string, kit: B
     elements: normalizeElements(kit.elements),
     imageStyle: normalizeImageStyle(kit.imageStyle),
     content: normalizeContent(kit.contentProfile),
+    signature: normalizeSignature((kit as Record<string, unknown>).signature),
     footer: {
       show: kit.footer?.show ?? true,
       tagline: kit.footer?.tagline || "",
@@ -174,6 +177,8 @@ function adaptLegacyBrand(raw: LegacyBrand, slug: string): StudioBrand {
     elements: normalizeElements({ brush: { enabled: true, color: "accent" }, badge: { enabled: true, shape: "starburst" } }),
     imageStyle: normalizeImageStyle(undefined),
     content: normalizeContent({ clientType: "retail", textWeight: "poster", formats: ["poster", "offer", "list", "statement"] }),
+    // Opticur-legacy: premium-mallarna är fasta, signaturen appliceras inte där.
+    signature: NEUTRAL_SIGNATURE,
     footer: {
       show: true,
       tagline: raw.footer.tagline,

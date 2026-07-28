@@ -4,7 +4,7 @@
 // sätts av anroparen (bloggens publika URL eller bokningslänk).
 import { generateJSON } from "@/lib/gemini";
 import { getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import { contentCompassBlock, type CompassParams } from "@/lib/content-compass/prompt";
 import type { NewsletterContent } from "@/lib/newsletter-render";
 
@@ -23,7 +23,7 @@ export interface NewsletterGenOpts {
 export async function generateNewsletter(opts: NewsletterGenOpts): Promise<NewsletterContent> {
   const [profile, directives] = await Promise.all([
     getProfileAsMarkdown().catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [] as string[], colors: {}, formats: [] as string[] })),
+    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
   ]);
   const brand = opts.brandName || "kunden";
   const compassText = opts.compass ? contentCompassBlock(opts.compass) : "";

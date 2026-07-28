@@ -13,7 +13,7 @@
 
 import { generate } from "@/lib/gemini";
 import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
 import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 import {
@@ -43,7 +43,7 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
     // Explicit klient: manusmotorn VET vilken kund den skriver för. Utan argument
     // hade ett anrop utan sessionskontext tyst fått standardklientens röst.
     getProfileAsMarkdown(opts.clientId).catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => ({ imageExtra: "", imageNegative: "", donts: [] as string[], colors: {}, formats: [] as string[] })),
+    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
   ]);
 
   // Lager 2 till 6: anatomi, funnel, 4A, DISC och de globala skrivreglerna sist.
