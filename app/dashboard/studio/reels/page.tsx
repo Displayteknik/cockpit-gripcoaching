@@ -46,6 +46,37 @@ export default function ReelsPage() {
   const [renderProgress, setRenderProgress] = useState(0);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoMb, setVideoMb] = useState(0);
+  const [sparade, setSparade] = useState<
+    { id: string; title: string | null; template_key: string; duration_ms: number | null; updated_at: string; storyboard: ReelStoryboard }[]
+  >([]);
+
+  async function laddaSparade() {
+    try {
+      const r = await fetch("/api/studio/reels");
+      const d = await r.json();
+      if (r.ok) setSparade(d.items || []);
+    } catch {
+      /* listan är en bekvämlighet, inte ett krav */
+    }
+  }
+
+  useEffect(() => {
+    void laddaSparade();
+  }, []);
+
+  function oppnaSparad(id: string) {
+    const rad = sparade.find((s) => s.id === id);
+    if (!rad?.storyboard?.scenes) return;
+    setBoard(rad.storyboard);
+    setTemplateKey(rad.storyboard.templateKey);
+    setReelId(id);
+    setSparad(true);
+    setAiBekraftad(false);
+    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    setVideoUrl(null);
+    setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   // Kundens färger och typsnitt in i videon, samma källa som resten av Studio.
   useEffect(() => {
@@ -116,6 +147,7 @@ export default function ReelsPage() {
       if (!res.ok) throw new Error(data?.error || "Kunde inte spara");
       setReelId(data.id);
       setSparad(true);
+      void laddaSparade();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunde inte spara");
     } finally {
@@ -473,6 +505,34 @@ export default function ReelsPage() {
             Texterna hamnar innanför Instagrams säkra zoner vid rendering: {SAFE_ZONE.top} px från toppen, {SAFE_ZONE.bottom} px från botten
             och {SAFE_ZONE.side} px in från sidorna. Där ligger appens egna knappar och caption.
           </p>
+        </section>
+      )}
+
+      {/* Sparade reels */}
+      {sparade.length > 0 && (
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900">Sparade reels</h2>
+          <p className="mt-1 text-sm text-gray-500">Klicka för att öppna manuset igen, byta bilder eller rendera om.</p>
+          <div className="mt-4 divide-y divide-gray-100">
+            {sparade.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => oppnaSparad(s.id)}
+                className="flex w-full items-center justify-between gap-4 py-3 text-left transition hover:bg-gray-50"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-gray-900">{s.title || "Utan titel"}</div>
+                  <div className="mt-0.5 text-xs text-gray-400">
+                    {REEL_TEMPLATE_LIST.find((m) => m.key === s.template_key)?.name || s.template_key}
+                    {s.duration_ms ? ` · ${(s.duration_ms / 1000).toFixed(1)} sek` : ""}
+                    {` · ${new Date(s.updated_at).toLocaleDateString("sv-SE")}`}
+                  </div>
+                </div>
+                <span className="shrink-0 text-xs font-medium text-pink-600">Öppna</span>
+              </button>
+            ))}
+          </div>
         </section>
       )}
     </div>
