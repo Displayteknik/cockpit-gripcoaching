@@ -34,6 +34,9 @@ function isPublicApi(path: string): boolean {
   if (pfx(path, "/api/lifeibalans")) return true;          // Life i Balans publika endpoints (kontaktformulär)
   if (pfx(path, "/api/indexnow")) return true;             // IndexNow-ping
   if (path.startsWith("/api/share/")) return true;         // publik kund-godkännandelänk (token i path)
+  // Metas webhook för Instagram: skickar ingen cookie. Grindas i stället HÅRT i routen på
+  // X-Hub-Signature-256 (HMAC-SHA256 med app-secret) — se app/api/instagram/webhook.
+  if (path === "/api/instagram/webhook") return true;
   return false;                                            // OBS: /api/share (skapa) = admin
 }
 
