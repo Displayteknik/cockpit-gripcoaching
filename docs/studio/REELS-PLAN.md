@@ -1,6 +1,6 @@
 # Reels Creator — plan och spec
 
-Status: **R0 klar och godkänd 2026-07-28.** R1 väntar på OK.
+Status: **R0, R1 och R2 klara och live** (`4ab24ed`, `62343ab`). **R3 (renderaren) står på tur.**
 
 Detta är Etapp H3-v2 i `docs/CONTENT-STRATEGI.md:145`, där v1 var "video + text-cover"
 och v2 stod som "bränn in overlay-text i videon, egen etapp, tyngre infra". Bygget sker
@@ -199,8 +199,8 @@ mallar utan bekräftelseruta.
 
 | Etapp | Innehåll | Bevis innan nästa etapp |
 |---|---|---|
-| **R1** | Manusmotorn: idé + mall → storyboard-JSON + caption, genom hela promptlagerhierarkin | Storyboard för Displayteknik-idén, inga tankstreck, texter inom ordgränsen |
-| **R2** | `studio_media` + `studio_reels`, fyra materialspår, fix av fälla b, c och g | Alla fyra spår ger 1080×1920, källa sparad korrekt |
+| ~~**R1**~~ | ✅ LIVE `4ab24ed`. Manusmotorn, 4 mallar med låst scenstruktur | Displayteknik-idén: 3 scener, inga tankstreck, ordgräns hållen |
+| ~~**R2**~~ | ✅ LIVE `62343ab`. `studio_media` + `studio_reels`, fyra materialspår, fälla b och c åtgärdade | Alla spår ger 1080×1920, källa sparad. Gemini gav 1024×1024 på 9:16-begäran → AI-spåret bytt till FLUX portrait (576×1024) |
 | **R3** | Canvas-renderare + förhandsvisning med redigerbara texter och scenlängder | Spelbar mp4 under 25 MB, texter innanför säkra zoner, Ken Burns synlig |
 | **R3b** | Videoklipp som scen: trim till scenlängd, beskär till 9:16 | Reel med videoklipp som scen 2 |
 | **R4** | Spara i biblioteket med storyboard, Ladda ner, Använd i inlägg | Reel öppnas och redigeras igen |
