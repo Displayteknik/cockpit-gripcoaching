@@ -112,6 +112,19 @@ Returnera JSON: { "score": 1-10, "reasoning": "1–2 meningar varför" }`,
 
       const { logActivity } = await import("@/lib/client-context");
       await logActivity(clientId, "lead_captured", `Nytt lead${score ? ` (score ${score}/10)` : ""}: ${body.lead?.phone || phoneMatch?.[0]}`, "/dashboard/fordon", { lead_id: leadRow?.id, score });
+
+      // Etapp L1 — coach-chatten skapade leads utan att någon fick veta det.
+      // (HM Motors webbformulär och Life i Balans mejlar redan själva, de hookas inte.)
+      const { notifyNewLead } = await import("@/lib/lead-notify");
+      void notifyNewLead({
+        clientId,
+        namn: body.lead?.name || body.lead?.phone || phoneMatch?.[0] || "Okänt namn",
+        kalla: "Coach-chatt",
+        epost: body.lead?.email || null,
+        telefon: body.lead?.phone || phoneMatch?.[0] || null,
+        innehall: [score ? `Poäng ${score}/10. ${score_reasoning || ""}`.trim() : "", lastUser.slice(0, 400)].filter(Boolean).join("\n\n"),
+        lank: "/dashboard/leads",
+      });
     }
 
     return NextResponse.json({ reply });

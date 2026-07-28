@@ -3,8 +3,22 @@ import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { getActiveClientId } from "@/lib/client-context";
 import { resolveCoachUserIds, resolveCoachContext } from "@/lib/coach-bridge";
 import { supabaseService } from "@/lib/supabase-admin";
+import { notifyNewLead } from "@/lib/lead-notify";
 
 export const runtime = "nodejs";
+
+// lobby_contacts saknar en source-kolumn; platform är det närmaste vi har. Etiketten
+// används i aviseringens ämnesrad så mottagaren direkt ser var leadet kom ifrån.
+function kallaEtikett(platform: string): string {
+  const p = (platform || "").toLowerCase();
+  if (p === "linkedin") return "Bild eller LinkedIn";
+  if (p === "ig") return "Instagram";
+  if (p === "fb") return "Facebook";
+  if (p === "email") return "E-post";
+  if (p === "phone") return "Telefon";
+  if (p === "web") return "Formulär";
+  return "Nya leads";
+}
 
 // Lobbyn (porterad från MySales Coach) — kontakterna före de blir affärer i GHL.
 // Läser/skriver lobby_contacts via identitetsbryggan (klient → coach_users), aldrig på
@@ -104,6 +118,19 @@ export async function POST(req: NextRequest) {
   const sb = supabaseService();
   const { data, error } = await sb.from("lobby_contacts").insert(row).select(FIELDS).maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Etapp L1 — avisera. Alla fyra källor (bild, röst, manuellt, formulär) går genom den
+  // här routen, så en enda hook täcker Nya leads. Best-effort: får aldrig fälla svaret.
+  const rad = data as Record<string, unknown> | null;
+  void notifyNewLead({
+    clientId,
+    namn: String(row.name || "Okänt namn"),
+    kalla: kallaEtikett(String(row.platform || "")),
+    epost: (rad?.email as string) || null,
+    telefon: (rad?.phone as string) || null,
+    innehall: (rad?.last_message as string) || (rad?.notes as string) || null,
+    lank: rad?.id ? `/dashboard/leads?id=${rad.id}` : "/dashboard/leads",
+  });
 
   return NextResponse.json({ ok: true, contact: data });
 }

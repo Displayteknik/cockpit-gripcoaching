@@ -170,6 +170,15 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
         setLinked(d.linked !== false);
         setContacts(d.contacts || []);
         setMysalesBase(d.mysalesBase || null);
+        // Djuplänk från leadaviseringens mejl: /dashboard/leads?id=<uuid> öppnar kortet
+        // direkt. Görs efter laddningen, annars finns kortet inte att öppna än.
+        try {
+          const id = new URLSearchParams(window.location.search).get("id");
+          if (id && (d.contacts || []).some((c: Contact) => c.id === id)) {
+            setOppenId(id);
+            setTimeout(() => document.getElementById(`lead-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+          }
+        } catch { /* ingen/ogiltig query */ }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -776,7 +785,7 @@ function Rad(props: {
   };
 
   return (
-    <div className={`rounded-xl border bg-white shadow-sm overflow-hidden ${oppen ? "border-gray-300 ring-1 ring-gray-200" : "border-gray-100"}`}>
+    <div id={`lead-${c.id}`} className={`rounded-xl border bg-white shadow-sm overflow-hidden ${oppen ? "border-gray-300 ring-1 ring-gray-200" : "border-gray-100"}`}>
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0" title={meta.label}>
           <KanalIkon className="w-4 h-4 text-gray-500" />
