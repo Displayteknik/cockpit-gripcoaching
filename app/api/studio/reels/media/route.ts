@@ -102,14 +102,31 @@ export async function POST(req: NextRequest) {
       }
       // FLUX svarar med en http-URL, Gemini med en data-URL. adoptReelMedia tar båda.
       const arDataUrl = gen.image.startsWith("data:");
-      const stored = await adoptReelMedia({
-        clientId,
-        dataUrl: arDataUrl ? gen.image : undefined,
-        url: arDataUrl ? undefined : gen.image,
-        source: "ai",
-        sourceDetail: prompt,
-      });
-      return NextResponse.json({ media: stored });
+      try {
+        const stored = await adoptReelMedia({
+          clientId,
+          dataUrl: arDataUrl ? gen.image : undefined,
+          url: arDataUrl ? undefined : gen.image,
+          source: "ai",
+          sourceDetail: prompt,
+          kravKvalitet: true,
+        });
+        return NextResponse.json({ media: stored });
+      } catch (genFel) {
+        // Modellen kan svara med en nästan helt svart bild utan att signalera fel.
+        // Hellre ett riktigt foto än en svart scen: fall tillbaka på fotosök.
+        const st = await searchStockPhotos(prompt, niche, 1, "portrait");
+        if (!st.photos?.length) {
+          return NextResponse.json({ error: (genFel as Error).message }, { status: 500 });
+        }
+        const stored = await adoptReelMedia({
+          clientId,
+          url: st.photos[0].src,
+          source: "stock",
+          sourceDetail: st.photos[0].photographer,
+        });
+        return NextResponse.json({ media: stored, notis: "AI-bilden blev oanvändbar, valde ett foto i stället." });
+      }
     }
 
     if (body.action === "adopt") {

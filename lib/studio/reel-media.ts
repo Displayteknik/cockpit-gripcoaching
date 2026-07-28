@@ -51,6 +51,30 @@ async function hamtaBild(url: string): Promise<Buffer> {
   return Buffer.from(ab);
 }
 
+/**
+ * Kvalitetsgrind. Bildmodeller returnerar ibland en nästan helt svart eller helt jämn
+ * bild utan att signalera fel, och en sådan scen ser ut som ett renderingsfel i den
+ * färdiga filmen. Verifierat i skarpt läge: FLUX gav en 16 kB bild med medelljus
+ * RGB 2,8,12 på en fullt rimlig prompt.
+ *
+ * Två kriterier: för mörk (eller för ljus) i snitt, eller för lite variation i bilden.
+ */
+export async function bildDuger(input: Buffer): Promise<{ ok: boolean; skal?: string }> {
+  try {
+    const sharp = (await import("sharp")).default;
+    const st = await sharp(input).stats();
+    const kanaler = st.channels.slice(0, 3);
+    const medel = kanaler.reduce((s, c) => s + c.mean, 0) / kanaler.length;
+    const spridning = kanaler.reduce((s, c) => s + c.stdev, 0) / kanaler.length;
+    if (medel < 14) return { ok: false, skal: "bilden blev nästan helt svart" };
+    if (medel > 246) return { ok: false, skal: "bilden blev nästan helt vit" };
+    if (spridning < 8) return { ok: false, skal: "bilden saknar motiv (helt jämn yta)" };
+    return { ok: true };
+  } catch {
+    return { ok: true }; // kan vi inte mäta, blockera inte
+  }
+}
+
 async function saidaBucket(): Promise<void> {
   const sb = supabaseService();
   const { data: buckets } = await sb.storage.listBuckets();
@@ -71,6 +95,8 @@ export async function adoptReelMedia(opts: {
   source: Exclude<ReelMediaSource, "">;
   sourceDetail?: string;
   dmContactId?: string | null;
+  /** Kasta i stället för att spara om bilden är oanvändbar (svart, vit eller tom yta). */
+  kravKvalitet?: boolean;
 }): Promise<StoredReelMedia> {
   let input: Buffer;
   if (opts.dataUrl) {
@@ -81,6 +107,12 @@ export async function adoptReelMedia(opts: {
     input = await hamtaBild(opts.url);
   } else {
     throw new Error("Ingen bild angiven");
+  }
+
+  // Grinden går FÖRE uppladdningen, så en trasig generering aldrig hamnar i biblioteket.
+  if (opts.kravKvalitet) {
+    const kvalitet = await bildDuger(input);
+    if (!kvalitet.ok) throw new Error(`Bildgenereringen misslyckades: ${kvalitet.skal}`);
   }
 
   const { buf, width, height } = await fitToReel(input);

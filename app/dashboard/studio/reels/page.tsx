@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Film, Sparkles, AlertTriangle, Clock, Copy, CheckCircle2, Loader2, Image as ImageIcon, Type, ShieldAlert, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Film, Sparkles, AlertTriangle, Clock, Copy, CheckCircle2, Loader2, Image as ImageIcon, Type, ShieldAlert, Save, Play, Download } from "lucide-react";
+import { renderReel, kanRendera, NEUTRAL_BRAND, type RenderBrand } from "@/lib/studio/reel-render";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 import ReelSceneMedia from "@/components/studio/ReelSceneMedia";
 import { REEL_TEMPLATE_LIST, MAX_WORDS_PER_LINE, SAFE_ZONE, ordCount, type ReelStoryboard, type ReelTemplateKey, type ReelSceneKind, type ReelMediaSource } from "@/lib/studio/reels";
@@ -39,6 +40,31 @@ export default function ReelsPage() {
   const [sparar, setSparar] = useState(false);
   const [sparad, setSparad] = useState(false);
   const [aiBekraftad, setAiBekraftad] = useState(false);
+  const [brand, setBrand] = useState<RenderBrand>(NEUTRAL_BRAND);
+  const [stod, setStod] = useState<{ ok: boolean; skal?: string } | null>(null);
+  const [renderar, setRenderar] = useState(false);
+  const [renderProgress, setRenderProgress] = useState(0);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoMb, setVideoMb] = useState(0);
+
+  // Kundens färger och typsnitt in i videon, samma källa som resten av Studio.
+  useEffect(() => {
+    fetch("/api/studio/brand")
+      .then((r) => r.json())
+      .then((d) => {
+        const b = d?.brand;
+        if (!b) return;
+        setBrand({
+          headlineFont: b.fonts?.headline || "Inter",
+          bodyFont: b.fonts?.body || "Inter",
+          accent: b.colors?.accent || NEUTRAL_BRAND.accent,
+          ink: b.colors?.ink || NEUTRAL_BRAND.ink,
+          paper: b.colors?.paper || NEUTRAL_BRAND.paper,
+        });
+      })
+      .catch(() => {});
+    kanRendera().then(setStod).catch(() => setStod({ ok: false, skal: "Kunde inte kontrollera videostödet." }));
+  }, []);
 
   const mall = REEL_TEMPLATE_LIST.find((m) => m.key === templateKey);
 
@@ -56,6 +82,24 @@ export default function ReelsPage() {
       return { ...prev, scenes };
     });
     setSparad(false);
+  }
+
+  async function rendera() {
+    if (!board) return;
+    setRenderar(true);
+    setError(null);
+    setRenderProgress(0);
+    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    setVideoUrl(null);
+    try {
+      const blob = await renderReel(board, brand, setRenderProgress);
+      setVideoUrl(URL.createObjectURL(blob));
+      setVideoMb(blob.size / 1024 / 1024);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Renderingen misslyckades");
+    } finally {
+      setRenderar(false);
+    }
   }
 
   async function sparaReel() {
@@ -361,6 +405,68 @@ export default function ReelsPage() {
               </button>
             </div>
             <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-gray-50 p-4 font-sans text-sm leading-relaxed text-gray-800">{board.caption}</pre>
+          </div>
+
+          {/* Rendering */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <h3 className="text-base font-semibold text-gray-900">Gör videon</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Videon skapas i din webbläsare, inget laddas upp till någon server. Det tar några sekunder.
+            </p>
+
+            {stod && !stod.ok && (
+              <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 p-3.5 text-xs text-amber-800">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{stod.skal} Öppna sidan i Chrome eller Edge så fungerar det.</span>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={rendera}
+                disabled={renderar || !alltMaterialKlart || (kraverBekraftelse && !aiBekraftad) || (stod ? !stod.ok : false)}
+                className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {renderar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {renderar ? `Renderar ${Math.round(renderProgress * 100)} %` : "Rendera video"}
+              </button>
+
+              {videoUrl && (
+                <a
+                  href={videoUrl}
+                  download={`reel-${board.templateKey}.mp4`}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900"
+                >
+                  <Download className="h-4 w-4" />
+                  Ladda ner ({videoMb.toFixed(1)} MB)
+                </a>
+              )}
+
+              {!alltMaterialKlart && <span className="text-xs text-gray-400">Alla scener behöver en bild först.</span>}
+              {alltMaterialKlart && kraverBekraftelse && !aiBekraftad && (
+                <span className="text-xs text-gray-400">Bekräfta AI-bilderna ovan först.</span>
+              )}
+            </div>
+
+            {renderar && (
+              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                <div className="h-full rounded-full bg-pink-500 transition-all" style={{ width: `${Math.round(renderProgress * 100)}%` }} />
+              </div>
+            )}
+
+            {videoUrl && (
+              <div className="mt-5 flex flex-wrap items-start gap-5">
+                <video src={videoUrl} controls playsInline className="w-[220px] rounded-xl border border-gray-200 bg-black" />
+                <div className="min-w-0 flex-1 text-sm text-gray-600">
+                  <p className="font-medium text-gray-900">Klar att publicera</p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                    Ladda ner filen och lägg upp den i Instagram-appen. Lägg på ett trendljud när du publicerar, det ger betydligt
+                    bättre räckvidd än en reel utan ljud.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <p className="px-1 text-xs text-gray-400">
