@@ -257,10 +257,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       clientId: slug, templateId, format, headline1, headline2, body,
       badge: { enabled: meta.fields.badge && badgeEnabled, line1: badgeLine1, line2: badgeLine2 },
       imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl,
+      // Ämnet/grafikbriefen sparas med inlägget — annars tappas den vid omladdning och
+      // Bildhjälpen står tom när man öppnar ett planerat utkast igen.
+      brief: topic,
       // Spara läget så inlägget öppnas i samma vy det skapades i (mall vs skriv eget).
       mode,
     }),
-    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, mode],
+    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, topic, mode],
   );
 
   const isCarousel = Boolean(meta.carousel);
@@ -702,6 +705,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setSlides(Array.isArray(d.slides) ? (d.slides as StudioSlide[]) : []);
     setSlideIdx(0);
     setVideoUrl((d.videoUrl as string) ?? "");
+    setTopic((d.brief as string) ?? "");
     setPrevImageUrl("");
     // Öppna i rätt vy: sparat läge först, annars härlett. Ett inlägg med rubriktext på
     // bilden är ett mall-inlägg och måste visas i mall-läget, annars ser man inget.

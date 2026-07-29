@@ -65,6 +65,7 @@ export interface StudioPayload {
   overrides: StudioOverrides; // fri redigering ovanpå mallen (tweak-lager)
   slides: StudioSlide[]; // ark-karusell: N slides → N PNG. Tom för icke-karusell-mallar.
   videoUrl: string; // reel: uppladdad video (studio-videos). Studio-rendern = 9:16-cover. Tom = ingen video.
+  brief: string; // grafikbrief: vad bilden ska föreställa. Ritas ALDRIG ut — styr Bildhjälpen.
 }
 
 export const MAX_SLIDES = 10;
@@ -121,6 +122,7 @@ export function normalizePayload(raw: Partial<StudioPayload>): StudioPayload {
     overrides: normalizeOverrides(raw.overrides),
     slides: normalizeSlides(raw.slides),
     videoUrl: typeof raw.videoUrl === "string" ? raw.videoUrl : "",
+    brief: typeof raw.brief === "string" ? raw.brief.slice(0, 600) : "",
   };
 }
 
