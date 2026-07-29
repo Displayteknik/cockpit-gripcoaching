@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
-import { generateFlux, searchStockPhotos, visualScene } from "@/lib/images";
+import { generateFlux, searchStockPhotos } from "@/lib/images";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { adoptReelMedia, listReelMedia } from "@/lib/studio/reel-media";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -84,14 +84,23 @@ export async function POST(req: NextRequest) {
     if (body.action === "ai") {
       if (!prompt) return NextResponse.json({ error: "Ingen bildbeskrivning" }, { status: 400 });
       const directives = await getKitDirectives(clientId);
-      // Två steg: prosa → visuell scen först, annars svarar bildmodellen NO_IMAGE.
-      const scene = await visualScene(prompt, niche || "företag");
+      // INGEN visualScene här. Den översätter PROSA till ett motiv och behövs i
+      // Bildhjälpen, där indata är en bildtext. Reels-manuset levererar redan en färdig
+      // engelsk motivbeskrivning, och att köra den genom översättningen en gång till
+      // skriver om den och driver iväg motivet: "uninviting retail storefront during a
+      // grey daytime" blev en mörk bakgårdsdörr. Använd beskrivningen som den är.
+      const scene = prompt;
       // FLUX först: den tar image_size och ger ett FAKTISKT stående original.
       // generateImagen skickar bara formatet i prompttexten och svarade 1024x1024 i test,
       // vilket betyder att nära halva motivet beskärs bort i sidled. generateFlux faller
       // själv tillbaka på generateImagen om FAL_KEY saknas eller anropet fallerar.
+      // Motivet FÖRST, stilen sist. "natural light" stod tidigare här och krockade rakt
+      // av med signaturens ljusinstruktion: två motstridiga ljuskrav i samma prompt.
+      // Ljussättningen ägs numera enbart av signaturen, motivet enbart av scenen.
+      // Bildmodeller hittar på läsbar text på skyltar och affischer även när prompten
+      // säger no text. Förbudet upprepas därför i Avoid-form, som väger tyngre.
       const gen = await generateFlux(
-        `${scene} Vertical 9:16 composition, calm space in the middle for text. Real photo, natural light, no text, no letters.${imageDirectiveSuffix(directives)}`,
+        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real.${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
         "portrait",
       );
       if (gen.error || !gen.image) {

@@ -58,12 +58,22 @@ export async function getKitDirectives(clientId: string): Promise<KitDirectives>
   }
 }
 
-// Bygger ett prompt-tillägg för bildgenerering ur direktiven.
+/**
+ * Prompt-tillägget för bildgenerering. Stilen läggs SIST och är uttryckligen begränsad
+ * till färg och ljusbehandling.
+ *
+ * Utan den avgränsningen tar stilen över motivet: en signatur som nämnde "dusk lighting"
+ * gjorde varje bild till en nattbild, även när scenens text sa att butiken hade öppet.
+ * Motivet bestäms av budskapet, stilen bestämmer bara hur det ser ut.
+ */
 export function imageDirectiveSuffix(d: KitDirectives): string {
   const bits: string[] = [];
   if (d.imageExtra) bits.push(d.imageExtra);
-  if (d.imageNegative) bits.push(`Avoid: ${d.imageNegative}`);
-  return bits.length ? ` Bildstil: ${bits.join(". ")}.` : "";
+  const stil = bits.length
+    ? ` Visual treatment (applies to colour and light only, never change the subject, the setting or the time of day described above): ${bits.join(". ")}.`
+    : "";
+  const undvik = d.imageNegative ? ` Avoid: ${d.imageNegative}.` : "";
+  return `${stil}${undvik}`;
 }
 
 // Bygger en regel-rad för copy-generering ur donts.

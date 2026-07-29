@@ -44,20 +44,29 @@ export const NEUTRAL_SIGNATURE: BrandSignature = {
  * varumärke, inte som ett filter. Kraftiga värden gör foton smutsiga i komprimeringen.
  */
 export const SIGNATURE_PRESETS: Record<Exclude<SignaturePreset, "">, { namn: string; beskrivning: string; grade: BrandSignature["grade"]; bildprompt: string; bildNegativ: string }> = {
+  // VIKTIGT: en signatur beskriver BEHANDLING (färg, kontrast, var ljuset ligger),
+  // aldrig MOTIV. Tid på dygnet, väder och om en butik är öppen eller stängd är
+  // innehållsbeslut som styrs av scenens budskap. Första versionen sa "dusk or evening
+  // lighting" och gjorde varje scen till en nattbild, även när texten sa "även när ni
+  // har öppet" — stilen sket sig in i innehållet och gjorde budskapet obegripligt.
   "mork-kontrast": {
     namn: "Mörk och kontrastrik",
     beskrivning: "Dämpad omgivning, skärmens ljus bär bilden. För skyltning och teknik.",
     grade: { brightness: 0.94, contrast: 1.18, saturation: 0.88, vignette: 0.28 },
+    // Andra överspecificeringen: "the brightest point in the frame" och "deep shadows"
+    // tvingade fram natt även utan ordet dusk, eftersom allt annat måste mörkas ned för
+    // att en skärm ska bli ljusast. En behandling får ändra FÄRG och KONTRAST, aldrig
+    // exponeringen eller tiden på dygnet. Sista satsen är spärren.
     bildprompt:
-      "cinematic, dusk or evening lighting, glowing screen as the focal point, muted desaturated surroundings, deep shadows, crisp highlights on the display",
-    bildNegativ: "flat daylight, busy colourful background, stock-photo smiling people",
+      "cinematic colour treatment, elevated contrast, muted desaturated palette, screens and displays rendered bright and crisp, keeping the scene's own time of day and ambient light level exactly as described",
+    bildNegativ: "busy colourful background, stock-photo smiling people, cluttered composition",
   },
   "ljus-luftig": {
     namn: "Ljus och luftig",
-    beskrivning: "Dagsljus, mjuka toner, mycket luft. För coaching och tjänst.",
+    beskrivning: "Mjuka toner, låg kontrast, mycket luft. För coaching och tjänst.",
     grade: { brightness: 1.05, contrast: 0.96, saturation: 0.95, vignette: 0 },
-    bildprompt: "soft natural daylight, airy composition, generous negative space, gentle muted palette",
-    bildNegativ: "harsh shadows, heavy vignette, dark moody tones",
+    bildprompt: "soft high-key treatment, low contrast, airy composition, generous negative space, gentle muted palette",
+    bildNegativ: "harsh crushed shadows, heavy vignette, cluttered composition",
   },
   neutral: {
     namn: "Neutral",
