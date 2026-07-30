@@ -4,6 +4,7 @@ import SmartTextarea from "@/components/SmartTextarea";
 import { FunctionGuide } from "@/components/FunctionGuide";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
@@ -215,6 +216,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [adapting, setAdapting] = useState(false);
   const [pubBusy, setPubBusy] = useState<ChannelKey | "">("");
   const [pubResult, setPubResult] = useState<Record<ChannelKey, "" | "ok" | "err">>({ ig: "", fb: "", li: "" });
+  // BILD-3: kvitto efter lyckad publicering — direktlänk, tid, format.
+  const [pubReceipt, setPubReceipt] = useState<{ permalink: string; tid: string; format: string } | null>(null);
   const [copied, setCopied] = useState<ChannelKey | "">("");
 
   const meta = useMemo(() => TEMPLATE_META.find((t) => t.id === templateId)!, [templateId]);
@@ -620,7 +623,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setSuggestions([]); // dölj listan efter val — annars ligger samma förslag kvar i både steg 1 och steg 4
   }, []);
 
+  // BILD-2: diff-dialog när genereringen vill ersätta text användaren själv skrivit.
+  // Default = Behåll (ingen destruktiv åtgärd utan aktivt val).
+  const [carouselDiffs, setCarouselDiffs] = useState<{ index: number; nuvarande: { headline: string; body: string }; forslag: { headline: string; body: string }; anvand: boolean }[] | null>(null);
+
   // Generera hela karusellen (hook → punkter → cta) ur ämne + varumärkesröst.
+  // BILD-2: användarens material är förstklassigt — egna bilder behålls ALLTID, egna texter
+  // behålls (AI:s förslag hamnar i diff-dialogen), AI fyller bara luckor.
   const generateCarouselNow = useCallback(async () => {
     setError(""); setGenCarousel(true);
     try {
@@ -630,13 +639,49 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Karusell-generering misslyckades");
-      if (Array.isArray(d.slides) && d.slides.length) { setSlides(d.slides); setSlideIdx(0); }
+      if (!Array.isArray(d.slides) || !d.slides.length) return;
+      const nya: StudioSlide[] = d.slides;
+      const gamla = slides;
+      const harInnehall = gamla.some((s) => s.imageUrl || s.headline?.trim() || s.body?.trim());
+      if (!harInnehall) { setSlides(nya); setSlideIdx(0); return; }
+      // Inventera + slå ihop: bild per slide behålls exakt, text-lucka fylls, text-konflikt → diff.
+      const antal = Math.max(gamla.length, nya.length);
+      const merged: StudioSlide[] = [];
+      const diffs: NonNullable<typeof carouselDiffs> = [];
+      for (let i = 0; i < antal; i++) {
+        const g = gamla[i];
+        const n = nya[i];
+        if (g && n) {
+          const egenText = Boolean(g.headline?.trim() || g.body?.trim());
+          if (egenText) {
+            merged.push({ ...g, imageUrl: g.imageUrl || n.imageUrl });
+            if ((n.headline && n.headline !== g.headline) || (n.body && n.body !== g.body)) {
+              diffs.push({ index: i, nuvarande: { headline: g.headline, body: g.body }, forslag: { headline: n.headline, body: n.body }, anvand: false });
+            }
+          } else {
+            merged.push({ ...n, imageUrl: g.imageUrl || n.imageUrl });
+          }
+        } else if (g) merged.push(g);
+        else if (n) merged.push(n);
+      }
+      setSlides(merged); setSlideIdx(0);
+      if (diffs.length) setCarouselDiffs(diffs);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setGenCarousel(false);
     }
-  }, [topic, headline1, compass]);
+  }, [topic, headline1, compass, slides]);
+
+  // Diff-dialogens "Använd valda förslag": bara aktivt ibockade slides får AI-texten.
+  const applyCarouselDiffs = useCallback(() => {
+    if (!carouselDiffs) return;
+    setSlides((prev) => prev.map((s, i) => {
+      const diff = carouselDiffs.find((x) => x.index === i && x.anvand);
+      return diff ? { ...s, headline: diff.forslag.headline, body: diff.forslag.body } : s;
+    }));
+    setCarouselDiffs(null);
+  }, [carouselDiffs]);
 
   // Skapa en on-brand AI-bild per slide (ämne = slidens egen text). Sekventiellt så
   // Gemini/Fal-kvoten inte spränger, med synlig progress. Sätter bilden direkt på varje slide.
@@ -708,6 +753,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   // ── Utkast (localStorage) ──
   const draftKey = `studio-draft:${slug}`;
+
+  // BILD-2: autospar i alla steg — inget försvinner vid fel eller navigering. Debounce så
+  // varje tangenttryck inte skriver; localStorage-draften öppnas via "Fortsätt där du slutade".
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { localStorage.setItem(draftKey, JSON.stringify(payload)); setHasDraft(true); } catch { /* ignore */ }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [payload, draftKey]);
   // Fyller hela editorn från en payload (delas av utkast + bibliotek).
   const applyPayload = useCallback((d: Record<string, unknown>) => {
     const badge = (d.badge ?? {}) as { enabled?: boolean; line1?: string; line2?: string };
@@ -1112,6 +1166,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
       setPubResult((p) => ({ ...p, [k]: "ok" }));
+      // BILD-3: publiceringskvitto med direktlänk till inlägget.
+      if (k === "ig" && d.status === "published") {
+        setPubReceipt({ permalink: d.permalink || "", tid: new Date().toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }), format });
+      }
       await refreshPosts();
       loadMedia(); // den renderade designen syns nu i mediabiblioteket
     } catch (e) {
@@ -2271,6 +2329,26 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </div>
           )}
 
+          {/* BILD-3: publiceringskvitto — direktlänk till inlägget, tid, tenant och format */}
+          {pubReceipt && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex flex-wrap items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0"><Check className="w-5 h-5 text-emerald-700" /></span>
+              <div className="flex-1 min-w-[200px]">
+                <div className="font-semibold text-emerald-900">Publicerat på Instagram</div>
+                <div className="text-xs text-emerald-700 mt-0.5">{pubReceipt.tid} · {client?.name || "din klient"} · {FORMAT_LABELS[pubReceipt.format as StudioFormat] || pubReceipt.format}</div>
+              </div>
+              {pubReceipt.permalink ? (
+                <a href={pubReceipt.permalink} target="_blank" rel="noopener"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
+                  <ExternalLink className="w-4 h-4" /> Öppna inlägget
+                </a>
+              ) : (
+                <span className="text-xs text-emerald-700">Inlägget syns på kontots profil.</span>
+              )}
+              <button onClick={() => setPubReceipt(null)} className="text-emerald-400 hover:text-emerald-700" title="Stäng"><X className="w-4 h-4" /></button>
+            </div>
+          )}
+
           {/* GHL-koppling & kontoval (byrå-only) — driver FB/LI-publiceringen ovan */}
           {!customerMode && (selectedChannels.includes("fb") || selectedChannels.includes("li") || (selectedChannels.includes("ig") && !igConn?.connected)) && (
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-3">
@@ -2454,6 +2532,41 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
           </div>
         </div>
       </div>
+
+      {/* BILD-2: diff-dialog — genereringen ersätter ALDRIG din text utan aktivt val. Portal
+          (fixed overlay inuti transformerad förfader klipps annars, se lessons). */}
+      {carouselDiffs && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div>
+              <h3 className="font-display font-bold text-gray-900 text-lg">Dina texter behålls</h3>
+              <p className="text-sm text-gray-500 mt-1">Skrivhjälpen föreslog ny text för slides du redan skrivit. Inget ersätts utan att du bockar i det.</p>
+            </div>
+            {carouselDiffs.map((d, di) => (
+              <label key={d.index} className="block rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-1.5 cursor-pointer">
+                <span className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                  <input type="checkbox" checked={d.anvand}
+                    onChange={(e) => setCarouselDiffs((prev) => prev ? prev.map((x, xi) => xi === di ? { ...x, anvand: e.target.checked } : x) : prev)}
+                    style={{ accentColor: primary }} />
+                  Slide {d.index + 1}: använd förslaget
+                </span>
+                <span className="block text-xs text-gray-500"><strong>Din text:</strong> {d.nuvarande.headline}{d.nuvarande.body ? ` — ${d.nuvarande.body}` : ""}</span>
+                <span className="block text-xs text-gray-500"><strong>Förslag:</strong> {d.forslag.headline}{d.forslag.body ? ` — ${d.forslag.body}` : ""}</span>
+              </label>
+            ))}
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button onClick={() => setCarouselDiffs(null)} className="px-4 py-2 rounded-lg text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50">
+                Behåll allt (rekommenderas)
+              </button>
+              <button onClick={applyCarouselDiffs} disabled={!carouselDiffs.some((d) => d.anvand)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-40" style={{ background: primary }}>
+                Använd valda förslag
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

@@ -50,7 +50,20 @@ export async function POST(req: NextRequest) {
         .eq("client_id", clientId);
     }
 
-    return NextResponse.json({ ok: true, postId: result.id, status: result.status });
+    // BILD-3: publiceringskvitto — direktlänk till inlägget på Instagram (nice-to-have,
+    // får aldrig fälla en lyckad publicering).
+    let permalink: string | undefined;
+    if (channel === "ig-graph" && result.status === "published" && result.id) {
+      try {
+        const { getIgConnection, igGet } = await import("@/lib/instagram");
+        const conn = await getIgConnection(clientId);
+        if (conn?.ig_access_token) {
+          permalink = (await igGet(`/${result.id}`, conn.ig_access_token, { fields: "permalink" }))?.permalink;
+        }
+      } catch { /* kvittolänken är valfri */ }
+    }
+
+    return NextResponse.json({ ok: true, postId: result.id, status: result.status, permalink });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

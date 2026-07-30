@@ -39,15 +39,23 @@ export async function igGet(path: string, token: string, params: Record<string, 
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   url.searchParams.set("access_token", token);
   const r = await fetch(url.toString());
-  if (!r.ok) throw new Error(`IG GET ${path}: ${await r.text()}`);
+  if (!r.ok) throw await graphFel("GET", path, await r.text());
   return r.json();
 }
 
 export async function igPost(path: string, token: string, body: Record<string, string>) {
   const params = new URLSearchParams({ ...body, access_token: token });
   const r = await fetch(`${BASE}${path}`, { method: "POST", body: params });
-  if (!r.ok) throw new Error(`IG POST ${path}: ${await r.text()}`);
+  if (!r.ok) throw await graphFel("POST", path, await r.text());
   return r.json();
+}
+
+// BILD-3: rå Graph-JSON når ALDRIG användaren — översätts till klartext med åtgärd.
+// Råfelet loggas server-side för felsökning (tokens förekommer inte i Graph-felsvar).
+async function graphFel(metod: string, path: string, ratt: string): Promise<Error> {
+  console.error(`[IG ${metod} ${path}]`, ratt.slice(0, 500));
+  const { oversattGraphFel } = await import("./studio/graph-fel");
+  return new Error(oversattGraphFel(ratt));
 }
 
 // SINGLE IMAGE

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Check, AlertCircle, Unlink, ChevronDown } from "lucide-react";
+import { valideraIgId, valideraMetaToken } from "@/lib/studio/graph-fel";
 
 interface Page { id: string; name: string; ig_username: string | null; has_ig: boolean }
 interface PagesResp { owner_connected: boolean; pages: Page[]; error?: string }
@@ -54,6 +55,11 @@ export default function TenantIgConnect() {
 
   async function connectManual() {
     if (!mAcc || !mTok) return;
+    // BILD-3: fånga förväxlade id-fält INNAN Meta-anropet (sid-id vs 17841-konto-id).
+    const felId = valideraIgId(mAcc);
+    if (felId) { setErr(felId); return; }
+    const felTok = valideraMetaToken(mTok);
+    if (felTok) { setErr(felTok); return; }
     setBusy(true); setErr(null);
     const r = await fetch("/api/meta/connect-tenant/manual", {
       method: "POST",

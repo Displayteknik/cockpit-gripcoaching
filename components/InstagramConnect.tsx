@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Check, X, ExternalLink, AlertCircle, RefreshCw } from "lucide-react";
+import { valideraIgId, valideraMetaToken } from "@/lib/studio/graph-fel";
 
 interface Status { connected: boolean; handle: string | null }
 
@@ -13,6 +14,8 @@ export default function InstagramConnect() {
   const [handle, setHandle] = useState("");
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  // BILD-3: fel visas inline i klartext — aldrig rå Graph-JSON i en alert-ruta.
+  const [fel, setFel] = useState<string | null>(null);
 
   useEffect(() => { reload(); }, []);
 
@@ -23,7 +26,12 @@ export default function InstagramConnect() {
 
   async function connect() {
     if (!accountId || !token) return;
-    setBusy(true);
+    // BILD-3: fånga förväxlade id-fält INNAN Meta-anropet (sid-id vs 17841-konto-id).
+    const felId = valideraIgId(accountId);
+    if (felId) { setFel(felId); return; }
+    const felTok = valideraMetaToken(token);
+    if (felTok) { setFel(felTok); return; }
+    setBusy(true); setFel(null);
     const r = await fetch("/api/instagram/connect", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -32,11 +40,11 @@ export default function InstagramConnect() {
     const d = await r.json();
     setBusy(false);
     if (r.ok) {
-      alert(`Anslutet: @${d.profile?.username} (${d.profile?.followers_count} följare)`);
+      setFel(null);
       setAccountId(""); setToken(""); setHandle("");
       reload();
     } else {
-      alert("Fel: " + (d.error || "okänt"));
+      setFel(d.error || "Kunde inte ansluta — kontrollera id och token.");
     }
   }
 
@@ -109,7 +117,12 @@ export default function InstagramConnect() {
       )}
 
       <div className="space-y-2">
-        <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Instagram Business Account ID (numerisk)" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+        {fel && (
+          <p className="flex items-start gap-1.5 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-2.5 py-2">
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {fel}
+          </p>
+        )}
+        <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Instagram Business Account ID (börjar med 17841)" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
         <input value={token} onChange={(e) => setToken(e.target.value)} type="password" placeholder="Long-lived Access Token" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
         <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@handle (auto om tom)" className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
         <button onClick={connect} disabled={busy || !accountId || !token} className="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white py-2.5 rounded-lg font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
