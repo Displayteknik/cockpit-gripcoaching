@@ -6,12 +6,32 @@ const BASE = "https://graph.facebook.com/v21.0";
 
 export interface IgClient { id: string; ig_account_id: string | null; ig_access_token: string | null; }
 
+// Enda stället som löser ut en IG-token per klient. Primär källa = tenant_ig_connections
+// (Anslutningsmotorn, krypterad page-token). Fallback = clients.ig_* (DT/HM, plaintext) så
+// befintliga kopplingar fortsätter fungera oförändrat. Returnerar alltid PLAINTEXT token.
 export async function getIgConnection(clientId: string): Promise<IgClient | null> {
   const { supabaseService } = await import("./supabase-admin");
+  const { decryptToken, decryptMaybe } = await import("./crypto/token-vault");
   const sb = supabaseService();
+
+  // 1. Primär: per-tenant-koppling med krypterad page-token.
+  const { data: t } = await sb
+    .from("tenant_ig_connections")
+    .select("ig_business_account_id, page_token_enc")
+    .eq("client_id", clientId)
+    .maybeSingle();
+  if (t?.ig_business_account_id && t?.page_token_enc) {
+    try {
+      return { id: clientId, ig_account_id: t.ig_business_account_id, ig_access_token: decryptToken(t.page_token_enc) };
+    } catch {
+      /* dekryptering misslyckades → falla igenom till clients-fallback */
+    }
+  }
+
+  // 2. Fallback: clients.ig_* (befintliga DT/HM). decryptMaybe = plaintext oförändrat.
   const { data } = await sb.from("clients").select("id, ig_account_id, ig_access_token").eq("id", clientId).maybeSingle();
   if (!data?.ig_account_id || !data?.ig_access_token) return null;
-  return data as IgClient;
+  return { id: data.id, ig_account_id: data.ig_account_id, ig_access_token: decryptMaybe(data.ig_access_token) };
 }
 
 export async function igGet(path: string, token: string, params: Record<string, string> = {}) {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Save, Loader2, Check, Globe, Search, Zap, BarChart3, Lock, Copy, Info, ExternalLink, Mail, Plug, Image as ImageIcon } from "lucide-react";
 import GoogleConnect from "@/components/GoogleConnect";
-import InstagramConnect from "@/components/InstagramConnect";
+import TenantIgConnect from "@/components/TenantIgConnect";
 
 type Settings = Record<string, string>;
 
@@ -24,11 +24,19 @@ interface SectionDef {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   fields?: FieldDef[];
-  customComponent?: "google" | "instagram";
+  customComponent?: "google" | "instagram" | "meta";
 }
 
 const SECTIONS: SectionDef[] = [
   // INTEGRATIONS
+  {
+    id: "meta",
+    category: "integrations",
+    title: "Meta / Facebook (ägarnivå)",
+    icon: Plug,
+    description: "Anslut ditt Meta-konto en gång. Sedan kopplas varje tenants Instagram via dropdown — inga manuella tokens.",
+    customComponent: "meta",
+  },
   {
     id: "instagram",
     category: "integrations",
@@ -266,7 +274,13 @@ export default function InstallningarPage() {
                 </div>
               </div>
               <div className="ml-12">
-                {section.customComponent === "instagram" && <InstagramConnect />}
+                {section.customComponent === "meta" && (
+                  <a href="/dashboard/installningar/meta" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:opacity-95">
+                    Öppna Meta-anslutning
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+                {section.customComponent === "instagram" && <TenantIgConnect />}
                 {section.customComponent === "google" && <GoogleConnect />}
                 {section.fields && (
                   <div className="space-y-4">

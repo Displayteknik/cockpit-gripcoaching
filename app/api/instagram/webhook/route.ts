@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
 import { hanteraKommentar } from "@/lib/instagram/comments";
+import { getIgConnection } from "@/lib/instagram";
 import { safeEqual, verifieraSignatur } from "@/lib/instagram/webhook-signatur";
 
 export const runtime = "nodejs";
@@ -78,10 +79,14 @@ async function behandla(body: { entry?: { id?: string; changes?: { field?: strin
     // och aldrig anta att det bara finns en; webhooken kan bära flera konton.
     const { data: klient } = await sb
       .from("clients")
-      .select("id, slug, ig_handle, ig_access_token")
+      .select("id, slug, ig_handle")
       .eq("ig_account_id", igAccountId)
       .maybeSingle();
-    if (!klient?.ig_access_token) continue;
+    if (!klient?.id) continue;
+
+    // Token via den centrala lösaren (tenant_ig_connections krypterad först, clients-fallback).
+    const conn = await getIgConnection(klient.id);
+    if (!conn?.ig_access_token) continue;
 
     const bas = (process.env.NEXT_PUBLIC_SITE_URL || "https://cockpit.gripcoaching.se").replace(/\/$/, "");
     const uppladdningsUrl = `${bas}/skicka-bild/${klient.slug}`;
@@ -98,7 +103,7 @@ async function behandla(body: { entry?: { id?: string; changes?: { field?: strin
         text: v.text || "",
         username: v.from?.username,
         egenUsername: klient.ig_handle || undefined,
-        token: klient.ig_access_token,
+        token: conn.ig_access_token,
         uppladdningsUrl,
         payload: v,
       });

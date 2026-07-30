@@ -1,0 +1,24 @@
+name: Tokenhälsovakt
+
+# ANSLUT-3 — daglig hälsokoll av Meta/IG-tokens. Kör GET /debug_token + ett billigt läsanrop
+# per tenant, sätter status OK/Varning/Död och mejlar vid övergång. Idempotent — säker att
+# köra flera gånger. Kräver repo-secret CRON_SECRET = samma värde som Vercels CRON_SECRET.
+on:
+  schedule:
+    - cron: "30 6 * * *" # dagligen 06:30 UTC (före schemaläggarens 07:00-svep)
+  workflow_dispatch: {}
+
+concurrency:
+  group: token-halsovakt
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigga /api/meta/health/cron
+        run: |
+          curl -fsS -X GET "https://cockpit.gripcoaching.se/api/meta/health/cron" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
