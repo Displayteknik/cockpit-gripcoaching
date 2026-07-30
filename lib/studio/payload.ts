@@ -40,6 +40,11 @@ export interface StudioOverrides {
   imageX: number; // -50..50 horisontell panorering (%)
   hideBrush: boolean;
   hideBadge: boolean;
+  // Fritt placerbara textrutor (B2): offset i % av canvasmått från mallens naturliga
+  // position. 0 = mallens standard. Läses av både live-editor och export-render (WYSIWYG).
+  h1X: number; h1Y: number;
+  h2X: number; h2Y: number;
+  bodyX: number; bodyY: number;
 }
 
 // En karusell-slide (ark-karusell). kind styr layouten: hook = omslag/krok,
@@ -76,6 +81,7 @@ export function emptySlide(kind: StudioSlide["kind"] = "point"): StudioSlide {
 
 export const DEFAULT_OVERRIDES: StudioOverrides = {
   fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false,
+  h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0,
 };
 
 // Typsnitt som får väljas i editorn (self-hostade → live = export). "" = mallens standard.
@@ -162,6 +168,12 @@ function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOv
     imageX: clamp(Number(o.imageX ?? 0), -50, 50),
     hideBrush: Boolean(o.hideBrush),
     hideBadge: Boolean(o.hideBadge),
+    h1X: clamp(Number(o.h1X ?? 0), -100, 100),
+    h1Y: clamp(Number(o.h1Y ?? 0), -100, 100),
+    h2X: clamp(Number(o.h2X ?? 0), -100, 100),
+    h2Y: clamp(Number(o.h2Y ?? 0), -100, 100),
+    bodyX: clamp(Number(o.bodyX ?? 0), -100, 100),
+    bodyY: clamp(Number(o.bodyY ?? 0), -100, 100),
   };
 }
 

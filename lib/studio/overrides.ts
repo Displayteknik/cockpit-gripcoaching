@@ -1,4 +1,5 @@
 import type { StudioPayload } from "./payload";
+import { FORMAT_DIMENSIONS } from "./payload";
 
 // Tweak-lager: mallarna läser overrides via dessa hjälpare. Tom/1 = mallens standard.
 // Samma funktioner används i live-editorn och i export-rendern → WYSIWYG.
@@ -42,6 +43,18 @@ export function showBadge(p: StudioPayload): boolean {
 export function font(def: string, p: StudioPayload): string {
   return `${p.overrides?.fontFamily || def}, sans-serif`;
 }
+// B2: fritt placerad textruta. Offset i % av canvasmått → translate i px.
+// 0/0 = mallens naturliga position (ingen transform alls → orörda mallar renderas exakt som förut).
+// Spreadas i textblockets style i arketypen; noden märks data-drag="h1|h2|body" för dragglagret.
+export function dragPos(p: StudioPayload, role: "h1" | "h2" | "body"): Record<string, string> {
+  const o = p.overrides;
+  const x = role === "h1" ? o?.h1X : role === "h2" ? o?.h2X : o?.bodyX;
+  const y = role === "h1" ? o?.h1Y : role === "h2" ? o?.h2Y : o?.bodyY;
+  if (!x && !y) return {};
+  const { w, h } = FORMAT_DIMENSIONS[p.format] ?? { w: 1080, h: 1350 };
+  return { transform: `translate(${Math.round(((x || 0) / 100) * w)}px, ${Math.round(((y || 0) / 100) * h)}px)` };
+}
+
 // Läsbar platta bakom texten (valfri) — gör vit text läsbar på rörigt foto.
 // Tom = ingen platta (mallens standard). Spreadas in i textblockets style.
 export function textPlate(p: StudioPayload): Record<string, string | number> {

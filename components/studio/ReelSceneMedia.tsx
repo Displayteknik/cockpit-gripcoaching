@@ -35,6 +35,9 @@ export default function ReelSceneMedia({
   const [fel, setFel] = useState<string | null>(null);
   const [kandidater, setKandidater] = useState<Kandidat[]>([]);
   const [bibliotek, setBibliotek] = useState<Bibliotek[]>([]);
+  // B3: exakt text som ska synas i scenbilden + verifieringsslingans utfall.
+  const [aiText, setAiText] = useState("");
+  const [textInfo, setTextInfo] = useState<{ metod: string; forsok: number; verifierad: boolean; avlastText: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const zonRef = useRef<HTMLDivElement>(null);
 
@@ -110,6 +113,9 @@ export default function ReelSceneMedia({
       return;
     }
 
+    // AI-spåret öppnar en liten panel (valfri "Text i bilden") — genererar först på knappen.
+    if (k === "ai") return;
+
     setBusy(true);
     try {
       if (k === "mina") {
@@ -125,13 +131,32 @@ export default function ReelSceneMedia({
         });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Kunde inte hämta bilder");
-        if (k === "ai") {
-          onValj(d.media.url, "ai");
-          setSpar(null);
-        } else {
-          setKandidater(d.candidates || []);
-        }
+        setKandidater(d.candidates || []);
       }
+    } catch (e) {
+      setFel(e instanceof Error ? e.message : "Något gick fel");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // B3: generera scenbilden — med exakt text går den genom verifieringsslingan
+  // (vision-koll, max 3 försök, programmatisk fallback) på serversidan.
+  async function genereraAi() {
+    setBusy(true);
+    setFel(null);
+    setTextInfo(null);
+    try {
+      const r = await fetch("/api/studio/reels/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "ai", prompt: imagePrompt, exactText: aiText.trim() }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte skapa bilden");
+      onValj(d.media.url, "ai");
+      if (d.textInfo) setTextInfo(d.textInfo);
+      else setSpar(null);
     } catch (e) {
       setFel(e instanceof Error ? e.message : "Något gick fel");
     } finally {
@@ -221,6 +246,38 @@ export default function ReelSceneMedia({
                     </button>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {spar === "ai" && (
+            <div className="mt-3 space-y-2">
+              <input
+                value={aiText} onChange={(e) => setAiText(e.target.value)} maxLength={120} disabled={busy}
+                placeholder="Text i bilden (valfri) — t.ex. Öppet i sommar"
+                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-pink-200"
+              />
+              <div className="flex items-center gap-2">
+                <button type="button" disabled={busy} onClick={() => void genereraAi()}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-pink-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-pink-700 disabled:opacity-50">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} Skapa bilden
+                </button>
+                <button type="button" onClick={() => setSpar(null)} className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
+                  <X className="h-3 w-3" /> Stäng
+                </button>
+              </div>
+              {textInfo && (
+                textInfo.verifierad ? (
+                  <p className="rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1.5 text-xs text-emerald-700">
+                    {textInfo.metod === "programmatisk"
+                      ? "Texten lades på stavningssäkert (bild utan text + exakt text ovanpå)."
+                      : `Texten kontrollerad och stämmer (försök ${textInfo.forsok}).`}
+                  </p>
+                ) : (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
+                    Texten i bilden avviker: ”{textInfo.avlastText || "ingen text hittades"}”. Prova igen.
+                  </p>
+                )
               )}
             </div>
           )}

@@ -273,16 +273,21 @@ export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16"
 // bildmodellen kan rita. Bildmodellen svarar "NO_IMAGE" på prosa/meddelanden — den
 // behöver ett motiv. thinkingBudget:0 (annars bränns token-budgeten på tänk → avhugget).
 // Faller tillbaka på ämnet självt om det inte går.
-export async function visualScene(topic: string, niche: string): Promise<string> {
+export async function visualScene(topic: string, niche: string, opts?: { textYta?: boolean }): Promise<string> {
   if (!GEMINI_KEY || !topic.trim()) return topic;
   try {
+    // textYta: bilden ska innehålla en skylt/lapp där exakt text sätts efteråt (B3) —
+    // då får scenen INTE förbjuda text, och ytan ska beskrivas. Texten själv nämns aldrig här.
+    const textDel = opts?.textYta
+      ? `Bilden ska innehålla en tydlig skylt, lapp eller yta där text kommer att sitta — beskriv motivet och var ytan är, men nämn INTE någon text. `
+      : `Inga texter/bokstäver i bilden. `;
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text:
           `Föreslå ETT konkret visuellt bildmotiv (ett riktigt foto) som passar detta inlägg för en ${niche}. ` +
-          `Svara med EN kort mening: vad som syns, stämning, ljus. Inga texter/bokstäver i bilden. ` +
+          `Svara med EN kort mening: vad som syns, stämning, ljus. ` + textDel +
           `Undvik vapen, knivar, blod eller något känsligt. Inlägg: "${topic.slice(0, 300)}"` }] }],
         generationConfig: { temperature: 0.6, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 } },
       }),

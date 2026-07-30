@@ -1,6 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
+import { dragPos } from "@/lib/studio/overrides";
 import ClientFooterOpticur from "@/components/studio/ClientFooterOpticur";
 import { SunOutline, StarBadge, BrushBox, isLightColor } from "@/components/studio/StudioBits";
 
@@ -38,7 +39,9 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
       <div style={{ padding: "40px 50px 0", textAlign: "center" }}>
         <div
           data-edit="headline1"
+          data-drag="h1"
           style={{
+            ...dragPos(payload, "h1"),
             fontFamily: "Inter, sans-serif",
             fontWeight: 800,
             textTransform: "uppercase",
@@ -53,7 +56,9 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
         {payload.headline2 ? (
           <div
             data-edit="headline2"
+            data-drag="h2"
             style={{
+              ...dragPos(payload, "h2"),
               fontFamily: "Inter, sans-serif",
               fontWeight: 800,
               color: c.ink,
@@ -92,7 +97,9 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
         {/* Penseldrags-ruta (färgbar vektor) — överlappar fotots underkant */}
         {payload.body ? (
           <div
+            data-drag="body"
             style={{
+              ...dragPos(payload, "body"),
               position: "absolute",
               left: 36,
               right: payload.badge.enabled ? 230 : 36,

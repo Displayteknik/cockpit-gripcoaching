@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { generateFlux, searchStockPhotos } from "@/lib/images";
+import { genereraMedExaktText } from "@/lib/studio/text-in-image";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { adoptReelMedia, listReelMedia } from "@/lib/studio/reel-media";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -84,6 +85,35 @@ export async function POST(req: NextRequest) {
     if (body.action === "ai") {
       if (!prompt) return NextResponse.json({ error: "Ingen bildbeskrivning" }, { status: 400 });
       const directives = await getKitDirectives(clientId);
+
+      // B3: scenen ska innehålla exakt text i själva bilden → samma verifieringsslinga
+      // som Bildhjälpen (vision-koll, max 3 försök, programmatisk fallback). Ordinarie
+      // vägen förbjuder läsbar text — den regeln gäller inte här.
+      const exactText = String((body as { exactText?: string }).exactText || "").slice(0, 120).trim();
+      if (exactText) {
+        const res = await genereraMedExaktText({
+          scen: `${prompt} Vertical 9:16 composition. Photographic and real.`,
+          text: exactText,
+          aspekt: "9:16",
+          stil: "lapp",
+          stilSuffix: imageDirectiveSuffix(directives),
+        });
+        if (res.error || !res.image) {
+          return NextResponse.json({ error: res.error || "Kunde inte skapa scenbilden med texten." }, { status: 500 });
+        }
+        const stored = await adoptReelMedia({
+          clientId,
+          dataUrl: res.image.startsWith("data:") ? res.image : undefined,
+          url: res.image.startsWith("data:") ? undefined : res.image,
+          source: "ai",
+          sourceDetail: `${prompt} [text: ${exactText}]`,
+          kravKvalitet: true,
+        });
+        return NextResponse.json({
+          media: stored,
+          textInfo: { metod: res.metod, forsok: res.forsok, verifierad: res.verifierad, avlastText: res.avlastText },
+        });
+      }
       // INGEN visualScene här. Den översätter PROSA till ett motiv och behövs i
       // Bildhjälpen, där indata är en bildtext. Reels-manuset levererar redan en färdig
       // engelsk motivbeskrivning, och att köra den genom översättningen en gång till

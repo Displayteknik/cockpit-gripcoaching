@@ -1,6 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
+import { dragPos } from "@/lib/studio/overrides";
 import ClientFooterOpticur from "@/components/studio/ClientFooterOpticur";
 import { StarBadge } from "@/components/studio/StudioBits";
 
@@ -94,7 +95,9 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
 
         {/* Gul jätterubrik med grön kontur */}
         <div
+          data-drag="h1"
           style={{
+            ...dragPos(payload, "h1"),
             fontFamily: "Inter, sans-serif",
             fontWeight: 800,
             textTransform: "uppercase",
@@ -112,7 +115,9 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
         {/* Underrubrik (centrerad, ingen sol) */}
         {payload.headline2 ? (
           <div
+            data-drag="h2"
             style={{
+              ...dragPos(payload, "h2"),
               fontFamily: "Inter, sans-serif",
               fontWeight: 700,
               color: c.primary,
@@ -128,7 +133,9 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
         {/* Brödtext (valfri) */}
         {payload.body ? (
           <div
+            data-drag="body"
             style={{
+              ...dragPos(payload, "body"),
               fontFamily: "Inter, sans-serif",
               fontWeight: 500,
               color: c.ink,

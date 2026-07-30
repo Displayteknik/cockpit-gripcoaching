@@ -126,6 +126,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // Bildbeskrivning från Bildhjälpen, kopplad till URL:en den gäller (så den inte blir stale
   // om användaren byter bild). Textförslagen grundas i vad bilden faktiskt föreställer.
   const [aiImageDesc, setAiImageDesc] = useState<{ url: string; desc: string } | null>(null);
+  // B3: exakt text som ska synas I bilden (eget fält, inte friprompten) + slingans resultat.
+  const [imgText, setImgText] = useState("");
+  const [imgTextInfo, setImgTextInfo] = useState<{ metod: string; forsok: number; verifierad: boolean; avlastText: string } | null>(null);
   const [imageFocusY, setImageFocusY] = useState(40);
   const [imgComment, setImgComment] = useState("");
   const [editingImg, setEditingImg] = useState(false);
@@ -408,16 +411,18 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   // ── Bildförslag (Pexels-stock eller AI-genererad) ──
   const suggestImage = useCallback(async (mode: "stock" | "ai") => {
-    setError(""); setSearchingImg(mode);
+    setError(""); setSearchingImg(mode); setImgTextInfo(null);
     try {
       const r = await fetch("/api/studio/suggest-image", {
         method: "POST", headers: { "Content-Type": "application/json" },
         // Skriv eget: ingen rubrik finns — använd bildtexten så bilden matchar det man skrev.
-        body: JSON.stringify({ mode, topic: topic || headline1 || caption.slice(0, 200), aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
+        // B3: exactText = texten som ska synas I bilden → verifieringsslinga server-side.
+        body: JSON.stringify({ mode, topic: topic || headline1 || caption.slice(0, 200), aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square", exactText: mode === "ai" ? imgText.trim() : "" }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Bildförslag misslyckades");
       setImgResults(d.photos || []);
+      if (d.textInfo) setImgTextInfo(d.textInfo);
       // AI-läge ger en scenbeskrivning för den genererade bilden → koppla till dess URL.
       if (mode === "ai" && d.description && d.photos?.[0]?.url) setAiImageDesc({ url: String(d.photos[0].url), desc: String(d.description) });
     } catch (e) {
@@ -425,7 +430,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSearchingImg("");
     }
-  }, [topic, headline1, caption, format]);
+  }, [topic, headline1, caption, format, imgText]);
 
   // ── Mediabibliotek: klientens sparade bilder (studio-images/<clientId>/) ──
   const loadMedia = useCallback(async () => {
@@ -1336,6 +1341,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {/* Bildhjälpen — skapa eller sök en passande bild ur din text (ingen egen bild krävs) */}
               <div className="pt-3 border-t border-gray-100 space-y-2">
                 <div className="text-sm font-medium text-gray-600">Ingen egen bild? Låt Bildhjälpen föreslå en som passar din text.</div>
+                {/* B3: exakt text i bilden — eget fält, stavas exakt via verifieringsslingan */}
+                <input
+                  value={imgText} onChange={(e) => setImgText(e.target.value)} maxLength={120}
+                  placeholder="Text i bilden (valfri) — t.ex. Öppet i sommar"
+                  className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2"
+                  style={{ ["--tw-ring-color" as string]: `${primary}55` }}
+                />
                 <div className="flex gap-2">
                   <button onClick={() => suggestImage("ai")} disabled={!!searchingImg}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
@@ -1358,6 +1370,20 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </button>
                     ))}
                   </div>
+                )}
+                {/* B3: slingans utfall — godkänt eller tydlig avvikelse-varning */}
+                {imgTextInfo && (
+                  imgTextInfo.verifierad ? (
+                    <div className="text-xs rounded-lg px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      {imgTextInfo.metod === "programmatisk"
+                        ? "Texten lades på stavningssäkert (bilden skapades utan text, texten renderades exakt ovanpå)."
+                        : `Texten i bilden är kontrollerad och stämmer (godkänd på försök ${imgTextInfo.forsok}).`}
+                    </div>
+                  ) : (
+                    <div className="text-xs rounded-lg px-3 py-2 bg-amber-50 text-amber-800 border border-amber-200">
+                      Texten i bilden avviker: ”{imgTextInfo.avlastText || "ingen text hittades"}”. Prova igen eller byt formulering.
+                    </div>
+                  )
                 )}
               </div>
               <p className="text-sm text-gray-500">Instagram kräver en bild. Facebook och LinkedIn funkar även utan.</p>
@@ -1954,7 +1980,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
               <div className={`relative mx-auto ${isCarousel && slideCount > 1 ? "px-11" : ""}`}>
                 <div className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
-                  <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined} />
+                  <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} onTextPatch={setOv} editColor={primary} slideIndex={isCarousel ? slideIdx : undefined} />
                   {!imageUrl && !videoUrl && !headline1.trim() && !body.trim() && (!isCarousel || slides.every((s) => !s.headline?.trim() && !s.body?.trim())) && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 p-6 bg-white/85 backdrop-blur-sm">
                       <span className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
@@ -1973,7 +1999,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 )}
               </div>
               {payload.imageUrl && (
-                <p className="text-xs text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma</p>
+                <p className="text-xs text-gray-400 text-center mt-2">Dra i bilden för att flytta · scrolla för att zooma · dra i en text för att placera den</p>
               )}
               <button onClick={() => setEditOpen(true)} disabled={!brand}
                 className="w-full mt-3 inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"

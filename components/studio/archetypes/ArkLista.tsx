@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs, hlColor, bodyColor, font, textPlate, lh } from "@/lib/studio/overrides";
+import { fs, hlColor, bodyColor, font, textPlate, lh, dragPos } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
 import { isLightColor } from "@/components/studio/StudioBits";
 
@@ -16,10 +16,10 @@ export default function ArkLista({ payload, brand }: { payload: StudioPayload; b
   return (
     <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.paper }}>
       <div style={{ padding: "56px 64px 20px" }}>
-        <div style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor(c.primary, payload), fontSize: fs(68, payload, "h1"), lineHeight: lh(1.08, payload), textTransform: "uppercase", letterSpacing: -0.5 }}><span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span></div>
-        {payload.headline2 ? <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: c.ink, fontSize: fs(34, payload, "h2"), lineHeight: lh(1.25, payload), marginTop: 18 }}><span data-edit="headline2" style={textPlate(payload)}>{payload.headline2}</span></div> : null}
+        <div data-drag="h1" style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor(c.primary, payload), fontSize: fs(68, payload, "h1"), lineHeight: lh(1.08, payload), textTransform: "uppercase", letterSpacing: -0.5, ...dragPos(payload, "h1") }}><span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span></div>
+        {payload.headline2 ? <div data-drag="h2" style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: c.ink, fontSize: fs(34, payload, "h2"), lineHeight: lh(1.25, payload), marginTop: 18, ...dragPos(payload, "h2") }}><span data-edit="headline2" style={textPlate(payload)}>{payload.headline2}</span></div> : null}
       </div>
-      <div style={{ flex: 1, padding: "10px 64px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 14 }}>
+      <div data-drag="body" style={{ flex: 1, padding: "10px 64px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 14, ...dragPos(payload, "body") }}>
         {items.map((item, i) => (
           <div key={i}>
             <div style={{ display: "flex", alignItems: "center", gap: 24, padding: "20px 0" }}>

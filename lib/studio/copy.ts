@@ -114,7 +114,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     "- FÖRBJUDET i body: stapla fristående fragment efter varandra. Aldrig så här: 'Syns i dagsljus. En kontakt för allt. Offert inom 24 timmar.' Skriv EN sammanhängande tanke istället.",
     "- INGEN uppmaning/CTA i något fält (inte 'boka', 'ring', 'kontakta oss', 'offert inom X'). Mallens fot har redan en CTA-knapp och bildtexten bär uppmaningen. Texten PÅ bilden ska bara få läsaren att stanna och känna igen sig.",
     harSiffror
-      ? "- SIFFROR: använd bara tal, priser och procent som faktiskt STÅR i varumärkesprofilen ovan. Hitta ALDRIG på statistik ('400 % fler blickar'), procentsatser eller priser. Osäker på en siffra: skriv utan siffra."
+      ? "- SIFFROR: använd bara tal, priser och procent som faktiskt STÅR i varumärkesprofilen ovan. Hitta ALDRIG på statistik ('400 % fler blickar'), kvoter ('8 av 10 kunder') eller priser — en kvot eller procentsats får bara användas om EXAKT den formuleringen står i profilen. Osäker på en siffra: skriv utan siffra."
       : "- SIFFROR: INGA tal, priser eller procent alls i denna text (klienten har inga verifierade siffror inlagda). Statistik utan källa är förbjuden. Skriv helt utan siffror.",
     "- VASSARE SPRÅK: konkret substantiv före abstrakt (skyltfönster, inte 'kommunikationsyta'), aktivt verb, vardagsord. Inga floskler, ingen svengelska, ingen myndighetston.",
     "- FÖRBJUDET i alla fält: emoji, symboler (✅▶•), punktlistor, radbrytningslistor, signatur (t.ex. '— Ingela'), telefonnummer, URL, hashtag. Kontaktuppgifter finns REDAN i mallen.",
@@ -154,6 +154,9 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   // och kvoter som "7 av 10" (annars slipper påhittad statistik förbi).
   const profilTal = new Set<string>();
   for (const m of profile.matchAll(/\d[\d\s.,]*\d|\d/g)) profilTal.add(m[0].replace(/[\s.,]/g, ""));
+  // Statistik-PÅSTÅENDEN ("8 av 10", "40 %") kräver att HELA frasen står i profilen —
+  // lösa tal räcker inte ("8" och "10" finns som öppettider men "8 av 10 kunder" är påhitt).
+  const profilKomp = profile.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
   const tillatna = new Set(hooks); // deterministisk backstop för roll-styrning + statistik-grind
   for (const v of result.all_variants) {
     const obj = parseJson(v.text);
@@ -174,6 +177,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     if (arStaplad(s.body)) continue; // telegramspråk: staplade fragment
     if ([s.headline1, s.headline2, s.body].some(harCta)) continue; // CTA hör i bildtext + fot-knapp
     if ([s.headline1, s.headline2, s.body].some((f) => harObackadSiffra(f, profilTal))) continue; // aldrig påhittade siffror (även "7 av 10")
+    if ([s.headline1, s.headline2, s.body].some((f) => harObackadStatistikfras(f, profilKomp))) continue; // kvot/procent-påståenden kräver frasen i profilen
     if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 150) continue;
     // Likhets-dedup: normalisera bort småord/skiljetecken så nästan-dubbletter
     // ("Vad säger blommorna?" vs "Vad säger dina blommor?") räknas som samma.
@@ -276,6 +280,22 @@ function harCta(s: string): boolean {
 function harObackadSiffra(s: string, profilTal: Set<string>): boolean {
   for (const m of s.matchAll(/\d[\d\s.,]*\d|\d/g)) {
     if (!profilTal.has(m[0].replace(/[\s.,]/g, ""))) return true;
+  }
+  return false;
+}
+
+/**
+ * Statistik-PÅSTÅENDEN på frasnivå: "X av Y" och "X %" måste stå som HEL fras i profilen.
+ * Token-grinden ovan räcker inte — "8" och "10" kan finnas som öppettider i profilen
+ * medan "8 av 10 kunder" är ren fabrikation (hände skarpt för Displayteknik).
+ */
+function harObackadStatistikfras(s: string, profilKomp: string): boolean {
+  const komp = (fras: string) => fras.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
+  for (const m of s.matchAll(/\d+\s*av\s*\d+/gi)) {
+    if (!profilKomp.includes(komp(m[0]))) return true;
+  }
+  for (const m of s.matchAll(/\d+(?:[.,]\d+)?\s*%/g)) {
+    if (!profilKomp.includes(komp(m[0]))) return true;
   }
   return false;
 }

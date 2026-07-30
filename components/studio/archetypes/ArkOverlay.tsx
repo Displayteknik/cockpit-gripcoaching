@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs, hlColor, bodyColor, imgPosition, imgScale, font, textPlate, lh } from "@/lib/studio/overrides";
+import { fs, hlColor, bodyColor, imgPosition, imgScale, font, textPlate, lh, dragPos } from "@/lib/studio/overrides";
 
 // Arketyp 6: Foto + text-overlay. Text ligger PÅ bilden med scrim för läsbarhet.
 // Stil ur brand.content.overlayStyle. För coaching/tjänst där bilden bär känslan
@@ -49,15 +49,15 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
         ) : null}
         <div style={{ position: "relative" }}>
           {payload.headline2 ? (
-            <div style={{ display: "inline-block", background: c.accent, color: (brand.colors.paper), padding: "6px 16px", borderRadius: 6, fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, fontSize: 24, marginBottom: 18, textTransform: "uppercase", letterSpacing: 1 }}>
+            <div data-drag="h2" style={{ display: "inline-block", background: c.accent, color: (brand.colors.paper), padding: "6px 16px", borderRadius: 6, fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, fontSize: 24, marginBottom: 18, textTransform: "uppercase", letterSpacing: 1, ...dragPos(payload, "h2") }}>
               <span data-edit="headline2">{payload.headline2}</span>
             </div>
           ) : null}
-          <div style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor("#fff", payload), fontSize: fs(74, payload, "h1"), lineHeight: lh(1.08, payload), letterSpacing: -1, textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
+          <div data-drag="h1" style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor("#fff", payload), fontSize: fs(74, payload, "h1"), lineHeight: lh(1.08, payload), letterSpacing: -1, textShadow: "0 2px 14px rgba(0,0,0,0.35)", ...dragPos(payload, "h1") }}>
             <span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span>
           </div>
           {payload.body ? (
-            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor("#fff", payload), opacity: 0.94, fontSize: fs(32, payload, "body"), lineHeight: lh(1.4, payload), marginTop: 22, maxWidth: 820, textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+            <div data-drag="body" style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor("#fff", payload), opacity: 0.94, fontSize: fs(32, payload, "body"), lineHeight: lh(1.4, payload), marginTop: 22, maxWidth: 820, textShadow: "0 1px 8px rgba(0,0,0,0.4)", ...dragPos(payload, "body") }}>
               <span data-edit="body" style={textPlate(payload)}>{payload.body}</span>
             </div>
           ) : null}
