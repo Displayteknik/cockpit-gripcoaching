@@ -281,13 +281,17 @@ export async function visualScene(topic: string, niche: string, opts?: { textYta
     const textDel = opts?.textYta
       ? `Bilden ska innehålla en tydlig skylt, lapp eller yta där text kommer att sitta — beskriv motivet och var ytan är, men nämn INTE någon text. `
       : `Inga texter/bokstäver i bilden. `;
+    // Motivet MÅSTE höra hemma i verksamheten. Skarpt fel: "Sluta köpa billigt" för ett
+    // digital signage-företag gav en sliten tröja — modellen tog budskapet som generisk
+    // metafor. Metaforer från andra branscher är förbjudna.
+    const branschDel = `Motivet ska omisskännligt höra hemma i just denna verksamhet (${niche}) — visa verksamhetens miljö, produkter eller kunder. Använd ALDRIG metaforer eller motiv från andra branscher (kläder, kaffe, schack och liknande). `;
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text:
           `Föreslå ETT konkret visuellt bildmotiv (ett riktigt foto) som passar detta inlägg för en ${niche}. ` +
-          `Svara med EN kort mening: vad som syns, stämning, ljus. ` + textDel +
+          `Svara med EN kort mening: vad som syns, stämning, ljus. ` + branschDel + textDel +
           `Undvik vapen, knivar, blod eller något känsligt. Inlägg: "${topic.slice(0, 300)}"` }] }],
         generationConfig: { temperature: 0.6, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 } },
       }),
@@ -298,6 +302,42 @@ export async function visualScene(topic: string, niche: string, opts?: { textYta
     return t && t.length > 8 ? t : topic;
   } catch {
     return topic;
+  }
+}
+
+// Motiv-grind: hör den genererade bilden hemma i verksamheten? Fail-closed kvalitetskoll
+// efter generering (skarpt fel: sliten tröja föreslogs för ett digital signage-företag).
+// Vid tveksamhet svarar modellen nej — hellre omtag/Sök foto än fel bransch i kundens flöde.
+export async function motivPassar(image: string, niche: string): Promise<boolean> {
+  if (!GEMINI_KEY || !image || !niche.trim()) return true;
+  try {
+    const m = image.match(/^data:(image\/\w+);base64,(.+)$/);
+    let inline: { mimeType: string; data: string };
+    if (m) {
+      inline = { mimeType: m[1], data: m[2] };
+    } else {
+      const r = await fetch(image);
+      if (!r.ok) return true;
+      const buf = Buffer.from(await r.arrayBuffer());
+      inline = { mimeType: r.headers.get("content-type") || "image/jpeg", data: buf.toString("base64") };
+    }
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [
+          { inlineData: inline },
+          { text: `Bilden ska användas i marknadsföring för en verksamhet inom: "${niche}". Hör motivet omisskännligt hemma i den verksamheten (dess miljö, produkter eller kunder)? En metafor från en annan bransch (t.ex. kläder, kaffe) räknas som NEJ. Svara ENDAST med JA eller NEJ.` },
+        ] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 10, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    });
+    if (!r.ok) return true;
+    const data = await r.json();
+    const svar = (data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "").trim().toUpperCase();
+    return !svar.startsWith("NEJ");
+  } catch {
+    return true;
   }
 }
 

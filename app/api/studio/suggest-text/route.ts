@@ -42,8 +42,9 @@ export async function POST(req: NextRequest) {
       templateId: String(body.templateId || ""),
       format: String(body.format || "1080x1350"),
       topic: String(body.topic || ""),
-      brandName: client?.name || "Opticur",
-      industry: client?.industry || "optiker",
+      // ALDRIG en annan klient som fallback (Opticur-läcka-familjen).
+      brandName: client?.name || "kunden",
+      industry: client?.industry || "",
       caption,
       imageDescription: bildbeskrivning,
       imageRole: bildroll,

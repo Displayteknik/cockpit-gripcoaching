@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
-import { searchStockPhotos, generateImagen, visualScene } from "@/lib/images";
+import { searchStockPhotos, generateImagen, visualScene, motivPassar } from "@/lib/images";
 import { genereraMedExaktText, type TextAspekt } from "@/lib/studio/text-in-image";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = await getActiveClient();
-    const niche = client?.industry || "optiker";
+    // ALDRIG en annan klients bransch som fallback (samma familj som Opticur-läckan) —
+    // saknas industry används klientnamnet, annars neutralt.
+    const niche = client?.industry || client?.name || "företaget";
     const body = await req.json().catch(() => ({}));
     const topic = (body.topic || "").toString().slice(0, 200) || niche;
 
@@ -66,7 +68,16 @@ export async function POST(req: NextRequest) {
       // Två steg: gör om ämnet/bildtexten (ofta prosa) till en visuell scen först — annars
       // svarar bildmodellen NO_IMAGE på ett meddelande/råd.
       const scene = await visualScene(topic, niche);
-      const gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
+      let gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
+      // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
+      // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
+      // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
+      if (gen.image && !(await motivPassar(gen.image, niche))) {
+        gen = await generateImagen(`${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
+        if (gen.image && !(await motivPassar(gen.image, niche))) {
+          return NextResponse.json({ error: "Motivet ville inte träffa er verksamhet den här gången. Prova “Sök foto”, eller skriv i ämnesraden vad bilden ska föreställa." }, { status: 500 });
+        }
+      }
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
       if (gen.error || !m) {
         // Snäll, handlingsbar text (t.ex. vid känsligt motiv som nekas) — peka mot Sök foto.

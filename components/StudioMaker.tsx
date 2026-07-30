@@ -465,10 +465,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   }, []);
 
   // §00: aldrig tom yta — generera on-brand bild ur inläggets innehåll och applicera direkt.
-  const generateOnBrandImage = useCallback(async () => {
+  // textOverride: generera ur EXAKT denna text (Skapa åt mig: den valda förslags-texten,
+  // state hinner inte uppdateras i samma tick).
+  const generateOnBrandImage = useCallback(async (textOverride?: string) => {
     setError(""); setSearchingImg("ai");
     try {
-      const t = [headline1, topic, body].filter(Boolean).join(". ").slice(0, 220) || topic;
+      const t = (textOverride || [headline1, topic, body].filter(Boolean).join(". ")).slice(0, 220) || topic;
       const r = await fetch("/api/studio/suggest-image", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "ai", topic: t, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
@@ -616,12 +618,18 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }
   }, [templateId, format, topic, caption, curImg, aiImageDesc]);
 
+  // Skapa åt mig: efter användarens VAL av förslag genereras bilden ur den valda texten.
+  const quickAutoImage = useRef(false);
   const applySuggestion = useCallback((s: Suggestion) => {
     setHeadline1(s.headline1 || "");
     setHeadline2(s.headline2 || "");
     setBody(s.body || "");
     setSuggestions([]); // dölj listan efter val — annars ligger samma förslag kvar i både steg 1 och steg 4
-  }, []);
+    if (quickAutoImage.current) {
+      quickAutoImage.current = false;
+      void generateOnBrandImage([s.headline1, s.body].filter(Boolean).join(". "));
+    }
+  }, [generateOnBrandImage]);
 
   // BILD-2: diff-dialog när genereringen vill ersätta text användaren själv skrivit.
   // Default = Behåll (ingen destruktiv åtgärd utan aktivt val).
@@ -1206,8 +1214,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }, 350);
   }, []);
 
-  // "Skapa åt mig" → färdigt förslag ur profilen: text (Skrivhjälpens toppförslag) + on-brand
-  // bild. Greta får något komplett att justera i stället för en tom sida.
+  // "Skapa åt mig" → tre förslag ur profilen som ANVÄNDAREN väljer bland (aldrig ett
+  // auto-valt). Efter valet (applySuggestion) genereras bilden ur den VALDA texten.
   const skapaAtMig = useCallback(async () => {
     setMode("template"); setQuickBusy(true); setError("");
     try {
@@ -1216,22 +1224,16 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         body: JSON.stringify({ templateId, format, topic: "" }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "Kunde inte skapa ett förslag — försök igen.");
-      setHeadline1(d.headline1 || ""); setHeadline2(d.headline2 || ""); setBody(d.body || "");
-      const t = [d.headline1, d.body].filter(Boolean).join(". ").slice(0, 220);
-      const ri = await fetch("/api/studio/suggest-image", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "ai", topic: t, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
-      });
-      const di = await ri.json();
-      const url = di.photos?.[0]?.url;
-      if (ri.ok && url) { setImage(url); if (di.description) setAiImageDesc({ url, desc: String(di.description) }); }
+      if (!r.ok) throw new Error(d.error || "Kunde inte skapa förslag — försök igen.");
+      setSuggestions(Array.isArray(d.suggestions) ? d.suggestions : []);
+      quickAutoImage.current = true; // efter användarens val: generera bild ur vald text
+      setTimeout(() => document.getElementById("studio-forslag")?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setQuickBusy(false);
     }
-  }, [templateId, format, setImage]);
+  }, [templateId, format]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1712,7 +1714,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {needsImage && !curImg && (
                 <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: `${primary}33`, background: `${primary}0a` }}>
                   <div className="text-xs text-gray-600">Den här mallen visar en bild. Ladda upp din egen nedan, eller låt oss skapa en bild i din stil ur innehållet.</div>
-                  <button onClick={generateOnBrandImage} disabled={searchingImg === "ai"}
+                  <button onClick={() => generateOnBrandImage()} disabled={searchingImg === "ai"}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     style={{ background: primary }}>
                     {searchingImg === "ai" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Skapa bild i din stil
@@ -1905,7 +1907,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </div>
                 {suggestions.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-gray-500">Klicka ett förslag, då fylls rubrik och text i nedan:</div>
+                    <div id="studio-forslag" className="text-xs font-medium text-gray-500">Klicka ett förslag, då fylls rubrik och text i nedan:</div>
                     {suggestions.map((s, i) => (
                       <button key={i} onClick={() => applySuggestion(s)}
                         className="w-full text-left rounded-xl border border-gray-200 hover:border-gray-300 bg-white/70 hover:bg-white p-3 transition-colors">
