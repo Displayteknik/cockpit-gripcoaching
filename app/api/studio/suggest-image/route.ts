@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
       const up = await sb.storage.from(BUCKET).upload(path, Buffer.from(m[2], "base64"), { contentType: "image/png" });
       if (up.error) return NextResponse.json({ error: up.error.message }, { status: 500 });
       const pub = sb.storage.from(BUCKET).getPublicUrl(path);
-      return NextResponse.json({ photos: [{ url: pub.data.publicUrl, thumb: pub.data.publicUrl, credit: "AI (Imagen 4.0)" }] });
+      // Returnera scenbeskrivningen: textförslagen grundas i vad bilden faktiskt föreställer
+      // (så en säljande rubrik inte hamnar ovanpå en problembild).
+      return NextResponse.json({ photos: [{ url: pub.data.publicUrl, thumb: pub.data.publicUrl, credit: "AI (Imagen 4.0)" }], description: scene });
     }
 
     // stock (Pexels) — riktiga foton, brand-medveten sökfråga

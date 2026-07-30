@@ -23,6 +23,32 @@ export interface StudioCopyOpts {
   topic?: string;
   brandName?: string;
   industry?: string;
+  caption?: string; // inläggets grundtext (om satt i sessionen) — texten grundas i den
+  imageDescription?: string; // vad bilden föreställer (Bildhjälpen-scen eller bildanalys)
+  imageRole?: "problem" | "losning" | "neutral"; // bildens roll → styr vilka texter som föreslås
+}
+
+// Vilka hook-typer passar en bild i respektive roll?
+// Problembild → sätt ord på problemet / ställ frågan (aldrig säljande påstående ovanpå).
+// Lösningsbild → landa påståendet/resultatet. Statistik kräver ALLTID verifierade siffror.
+function tillatnaHooks(role: StudioCopyOpts["imageRole"], harSiffror: boolean): string[] {
+  const bas =
+    role === "problem" ? ["fråga", "konträr", "berättelse"]
+    : role === "losning" ? ["påstående", "konträr", "berättelse"]
+    : ["fråga", "konträr", "berättelse", "påstående"];
+  return harSiffror ? [...bas, "statistik"] : bas;
+}
+
+// Har tenanten verifierade siffror inlagda (t.ex. priser/statistik i Brand-profilen)?
+// Grind för statistik-mallen: utan källa får inga siffror genereras.
+function profilHarSiffror(profile: string): boolean {
+  const komp = profile.replace(/[\s ]/g, "");
+  if (/(\d[\d.,]*)%/.test(komp)) return true; // procent
+  if (/(\d[\d.,]*)(kr|:-|sek)/i.test(komp)) return true; // pris
+  for (const m of komp.matchAll(/\d[\d.,]*/g)) {
+    if (Number(m[0].replace(/[.,]/g, "")) >= 1000) return true; // större tal (t.ex. 21000)
+  }
+  return false;
 }
 
 const FORBIDDEN = [
@@ -50,6 +76,26 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   const brand = opts.brandName || "kunden";
   const industry = opts.industry ? ` (${opts.industry})` : "";
   const softMax = meta?.headlineSoftMax ?? 26;
+  const harSiffror = profilHarSiffror(profile);
+  const hooks = tillatnaHooks(opts.imageRole, harSiffror);
+
+  // Grundningsblock: knyt texten till inläggets grundtext + vad bilden föreställer.
+  const caption = (opts.caption || "").trim();
+  const bildDesc = (opts.imageDescription || "").trim();
+  const rollGuide =
+    opts.imageRole === "problem"
+      ? "BILDENS ROLL: bilden föreställer PROBLEMET (före-läget). Texten ska sätta ord på problemet eller ställa frågan läsaren känner igen — presentera INTE lösningen och skriv INGEN säljande rubrik ovanpå. Det krockar med bilden. Låt bilden vara problemet och texten spegla det."
+      : opts.imageRole === "losning"
+      ? "BILDENS ROLL: bilden föreställer LÖSNINGEN/det önskade resultatet (efter-läget). Texten ska landa påståendet eller resultatet som bilden visar."
+      : "";
+  const groundBlock = (caption || bildDesc || rollGuide)
+    ? [
+        "\n=== GRUNDA TEXTEN I INLÄGGET (viktigast av allt) ===",
+        caption ? `INLÄGGETS GRUNDTEXT (captionen läsaren ser): "${caption.slice(0, 700)}". Texten på bilden ska höra ihop med detta budskap — inte upprepa det ordagrant, utan fånga kärnan i några få ord.` : "",
+        bildDesc ? `BILDEN FÖRESTÄLLER: ${bildDesc}. Texten ska förstärka bildens roll i berättelsen, aldrig säga emot det man ser.` : "",
+        rollGuide,
+      ].filter(Boolean).join("\n")
+    : "";
 
   const systemPrompt = [
     `Du skriver text som ska tryckas PÅ EN BILD (affisch/social-media-inlägg) för ${brand}${industry}.`,
@@ -58,6 +104,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     profile
       ? `\n=== KLIENTENS VARUMÄRKESPROFIL — grunda ALLT (röst, målgrupp, ord) på denna, uppfinn inget utanför den ===\n${profile.slice(0, 6000)}`
       : "",
+    groundBlock,
     "\n=== MALLENS FÄLT (tre korta fält, inget annat) ===",
     `Rubrik: "${meta?.fields.headline1 ?? "rubrik"}". Underrubrik: "${meta?.fields.headline2 ?? "underrubrik"}". Kort text: "${meta?.fields.body ?? "brödtext"}".`,
     "\n=== HÅRDA REGLER (affisch-format) ===",
@@ -66,7 +113,9 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     "- body: EN hel mening (två korta om det behövs), MAX ~90 tecken. Skriv som du pratar, inte som en punktlista i löptext.",
     "- FÖRBJUDET i body: stapla fristående fragment efter varandra. Aldrig så här: 'Syns i dagsljus. En kontakt för allt. Offert inom 24 timmar.' Skriv EN sammanhängande tanke istället.",
     "- INGEN uppmaning/CTA i något fält (inte 'boka', 'ring', 'kontakta oss', 'offert inom X'). Mallens fot har redan en CTA-knapp och bildtexten bär uppmaningen. Texten PÅ bilden ska bara få läsaren att stanna och känna igen sig.",
-    "- SIFFROR: använd bara tal, priser och procent som faktiskt STÅR i varumärkesprofilen ovan. Hitta ALDRIG på statistik ('400 % fler blickar'), procentsatser eller priser. Osäker på en siffra: skriv utan siffra.",
+    harSiffror
+      ? "- SIFFROR: använd bara tal, priser och procent som faktiskt STÅR i varumärkesprofilen ovan. Hitta ALDRIG på statistik ('400 % fler blickar'), procentsatser eller priser. Osäker på en siffra: skriv utan siffra."
+      : "- SIFFROR: INGA tal, priser eller procent alls i denna text (klienten har inga verifierade siffror inlagda). Statistik utan källa är förbjuden. Skriv helt utan siffror.",
     "- VASSARE SPRÅK: konkret substantiv före abstrakt (skyltfönster, inte 'kommunikationsyta'), aktivt verb, vardagsord. Inga floskler, ingen svengelska, ingen myndighetston.",
     "- FÖRBJUDET i alla fält: emoji, symboler (✅▶•), punktlistor, radbrytningslistor, signatur (t.ex. '— Ingela'), telefonnummer, URL, hashtag. Kontaktuppgifter finns REDAN i mallen.",
     "- Använd EN tydlig hook-typ och gör den scrollstoppande enligt playbooken (komprimerad till affisch-längd).",
@@ -78,9 +127,9 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   ].join("\n");
 
   const userPrompt = [
-    `Ämne/vinkel: ${opts.topic?.trim() || "välj den starkaste vinkeln för verksamheten"}. Postformat: ${opts.format}.`,
+    `Ämne/vinkel: ${opts.topic?.trim() || (caption ? "utgå från inläggets grundtext ovan" : "välj den starkaste vinkeln för verksamheten")}. Postformat: ${opts.format}.`,
     "Returnera ENDAST strikt JSON, inga kodstaket, inga kommentarer:",
-    '{"hookType":"fråga|statistik|konträr|berättelse|påstående","headline1":"...","headline2":"...","body":"..."}',
+    `{"hookType":"${hooks.join("|")}","headline1":"...","headline2":"...","body":"..."}`,
   ].join("\n");
 
   const result = await iterateGenerate({
@@ -89,9 +138,9 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     clientId: opts.clientId,
     category: "studio_copy",
     variants: 7, // fler råförslag → större chans att ≥3 distinkta överlever filter + dedup
-    // En hook-typ per försök. Utan detta väljer nästan alla varianter samma vinkel och
-    // de tre förslagen blir varianter av samma rubrik.
-    variantSuffixes: HOOK_TYPES.map(
+    // En hook-typ per försök, men BARA hooks som passar bildens roll (problembild → problem/fråga,
+    // lösningsbild → påstående/resultat) och med statistik bortgrindad utan verifierade siffror.
+    variantSuffixes: hooks.map(
       (h) => `DITT FÖRSÖK: använd hook-typen "${h}" och en egen vinkel som de andra försöken inte kan råka landa på. Sätt hookType till exakt "${h}".`,
     ),
     temperature: 0.9,
@@ -102,6 +151,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   const seen = new Set<string>();
   // Profilens siffror utan mellanslag → "21 000 kr" i profilen backar "21 000" i förslaget.
   const profilKomprimerad = profile.replace(/[\s ]/g, "");
+  const tillatna = new Set(hooks); // deterministisk backstop för roll-styrning + statistik-grind
   for (const v of result.all_variants) {
     const obj = parseJson(v.text);
     if (!obj) continue;
@@ -112,6 +162,8 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
       body: str(obj.body),
     };
     if (!s.headline1 || !s.body) continue;
+    // Statistik utan verifierade siffror, eller en hook-typ som krockar med bildens roll → bort.
+    if (s.hookType && !tillatna.has(s.hookType)) continue;
     if (![s.headline1, s.headline2, s.body].filter(Boolean).every(looksComplete)) continue;
     if (![s.headline1, s.headline2, s.body].every(noForbidden)) continue;
     if ([s.headline1, s.headline2, s.body].some(hasEmojiOrList)) continue; // affisch-format: rent

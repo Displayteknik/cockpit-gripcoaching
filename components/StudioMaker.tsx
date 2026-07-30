@@ -123,6 +123,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [badgeLine1, setBadgeLine1] = useState("FRÅN");
   const [badgeLine2, setBadgeLine2] = useState("0 KR");
   const [imageUrl, setImageUrl] = useState("");
+  // Bildbeskrivning från Bildhjälpen, kopplad till URL:en den gäller (så den inte blir stale
+  // om användaren byter bild). Textförslagen grundas i vad bilden faktiskt föreställer.
+  const [aiImageDesc, setAiImageDesc] = useState<{ url: string; desc: string } | null>(null);
   const [imageFocusY, setImageFocusY] = useState(40);
   const [imgComment, setImgComment] = useState("");
   const [editingImg, setEditingImg] = useState(false);
@@ -415,6 +418,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Bildförslag misslyckades");
       setImgResults(d.photos || []);
+      // AI-läge ger en scenbeskrivning för den genererade bilden → koppla till dess URL.
+      if (mode === "ai" && d.description && d.photos?.[0]?.url) setAiImageDesc({ url: String(d.photos[0].url), desc: String(d.description) });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -457,7 +462,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Bildgenerering misslyckades");
       const url = d.photos?.[0]?.url;
-      if (url) setImage(url); else throw new Error("Ingen bild genererades");
+      if (url) { setImage(url); if (d.description) setAiImageDesc({ url, desc: String(d.description) }); } else throw new Error("Ingen bild genererades");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -579,9 +584,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const suggest = useCallback(async () => {
     setError(""); setSuggesting(true); setSuggestions([]);
     try {
+      // Grunda förslagen i inläggets grundtext + bilden: skicka captionen och den aktuella
+      // bilden. Beskrivningen skickas bara om den hör till just den bilden (annars gör
+      // servern en snabb bildanalys). Så texten förstärker bildens roll istället för att krocka.
+      const imgDesc = aiImageDesc && aiImageDesc.url === curImg ? aiImageDesc.desc : "";
       const r = await fetch("/api/studio/suggest-text", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, format, topic }),
+        body: JSON.stringify({ templateId, format, topic, caption, imageUrl: curImg, imageDescription: imgDesc }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Förslag misslyckades");
@@ -591,7 +600,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSuggesting(false);
     }
-  }, [templateId, format, topic]);
+  }, [templateId, format, topic, caption, curImg, aiImageDesc]);
 
   const applySuggestion = useCallback((s: Suggestion) => {
     setHeadline1(s.headline1 || "");

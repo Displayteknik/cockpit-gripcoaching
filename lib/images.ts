@@ -296,6 +296,76 @@ export async function visualScene(topic: string, niche: string): Promise<string>
   }
 }
 
+export type BildRoll = "problem" | "losning" | "neutral";
+
+// Analysera en FÄRDIG bild (URL) → kort beskrivning + vilken roll den spelar i berättelsen.
+// Används när bilden inte kom från Bildhjälpen (då finns redan en scenbeskrivning), t.ex.
+// en uppladdad bild eller ett stockfoto. Rollen styr sedan vilka texter som föreslås:
+// visar bilden PROBLEMET → problem/fråge-texter; visar den LÖSNINGEN → påstående/resultat.
+export async function analyzeImageRole(imageUrl: string, caption?: string): Promise<{ description: string; role: BildRoll }> {
+  if (!GEMINI_KEY || !imageUrl) return { description: "", role: "neutral" };
+  try {
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) return { description: "", role: "neutral" };
+    const buf = Buffer.from(await imgRes.arrayBuffer());
+    if (buf.length >= 19 * 1024 * 1024) return { description: "", role: "neutral" };
+    const inline = { mimeType: imgRes.headers.get("content-type") || "image/jpeg", data: buf.toString("base64") };
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [
+          { inlineData: inline },
+          { text:
+            "Beskriv bilden på svenska i EN kort mening (vad syns, stämning, ljus). " +
+            "Avgör sedan bildens roll i BERÄTTELSEN inlägget berättar: visar den ett PROBLEM/en brist (\"före\"-läget, det som ska bytas ut), " +
+            "en LÖSNING/ett önskat resultat (\"efter\"-läget, det man vill ha), eller är den NEUTRAL. " +
+            (caption ? `Inläggets text som ramar in bilden: "${caption.slice(0, 400)}". Väg in den: samma bild kan vara ett problem eller en lösning beroende på hur texten ramar in den. ` : "") +
+            'Svara ENDAST med strikt JSON: {"description":"...","role":"problem|losning|neutral"}' },
+        ] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: "application/json" },
+      }),
+    });
+    if (!r.ok) return { description: "", role: "neutral" };
+    const data = await r.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "";
+    const obj = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}");
+    const role: BildRoll = obj.role === "problem" || obj.role === "losning" ? obj.role : "neutral";
+    return { description: typeof obj.description === "string" ? obj.description.trim() : "", role };
+  } catch {
+    return { description: "", role: "neutral" };
+  }
+}
+
+// Klassa bildens roll UTIFRÅN en känd beskrivning (t.ex. scenen från Bildhjälpen) — utan
+// att analysera pixlar. Billig textklassning, används när bilden genererades och vi redan
+// vet vad den föreställer.
+export async function classifyImageRoleFromText(description: string, caption?: string): Promise<BildRoll> {
+  if (!GEMINI_KEY || !description.trim()) return "neutral";
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text:
+          "En bild i ett marknadsinlägg föreställer följande. Avgör bildens roll: PROBLEM/brist (\"före\", något slitet/trist/frustrerande), " +
+          "LÖSNING/önskat resultat (\"efter\", proffsigt/tilltalande), eller NEUTRAL. " +
+          (caption ? `Inläggets text: "${caption.slice(0, 300)}". ` : "") +
+          `Bild: "${description.slice(0, 300)}". ` +
+          'Svara ENDAST med JSON: {"role":"problem|losning|neutral"}' }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 60, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: "application/json" },
+      }),
+    });
+    if (!r.ok) return "neutral";
+    const data = await r.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "";
+    const role = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}").role;
+    return role === "problem" || role === "losning" ? role : "neutral";
+  } catch {
+    return "neutral";
+  }
+}
+
 // Redigera en befintlig bild via textinstruktion (bild-till-bild, "Nano Banana").
 // Ex: "visa bara barnet, inte optikern, annars lika". Behåller komposition/stil/ljus
 // och ändrar bara det instruktionen ber om. Returnerar data-URL (PNG/JPEG base64).
