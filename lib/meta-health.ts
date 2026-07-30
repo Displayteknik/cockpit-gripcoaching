@@ -64,13 +64,17 @@ async function record(
   }
 }
 
-export interface HealthSweepSummary { checked: number; ok: number; warning: number; dead: number }
+export interface HealthSweepSummary {
+  checked: number; ok: number; warning: number; dead: number;
+  details?: { name: string; scope: "owner" | "page"; status: HealthStatus; detail: string }[];
+}
 
 // dryrun = kör alla kontroller men UTAN sidoeffekter (inga DB-skrivningar, inga mail).
 // Används för att verifiera en nyss satt IG_APP_SECRET utan att riskera falsklarm.
 export async function runHealthChecks(dryrun = false): Promise<HealthSweepSummary> {
   const sb = supabaseService();
   const summary: HealthSweepSummary = { checked: 0, ok: 0, warning: 0, dead: 0 };
+  if (dryrun) summary.details = []; // per-konto-diagnos, bara i torrläge
 
   // Utan app-secret kan INGEN token verifieras (debug_token + appsecret_proof kräver den).
   // Hoppa hela svepet hellre än att markera allt som "död" och spamma falska larm till kunder.
@@ -92,7 +96,11 @@ export async function runHealthChecks(dryrun = false): Promise<HealthSweepSummar
     }
     // Räkna bara om ägar-koppling finns (annars är "ingen token" väntat, inte ett larm).
     const { data: ownerRow } = await sb.from("meta_owner_connection").select("id").limit(1).maybeSingle();
-    if (ownerRow) { if (!dryrun) await record(sb, res, "Ägar-konto (Meta)"); summary.checked++; summary[res.status]++; }
+    if (ownerRow) {
+      if (!dryrun) await record(sb, res, "Ägar-konto (Meta)");
+      else summary.details!.push({ name: "Ägar-konto (Meta)", scope: "owner", status: res.status, detail: res.detail });
+      summary.checked++; summary[res.status]++;
+    }
   } catch { /* isolera ägar-fel */ }
 
   // 2. Per-tenant. tenant_ig_connections + legacy clients (ig_account_id utan tenant-rad).
@@ -117,6 +125,7 @@ export async function runHealthChecks(dryrun = false): Promise<HealthSweepSummar
         res = { clientId, scope: "page", ...statusFromToken(dbgValid, expiresAt, readOk) };
       }
       if (!dryrun) await record(sb, res, nameOf.get(clientId) || "Kund");
+      else summary.details!.push({ name: nameOf.get(clientId) || "Kund", scope: "page", status: res.status, detail: res.detail });
       summary.checked++; summary[res.status]++;
     } catch { /* isolera tenant-fel, fortsätt svepet */ }
   }
