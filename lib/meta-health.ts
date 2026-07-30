@@ -16,10 +16,13 @@ const WARN_DAYS = 7;
 
 interface CheckResult { clientId: string | null; scope: "owner" | "page"; status: HealthStatus; detail: string }
 
-function statusFromToken(isValid: boolean, expiresAt: number | undefined, readOk: boolean): { status: HealthStatus; detail: string } {
-  if (!isValid) return { status: "dead", detail: "debug_token: is_valid=false" };
+// dbgValid: true = giltig, false = definitivt ogiltig, null = okänt (debug_token svarade inte).
+// readOk = det billiga läsanropet lyckades. Läsanropet är det AUKTORITATIVA livstecknet: ett
+// transient debug_token-fel (null) med lyckad läsning räknas som OK, aldrig som falskt "död".
+function statusFromToken(dbgValid: boolean | null, expiresAt: number | undefined, readOk: boolean): { status: HealthStatus; detail: string } {
+  if (dbgValid === false) return { status: "dead", detail: "debug_token: is_valid=false" };
   if (!readOk) return { status: "dead", detail: "läsanrop mot Graph misslyckades" };
-  if (expiresAt && expiresAt > 0) {
+  if (dbgValid === true && expiresAt && expiresAt > 0) {
     const daysLeft = (expiresAt * 1000 - Date.now()) / 86_400_000;
     if (daysLeft < WARN_DAYS) return { status: "warning", detail: `token går ut om ${Math.max(0, Math.round(daysLeft))} dgr` };
   }
@@ -67,6 +70,10 @@ export async function runHealthChecks(): Promise<HealthSweepSummary> {
   const sb = supabaseService();
   const summary: HealthSweepSummary = { checked: 0, ok: 0, warning: 0, dead: 0 };
 
+  // Utan app-secret kan INGEN token verifieras (debug_token + appsecret_proof kräver den).
+  // Hoppa hela svepet hellre än att markera allt som "död" och spamma falska larm till kunder.
+  if (!process.env.IG_APP_SECRET) return summary;
+
   // Namn-uppslag.
   const { data: clientsData } = await sb.from("clients").select("id, name");
   const nameOf = new Map<string, string>((clientsData || []).map((c) => [c.id, c.name || "Kund"]));
@@ -100,12 +107,12 @@ export async function runHealthChecks(): Promise<HealthSweepSummary> {
       if (!conn?.ig_access_token) {
         res = { clientId, scope: "page", status: "dead", detail: "ingen token kunde läsas" };
       } else {
-        let isValid = false;
+        let dbgValid: boolean | null = null;
         let expiresAt: number | undefined;
         let readOk = false;
-        try { const dbg = await debugToken(conn.ig_access_token); isValid = !!dbg.is_valid; expiresAt = dbg.expires_at; } catch { isValid = false; }
+        try { const dbg = await debugToken(conn.ig_access_token); dbgValid = !!dbg.is_valid; expiresAt = dbg.expires_at; } catch { dbgValid = null; }
         try { await getIgUsername(igId, conn.ig_access_token); readOk = true; } catch { readOk = false; }
-        res = { clientId, scope: "page", ...statusFromToken(isValid, expiresAt, readOk) };
+        res = { clientId, scope: "page", ...statusFromToken(dbgValid, expiresAt, readOk) };
       }
       await record(sb, res, nameOf.get(clientId) || "Kund");
       summary.checked++; summary[res.status]++;
