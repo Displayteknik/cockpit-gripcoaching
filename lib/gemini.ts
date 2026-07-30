@@ -1,6 +1,8 @@
 // Gemini API wrapper — server-side only. Uses GEMINI_API_KEY env var.
 // Models: gemini-2.5-flash (snabb, idégenerering), gemini-2.5-pro (coach, content, djup)
 
+import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
+
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 export type GeminiModel = "gemini-2.5-flash" | "gemini-2.5-pro";
@@ -18,6 +20,26 @@ export interface GenerateOptions {
   temperature?: number;
   maxOutputTokens?: number;
   jsonMode?: boolean;
+  /**
+   * Globala skrivregler (lib/content/writing-rules) vävs in i systemInstruction.
+   * DEFAULT PÅ för allt som har en systemInstruction — så varje textgenerator, även
+   * framtida, får reglerna utan att någon behöver komma ihåg det. Sätt false för
+   * strukturerade anrop som inte producerar kundtext (extraktion, klassning, vision).
+   */
+  skrivregler?: boolean;
+}
+
+/**
+ * Väver in de globala skrivreglerna sist i systemInstruction (sist = väger tyngst).
+ * Idempotent: en route som redan lagt in blocket själv får det inte två gånger.
+ * Detta är kärnpunkten som gör språkkvaliteten systemsäkrad i stället för att bero på
+ * att varje enskild generator kommer ihåg reglerna.
+ */
+function medSkrivregler(opts: GenerateOptions): string {
+  const sys = opts.systemInstruction || "";
+  if (opts.skrivregler === false) return sys;
+  if (sys.includes("GLOBALA SKRIVREGLER")) return sys;
+  return `${sys}\n\n${WRITING_RULES_BLOCK}`;
 }
 
 export async function generate(opts: GenerateOptions): Promise<string> {
@@ -40,7 +62,7 @@ export async function generate(opts: GenerateOptions): Promise<string> {
   };
 
   if (opts.systemInstruction) {
-    body.systemInstruction = { parts: [{ text: opts.systemInstruction }] };
+    body.systemInstruction = { parts: [{ text: medSkrivregler(opts) }] };
   }
 
   const res = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
@@ -82,7 +104,7 @@ export async function generateWithUsage(opts: GenerateOptions): Promise<Generate
       ...(opts.jsonMode ? { responseMimeType: "application/json" } : {}),
     },
   };
-  if (opts.systemInstruction) body.systemInstruction = { parts: [{ text: opts.systemInstruction }] };
+  if (opts.systemInstruction) body.systemInstruction = { parts: [{ text: medSkrivregler(opts) }] };
 
   const res = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
     method: "POST",
@@ -147,7 +169,9 @@ export async function groundedGenerate(
 }
 
 export async function generateJSON<T = unknown>(opts: GenerateOptions): Promise<T> {
-  const raw = await generate({ ...opts, jsonMode: true });
+  // Strukturerad output (klassning, extraktion) = ingen kundtext → prosa-reglerna skulle
+  // bara bli brus. Anroparen kan sätta skrivregler: true om JSON:en bär kundtext.
+  const raw = await generate({ skrivregler: false, ...opts, jsonMode: true });
   try {
     return JSON.parse(raw) as T;
   } catch {

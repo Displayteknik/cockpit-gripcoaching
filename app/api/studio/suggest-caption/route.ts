@@ -5,7 +5,7 @@ import { getProfileAsMarkdown } from "@/lib/knowledge";
 import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
-import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
+import { sanitizeGenerated, skrivreglerPa, WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
       "- FÖRBJUDNA ord: kraftfull, banbrytande, game-changer, handlar om, nästa nivå, holistisk, skalbar.",
       "- Inga telefonnummer/URL:er. Returnera ENDAST själva captionen (med radbrytningar), ingen förklaring.",
       dontsRule(directives.donts),
+      "",
+      WRITING_RULES_BLOCK,
     ].filter(Boolean).join("\n");
 
     const contentBlock = isCarousel

@@ -701,6 +701,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setImageUrl((d.imageUrl as string) ?? ""); setImageFocusY((d.imageFocusY as number) ?? 40);
     setBrushColor((d.brushColor as string) || DEFAULT_BRUSH);
     setCaption((d.caption as string) ?? "");
+    setChannelCaptions((d.channelCaptions as Record<ChannelKey, string>) ?? { ig: "", fb: "", li: "" });
     setOverrides({ ...DEFAULT_OVERRIDES, ...((d.overrides as object) || {}) });
     setSlides(Array.isArray(d.slides) ? (d.slides as StudioSlide[]) : []);
     setSlideIdx(0);
@@ -740,7 +741,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const title = headline1 || caption.slice(0, 40) || body.slice(0, 40) || "Namnlöst inlägg";
       const r = await fetch("/api/studio/posts", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption }, compass }),
+        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption, channelCaptions }, compass }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte spara i biblioteket");
@@ -754,7 +755,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSavingPost(false);
     }
-  }, [headline1, body, caption, loadedPostId, payload, refreshPosts, compass]);
+  }, [headline1, body, caption, channelCaptions, loadedPostId, payload, refreshPosts, compass]);
 
   // "Spara utkast" = spara lokalt (snabb återuppta) OCH i biblioteket så det syns i
   // "Tidigare skapelser" längst ner. Tidigare sparade "Spara utkast" bara localStorage →

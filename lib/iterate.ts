@@ -7,6 +7,7 @@ import { scoreOutput, fetchWinningExamples, type VoiceScore } from "./voice-scor
 import { getVoiceFingerprint, type VoiceFingerprint } from "./voice-fingerprint";
 import { supabaseService } from "./supabase-admin";
 import { SPECIALIST_GUARDRAILS } from "./specialists";
+import { WRITING_RULES_BLOCK } from "./content/writing-rules";
 
 export interface IterateOptions {
   systemPrompt: string;
@@ -19,6 +20,9 @@ export interface IterateOptions {
   category?: string; // for winning-example-fetch
   targetLength?: { min: number; max: number };
   contentCompass?: string; // Content Compass-block (anatomi + funnel/4A/DISC). Tomt = av.
+  // Per-variant-tillagg till userPrompt (index i = variant i). Tvingar spridning mellan
+  // varianterna, t.ex. en hook-typ per forsok, istallet for att alla valjer samma vinkel.
+  variantSuffixes?: string[];
   // Om inget clientId: kor utan voice-score, returnera forsta varianten
 }
 
@@ -70,18 +74,22 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
   }
   // Lager 2 till 5 (inläggsanatomi + Content Compass), efter rösten och före guardrails.
   if (opts.contentCompass) fullSystem += "\n\n" + opts.contentCompass;
+  // Globala skrivregler — kärnpunkt for Anthropic-vagen (studio-copy + alla specialister).
+  // Idempotent: laggs inte dubbelt om anroparen redan vavt in blocket.
+  if (!fullSystem.includes("GLOBALA SKRIVREGLER")) fullSystem += "\n\n" + WRITING_RULES_BLOCK;
   fullSystem += SPECIALIST_GUARDRAILS;
 
   // Generera N varianter parallellt
-  const calls = Array.from({ length: variants }, () =>
-    anthropic.messages.create({
+  const calls = Array.from({ length: variants }, (_, i) => {
+    const suffix = opts.variantSuffixes?.[i % (opts.variantSuffixes.length || 1)];
+    return anthropic.messages.create({
       model,
       max_tokens: maxTokens,
       temperature: temp,
       system: fullSystem,
-      messages: [{ role: "user", content: opts.userPrompt }],
-    })
-  );
+      messages: [{ role: "user", content: suffix ? `${opts.userPrompt}\n\n${suffix}` : opts.userPrompt }],
+    });
+  });
 
   const results = await Promise.allSettled(calls);
 
