@@ -13,6 +13,8 @@ import {
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
 import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, STUDIO_FONTS } from "@/lib/studio/payload";
+import { laddaBitmap, renderImageEdit, normalizeImageEdit, type ImageEdit } from "@/lib/studio/image-edit";
+import BildRedigerare from "@/components/studio/BildRedigerare";
 import { profileForDate, type CompassSchedule, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
 import { FUNNEL_LABEL_SV, FOURA_LABEL_SV, DISC_LABEL_SV } from "@/lib/content-compass/labels";
 import type { FourA } from "@/lib/content-framework";
@@ -123,6 +125,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [badgeLine1, setBadgeLine1] = useState("FRÅN");
   const [badgeLine2, setBadgeLine2] = useState("0 KR");
   const [imageUrl, setImageUrl] = useState("");
+  // BILD-1: bildredigering i Skriv eget-läget. editedPreview = exakt publicerings-pixlarna
+  // (samma canvas-funktion driver preview och publicering → pixelparitet per konstruktion).
+  const [imageEdit, setImageEdit] = useState<ImageEdit | null>(null);
+  const [editedPreview, setEditedPreview] = useState("");
   // Bildbeskrivning från Bildhjälpen, kopplad till URL:en den gäller (så den inte blir stale
   // om användaren byter bild). Textförslagen grundas i vad bilden faktiskt föreställer.
   const [aiImageDesc, setAiImageDesc] = useState<{ url: string; desc: string } | null>(null);
@@ -262,14 +268,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     () => ({
       clientId: slug, templateId, format, headline1, headline2, body,
       badge: { enabled: meta.fields.badge && badgeEnabled, line1: badgeLine1, line2: badgeLine2 },
-      imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl,
+      imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, imageEdit,
       // Ämnet/grafikbriefen sparas med inlägget — annars tappas den vid omladdning och
       // Bildhjälpen står tom när man öppnar ett planerat utkast igen.
       brief: topic,
       // Spara läget så inlägget öppnas i samma vy det skapades i (mall vs skriv eget).
       mode,
     }),
-    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, topic, mode],
+    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, imageEdit, topic, mode],
   );
 
   const isCarousel = Boolean(meta.carousel);
@@ -297,7 +303,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // Bild: i karusell-läge hör bilden till AKTUELL slide, annars till inlägget.
   const setImage = useCallback((url: string) => {
     if (isCarousel) updateSlide(slideIdx, { imageUrl: url });
-    else setImageUrl(url);
+    else { setImageUrl(url); setImageEdit(null); } // ny bild → redigeraren sätter färsk default
   }, [isCarousel, slideIdx, updateSlide]);
   // Aktuell bild att visa/redigera (slidens bild i karusell, annars inläggets).
   const curImg = isCarousel ? (slides[slideIdx]?.imageUrl || "") : imageUrl;
@@ -713,6 +719,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setHeadline1((d.headline1 as string) ?? ""); setHeadline2((d.headline2 as string) ?? ""); setBody((d.body as string) ?? "");
     setBadgeEnabled(!!badge.enabled); setBadgeLine1(badge.line1 ?? "FRÅN"); setBadgeLine2(badge.line2 ?? "0 KR");
     setImageUrl((d.imageUrl as string) ?? ""); setImageFocusY((d.imageFocusY as number) ?? 40);
+    setImageEdit(normalizeImageEdit(d.imageEdit));
     setBrushColor((d.brushColor as string) || DEFAULT_BRUSH);
     setCaption((d.caption as string) ?? "");
     setChannelCaptions((d.channelCaptions as Record<ChannelKey, string>) ?? { ig: "", fb: "", li: "" });
@@ -981,6 +988,47 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     navigator.clipboard?.writeText(capFor(k)).then(() => { setCopied(k); setTimeout(() => setCopied(""), 1500); }).catch(() => {});
   }, [capFor]);
 
+  // BILD-1: förhandsvisningen visar SAMMA canvas-output som publiceras (pixelparitet).
+  // Debounce så drag i beskärningsramen inte renderar för varje pixel.
+  useEffect(() => {
+    if (mode !== "simple" || !imageUrl || !imageEdit) { setEditedPreview((p) => { if (p) URL.revokeObjectURL(p); return ""; }); return; }
+    let aktiv = true;
+    const t = setTimeout(async () => {
+      try {
+        const bm = await laddaBitmap(imageUrl);
+        const blob = await renderImageEdit(bm, imageEdit);
+        bm.close();
+        if (!aktiv) return;
+        const url = URL.createObjectURL(blob);
+        setEditedPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return url; });
+      } catch { if (aktiv) setEditedPreview(""); }
+    }, 250);
+    return () => { aktiv = false; clearTimeout(t); };
+  }, [mode, imageUrl, imageEdit]);
+
+  // BILD-1: publiceringsbilden = exakt samma render som previewn, uppladdad till studio-images.
+  const uploadEditedImage = useCallback(async (): Promise<string | null> => {
+    if (!imageUrl || !imageEdit) return null;
+    try {
+      const bm = await laddaBitmap(imageUrl);
+      const blob = await renderImageEdit(bm, imageEdit);
+      bm.close();
+      const file = new File([blob], `bild-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const r = await fetch("/api/studio/upload-url", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
+      });
+      const d = await r.json();
+      if (!r.ok) return null;
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+      const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
+      if (up.error) return null;
+      return d.publicUrl as string;
+    } catch {
+      return null;
+    }
+  }, [imageUrl, imageEdit]);
+
   // Rendera den FÄRDIGA designen (bild + ram + text + badge) klient-sida till en PNG och
   // ladda upp den — så det är DESIGNEN som publiceras, inte råfotot. Playwright-export körs
   // bara lokalt (501 i moln); detta fångar samma live-render i webbläsaren. null = misslyckades.
@@ -1022,7 +1070,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       // Skriv eget = publicera råfotot direkt (ingen mall). Reel = videon. Annars den
       // FÄRDIGA mall-designen (fallback: råfotot).
-      const designUrl = mode === "simple" ? imageUrl : postType === "reel" ? imageUrl : (await renderDesignPng()) || imageUrl;
+      // BILD-1: i Skriv eget publiceras den REDIGERADE bilden (samma pixlar som previewn),
+      // inte råfotot. Utan redigering (t.ex. gammal draft) → råfotot som förut.
+      const designUrl = mode === "simple" ? ((await uploadEditedImage()) || imageUrl) : postType === "reel" ? imageUrl : (await renderDesignPng()) || imageUrl;
       // Schemalagt → säkerställ en biblioteks-rad så scheduled_at skrivs och inlägget syns i Kalendern.
       let postId = loadedPostId;
       if (scheduleDate && !postId) postId = await savePost(false);
@@ -1070,7 +1120,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setPubBusy("");
     }
-  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, mode, renderDesignPng, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost, headline1, body]);
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, mode, renderDesignPng, uploadEditedImage, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost, headline1, body]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const simpleFileRef = useRef<HTMLInputElement>(null);
@@ -1312,6 +1362,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <input ref={simpleFileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
               </div>
+              {/* BILD-1: anpassa fotot till IG-format direkt här — aldrig mer Canva-omväg */}
+              {imageUrl && (
+                <BildRedigerare src={imageUrl} edit={imageEdit} onChange={setImageEdit}
+                  primary={primary} brandColor={brand?.colors?.primary || primary} />
+              )}
               <button onClick={toggleMedia}
                 className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                 <FolderOpen className="w-4 h-4" /> {showMedia ? "Dölj mina bilder" : "Mina bilder"}
@@ -1538,11 +1593,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
               </div>
+              {/* BILD-1: fokuspunkt-reglaget ersatt — bilden justeras direkt i förhandsvisningen */}
               {curImg && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Vertikal fokuspunkt ({imageFocusY}%)</label>
-                  <input type="range" min={0} max={100} value={imageFocusY} onChange={(e) => setImageFocusY(Number(e.target.value))} className="w-full" style={{ accentColor: primary }} />
-                </div>
+                <p className="text-xs text-gray-400">Justera bilden direkt i förhandsvisningen: dra för att flytta, scrolla för att zooma.</p>
               )}
 
               {/* Ändra bilden via kommentar (AI redigerar den befintliga bilden) */}
@@ -2160,7 +2213,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <div key={key} className="space-y-3">
                     <ChannelPreview channel={key} renderSrc={channelRenderSrc} format={format} caption={eff}
                       clientName={client?.name || slug} handle={key === "ig" ? igConn?.handle : null} primary={primary}
-                      imageSrc={mode === "simple" ? imageUrl : undefined} />
+                      imageSrc={mode === "simple" ? (editedPreview || imageUrl) : undefined} />
 
                     {/* Per-kanal-caption (redigerbar) — faller tillbaka på grund-captionen */}
                     <div className="rounded-xl border bg-gray-50 p-2.5 space-y-1.5" style={{ borderColor: `${brand.color}26` }}>

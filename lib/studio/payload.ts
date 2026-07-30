@@ -1,6 +1,8 @@
 // Studio — payload-kontrakt (samma för alla mallar, se docs/studio/PLAN.md §3.3 i KICKOFF).
 // Deterministisk: mallen ritas ENBART från detta objekt. AI rör aldrig layout.
 
+import { normalizeImageEdit, type ImageEdit } from "@/lib/studio/image-edit";
+
 export type StudioFormat = "1080x1350" | "1080x1080" | "1080x1920";
 
 // Etikett för formatväljaren (client-säker).
@@ -71,6 +73,8 @@ export interface StudioPayload {
   slides: StudioSlide[]; // ark-karusell: N slides → N PNG. Tom för icke-karusell-mallar.
   videoUrl: string; // reel: uppladdad video (studio-videos). Studio-rendern = 9:16-cover. Tom = ingen video.
   brief: string; // grafikbrief: vad bilden ska föreställa. Ritas ALDRIG ut — styr Bildhjälpen.
+  // BILD-1: bildredigering i Skriv eget-läget (beskärning/hela-bilden). null = orört råfoto.
+  imageEdit: ImageEdit | null;
 }
 
 export const MAX_SLIDES = 10;
@@ -129,6 +133,7 @@ export function normalizePayload(raw: Partial<StudioPayload>): StudioPayload {
     slides: normalizeSlides(raw.slides),
     videoUrl: typeof raw.videoUrl === "string" ? raw.videoUrl : "",
     brief: typeof raw.brief === "string" ? raw.brief.slice(0, 600) : "",
+    imageEdit: normalizeImageEdit(raw.imageEdit),
   };
 }
 
