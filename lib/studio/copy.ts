@@ -149,8 +149,11 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
 
   const out: { s: StudioCopySuggestion; score: number }[] = [];
   const seen = new Set<string>();
-  // Profilens siffror utan mellanslag → "21 000 kr" i profilen backar "21 000" i förslaget.
-  const profilKomprimerad = profile.replace(/[\s ]/g, "");
+  // Alla siffer-/pris-tokens i profilen som en mängd (utan mellanslag/tusenavgränsare).
+  // "21 000 kr" → "21000". Används för att backa VARJE siffra i förslaget — även små tal
+  // och kvoter som "7 av 10" (annars slipper påhittad statistik förbi).
+  const profilTal = new Set<string>();
+  for (const m of profile.matchAll(/\d[\d\s.,]*\d|\d/g)) profilTal.add(m[0].replace(/[\s.,]/g, ""));
   const tillatna = new Set(hooks); // deterministisk backstop för roll-styrning + statistik-grind
   for (const v of result.all_variants) {
     const obj = parseJson(v.text);
@@ -170,7 +173,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     if (hasContactInfo(s.body)) continue; // telefon/URL finns redan i mallens fot
     if (arStaplad(s.body)) continue; // telegramspråk: staplade fragment
     if ([s.headline1, s.headline2, s.body].some(harCta)) continue; // CTA hör i bildtext + fot-knapp
-    if ([s.headline1, s.headline2, s.body].some((f) => harObackadSiffra(f, profilKomprimerad))) continue; // aldrig påhittade siffror
+    if ([s.headline1, s.headline2, s.body].some((f) => harObackadSiffra(f, profilTal))) continue; // aldrig påhittade siffror (även "7 av 10")
     if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 150) continue;
     // Likhets-dedup: normalisera bort småord/skiljetecken så nästan-dubbletter
     // ("Vad säger blommorna?" vs "Vad säger dina blommor?") räknas som samma.
@@ -264,18 +267,15 @@ function harCta(s: string): boolean {
 }
 
 /**
- * Fail-closed siffergrind: riskabla tal (procent, kronor, tal >= 1000) MÅSTE finnas i
- * varumärkesprofilen. Stoppar påhittad statistik ("400 % fler blickar") men släpper igenom
- * äkta prisuppgifter ur profilen ("43 tum, 21 000 kr"). Saknas profil → alla riskabla tal
- * avvisas, hellre text utan siffra än en uppfunnen siffra i kundens namn.
+ * Fail-closed siffergrind: VARJE siffra i texten måste finnas som ett verkligt tal i
+ * varumärkesprofilen. Stoppar all påhittad statistik — både "400 % fler blickar" OCH små
+ * kvoter som "7 av 10 går förbi" — men släpper igenom äkta prisuppgifter ("43 tum, 21 000 kr").
+ * Matchar hela tal-tokens (inte delsträngar), så "7" inte råkar backas av "27500" i profilen.
+ * Saknas profil → profilTal tom → alla siffror avvisas. Hellre text utan siffra än en uppfunnen.
  */
-function harObackadSiffra(s: string, profilKomprimerad: string): boolean {
-  const komp = s.replace(/[\s ]/g, "");
-  const riskabla: string[] = [];
-  for (const m of komp.matchAll(/(\d[\d.,]*)%/g)) riskabla.push(m[1]);
-  for (const m of komp.matchAll(/(\d[\d.,]*)(?=kr|:-|sek)/gi)) riskabla.push(m[1]);
-  for (const m of komp.matchAll(/\d[\d.,]*/g)) {
-    if (Number(m[0].replace(/[.,]/g, "")) >= 1000) riskabla.push(m[0]);
+function harObackadSiffra(s: string, profilTal: Set<string>): boolean {
+  for (const m of s.matchAll(/\d[\d\s.,]*\d|\d/g)) {
+    if (!profilTal.has(m[0].replace(/[\s.,]/g, ""))) return true;
   }
-  return riskabla.some((tal) => !profilKomprimerad.includes(tal));
+  return false;
 }
