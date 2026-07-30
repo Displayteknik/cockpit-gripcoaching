@@ -206,10 +206,38 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
     );
   }
 
+  // Instagram beskär i verkligheten: profilrutnätet (och delar av flödet) visar 3:4 —
+  // en kvadratisk design förlorar ~12,5 % per SIDA. Skarpt fall: "Sluta skriva på A4"
+  // fick vänsterkanten kapad på IG fast förhandsvisningen såg perfekt ut. Visa därför
+  // rutnätets faktiska beskärning här, på SAMMA media som publiceras.
+  const gridW = 76;
+  const gridH = Math.round((gridW * 4) / 3);
+  const visaGrid = channel === "ig" && format !== "1080x1920" && (imageSrc !== undefined || w / h > 0.76);
+  const gridScale = gridH / h;
+  const GridThumb = visaGrid ? (
+    <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-2">
+      <div className="relative overflow-hidden rounded-md border border-amber-200 shrink-0 bg-gray-100" style={{ width: gridW, height: gridH }}>
+        {imageSrc !== undefined ? (
+          imageSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageSrc} alt="" className="w-full h-full object-cover" />
+          ) : null
+        ) : (
+          <iframe title="ig-grid-preview" scrolling="no" src={renderSrc}
+            style={{ width: w, height: h, border: 0, transform: `scale(${gridScale})`, transformOrigin: "top left", pointerEvents: "none", position: "absolute", left: -((w * gridScale - gridW) / 2), top: 0 }} />
+        )}
+      </div>
+      <p className="text-xs text-amber-800 leading-snug">
+        <strong>Så beskär Instagram i rutnätet (3:4).</strong> Hamnar text utanför? Dra in den mot mitten, eller välj Porträtt-formatet.
+      </p>
+    </div>
+  ) : null;
+
   return (
     <div className="space-y-2.5" style={{ width: MW }}>
       {Header}
       {card}
+      {GridThumb}
     </div>
   );
 }

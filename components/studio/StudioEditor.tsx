@@ -197,6 +197,10 @@ export default function StudioEditor({
   // Varningszon: blocket räknas som "i zonen" när dess nederkant når ned i nedre 20 %.
   const zoneTop = h * 0.8;
   const inWarnZone = activeDrag ? dragBoxes.some((b) => b.role === activeDrag && b.top + b.height > zoneTop) : false;
+  // Kvadrat (1:1): Instagram visar numera rutnät/flöde i 3:4 → ~12,5 % klipps per SIDA.
+  // Visa sidozonerna under textdrag så text inte hamnar där (skarpt fall: "Sluta skriva
+  // på A4" fick vänsterkanten kapad på IG).
+  const sidZon = payload.format === "1080x1080" ? w * 0.125 : 0;
 
   return (
     <div style={{ position: "relative", width: w * scale, height: h * scale }}>
@@ -245,6 +249,17 @@ export default function StudioEditor({
             {inWarnZone ? "Texten täcks ofta av Instagrams gränssnitt här" : "Nedre 20 % täcks ofta av Instagram"}
           </span>
         </div>
+      )}
+      {/* Sidozoner (bara 1:1): Instagram beskär kvadrat till 3:4 i rutnät/flöde */}
+      {activeDrag && sidZon > 0 && (
+        <>
+          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: sidZon * scale, background: "rgba(239,68,68,0.12)", borderRight: "2px dashed rgba(239,68,68,0.6)", zIndex: 4, pointerEvents: "none" }} />
+          <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: sidZon * scale, background: "rgba(239,68,68,0.12)", borderLeft: "2px dashed rgba(239,68,68,0.6)", zIndex: 4, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "#b91c1c", background: "rgba(255,255,255,0.85)", padding: "2px 6px", borderRadius: 6, writingMode: "vertical-rl" }}>
+              Klipps i IG:s rutnät
+            </span>
+          </div>
+        </>
       )}
     </div>
   );
