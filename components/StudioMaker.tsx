@@ -2271,7 +2271,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   <div key={key} className="space-y-3">
                     <ChannelPreview channel={key} renderSrc={channelRenderSrc} format={format} caption={eff}
                       clientName={client?.name || slug} handle={key === "ig" ? igConn?.handle : null} primary={primary}
-                      imageSrc={mode === "simple" ? (editedPreview || imageUrl) : undefined} />
+                      imageSrc={mode === "simple" ? (editedPreview || imageUrl) : undefined}
+                      // Ett-klicks-fix: Kvadrat klipps i IG:s rutnät → byt till Porträtt direkt i varningen
+                      // (mall-läget; i Skriv eget styr bildredigerarens formatval istället).
+                      onFixFormat={key === "ig" && mode !== "simple" && format === "1080x1080" && meta.formats.includes("1080x1350") ? () => setFormat("1080x1350") : undefined} />
 
                     {/* Per-kanal-caption (redigerbar) — faller tillbaka på grund-captionen */}
                     <div className="rounded-xl border bg-gray-50 p-2.5 space-y-1.5" style={{ borderColor: `${brand.color}26` }}>

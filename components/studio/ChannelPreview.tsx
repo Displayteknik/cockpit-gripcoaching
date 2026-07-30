@@ -72,9 +72,12 @@ interface Props {
   mediaWidth?: number;
   // Skriv eget-läget: visa råfotot direkt (ingen mall-render). Tomt → placeholder.
   imageSrc?: string;
+  // Ett-klicks-fix i rutnäts-varningen: byt till Porträtt (4:5) direkt där problemet syns,
+  // utan att användaren behöver hitta formatväljaren. Sätts bara när bytet är möjligt.
+  onFixFormat?: () => void;
 }
 
-export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc }: Props) {
+export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc, onFixFormat }: Props) {
   const { w, h } = FORMAT_DIMENSIONS[format] ?? FORMAT_DIMENSIONS["1080x1350"];
   const MW = mediaWidth;
   const MH = Math.round((MW * h) / w);
@@ -227,9 +230,17 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
             style={{ width: w, height: h, border: 0, transform: `scale(${gridScale})`, transformOrigin: "top left", pointerEvents: "none", position: "absolute", left: -((w * gridScale - gridW) / 2), top: 0 }} />
         )}
       </div>
-      <p className="text-xs text-amber-800 leading-snug">
-        <strong>Så beskär Instagram i rutnätet (3:4).</strong> Hamnar text utanför? Dra in den mot mitten, eller välj Porträtt-formatet.
-      </p>
+      <div className="space-y-1.5">
+        <p className="text-xs text-amber-800 leading-snug">
+          <strong>Så beskär Instagram i rutnätet (3:4).</strong> Hamnar text utanför? {onFixFormat ? "Byt format med knappen:" : "Dra in den mot mitten."}
+        </p>
+        {onFixFormat && (
+          <button onClick={onFixFormat}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700">
+            Byt till Porträtt (4:5) — säkert för Instagram
+          </button>
+        )}
+      </div>
     </div>
   ) : null;
 
