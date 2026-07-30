@@ -50,6 +50,7 @@ const CRON_PATHS = new Set([
   "/api/instagram/publish-internal",
   "/api/reports/weekly-cron",
   "/api/scheduler/cron",
+  "/api/meta/health/cron",
 ]);
 
 // Rutter som BÅDE admin och kundportalen (/k) använder. Grindas i routen med
