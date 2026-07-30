@@ -12,6 +12,13 @@ export const maxDuration = 60;
 
 const BUCKET = "studio-images";
 
+// Realism-recept mot "AI-look": dokumentär stil, verklig vardagsmiljö, och framför allt —
+// skärmar i bilden visar ENKELT verkligt innehåll. Abstrakta färgvirvlar på en LED-skärm
+// är det största AI-avslöjandet i signage-sammanhang (skarp feedback från Håkan).
+const REALISM =
+  " Documentary-style photograph, believable everyday Swedish setting, natural light, candid realism with slight imperfections — not a sterile architectural render." +
+  " Any screen or display in the image shows SIMPLE realistic content such as a clean product photo, a menu board or a plain sign layout — never abstract glowing swirls, fantasy graphics or colourful artwork.";
+
 // POST /api/studio/suggest-image — { mode: "stock" | "ai", topic, aspect }
 // stock → Pexels-foton (publika URL:er, direkt användbara). ai → Imagen 4.0 → studio-images.
 // Admin-grindad av proxy.ts.
@@ -38,7 +45,7 @@ export async function POST(req: NextRequest) {
         const aspekt: TextAspekt = ar === "9:16" ? "9:16" : ar === "3:4" ? "3:4" : "1:1";
         const scen = await visualScene(topic, niche, { textYta: true });
         const res = await genereraMedExaktText({
-          scen: `${scen} Verkligt foto, naturligt ljus.`,
+          scen: `${scen} Verkligt foto, naturligt ljus.${REALISM}`,
           text: exactText,
           aspekt,
           stil: body.textStil === "overlay" ? "overlay" : "lapp",
@@ -68,12 +75,12 @@ export async function POST(req: NextRequest) {
       // Två steg: gör om ämnet/bildtexten (ofta prosa) till en visuell scen först — annars
       // svarar bildmodellen NO_IMAGE på ett meddelande/råd.
       const scene = await visualScene(topic, niche);
-      let gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
+      let gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${REALISM}${imageDirectiveSuffix(directives)}`, ar);
       // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
       // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
       // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
       if (gen.image && !(await motivPassar(gen.image, niche))) {
-        gen = await generateImagen(`${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${imageDirectiveSuffix(directives)}`, ar);
+        gen = await generateImagen(`${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${REALISM}${imageDirectiveSuffix(directives)}`, ar);
         if (gen.image && !(await motivPassar(gen.image, niche))) {
           return NextResponse.json({ error: "Motivet ville inte träffa er verksamhet den här gången. Prova “Sök foto”, eller skriv i ämnesraden vad bilden ska föreställa." }, { status: 500 });
         }

@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       // Bildmodeller hittar på läsbar text på skyltar och affischer även när prompten
       // säger no text. Förbudet upprepas därför i Avoid-form, som väger tyngre.
       const gen = await generateFlux(
-        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real.${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
+        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real, documentary style, believable everyday setting. Any screen in frame shows simple realistic content, never abstract glowing swirls.${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
         "portrait",
       );
       if (gen.error || !gen.image) {

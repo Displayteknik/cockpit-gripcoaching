@@ -284,7 +284,7 @@ export async function visualScene(topic: string, niche: string, opts?: { textYta
     // Motivet MÅSTE höra hemma i verksamheten. Skarpt fel: "Sluta köpa billigt" för ett
     // digital signage-företag gav en sliten tröja — modellen tog budskapet som generisk
     // metafor. Metaforer från andra branscher är förbjudna.
-    const branschDel = `Motivet ska omisskännligt höra hemma i just denna verksamhet (${niche}) — visa verksamhetens miljö, produkter eller kunder. Använd ALDRIG metaforer eller motiv från andra branscher (kläder, kaffe, schack och liknande). `;
+    const branschDel = `Motivet ska omisskännligt höra hemma i just denna verksamhet (${niche}) — visa verksamhetens miljö, produkter eller kunder. Använd ALDRIG metaforer eller motiv från andra branscher (kläder, kaffe, schack och liknande). Beskriv en VERKLIG vardagsmiljö, gärna med människor eller kunder när det passar — aldrig en steril arkitekturbild. Visas en skärm/display i motivet ska den visa enkelt verkligt innehåll (produktbild, meny, enkel skylt) — aldrig abstrakta färgvirvlar. `;
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
