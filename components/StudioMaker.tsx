@@ -1184,6 +1184,55 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const simpleFileRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
 
+  // ── Snabbstart (Greta-vägen): tre tydliga ingångar när inlägget är tomt ──
+  const [quickBusy, setQuickBusy] = useState(false);
+  const visaSnabbstart = !loadedPostId && mode !== "improve" && !imageUrl && !videoUrl
+    && !headline1.trim() && !body.trim() && !caption.trim()
+    && slides.every((s) => !s.imageUrl && !s.headline?.trim() && !s.body?.trim());
+
+  // "Jag har ett foto" → Skriv eget + öppna filväljaren direkt (klicket är user-gesture).
+  const startMedFoto = useCallback(() => {
+    setMode("simple");
+    setTimeout(() => simpleFileRef.current?.click(), 350);
+  }, []);
+
+  // "Jag har en idé" → mall-läget med fokus i ämnesfältet, så nästa steg är självklart.
+  const startMedIde = useCallback(() => {
+    setMode("template");
+    setTimeout(() => {
+      const el = document.getElementById("studio-amne") as HTMLInputElement | null;
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.focus();
+    }, 350);
+  }, []);
+
+  // "Skapa åt mig" → färdigt förslag ur profilen: text (Skrivhjälpens toppförslag) + on-brand
+  // bild. Greta får något komplett att justera i stället för en tom sida.
+  const skapaAtMig = useCallback(async () => {
+    setMode("template"); setQuickBusy(true); setError("");
+    try {
+      const r = await fetch("/api/studio/suggest-text", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId, format, topic: "" }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte skapa ett förslag — försök igen.");
+      setHeadline1(d.headline1 || ""); setHeadline2(d.headline2 || ""); setBody(d.body || "");
+      const t = [d.headline1, d.body].filter(Boolean).join(". ").slice(0, 220);
+      const ri = await fetch("/api/studio/suggest-image", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "ai", topic: t, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
+      });
+      const di = await ri.json();
+      const url = di.photos?.[0]?.url;
+      if (ri.ok && url) { setImage(url); if (di.description) setAiImageDesc({ url, desc: String(di.description) }); }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setQuickBusy(false);
+    }
+  }, [templateId, format, setImage]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -1224,6 +1273,47 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
         {error && (
           <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        )}
+
+        {/* Snabbstart (Greta-vägen): tre kort som svarar på "hur börjar jag?" i användarens
+            egna ord och leder rätt in i läget + första åtgärden. Visas bara när inlägget är
+            tomt — så fort innehåll finns försvinner de och stör aldrig pågående arbete. */}
+        {visaSnabbstart && (
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Kom igång — välj det som stämmer</div>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <button onClick={startMedFoto}
+                className="text-left rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-start gap-3">
+                <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}14` }}>
+                  <Upload className="w-5 h-5" style={{ color: primary }} />
+                </span>
+                <span className="leading-snug">
+                  <span className="block text-sm font-bold text-gray-900">Jag har ett foto</span>
+                  <span className="block text-xs text-gray-500 mt-0.5">Ladda upp, anpassa till Instagram och skriv texten.</span>
+                </span>
+              </button>
+              <button onClick={startMedIde}
+                className="text-left rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-start gap-3">
+                <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}14` }}>
+                  <Sparkles className="w-5 h-5" style={{ color: primary }} />
+                </span>
+                <span className="leading-snug">
+                  <span className="block text-sm font-bold text-gray-900">Jag har en idé</span>
+                  <span className="block text-xs text-gray-500 mt-0.5">Skriv ämnet, så föreslår Skrivhjälpen text och bild.</span>
+                </span>
+              </button>
+              <button onClick={skapaAtMig} disabled={quickBusy}
+                className="text-left rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-start gap-3 disabled:opacity-60">
+                <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: primary }}>
+                  {quickBusy ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Wand2 className="w-5 h-5 text-white" />}
+                </span>
+                <span className="leading-snug">
+                  <span className="block text-sm font-bold text-gray-900">{quickBusy ? "Skapar förslag…" : "Skapa åt mig"}</span>
+                  <span className="block text-xs text-gray-500 mt-0.5">Få ett färdigt förslag ur er profil — justera och publicera.</span>
+                </span>
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Lägesväxel — pedagogiskt val av arbetssätt, premium segmenterad kontroll */}
@@ -1538,7 +1628,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <p className="text-sm text-gray-500 mt-0.5 ml-9">Vad ska inlägget handla om? Skriv en rad, eller få 3 idéer att välja bland.</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input value={topic} onChange={(e) => setTopic(e.target.value)}
+                <input id="studio-amne" value={topic} onChange={(e) => setTopic(e.target.value)}
                   placeholder={isCarousel ? "Ämne för karusellen, t.ex. 3 misstag att undvika, 5 tips" : "t.ex. ett erbjudande, en nyhet, veckans bukett"}
                   className={inputCls} />
                 {!isCarousel && (
