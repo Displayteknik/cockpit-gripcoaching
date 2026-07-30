@@ -11,6 +11,8 @@ export async function GET(req: NextRequest) {
   if (!secret || auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const summary = await runHealthChecks();
-  return NextResponse.json({ success: true, ...summary });
+  // ?dryrun=1 kör alla kontroller utan DB-skrivningar eller mail (för att validera secret).
+  const dryrun = new URL(req.url).searchParams.get("dryrun") === "1";
+  const summary = await runHealthChecks(dryrun);
+  return NextResponse.json({ success: true, dryrun, ...summary });
 }

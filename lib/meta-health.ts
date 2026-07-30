@@ -66,7 +66,9 @@ async function record(
 
 export interface HealthSweepSummary { checked: number; ok: number; warning: number; dead: number }
 
-export async function runHealthChecks(): Promise<HealthSweepSummary> {
+// dryrun = kör alla kontroller men UTAN sidoeffekter (inga DB-skrivningar, inga mail).
+// Används för att verifiera en nyss satt IG_APP_SECRET utan att riskera falsklarm.
+export async function runHealthChecks(dryrun = false): Promise<HealthSweepSummary> {
   const sb = supabaseService();
   const summary: HealthSweepSummary = { checked: 0, ok: 0, warning: 0, dead: 0 };
 
@@ -90,7 +92,7 @@ export async function runHealthChecks(): Promise<HealthSweepSummary> {
     }
     // Räkna bara om ägar-koppling finns (annars är "ingen token" väntat, inte ett larm).
     const { data: ownerRow } = await sb.from("meta_owner_connection").select("id").limit(1).maybeSingle();
-    if (ownerRow) { await record(sb, res, "Ägar-konto (Meta)"); summary.checked++; summary[res.status]++; }
+    if (ownerRow) { if (!dryrun) await record(sb, res, "Ägar-konto (Meta)"); summary.checked++; summary[res.status]++; }
   } catch { /* isolera ägar-fel */ }
 
   // 2. Per-tenant. tenant_ig_connections + legacy clients (ig_account_id utan tenant-rad).
@@ -114,7 +116,7 @@ export async function runHealthChecks(): Promise<HealthSweepSummary> {
         try { await getIgUsername(igId, conn.ig_access_token); readOk = true; } catch { readOk = false; }
         res = { clientId, scope: "page", ...statusFromToken(dbgValid, expiresAt, readOk) };
       }
-      await record(sb, res, nameOf.get(clientId) || "Kund");
+      if (!dryrun) await record(sb, res, nameOf.get(clientId) || "Kund");
       summary.checked++; summary[res.status]++;
     } catch { /* isolera tenant-fel, fortsätt svepet */ }
   }
