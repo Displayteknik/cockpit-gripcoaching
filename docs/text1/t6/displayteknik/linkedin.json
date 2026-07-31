@@ -1,0 +1,138 @@
+{
+  "profil": "Displayteknik",
+  "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "flode": "linkedin",
+  "genererad": "2026-07-31T19:08:33.109Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det dyraste du kan göra är att köpa en för billig skärm.\",\"body\":\"Det dyraste du kan göra är att köpa en för billig skärm.\\n\\nDet här är det vanligaste misstaget vi ser hos nya kunder. Man har köpt en vanlig konsument-TV och monterat i skyltfönstret för att spara pengar. Några veckor senare, när solen ligger på, ser man bara en svart, blänkande ruta.\\n\\nInvesteringen blir en kostnad utan resultat. Kunderna går förbi, omedvetna om dina erbjudanden.\\n\\nInsikten är att en skärm i ett skyltfönster inte tävlar mot mörkret inomhus. Den tävlar mot direkt solljus utomhus. Det ställer helt andra krav på hårdvaran.\\n\\nEn professionell skärm för ett skyltfönster är byggd för tre saker en vanlig TV inte klarar:\\n\\n1. Ljusstyrka: Med 2 500 nits (eller mer) syns ditt budskap klart och tydligt, även när sommarsolen står som högst. En vanlig TV har sällan mer än 400 nits.\\n\\n2. Drifttid: Den är konstruerad för att vara påslagen dygnet runt, år efter år, utan att bilden bränner in eller komponenterna överhettas.\\n\\n3. Temperatur: Den klarar både värmen från solen på sommaren och kylan som kan uppstå vid fönstret på vintern.\\n\\nAtt välja rätt från början gäller inte att hitta den dyraste lösningen. Det gäller att hitta den mest lönsamma.\\n\\nSkicka en bild på ditt skyltfönster så ger vi ett förslag inom 24 timmar, helt utan förpliktelser.\",\"hashtags\":\"#digitalskyltning #skyltfönster #retail\",\"cta\":\"direct\",\"word_count\":217,\"notes\":\"Inlägget adresserar det vanliga misstaget att köpa en konsument-TV, kopplar det till sommarsol och förklarar nyttan med en professionell skärm genom tre konkreta punkter.\"}",
+      "duration_ms": 12071,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 10
+      },
+      "extra": {
+        "voice_score": {
+          "score": 55,
+          "verdict": "warn",
+          "issues": [
+            "Anvander forbjudet ord \"billig\" (2x)"
+          ]
+        },
+        "sparad_rad_id": "eda50a69-f676-40fd-8939-ae8e7d4ae044"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Från en bild i ett mejl till en lysande skärm i skyltfönstret.\",\"body\":\"Från en bild i ett mejl till en lysande skärm i skyltfönstret.\\n\\nMånga tror att digital skyltning är ett stort, komplicerat projekt. Man ser framför sig månader av planering, tekniska val och flera olika leverantörer att hålla reda på.\\n\\nDet behöver inte vara så. Faktum är att de flesta av våra projekt följer en ganska enkel och direkt väg, där du som kund har en enda kontaktperson för hela resan.\\n\\nInsikten är att processen är designad för att vara trygg, inte teknisk. Du behöver inte vara AV-tekniker för att få en skärm som fungerar.\\n\\nSå här ser det oftast ut:\\n\\n1. Första kontakten: Du skickar en bild på platsen där skärmen ska sitta, ett skyltfönster, en fasad, en reception. Vi bokar ett kort samtal eller en digital fika för att förstå målet.\\n\\n2. Förslaget: Inom 24 timmar får du ett konkret förslag. Det specificerar rätt skärm för miljön (som klarar direkt solljus), ett fast pris för hårdvara, installation och mjukvara. Inga dolda kostnader.\\n\\n3. Installation: Vi kommer ut, monterar skärmen, drar nödvändig el och ser till att allt är anslutet och fungerar. Vi lämnar inte förrän din första bild eller film rullar.\\n\\n4. Överlämning & Support: Du får en enkel genomgång av hur du själv byter innehåll med några klick. Och du vet att du alltid kan ringa samma person om något skulle behöva justeras.\\n\\nDet gäller att göra det enkelt att synas. Inte att sälja pixlar och paneler.\\n\\nHar du en plats där en skärm skulle kunna göra skillnad?\",\"hashtags\":\"#digitalskyltning #ledskärm #butikskommunikation\",\"cta\":\"soft\",\"word_count\":251,\"notes\":\"Inlägget demystifierar köpprocessen med en 'bakom kulisserna'-vinkel för att bygga trygghet och sänka tröskeln för en första kontakt.\"}",
+      "duration_ms": 13093,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "komplicerat"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 10
+      },
+      "extra": {
+        "voice_score": {
+          "score": 70,
+          "verdict": "pass",
+          "issues": [
+            "Anvander forbjudet ord \"komplicerat\" (1x)"
+          ]
+        },
+        "sparad_rad_id": "728ce792-f4b9-46ee-808b-2a985c7e787b"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Tre frågor vi alltid får innan någon köper en digital skärm. Svaren är sällan vad de väntar sig.\",\"body\":\"Tre frågor vi alltid får innan någon köper en digital skärm. Svaren är sällan vad de väntar sig.\\n\\nFunderar du på digital skyltning? Då har du säkert ställt dig någon av dessa frågor. Det är helt rätt. Ett felaktigt val kan bli en dyr historia, inte bara i inköp utan i förlorade kunder.\\n\\nMånga tror att den tekniska specifikationen är det viktigaste, men de verkliga frågorna gäller drift, synlighet och totalekonomi över tid. Det är där värdet skapas.\\n\\nHär är vår syn på saken, baserat på hundratals installationer över hela Norden.\\n\\n1. ”Vad kostar det egentligen?”\\nSvar: En professionell skärm för ett skyltfönster (som syns i solljus) börjar runt 21 000 kr. Men den verkliga kostnaden är vad du förlorar på en skärm som inte syns, eller en som går sönder i förtid. Fråga istället: Vad är livstidskostnaden, inklusive drift och support?\\n\\n2. ”Hinner vi verkligen uppdatera innehållet?”\\nSvar: Ofta inte. Därför är ett enkelt system för innehållshantering avgörande. Du ska kunna schemalägga en hel säsong på en timme, från vilken dator som helst. Vi ser till att tekniken inte blir en tidstjuv.\\n\\n3. ”Håller den verkligen för svenskt klimat?”\\nSvar: Ja, om den är byggd för det. En vanlig TV klarar inte av kyla, kondens eller direkt solljus på sommaren. En riktig kommersiell skärm är testad för nordiska förhållanden, från sommarvärme i ett söderfönster till isiga vindar på en fasad.\\n\\nI slutändan handlar det om att få en lösning som bara fungerar. Som säljer åt dig, utan att du behöver bli din egen AV-tekniker.\\n\\nHar du andra frågor du funderar på? Skicka ett meddelande så tar vi en digital fika, helt utan säljpitch.\",\"hashtags\":\"#digitalskyltning #ledskärm #butikskommunikation\",\"cta\":\"soft\",\"word_count\":272,\"notes\":\"Inlägget adresserar de tre vanligaste kundfrågorna för att bygga förtroende och visa expertis (Know-porten), med en mjuk CTA.\"}",
+      "duration_ms": 13249,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 10
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "496be5fe-8f0d-456c-8a21-c4ad27e73784"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"De väntade i nästan 18 månader. Det kostade dem mer än själva skärmen.\",\"body\":\"De väntade i nästan 18 månader. Det kostade dem mer än själva skärmen.\\n\\nJag hade kontakt med en butiksägare första gången tidigt 2025. Behovet var solklart: skyltfönstret låg i direkt söderläge och deras gamla skyltning syntes helt enkelt inte efter klockan 10 på morgonen.\\n\\nÄndå hände inget. De ville fundera, jämföra, invänta \\\"rätt läge\\\".\\n\\nKänns det igen? Man vet att något behöver göras, men tröskeln att agera känns hög.\\n\\nNär vi väl monterade deras nya skärm i somras kom insikten snabbt. Den verkliga kostnaden var inte investeringen i hårdvaran. Den verkliga kostnaden var alla de kunder som gått förbi under 500+ dagar utan att se deras budskap.\\n\\nDen tysta kostnaden av att inte synas är alltid högre än investeringen för att göra det. Att vänta är också ett beslut.\\n\\nTre saker hände direkt efter installationen:\\n\\n1. Fler spontana besökare. Skärmen fångade blickar från andra sidan gatan.\\n\\n2. Ökad försäljning på kampanjvaror. Budskapet gick äntligen fram, även i fullt dagsljus.\\n\\n3. En känsla av stolthet. Fasaden såg levande och modern ut, precis som varumärket.\\n\\nAtt skjuta upp ett beslut är sällan gratis. Oftast betalar man med förlorade möjligheter.\\n\\nÄr det dags för er att sluta betala den tysta kostnaden?\\n\\nSkicka en bild på er fasad eller ert skyltfönster, så återkommer jag med en konkret idé inom 24 timmar. Helt utan förpliktelser.\",\"hashtags\":\"#digitalskyltning #skyltfönster #retail\",\"cta\":\"direct\",\"word_count\":224,\"notes\":\"Använder en berättelse om en tvekande kund för att illustrera den dolda kostnaden av att vänta, vilket bygger förtroende och skapar igenkänning.\"}",
+      "duration_ms": 13127,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 10
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "e935318a-bcca-4c98-94be-23935d412f02"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Ingen frågar efter den billigaste hjärtstartaren. Varför gör vi det med skärmar som ska rädda vår försäljning?\",\"body\":\"Ingen frågar efter den billigaste hjärtstartaren. Varför gör vi det med skärmar som ska rädda vår försäljning?\\n\\nDet är lätt att se en digital skärm som en enkel produkt. Man jämför pris på en 55-tummare på nätet mot en offert för en kommersiell skärm och ser en stor skillnad.\\n\\nFrestelsen att välja det lägre priset är stark. Man tänker \\\"en skärm är en skärm\\\".\\n\\nTills den inte är det.\\n\\nTills konsument-TV:n i skyltfönstret är helt svart i solljuset. Tills den billiga utomhusskärmen slocknar efter första sommaren på grund av överhettning. Eller tills ingen vet vem man ska ringa när innehållet inte uppdateras.\\n\\nDå blir den billiga lösningen plötsligt väldigt dyr. Inte bara i reparationer, utan i förlorade kunder som aldrig ens ser ditt budskap.\\n\\nVåra kunder väljer inte bort ett lågt pris. De väljer till trygghet. De väljer en helhetslösning som fungerar från dag ett, år efter år.\\n\\nDet gäller att investera i en säljare som aldrig tar semester, snarare än att bara köpa en pryl. Den investeringen ser ut så här:\\n\\n1. Rätt ljusstyrka från start. Skärmen ska synas i sin miljö, oavsett om det är i ett ljust skyltfönster eller på en solig fasad.\\n\\n2. Byggd för drift. Kommersiella skärmar är gjorda för att vara påslagna dygnet runt, inte för fyra timmars TV-tittande på kvällen.\\n\\n3. En kontakt för allt. Från val av skärm och installation till support när något händer. Du slipper bli din egen AV-tekniker.\\n\\nNästa gång du ser ett pris som verkar för bra för att vara sant, fundera på den verkliga kostnaden.\\n\\nVad är din erfarenhet av att välja kvalitet framför lägsta pris?\",\"hashtags\":\"#digitalskyltning #ledskärm #retail\",\"cta\":\"soft\",\"word_count\":268,\"notes\":\"Posten använder en kontraintuitiv krok (hjärtstartare) för att ompositionera skärmen från en kostnad till en kritisk investering, och belyser värdet av helhetslösningen framför priset på hårdvaran.\"}",
+      "duration_ms": 14176,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 10
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "5de72aa9-54d0-49a4-864b-b6f354e51db6"
+      }
+    }
+  ]
+}

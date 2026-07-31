@@ -1,0 +1,103 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "social",
+  "genererad": "2026-07-31T19:12:06.624Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Nästan alla gör samma fel när bilen krånglar.\",\"caption\":\"Tjena! Innan folk ringer oss, har de ofta redan googlat felet, kollat Youtube och frågat en kompis. Ibland har de till och med köpt en reservdel på nätet som inte alls passar. \\n\\nProblemet? Det som ser ut som ett enkelt fel, som att ett batteri är dött, kan i själva verket vara en generator som inte laddar. Då har du lagt pengar på ett nytt batteri i onödan.\\n\\nDu sparar nästan alltid både tid och pengar på att ringa oss först. Ett snabbt samtal kostar inget. Vi kan ofta ge en första gissning direkt på telefon så du vet vad du ska göra, eller inte göra.\\n\\nDet är såhär vi jobbar i Krokom. Rakt och ärligt.\",\"hashtags\":\"#bilverkstad #krokom #biltips #östersund #jämtland\",\"cta\":\"Ring oss på 0640-62758 innan du beställer delar.\",\"format_note\":\"Bild på en mekaniker som pratar med en kund över en öppen motorhuv, eller en bild på en vanlig men missförstådd bildel som en generator eller en säkringsdosa. Fokus på människa och verkstadsmiljö.\"}",
+      "duration_ms": 10775,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "fa4607df-cf17-4057-bb67-581ce97d5f80"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Många undrar hur det går till när man köper bil hos oss.\",\"caption\":\"Många undrar hur det går till när man köper bil hos oss. Det är enklare än du tror.\\n\\n1. Du hittar en bil du gillar, antingen på vår hemsida eller här på gården i Krokom.\\n\\n2. Du ringer, mejlar eller kommer förbi. Vi pratar igenom bilen och ser om den passar det du behöver. Har du en inbytesbil? Vi kollar på den direkt och ger dig ett värde.\\n\\n3. Du provkör. Känns allt bra så skriver vi papper och fixar med ägarbyte och försäkring. Oftast är allt klart på under en timme.\\n\\n4. Du kör hem med din nya bil. Vi ser till att den är besiktigad, servad och redo för vägarna.\\n\\nInget krångel. Bara bilar som funkar och service som man kan lita på.\",\"hashtags\":\"#hmmotor #krokom #jämtland #bilköp #begagnadebilar\",\"cta\":\"Ring oss på 0640-62758 när du hittat något du gillar.\",\"format_note\":\"Bild/kort video som visar en glad kund som precis fått nycklarna till sin bil framför vår lokal i Krokom. Fokus på det personliga mötet.\"}",
+      "duration_ms": 11340,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": true,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "7d5f0e8f-affd-4bf0-a8af-3439bdafd587"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Kan jag byta in min gamla bil? Och 2 andra frågor vi får varje dag.\",\"caption\":\"Kan jag byta in min gamla bil? Och 2 andra frågor vi får varje dag.\\n\\nHär är våra ärliga svar, rakt på sak.\\n\\n1. \\\"Är min gamla bil/ATV/skoter värd något i inbyte?\\\"\\nSVAR: Ja, nästan alltid. Ofta mer än du tror. Många tror att en gammal bil bara är skrot, men för oss kan den vara perfekt för någon annan. Vi kollar skicket på plats och ger dig ett rättvist pris direkt.\\n\\n2. \\\"Vilken ATV ska jag ha egentligen?\\\"\\nSVAR: Den som passar din mark, inte grannens. En vanlig miss är att köpa för litet eller för stort. Vi frågar alltid vad du ska göra: Plogar du en stor gårdsplan eller kör du ut älgpass i skogen? Svaret avgör vilken maskin som är rätt för dig.\\n\\n3. \\\"Kan ni hjälpa till med finansiering?\\\"\\nSVAR: Absolut. Vi löser det mesta på plats här i Krokom. Vi jobbar med flera banker och hittar en lösning som funkar för din plånbok. Det går oftast snabbt och smidigt.\",\"hashtags\":\"#hmmotor #krokom #östersund #jämtland #bilverkstad\",\"cta\":\"Vilken fråga har du till oss? Ställ den i kommentarerna.\",\"format_note\":\"Karussell-inlägg. Slide 1: Hooken som stor text. Slide 2-4: En fråga och ett svar per slide. Sista slide: CTA.\"}",
+      "duration_ms": 13049,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "9153c3da-4905-404b-830b-b185862042df"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Han funderade i två år. Sen ringde han.\",\"caption\":\"Han funderade i två år. Sen ringde han.\\n\\nEn kund från trakten hade kollat på en specifik fyrhjuling länge. Mailat lite, ringt nån gång, men aldrig kommit till skott. Han var osäker på om den verkligen var rätt för hans marker.\\n\\nFörra veckan slog han till. I helgen hörde han av sig igen.\\n\\nInte med problem. Med en bild på tre älgar och en kort text: \\\"Den funkar precis som ni sa. Skulle köpt den för två år sen.\\\"\\n\\nDet är den bekräftelsen vi jobbar för. Att sälja rätt grej för jobbet som ska göras, så du blir nöjd på riktigt. Inte bara första veckan, utan år efter år.\",\"hashtags\":\"#hmmotor #krokom #fyrhjuling #atv #jämtland\",\"cta\":\"Funderar du också? Kom förbi på en kaffe så pratar vi.\",\"format_note\":\"Bild: En kvalitetsbild på en kunds ATV i en genuin jämtländsk skogsmiljö, kanske med en hint av jakt eller skogsarbete. Undvik polerade studiobilder.\"}",
+      "duration_ms": 11373,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "1b3c7173-8718-4b7c-ae7b-b516e409add6"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Den billigaste fyrhjulingen är nästan alltid den dyraste.\",\"caption\":\"Den billigaste fyrhjulingen är nästan alltid den dyraste.\\n\\nDet låter konstigt, men vi ser det varje vecka. Någon kommer in med en maskin köpt billigt på nätet. Den höll en sommar, sen rasade växellådan eller så är det omöjligt att få tag på reservdelar.\\n\\nPlötsligt står du där med en värdelös fyrhjuling när jakten börjar eller när snön ska plogas. Den billiga affären blev en dyr läxa.\\n\\nVi säljer bara maskiner vi vet fungerar här uppe i Jämtland. Grejer som startar i minusgrader och som det finns delar till om fem år. Det är en trygghet som är värd mer än en prislapp.\",\"hashtags\":\"#atv #fyrhjuling #jämtland #krokom #hmmotor\",\"cta\":\"Skicka ett DM med ordet 'ATV' så skickar vi info om de maskiner vi har inne nu.\",\"format_note\":\"Bild/video: En närbild på en robust detalj på en kvalitets-ATV i verkstaden, t.ex. en rejäl vinsch, ett grovt däck eller en svetsfog. Det ska signalera hållbarhet och kvalitet, inte ett polerat produktfoto.\"}",
+      "duration_ms": 12908,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "60704192-2829-4021-8b1b-82776c1bc9e0"
+      }
+    }
+  ]
+}

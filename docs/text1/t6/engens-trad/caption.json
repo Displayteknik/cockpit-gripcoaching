@@ -1,0 +1,92 @@
+{
+  "profil": "Engens Träd & Trädgård",
+  "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
+  "flode": "caption",
+  "genererad": "2026-07-31T19:09:15.877Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "\"Det är nog ingen större fara med det där trädet.\"\n\nDet är den vanligaste meningen jag hör, precis innan vi hittar ett träd som verkligen borde ha tagits om hand för länge sedan. Ofta handlar det om att man skjuter upp att bedöma riskträd, och det är lätt hänt. Men tänk på att väder och vind kan snabbt ändra läget till det sämre.\n\nDet smartaste du kan göra är att låta oss titta på det. En första bedömning kostar inget, och du får ett rakt svar på om det behöver åtgärdas nu, nästa år, eller inte alls.\n\nSkicka en bild på trädet och var det står, så tittar jag på det.\n\n#trädfällning #riskträd #roslagen #åkersberga #trädgård",
+      "duration_ms": 3272,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "Att ta ner ett träd är en process som kräver planering och precision. Här är hur ett typiskt uppdrag ser ut hos oss, från första kontakten tills trädet är borta och tomten städad:\n\n1.  **Första kontakten:** Du ringer eller mejlar mig, kanske med en bild på trädet.\n2.  **Bedömning på plats:** Jag kommer ut och tittar på trädet, platsen runt omkring och vad du vill ha gjort. Det tar cirka 30 minuter och kostar inget.\n3.  **Offert:** Du får en offert med förslag på åtgärd, pris och hur RUT-avdraget fungerar.\n4.  **Jobbet utförs:** När vi har enats om planen kommer jag och fäller trädet säkert och kontrollerat, bit för bit om det behövs.\n5.  **Rent efteråt:** Vi städar upp efter oss, så du kan använda tomten direkt.\n\nDet ska vara enkelt och tryggt att få hjälp med träden.\n\nSkicka en bild på trädet så tittar vi.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
+      "duration_ms": 3334,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "kanske"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "\"Vad händer om trädet faller?\"\n\nDet är en av de vanligaste frågorna jag får. Många oroar sig för vad som kan hända om ett träd inte tas om hand på rätt sätt, särskilt när det står nära huset, bilen eller lekplatsen. Vår uppgift är att se till att det inte blir något drama. Vi planerar varje fällning noga och tar ner trädet bit för bit, kontrollerat och säkert.\n\nEn annan vanlig fråga är \"Måste hela trädet bort?\". Inte alltid. Ibland räcker det med beskärning för att det ska må bättre, eller för att få mer ljus till tomten. Och \"Blir det inte dyrt?\" Priset beror på läge, storlek och risk. Rut-avdraget sänker arbetskostnaden direkt på fakturan, så det blir ofta mer överkomligt än man först tror.\n\nSkicka en bild på trädet och var det står, så tittar vi på det tillsammans.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
+      "duration_ms": 3398,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "\"Vi har pratat om det där trädet i flera år...\"\n\nDen meningen hör jag ofta. Många tvekar, dels för att man inte vet hur man ska gå till väga, dels för oron att det ska bli krångligt eller dyrt. Men det behöver inte vara så.\n\nNär vi väl kommer ut och gör jobbet är resultatet nästan alltid detsamma: trädet är borta, tomten är hel och alla är glada. Och man undrar varför man inte tog tag i det tidigare.\n\nSkicka en bild på ditt träd, så får du en första bedömning, helt utan kostnad.\n\n#trädfällning #riskträd #roslagen #åkersberga #trädgård",
+      "duration_ms": 3067,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "\"Jag vill bara få det gjort, säkert.\"\n\nDen meningen hör jag ofta när jag pratar med villaägare i Roslagen. Många har dragit sig för att ta tag i träd som står för nära huset, skymmer solen eller känns lite läskiga när det blåser. De vill ha en lösning som är lugn och trygg, utan drama.\n\nAtt välja det allra billigaste alternativet när det gäller trädfällning kan tyvärr bli dyrt i längden, om något går fel. Min uppgift är att se riskerna innan du gör det, och se till att trädet tas bort kontrollerat. Du slipper gissa eller oroa dig, och får jobbet gjort på ett sätt som håller tomten hel och alla glada.\n\nSkicka en bild på trädet och var det står, så tittar vi på det tillsammans.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
+      "duration_ms": 2734,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billigaste"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 5,
+        "rostmarkorer_totalt": 24
+      }
+    }
+  ]
+}

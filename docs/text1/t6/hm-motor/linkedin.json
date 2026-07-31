@@ -1,0 +1,128 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "linkedin",
+  "genererad": "2026-07-31T19:11:31.001Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det vanligaste misstaget vi ser kostar dig dubbelt.\",\"body\":\"Det vanligaste misstaget vi ser kostar dig dubbelt.\\n\\nDet börjar nästan alltid likadant.\\n\\nNågot krånglar med din fyrhjuling, snöskoter eller båtmotor. Du tänker: \\\"Det här borde jag kunna fixa själv.\\\"\\n\\nSå du googlar. Läser på några forum. Kollar ett par Youtube-klipp där någon i en annan del av världen löser ett liknande problem.\\n\\nDu köper en reservdel och sätter igång. Men delen passar inte riktigt, eller så var det inte den som var felet. Och plötsligt har det lilla problemet blivit ett mycket större. Ofta ett mycket dyrare.\\n\\nInsikten är inte att du inte ska försöka. Insikten är att den största kostnaden sällan är det ursprungliga felet, utan det andra felet man skapar när man försöker laga det första på fel sätt.\\n\\nInnan du plockar fram verktygslådan, fundera på det här:\\n\\n1. En expert diagnos är en investering. Den hindrar dig från att köpa fel delar och lägga timmar på fel sak.\\n\\n2. Vissa fel ser enkla ut men är symptom på något större. Att bara byta en säkring löser inte kortslutningen.\\n\\n3. Ett snabbt samtal kostar ingenting. Vi har sett de flesta problem förut och kan ofta ge en första bedömning direkt.\\n\\nAtt vara händig är en bra sak. Men att veta när man ska ringa en verkstad är ännu bättre.\\n\\nVad är din erfarenhet av att försöka laga saker själv?\",\"hashtags\":\"#verkstad #krokom #reparation\",\"cta\":\"soft\",\"word_count\":238,\"notes\":\"Fokuserar på det vanliga misstaget att 'gissa' sig till en reparation via Youtube, vilket leder till högre kostnader, och positionerar verkstaden som en smart första investering.\"}",
+      "duration_ms": 14402,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "eb9530d2-c018-47a4-8dc9-17b83435e387"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Ett motorproblem känns ofta som kaos. Men lösningen är alltid en lugn, stegvis process.\",\"body\":\"Ett motorproblem känns ofta som kaos.\\n\\nDu hör ett ljud som inte borde vara där. En lampa lyser. Plötsligt är du osäker på om du ens kommer fram.\\n\\nDen känslan av osäkerhet är det första vi vill ta bort när du kommer till oss i Krokom.\\n\\nFör även om varje problem är unikt, är vår process för att hitta och lösa det alltid densamma. Det gäller att byta ut kaos mot klarhet, steg för steg.\\n\\nSåhär går det oftast till:\\n\\n1. Första samtalet eller besöket. Du beskriver problemet som du upplever det. Vi lyssnar och ställer frågor. Inga tekniska termer behövs. Vi vill förstå din upplevelse.\\n\\n2. Felsökning. Vi kopplar in vår diagnostik, men vi förlitar oss lika mycket på erfarenhet. Vi tittar, känner och lyssnar. Målet är att hitta grundorsaken, inte bara symptomet.\\n\\n3. Återkoppling och plan. Innan vi rör en enda skruv ringer vi dig. Vi förklarar vad vi hittat, vad som behöver göras och vad det kommer att kosta. Du får ett fast pris och en tydlig tidsplan. Inga överraskningar.\\n\\n4. Jobbet utförs. När du gett klartecken, fixar vi det. Vi använder rätt delar och rätt verktyg. Jobbet görs ordentligt, från början till slut.\\n\\nDet är så vi jobbar. Inga konstigheter, bara en trygg och tydlig väg från problem till en fungerande maskin.\\n\\nÄr tydlighet i processen något du värdesätter när du lämnar in något på service?\\n\",\"hashtags\":\"#verkstad #krokom #motor\",\"cta\":\"soft\",\"word_count\":224,\"notes\":\"Inlägget använder en 'bakom kulisserna'-vinkel för att bygga förtroende (KNOW-port) genom att visa en tydlig och trygg process, vilket direkt bemöter kundens känsla av kaos vid ett motorproblem.\"}",
+      "duration_ms": 13743,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "a2fb21a0-8380-4b1f-b000-c228f534a18c"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Kan jag vänta kvar? Går det att fixa direkt? Vad kommer det kosta?\",\"body\":\"Kan jag vänta kvar? Går det att fixa direkt? Vad kommer det kosta?\\n\\nDet är tre frågor vi hör nästan varje dag i verkstaden i Krokom.\\n\\nOch det är helt rimliga frågor. Att lämna in bilen skapar ofta en känsla av osäkerhet. Man vill veta vad som gäller, utan krångel och utan överraskningar.\\n\\nVi tror på raka svar. Det är enklare för dig och det är enklare för oss. Det bygger förtroende som håller längre än en enskild reparation.\\n\\nDärför är våra svar alltid desamma:\\n\\n1. \\\"Kan jag vänta kvar?\\\"\\nOftast, ja. Är det ett mindre jobb som ett lampbyte eller en snabb felsökning, fixar vi det medan du tar en kaffe. Vi vet att din tid är viktig. Om det är större, säger vi det direkt och bokar en tid som passar.\\n\\n2. \\\"Kan ni kolla den här andra saken också?\\\"\\nAbsolut. När bilen ändå är här är det smart att passa på. Vi gör en snabb bedömning och ger dig besked direkt om det är något vi hinner med eller om vi behöver boka en ny tid för det.\\n\\n3. \\\"Vad kommer det att kosta?\\\"\\nDu får alltid ett prisförslag innan vi börjar. Inga dolda avgifter eller konstiga påslag. Om vi hittar något mer när vi väl börjat jobba ringer vi dig alltid först för att stämma av. Du har full kontroll.\\n\\nEn bilverkstad ska inte vara en svart låda. Det ska vara tydligt, ärligt och effektivt.\\n\\nVilken är den viktigaste egenskapen du letar efter hos en bilverkstad?\",\"hashtags\":\"#bilverkstad #krokom #bilservice\",\"cta\":\"soft\",\"word_count\":252,\"notes\":\"Vinkeln är att bygga förtroende (know-port) genom att transparent besvara de vanligaste kundfrågorna, vilket positionerar HM Motor som ärliga och kundorienterade.\"}",
+      "duration_ms": 14763,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "6072b5a8-e0e4-4005-9eae-fa2b2893deaa"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Han körde runt med problemet i två månader. Det kostade honom nästan hela semestern.\",\"body\":\"Han körde runt med problemet i två månader. Det kostade honom nästan hela semestern.\\n\\nDu känner igen det. Ett litet missljud som dyker upp. En varningslampa som blinkar till ibland.\\n\\nDen första tanken är nästan alltid: \\\"Det är nog inget farligt, det försvinner säkert av sig själv.\\\"\\n\\nMan skjuter på det. Andra saker är viktigare. Man hoppas att man ska slippa en verkstadsräkning precis innan ledigheten.\\n\\nMen sanningen är att små problem sällan löser sig själva. De tenderar att växa. Ett litet läckage blir en överhettad motor. Ett rosslande ljud blir ett haveri längs E14.\\n\\nAtt ignorera ett problem är sällan en besparing. Det är oftast bara en förskjutning av en mycket större kostnad, både i pengar och i förstörd tid.\\n\\nFör den här kunden slutade det bra. Vi fick tag på delarna och fixade bilen precis i tid. Men det var nära.\\n\\nNästa gång du märker något som inte stämmer, tänk på detta:\\n\\n1. Ovanliga ljud är aldrig ett bra tecken.\\n2. Varningslampor finns av en anledning.\\n3. En snabb kontroll är alltid billigare än en bärgning.\\n\\nEn halvtimmes felsökning idag kan rädda hela din semesterresa imorgon.\\n\\nHar du varit med om att ett litet problem vuxit sig stort? Dela din historia i kommentarerna.\",\"hashtags\":\"#bilverkstad #krokom #motorproblem\",\"cta\":\"soft\",\"word_count\":218,\"notes\":\"Vinkeln är en igenkännbar historia om att skjuta upp problem, vilket bygger förtroende genom att visa förståelse för kundens tvekan och konsekvenserna av att vänta.\"}",
+      "duration_ms": 14237,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "e52e297d-2a5e-441b-bab4-5677b556c12e"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Priset är sällan den verkliga anledningen till att en kund väljer nej.\",\"body\":\"Priset är sällan den verkliga anledningen till att en kund väljer nej.\\n\\nFolk betalar gärna extra för en sak: trygghet.\\n\\nEn kund kom in häromdagen. Inte för att vi var billigast, utan för att en granne sagt: \\\"Åk till HM Motor, de fixar det direkt.\\\"\\n\\nRyktet om att vi löser problem snabbt och utan krångel är värt mer än en rabatt. Kunden köper inte bara en reparation. De köper sig fria från oro.\\n\\nDet är en känsla av att slippa oväntade kostnader, slippa vänta i veckor på en tid, och slippa undra om jobbet blir rätt gjort.\\n\\nDet är vad som egentligen ligger bakom ett köpbeslut:\\n\\n1. Förtroende: Känslan av att lämna över nycklarna till någon som kan sin sak.\\n2. Tillgänglighet: Vetskapen om att hjälp finns nära till hands, ofta direkt.\\n3. Tydlighet: Ett rakt svar på vad som är fel och vad som krävs för att fixa det.\\n\\nNär de tre sakerna finns på plats blir priset en andrahandsfråga.\\n\\nVilken faktor väger tyngst för dig när du väljer verkstad?\",\"hashtags\":\"#verkstad #trygghet #krokom\",\"cta\":\"soft\",\"word_count\":204,\"notes\":\"Använder en kontraintuitiv insikt om pris för att bygga förtroende och visa att vi förstår kundens verkliga behov.\"}",
+      "duration_ms": 12629,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "7e70c9ae-9c91-430e-a51e-bab12be3c679"
+      }
+    }
+  ]
+}

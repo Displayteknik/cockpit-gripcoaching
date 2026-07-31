@@ -1,0 +1,88 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "caption",
+  "genererad": "2026-07-31T19:10:49.864Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "Du har byggt en bra tjänst. Men ditt system för att hitta kunder är fortfarande du, din kalender och en stor dos hopp.\n\nVi fixar det. Många nya kunder vi möter kör fast när de försöker sätta upp alla system själva. De testar olika verktyg, men inget \"fastnar\" som en naturlig del av vardagen. Jag bygger det tekniska kundflödet åt dig och coachar dig samtidigt genom de rädslor och blockeringar som hindrar dig från att använda det effektivt.\n\nVill du ha ett system som bara funkar, så du slipper tänka på var nästa kund ska komma ifrån? Läs mer på vår hemsida!\n\n#Hmmotor\n#Krokom\n#Kundflöde\n#Soloföretagare\n#Småföretagare",
+      "duration_ms": 4851,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "Tjena! Många undrar hur vi jobbar när en kund kommer in med ett problem. Det är ganska enkelt, och vi fixar det snabbt.\n\nFörst kollar vi in vad du behöver. Inget krångel. Sedan sätter vi igång direkt. Vi bygger det tekniska flödet som behövs och coachar dig genom eventuella blockeringar, så att du får ett system som bara funkar. Så slipper du tänka på var nästa kund ska komma ifrån.\n\nKänner du igen dig i att köra fast?\n\n#HMMotorKrokom\n#Kundflöde\n#Soloföretagare",
+      "duration_ms": 2397,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "Vi får ofta frågor om hur vi jobbar. Här är tre vanliga frågor och våra svar:\n\n**1. \"Kan ni fixa detta snabbt?\"** Ja, ofta! Många gånger fixar vi det på 30 minuter, och det är såhär vi jobbar.\n**2. \"Måste jag boka tid?\"** Nej, inte alltid. Vi gillar att vara flexibla, så kom förbi när det passar dig.\n**3. \"Är det dyrt?\"** Vi fokuserar på att lösa ditt problem effektivt, så du slipper onödiga kostnader och kan komma vidare.\n\nKänner du igen dig i att du \"kör fast och gör inget alls\" med ditt kundflöde? Kommentera med dina bästa tips för att komma igång!\n\n#hmmotor #krokom #kundservice #mekaniker",
+      "duration_ms": 2545,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "Tjena! Jag minns en kund som tvekade länge med att automatisera sitt kundflöde. Han visste att han behövde det, men körde fast varje gång.\n\nTill slut bestämde han sig. Vi satte ihop ett system som bara funkar, och nu slipper han tänka på var nästa kund ska komma ifrån. Det är såhär vi jobbar.\n\nKänner du igen dig i att tveka? Skicka ett DM så pratar vi mer.\n\n#HMMotor #Krokom #Kundflöde #Automation #Soloföretagare",
+      "duration_ms": 3714,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "Tjena! Många tror att kunden alltid väljer det billigaste, men jag har sett motsatsen så många gånger.\n\nFaktum är att kunder ofta är villiga att betala mer för att slippa krångel och få ett system som bara funkar. De vill inte fastna och göra inget alls, utan ha ett flöde där nästa kund kommer in automatiskt. Vi fixar det åt dig.\n\nKänner du igen dig?",
+      "duration_ms": 2120,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      }
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "profil": "Annas Blommor",
+  "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+  "flode": "linkedin",
+  "genererad": "2026-07-31T19:12:56.384Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det största misstaget blivande brudpar gör? De börjar med fel fråga.\",\"body\":\"Det största misstaget blivande brudpar gör?\\nDe börjar med fel fråga.\\n\\nMan har sett bilder på Instagram eller Pinterest. En specifik blomma, en exakt färgkombination från ett kaliforniskt sommarbröllop.\\n\\nFrågan blir: ”Kan vi få exakt de här pionerna i slutet av augusti?”\\n\\nProblemet är att den frågan låser kreativiteten och ignorerar det viktigaste: säsongen här i Jämtland.\\n\\nInsikten är att byta fokus.\\nIstället för att fråga efter en specifik blomma, fråga efter en specifik känsla.\\n\\nNär vi utgår från känslan, då kan vi som florister använda vår expertis för att skapa något unikt och personligt för just er. Då kan vi välja de blommor som är som allra vackrast just den veckan ni gifter er.\\n\\nAtt arbeta med säsongen, inte mot den, ger ett resultat som känns både mer levande och självklart.\\n\\nSå nästa gång du planerar, prova att byta ut frågan:\\n\\n- Inte: ”Vad kostar vita rosor?”\\n- Utan: ”Vi vill ha en varm, romantisk och lite vild känsla. Vad blommar då?”\\n\\n- Inte: ”Kan ni få tag på den här exakta blomman?”\\n- Utan: ”Här är vår färgpalett och inspirationsbilder. Hur tolkar ni den med säsongens blommor?”\\n\\nResultatet blir alltid bättre när vi får förtroendet att skapa utifrån en känsla, inte en inköpslista.\\n\\nVilken känsla vill ni skapa på er stora dag?\",\"hashtags\":\"#bröllopsblommor #annasblommor #östersund\",\"cta\":\"soft\",\"word_count\":221,\"notes\":\"Inlägget adresserar ett vanligt kundmisstag för att positionera oss som experter och guida kunden mot ett bättre samarbete (fokus på känsla, inte specifika blommor).\"}",
+      "duration_ms": 12891,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "ecb6fb08-671f-4d8d-9108-dc2fe79373e4"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Ett bröllop börjar sällan med en färdig beställning.\",\"body\":\"Ett bröllop börjar sällan med en färdig beställning.\\n\\nOfta börjar det med en känsla. En Pinterest-mapp som svämmar över. En vag idé om ”vilt och vackert” eller ”romantiskt och ljust”. Många känner sig lite vilsna i början, och det är helt okej.\\n\\nDet är precis där vi kommer in. Vårt jobb är inte att sälja blommor ur en katalog. Det är att översätta er personlighet och vision till ett levande, blommande uttryck.\\n\\nProcessen är enklare än du tror och gäller att bygga förtroende, inte bara att bocka av en lista. Från första hej till färdig installation ser det oftast ut så här:\\n\\n1.  **Avstämningen.** Vi börjar med ett samtal (ofta över en kaffe) där ni berättar allt. Om platsen, klänningen, färgerna, känslan. Vi lyssnar mer än vi pratar och ställer frågor för att förstå er på djupet.\\n\\n2.  **Idé & offert.** Utifrån samtalet skapar vi en visuell moodboard och en detaljerad offert. Här ser ni förslaget i bild och text, från brudbukettens dahlia till vigselbågens björk. Allt är skräddarsytt, aldrig en färdig mall.\\n\\n3.  **Säsongens magi.** När vi närmar oss den stora dagen handplockar vi de absolut finaste blommorna som säsongen har att erbjuda. Vi arbetar med det som är som vackrast just då, vilket gör varje bröllop unikt.\\n\\n4.  **Skapandet.** Dagarna innan är vår verkstad fylld till bredden. Varje bukett binds för hand, varje arrangemang byggs med omsorg. Det är ett hantverk från grunden.\\n\\nAtt se allt falla på plats, från den första osäkra idén till en blommande festlokal, är det bästa vi vet.\\n\\nPlanerar du en stor dag och undrar var du ska börja? Skicka ett meddelande så kan vi prata vidare.\",\"hashtags\":\"#bröllopsblommor #annasblommor #östersund\",\"cta\":\"soft\",\"word_count\":272,\"notes\":\"Inlägget visar processen bakom kulisserna för att bygga förtroende (KNOW-port) och avdramatisera processen för den primära målgruppen (brudpar).\"}",
+      "duration_ms": 16336,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "9340ebbd-cb3d-4100-9f07-cbe27dc1bb59"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"“Hur långt i förväg måste vi boka?” är nästan alltid den första frågan.\",\"body\":\"“Hur långt i förväg måste vi boka?” är nästan alltid den första frågan.\\n\\nOavsett om det är för ett bröllop eller en större fest landar samtalet ofta där. Och det är helt förståeligt, planering handlar ju om att få de stora pusselbitarna på plats i tid.\\n\\nMen bakom de praktiska frågorna döljer sig ofta en djupare önskan: att allt ska kännas personligt och precis rätt den dagen det gäller. Därför är våra svar alltid ärliga, och handlar mer om känsla än bara kalender.\\n\\nHär är tre frågor vi ofta får, och våra svar:\\n\\n1. “Hur långt i förväg behöver vi boka er för bröllop?”\\nSvar: Gärna 9-12 månader innan, speciellt för sommardatum. Inte för att vi vill stressa, utan för att vi vill ha gott om tid att lära känna er och låta era personligheter färga blommorna. Det är då magin skapas.\\n\\n2. “Kan vi önska exakt vilka blommor vi vill ha?”\\nSvar: Vi utgår alltid från er känsla, färgpalett och stil. Men vi jobbar stenhårt med säsongens finaste svenska snittblommor. Det betyder att vi väljer det som är som vackrast just då, istället för att lova en specifik blomma som kanske inte är i sin bästa form. Resultatet blir alltid bättre.\\n\\n3. “Vad händer om vi inte vet exakt vad vi vill ha?”\\nSvar: Perfekt. Det är vårt jobb att lyssna, tolka och översätta er historia till ett blomsterspråk. Ni behöver inte kunna namnet på en enda blomma. Ni behöver bara berätta om er, så sköter vi resten.\\n\\nI grunden handlar det om förtroende. Att ni litar på vårt hantverk, och att vi får äran att förvalta era drömmar.\\n\\nHar du andra frågor kring blommor till en stor dag? Ställ dem gärna i kommentarerna.\",\"hashtags\":\"#bröllopsblommor #östersund #florist\",\"cta\":\"soft\",\"word_count\":277,\"notes\":\"Inlägget bygger förtroende (KNOW-port) genom att transparent besvara vanliga kundfrågor, vilket positionerar varumärket som en hjälpsam expert.\"}",
+      "duration_ms": 14236,
+      "autochecks": {
+        "cta_count": 3,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 77,
+          "verdict": "pass",
+          "issues": [
+            "AI-floskel: \"i grunden handlar det om\""
+          ]
+        },
+        "sparad_rad_id": "69b6e76a-daf9-4ba7-85a0-2720ddad1ac3"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Det tog sex månader från första samtalet till första leverans.\",\"body\":\"Det tog sex månader från första samtalet till första leverans.\\n\\nKunden, ett lokalt företag här i Östersund, var intresserad av ett blomsterabonnemang. Men osäkerheten fanns där. \\\"Är det verkligen värt det? Kommer det märkas någon skillnad?\\\"\\n\\nJag förstår den tvekan. Det kan kännas som en onödig utgift, en lyx man kan vara utan.\\n\\nMen den stora missuppfattningen är att se blommor som en dekoration. De är en signal. En signal till medarbetare att de arbetar på en plats som bryr sig. En signal till besökare att de kommit till ett företag som månar om detaljerna.\\n\\nNär vi väl levererade den första buketten dröjde det inte länge innan jag fick ett mejl. Inte från chefen, utan från en anställd som ville tacka.\\n\\nResultatet var inte bara en finare reception. Det var en mätbart bättre stämning.\\n\\nEffekten vi ser hos våra företagskunder kretsar ofta kring tre saker:\\n\\n1. Välkomnandet: Besökare och kunder kommenterar den levande och varma känslan direkt när de kliver in.\\n\\n2. Stoltheten: Medarbetarna känner sig mer uppskattade och blir stoltare över sin arbetsplats.\\n\\n3. Energiskiftet: En tyst och steril miljö blir plötsligt levande och mer kreativ.\\n\\nFärska blommor är sällan en fråga om budget. Det är en fråga om vilken känsla ni vill skapa.\\n\\nHar du upplevt hur miljön på en arbetsplats påverkar din egen känsla?\",\"hashtags\":\"#annasblommor #företagskund #östersund\",\"cta\":\"soft\",\"word_count\":226,\"notes\":\"Använder en generaliserad kundhistoria om tvekan inför ett företagsabonnemang för att bygga 'know' och visa på värdet bortom det estetiska.\"}",
+      "duration_ms": 14113,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "d35610e1-4e49-4d22-9e29-b13288ec790c"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Priset är nästan aldrig det som avgör om ett brudpar väljer oss.\",\"body\":\"Priset är nästan aldrig det som avgör om ett brudpar väljer oss.\\n\\nDet kan låta konstigt, men det är sant.\\n\\nNär man planerar ett bröllop eller en stor fest är budgeten såklart viktig. Man jämför offerter och letar efter det bästa värdet. Men vi märker att när det kommer till blommorna, det som ska rama in hela dagen, handlar det sällan om att hitta den lägsta prislappen.\\n\\nDet gäller något annat. En känsla.\\n\\nKänslan av trygghet i att någon förstår exakt den där visionen av vildvuxna sommarängar. Känslan av att blommorna är utvalda för säsongen, handbundna här i Östersund och inte fraktade över halva jordklotet.\\n\\nDet är därför samtalet ofta skiftar från \\\"vad kostar det?\\\" till \\\"hur jobbar ni?\\\".\\n\\nNär ett par väljer bort det billigaste alternativet investerar de oftast i:\\n\\n1.  **Personlig tolkning:** Att deras historia och stil får synas i blommorna, inte en kopia från en katalog.\\n\\n2.  **Hantverket:** Tiden och kunskapen det tar att välja ut, förbereda och binda varje stjälk så att den håller hela dagen och kvällen.\\n\\n3.  **Säsongens bästa:** Tillgång till unika, närodlade sorter som dahlior och luktärter som doftar sommar på riktigt.\\n\\n4.  **Trygghet:** Att kunna släppa en stor detalj och lita på att resultatet blir precis som man drömt om, eller till och med bättre.\\n\\nDet är en investering i minnet av dagen.\\n\\nVilken detalj på ett bröllop tycker du är viktigast att inte kompromissa med?\\n\\n#bröllopsblommor #östersund #jämtland\",\"hashtags\":\"#bröllopsblommor #östersund #jämtland\",\"cta\":\"soft\",\"word_count\":236,\"notes\":\"Inlägget positionerar värde över pris genom att fokusera på trygghet och hantverk, vilket passar varumärkets premium-USP.\"}",
+      "duration_ms": 14976,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 6,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "12ade4a4-c970-4dd4-9eb0-103c3c3b0964"
+      }
+    }
+  ]
+}
