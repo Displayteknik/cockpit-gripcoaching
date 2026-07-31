@@ -75,7 +75,9 @@ vi.mock("@/lib/content/writing-rules", async (importOriginal) => {
 import { anatomiBlock, byggTextPrompt, klippProfil, saneraText } from "@/lib/prompt-core";
 import { POST_ANATOMY } from "@/lib/content-compass/prompt";
 
-const BAS = { clientId: "klient-1", uppdrag: "=== UPPDRAG ===\nSkriv en caption.", underlag: "Ämne: vårkampanj" };
+// Fast datum (BILD-5b): säsongsraden får ALDRIG göra testerna tidsberoende.
+const FAST_DATUM_JULI = new Date(2026, 6, 15);
+const BAS = { clientId: "klient-1", uppdrag: "=== UPPDRAG ===\nSkriv en caption.", underlag: "Ämne: vårkampanj", datum: FAST_DATUM_JULI };
 
 beforeEach(() => {
   skrivreglerPaMock.mockReset();
@@ -130,6 +132,29 @@ describe("byggTextPrompt — lager och ordning", () => {
   it("icke-bildnära syfte (linkedin) får inte kit-donts", async () => {
     const b = await byggTextPrompt({ ...BAS, syfte: "linkedin" });
     expect(b.system).not.toContain("KUNDENS VILL-INTE-HA");
+  });
+});
+
+describe("säsongsraden (BILD-5b) — datum injiceras, aldrig tidsberoende", () => {
+  it("juli: säsongsraden finns, sommar, INGEN semla-markör", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption", datum: new Date(2026, 6, 15) });
+    expect(b.system).toContain("AKTUELL TID: 15 juli 2026, sommar");
+    expect(b.system).toContain("föreslå ALDRIG produkter/motiv ur fel säsong");
+    expect(b.system).not.toContain("seml");
+    expect(b.meta.lager.sasong).toBe(true);
+  });
+
+  it("februari: semla-markören (fettisdagen) finns", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption", datum: new Date(2026, 1, 5) });
+    expect(b.system).toContain("AKTUELL TID: 5 februari 2026, vinter");
+    expect(b.system).toContain("fettisdagen (semmeldags)");
+  });
+
+  it("säsongsraden ligger tidigt: efter uppdraget, före profilen", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption" });
+    const i = b.system.indexOf("AKTUELL TID:");
+    expect(i).toBeGreaterThan(b.system.indexOf("=== UPPDRAG ==="));
+    expect(i).toBeLessThan(b.system.indexOf("=== KLIENTENS VARUMÄRKESPROFIL ==="));
   });
 });
 

@@ -37,6 +37,7 @@ import {
   taBortFloskler,
   type HashtagKanal,
 } from "@/lib/content/writing-rules";
+import { sasongsPromptRad } from "@/lib/content/sasong";
 
 export type TextSyfte =
   | "caption"
@@ -65,6 +66,8 @@ export interface ByggParams {
   /** Winning-example-kategori (subcategory i client_assets). Default härleds ur syftet. */
   kategori?: string;
   maxProfilTecken?: number;
+  /** BILD-5b: datum för säsongskontexten — injiceras i tester (fast datum), default nu. */
+  datum?: Date;
 }
 
 export interface ByggdPrompt {
@@ -201,6 +204,11 @@ function escapeRe(s: string): string {
 export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
   const delar: string[] = [p.uppdrag.trim()];
   const lager: Record<string, boolean> = { uppdrag: true };
+
+  // 1b. Säsongskontext (BILD-5b) — kort rad direkt efter uppdraget, så inget flöde
+  // föreslår motiv ur fel säsong (skarpt fel: semla i juli). Datum injicerbart för test.
+  delar.push(sasongsPromptRad(p.datum));
+  lager.sasong = true;
   let profilKlippt: string[] = [];
   let profilText = "";
   let fingerprint: VoiceFingerprint | null = null;

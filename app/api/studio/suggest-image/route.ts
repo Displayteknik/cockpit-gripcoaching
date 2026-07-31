@@ -3,6 +3,7 @@ import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { searchStockPhotos, generateImagen, visualScene, motivPassar } from "@/lib/images";
 import { genereraMedExaktText, type TextAspekt } from "@/lib/studio/text-in-image";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
+import { seasonPromptLineEn } from "@/lib/content/sasong";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -37,6 +38,9 @@ export async function POST(req: NextRequest) {
     if (body.mode === "ai") {
       const ar = body.aspect === "story" ? "9:16" : body.aspect === "portrait" ? "3:4" : body.aspect === "square" ? "1:1" : "4:3";
       const directives = await getKitDirectives(await resolveClientId());
+      // BILD-5b: säsongsrad i bildprompten — hela scenen (kläder/ljus/växtlighet/väder)
+      // ska stämma med årstiden (skarpt fel: semla i juli).
+      const SEASON = ` ${seasonPromptLineEn()}`;
 
       // B3: exakt text i bilden — egen väg med vision-verifiering + programmatisk fallback.
       // Fältet är separat ("Text i bilden"), inte inbakat i friprompten.
@@ -45,7 +49,7 @@ export async function POST(req: NextRequest) {
         const aspekt: TextAspekt = ar === "9:16" ? "9:16" : ar === "3:4" ? "3:4" : "1:1";
         const scen = await visualScene(topic, niche, { textYta: true });
         const res = await genereraMedExaktText({
-          scen: `${scen} Verkligt foto, naturligt ljus.${REALISM}`,
+          scen: `${scen} Verkligt foto, naturligt ljus.${REALISM}${SEASON}`,
           text: exactText,
           aspekt,
           stil: body.textStil === "overlay" ? "overlay" : "lapp",
@@ -75,12 +79,12 @@ export async function POST(req: NextRequest) {
       // Två steg: gör om ämnet/bildtexten (ofta prosa) till en visuell scen först — annars
       // svarar bildmodellen NO_IMAGE på ett meddelande/råd.
       const scene = await visualScene(topic, niche);
-      let gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${REALISM}${imageDirectiveSuffix(directives)}`, ar);
+      let gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`, ar);
       // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
       // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
       // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
       if (gen.image && !(await motivPassar(gen.image, niche))) {
-        gen = await generateImagen(`${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${REALISM}${imageDirectiveSuffix(directives)}`, ar);
+        gen = await generateImagen(`${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus, inga texter, inga bokstäver.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`, ar);
         if (gen.image && !(await motivPassar(gen.image, niche))) {
           return NextResponse.json({ error: "Motivet ville inte träffa er verksamhet den här gången. Prova “Sök foto”, eller skriv i ämnesraden vad bilden ska föreställa." }, { status: 500 });
         }

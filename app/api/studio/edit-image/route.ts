@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveClientId } from "@/lib/client-context";
 import { editImagen } from "@/lib/images";
+import { hittaSasongsord } from "@/lib/content/sasong";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
@@ -23,7 +24,18 @@ export async function POST(req: NextRequest) {
     if (!imageUrl) return NextResponse.json({ error: "Ingen bild att ändra" }, { status: 400 });
     if (!instruction) return NextResponse.json({ error: "Skriv vad som ska ändras" }, { status: 400 });
 
-    const gen = await editImagen(instruction, imageUrl);
+    // BILD-5b: nämner instruktionen en säsong/tid ("anpassa till juli") ska HELA scenen
+    // följa med — inte bara det omnämnda objektet (skarpt fel: juli-korrekt fruktskål,
+    // men kvinnan bredvid behöll vinterkappan). Villkorat så vanliga redigeringar
+    // ("byt bakgrundsfärg") inte får onödig promptvikt.
+    const sasongsord = hittaSasongsord(instruction);
+    const instr = sasongsord.length
+      ? `${instruction}\n\nVIKTIGT — säsongskonsistens: instruktionen anger en tid/säsong (${sasongsord.join(", ")}). ` +
+        `Uppdatera då ALLA element i bilden som signalerar årstid — kläder på personer, ljus och dagsljus, växtlighet, väder och bakgrundsmiljö — ` +
+        `så att HELA scenen stämmer med den angivna tiden, inte bara det omnämnda objektet. Blanda aldrig säsongssignaler.`
+      : instruction;
+
+    const gen = await editImagen(instr, imageUrl);
     const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
     if (gen.error || !m) {
       return NextResponse.json({ error: gen.error || "Bildändring misslyckades" }, { status: 500 });

@@ -18,6 +18,7 @@
 
 import { supabaseServer } from "./supabase-admin";
 import { assertSafePublicUrl } from "./safe-url";
+import { seasonPromptLineEn } from "./content/sasong";
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const FAL_KEY = process.env.FAL_KEY || "";
@@ -203,6 +204,7 @@ async function craftImagePromptWithAI(
 
 POST CONTENT (use as topic input, NOT a literal scene to depict): "${contentText.slice(0, 1200)}"
 BRAND / INDUSTRY: ${niche || "business"}
+${seasonPromptLineEn()}
 ${fullContext}
 
 INDUSTRY-SPECIFIC VISUAL RULES (these OVERRIDE the generic style hint below):
