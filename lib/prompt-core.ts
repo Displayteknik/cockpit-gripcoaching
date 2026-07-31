@@ -118,11 +118,18 @@ const BILDNARA: TextSyfte[] = ["caption", "studio-text", "karusell", "reel", "ka
 // "full": hela anatomin inkl. exakt en CTA. "pa-bild": text som trycks PÅ bilden —
 // captionen bär CTA:n, annars får inlägget två uppmaningar (affischregeln ur copy.ts).
 //
-// CTA-GOLV (T-5): "exakt EN CTA" är en HÅRD regel som funnel-lagret aldrig kan
-// upphäva — en satt eller defaultad funnel-nivå styr uppmaningens TON, aldrig dess
-// EXISTENS. Golvet läggs därför sist i VARJE "full"-variant, oavsett compass-läge.
-const CTA_GOLV =
-  "HÅRD REGEL (CTA-golv): texten avslutas med exakt EN uppmaning (CTA), alltid sist — aldrig noll, aldrig två. En funnel-nivå styr uppmaningens TON, aldrig om den finns.";
+// CTA-GOLV (T-5, skärpt T-6a): "exakt EN CTA" är en HÅRD regel som funnel-lagret
+// aldrig kan upphäva — en satt eller defaultad funnel-nivå styr uppmaningens TON,
+// aldrig dess EXISTENS eller imperativform. Golvet läggs därför sist i VARJE
+// "full"-variant, oavsett compass-läge. T-6a: skarptestet visade captions som
+// KONSTATERAR ("vi ser till att du får...") utan att någonsin UPPMANA — golvet
+// kräver nu imperativ + väg, och föredrar tenantens egna CTA-formuleringar.
+const CTA_GOLV = [
+  "HÅRD REGEL (CTA-golv): texten avslutas med exakt EN uppmaning (CTA), alltid sist — aldrig noll, aldrig två.",
+  "CTA:n är en UPPMANING I IMPERATIV MED VÄG: den börjar med ett verb (boka, skicka, svara, kommentera, ring, läs) och säger hur eller var handlingen görs. Ett konstaterande ('vi hjälper dig gärna', 'vi ser till att du får...') är INTE en CTA.",
+  "Funnel-nivån styr uppmaningens TON och tyngd — aldrig om den finns eller att den är imperativ. Mjuk och imperativ går ihop: 'Boka en digital fika, ingen säljpitch.'",
+  "Innehåller varumärkesprofilen färdiga CTA-formuleringar (Erbjudande/CTA-sektion, kundens egna ord): FÖREDRA dem framför nyskrivna.",
+].join("\n");
 
 export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
   if (variant === "pa-bild") {

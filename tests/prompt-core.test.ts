@@ -199,6 +199,33 @@ describe("CTA-golvet (T-5) — hård regel oavsett compass-läge", () => {
   });
 });
 
+describe("T-6a — CTA-golvet är uppmaning i imperativ med väg", () => {
+  it("golvet kräver imperativ + väg, ger mjuk-och-imperativ-exemplet och föredrar profilens CTA-formuleringar", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption" });
+    expect(b.system).toContain("UPPMANING I IMPERATIV MED VÄG");
+    expect(b.system).toContain("Boka en digital fika, ingen säljpitch");
+    expect(b.system).toContain("FÖREDRA dem framför nyskrivna");
+    expect(b.system).toContain("är INTE en CTA");
+  });
+
+  it("skärpningen följer med i ALLA full-anatomilägen (compass, mjuk default, bar)", () => {
+    const lagen = [
+      anatomiBlock("full", { funnel: "bofu", four_a: null, disc: [] }),
+      anatomiBlock("full", undefined, "tofu"),
+      anatomiBlock("full", undefined, undefined),
+    ];
+    for (const block of lagen) {
+      expect(block).toContain("CTA-golv");
+      expect(block).toContain("IMPERATIV MED VÄG");
+      expect(block).toContain("aldrig om den finns eller att den är imperativ");
+    }
+  });
+
+  it("pa-bild-varianten har fortfarande inget CTA-golv", () => {
+    expect(anatomiBlock("pa-bild")).not.toContain("CTA-golv");
+  });
+});
+
 describe("compass-defaults", () => {
   it("linkedin utan compass defaultar mjukt till MOFU", async () => {
     const b = await byggTextPrompt({ ...BAS, syfte: "linkedin" });
