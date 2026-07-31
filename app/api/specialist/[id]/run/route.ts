@@ -4,6 +4,7 @@ import { getSpecialist, buildUserPrompt, SPECIALIST_GUARDRAILS } from "@/lib/spe
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { iterateGenerate } from "@/lib/iterate";
+import { byggTextPrompt } from "@/lib/prompt-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -49,6 +50,17 @@ export async function POST(
     const userPrompt = buildUserPrompt(specialist, inputs);
     const useIterate = specialist.iterate === true;
 
+    // TEXT-1 T-3: prompten byggs av prompt-core — specialisterna får därmed brand-profil
+    // (saknades helt förut), röst, winning examples, anatomi och skrivregler i fast ordning.
+    // Uppdraget = specialistens systemprompt, oförändrad.
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "specialist",
+      uppdrag: specialist.systemPrompt,
+      underlag: userPrompt,
+      kategori: specialist.category,
+    });
+
     let text: string;
     let tokens_in: number | null = null;
     let tokens_out: number | null = null;
@@ -61,8 +73,8 @@ export async function POST(
           ? { min: specialist.target_length_min, max: specialist.target_length_max }
           : undefined;
       const result = await iterateGenerate({
-        systemPrompt: specialist.systemPrompt,
-        userPrompt,
+        prebuilt: { system: bygg.system, fingerprint: bygg.fingerprint, winning: bygg.winning },
+        userPrompt: bygg.user,
         clientId,
         model: MODEL,
         maxTokens: 4096,
@@ -82,8 +94,10 @@ export async function POST(
       const msg = await anthropic.messages.stream({
         model: MODEL,
         max_tokens: 4096,
-        system: specialist.systemPrompt + SPECIALIST_GUARDRAILS,
-        messages: [{ role: "user", content: userPrompt }],
+        // Samma prompt-core-bygge som iterate-vägen — även direktkörda specialister
+        // får brand-profil + röst + anatomi. Guardrails läggs sist (Anthropic-specifika).
+        system: bygg.system + SPECIALIST_GUARDRAILS,
+        messages: [{ role: "user", content: bygg.user }],
       }).finalMessage();
       text = msg.content
         .map((c) => (c.type === "text" ? c.text : ""))
