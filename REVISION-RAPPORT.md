@@ -371,6 +371,13 @@ Reels-manus är flödet där flest lager är korrekt invävda; Compass-veckan ä
 9. Ta bort/arkivera `webbdata-demo` ur ordinarie meny (demo-/säljyta).
 10. `valideraPageId` används aldrig — antingen koppla in eller ta bort (mikrostäd i REV-1).
 
+# Öppna frågor till Håkan — BESVARADE 2026-07-31
+
+**Håkans svar (gäller vid REV-1..4):**
+1. **Kunden ska se ordet "rådgivare"** — genomgående, ersätt konsult/byrå i kundsynlig text (REV-4).
+2. **`hq` och `webbdata-demo` flyttas ut ur ordinarie menyn**, bakom admin-flagga (REV-3).
+3. **`SkapaInlaggMaker.tsx` tas bort** — verifiera FÖRST med grep att inget importerar den dynamiskt (`import(`, strängbaserade sökvägar), sedan radera. Dess KRITISK-fynd i 0.4 försvinner därmed (REV-1).
+
 # Öppna frågor till Håkan (max 3)
 
 1. **Rådgivare/konsult/byrå** — vilket ord ska kunden se? *(Om du inte vet: "din rådgivare" — mjukast och stämmer med coach-rollen.)*
