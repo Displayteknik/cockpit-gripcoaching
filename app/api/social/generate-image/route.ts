@@ -47,9 +47,27 @@ export async function POST(req: NextRequest) {
     image_style: f.image_style,
   }));
 
+  // BILD-7b: flödets EGEN historik (hm_social_posts.image_prompt) → "nyligen använda
+  // motiv, välj ett annat". Ingen ny datamodell, fail-open: variation får aldrig
+  // stoppa en generering.
+  let nyligenMotiv: string[] = [];
+  try {
+    const { data: senaste } = await sb
+      .from("hm_social_posts")
+      .select("image_prompt")
+      .eq("client_id", clientId)
+      .not("image_prompt", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(5);
+    nyligenMotiv = (senaste || [])
+      .map((r) => String(r.image_prompt || "").replace(/\s+/g, " ").trim().slice(0, 120))
+      .filter(Boolean);
+  } catch {}
+
   const result = await generateImageForPost({
     contentText,
     niche: client?.industry || undefined,
+    nyligenMotiv,
     styleId: (body.style as Parameters<typeof generateImageForPost>[0]["styleId"]) || "cinematic",
     mode: body.mode || "standalone",
     aspect: body.aspect || "square",

@@ -1,0 +1,46 @@
+{
+  "lage": "fore",
+  "kord": "2026-07-31T19:32:15.392Z",
+  "fall": [
+    {
+      "nr": 1,
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Skyltfönstret som säljer när butiken är stängd",
+      "fil": "fore-1-displayteknik.png",
+      "scen": "En kvinna i medelåldern betraktar en stor, ljusstark digital skylt i ett mörkt skyltfönster kvällstid, med produkter tydligt visade på skärmen, vilket förmedlar en känsla av tillgänglighet och modern handel."
+    },
+    {
+      "nr": 2,
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Digital menytavla i lunchrestaurangen",
+      "fil": "fore-2-displayteknik.png",
+      "scen": "En lunchrestaurang med några gäster som tittar upp mot en stor, tydlig digital menytavla som visar dagens rätter med aptitretande bilder, i ett ljust och inbjudande dagsljus."
+    },
+    {
+      "nr": 3,
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Skärmen i receptionen som visar dagens besökare och erbjudanden",
+      "fil": "fore-3-displayteknik.png",
+      "scen": "En tydlig bild av en receptionsdisk med en vänlig receptionist som ler mot en besökare, bakom dem en stor digital skärm som visar en lista över \"Dagens Besökare\" och en enkel, stilren bild på ett aktuellt \"Erbjudande\", allt i ett ljust och inbjudande dagsljus."
+    },
+    {
+      "nr": 4,
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Skyltfönstret inför helgen",
+      "fil": "fore-4-annas-blommor.png",
+      "scen": "En florist binder en stor, elegant brudbukett med vita rosor och gröna blad, i ett välfyllt skyltfönster med mjukt, naturligt ljus."
+    },
+    {
+      "nr": 5,
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Veckans buketterbjudande på skylten utanför butiken",
+      "fil": "fore-5-annas-blommor.png",
+      "scen": "Ett foto av en kund som ler och håller upp en vackert bunden bukett med färska blommor, med butikens skyltfönster och en skylt med \"Veckans buketterbjudande\" synlig i bakgrunden, i naturligt dagsljus."
+    }
+  ]
+}

@@ -61,3 +61,41 @@ qa-screen preview vs publicerat.
 
 ## ANSLUT-1..4 — efter BILD-etapperna (oförändrad scope, se ANSLUTNINGSMOTORN.md)
 DT + HM Motor rörs inte (permanenta sidtokens). Inga tokens i loggar/client bundle.
+
+## BILD-7 — bildpromptens kärnregler (KVALITET-2 del B)
+
+Tre plattformsregler i centrala lager. Inga tenant- eller branschundantag: samma krav
+gäller blomsteraffär, bilhandlare och coach. Bevis: `docs/studio/bild7-exempel/`
+(fem före/efter-par, två tenants), tester i `tests/bild7-bildprompt.test.ts`.
+
+**7a — avbildat exempelinnehåll ska ha RELEVANS *och* BUDSKAP** (`lib/images.ts`).
+Allt som porträtteras som innehåll i scenen (skärmar, skyltar, menytavlor, affischer,
+dokument, förpackningar) ska vara trovärdigt och relevant både för verksamheten och för
+inläggets budskap — aldrig dekorativ utfyllnad. Syns tenantens produkt eller miljö ska
+bilden samtidigt visa VERKLIG ANVÄNDNING. Regeln är delad i två halvor:
+`DEPICTED_RELEVANCE_*` gäller alltid (även i flöden som förbjuder läsbar text, t.ex.
+reels), `DEPICTED_MESSAGE_*` gäller där avbildad skyltning får bära text och kräver
+BÅDE motiv OCH en kort rad (erbjudande, pris, event eller tid) — menyskärm visar rätten
+plus "DAGENS LUNCH 129 KR". Budskapstexten är svensk, tankstreckfri (bygger på BILD-6a)
+och får aldrig vara en CTA som konkurrerar med inläggets.
+Det gamla blanka "inga texter, inga bokstäver" är ersatt: pålagd rubrik/uppmaning/logotyp
+är förbjuden, skyltning som hör hemma i miljön ska säga något. Förbudet stoppade ändå
+aldrig modellen från att rita skyltar — det gjorde dem bara innehållslösa.
+KVARSTÅENDE: stavningen i avbildad text kan inte garanteras på promptnivå. Exakt text
+går via "Text i bilden" (B3) med vision-grind och programmatisk fallback.
+
+**7b — motivvariation i säsongslagret** (`lib/content/sasong.ts`). Markörlistan innehåller
+bara HÖGTIDER, så den närmaste vann varje generering (kräftskiva i tre av fem
+testbilder). `sasongsUttryck()` ger nu årstidens bredare uttryck — ljus, väder,
+växtlighet, rytm, miljö — i ett roterande urval (frö injicerbart för test, slumpat i
+drift). Både `sasongsPromptRad` (sv) och `seasonPromptLineEn` (en) bär variationsregeln.
+Uttrycken är branschneutrala: de beskriver stämning, aldrig produkt. Flöden med egen
+historik skickar `nyligenMotiv` → "välj ett annat den här gången" (social-flödet läser
+`hm_social_posts.image_prompt`; ingen ny datamodell).
+
+**7c — färgton mot grafisk profil** (`lib/studio/kit.ts`). `fargTon()` tolkar profilens
+färgtemperatur språkoberoende — brand-kit-agenten skriver "varm-naturlig", formuläret
+skriver "warm". Den gamla likhetsjämförelsen mot exakt "warm" gjorde att tenanter tyst
+tappade sin ton. Direktivet säger nu konkret vad tonen betyder och att den går före en
+neutral/dämpad behandling (signaturens "muted desaturated palette" vann annars). Fortsatt
+bara färg och ljus — motivet ägs av budskapet.

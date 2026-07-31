@@ -26,6 +26,22 @@ export const NEUTRAL_DIRECTIVES: KitDirectives = {
   signature: NEUTRAL_SIGNATURE,
 };
 
+/**
+ * BILD-7c: normaliserar profilens färgtemperatur.
+ *
+ * Fältet är fritext i praktiken — brand-kit-agenten skriver svenska värden ("varm-naturlig",
+ * "sval och ren") medan formuläret skriver warm/cool/neutral. Den gamla likhetsjämförelsen
+ * mot exakt "warm" gjorde att en tenant med "varm-naturlig" tyst tappade sin färgton och fick
+ * en avmättad bild. Tolkningen är därför språkoberoende och gäller alla tenants.
+ */
+export function fargTon(varde: unknown): "warm" | "cool" | "" {
+  const v = String(varde ?? "").toLowerCase();
+  if (!v || /neutral/.test(v)) return "";
+  if (/varm|warm|gyllen|golden|amber|solig/.test(v)) return "warm";
+  if (/kall|sval|cool|cold|blå|blue|crisp/.test(v)) return "cool";
+  return "";
+}
+
 export async function getKitDirectives(clientId: string): Promise<KitDirectives> {
   try {
     const sb = supabaseService();
@@ -41,8 +57,17 @@ export async function getKitDirectives(clientId: string): Promise<KitDirectives>
     if (im.mode === "illustration") parts.push("clean vector illustration, not a photo");
     else if (im.mode === "mixed") parts.push("photo or illustration");
     if (im.prompt) parts.push(String(im.prompt));
-    if (im.colorGrade === "warm") parts.push("warm color grade");
-    else if (im.colorGrade === "cool") parts.push("cool color grade");
+    // BILD-7c: färgtemperaturen ur den grafiska profilen ska SYNAS i bilden. "warm
+    // color grade" var för svagt — signaturens behandling ("muted desaturated palette")
+    // stod senare i samma mening och vann, och varma varumärken fick avmättade bilder.
+    // Raden säger nu vad tonen betyder konkret och att den går före en neutral/dämpad
+    // behandling. Fortfarande bara färg och ljus — aldrig motivet.
+    const grade = fargTon(im.colorGrade);
+    if (grade === "warm") {
+      parts.push("warm colour temperature throughout: golden sunlit light, warm skin tones, amber highlights — never desaturated, never washed out (this colour temperature takes precedence over any neutral or muted treatment)");
+    } else if (grade === "cool") {
+      parts.push("cool colour temperature throughout: crisp blue-grey daylight, clean cool highlights — never yellow or muddy (this colour temperature takes precedence over any neutral or muted treatment)");
+    }
     if (im.people === false) parts.push("no people in the image");
     const cp = (kit.contentProfile || {}) as Record<string, any>;
     return {

@@ -1,0 +1,46 @@
+{
+  "lage": "efter",
+  "kord": "2026-07-31T19:37:14.526Z",
+  "fall": [
+    {
+      "nr": 1,
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Skyltfönstret som säljer när butiken är stängd",
+      "fil": "efter-1-displayteknik.png",
+      "scen": "En kvinna i medelåldern betraktar intresserat en stor digital skylt i ett skyltfönster kvällstid, med en varm och inbjudande belysning från butiken som reflekteras i skylten som visar \"VÅRA NYHETER SE MER\"."
+    },
+    {
+      "nr": 2,
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Digital menytavla i lunchrestaurangen",
+      "fil": "efter-2-displayteknik.png",
+      "scen": "En medelålders kvinna i kockrock ler vänligt bakom en disk i en modern lunchrestaurang, med en stor, tydlig digital menytavla i bakgrunden som visar \"DAGENS LUNCH 129 KR\" med en aptitlig bild av en maträtt, i ett väl upplyst och inbjudande rum."
+    },
+    {
+      "nr": 3,
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Skärmen i receptionen som visar dagens besökare och erbjudanden",
+      "fil": "efter-3-displayteknik.png",
+      "scen": "En receptionist ler mot en besökare framför en stor, modern digital skärm i en ljus lobby, där skärmen visar \"VÄLKOMMEN TILL OSS\" och \"MÖTE KL 10:00\"."
+    },
+    {
+      "nr": 4,
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Skyltfönstret inför helgen",
+      "fil": "efter-4-annas-blommor.png",
+      "scen": "En florist arrangerar en stor, färgsprakande brudbukett med vita rosor, gröna blad och lila eustoma i ett välbelyst skyltfönster, med en liten handskriven skylt som säger \"HELGBUKETT 299 KR\" bredvid."
+    },
+    {
+      "nr": 5,
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Veckans buketterbjudande på skylten utanför butiken",
+      "fil": "efter-5-annas-blommor.png",
+      "scen": "En närbild av en hand som justerat en skylt med texten \"VECKANS BUKETT 299 KR\" bredvid en färgstark bukett med snittblommor, i naturligt dagsljus med en glad och inbjudande stämning."
+    }
+  ]
+}

@@ -34,6 +34,33 @@ export const NO_DASH_IN_IMAGE_SV =
   "Text som ändå syns i bilden — även på avbildade skärmar, skyltar, affischer och förpackningar — " +
   "får ALDRIG innehålla tankstreck (– eller —). Skriv datum och intervall utan (t.ex. 'KRÄFTSKIVA 8 AUGUSTI').";
 
+// ── BILD-7a: avbildat exempelinnehåll ska ha RELEVANS *och* BUDSKAP ─────────
+// Allt som porträtteras som exempelinnehåll i en genererad bild — skärmar, skyltar,
+// menytavlor, affischer, dokument, förpackningar, produkter — är en del av budskapet,
+// aldrig dekorativ utfyllnad. Skarpa fel bakom regeln: LED-skärmar med abstrakta
+// färgvirvlar (ser omedelbart AI-genererat ut) och skyltfönster som visar något helt
+// annat än vad tenanten säljer.
+//
+// Regeln är delad i två halvor med flit:
+//   RELEVANS — gäller ALLTID, även i flöden som förbjuder läsbar text i bilden.
+//   BUDSKAP  — gäller där avbildad skyltning tillåts bära text. Då ska skylten ha
+//              BÅDE ett relevant motiv OCH en kort trovärdig rad (erbjudande, pris,
+//              event eller tid) i en vertikal som är rimlig för tenanten.
+// Plattformsregel: samma krav för blomsteraffär, bilhandlare och coach.
+export const DEPICTED_RELEVANCE_EN =
+  "DEPICTED EXAMPLE CONTENT: anything shown as content inside the scene — screens, displays, signs, menu boards, posters, documents, packaging, price tags, products — must be believable and relevant BOTH to this business and to the message of the post. It is never decorative filler: no abstract glowing swirls, no fantasy graphics, no placeholder artwork, no unrelated brands. When the business's own product or environment is visible, the image must at the same time demonstrate REAL USE of it.";
+export const DEPICTED_RELEVANCE_SV =
+  "AVBILDAT EXEMPELINNEHÅLL: allt som visas som innehåll i scenen — skärmar, skyltar, menytavlor, affischer, dokument, förpackningar, prislappar, produkter — ska vara trovärdigt och relevant både för verksamheten och för inläggets budskap. Det är aldrig dekorativ utfyllnad: inga abstrakta färgvirvlar, inga fantasigrafiker, inga platshållarmönster. När verksamhetens egen produkt eller miljö syns ska bilden samtidigt visa VERKLIG ANVÄNDNING av den.";
+
+export const DEPICTED_MESSAGE_EN =
+  "DEPICTED SIGNAGE MUST CARRY A MESSAGE: when a screen, sign, board, window display or poster is visible it must have BOTH a recognisable subject AND a short, believable message in Swedish — an offer, a price, an event or a time — that makes sense for this business. Examples of the principle: a menu screen shows the dish itself plus 'DAGENS LUNCH 129 KR'; a shop window shows what the shop actually sells plus a short campaign line. Keep it to two to five short, ordinary Swedish words, spelled correctly: use å, ä and ö ONLY in words that actually have them (write IDAG, not IDÅG; VÄLKOMMEN, not VÄKLLOMMEN) and never double or reorder letters. Never write a call to action that competes with the post's own — no 'RING NU', no phone numbers, no web addresses, no invented brand logos.";
+export const DEPICTED_MESSAGE_SV =
+  "AVBILDAD SKYLTNING SKA BÄRA ETT BUDSKAP: syns en skärm, skylt, tavla, skyltfönster eller affisch ska den ha BÅDE ett tydligt motiv OCH en kort trovärdig rad på svenska — ett erbjudande, ett pris, ett event eller en tid — som är rimlig för verksamheten. Principen: menyskärmen visar rätten plus \"DAGENS LUNCH 129 KR\"; skyltfönstret visar det butiken faktiskt säljer plus en kort kampanjrad. Håll det till två till fem korta, vanliga svenska ord, rättstavade: använd å, ä och ö BARA i ord som verkligen har dem (skriv IDAG, inte IDÅG; VÄLKOMMEN, inte VÄKLLOMMEN) och dubblera aldrig bokstäver. Skriv aldrig en uppmaning som konkurrerar med inläggets egen — inga \"RING NU\", inga telefonnummer, inga webbadresser.";
+
+/** Hela BILD-7a-regeln för flöden där avbildad skyltning får bära text. */
+export const DEPICTED_CONTENT_EN = `${DEPICTED_RELEVANCE_EN} ${DEPICTED_MESSAGE_EN} ${NO_DASH_IN_IMAGE_EN}`;
+export const DEPICTED_CONTENT_SV = `${DEPICTED_RELEVANCE_SV} ${DEPICTED_MESSAGE_SV} ${NO_DASH_IN_IMAGE_SV}`;
+
 export const IMAGE_STYLES = [
   { id: "cinematic", label: "Cinematic mörk", desc: "Filmisk, dramatisk belysning", prompt: "Cinematic commercial photography. Dramatic directional lighting with deep shadows. Film-grade color grading. Dark navy and warm accent tones. Shot on full-frame camera with 35mm lens." },
   { id: "editorial", label: "Editorial reportage", desc: "Tidskriftskänsla, autentiskt", prompt: "High-end editorial photography. Real environments, authentic moments. Magazine-quality composition. Natural but refined lighting. Storytelling through visual detail." },
@@ -184,6 +211,7 @@ async function craftImagePromptWithAI(
   mode: "overlay" | "standalone",
   feedback?: ImageFeedback[],
   brandContext?: string,
+  nyligenMotiv?: string[],
 ): Promise<string> {
   if (!GEMINI_KEY) return contentText;
   const rules = rulesForNiche(niche);
@@ -214,7 +242,7 @@ async function craftImagePromptWithAI(
 
 POST CONTENT (use as topic input, NOT a literal scene to depict): "${contentText.slice(0, 1200)}"
 BRAND / INDUSTRY: ${niche || "business"}
-${seasonPromptLineEn()}
+${seasonPromptLineEn(new Date(), { nyligenMotiv })}
 ${fullContext}
 
 INDUSTRY-SPECIFIC VISUAL RULES (these OVERRIDE the generic style hint below):
@@ -235,6 +263,7 @@ CRITICAL RULES (NEVER VIOLATE):
 4. NO extreme dramatic dark close-ups of body parts unless the industry rules explicitly allow it.
 5. NEVER let the generic style baseline override the industry rules.
 6. ${NO_DASH_IN_IMAGE_EN}
+7. ${DEPICTED_RELEVANCE_EN}
 ${feedbackSection}
 
 Write ONLY the prompt, 3-4 sentences, hyper-specific about: subject, environment, lighting, mood, composition.` }] }],
@@ -291,13 +320,25 @@ export async function visualScene(topic: string, niche: string, opts?: { textYta
   try {
     // textYta: bilden ska innehålla en skylt/lapp där exakt text sätts efteråt (B3) —
     // då får scenen INTE förbjuda text, och ytan ska beskrivas. Texten själv nämns aldrig här.
+    // BILD-7a: den gamla raden var ett blankt textförbud. Det stoppade aldrig modellen
+    // från att rita skyltar (BILD-6a föddes ur en avbildad skärmannons) — det gjorde
+    // bara skyltarna innehållslösa. Nu skiljs pålagd rubrik/CTA från skyltning som
+    // naturligt hör hemma i miljön: det förra är förbjudet, det senare ska säga något.
     const textDel = opts?.textYta
       ? `Bilden ska innehålla en tydlig skylt, lapp eller yta där text kommer att sitta — beskriv motivet och var ytan är, men nämn INTE någon text. `
-      : `Inga texter/bokstäver i bilden. `;
+      : `Ingen pålagd rubrik, ingen uppmaning och ingen logotyp ovanpå bilden. `;
     // Motivet MÅSTE höra hemma i verksamheten. Skarpt fel: "Sluta köpa billigt" för ett
     // digital signage-företag gav en sliten tröja — modellen tog budskapet som generisk
     // metafor. Metaforer från andra branscher är förbjudna.
-    const branschDel = `Motivet ska omisskännligt höra hemma i just denna verksamhet (${niche}) — visa verksamhetens miljö, produkter eller kunder. Använd ALDRIG metaforer eller motiv från andra branscher (kläder, kaffe, schack och liknande). Beskriv en VERKLIG vardagsmiljö, gärna med människor eller kunder när det passar — aldrig en steril arkitekturbild. Visas en skärm/display i motivet ska den visa enkelt verkligt innehåll (produktbild, meny, enkel skylt) — aldrig abstrakta färgvirvlar. `;
+    // BILD-7a: skärmar/skyltar i motivet ska ha relevans OCH budskap. Den gamla raden
+    // krävde bara "enkelt verkligt innehåll" — resultatet blev tomma menytavlor och
+    // skyltfönster utan poäng. Nu ska scenen beskriva vad skylten visar OCH säger.
+    const branschDel =
+      `Motivet ska omisskännligt höra hemma i just denna verksamhet (${niche}) — visa verksamhetens miljö, produkter eller kunder. ` +
+      `Använd ALDRIG metaforer eller motiv från andra branscher (kläder, kaffe, schack och liknande). ` +
+      `Beskriv en VERKLIG vardagsmiljö, gärna med människor eller kunder när det passar — aldrig en steril arkitekturbild. ` +
+      `${DEPICTED_RELEVANCE_SV} ${opts?.textYta ? "" : DEPICTED_MESSAGE_SV + " "}` +
+      `Nämn i scenbeskrivningen vad en eventuell skärm/skylt visar. `;
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -524,6 +565,8 @@ export async function generateImageForPost(opts: {
   aspect?: "square" | "portrait" | "landscape";
   feedback?: ImageFeedback[];
   brandContext?: string;
+  /** BILD-7b: motiv från de senaste genereringarna → "välj ett annat den här gången". */
+  nyligenMotiv?: string[];
 }): Promise<{ success?: boolean; image?: string; error?: string; engine?: string; prompt?: string }> {
   const niche = opts.niche || "business";
   // Om ingen styleId angiven — välj smart baserat på bransch (INTE alltid "cinematic mörk")
@@ -531,7 +574,7 @@ export async function generateImageForPost(opts: {
   const styleObj = IMAGE_STYLES.find((s) => s.id === resolvedStyleId) || IMAGE_STYLES[1];
   const mode = opts.mode || "standalone";
 
-  const aiScene = await craftImagePromptWithAI(opts.contentText, niche, styleObj.prompt, mode, opts.feedback, opts.brandContext);
+  const aiScene = await craftImagePromptWithAI(opts.contentText, niche, styleObj.prompt, mode, opts.feedback, opts.brandContext, opts.nyligenMotiv);
   const fullPrompt = `${aiScene}
 CRITICAL: Absolutely NO text, NO words, NO letters, NO numbers in the image.
 Photorealistic. Natural composition. 4K resolution feel.
