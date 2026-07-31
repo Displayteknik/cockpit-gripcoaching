@@ -147,6 +147,33 @@ describe("anatomin", () => {
   });
 });
 
+describe("CTA-golvet (T-5) — hård regel oavsett compass-läge", () => {
+  it("caption (mjuk funnel-default) bär CTA-golvet", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption" });
+    expect(b.system).toContain("CTA-golv");
+  });
+
+  it("karusell med uttrycklig compass bär CTA-golvet", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "karusell", compass: { funnel: "bofu", four_a: null, disc: [] } });
+    expect(b.system).toContain("CTA-golv");
+  });
+
+  it("linkedin utan compass bär CTA-golvet", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "linkedin" });
+    expect(b.system).toContain("CTA-golv");
+  });
+
+  it("bar anatomi (ingen compass, ingen default) bär CTA-golvet", () => {
+    expect(anatomiBlock("full", undefined, undefined)).toContain("CTA-golv");
+  });
+
+  it("pa-bild-varianten (studio-text) har INTE CTA-golvet — captionen bär uppmaningen", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "studio-text" });
+    expect(b.system).not.toContain("CTA-golv");
+    expect(b.system).toContain("INGEN CTA i texten på bilden");
+  });
+});
+
 describe("compass-defaults", () => {
   it("linkedin utan compass defaultar mjukt till MOFU", async () => {
     const b = await byggTextPrompt({ ...BAS, syfte: "linkedin" });

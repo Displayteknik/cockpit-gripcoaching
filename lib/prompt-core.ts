@@ -112,6 +112,13 @@ const BILDNARA: TextSyfte[] = ["caption", "studio-text", "karusell", "reel", "ka
 // ── Anatomilagret — frikopplat från Compass ──────────────────────────────────
 // "full": hela anatomin inkl. exakt en CTA. "pa-bild": text som trycks PÅ bilden —
 // captionen bär CTA:n, annars får inlägget två uppmaningar (affischregeln ur copy.ts).
+//
+// CTA-GOLV (T-5): "exakt EN CTA" är en HÅRD regel som funnel-lagret aldrig kan
+// upphäva — en satt eller defaultad funnel-nivå styr uppmaningens TON, aldrig dess
+// EXISTENS. Golvet läggs därför sist i VARJE "full"-variant, oavsett compass-läge.
+const CTA_GOLV =
+  "HÅRD REGEL (CTA-golv): texten avslutas med exakt EN uppmaning (CTA), alltid sist — aldrig noll, aldrig två. En funnel-nivå styr uppmaningens TON, aldrig om den finns.";
+
 export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
   if (variant === "pa-bild") {
     return [
@@ -123,10 +130,10 @@ export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParam
     ].join("\n");
   }
   const harParams = !!(compass && (compass.funnel || compass.four_a || (compass.disc || []).length));
-  if (harParams) return contentCompassBlock(compass!);
+  if (harParams) return `${contentCompassBlock(compass!)}\n${CTA_GOLV}`;
   if (mjukDefault) {
     const block = contentCompassBlock({ funnel: mjukDefault, four_a: null, disc: [] });
-    return `${block}\n(Funnel-nivån ovan är förvald för den här innehållstypen — väg in den bara om inget annat framgår av ämnet.)`;
+    return `${block}\n(Funnel-nivån ovan är förvald för den här innehållstypen — väg in den bara om inget annat framgår av ämnet.)\n${CTA_GOLV}`;
   }
   return [
     "=== INLÄGGSANATOMI (följ i ordning) ===",
@@ -134,6 +141,7 @@ export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParam
     `2. ${POST_ANATOMY.story}`,
     `3. ${POST_ANATOMY.nytta}`,
     `4. ${POST_ANATOMY.cta}`,
+    CTA_GOLV,
   ].join("\n");
 }
 
