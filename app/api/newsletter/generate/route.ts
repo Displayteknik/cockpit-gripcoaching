@@ -4,7 +4,7 @@ import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generateNewsletter, renderNewsletterHtml, renderNewsletterText } from "@/lib/newsletter";
-import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
+import { saneraText } from "@/lib/prompt-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -54,15 +54,23 @@ export async function POST(req: NextRequest) {
       compass: b.compass && typeof b.compass === "object" ? b.compass : null,
     });
 
+    // TEXT-1: enhetlig sanering via saneraText — på innehållsfälten FÖRE rendering,
+    // så färdig HTML (hex-färger m.m.) aldrig körs genom hashtag-städet.
+    const ren = (x: string) => saneraText(x, clientId);
+    content.subjects = await Promise.all(content.subjects.map(ren));
+    [content.preheader, content.greeting, content.intro, content.cta_text, content.signoff] = await Promise.all([
+      ren(content.preheader), ren(content.greeting), ren(content.intro), ren(content.cta_text), ren(content.signoff),
+    ]);
+    content.sections = await Promise.all(
+      content.sections.map(async (s) => ({ heading: await ren(s.heading), body: await ren(s.body) })),
+    );
+
     const subject = content.subjects[0] || title || "Nyhetsbrev";
     const brandName = client?.name || "";
     const html = renderNewsletterHtml(content, { brandName, primaryColor: client?.primary_color, ctaUrl });
     const text = renderNewsletterText(content, { brandName, ctaUrl });
 
-    // Skyddsnät: skrivreglerna gäller även nyhetsbrev (inga hashtags i mejl).
-    const pa = await skrivreglerPa(clientId);
-    const r = (x: string) => (pa ? sanitizeGenerated(x, { hashtags: false }) : x);
-    return NextResponse.json({ content, subject: r(subject), html: r(html), text: r(text), ctaUrl: ctaUrl || null, sourceBlogId: b.blogId || null });
+    return NextResponse.json({ content, subject, html, text, ctaUrl: ctaUrl || null, sourceBlogId: b.blogId || null });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
