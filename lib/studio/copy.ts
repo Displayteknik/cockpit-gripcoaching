@@ -58,10 +58,6 @@ const FORBIDDEN = [
 // Dinglande funktionsord i slutet = troligt avhugget fragment ("En liten skäv förändrar").
 const DANGLING = /\b(och|att|som|en|ett|för|med|på|till|av|den|det|är|kan|när|men|eller|så|de|vi|din|ditt)\s*$/i;
 
-// De fem hook-typerna. En per parallellt försök → tre distinkta förslag i stället för
-// tre varianter av samma rubrik.
-const HOOK_TYPES = ["fråga", "konträr", "berättelse", "påstående", "statistik"] as const;
-
 // CTA hör i bildtexten och i mallens fot-knapp, aldrig i texten PÅ bilden.
 const CTA_ORD = /\b(boka|ring|kontakta|hör av dig|mejla|maila|swisha|beställ|offert inom|slå en signal|besök oss|klicka)\b/i;
 

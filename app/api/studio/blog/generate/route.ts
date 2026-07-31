@@ -5,7 +5,7 @@ import { getGhlConfig, ghlBlogMeta, ghlListBlogPosts, resolveBlogPostBase } from
 import { generateImagen, searchStockPhotos } from "@/lib/images";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
-import { sanitizeGenerated, WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
+import { sanitizeGenerated } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
