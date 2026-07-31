@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getKnowledge } from "@/lib/knowledge";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
-import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,9 +58,6 @@ export async function POST(req: NextRequest) {
       if (w) resourceCtx = `\n## VERK-KONTEXT\n${JSON.stringify(w, null, 2)}\n`;
     }
 
-    const knowledge = await getKnowledge("viral-hooks", "conversion");
-    const fp = await getVoiceFingerprint(clientId).catch(() => null);
-    const voiceBlock = fp ? fingerprintToPromptBlock(fp) : "";
     const isCarousel = body.format === "carousel";
 
     const slideSchema = isCarousel
@@ -80,11 +76,9 @@ export async function POST(req: NextRequest) {
       ? `Detta är en STORY. Kort, personlig, känns spontan. Inkludera engagement-trigger (poll/fråga/sticker).`
       : `Standard inlägg. Hook först, värde sen, CTA sist.`;
 
-    const system = `Du är ${client?.name || "klientens"} egna content-producent. Du skriver konverterande inlägg för Instagram och Facebook på svenska.
-
-${knowledge}
-
-${voiceBlock}
+    // TEXT-1 T-2: prompten byggs av prompt-core (kunskap, brand-profil, röst, winning,
+    // anatomi/compass och skrivregler ägs av kärnan). Uppdraget = flödets hårda regler.
+    const uppdrag = `Du är ${client?.name || "klientens"} egna content-producent. Du skriver konverterande inlägg för Instagram och Facebook på svenska.
 
 FORMAT-INSTRUKTION: ${formatGuide}
 
@@ -97,10 +91,9 @@ HÅRDA REGLER:
 - Inte "i denna artikel" eller "vi kommer att" — skriv direkt.
 - Skriv ALDRIG strukturella etiketter ("Hook:", "Caption:", "CTA:", "Hashtags:", "Format note:") inuti fält-värdena. Varje fält ska vara ENBART det copy-paste-färdiga innehållet.
 - INGEN emoji-prefix på hook (🎣, 🚨, 💡 etc) — Ingela skriver inte med scroll-stop-emojis.
-- INGA hashtags i caption — hashtags hör endast hemma i hashtags-fältet. Aldrig dubbla.
+- INGA hashtags i caption — hashtags hör endast hemma i hashtags-fältet. Aldrig dubbla.`;
 
-RETURNERA JSON:
-{
+    const jsonSchema = `{
   "hook": "3 sekunder — texten som stoppar scrollen",
   "caption": "Hela inläggstexten",
   "hashtags": "#hashtag1 #hashtag2 ...",
@@ -116,15 +109,27 @@ ${resourceCtx}
 
 Skriv det konverterande inlägget enligt reglerna nu.`;
 
-    const post = await generateJSON<GeneratedPost>({
-      model: "gemini-2.5-pro",
-      systemInstruction: system,
-      prompt: userPrompt,
-      temperature: 0.9,
-      maxOutputTokens: isCarousel ? 4000 : 2000,
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "social",
+      kanal: body.platform,
+      uppdrag,
+      underlag: userPrompt,
+      knowledge: ["viral-hooks", "conversion"],
+      jsonSchema,
     });
 
-    // Sanera bort strukturella etiketter, emoji-prefix och hashtag-läckage
+    const post = await generateJSON<GeneratedPost>({
+      model: "gemini-2.5-pro",
+      systemInstruction: bygg.system,
+      prompt: bygg.user,
+      temperature: 0.9,
+      maxOutputTokens: isCarousel ? 4000 : 2000,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+    });
+
+    // Strukturell städning (etiketter, emoji-prefix, hashtag-läckage) — formatfix,
+    // inte språksanering. Språket saneras enhetligt av saneraText (TEXT-1) nedan.
     const stripLabels = (s: string | undefined): string => {
       if (!s) return "";
       let t = s.trim();
@@ -140,21 +145,13 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
       t = t.replace(/\n+\s*(?:#\S+\s*){2,}\s*$/g, "");
       return t.trim();
     };
-    // Hård fångare av "handla om" i alla tempus
-    const stripForbidden = (s: string): string => {
-      if (!s) return s;
-      let t = s;
-      t = t.replace(/\bdet handlar om\b/gi, "det här är");
-      t = t.replace(/\bdet handlade om\b/gi, "det var");
-      t = t.replace(/\bdet handlat om\b/gi, "det varit");
-      t = t.replace(/\bhandlar om\b/gi, "är");
-      t = t.replace(/\bhandlade om\b/gi, "var");
-      t = t.replace(/\bhandlat om\b/gi, "varit");
-      return t;
-    };
-    post.hook = stripForbidden(stripEmojiPrefix(stripLabels(post.hook)));
-    post.caption = stripForbidden(stripHashtagBlock(stripLabels(post.caption)));
-    post.cta = stripForbidden(stripLabels(post.cta));
+    // TEXT-1: den egna stripForbidden-funktionen ersatt av enhetlig saneraText.
+    const kanal = body.platform === "facebook" ? "facebook" : "instagram";
+    [post.hook, post.caption, post.cta] = await Promise.all([
+      saneraText(stripEmojiPrefix(stripLabels(post.hook)), clientId, kanal),
+      saneraText(stripHashtagBlock(stripLabels(post.caption)), clientId, kanal),
+      saneraText(stripLabels(post.cta), clientId, kanal),
+    ]);
     post.hashtags = stripLabels(post.hashtags);
 
     const { data: saved, error } = await sb
