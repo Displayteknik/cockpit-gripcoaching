@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
-import { generateFlux, searchStockPhotos } from "@/lib/images";
+import { generateFlux, searchStockPhotos, NO_DASH_IN_IMAGE_EN } from "@/lib/images";
 import { genereraMedExaktText } from "@/lib/studio/text-in-image";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { adoptReelMedia, listReelMedia } from "@/lib/studio/reel-media";
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       const exactText = String((body as { exactText?: string }).exactText || "").slice(0, 120).trim();
       if (exactText) {
         const res = await genereraMedExaktText({
-          scen: `${prompt} Vertical 9:16 composition. Photographic and real.`,
+          scen: `${prompt} Vertical 9:16 composition. Photographic and real. ${NO_DASH_IN_IMAGE_EN}`,
           text: exactText,
           aspekt: "9:16",
           stil: "lapp",
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       // Bildmodeller hittar på läsbar text på skyltar och affischer även när prompten
       // säger no text. Förbudet upprepas därför i Avoid-form, som väger tyngre.
       const gen = await generateFlux(
-        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real, documentary style, believable everyday setting. Any screen in frame shows simple realistic content, never abstract glowing swirls.${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
+        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real, documentary style, believable everyday setting. Any screen in frame shows simple realistic content, never abstract glowing swirls. ${NO_DASH_IN_IMAGE_EN}${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
         "portrait",
       );
       if (gen.error || !gen.image) {

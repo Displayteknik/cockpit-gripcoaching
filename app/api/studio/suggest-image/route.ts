@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
-import { searchStockPhotos, generateImagen, visualScene, motivPassar } from "@/lib/images";
+import { searchStockPhotos, generateImagen, visualScene, motivPassar, NO_DASH_IN_IMAGE_EN } from "@/lib/images";
 import { genereraMedExaktText, type TextAspekt } from "@/lib/studio/text-in-image";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { seasonPromptLineEn } from "@/lib/content/sasong";
@@ -18,7 +18,9 @@ const BUCKET = "studio-images";
 // är det största AI-avslöjandet i signage-sammanhang (skarp feedback från Håkan).
 const REALISM =
   " Documentary-style photograph, believable everyday Swedish setting, natural light, candid realism with slight imperfections — not a sterile architectural render." +
-  " Any screen or display in the image shows SIMPLE realistic content such as a clean product photo, a menu board or a plain sign layout — never abstract glowing swirls, fantasy graphics or colourful artwork.";
+  " Any screen or display in the image shows SIMPLE realistic content such as a clean product photo, a menu board or a plain sign layout — never abstract glowing swirls, fantasy graphics or colourful artwork." +
+  // BILD-6a: tankstreck förbjudet även i avbildad text (skärmannons visade "KRÄFTSKIVA – 8 AUGUSTI").
+  ` ${NO_DASH_IN_IMAGE_EN}`;
 
 // POST /api/studio/suggest-image — { mode: "stock" | "ai", topic, aspect }
 // stock → Pexels-foton (publika URL:er, direkt användbara). ai → Imagen 4.0 → studio-images.

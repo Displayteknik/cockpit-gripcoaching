@@ -24,6 +24,16 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const FAL_KEY = process.env.FAL_KEY || "";
 const PEXELS_KEY = process.env.PEXELS_API_KEY || "";
 
+// BILD-6a: tankstrecksregeln gäller även SCENOGRAFI — text på avbildade skärmar,
+// skyltar, affischer och förpackningar (skarpt fall: en avbildad skärmannons visade
+// "KRÄFTSKIVA – 8 AUGUSTI"). Läggs i bildprompternas hårda regler i alla vägar.
+export const NO_DASH_IN_IMAGE_EN =
+  "Any text appearing IN the image — including on depicted screens, signs, posters and packaging — " +
+  "must never contain dashes (– or —). Write dates and ranges without them (e.g. 'KRÄFTSKIVA 8 AUGUSTI').";
+export const NO_DASH_IN_IMAGE_SV =
+  "Text som ändå syns i bilden — även på avbildade skärmar, skyltar, affischer och förpackningar — " +
+  "får ALDRIG innehålla tankstreck (– eller —). Skriv datum och intervall utan (t.ex. 'KRÄFTSKIVA 8 AUGUSTI').";
+
 export const IMAGE_STYLES = [
   { id: "cinematic", label: "Cinematic mörk", desc: "Filmisk, dramatisk belysning", prompt: "Cinematic commercial photography. Dramatic directional lighting with deep shadows. Film-grade color grading. Dark navy and warm accent tones. Shot on full-frame camera with 35mm lens." },
   { id: "editorial", label: "Editorial reportage", desc: "Tidskriftskänsla, autentiskt", prompt: "High-end editorial photography. Real environments, authentic moments. Magazine-quality composition. Natural but refined lighting. Storytelling through visual detail." },
@@ -224,6 +234,7 @@ CRITICAL RULES (NEVER VIOLATE):
 3. NO text, words, letters, numbers in image.
 4. NO extreme dramatic dark close-ups of body parts unless the industry rules explicitly allow it.
 5. NEVER let the generic style baseline override the industry rules.
+6. ${NO_DASH_IN_IMAGE_EN}
 ${feedbackSection}
 
 Write ONLY the prompt, 3-4 sentences, hyper-specific about: subject, environment, lighting, mood, composition.` }] }],
@@ -437,7 +448,8 @@ export async function editImagen(
 
   const fullPrompt =
     `Redigera bilden enligt instruktionen. Behåll allt annat oförändrat — samma komposition, ` +
-    `stil, ljus, färgton och bildformat. Ändra endast det som efterfrågas. Inga texter, siffror eller bokstäver i bilden.\n` +
+    `stil, ljus, färgton och bildformat. Ändra endast det som efterfrågas. Inga texter, siffror eller bokstäver i bilden. ` +
+    `${NO_DASH_IN_IMAGE_SV}\n` +
     `Instruktion: ${instruction}`;
 
   const parts = [
