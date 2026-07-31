@@ -5,7 +5,7 @@
 // och genererar flera varianter; filtren efteråt tar bort fragment/AI-språk → topp 3.
 
 import { iterateGenerate } from "@/lib/iterate";
-import { byggTextPrompt } from "@/lib/prompt-core";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
 
 export interface StudioCopySuggestion {
@@ -199,7 +199,18 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     if (picked.length >= 3) break;
     if (!picked.includes(p.s)) picked.push(p.s);
   }
-  return picked;
+  // TEXT-1 justeringsrundan (v2): fälten gick aldrig genom saneringen — tankstreck
+  // läckte rakt ut på bilderna (20 %→50 % i mätningen). Saneras EFTER score/dedup
+  // (scoren ska mäta modellens råa träffsäkerhet som förut), FÖRE retur. Hashtag-
+  // städet är verkningslöst här (fälten har inga hashtags) men skadar inte.
+  return Promise.all(
+    picked.map(async (s) => ({
+      hookType: s.hookType,
+      headline1: await saneraText(s.headline1, opts.clientId),
+      headline2: await saneraText(s.headline2, opts.clientId),
+      body: await saneraText(s.body, opts.clientId),
+    })),
+  );
 }
 
 // Normalisera en rubrik för likhets-jämförelse: gemener, bort skiljetecken + vanliga småord.
