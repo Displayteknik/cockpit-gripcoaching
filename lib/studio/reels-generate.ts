@@ -6,15 +6,15 @@
 // från mallen — modellen får bara fylla i orden. Då kan en slarvig generering aldrig
 // ge en reel som är 47 sekunder lång eller har sju scener.
 //
-// Promptlagren vävs in EXPLICIT här: röst → hook-playbook → contentCompassBlock
-// (anatomi, funnel, 4A, DISC och de globala skrivreglerna sist) → mallens scenkrav.
-// Se lib/iterate.ts:21 för motsatsen: där deklarerades fältet contentCompass men
-// sattes aldrig av någon anropare, så Compass-lagren nådde aldrig prompten.
+// Promptlagren byggs av lib/prompt-core (TEXT-1 T-3): uppdraget här är scen-/overlay-/
+// bild-/caption-/ärlighetsreglerna, kärnan lägger hook-playbook, varumärkesprofil, röst,
+// winning examples, anatomi + Compass (mallens funnel/4A + opts.disc), kit-donts,
+// skrivregler och JSON-schemat SIST. Kit-direktiven hämtas lokalt enbart för BILDDELEN
+// (imageNegative) — donts-raden ägs av kärnans lager 7.
 
 import { generate } from "@/lib/gemini";
-import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
-import { contentCompassBlock } from "@/lib/content-compass/prompt";
+import { byggTextPrompt } from "@/lib/prompt-core";
+import { getKitDirectives, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 import {
   MAX_REEL_MS,
@@ -27,38 +27,30 @@ import {
   type ReelGenOpts,
   type ReelScene,
   type ReelStoryboard,
+  type ReelTemplate,
 } from "@/lib/studio/reels";
 
 interface RawScene { line1: string; line2: string; imagePrompt: string }
 
-export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelStoryboard> {
+// Bygger reel-systemprompten via prompt-core. Exporterad separat så paritetstestet
+// (tests/reels-prompt-paritet.test.ts) kan verifiera att alla innehållsblock finns kvar
+// utan att köra genereringsloopen.
+export async function byggReelPrompt(opts: ReelGenOpts): Promise<{ system: string; mall: ReelTemplate }> {
   const mall = REEL_TEMPLATES[opts.templateKey];
   if (!mall) throw new Error(`Okänd mall: ${opts.templateKey}`);
 
-  const ide = String(opts.ide || "").trim();
-  if (!ide) throw new Error("Skriv en idé först");
-
-  const [playbook, profile, directives] = await Promise.all([
-    getKnowledge("hook-playbook").catch(() => ""),
-    // Explicit klient: manusmotorn VET vilken kund den skriver för. Utan argument
-    // hade ett anrop utan sessionskontext tyst fått standardklientens röst.
-    getProfileAsMarkdown(opts.clientId).catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
-  ]);
-
-  // Lager 2 till 6: anatomi, funnel, 4A, DISC och de globala skrivreglerna sist.
-  const compass = contentCompassBlock({ funnel: mall.funnel, four_a: mall.fourA, disc: opts.disc || [] });
+  // Kit-direktiven behövs lokalt BARA för bilddelen (imageNegative styr motiven).
+  // Donts-raden (text/ton) läggs av kärnans lager 7 — inte här, annars dubblett.
+  const directives = await getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES);
 
   const scenSpec = mall.scenes
     .map((s, i) => `${i + 1}. ${s.kind} (${(s.durationMs / 1000).toFixed(1)} sek): ${s.roll}`)
     .join("\n");
 
-  const system = [
+  const uppdrag = [
     "Du skriver manus till korta vertikala videor (reels) på svenska för sociala medier.",
     "Du skriver ORD och BILDBESKRIVNINGAR. Du bestämmer aldrig antal scener, scenlängder eller övergångar.",
-    playbook ? `\n=== HOOK-PLAYBOOK (använd för scen 1) ===\n${playbook.slice(0, 2500)}` : "",
-    profile ? `\n=== VARUMÄRKESPROFIL — grunda röst, målgrupp, tjänster och ord HÅRT på denna ===\n${profile.slice(0, 6500)}` : "",
-    compass ? `\n${compass}` : "",
+    "Hook-playbooken nedan använder du för scen 1.",
     `\n=== SCENSTRUKTUR FÖR MALLEN "${mall.name}" (LÅST: exakt ${mall.scenes.length} scener, i denna ordning) ===`,
     scenSpec,
     "\n=== OVERLAY-TEXT (orden som bränns in i videon) ===",
@@ -84,12 +76,30 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
     "- Max fem relevanta hashtags, på egen rad sist.",
     "\n=== ÄRLIGHET ===",
     "- Hitta ALDRIG på priser, siffror, kundnamn eller resultat. Saknas uppgiften: skriv en platshållare inom hakparenteser.",
-    dontsRule(directives.donts),
-    "\n=== SVAR: ENDAST strikt JSON, inga kodstaket ===",
-    `{"title":"kort intern titel","caption":"...","scenes":[${mall.scenes.map(() => '{"line1":"...","line2":"...","imagePrompt":"..."}').join(",")}]}`,
   ]
     .filter(Boolean)
     .join("\n");
+
+  const b = await byggTextPrompt({
+    // Explicit klient: manusmotorn VET vilken kund den skriver för. Utan argument
+    // hade ett anrop utan sessionskontext tyst fått standardklientens röst.
+    clientId: opts.clientId,
+    syfte: "reel",
+    uppdrag,
+    knowledge: ["hook-playbook"],
+    // Mallens funnel/4A är flödesdata; DISC kommer från anroparen.
+    compass: { funnel: mall.funnel, four_a: mall.fourA, disc: opts.disc || [] },
+    jsonSchema: `{"title":"kort intern titel","caption":"...","scenes":[${mall.scenes.map(() => '{"line1":"...","line2":"...","imagePrompt":"..."}').join(",")}]}`,
+  });
+
+  return { system: b.system, mall };
+}
+
+export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelStoryboard> {
+  const ide = String(opts.ide || "").trim();
+  if (!ide) throw new Error("Skriv en idé först");
+
+  const { system, mall } = await byggReelPrompt(opts);
 
   let feedback = "";
   let raw: RawScene[] = [];
@@ -115,6 +125,7 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
       temperature: 0.85,
       maxOutputTokens: 3000,
       jsonMode: true,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
     });
 
     const obj = tolkaJson<{ title?: unknown; caption?: unknown; scenes?: unknown }>(svar);
