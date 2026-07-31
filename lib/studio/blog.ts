@@ -4,9 +4,7 @@
 // omslagsbild-prompt. Modellen får BARA länka till riktiga URL:er vi skickar in.
 
 import { generate } from "@/lib/gemini";
-import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
-import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 
 export interface InternalLink { title: string; url: string }
 
@@ -34,11 +32,6 @@ export interface BlogGenOpts {
 const FORBIDDEN = ["kraftfull", "banbrytande", "game-changer", "handlar om", "nästa nivå", "holistisk", "skalbar"];
 
 export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticle> {
-  const [playbook, profile, directives] = await Promise.all([
-    getKnowledge("hook-playbook").catch(() => ""),
-    getProfileAsMarkdown().catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
-  ]);
   const brand = opts.brandName || "kunden";
   const words = Math.min(Math.max(opts.wordCount || 900, 400), 2200);
   const links = (opts.internalLinks || []).slice(0, 12);
@@ -47,11 +40,12 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
     ? links.map((l, i) => `${i + 1}. "${l.title}" → ${l.url}`).join("\n")
     : "(inga befintliga inlägg tillgängliga — hoppa över interna länkar)";
 
-  const system = [
+  // TEXT-1 T-2: prompten byggs av prompt-core (hook-playbook, brand-profil, röst, winning,
+  // anatomi/compass och skrivregler ägs av kärnan). Kit-donts utgår avsiktligt — blogg är
+  // inte bildnära. Uppdraget = rollrad + interna länkar + E-E-A-T/STRUKTUR/META-kraven.
+  const uppdrag = [
     `Du är en erfaren svensk SEO-skribent och ämnesexpert som skriver för ${brand}${opts.industry ? ` (${opts.industry})` : ""}.`,
     "Skriv som en kunnig människa med förstahandserfarenhet — konkret, trovärdigt, hjälpsamt. Ingen AI-floskel, ingen säljhype, inga tomma superlativ.",
-    playbook ? `\n=== HOOK-PLAYBOOK (använd för inledningen) ===\n${playbook.slice(0, 2500)}` : "",
-    profile ? `\n=== VARUMÄRKESPROFIL — grunda röst, tonalitet, målgrupp, ord och tjänster HÅRT på denna ===\n${profile.slice(0, 6500)}` : "",
     "\n=== KLIENTENS BEFINTLIGA INLÄGG (för interna länkar — använd BARA dessa exakta URL:er) ===",
     linkBlock,
     "\n=== E-E-A-T & KVALITET (konstens alla regler) ===",
@@ -73,33 +67,47 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
     "- faq: SAMMA frågor/svar som i Vanliga frågor-sektionen (rå text, ingen HTML) — används för FAQ-schema.",
     "- coverImagePrompt: en engelsk fotoprompt för en redaktionell, verklig omslagsbild som passar ämnet och branschen (inga texter/logotyper i bilden). coverImageAlt: svensk alt-text.",
     `- FÖRBJUDNA ord: ${FORBIDDEN.join(", ")}. Svenska tecken å/ä/ö korrekt överallt.`,
-    dontsRule(directives.donts),
-    "\n=== SVAR: ENDAST strikt JSON, inga kodstaket ===",
-    '{"title":"...","metaTitle":"...","metaDescription":"...","urlSlug":"...","html":"<h2>...</h2><p>... <a href=\\"...\\">...</a></p>","faq":[{"q":"...","a":"..."}],"tags":["..."],"coverImagePrompt":"...","coverImageAlt":"..."}',
   ].join("\n");
 
-  const prompt = `Ämne/vinkel: ${opts.topic.trim()}. Skriv den kompletta artikeln nu enligt alla krav.`;
+  const b = await byggTextPrompt({
+    clientId: opts.clientId,
+    syfte: "blogg",
+    kanal: "webb",
+    uppdrag,
+    underlag: `Ämne/vinkel: ${opts.topic.trim()}. Skriv den kompletta artikeln nu enligt alla krav.`,
+    knowledge: ["hook-playbook"],
+    jsonSchema:
+      '{"title":"...","metaTitle":"...","metaDescription":"...","urlSlug":"...","html":"<h2>...</h2><p>... <a href=\\"...\\">...</a></p>","faq":[{"q":"...","a":"..."}],"tags":["..."],"coverImagePrompt":"...","coverImageAlt":"..."}',
+  });
 
   const raw = await generate({
     model: "gemini-2.5-pro",
-    systemInstruction: system,
-    prompt,
+    systemInstruction: b.system,
+    prompt: b.user,
     temperature: 0.8,
     maxOutputTokens: 8192,
     jsonMode: true,
+    skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
   });
 
   const obj = parseJson(raw);
   if (!obj) throw new Error("Kunde inte tolka AI-svaret som artikel");
 
-  const title = str(obj.title) || opts.topic;
+  // TEXT-1: enhetlig sanering på textfälten. HTML-kroppen saneras (som förut) av
+  // anropande route med hashtag-städet AV — saneraText saknar den ventilen och
+  // "#fragment"/hex i markup får aldrig gå genom hashtag-begränsaren.
+  const title = await saneraText(str(obj.title) || opts.topic, opts.clientId);
+  const [metaTitle, metaDescription] = await Promise.all([
+    saneraText(str(obj.metaTitle) || title, opts.clientId),
+    saneraText(str(obj.metaDescription), opts.clientId),
+  ]);
   const faq = Array.isArray(obj.faq)
     ? obj.faq.map((f: Record<string, unknown>) => ({ q: str(f.q), a: str(f.a) })).filter((f: { q: string; a: string }) => f.q && f.a).slice(0, 6)
     : [];
   return {
     title,
-    metaTitle: (str(obj.metaTitle) || title).slice(0, 60),
-    metaDescription: str(obj.metaDescription).slice(0, 160),
+    metaTitle: metaTitle.slice(0, 60),
+    metaDescription: metaDescription.slice(0, 160),
     urlSlug: slugify(str(obj.urlSlug) || title),
     html: str(obj.html),
     faq,
@@ -116,14 +124,11 @@ export interface SocialFromArticle { hookType: string; headline1: string; headli
 export async function repurposeToSocial(opts: {
   clientId: string; title: string; articleText: string; brandName?: string; industry?: string;
 }): Promise<SocialFromArticle[]> {
-  const profile = await getProfileAsMarkdown().catch(() => "");
-  const directives = await getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES);
   const brand = opts.brandName || "kunden";
 
-  const system = [
+  // TEXT-1 T-2: prompten byggs av prompt-core. Uppdraget = affisch-formatets hårda regler.
+  const uppdrag = [
     `Du gör om en bloggartikel för ${brand}${opts.industry ? ` (${opts.industry})` : ""} till korta sociala affisch-inlägg (text PÅ en bild).`,
-    dontsRule(directives.donts),
-    profile ? `\n=== VARUMÄRKESPROFIL — grunda röst/målgrupp/ord på denna ===\n${profile.slice(0, 4000)}` : "",
     "\n=== REGLER (affisch-format) ===",
     "- headline1: kort slagkraftig rubrik, MAX ~26 tecken, hel fras (aldrig fragment).",
     "- headline2: kort underrubrik/fråga, ~20–45 tecken.",
@@ -131,22 +136,39 @@ export async function repurposeToSocial(opts: {
     "- FÖRBJUDET: emoji, symboler, punktlistor, signatur, telefonnummer, URL, hashtag.",
     `- FÖRBJUDNA ord: ${FORBIDDEN.join(", ")}. Svenska tecken å/ä/ö korrekt.`,
     "- Skapa 3 varianter, var och en med EN distinkt hook-typ (fråga/statistik/konträr/berättelse/påstående) och egen vinkel ur artikeln.",
-    "\n=== SVAR: ENDAST strikt JSON-array, inga kodstaket ===",
-    '[{"hookType":"fråga","headline1":"...","headline2":"...","body":"..."}, {...}, {...}]',
   ].join("\n");
 
-  const prompt = `Artikelns rubrik: ${opts.title}\n\nArtikel (utdrag):\n${opts.articleText.slice(0, 3500)}\n\nSkapa 3 sociala affisch-inlägg nu.`;
+  const b = await byggTextPrompt({
+    clientId: opts.clientId,
+    syfte: "blogg",
+    uppdrag,
+    underlag: `Artikelns rubrik: ${opts.title}\n\nArtikel (utdrag):\n${opts.articleText.slice(0, 3500)}\n\nSkapa 3 sociala affisch-inlägg nu.`,
+    jsonSchema: '[{"hookType":"fråga","headline1":"...","headline2":"...","body":"..."}, {...}, {...}]',
+  });
 
-  const raw = await generate({ model: "gemini-2.5-flash", systemInstruction: system, prompt, temperature: 0.85, maxOutputTokens: 1800, jsonMode: true });
+  const raw = await generate({
+    model: "gemini-2.5-flash",
+    systemInstruction: b.system,
+    prompt: b.user,
+    temperature: 0.85,
+    maxOutputTokens: 1800,
+    jsonMode: true,
+    skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+  });
   let arr: unknown;
   try { arr = JSON.parse(raw); } catch { const m = raw.match(/\[[\s\S]*\]/); arr = m ? JSON.parse(m[0]) : []; }
   if (!Array.isArray(arr)) return [];
-  return arr
-    .map((v: Record<string, unknown>) => ({
-      hookType: str(v.hookType), headline1: str(v.headline1), headline2: str(v.headline2), body: str(v.body),
-    }))
-    .filter((s) => s.headline1 && s.body)
-    .slice(0, 3);
+  // TEXT-1: enhetlig sanering — repurpose saknade sanering helt före migreringen.
+  const ren = (t: string) => saneraText(t, opts.clientId);
+  const ut = await Promise.all(
+    arr.map(async (v: Record<string, unknown>) => ({
+      hookType: str(v.hookType),
+      headline1: await ren(str(v.headline1)),
+      headline2: await ren(str(v.headline2)),
+      body: await ren(str(v.body)),
+    })),
+  );
+  return ut.filter((s) => s.headline1 && s.body).slice(0, 3);
 }
 
 // Bygger FAQPage JSON-LD (för AEO/rich results) ur faq-listan.
