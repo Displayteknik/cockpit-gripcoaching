@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
-import { getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
-import { contentCompassBlock } from "@/lib/content-compass/prompt";
-import { sanitizeGenerated, skrivreglerPa, WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -43,6 +40,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = await getActiveClient();
+    const clientId = await resolveClientId();
     const b = await req.json().catch(() => ({}));
     const headline = (b.headline || "").toString().slice(0, 200);
     const headline2 = (b.headline2 || "").toString().slice(0, 200);
@@ -50,51 +48,52 @@ export async function POST(req: NextRequest) {
     const topic = (b.topic || "").toString().slice(0, 200);
     const postType = (b.postType || "post").toString();
     const slides: Slide[] = Array.isArray(b.slides) ? b.slides.slice(0, 12) : [];
-    const profile = await getProfileAsMarkdown().catch(() => "");
-    const directives = await getKitDirectives(await resolveClientId());
-    const compassText = b.compass && typeof b.compass === "object" ? contentCompassBlock(b.compass) : "";
 
     const isCarousel = slides.length > 0;
     const longer = isCarousel || postType === "reel";
 
-    const system = [
+    // TEXT-1 T-2: prompten byggs av prompt-core (brand-profil, röst, winning, anatomi/compass,
+    // kit-donts och skrivregler ägs av kärnan). Den gamla egna STRUKTUR-sektionen är ersatt av
+    // kärnans anatomilager (planbeslut) — kvar här är kanal-/längdregler + språkregler.
+    const uppdrag = [
       `Du skriver bildtexten (captionen) till ${TYPE_LABEL[postType] || "ett socialt inlägg"} (Instagram/Facebook) för ${client?.name || "kunden"}.`,
       "Detta är texten man LÄSER under/bredvid inlägget — inte text på bilden. Skriv som en människa, varmt och konkret.",
-      profile ? `\n=== VARUMÄRKESPROFIL — grunda röst, målgrupp och ord på denna ===\n${profile.slice(0, 5000)}` : "",
-      compassText ? `\n${compassText}` : "",
-      "\n=== STRUKTUR (världsklass-caption) ===",
-      "- RAD 1 = krok som stoppar scrollen (fristående, stark). Sedan en tom rad.",
+      "\n=== KANAL & LÄNGD ===",
       `- ${longer ? "2–4 korta stycken" : "1–2 korta stycken"} som ger konkret värde/berättelse. Radbryt för luft.`,
       isCarousel ? "- Knyt ihop karusellens poänger till en helhet (räkna inte bara upp dem)." : "",
       postType === "reel" ? "- Skriv så att den funkar till en reel: fånga i första raden, driv till att titta klart." : "",
-      "- Avsluta med EN tydlig uppmaning (t.ex. boka, spara inlägget, skriv en kommentar, läs mer).",
       "- 3–5 relevanta hashtags på egen rad sist.",
       "\n=== SPRÅK ===",
       "- Svenska tecken å/ä/ö korrekt. Naturligt, mänskligt språk. Emoji sparsamt (0–2), bara om det passar rösten.",
       "- FÖRBJUDNA ord: kraftfull, banbrytande, game-changer, handlar om, nästa nivå, holistisk, skalbar.",
       "- Inga telefonnummer/URL:er. Returnera ENDAST själva captionen (med radbrytningar), ingen förklaring.",
-      dontsRule(directives.donts),
-      "",
-      WRITING_RULES_BLOCK,
     ].filter(Boolean).join("\n");
 
     const contentBlock = isCarousel
       ? "Karusellens slides:\n" + slides.map((s, i) => `${i + 1}. [${s.kind || "slide"}] ${s.headline || ""}${s.body ? ` — ${s.body}` : ""}`).join("\n")
       : [headline ? `Rubrik på bilden: ${headline}.` : "", headline2 ? `Underrubrik: ${headline2}.` : "", body ? `Text på bilden: ${body}.` : ""].filter(Boolean).join("\n");
 
-    const prompt = [
-      topic ? `Ämne: ${topic}.` : "",
-      contentBlock,
-      "\nSkriv captionen nu — strukturerad enligt reglerna.",
-    ].filter(Boolean).join("\n");
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "caption",
+      kanal: "instagram",
+      uppdrag,
+      underlag: [
+        topic ? `Ämne: ${topic}.` : "",
+        contentBlock,
+        "\nSkriv captionen nu — strukturerad enligt reglerna.",
+      ].filter(Boolean).join("\n"),
+      compass: b.compass && typeof b.compass === "object" ? b.compass : undefined,
+    });
 
     // Generera EN caption med given krok-vinkel + grinda mot AI-språk (regenerera 2 ggr).
+    // Krok-vinkeln läggs som variant-suffix på underlaget (TEXT-1).
     const genOne = async (vinkelInstruktion: string): Promise<string> => {
-      const base = vinkelInstruktion ? `${system}\n\n=== KROK-VINKEL ===\n${vinkelInstruktion}` : system;
+      const prompt = vinkelInstruktion ? `${bygg.user}\n\n=== KROK-VINKEL ===\n${vinkelInstruktion}` : bygg.user;
       let out = "";
       for (let attempt = 0; attempt < 3; attempt++) {
-        const sys = attempt === 0 ? base : `${base}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
-        out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? 0.9 : 0.7, maxOutputTokens: longer ? 700 : 500 })).trim();
+        const sys = attempt === 0 ? bygg.system : `${bygg.system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
+        out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? 0.9 : 0.7, maxOutputTokens: longer ? 700 : 500, skrivregler: false /* prompt-core äger skrivregler-flaggan (TEXT-1) */ })).trim();
         if (!hasBanned(out)) break;
       }
       return hasBanned(out) ? sanitizeCaption(out) : out;
@@ -114,13 +113,15 @@ export async function POST(req: NextRequest) {
       const variants = await Promise.all(
         valda.map(async (v) => ({ angle: v.angle, caption: await genOne(v.instruktion) })),
       );
-      const pa = await skrivreglerPa(client?.id);
-      return NextResponse.json({ variants: variants.filter((v) => v.caption).map((v) => (pa ? { ...v, caption: sanitizeGenerated(v.caption) } : v)) });
+      // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
+      const sanerade = await Promise.all(
+        variants.filter((v) => v.caption).map(async (v) => ({ ...v, caption: await saneraText(v.caption, clientId) })),
+      );
+      return NextResponse.json({ variants: sanerade });
     }
 
     const caption = await genOne("");
-    const reglerPa = await skrivreglerPa(client?.id);
-    return NextResponse.json({ caption: reglerPa ? sanitizeGenerated(caption) : caption });
+    return NextResponse.json({ caption: await saneraText(caption, clientId) });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
