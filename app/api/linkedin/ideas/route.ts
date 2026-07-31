@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getKnowledge } from "@/lib/knowledge";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
@@ -48,17 +48,15 @@ export async function POST(req: NextRequest) {
       .limit(20);
     const recentHooks = (recentPosts ?? []).map((p) => `- (${p.pillar ?? "—"}) ${p.hook ?? ""}`).join("\n");
 
-    const knowledge = await getKnowledge("linkedin-foundation", "linkedin-formats", "linkedin-advanced");
-
     const pillarFilter = body.pillar
       ? `\n\nFOKUSPELARE: Generera ALLA idéer kring pelaren "${body.pillar}".`
       : `\n\nFÖRDELA idéerna mellan pelarna ovan så jämnt som möjligt.`;
 
-    const system = `Du är ${client?.name || "klientens"} egna LinkedIn-strateg.
+    // TEXT-1 T-2: prompten byggs av prompt-core (kunskap, brand-profil, röst, winning,
+    // anatomi/compass och skrivregler ägs av kärnan). Uppdraget = pelare/trust-gate-logiken.
+    const uppdrag = `Du är ${client?.name || "klientens"} egna LinkedIn-strateg.
 
 Du följer Hakan Grips kursmetodik "Från Okänd till Kund" och de hårda principerna nedan.
-
-${knowledge}
 
 KLIENTENS PELARE (content-teman):
 ${pillars || "(inga definierade — använd brand-profilens pain points som proxy)"}
@@ -71,10 +69,9 @@ UPPGIFT: Generera ${count} skarpa idéer för LinkedIn-inlägg som låter EXAKT 
 - Vara konkret nog att kunna skrivas direkt utan extra research
 - Variera mellan format (text dominerar, men minst 1-2 karuseller och 1 poll)
 - Variera mellan trust-portar (mestadels know/like/trust för fritt content; max 20% try/buy)
-- Aldrig återanvända en hook från senaste inläggen${pillarFilter}
+- Aldrig återanvända en hook från senaste inläggen${pillarFilter}`;
 
-RETURNERA JSON exakt så här:
-{
+    const jsonSchema = `{
   "ideas": [
     {
       "hook": "Konkret hook-mening (max 12 ord)",
@@ -87,13 +84,32 @@ RETURNERA JSON exakt så här:
   ]
 }`;
 
+    const b = await byggTextPrompt({
+      clientId,
+      syfte: "linkedin",
+      kanal: "linkedin",
+      uppdrag,
+      underlag: `Generera ${count} idéer nu. Returnera bara JSON.`,
+      knowledge: ["linkedin-foundation", "linkedin-formats", "linkedin-advanced"],
+      jsonSchema,
+    });
+
     const result = await generateJSON<GenResponse>({
       model: "gemini-2.5-pro",
-      systemInstruction: system,
-      prompt: `Generera ${count} idéer nu. Returnera bara JSON.`,
+      systemInstruction: b.system,
+      prompt: b.user,
       temperature: 0.95,
       maxOutputTokens: 4000,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
     });
+
+    // TEXT-1: enhetlig sanering — flödet saknade sanering helt före migreringen.
+    for (const i of result.ideas ?? []) {
+      [i.hook, i.angle] = await Promise.all([
+        saneraText(i.hook, clientId, "linkedin"),
+        saneraText(i.angle, clientId, "linkedin"),
+      ]);
+    }
 
     const inserts = (result.ideas ?? []).map((i) => ({
       client_id: clientId,
