@@ -49,6 +49,7 @@ export default function ProfilPage() {
   const [profile, setProfile] = useState<Profile>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [assisting, setAssisting] = useState<string | null>(null);
   const [showIcpWizard, setShowIcpWizard] = useState(false);
   const [showToneWizard, setShowToneWizard] = useState(false);
@@ -84,8 +85,12 @@ export default function ProfilPage() {
     });
   }, []);
 
-  const update = (field: keyof Profile, value: string) =>
+  const update = (field: keyof Profile, value: string) => {
     setProfile((p) => ({ ...p, [field]: value }));
+    // Kvittot "Sparat" gäller tills nästa ändring — ny ändring nollställer kvitto + ev. fel.
+    setSavedAt(null);
+    setSaveError(null);
+  };
 
   // Klick på ett completeness-område i QualityMeter → scrolla till rätt sektion + kort highlight
   // så man ser var man ska jobba vidare. Keys från /api/profile/quality.
@@ -106,18 +111,31 @@ export default function ProfilPage() {
 
   // payload valfritt: wizardarna skickar in det sammanslagna objektet direkt så vi
   // slipper spara mot en stale profile-state (annars försvinner wizard-resultatet tyst).
+  // OBS: får ALDRIG anropas som event-handler direkt (onClick={save}) — då blir payload
+  // ett klick-event och JSON.stringify kastar på cirkulära referenser. Anropa () => save().
   async function save(payload?: Profile) {
     setSaving(true);
-    const r = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload ?? profile),
-    });
-    setSaving(false);
-    if (r.ok) {
-      setSavedAt(new Date());
-      setQualityRefresh((n) => n + 1);
-    } else alert("Kunde inte spara.");
+    setSaveError(null);
+    try {
+      const r = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload ?? profile),
+        // Snurra aldrig för evigt: efter 20 s utan svar avbryts anropet och felet visas.
+        signal: AbortSignal.timeout(20000),
+      });
+      if (r.ok) {
+        setSavedAt(new Date());
+        setQualityRefresh((n) => n + 1);
+      } else {
+        setSaveError("Kunde inte spara. Ändringarna finns kvar i formuläret — försök igen.");
+      }
+    } catch {
+      // Nätverksfel, timeout eller oväntat undantag — visa fel i stället för evig snurr.
+      setSaveError("Kunde inte spara. Ändringarna finns kvar i formuläret — försök igen.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function assistField(field: keyof Profile) {
@@ -156,14 +174,17 @@ export default function ProfilPage() {
         accent={accent}
         eyebrow={<LivePill label="Brand-profil" />}
         right={
-          <button
-            onClick={() => save()}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedAt ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saving ? "Sparar..." : savedAt ? "Sparat" : "Spara"}
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              onClick={() => save()}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedAt ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {saving ? "Sparar..." : savedAt ? "Sparat" : "Spara"}
+            </button>
+            {saveError && <div className="text-xs text-red-200 text-right max-w-[260px]">{saveError}</div>}
+          </div>
         }
       />
 
@@ -228,7 +249,7 @@ export default function ProfilPage() {
         </button>
       </div>
 
-      <Section title="Grundinfo" icon={Building2} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section title="Grundinfo" icon={Building2} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <Row>
           <Field label="Företagsnamn" value={profile.company_name} onChange={(v) => update("company_name", v)} />
           <Field label="Tagline" value={profile.tagline} onChange={(v) => update("tagline", v)} />
@@ -243,7 +264,7 @@ export default function ProfilPage() {
         </Row>
       </Section>
 
-      <Section id="sec-berattelse" title="Berättelsen" icon={User} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section id="sec-berattelse" title="Berättelsen" icon={User} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <TextArea
           label="Brand story"
           hint="2–4 stycken: varför företaget finns, hur det började, vad som gör det speciellt."
@@ -264,7 +285,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Differentiering" icon={Award} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section title="Differentiering" icon={Award} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <TextArea
           label="Tre saker bara du kan säga"
           hint="Det som ger dig tyngd: år av erfarenhet, certifieringar, lokal koppling, en metod ingen annan har. En per rad."
@@ -276,7 +297,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section id="sec-erbjudande" title="Erbjudande & CTA" icon={ShoppingBag} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section id="sec-erbjudande" title="Erbjudande & CTA" icon={ShoppingBag} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <TextArea
           label="Tjänster / produkter"
           hint="Vad du faktiskt säljer. En per rad."
@@ -299,7 +320,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section id="sec-malgrupp" title="Målgrupp" icon={Target} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section id="sec-malgrupp" title="Målgrupp" icon={Target} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <TextArea
           label="Din viktigaste målgrupp"
           hint="Dina bästa kunder: vilka de är, var de finns, vad de oroar sig för, hur de köper och vad som får dem att höra av sig."
@@ -329,7 +350,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Kundernas egna ord" icon={Quote} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section title="Kundernas egna ord" icon={Quote} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <TextArea
           label="Kundord & recensioner"
           hint="Klistra in riktiga recensioner, mejl och samtalsanteckningar från dina kunder. Skrivhjälpen plockar ut deras sätt att prata så texterna känns igen."
@@ -348,7 +369,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section title="Konkurrenter" icon={Users} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section title="Konkurrenter" icon={Users} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <TextArea
           label="Konkurrent-översikt"
           hint="Vilka är dina 3–5 främsta konkurrenter? Vad gör de bra och vad gör de dåligt?"
@@ -360,7 +381,7 @@ export default function ProfilPage() {
         />
       </Section>
 
-      <Section id="sec-ton" title="Ton & språk" icon={MessageSquare} onSave={save} saving={saving} savedAt={savedAt}>
+      <Section id="sec-ton" title="Ton & språk" icon={MessageSquare} onSave={save} saving={saving} savedAt={savedAt} saveError={saveError}>
         <TextArea
           label="Tonregler"
           hint="Hur du låter när du är som bäst. Konkreta regler med GÖR / GÖR INTE."
@@ -496,7 +517,7 @@ function VocExtractor({ seed, onDone, onClose }: { seed: Profile; onDone: (r: { 
   );
 }
 
-function Section({ title, icon: Icon, children, id, onSave, saving, savedAt }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; id?: string; onSave?: () => void; saving?: boolean; savedAt?: Date | null }) {
+function Section({ title, icon: Icon, children, id, onSave, saving, savedAt, saveError }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; id?: string; onSave?: () => void; saving?: boolean; savedAt?: Date | null; saveError?: string | null }) {
   return (
     <div id={id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4 scroll-mt-20 transition-shadow">
       <div className="flex items-center justify-between gap-2">
@@ -507,14 +528,17 @@ function Section({ title, icon: Icon, children, id, onSave, saving, savedAt }: {
           {title}
         </h2>
         {onSave && (
-          <button
-            onClick={onSave}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-blue text-white shadow-sm hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : savedAt ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-            {saving ? "Sparar…" : "Spara"}
-          </button>
+          <div className="flex items-center gap-2">
+            {saveError && <span className="text-xs text-red-600 text-right max-w-[260px]">{saveError}</span>}
+            <button
+              onClick={() => onSave()} // ALDRIG onClick={onSave} — klick-eventet får inte läcka in som payload till save()
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-blue text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : savedAt ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+              {saving ? "Sparar…" : savedAt ? "Sparat" : "Spara"}
+            </button>
+          </div>
         )}
       </div>
       {children}

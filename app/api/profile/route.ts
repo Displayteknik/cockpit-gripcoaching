@@ -25,7 +25,13 @@ export async function PUT(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   const clientId = await getActiveClientId();
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch (e) {
+    console.error("[api/profile] PUT ogiltig body:", (e as Error).message);
+    return NextResponse.json({ error: "Kunde inte läsa det som skulle sparas. Försök igen." }, { status: 400 });
+  }
   delete body.id;
   delete body.client_id;
   const sb = supabaseService();
@@ -34,7 +40,10 @@ export async function PUT(req: NextRequest) {
   const existing = await sb.from("hm_brand_profile").select("client_id").eq("client_id", clientId).maybeSingle();
   if (!existing.data) {
     const { data, error } = await sb.from("hm_brand_profile").insert({ ...body, client_id: clientId }).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("[api/profile] PUT insert misslyckades:", error.message, "client:", clientId);
+      return NextResponse.json({ error: "Kunde inte spara profilen. Försök igen om en stund." }, { status: 500 });
+    }
     return NextResponse.json(data);
   }
   const { data, error } = await sb
@@ -43,6 +52,9 @@ export async function PUT(req: NextRequest) {
     .eq("client_id", clientId)
     .select()
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[api/profile] PUT update misslyckades:", error.message, "client:", clientId);
+    return NextResponse.json({ error: "Kunde inte spara profilen. Försök igen om en stund." }, { status: 500 });
+  }
   return NextResponse.json(data);
 }
