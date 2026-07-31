@@ -119,8 +119,8 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
   const html = (await skrivreglerPa(opts.clientId)) ? taBortTankstreckHtml(str(obj.html)) : str(obj.html);
   return {
     title,
-    metaTitle: metaTitle.slice(0, 60),
-    metaDescription: metaDescription.slice(0, 160),
+    metaTitle: klippOrdgrans(metaTitle, 60),
+    metaDescription: klippOrdgrans(metaDescription, 160),
     urlSlug: slugify(str(obj.urlSlug) || title),
     html,
     faq,
@@ -197,6 +197,20 @@ export function buildFaqJsonLd(faq: { q: string; a: string }[]): string {
     })),
   };
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+}
+
+/**
+ * T-5 (4): klipp på ORDGRÄNS, aldrig mitt i ord. slice(0,60) gav trunkerade svansar
+ * som "… | Disp" (Displayteknik kapad). Klipper vid sista mellanslaget före taket
+ * och städar bort dinglande avgränsare (| , : ; – —) i slutet.
+ */
+export function klippOrdgrans(s: string, max: number): string {
+  const t = String(s || "").trim();
+  if (t.length <= max) return t;
+  const kapad = t.slice(0, max + 1);
+  const sista = kapad.lastIndexOf(" ");
+  const ord = (sista > 0 ? kapad.slice(0, sista) : kapad.slice(0, max)).trim();
+  return ord.replace(/[|,:;&\-–—]+$/g, "").trim();
 }
 
 function str(v: unknown): string {

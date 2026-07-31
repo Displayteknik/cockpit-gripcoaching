@@ -226,6 +226,11 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
         // sektioner för de fylligare profilerna och röst-träffen sjönk mätbart.
         const klippt = klippProfil(raa, p.maxProfilTecken ?? 9000);
         profilKlippt = klippt.klippta;
+        // T-5 (5): synliggör klipputfallet i loggen (batch + prod). Klipps röst-
+        // bärande sektioner (Customer Voice) är det en profilfråga att agera på.
+        if (klippt.klippta.length) {
+          console.log(`[prompt-core] profil klippt (${p.syfte}, ${p.clientId}): ${klippt.klippta.join(" → ")} (${raa.length} → ${klippt.text.length} tecken)`);
+        }
         profilText = klippt.text;
         delar.push(`=== KLIENTENS VARUMÄRKESPROFIL ===\n${klippt.text}`);
         lager.brandProfil = true;
