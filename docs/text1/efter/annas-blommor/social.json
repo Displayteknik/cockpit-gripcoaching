@@ -2,32 +2,13 @@
   "profil": "Annas Blommor",
   "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
   "flode": "social",
-  "genererad": "2026-07-31T15:08:59.512Z",
+  "genererad": "2026-07-31T17:19:38.394Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "{\"hook\":\"Det vanligaste misstaget blivande brudpar gör? Att bli kär i en specifik bild på Pinterest.\",\"caption\":\"Det vanligaste misstaget blivande brudpar gör? Att bli kär i en specifik bild på Pinterest.\\n\\nVi förstår precis. Man hittar den där perfekta, vilda buketten med pioner och drömmer sig bort till en julidag i Jämtland.\\n\\nMen pionen blommar här i juni. I juli är den över för säsongen.\\n\\nAtt låsa fast sig vid en exakt blomma som kanske inte är i säsong just er vecka skapar stress och kompromisser. Istället för att jaga en specifik sort hjälper vi er att fånga en *känsla*.\\n\\nFärgpaletten. Formen. Känslan av sommaräng, av skog, av elegans.\\n\\nNär vi utgår från känslan kan vi välja de allra vackraste blommorna som är som bäst precis när ni gifter er. Då blir resultatet inte en kopia, utan något som är unikt ert. Och ofta vackrare än originalbilden.\\n\\nBerätta för oss, vad drömmer ni om för känsla på ert bröllop?\",\"hashtags\":\"#annasblommor #bröllopsblommor #bröllopöstersund #floristjämtland #bröllopsinspiration\",\"cta\":\"Kommentera\",\"format_note\":\"Använd en vacker bild på en säsongstypisk, unik brudbukett som inte ser ut som en stereotypisk Pinterest-bukett. Gärna närbild på hantverket.\"}",
-      "duration_ms": 12649,
-      "autochecks": {
-        "cta_count": 1,
-        "svag_hook": false,
-        "forbjudna_ord": [],
-        "floskler": [],
-        "tankstreck_i_loptext": false,
-        "hashtags": 5,
-        "rostmarkorer_traffade": 0,
-        "rostmarkorer_totalt": 0
-      },
-      "extra": {
-        "sparad_rad_id": "b3ec638b-9b96-41d0-96f4-cee8f775f2b4"
-      }
-    },
-    {
-      "amne_id": "bakom-kulisserna",
-      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "{\"hook\":\"Från en Pinterest-board till ett färdigt bröllop.\",\"caption\":\"Så många undrar hur det går till när vi skapar blommorna till en hel bröllopsdag. Det är en process som är lika delar kreativitet och noggrann planering.\\n\\nAllt börjar med ett första möte, ofta över en kaffe här i butiken. Ni berättar om era tankar, visar bilder och vi pratar om vilken känsla ni vill att dagen ska ha. Är den romantisk, bohemisk, avskalad eller färgstark?\\n\\nDärefter skapar vi ett personligt förslag med en moodboard. Här ser ni färgpaletten, specifika blomstersorter och förslag på allt från brudbukett och corsage till dekorationer för vigsel och fest. Det är en visuell plan för hela er dag.\\n\\nNär ni känner er trygga och har godkänt förslaget beställer vi hem de finaste blommorna från våra odlare. Dagarna innan bröllopet är butiken en kreativ verkstad där vi binder, arrangerar och förbereder varje detalj.\\n\\nPå den stora dagen levererar vi och installerar allt på plats, så att ni kan fokusera på varandra. Att se allt komma samman och bli precis den dröm ni hade är det absolut bästa vi vet.\",\"hashtags\":\"#annasblommor #bröllopsblommor #bröllopsflorist #östersund #jämtland\",\"cta\":\"Går ni i bröllopstankar? Skicka ett DM så bokar vi in ett första förutsättningslöst möte.\",\"format_note\":\"Karussellinlägg. Bild 1: En vacker brudbukett med texten från hooken. Bild 2: Ett par som sitter i butiken med Anna. Bild 3: En närbild på en moodboard. Bild 4: Florister som binder blommor i verkstaden. Bild 5: En färdigdekorerad vigselplats. Sista bilden innehåller CTA-texten.\"}",
-      "duration_ms": 13694,
+      "output": "{\"hook\":\"Det vanligaste misstaget brudpar gör när de planerar sina blommor.\",\"caption\":\"Man hittar den perfekta bilden på Pinterest.\\n\\nExakt så ska det se ut. Färgerna, formerna, allt.\\n\\nMen ofta finns det ett problem. Blommorna på bilden kanske inte alls är i säsong när ni gifter er. Eller så behöver de flygas in från andra sidan jorden, vilket varken är hållbart eller snällt mot budgeten.\\n\\nResultatet kan bli en kompromiss som inte känns helt som ni.\\n\\nDärför börjar vi alltid på ett annat ställe. Inte med en bild, utan med en känsla.\\n\\nHur vill ni att er dag ska kännas? Vild och naturlig? Elegant och avskalad? Romantisk och mjuk?\\n\\nNär vi utgår från känslan kan vi tillsammans skapa något som är unikt för er, med de allra finaste blommorna som säsongen här i Jämtland har att erbjuda. Det blir personligt, på riktigt.\",\"hashtags\":\"#bröllopsblommor #bröllopsinspiration #floristöstersund #jämtland #annasblommor\",\"cta\":\"Ska ni gifta er? Skicka ett DM så pratar vi känsla och idéer.\",\"format_note\":\"En vacker, stämningsfull bild på en unik brudbukett som ser handbunden och personlig ut. Gärna i ett naturligt ljus.\"}",
+      "duration_ms": 13543,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -39,16 +20,35 @@
         "rostmarkorer_totalt": 0
       },
       "extra": {
-        "sparad_rad_id": "91d9f940-244c-406f-af0f-5f0364b4cb1c"
+        "sparad_rad_id": "279f012e-e234-47d4-be13-513daa0ce60a"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Från en bild på Pinterest till en färdig brudbukett. Så går det till.\",\"caption\":\"Från en bild på Pinterest till en färdig brudbukett. Så går det till.\\n\\nDet börjar ofta med ett mejl, en känsla ni vill åt. Kanske har ni sparat bilder på vildvuxna buketter, varma färger eller en speciell blomma som betyder något för er.\\n\\nSteg 1: Konsultationen\\nVi ses över en kaffe i butiken (eller digitalt). Här pratar vi inte bara blommor. Vi pratar om er, om platsen, klänningen, ljuset och känslan ni drömmer om. Målet är att förstå helheten så blommorna blir en naturlig del av er dag, inte bara en dekoration.\\n\\nSteg 2: Skissen\\nUtifrån vårt samtal skapar jag ett personligt förslag. En visuell moodboard och en konkret plan med färgpalett och förslag på blommor som är i säsong. Allt för att ni ska kunna se visionen framför er.\\n\\nSteg 3: Hantverket\\nNågra dagar innan bröllopet anländer de färska, ofta svenskodlade, blommorna. Det är nu magin sker. Varje bukett, varje corsage och varje arrangemang binds för hand här i butiken i Östersund. Ett hantverk från grunden, anpassat helt för er.\\n\\nSteg 4: Leverans\\nPå den stora dagen levererar vi allt till er. Vi ser till att blommorna är på plats i kyrkan, på festlokalen och att brudbuketten väntar på dig. Allt för att ni ska kunna släppa alla detaljer och bara njuta.\",\"hashtags\":\"#bröllopsblommor #annasblommor #östersund #bröllopsflorist #jämtland\",\"cta\":\"Går ni i bröllopstankar? Skicka ett DM så berättar vi mer om hur vi kan hjälpa er.\",\"format_note\":\"Karussell-inlägg. Slide 1: Hooken på en vacker bild. Slide 2-5: En bild per steg (konsultation, moodboard, binderi, färdig bukett) med kort text.\"}",
+      "duration_ms": 12780,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "sparad_rad_id": "68714026-40af-44f3-99d2-bd2b65f600d7"
       }
     },
     {
       "amne_id": "tre-fragor",
       "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "{\"hook\":\"Vad kostar bröllopsblommor egentligen? Här är våra ärliga svar på de 3 vanligaste frågorna.\",\"caption\":\"Vad kostar bröllopsblommor egentligen? Och när ska man boka? Vi får ofta samma fina frågor från blivande brudpar, så vi tänkte att vi samlar svaren här.\\n\\nFråga 1: ”Vad kostar det?”\\nSvar: Det beror helt på vilka blommor ni drömmer om, hur många ni är och vilken känsla ni vill skapa. En brudbukett kan kosta från 2000 kr och uppåt, men ett helt bröllop är unikt. Istället för en prislista tar vi ett första samtal där vi lyssnar in er vision. Då kan vi ge en personlig offert som faktiskt stämmer med era önskemål och er budget.\\n\\nFråga 2: ”När är det dags att boka florist?”\\nSvar: Så fort ni har bokat datum och lokal. Vi tar bara ett visst antal bröllop per helg för att kunna ge varje par vår fulla uppmärksamhet. Populära sommardatum blir ofta uppbokade 9-12 månader i förväg, så hör av er så snart ni kan för att säkra er plats.\\n\\nFråga 3: ”Måste vi veta exakt vilka blommor vi vill ha?”\\nSvar: Absolut inte! De flesta vet inte det. Det är vårt jobb som florister och kreatörer att hjälpa er hitta rätt. Det viktigaste är att ni kan beskriva känslan ni är ute efter. Är det romantiskt, vilt, avskalat, färgglatt? Vi översätter er känsla till blommor som är i säsong just er dag.\",\"hashtags\":\"#bröllopsblommor #bröllopsflorist #bröllopöstersund #jämtland #annasblommor\",\"cta\":\"Går ni i bröllopstankar? Skicka ett DM så bokar vi in ett första, förutsättningslöst samtal.\",\"format_note\":\"Karussellinlägg. Första bilden: Hook-texten på en vacker bild av en brudbukett. Nästa tre bilder: En fråga och ett svar per bild. Sista bilden: CTA-texten.\"}",
-      "duration_ms": 12476,
+      "output": "{\"hook\":\"Planerar ni bröllop? Då har ni säkert funderat på det här.\",\"caption\":\"Att välja blommor till sin stora dag väcker många frågor. Helt naturligt! Här är de tre vanligaste vi får från blivande brudpar, och våra ärliga svar.\\n\\n1. ”Vad kostar bröllopsblommor?”\\nEn omöjlig fråga att svara på rakt av! Priset beror helt på era önskemål. Vilka blommor vill ni ha? Hur många buketter och arrangemang? Det bästa är att boka en konsultation där vi går igenom era drömmar och sätter ihop en offert utifrån just er budget och stil.\\n\\n2. ”Måste vi välja blommor som är i säsong?”\\nVi rekommenderar det alltid. Blommor i säsong är inte bara vackrare och mer hållbara, de är också snällare mot både plånboken och miljön. Vi jobbar helst med svenska snittblommor och kan skapa magi med det som naturen erbjuder just när ni gifter er.\\n\\n3. ”När ska vi boka floristen?”\\nSå snart ni har bokat datum och lokal! Populära helger under sommaren blir snabbt fullbokade. Genom att vara ute i god tid säkrar ni att vi finns tillgängliga och hinner planera varje detalj tillsammans i lugn och ro.\\n\\nHar ni andra frågor? Skriv dem i kommentarerna så svarar vi!\",\"hashtags\":\"#bröllopsblommor #östersund #jämtland #bröllopsinspiration #annasblommor\",\"cta\":\"kommentera\",\"format_note\":\"Karussell-inlägg. Slide 1: Hooken som text på en vacker bild. Slide 2: Fråga 1 + svar. Slide 3: Fråga 2 + svar. Slide 4: Fråga 3 + svar. Sista slide: CTA-frågan.\"}",
+      "duration_ms": 11101,
       "autochecks": {
-        "cta_count": 2,
+        "cta_count": 5,
         "svag_hook": false,
         "forbjudna_ord": [],
         "floskler": [],
@@ -58,16 +58,16 @@
         "rostmarkorer_totalt": 0
       },
       "extra": {
-        "sparad_rad_id": "19ac6aa6-1831-4f76-b616-2d0e6d02c385"
+        "sparad_rad_id": "35982494-9357-45dc-9aed-391cc1213973"
       }
     },
     {
       "amne_id": "tvekade",
       "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "{\"hook\":\"”Vi vet inte ens var vi ska börja.”\",\"caption\":\"”Vi vet inte ens var vi ska börja.”\\n\\nDet var första meningen i ett mail vi fick från ett brudpar för nästan ett år sedan. De hade sett våra bilder, men kände sig helt överväldigade av alla val. Färger, sorter, budget, vad passar ens i augusti?\\n\\nDe sköt upp det. Tiden gick. Och för några månader sedan hörde de av sig igen, lite lätt stressade.\\n\\nVi bokade in en fika här i butiken. Pratade inte om specifika blommor, utan om känslan de ville ha på sin dag. Varmt, avslappnat, personligt, med doft av sommar. Vi tittade på bilder från deras festlokal. Utifrån det tog vi fram ett förslag, en röd tråd med sensommarblommor från svenska odlare.\\n\\nI helgen var det dags. Och att få se deras ansikten när de hämtade brudbuketten… det är precis därför vi gör det vi gör. Från total osäkerhet till ett lugn och en känsla av att allt blev precis rätt.\\n\\nKänner du igen dig i den där första känslan av överväldigande val? Du är inte ensam.\",\"hashtags\":\"#bröllopsblommor #annasblommor #östersund #bröllopjämtland #bröllopsinspiration\",\"cta\":\"Boka en förutsättningslös konsultation\",\"format_note\":\"Bild/karusell. Första bilden: citatet i hooken stort mot en vacker, drömsk blombild. Följande bilder: behind-the-scenes från butiken, en bild på den färdiga buketten, kanske en bild från festlokalen om brudparet godkänt det.\"}",
-      "duration_ms": 11529,
+      "output": "{\"hook\":\"De var så nära att välja bort blommorna helt.\",\"caption\":\"De var så nära att välja bort blommorna helt.\\n\\nBudgeten var tajt och de undrade om det verkligen var värt det. Kanske sidenblommor, eller inga alls?\\n\\nVi pratade igenom deras dag, känslan de ville skapa och färgerna som fanns i deras liv. Inte om dyra arrangemang, utan om vad några få, väl valda blommor kan göra för en hel stämning.\\n\\nNär vi sedan levererade den här brudbuketten, tillsammans med dekorationerna till festen, kom det ett meddelande en stund senare:\\n\\n\\\"Anna, jag gråter. Det är precis så här jag ville att det skulle kännas. Tack.\\\"\\n\\nIbland är det inte mängden blommor som skapar magin. Det är känslan. Att det blir rätt.\",\"hashtags\":\"#annasblommor #bröllopsblommor #bröllopöstersund #jämtland #brudbukett\",\"cta\":\"Planerar ni bröllop? Skicka ett DM så pratar vi igenom era idéer, helt förutsättningslöst.\",\"format_note\":\"Använd en karusell. Bild 1: En vacker, närbild på brudbuketten som nämns i texten. Bild 2: En bild på brudparet (om godkänt) eller en miljöbild från festlokalen där blommorna syns.\"}",
+      "duration_ms": 10761,
       "autochecks": {
-        "cta_count": 1,
+        "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [],
         "floskler": [],
@@ -77,14 +77,14 @@
         "rostmarkorer_totalt": 0
       },
       "extra": {
-        "sparad_rad_id": "f2e53363-3118-48d4-9a65-21df015aeda1"
+        "sparad_rad_id": "f6520f9d-7949-4b6f-a38a-e8059902a782"
       }
     },
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "{\"hook\":\"Den billigaste brudbuketten är sällan den bästa.\",\"caption\":\"Den billigaste brudbuketten är sällan den bästa.\\n\\nNär ni väljer blommor till ert bröllop är det lätt att fastna i prislistor. Men blommor är så mycket mer än en siffra på en faktura. De är en känsla, ett minne och en del av er berättelse.\\n\\nEn florist som tar sig tid att förstå er vision väljer inte bara blommor. Vi väljer stjälkar som håller hela dagen, binder med en teknik som får buketten att se levande ut på bild och skapar en helhet som speglar precis vilka ni är.\\n\\nDå får ni inte bara blommor. Ni får trygghet och ett hantverk som lyfter hela er dag.\\n\\nDet är en investering i minnena ni kommer att se tillbaka på i årtionden.\",\"hashtags\":\"#bröllopsblommor #bröllopsflorist #jämtland #östersund #annasblommor\",\"cta\":\"Boka en konsultation\",\"format_note\":\"Bild på en detaljrik, handbunden brudbukett av hög kvalitet. Gärna i en miljö som andas Jämtland.\"}",
-      "duration_ms": 10669,
+      "output": "{\"hook\":\"Brudbuketten som kostar minst kan bli den dyraste.\",\"caption\":\"Självklart är priset en del av ekvationen när man planerar ett bröllop. Men när det kommer till blommorna, finns det en annan sorts kostnad som inte syns på prislappen.\\n\\nDen verkliga kostnaden av ett budgetalternativ kan vara blommor som slokar innan vigseln, fel nyans på rosorna som inte alls matchar tärnornas klänningar, eller en leverantör som är svår att få tag på veckan innan.\\n\\nAtt välja hantverk och erfarenhet är en investering i trygghet. Det är att veta att någon ser helheten, förstår er vision och väljer ut de absolut finaste, färskaste blommorna för just er dag. Det är känslan av att kunna släppa en stor del av planeringen och lita på att det blir precis så vackert som ni drömt om.\\n\\nVi binder inte bara blommor. Vi skapar en känsla som håller hela dagen, och i minnena för alltid.\",\"hashtags\":\"#bröllopsblommor #bröllopöstersund #bröllopsinspiration #jämtland #annasblommor\",\"cta\":\"Ska ni gifta er 2025? Boka en kravlös konsultation med oss via länken i profilen.\",\"format_note\":\"Bild: En närbild på en detaljrik, handbunden brudbukett som visar hantverket. Kanske en vacker sidenbandsdetalj eller en ovanlig blomma.\"}",
+      "duration_ms": 11947,
       "autochecks": {
         "cta_count": 1,
         "svag_hook": false,
@@ -96,7 +96,7 @@
         "rostmarkorer_totalt": 0
       },
       "extra": {
-        "sparad_rad_id": "cc5b11f7-bb2e-42aa-ba47-85519152a34b"
+        "sparad_rad_id": "99c31965-0037-4ec8-af8c-a67282db1ac6"
       }
     }
   ]

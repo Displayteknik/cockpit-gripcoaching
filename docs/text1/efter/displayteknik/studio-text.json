@@ -2,13 +2,13 @@
   "profil": "Displayteknik",
   "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
   "flode": "studio-text",
-  "genererad": "2026-07-31T15:14:41.267Z",
+  "genererad": "2026-07-31T16:59:02.909Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Behöver vi verkligen en så ljusstark skärm?\",\"headline2\":\"Den frågan får vi varje vecka\",\"body\":\"Sedan ser kunden skärmen i skyltfönstret mitt på dagen. Då förstår de varför 2500 nits gör skillnad.\"}",
-      "duration_ms": 17254,
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Skyltfönstret\",\"headline2\":\"Funderar du på en skärm som syns i solljus?\",\"body\":\"Det vanligaste misstaget är att köpa fel ljusstyrka. En vanlig inomhusskärm går inte att läsa i skyltfönster, du behöver 2 500 nits eller mer.\"}",
+      "duration_ms": 15448,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -24,21 +24,21 @@
         "alla_forslag": [
           {
             "hookType": "fråga",
-            "headline1": "Behöver vi verkligen en så ljusstark skärm?",
-            "headline2": "Den frågan får vi varje vecka",
-            "body": "Sedan ser kunden skärmen i skyltfönstret mitt på dagen. Då förstår de varför 2500 nits gör skillnad."
+            "headline1": "Skyltfönstret",
+            "headline2": "Funderar du på en skärm som syns i solljus?",
+            "body": "Det vanligaste misstaget är att köpa fel ljusstyrka. En vanlig inomhusskärm går inte att läsa i skyltfönster, du behöver 2 500 nits eller mer."
           },
           {
             "hookType": "konträr",
-            "headline1": "Störst är inte bäst",
-            "headline2": "Varför du ska välja mindre skärm",
-            "body": "Nya kunder tror att en större skärm alltid syns mer. Men fel ljusstyrka gör även den största skärmen osynlig i solljus."
+            "headline1": "Den dyraste skärmen",
+            "headline2": "Den du redan äger",
+            "body": "Fel ljusstyrka i skyltfönstret eller hårdvara som inte tål vinter kostar mer än rätt skärm från början."
           },
           {
-            "hookType": "fråga",
-            "headline1": "Vet du varför din skärm dog efter en vinter?",
-            "headline2": "Det vanligaste misstaget nya kunder gör",
-            "body": "De köper en skärm för inomhusbruk och sätter den utomhus. Nordiskt klimat kräver rätt hårdvara från start."
+            "hookType": "berättelse",
+            "headline1": "Skärmen dog efter en vinter",
+            "headline2": "Konsumentskärm i skyltfönstret",
+            "body": "Den billigaste skärmen på nätet klarar inte nordisk vinter, kondens eller solljus rakt in. Då blir den dyraste."
           }
         ]
       }
@@ -46,40 +46,26 @@
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vem fixar allt när skärmen ska upp?\",\"headline2\":\"En kontakt – från första idé till driftsatt lösning\",\"body\":\"Vi tar hand om val, installation, montering, innehållstyrning och support. Du slipper jaga tre leverantörer.\"}",
-      "duration_ms": 7599,
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vad händer efter offerten?\",\"headline2\":\"Från ja till igång på två veckor\",\"body\":\"Du säger ja. Vi beställer skärmen, bokar installation och kör igång din kampanj samtidigt som monteringen är klar.\"}",
+      "duration_ms": 14529,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
-        "forbjudna_ord": [
-          "jag"
-        ],
+        "forbjudna_ord": [],
         "floskler": [],
-        "tankstreck_i_loptext": true,
+        "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 2,
+        "rostmarkorer_traffade": 0,
         "rostmarkorer_totalt": 11
       },
       "extra": {
-        "voice_score_vinnare": 91,
+        "voice_score_vinnare": 85,
         "alla_forslag": [
           {
             "hookType": "fråga",
-            "headline1": "Vem fixar allt när skärmen ska upp?",
-            "headline2": "En kontakt – från första idé till driftsatt lösning",
-            "body": "Vi tar hand om val, installation, montering, innehållstyrning och support. Du slipper jaga tre leverantörer."
-          },
-          {
-            "hookType": "konträr",
-            "headline1": "Ingen säljpitch först",
-            "headline2": "Varför vi börjar med kaffe, inte offert",
-            "body": "De flesta leverantörer skickar prislappar direkt. Vi börjar med digital fika — 30 minuter där du pratar och vi lyssnar."
-          },
-          {
-            "hookType": "fråga",
-            "headline1": "Vad händer efter ja?",
-            "headline2": "Från första fika till igång på 10 dagar",
-            "body": "Vi väljer rätt skärm, monterar, kopplar el och laddar första kampanjen. Du öppnar en morgon med skärmen tänd."
+            "headline1": "Vad händer efter offerten?",
+            "headline2": "Från ja till igång på två veckor",
+            "body": "Du säger ja. Vi beställer skärmen, bokar installation och kör igång din kampanj samtidigt som monteringen är klar."
           }
         ]
       }
@@ -87,41 +73,14 @@
     {
       "amne_id": "tre-fragor",
       "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Ni säljer bara skärmar?\",\"headline2\":\"Nej — vi säljer fler kunder.\",\"body\":\"Skärmen är bara verktyget. Det du köper är uppmärksamhet på plats, trygghet i drift och support när det krånglar.\"}",
-      "duration_ms": 5807,
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Syns skärmen i solljus?\",\"headline2\":\"Frågan vi hör varje vecka\",\"body\":\"Ja. Vi levererar bara skärmar med minst 2 500 nits, syns även i direkt solljus genom skyltfönstret.\"}",
+      "duration_ms": 6328,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [],
         "floskler": [],
-        "tankstreck_i_loptext": true,
-        "hashtags": 0,
-        "rostmarkorer_traffade": 0,
-        "rostmarkorer_totalt": 11
-      },
-      "extra": {
-        "voice_score_vinnare": 85,
-        "alla_forslag": [
-          {
-            "hookType": "konträr",
-            "headline1": "Ni säljer bara skärmar?",
-            "headline2": "Nej — vi säljer fler kunder.",
-            "body": "Skärmen är bara verktyget. Det du köper är uppmärksamhet på plats, trygghet i drift och support när det krånglar."
-          }
-        ]
-      }
-    },
-    {
-      "amne_id": "tvekade",
-      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vad kostar ett år av väntan?\",\"headline2\":\"En kund räknade efter\",\"body\":\"Skyltfönstret stod tomt i tolv månader medan konkurrenten fick kunderna. Nu syns de – och säljer mer varje dag.\"}",
-      "duration_ms": 7426,
-      "autochecks": {
-        "cta_count": 0,
-        "svag_hook": false,
-        "forbjudna_ord": [],
-        "floskler": [],
-        "tankstreck_i_loptext": true,
+        "tankstreck_i_loptext": false,
         "hashtags": 0,
         "rostmarkorer_traffade": 0,
         "rostmarkorer_totalt": 11
@@ -131,21 +90,42 @@
         "alla_forslag": [
           {
             "hookType": "fråga",
-            "headline1": "Vad kostar ett år av väntan?",
-            "headline2": "En kund räknade efter",
-            "body": "Skyltfönstret stod tomt i tolv månader medan konkurrenten fick kunderna. Nu syns de – och säljer mer varje dag."
+            "headline1": "Syns skärmen i solljus?",
+            "headline2": "Frågan vi hör varje vecka",
+            "body": "Ja. Vi levererar bara skärmar med minst 2 500 nits, syns även i direkt solljus genom skyltfönstret."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Varför vänta i sex månader?\",\"headline2\":\"En skyltfönsterskärm som betalar sig själv på tre veckor\",\"body\":\"Kunden tvekade på investeringen. Nu syns kampanjen i solljus och fler stannar utanför butiken varje dag.\"}",
+      "duration_ms": 16191,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Varför vänta i sex månader?",
+            "headline2": "En skyltfönsterskärm som betalar sig själv på tre veckor",
+            "body": "Kunden tvekade på investeringen. Nu syns kampanjen i solljus och fler stannar utanför butiken varje dag."
           },
           {
             "hookType": "konträr",
-            "headline1": "Vänta är ingen strategi",
-            "headline2": "De trodde det blev för dyrt",
-            "body": "En bilhandlare tvekade i sex månader. När skärmen väl kom upp sålde de två bilar första veckan."
-          },
-          {
-            "hookType": "berättelse",
-            "headline1": "Tre månader av tvivel",
-            "headline2": "Sen stod skärmen i skyltfönstret",
-            "body": "Nu stannar folk utanför och går in. Exakt det hon ville – men inte trodde skulle hända så fort."
+            "headline1": "Vänta tills nästa år?",
+            "headline2": "Den som dröjer förlorar kunder",
+            "body": "En butik i Gävle tvekade i fem månader. När skärmen kom upp ökade trafiken in direkt, folk stannade vid skyltfönstret igen."
           }
         ]
       }
@@ -153,40 +133,38 @@
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "{\"hookType\":\"påstående\",\"headline1\":\"Det billigaste blir dyrt\",\"headline2\":\"När skärmen slutar fungera efter ett år\",\"body\":\"Kunden som köper billigast får ingen som tar ansvar när den strular. Du får en kontakt för allt — från val till drift.\"}",
-      "duration_ms": 6600,
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Varför kostar den mer?\",\"headline2\":\"Den frågan får vi varje dag\",\"body\":\"Skärmen som strular första vintern kostar dig mer än du sparade. Vi säljer det som håller.\"}",
+      "duration_ms": 8800,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
-        "forbjudna_ord": [
-          "billig"
-        ],
+        "forbjudna_ord": [],
         "floskler": [],
-        "tankstreck_i_loptext": true,
+        "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 1,
+        "rostmarkorer_traffade": 0,
         "rostmarkorer_totalt": 11
       },
       "extra": {
-        "voice_score_vinnare": 88,
+        "voice_score_vinnare": 85,
         "alla_forslag": [
           {
-            "hookType": "påstående",
-            "headline1": "Det billigaste blir dyrt",
-            "headline2": "När skärmen slutar fungera efter ett år",
-            "body": "Kunden som köper billigast får ingen som tar ansvar när den strular. Du får en kontakt för allt — från val till drift."
+            "hookType": "fråga",
+            "headline1": "Varför kostar den mer?",
+            "headline2": "Den frågan får vi varje dag",
+            "body": "Skärmen som strular första vintern kostar dig mer än du sparade. Vi säljer det som håller."
           },
           {
-            "hookType": "konträr",
-            "headline1": "Det billigaste blev dyrast",
-            "headline2": "Varför kunder betalar mer för skärmar",
-            "body": "En skärm som dör efter en vinter kostar mer än en som håller i tio år."
+            "hookType": "berättelse",
+            "headline1": "Den billigaste skärmen",
+            "headline2": "Fungerade i två månader",
+            "body": "Sedan dog den i första vintern. Kunden köpte om, den här gången vädertålig från början."
           },
           {
-            "hookType": "konträr",
-            "headline1": "Billigast kostar mest",
-            "headline2": "Varför butiker betalar mer för rätt skärm",
-            "body": "En skärm som inte syns i solljus säljer ingenting. Den som köper fel ljusstyrka byter skärm efter ett år."
+            "hookType": "fråga",
+            "headline1": "Varför köper de dyrare?",
+            "headline2": "Det gäller inte pris",
+            "body": "Kunden väljer den som tar ansvar för helheten. Installation, innehåll, support, en kontakt för allt."
           }
         ]
       }

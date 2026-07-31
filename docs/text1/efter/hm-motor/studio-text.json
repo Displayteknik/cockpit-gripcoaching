@@ -2,43 +2,37 @@
   "profil": "HM Motor Krokom",
   "client_id": "00000000-0000-0000-0000-000000000001",
   "flode": "studio-text",
-  "genererad": "2026-07-31T15:16:09.136Z",
+  "genererad": "2026-07-31T17:12:08.434Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Vi vill inte ha din bil\",\"headline2\":\"Förrän du slutat leta efter det billigaste\",\"body\":\"De flesta ringer runt efter lägsta pris – sen köper de ändå hos oss. För det billigaste är sällan det som funkar längst.\"}",
-      "duration_ms": 5336,
+      "output": "{\"hookType\":\"påstående\",\"headline1\":\"De flesta väntar för länge\",\"headline2\":\"Tror att bilen ska bli värre först\",\"body\":\"Men små ljud blir stora problem. Vi fixar det innan det kostar dig tusenlappar.\"}",
+      "duration_ms": 8429,
       "autochecks": {
         "cta_count": 0,
-        "svag_hook": false,
+        "svag_hook": true,
         "forbjudna_ord": [],
         "floskler": [],
-        "tankstreck_i_loptext": true,
+        "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 0,
+        "rostmarkorer_traffade": 1,
         "rostmarkorer_totalt": 7
       },
       "extra": {
         "voice_score_vinnare": 88,
         "alla_forslag": [
           {
-            "hookType": "konträr",
-            "headline1": "Vi vill inte ha din bil",
-            "headline2": "Förrän du slutat leta efter det billigaste",
-            "body": "De flesta ringer runt efter lägsta pris – sen köper de ändå hos oss. För det billigaste är sällan det som funkar längst."
-          },
-          {
             "hookType": "påstående",
             "headline1": "De flesta väntar för länge",
-            "headline2": "Problemet löser sig inte av sig själv",
-            "body": "Bilägare som hör av sig först sparar både tid och pengar – det är så enkelt det är."
+            "headline2": "Tror att bilen ska bli värre först",
+            "body": "Men små ljud blir stora problem. Vi fixar det innan det kostar dig tusenlappar."
           },
           {
             "hookType": "fråga",
-            "headline1": "Vet du vad vi fixar först?",
-            "headline2": "Det du trodde skulle ta veckor",
-            "body": "De flesta tror att det tar lång tid att få hjälp. Men oftast löser vi det akuta redan samma dag."
+            "headline1": "Stannar bilen utanför?",
+            "headline2": "Många väntar tills det blir akut",
+            "body": "De flesta ringer först när bilen inte startar. Men då är det ofta dyrare och tar längre tid att fixa."
           }
         ]
       }
@@ -46,41 +40,8 @@
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vad händer egentligen?\",\"headline2\":\"När du lämnar bilen hos oss i Krokom\",\"body\":\"Vi tar emot dig direkt – utan tidsbokning. Sen fixar vi det medan du väntar eller åker därifrån.\"}",
-      "duration_ms": 10149,
-      "autochecks": {
-        "cta_count": 0,
-        "svag_hook": false,
-        "forbjudna_ord": [],
-        "floskler": [],
-        "tankstreck_i_loptext": true,
-        "hashtags": 0,
-        "rostmarkorer_traffade": 0,
-        "rostmarkorer_totalt": 7
-      },
-      "extra": {
-        "voice_score_vinnare": 88,
-        "alla_forslag": [
-          {
-            "hookType": "fråga",
-            "headline1": "Vad händer egentligen?",
-            "headline2": "När du lämnar bilen hos oss i Krokom",
-            "body": "Vi tar emot dig direkt – utan tidsbokning. Sen fixar vi det medan du väntar eller åker därifrån."
-          },
-          {
-            "hookType": "fråga",
-            "headline1": "Hur snabbt fixar vi din bil?",
-            "headline2": "Vi svarar samma dag",
-            "body": "De flesta problem tar vi hand om direkt när du kommer in. Behöver vi beställa delar får du besked samma dag."
-          }
-        ]
-      }
-    },
-    {
-      "amne_id": "tre-fragor",
-      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Kan ni fixa det direkt?\",\"headline2\":\"Tre frågor vi får varje dag\",\"body\":\"Ja, oftast. Vi har reservdelar här och fixar det mesta på plats samma dag.\"}",
-      "duration_ms": 5503,
+      "output": "{\"hookType\":\"berättelse\",\"headline1\":\"Från trasig bil till nöjd kund\",\"headline2\":\"Så jobbar vi på HM Motor\",\"body\":\"Han ringde på morgonen med en XJ som inte ville starta. Vi hittade felet direkt och han körde hem samma eftermiddag.\"}",
+      "duration_ms": 10541,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -95,25 +56,31 @@
         "voice_score_vinnare": 88,
         "alla_forslag": [
           {
-            "hookType": "fråga",
-            "headline1": "Kan ni fixa det direkt?",
-            "headline2": "Tre frågor vi får varje dag",
-            "body": "Ja, oftast. Vi har reservdelar här och fixar det mesta på plats samma dag."
+            "hookType": "berättelse",
+            "headline1": "Från trasig bil till nöjd kund",
+            "headline2": "Så jobbar vi på HM Motor",
+            "body": "Han ringde på morgonen med en XJ som inte ville starta. Vi hittade felet direkt och han körde hem samma eftermiddag."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Vi bokar ingen tid",
+            "headline2": "Hur fixar vi din bil ändå?",
+            "body": "Du ringer, vi tar emot bilen direkt och du får den klar samma dag, utan att sitta i väntan."
           }
         ]
       }
     },
     {
-      "amne_id": "tvekade",
-      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vad händer när du väntar?\",\"headline2\":\"En kund tvekade i tre månader\",\"body\":\"När han till slut kom in fixade vi det på en dag – och han undrade varför han inte kom tidigare.\"}",
-      "duration_ms": 4653,
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Vi svarar inte alltid ja\",\"headline2\":\"Tre ärliga svar vi ger våra kunder\",\"body\":\"Vi lovar bara det vi faktiskt kan fixa, och ibland är det smartare att vänta än att stressa igång.\"}",
+      "duration_ms": 5942,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [],
         "floskler": [],
-        "tankstreck_i_loptext": true,
+        "tankstreck_i_loptext": false,
         "hashtags": 0,
         "rostmarkorer_traffade": 0,
         "rostmarkorer_totalt": 7
@@ -122,16 +89,37 @@
         "voice_score_vinnare": 88,
         "alla_forslag": [
           {
-            "hookType": "fråga",
-            "headline1": "Vad händer när du väntar?",
-            "headline2": "En kund tvekade i tre månader",
-            "body": "När han till slut kom in fixade vi det på en dag – och han undrade varför han inte kom tidigare."
-          },
+            "hookType": "konträr",
+            "headline1": "Vi svarar inte alltid ja",
+            "headline2": "Tre ärliga svar vi ger våra kunder",
+            "body": "Vi lovar bara det vi faktiskt kan fixa, och ibland är det smartare att vänta än att stressa igång."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Tveka länge nog\",\"headline2\":\"så blir det dyrare\",\"body\":\"En kund funderade i två månader. När bilen till slut kom in behövde vi byta fler delar än om han kommit direkt.\"}",
+      "duration_ms": 7793,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score_vinnare": 88,
+        "alla_forslag": [
           {
             "hookType": "konträr",
-            "headline1": "Att vänta kostade mer",
-            "headline2": "Varför tveka när resultatet ändå kommer?",
-            "body": "En kund tvekade i tre månader. När han väl slog till var bilen klar på två dagar."
+            "headline1": "Tveka länge nog",
+            "headline2": "så blir det dyrare",
+            "body": "En kund funderade i två månader. När bilen till slut kom in behövde vi byta fler delar än om han kommit direkt."
           }
         ]
       }
@@ -139,8 +127,8 @@
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Billigast är dyrt\",\"headline2\":\"Varför kunder går förbi lågprisgaraget\",\"body\":\"De som köper bara på pris byter verkstad efter första felet. Våra kunder stannar för att vi fixar det rätt från början.\"}",
-      "duration_ms": 5747,
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Billigast är bäst?\",\"headline2\":\"Varför kunder betalar mer\",\"body\":\"De flesta som köper bil hos oss väljer inte det billigaste alternativet. De väljer den som känns trygg.\"}",
+      "duration_ms": 6240,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -155,22 +143,22 @@
         "voice_score_vinnare": 85,
         "alla_forslag": [
           {
-            "hookType": "konträr",
-            "headline1": "Billigast är dyrt",
-            "headline2": "Varför kunder går förbi lågprisgaraget",
-            "body": "De som köper bara på pris byter verkstad efter första felet. Våra kunder stannar för att vi fixar det rätt från början."
+            "hookType": "fråga",
+            "headline1": "Billigast är bäst?",
+            "headline2": "Varför kunder betalar mer",
+            "body": "De flesta som köper bil hos oss väljer inte det billigaste alternativet. De väljer den som känns trygg."
           },
           {
-            "hookType": "berättelse",
-            "headline1": "Han valde den dyraste",
-            "headline2": "Varför gick han förbi vårt billigaste?",
-            "body": "För att han ville sova gott om natten utan att undra om servicen håller hela vägen."
+            "hookType": "konträr",
+            "headline1": "Det billigaste blir dyrast",
+            "headline2": "Varför väljer kunderna bort lågprisalternativet?",
+            "body": "De som köper bil vill ha trygghet och service som håller längre än garantin."
           },
           {
             "hookType": "påstående",
-            "headline1": "Billigast säger oftast nej",
-            "headline2": "Varför kostar det mer i längden?",
-            "body": "Den som bara jämför pris missar garantin, servicen och tiden det tar när något krånglar."
+            "headline1": "Billigast blir dyrast",
+            "headline2": "Det vet våra kunder",
+            "body": "När du väljer den som tar minst betalt får du ofta betala dubbelt, en gång för jobbet och en gång för att fixa det igen."
           }
         ]
       }

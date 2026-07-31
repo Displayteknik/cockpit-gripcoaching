@@ -1,6 +1,70 @@
 # TEXT1-RESULTAT — före/efter promptmigreringen (T-4)
 
-Genererad 2026-07-31 15:16. Samma 5 låsta ämnen (docs/text1/amnen.json), samma 4 klientprofiler, samma mätsticka (autochecks) på båda sidor. FÖRE = koden före TEXT-1 (studio-text fångad från worktree på T-2-commit — vägen orörd t.o.m. dess). EFTER = prompt-core-vägen.
+Genererad 2026-07-31 17:32. Samma 5 låsta ämnen (docs/text1/amnen.json), samma 4 klientprofiler, samma mätsticka (autochecks) på båda sidor. FÖRE = koden före TEXT-1 (studio-text fångad från worktree på T-2-commit — vägen orörd t.o.m. dess). EFTER = prompt-core-vägen **efter justeringsrundan T-5** (tabellerna nedan visar alltså före → efter-T5; v1-mellanmätningen finns i sektionen här under).
+
+## Justeringsrundan (T-5) — utfall
+
+Hela efter-batchen omkörd 2026-07-31 kväll mot T-5-koden (180/180 lyckade; en post, engens-trad/studio-text/bakom-kulisserna, föll 3 ggr i kvalitetsfiltren i batchen och omkördes separat med samma kod + autochecks; batchens DB-städning verifierad i loggen: linkedin_posts 20/0 kvar, hm_social_posts 20/0, agent_experiments 26+1/0, client_activity 40/0, voice_profile återställd).
+
+**Åtgärder i rundan:** (v2) sanering av studio-textens poster-fält efter score · HTML-säker tankstrecks-sanering för blogg-brödtext (`taBortTankstreckHtml`) · röstviktad profilklippning (tak 6000→9000, Customer Voice klipps efter Sekundär ICP) — (T-5) CTA-golv som hård regel i alla full-anatomier · `saneraText` på ALLA textbärande fält (nyhetsbrev, social-slides/hashtags, blogg-FAQ/alt, compass-veckans payload) · förbjudna klientord som eget hårt block sist + röst-exempel med förbjudna ord filtreras ur prompten · metaTitle/metaDescription klipps på ordgräns · profilKlippt loggas.
+
+### Tankstreck i löptext (mål: 0 %) — före → efter-v1 → efter-T5
+
+| Flöde | Före | Efter v1 | Efter T-5 |
+|---|---|---|---|
+| studio-text | 20 % | 50 % | **0 %** |
+| caption | 0 % | 0 % | **0 %** |
+| karusell | 25 % | 0 % | **0 %** |
+| linkedin | 40 % | 0 % | **0 %** |
+| social | 50 % | 0 % | **0 %** |
+| nyhetsbrev | 40 % | 10 % | **0 %** |
+| blogg | 60 % | 95 % | **0 %** |
+| veckoplan | 0 % | 0 % | **0 %** |
+| enskilt | 0 % | 0 % | **0 %** |
+
+Målet nått: 0 % i samtliga nio flöden. v1-regressionerna (studio-text 50 %, blogg 95 %) berodde på osanerade fält respektive osanerad HTML-kropp — båda vägarna är nu täckta i koden, inte bara i prompten.
+
+### Exakt en CTA (andel texter) — före → efter-v1 → efter-T5
+
+| Flöde | Före | Efter v1 | Efter T-5 |
+|---|---|---|---|
+| studio-text | 0 % | 0 % | **0 %** (avsiktligt: pa-bild-texter ska INTE ha CTA) |
+| caption | 40 % | 10 % | **20 %** |
+| karusell | 40 % | 20 % | **30 %** |
+| linkedin | 15 % | 0 % | **0 %** |
+| social | 15 % | 35 % | **20 %** |
+| nyhetsbrev | 10 % | 20 % | **20 %** |
+| blogg | 30 % | 35 % | **60 %** |
+| veckoplan | 5 % | 15 % | **0 %** |
+| enskilt | 30 % | 35 % | **35 %** |
+
+Läsvarning: `raknaCta` är en ordlista-heuristik (svara/boka/klicka/…). LinkedIn-flödet styrs mot mjuka CTA:er ("vad tror du?") som inte innehåller något av listorden — CTA-snittet 0,0 betyder "inga hårda CTA-ord", inte "ingen uppmaning". Blogg (mest hård-CTA-drivet flöde) gick 35 → 60 % efter CTA-golvet.
+
+### Röst-träff — före → efter-v1 → efter-T5
+
+| Flöde | Före | Efter v1 | Efter T-5 |
+|---|---|---|---|
+| linkedin | 34 % | 12 % | **11 %** |
+| veckoplan | 40 % | 29 % | **38 %** |
+| blogg | 43 % | 27 % | **26 %** |
+| social | 30 % | 17 % | **11 %** |
+
+Profilklippningen (9000 + röstviktad ordning) räckte alltså INTE för att återhämta linkedin-röst-träffen. Trolig kvarvarande orsak: v1-tappet kom inte främst från klippet — bara Displayteknik (9396 tecken) klipptes över huvud taget, och nu klipps enbart Kundresa. Två kandidater för nästa runda: (a) röst-fingerprintblocket ligger tidigare i den längre T-5-prompten och drunknar (signaturfraser kan behöva upprepas nära slutet), (b) T-5-filtret som tar bort röst-exempel innehållande klientens förbjudna ord minskar exempelunderlaget för vissa klienter. Veckoplan (som gick via samma profil men annan prompt) gick upp 29 → 38 %.
+
+### Profilklippt-utfall (maxProfilTecken 9000, röstviktad KLIPPORDNING)
+
+| Profil | Profilstorlek | Klipps nu | Klipps med gamla 6000-taket |
+|---|---|---|---|
+| Displayteknik | 9 396 tecken | Kundresa | Kundresa, Konkurrenter, Sekundär ICP, Voice of Customer, Hashtag-bas, Brand story |
+| Engens Träd & Trädgård | 3 578 | inget | inget |
+| HM Motor Krokom | 1 464 | inget | inget |
+| Annas Blommor | 1 061 | inget | inget |
+
+Story-bank och Customer Voice överlever för ALLA fyra profiler (Håkans intention). Klipputfall loggas nu av prompt-core (`[prompt-core] profil klippt …`) i både batch och produktion.
+
+### Beslut punkt 3 — förbjudna klientord (Håkan 2026-07-31)
+
+INGEN mekanisk ersättning av godtyckliga klientord i efterhand — grammatikrisken accepteras inte. Huvudspärren är prompten: förbuden ligger som eget HÅRT block sist bland innehållsreglerna (flyttat ur röstblocket) och röst-exempel som innehåller förbjudna ord filtreras ur urvalet. Skyddsnätet är detektering + logg i `saneraText` (`[saneraText] klientens förbjudna ord kvar …`) — verifierat i skarp drift under batchen (fångade bl.a. "billigaste" för Engens). Plattformens fasta floskellista (kraftfull/banbrytande/…) ersätts fortsatt mekaniskt som förut — den har kurerade ersättningar.
 
 Läsanvisning: CTA-ord räknas med grov heuristik (`raknaCta`) — riktningen är det viktiga, inte absolutvärdet. "Röst-träff" = andel av klientens signaturfraser/smärtord/glädjeord som förekommer. Floskler = plattformens förbjudna AI-ord. Tankstreck = som skiljetecken i löptext.
 
@@ -8,28 +72,28 @@ Läsanvisning: CTA-ord räknas med grov heuristik (`raknaCta`) — riktningen ä
 
 | Flöde | Texter (före→efter) | CTA-snitt | Svag hook | Förbjudna ord/text | Floskler/text | Tankstreck | Hashtags-snitt | Röst-träff |
 |---|---|---|---|---|---|---|---|---|
-| studio-text | 20 → 20 | 0,0 → **0,0** | 0 % → **0 %** | 0,1 → **0,1** | 0,0 → **0,0** | 20 % → **50 %** | 0,0 → **0,0** | 4 % → **3 %** |
-| caption | 20 → 20 | 0,5 → **0,1** | 5 % → **10 %** | 0,1 → **0,2** | 0,0 → **0,0** | 0 % → **0 %** | 4,3 → **4,6** | 25 % → **22 %** |
-| karusell | 20 → 20 | 0,7 → **0,5** | 0 % → **0 %** | 0,1 → **0,1** | 0,0 → **0,0** | 25 % → **0 %** | 0,0 → **0,0** | 21 % → **22 %** |
-| linkedin | 20 → 20 | 0,3 → **0,4** | 5 % → **15 %** | 0,1 → **0,6** | 0,1 → **0,0** | 40 % → **0 %** | 3,5 → **3,1** | 34 % → **12 %** |
-| social | 20 → 20 | 0,6 → **0,5** | 5 % → **0 %** | 0,1 → **0,3** | 0,0 → **0,0** | 50 % → **0 %** | 10,0 → **6,0** | 30 % → **17 %** |
-| nyhetsbrev | 20 → 20 | 0,1 → **0,3** | 0 % → **0 %** | 0,5 → **0,7** | 0,1 → **0,2** | 40 % → **10 %** | 0,0 → **0,0** | 18 % → **16 %** |
-| blogg | 20 → 20 | 1,7 → **1,2** | 0 % → **0 %** | 1,4 → **1,1** | 0,7 → **0,3** | 60 % → **95 %** | 0,1 → **0,0** | 43 % → **27 %** |
-| veckoplan | 20 → 20 | 3,6 → **4,1** | 0 % → **0 %** | 0,5 → **0,7** | 0,0 → **0,0** | 0 % → **0 %** | 24,9 → **25,0** | 40 % → **29 %** |
-| enskilt | 20 → 20 | 0,6 → **0,3** | 0 % → **0 %** | 0,1 → **0,1** | 0,0 → **0,0** | 0 % → **0 %** | 5,0 → **4,8** | 25 % → **17 %** |
+| studio-text | 20 → 20 | 0,0 → **0,0** | 0 % → **5 %** | 0,1 → **0,0** | 0,0 → **0,0** | 20 % → **0 %** | 0,0 → **0,0** | 4 % → **2 %** |
+| caption | 20 → 20 | 0,5 → **0,2** | 5 % → **20 %** | 0,1 → **0,3** | 0,0 → **0,0** | 0 % → **0 %** | 4,3 → **4,7** | 25 % → **21 %** |
+| karusell | 20 → 20 | 0,7 → **0,3** | 0 % → **0 %** | 0,1 → **0,1** | 0,0 → **0,0** | 25 % → **0 %** | 0,0 → **0,0** | 21 % → **15 %** |
+| linkedin | 20 → 20 | 0,3 → **0,0** | 5 % → **0 %** | 0,1 → **0,3** | 0,1 → **0,0** | 40 % → **0 %** | 3,5 → **3,0** | 34 % → **11 %** |
+| social | 20 → 20 | 0,6 → **0,7** | 5 % → **0 %** | 0,1 → **0,3** | 0,0 → **0,0** | 50 % → **0 %** | 10,0 → **5,0** | 30 % → **11 %** |
+| nyhetsbrev | 20 → 20 | 0,1 → **0,2** | 0 % → **0 %** | 0,5 → **0,4** | 0,1 → **0,0** | 40 % → **0 %** | 0,0 → **0,0** | 18 % → **14 %** |
+| blogg | 20 → 20 | 1,7 → **1,1** | 0 % → **0 %** | 1,4 → **1,1** | 0,7 → **0,6** | 60 % → **0 %** | 0,1 → **0,0** | 43 % → **26 %** |
+| veckoplan | 20 → 20 | 3,6 → **3,5** | 0 % → **0 %** | 0,5 → **0,8** | 0,0 → **0,0** | 0 % → **0 %** | 24,9 → **24,1** | 40 % → **38 %** |
+| enskilt | 20 → 20 | 0,6 → **0,3** | 0 % → **0 %** | 0,1 → **0,2** | 0,0 → **0,0** | 0 % → **0 %** | 5,0 → **5,0** | 25 % → **14 %** |
 
 ## Exakt en CTA (skrivregel 4) — andel texter
 
 | Flöde | Före | Efter |
 |---|---|---|
 | studio-text | 0 % | **0 %** |
-| caption | 40 % | **10 %** |
-| karusell | 40 % | **20 %** |
+| caption | 40 % | **20 %** |
+| karusell | 40 % | **30 %** |
 | linkedin | 15 % | **0 %** |
-| social | 15 % | **35 %** |
+| social | 15 % | **20 %** |
 | nyhetsbrev | 10 % | **20 %** |
-| blogg | 30 % | **35 %** |
-| veckoplan | 5 % | **15 %** |
+| blogg | 30 % | **60 %** |
+| veckoplan | 5 % | **0 %** |
 | enskilt | 30 % | **35 %** |
 
 ## Sida vid sida — första ämnet ("misstag") per flöde, Displayteknik
@@ -42,7 +106,7 @@ Läsanvisning: CTA-ord räknas med grov heuristik (`raknaCta`) — riktningen ä
 ```
 **Efter:**
 ```
-{"hookType":"fråga","headline1":"Behöver vi verkligen en så ljusstark skärm?","headline2":"Den frågan får vi varje vecka","body":"Sedan ser kunden skärmen i skyltfönstret mitt på dagen. Då förstår de varför 2500 nits gör skillnad."}
+{"hookType":"fråga","headline1":"Skyltfönstret","headline2":"Funderar du på en skärm som syns i solljus?","body":"Det vanligaste misstaget är att köpa fel ljusstyrka. En vanlig inomhusskärm går inte att läsa i skyltfönster, du behöver 2 500 nits eller mer."}
 ```
 
 ### caption
@@ -59,9 +123,11 @@ Har du en plats som är svår att exponera? Skicka en bild så får du en offert
 ```
 **Efter:**
 ```
-Är din digitala skyltning trött, eller syns den inte i solljuset? Många företag har redan investerat i snygg branding, men glömmer att den också måste synas där kunderna faktiskt är. Det vanligaste misstaget vi ser är att man väljer en skärm som ser bra ut på pappret, men inte klarar av nordiskt klimat eller ljusförhållanden.
+Många företag vill satsa på digital skyltning, men väljer fel skärm. Kanske köper man en billig TV från hemelektronikaffären som inte är gjord för 24/7-drift, eller för att synas i direkt solljus. Resultatet blir ofta en skärm som ser trött ut, eller till och med går sönder efter kort tid.
 
-Hos oss får du en kontakt för allt, från första idé till driftsatt lösning som fungerar år efter år. Vi hjälper dig att välja rätt skärm för butiken, bilhallen, restaurangen eller fastigheten, så att den syns, säljer och  …
+Du får en skärm som syns och fungerar år efter år. Vi ser till att du får rätt skärm för din miljö, oavsett om det är en ljusstark skyltfönsterskärm eller en vädertålig utomhusskärm. Vi tar ansvar för val, installation, innehåll och support.
+
+Skicka en bild  …
 ```
 
 ### karusell
@@ -72,7 +138,7 @@ Hos oss får du en kontakt för allt, från första idé till driftsatt lösning
 ```
 **Efter:**
 ```
-[{"kind":"hook","headline":"Vanligaste misstaget med skärmar?","body":"Många väljer fel skärm. Det blir dyrt och syns inte i längden.","imageUrl":""},{"kind":"point","headline":"Fel ljusstyrka för miljön","body":"En vanlig skärm syns inte i solljus. En utomhusskärm behöver hög ljusstyrka, till exempel 3 000 nits, för att synas tydligt.","imageUrl":""},{"kind":"point","headline":"Inte anpassad för väder","body":"En inomhusskärm dör snabbt utomhus. Våra vädertåliga skärmar klarar nordiskt klimat år efter år, från kyla till fukt.","imageUrl":""},{ …
+[{"kind":"hook","headline":"Vanliga misstag med digital skärm","body":"Många företag väljer fel skärm för skyltfönstret. Så undviker du det misstaget.","imageUrl":""},{"kind":"point","headline":"Fel skärm för solljus","body":"En vanlig TV syns inte i dagsljus eller direkt solljus. En professionell skyltfönsterskärm behöver minst 2 500 nits för att budskapet ska synas tydligt.","imageUrl":""},{"kind":"point","headline":"Inte byggd för att hålla","body":"Konsumentskärmar är inte gjorda för 24/7-drift i nordiskt klimat. De tål varken kyla, kondens …
 ```
 
 ### linkedin
@@ -83,7 +149,7 @@ Hos oss får du en kontakt för allt, från första idé till driftsatt lösning
 ```
 **Efter:**
 ```
-{"hook":"Det vanligaste misstaget när man köper skärm? Man fokuserar på fel sak.","body":"Det vanligaste misstaget när man köper skärm? Man fokuserar på fel sak.\n\nFöretag lägger veckor på att jämföra skärmstorlek och upplösning.\n\nMen den tekniska detaljen som faktiskt avgör om investeringen lönar sig hamnar nästan alltid i skymundan.\n\nLjussyrkan, mätt i nits.\n\nEn skärm i ett skyltfönster som inte syns i solljus säljer ingenting. Den blir bara en svart, dyr rektangel. En utomhusskylt som inte är byggd för nordiskt klimat blir snabbt en k …
+{"hook":"Det vanligaste misstaget när man köper skärm till skyltfönstret? Att köpa en TV.","body":"Det vanligaste misstaget när man köper skärm till skyltfönstret? Att köpa en TV.\n\nDu har sett det. En svart rektangel i grannbutikens fönster. Den skulle visa en snygg kampanj, men solen ligger på och allt som syns är en spegelbild.\n\nPå pappret såg det smart ut. En vanlig TV från hemelektronikkedjan var ju mycket billigare. Men efter några veckor inser man att den inte är byggd för jobbet.\n\nInsikten är att en skärm för ett skyltfönster inte  …
 ```
 
 ### social
@@ -94,7 +160,7 @@ Hos oss får du en kontakt för allt, från första idé till driftsatt lösning
 ```
 **Efter:**
 ```
-{"hook":"Det vanligaste misstaget kostar tusenlappar och syns inte ens.","caption":"Det vanligaste misstaget kostar tusenlappar och syns inte ens.\n\nFöretag köper en skärm. Ofta en vanlig TV. Den monteras i ett ljust rum eller i ett skyltfönster.\n\nResultatet blir en mörk ruta som reflekterar allt. Budskapet försvinner i solljuset. Skärmen är inte byggd för att vara igång hela dagarna, och garantin gäller sällan för företag.\n\nAtt välja rätt skärm för rätt miljö är avgörande. En skärm för ett skyltfönster behöver en helt annan ljusstyrka än  …
+{"hook":"Det vanligaste (och dyraste) misstaget? Att köpa en vanlig TV till skyltfönstret.","caption":"Det vanligaste (och dyraste) misstaget? Att köpa en vanlig TV till skyltfönstret.\n\nDen ser bra ut på papperet. Priset är lågt. Men efter några månader i ett ljust fönster är bilden urblekt. Och efter ett år är skärmen ofta helt svart. Garantin? Gäller sällan för drift dygnet runt.\n\nEn professionell skärm för ett skyltfönster är byggd för två saker en vanlig TV saknar:\n\n1. Ljusstyrka som syns, även i direkt solljus.\n2. Drift dygnet runt, …
 ```
 
 ### nyhetsbrev
@@ -105,7 +171,7 @@ Hos oss får du en kontakt för allt, från första idé till driftsatt lösning
 ```
 **Efter:**
 ```
-{"subjects":["Det vanligaste misstaget med digitala skärmar","Ett tidigt samtal kan spara dig tusenlappar","När är rätt läge att be om hjälp med skärmar?","En sak jag ser att många företag gör fel"],"preheader":"Att försöka lösa allt själv kan bli dyrare än du tror. Här är varför vi rekommenderar ett annat sätt.","greeting":"Hej!","intro":"Känner du igen dig i att googla fram en lösning, köpa något halvbra på nätet eller fråga en bekant? Det är en vanlig start när man inser att man behöver synas bättre. Men när det gäller digitala skärmar kan d …
+{"subjects":["Ett vanligt misstag med digitala skärmar","Hur du sparar tid på din nästa skärm","Innan du köper en ny skärm till butiken","En reflektion om att göra rätt från början"],"preheader":"Att försöka lösa allt själv kostar ofta mer än att fråga. Få ett ärligt råd från start.","greeting":"Hej!","intro":"Jag pratar med många företagare som funderar på digital skyltning. Nästan alla berättar samma sak: de väntade för länge med att ställa den första frågan, och försökte lösa allt själva innan de hörde av sig.","sections":[{"heading":"Risken …
 ```
 
 ### blogg
@@ -116,7 +182,7 @@ Hos oss får du en kontakt för allt, från första idé till driftsatt lösning
 ```
 **Efter:**
 ```
-{"title":"Det största misstaget när du köper digitala skärmar (och hur du undviker det)","metaTitle":"Misstaget som kostar mest vid köp av digitala skärmar | Disp","metaDescription":"Innan du väljer en digital skärm för din butik eller fasad, undvik detta vanliga och kostsamma misstag. Vi förklarar vad som verkligen räknas.","urlSlug":"vanligaste-misstaget-kopa-digitala-skarmar","html":"<p class=\"lead\">Många tror att den största risken med en ny digital skärm är att betala för mycket. Sanningen är att det dyraste misstaget är ett helt annat:  …
+{"title":"Det vanligaste misstaget med digitala skärmar (och hur du undviker det)","metaTitle":"Vanligaste misstaget med digitala skärmar | Displayteknik","metaDescription":"Innan du köper en digital skärm för ditt företag, undvik detta kostsamma misstag. Vi förklarar varför en vanlig TV inte fungerar i ett skyltfönster.","urlSlug":"vanligaste-misstaget-med-digitala-skarmar","html":"<p class=\"lead\">Många tror att en vanlig TV från en elektronikjätte är ett smart sätt att spara pengar på digital skyltning. Det är det absolut vanligaste och mes …
 ```
 
 ### veckoplan
@@ -127,7 +193,7 @@ Hos oss får du en kontakt för allt, från första idé till driftsatt lösning
 ```
 **Efter:**
 ```
-{"theme":"Det vanligaste misstaget nya kunder gör innan de hör av sig till oss","voice_source_count":3,"days":[{"day":"Måndag","fourA":"analytical","disc":"C","funnel":"TOFU","format":"big_stat","hook":"8 av 10 skärmar i skyltfönster är för mörka.","body":"Det vanligaste misstaget är att köpa en skärm som inte syns. En standardskärm har en ljusstyrka på cirka 350-500 nits. I ett skyltfönster med direkt solljus krävs minst 2 500 nits för att ditt budskap ska nå fram.\n\nEn för svag skärm blir en svart spegel, inte en säljyta. Resultatet blir en  …
+{"theme":"Det vanligaste misstaget nya kunder gör innan de hör av sig till oss","voice_source_count":3,"days":[{"day":"Måndag","fourA":"analytical","disc":"C","funnel":"TOFU","format":"big_stat","hook":"8 av 10 skyltfönster gör samma misstag.","body":"De köper en vanlig TV. Den är byggd för ett mörkt vardagsrum, inte för att synas i fullt dagsljus.\n\nResultatet: skärmen är för mörk för att fånga kunder och går sönder i förtid. Den är inte gjord för att vara på hela dagarna.\n\nEn professionell skärm för ett skyltfönster har 4-5 gånger högre lj …
 ```
 
 ### enskilt
@@ -138,7 +204,7 @@ Hos oss får du en kontakt för allt, från första idé till driftsatt lösning
 ```
 **Efter:**
 ```
-{"variants":[{"tier":"silver","hook":"Din nya skärm är installerad. Vem ringer du om ett halvår?","body":"Många fokuserar bara på själva skärmen. De jämför priser, storlekar och upplösning.\n\nMen den verkliga utmaningen börjar efter installationen. Innehållet blir inaktuellt. En kabel glappar. Något behöver startas om. Plötsligt blir du din egen AV-tekniker.\n\nDet största misstaget är att se skärmen som en produkt, inte en helhet. En driftsäker lösning kräver mer än hårdvara.\n\nChecklista för en trygg investering:\n- Installation: Ingår prof …
+{"variants":[{"tier":"gold","hook":"Misstaget som kostar butiksägare tusenlappar i onödan.","body":"Du behöver en skärm till skyltfönstret. Du åker till närmaste elektronikvaruhus och köper en vanlig TV. Problemet löst, eller?\n\nNej. Det här är det vanligaste och dyraste misstaget vi ser.\n\nEn vanlig TV är byggd för ett vardagsrum. Inte för ett skyltfönster med direkt solljus, dygnet-runt-drift och kalla nordiska vintrar. Den kommer se mörk ut, överhettas och gå sönder i förtid.\n\nResultatet? Du får köpa en ny skärm igen. Och igen.\n\nEn rik …
 ```
 
 ## Blindbedömning (Håkan — bilaga B i REVISION-protokollet)

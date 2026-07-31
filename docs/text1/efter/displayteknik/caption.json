@@ -2,29 +2,32 @@
   "profil": "Displayteknik",
   "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
   "flode": "caption",
-  "genererad": "2026-07-31T14:50:15.365Z",
+  "genererad": "2026-07-31T16:59:08.297Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "Är din digitala skyltning trött, eller syns den inte i solljuset? Många företag har redan investerat i snygg branding, men glömmer att den också måste synas där kunderna faktiskt är. Det vanligaste misstaget vi ser är att man väljer en skärm som ser bra ut på pappret, men inte klarar av nordiskt klimat eller ljusförhållanden.\n\nHos oss får du en kontakt för allt, från första idé till driftsatt lösning som fungerar år efter år. Vi hjälper dig att välja rätt skärm för butiken, bilhallen, restaurangen eller fastigheten, så att den syns, säljer och klarar alla utmaningar.\n\nSkicka en bild på platsen idag så får du en offert inom 24 timmar.\n\n#Displayteknik #DigitalSkyltning #LEDskärm #Butiksskyltning #FångaFlerKunder",
-      "duration_ms": 13221,
+      "output": "Många företag vill satsa på digital skyltning, men väljer fel skärm. Kanske köper man en billig TV från hemelektronikaffären som inte är gjord för 24/7-drift, eller för att synas i direkt solljus. Resultatet blir ofta en skärm som ser trött ut, eller till och med går sönder efter kort tid.\n\nDu får en skärm som syns och fungerar år efter år. Vi ser till att du får rätt skärm för din miljö, oavsett om det är en ljusstark skyltfönsterskärm eller en vädertålig utomhusskärm. Vi tar ansvar för val, installation, innehåll och support.\n\nSkicka en bild på platsen du vill skylta upp, så får du en offert inom 24 timmar.\n\n#digitalskyltning #ledskärm #skyltfönster #butikskommunikation #retail",
+      "duration_ms": 2816,
       "autochecks": {
         "cta_count": 0,
-        "svag_hook": false,
-        "forbjudna_ord": [],
+        "svag_hook": true,
+        "forbjudna_ord": [
+          "kanske",
+          "billig"
+        ],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 5,
-        "rostmarkorer_traffade": 2,
+        "rostmarkorer_traffade": 0,
         "rostmarkorer_totalt": 11
       }
     },
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "Från första kontakt till driftsatt lösning, så ser vår process ut när du beställer digitala skärmar för din verksamhet. Vi vet att du vill ha en skärm som syns, säljer och fungerar år efter år.\n\nDu får en kontakt för allt. Vi tar hand om val, installation, innehåll och löpande support. Enkelhet och trygghet för dig, oavsett om det är för butik, bilhall, trafik eller hotell.\n\n#Displayteknik #DigitalSkyltning #LEDskärm #Kunduppdrag #FångaFlerKunder",
-      "duration_ms": 13398,
+      "output": "När du vill synas bättre med digitala skärmar, börjar allt med en enkel kontakt. Ofta en digital fika på 30 minuter, där vi pratar om vad du vill uppnå, utan säljpitch. Eller så skickar du en bild på platsen, och får en offert inom 24 timmar.\n\nSedan tar vi hand om allt. Från val av rätt skärm för din miljö (inomhus, skyltfönster eller utomhus), till installation, montering och driftsättning. Du får en kontakt för allt, och vi ser till att skärmen fungerar år efter år.\n\n#digitalskyltning #digitalsignage #ledskärm #skyltfönster #butikskommunikation",
+      "duration_ms": 2817,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -39,8 +42,24 @@
     {
       "amne_id": "tre-fragor",
       "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "Många funderar över vad en digital skärm egentligen kostar och hur länge den håller. Det är frågor vi får ofta, och såklart ska du få ärliga svar.\n\n**1. Vad kostar en digital skärm?** En digital skyltfönsterskärm på 43 tum ligger från 21 000 kr.\n**2. Hur länge håller en digital skärm?** Våra skärmar har en garanterad drifttid på 70 000, 100 000 timmar. Det betyder att de håller i många år.\n**3. Vem hjälper oss om något strular?** Du får en kontakt för allt, från första idé till driftsatt lösning. Vi tar hand om val, installation, innehåll och support.\n\nKänner du igen dig? Skicka ett meddelande så tar vi en digital fika, helt utan säljprat.\n\n#DigitalSkyltning #Displayteknik #LEDskärmar #Butikskommunikation #Söderhamn",
-      "duration_ms": 14245,
+      "output": "\"Vad kostar en digital skärm?\" och \"Vem hjälper oss när den strular?\" är några av de frågor vi ofta får. Vi vet att det är en djungel därute, och det är lätt att känna sig ensam när man ska välja. Därför gillar vi att vara raka och konkreta från start.\n\nDu får en kontakt för allt, från första idé till driftsatt lösning. Vi ser till att du får rätt skärm för dina behov, oavsett om det är för skyltfönstret, inomhus eller utomhus i nordiskt klimat. Du ska veta vad du får, och att det fungerar, år efter år.\n\nHar du en fråga vi kan svara på? Skicka ett meddelande.\n\n#digitalskyltning #digitalsignage #ledskärm #skyltfönster #butikskommunikation",
+      "duration_ms": 2709,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "Många funderar länge på digital skyltning. Kommer det att synas? Får vi hjälp med innehållet? Och vad kostar det egentligen?\n\nEn av våra kunder tvekade först, men när de väl slog till blev resultatet en riktig succé. Deras skyltfönsterlösning med en high-bright skärm som syns även i direkt solljus drar nu blickarna till sig och skärmen har fungerat år efter år. Vi skötte allt från val av skärm till installation och drift.\n\nÄr du nyfiken på hur digitala skärmar kan få ditt varumärke att synas bättre? Skicka ett DM så tar vi en digital fika, helt utan säljpitch.\n\n#digitalskyltning #skyltfönster #ledskärm #butikskommunikation #retail",
+      "duration_ms": 2676,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": true,
@@ -53,36 +72,20 @@
       }
     },
     {
-      "amne_id": "tvekade",
-      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "Vi hade en kund som tvekade länge med att byta ut sin trötta skyltning. De visste att den inte syntes i solljuset och att budskapen var svåra att uppdatera.\n\nEfter att ha visat dem hur enkelt det kan vara, från första idé till driftsatt lösning, bestämde de sig. Och resultatet? En digital skyltfönsterskärm som syns, säljer och fungerar år efter år. Det är vad vi menar med en partner för allt.\n\n#Displayteknik #DigitalaSkärmar #Skyltfönster #Butiksinredning",
-      "duration_ms": 2236,
-      "autochecks": {
-        "cta_count": 0,
-        "svag_hook": false,
-        "forbjudna_ord": [],
-        "floskler": [],
-        "tankstreck_i_loptext": false,
-        "hashtags": 4,
-        "rostmarkorer_traffade": 2,
-        "rostmarkorer_totalt": 11
-      }
-    },
-    {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "Våra kunder väljer sällan det billigaste alternativet. De vet att en digital skärm måste synas, sälja och fungera, år efter år, även i tufft nordiskt klimat.\n\nDu får en partner som tar ansvar för hela lösningen: från val och installation till innehåll och löpande support. En kontakt för allt, så att du kan fokusera på din egen verksamhet.\n\n#DigitalaSkärmar #LEDskärmar #Displayteknik #Skyltfönster #Butiksinredning",
-      "duration_ms": 2059,
+      "output": "Många har sett skärmar som inte syns i solljuset eller som lagt av efter bara en vinter. Det billigaste alternativet blir ofta det dyraste i längden, med en skyltning som är trött och inte säljer.\n\nVi hjälper dig att välja rätt skärm för just din miljö, byggd för att fungera år efter år, även i nordiskt klimat. Du får en kontakt för allt: val, installation, innehåll och löpande support.\n\n#digitalskyltning #ledskärm #skyltfönster #butikskommunikation #retail",
+      "duration_ms": 2100,
       "autochecks": {
         "cta_count": 0,
-        "svag_hook": false,
+        "svag_hook": true,
         "forbjudna_ord": [
           "billig"
         ],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 5,
-        "rostmarkorer_traffade": 0,
+        "rostmarkorer_traffade": 2,
         "rostmarkorer_totalt": 11
       }
     }

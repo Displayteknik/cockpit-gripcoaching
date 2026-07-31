@@ -2,104 +2,91 @@
   "profil": "Engens Träd & Trädgård",
   "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
   "flode": "nyhetsbrev",
-  "genererad": "2026-07-31T14:58:01.917Z",
+  "genererad": "2026-07-31T17:07:47.993Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "{\"subjects\":[\"Har du också ett 'borde'-träd på tomten?\",\"Ett samtal som kan spara både tid och pengar\",\"Det där trädet vi pratat om i flera år...\",\"Är det dags för en andra åsikt om trädet?\"],\"preheader\":\"Det vanligaste misstaget är att vänta. Här är varför det lönar sig att fråga tidigt.\",\"greeting\":\"Hej!\",\"intro\":\"Jag hör ofta samma sak från nya kunder: de har tänkt på det där trädet ett tag, kanske flera år, men skjutit på det. Känns det igen? Det är helt normalt. Men att vänta kan tyvärr göra ett enkelt jobb både krångligare och dyrare än det hade behövt vara.\",\"sections\":[{\"heading\":\"Fler valmöjligheter, mindre stress\",\"body\":\"När vi kommer in tidigt i processen finns det oftast fler alternativ. Kanske räcker det med en beskärning istället för att ta ner hela trädet. Ju tidigare vi tittar på det, desto lugnare och mer kontrollerat blir jobbet.\"},{\"heading\":\"Undvik onödiga kostnader\",\"body\":\"Många testar egna lösningar eller frågar en bekant först. Det kan leda till att problemet växer, och när vi väl kopplas in har det redan kostat onödig tid och pengar. Ett tidigt råd kan spara dig den resan.\"},{\"heading\":\"Ett rakt svar kostar inget\",\"body\":\"Att be om en bedömning förpliktigar dig inte till något. Ibland är det bästa rådet att inte göra någonting alls just nu. Du får ett ärligt svar, så att du kan ta ett klokt beslut utan gissningar.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott,\\nRickard Engström\\nEngens Träd & Trädgård\"}",
-      "duration_ms": 11923,
+      "output": "{\"subjects\":[\"Har du också skjutit upp det?\",\"Ett samtal som kan spara dig tusenlappar\",\"Det vanligaste misstaget med träd på tomten\",\"När är det rätt läge att ringa om ett träd?\"],\"preheader\":\"Många väntar för länge med att be om råd. Det kan bli onödigt dyrt och krångligt.\",\"greeting\":\"Hej!\",\"intro\":\"Jag hör ofta samma sak från nya kunder: ”Vi har pratat om det där trädet i flera år”. Känns det igen? Man skjuter upp det, tänker att det nog inte är så bråttom, eller försöker hitta en egen lösning. Det är ett vanligt misstag som sällan lönar sig.\",\"sections\":[{\"heading\":\"När problemet växer\",\"body\":\"Ett litet problem blir sällan mindre med tiden. Ett träd som lutar eller har döda grenar blir inte säkrare av sig självt. Att vänta kan begränsa valmöjligheterna och göra jobbet både svårare och dyrare.\"},{\"heading\":\"Fråga tidigt, spara pengar\",\"body\":\"Ett tidigt samtal ger nästan alltid en bättre lösning. Ofta kan vi hitta ett enklare sätt att hantera trädet på om vi får titta på det innan det har blivit ett akut problem.\"},{\"heading\":\"Ett rakt svar kostar inget\",\"body\":\"Du behöver inte vara säker innan du ringer. En första bedömning är gratis och du får ett ärligt svar. Ibland är det bästa rådet att inte göra någonting alls just nu. Då säger jag det.\"}],\"cta_text\":\"Läs mer om misstaget här\",\"signoff\":\"Hör av dig om du funderar på något,\\n/ Rickard Engström\\nEngens Träd & Trädgård\"}",
+      "duration_ms": 13597,
       "autochecks": {
-        "cta_count": 0,
+        "cta_count": 1,
         "svag_hook": false,
-        "forbjudna_ord": [
-          "kanske"
-        ],
+        "forbjudna_ord": [],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 6,
+        "rostmarkorer_traffade": 3,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "{\"subjects\":[\"Hur går det till att fälla ett träd?\",\"Från första samtal till ren tomt\",\"Steg för steg: när ett träd ska bort\",\"Är det krångligt? Så jobbar vi.\"],\"preheader\":\"Funderar du på ett träd som står lite dumt till? Här är de enkla stegen från första kontakt till klart jobb.\",\"greeting\":\"Hej!\",\"intro\":\"Att ringa om ett träd som oroar eller skymmer solen kan kännas som ett stort steg. Man kanske drar sig för att man inte vet vad som händer sen, om det blir komplicerat eller om man binder upp sig på något. Det behöver inte vara så. För oss är det viktigaste att du känner dig lugn och har koll på läget hela vägen.\",\"sections\":[{\"heading\":\"Det börjar med att vi lyssnar\",\"body\":\"När du hör av dig, ofta med en bild på trädet, är vårt första jobb att förstå vad du vill ha hjälp med. Är det bara en bedömning? Står det nära huset? Vi ställer några frågor och ger dig ett rakt svar på vad vi tror är rimligt.\"},{\"heading\":\"Ett tydligt förslag, inga konstigheter\",\"body\":\"Om det är ett jobb vi kan hjälpa till med får du ett fast pris från oss. Där står det precis vad som ingår, vad det kostar efter RUT-avdrag och när vi kan göra det. Inget fluff, inga dolda avgifter.\"},{\"heading\":\"Själva jobbet – säkert och städat\",\"body\":\"När vi väl är på plats jobbar vi lugnt och metodiskt, bit för bit. Säkerheten för dig, ditt hus och oss är alltid prio ett. Efteråt ser vi till att det är rent och snyggt på tomten.\"}],\"cta_text\":\"Läs mer om hur vi jobbar\",\"signoff\":\"Hör av dig om du funderar på något,\\n/ Rickard Engström\"}",
-      "duration_ms": 13595,
+      "output": "{\"subjects\":[\"Hur går det till när man tar ner ett träd?\",\"Från första samtal till ett färdigt jobb\",\"Vad händer när du ringer mig om ett träd?\",\"En titt på hur vi jobbar, steg för steg\"],\"preheader\":\"Många undrar vad som händer efter första samtalet. Här är en snabb genomgång.\",\"greeting\":\"Hej!\",\"intro\":\"Att ringa om ett träd som står lite dumt till kan kännas som ett stort steg. Man kanske har funderat i flera år, men är osäker på hur allt funkar i praktiken. Vad kostar det? Hur stökigt blir det? Jag tänkte visa hur ett vanligt jobb hos oss ser ut, från första samtal till att allt är klart.\",\"sections\":[{\"heading\":\"Det börjar med en bedömning\",\"body\":\"Allt startar med att vi tittar på trädet, antingen via bilder du skickar eller att jag kommer ut. Vi pratar om vad du vill ha gjort och jag ger dig ett rakt svar på vad som är rimligt att göra, och vad det skulle kosta. Det kostar inget och du förbinder dig inte till något.\"},{\"heading\":\"Själva jobbet: lugnt och säkert\",\"body\":\"När vi är överens bokar vi en tid som passar. På dagen för jobbet tar vi ner trädet bit för bit, kontrollerat och säkert, särskilt om det står nära huset. Målet är att det ska ske helt utan drama för dig och dina grannar.\"},{\"heading\":\"När vi är klara\",\"body\":\"Efteråt ser vi till att det är snyggt och städat på tomten. Vi tar hand om allt ris och virke precis som vi kommit överens om. Du ska bara kunna njuta av resultatet.\"}],\"cta_text\":\"Läs hela guiden här\",\"signoff\":\"Hör av dig om du funderar på något,\\n/ Rickard Engström\"}",
+      "duration_ms": 11931,
       "autochecks": {
-        "cta_count": 1,
+        "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [
-          "komplicerat",
           "kanske"
         ],
         "floskler": [],
-        "tankstreck_i_loptext": true,
+        "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 3,
+        "rostmarkorer_traffade": 5,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "tre-fragor",
       "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "{\"subjects\":[\"Tre vanliga frågor om trädfällning\",\"Få ett rakt svar om ditt träd\",\"Vad kostar det? Och andra funderingar.\",\"Mina ärliga svar på dina frågor\"],\"preheader\":\"Vi svarar på de vanligaste funderingarna om pris, tid och om jobbet verkligen behövs.\",\"greeting\":\"Hej!\",\"intro\":\"När man funderar på att ta ner ett träd på tomten är det nästan alltid samma tre frågor som dyker upp. Det är helt rimligt, för det handlar om trygghet och att veta vad man ger sig in på. Här är mina raka svar på de vanligaste funderingarna jag får höra ute i Roslagen.\",\"sections\":[{\"heading\":\"Vad kommer det att kosta?\",\"body\":\"Priset beror på trädets storlek, risk och läge. Men en sak är säker: du får alltid ett fast pris av oss innan vi startar. Inga överraskningar eller dolda avgifter efteråt.\"},{\"heading\":\"Hur lång tid tar det?\",\"body\":\"Oftast går det snabbare än man tror. Ett normalstort träd är oftast ett dagsprojekt. Vi ger dig en tydlig tidsplan som vi håller, så du vet precis när tomten är din igen.\"},{\"heading\":\"Måste trädet verkligen bort?\",\"body\":\"Ibland är svaret faktiskt nej. Om trädet är friskt och inte utgör en risk säger vi det. Mitt mål är inte att sälja in ett jobb, utan att ge dig ett ärligt råd du kan lita på.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Hör av dig om du funderar på något,\\n/ Rickard Engström\"}",
-      "duration_ms": 11650,
+      "output": "{\"subjects\":[\"Tre vanliga frågor om trädfällning\",\"Ärliga svar på dina funderingar om träd\",\"Vad kostar det? Behöver jag det ens?\",\"Få ett rakt svar om ditt träd\"],\"preheader\":\"Vi svarar på de vanligaste funderingarna kring pris, tid och om det verkligen behövs.\",\"greeting\":\"Hej!\",\"intro\":\"När man funderar på att ta ner ett träd är det lätt att frågorna hopar sig. Man vill veta vad man ger sig in på, utan krångel och oväntade kostnader. Därför har jag samlat de tre vanligaste frågorna jag får, och mina raka svar på dem.\",\"sections\":[{\"heading\":\"Vad kostar det?\",\"body\":\"Priset beror såklart på trädets storlek, risk och var det står. Det viktiga för dig är att du alltid får ett fast pris av mig innan vi börjar. Inga överraskningar efteråt.\"},{\"heading\":\"Hur lång tid tar det?\",\"body\":\"Oftast går det snabbare än man tror. Ett vanligt träd på en villatomt är ofta nere och klart på en halv till en hel dag. Vi ger alltid en tidsplan vi vet att vi kan hålla.\"},{\"heading\":\"Behöver trädet verkligen fällas?\",\"body\":\"Ibland är svaret nej. Om trädet är friskt och inte utgör en risk kan beskärning räcka, eller så behövs ingen åtgärd alls. Då säger vi det. Mitt mål är att du ska känna dig trygg med beslutet, oavsett vad det blir.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott, \\nRickard Engström\"}",
+      "duration_ms": 11411,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
-        "forbjudna_ord": [
-          "handlar om"
-        ],
-        "floskler": [
-          "handlar om"
-        ],
+        "forbjudna_ord": [],
+        "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 3,
+        "rostmarkorer_traffade": 2,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "tvekade",
       "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "{\"subjects\":[\"Det där trädet på tomten...\",\"Varför väntade vi så länge?\",\"Känner du igen den här känslan?\",\"Om trädet du funderat på i ett år\"],\"preheader\":\"Det är den vanligaste frågan vi hör efteråt. En kunds berättelse om att äntligen få det gjort.\",\"greeting\":\"Hej!\",\"intro\":\"Man går och tittar på det där trädet. Kanske skymmer det solen, eller så känns det bara lite för stort, lite för nära huset. Man tänker att man borde ta tag i det, men det blir aldrig av. Känns det igen? Du är inte ensam.\",\"sections\":[{\"heading\":\"Från tvekan till lättnad\",\"body\":\"En av våra kunder i Åkersberga funderade i nästan ett år. De var osäkra på kostnaden och om det verkligen skulle göra så stor skillnad. Tveksamheten är helt naturlig.\"},{\"heading\":\"Den vanligaste reaktionen efteråt\",\"body\":\"När jobbet väl var gjort var deras första reaktion: \\\"Varför väntade vi så länge?\\\". Den meningen hör jag ofta. Oron innan är ofta jobbigare än själva lösningen.\"},{\"heading\":\"Vad är det som förändras?\",\"body\":\"Det handlar inte bara om att ett träd är borta. Det handlar om ljuset som kommer in, ytan som blir användbar igen och tryggheten i att inte behöva oroa sig när det blåser. Det är en känsla av lättnad.\"}],\"cta_text\":\"Läs hela berättelsen här\",\"signoff\":\"Hör av dig om du har frågor,\\n/ Rickard Engström\"}",
-      "duration_ms": 10653,
+      "output": "{\"subjects\":[\"”Varför väntade vi så länge?”\",\"Känner du igen dig i det här?\",\"Från tvekan till lättnad på tomten\",\"Det där trädet ni pratat om...\"],\"preheader\":\"Det är den vanligaste frågan vi får när jobbet väl är gjort. Läs om en kunds resa.\",\"greeting\":\"Hej!\",\"intro\":\"Jag hör det ofta. Man går och tittar på ett träd, kanske i flera år. Man tänker att det är ett stort projekt, att det blir dyrt, och att det kanske klarar sig en vinter till. Tveksamheten är helt naturlig, men ibland står den i vägen för en enklare och tryggare vardag på tomten.\",\"sections\":[{\"heading\":\"Ett års funderande\",\"body\":\"En kund i Roslagen hade precis den känslan. De funderade i nästan ett år på ett träd som skymde sol och kändes lite osäkert. De var oroliga för kostnaden och om det verkligen skulle göra så stor skillnad.\"},{\"heading\":\"När beslutet väl var fattat\",\"body\":\"När de till slut hörde av sig gick det snabbt. Vi kom ut, gjorde en bedömning och fällde trädet säkert och kontrollerat. Inget drama, ingen stress. Tomten blev ljusare och kändes genast större.\"},{\"heading\":\"Den vanligaste reaktionen\",\"body\":\"Deras spontana kommentar direkt efteråt var: ”Varför väntade vi så länge?”. Känslan av lättnad är ofta det som stannar kvar, inte minnet av kostnaden.\"}],\"cta_text\":\"Läs hela berättelsen här\",\"signoff\":\"Ha en fin dag,\\n/ Rickard Engström\"}",
+      "duration_ms": 11873,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [
-          "handlar om",
           "kanske"
         ],
-        "floskler": [
-          "handlar om"
-        ],
+        "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 1,
+        "rostmarkorer_traffade": 4,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "{\"subjects\":[\"Priset på en trädfällning (och vad som glöms bort)\",\"När det billigaste kan bli det dyraste\",\"Ett val du är nöjd med, även nästa år\",\"En tanke om pris och trygghet på tomten\"],\"preheader\":\"Det är lätt att bara titta på slutsiffran. Men det är helheten som avgör om det blev ett bra jobb.\",\"greeting\":\"Hej!\",\"intro\":\"Det är lätt att fastna vid prislappen när man jämför, oavsett om det gäller en ny gräsklippare eller en trädfällning. Men precis som du har jag lärt mig den hårda vägen att det billigaste alternativet sällan är det bästa i längden. Speciellt inte när det står ett stort träd intill huset.\",\"sections\":[{\"heading\":\"Vad ingår egentligen?\",\"body\":\"En offert kan se billig ut, men täcker den allt? Bortforsling, stubbfräsning och städning är delar som lätt glöms bort. Det är helheten som avgör om jobbet blir smidigt och du blir nöjd efteråt.\"},{\"heading\":\"Trygghet har inget pris\",\"body\":\"Det viktigaste är att jobbet görs säkert och kontrollerat, utan skador på din tomt, ditt hus eller grannens staket. Rätt försäkring och erfarenhet är en trygghet som inte alltid syns på den första offerten.\"},{\"heading\":\"Vem du ringer om något händer\",\"body\":\"Att anlita ett lokalt företag betyder att du vet vem du ska prata med. Det handlar om ansvar och att kunna lita på att personen som gjorde jobbet också står för det.\"}],\"cta_text\":\"Läs hela tanken här\",\"signoff\":\"Allt gott,\\nRickard Engström\\nEngens Träd & Trädgård\"}",
-      "duration_ms": 13268,
+      "output": "{\"subjects\":[\"Det där med billigaste offerten\",\"Pris, trygghet och ditt träd\",\"När det lönar sig att inte ta det billigaste\",\"Vad ingår egentligen i priset?\"],\"preheader\":\"Ett träd som står nära huset är inget ställe att chansa på. Här är några tankar om helheten.\",\"greeting\":\"Hej!\",\"intro\":\"Man hör det ofta, oavsett om det gäller hantverkare eller trädfällning: ”Det blir säkert dyrt”. Och visst, det är en kostnad att ta ner ett träd. Men den verkliga kostnaden syns inte alltid på den billigaste offerten. Den syns i det som händer efteråt.\",\"sections\":[{\"heading\":\"Priset för att något går fel\",\"body\":\"Ett träd som fälls på fel sätt kan skada hus, altan eller planteringar. Att välja någon enbart på pris, utan att veta hur de jobbar, är en risk. Trygghet och erfarenhet har ett värde som är svårt att sätta en prislapp på.\"},{\"heading\":\"Vad ingår i helheten?\",\"body\":\"Ingår bortforsling? Städas tomten ordentligt efteråt? Finns det försäkringar som täcker om något händer? Det är sådana frågor som skiljer en seriös aktör från någon som bara ger ett lågt pris för att få jobbet.\"},{\"heading\":\"Du köper ett lugn\",\"body\":\"Mitt mål är inte att vara billigast. Mitt mål är att du ska känna dig helt lugn, från första samtalet tills trädet är borta och tomten är städad. Att du vet att jobbet blir gjort säkert, kontrollerat och utan drama.\"}],\"cta_text\":\"Läs hela tanken här\",\"signoff\":\"Allt gott,\\nRickard Engström\\n\\nEngens Träd & Trädgård\\nRoslagen & Norra Stockholm\"}",
+      "duration_ms": 12651,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [
-          "handlar om",
           "billigaste"
         ],
-        "floskler": [
-          "handlar om"
-        ],
+        "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 2,
+        "rostmarkorer_traffade": 4,
         "rostmarkorer_totalt": 24
       }
     }

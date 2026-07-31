@@ -2,33 +2,49 @@
   "profil": "Engens Träd & Trädgård",
   "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
   "flode": "caption",
-  "genererad": "2026-07-31T14:56:04.875Z",
+  "genererad": "2026-07-31T17:05:52.055Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "\"Jag borde ha ringt tidigare.\"\n\nDet är den vanligaste meningen jag hör när jag kommer ut och tittar på ett träd som nu har vuxit sig stort, står för nära huset, skymmer ljuset eller helt enkelt blivit ett riskträd som känns läskigt att ha kvar.\n\nMånga gånger vill man inte ta tag i det, man skjuter upp det, eller tror att det är för komplicerat. Men att få en bedömning tidigt är alltid klokt. Då kan vi planera och hitta rätt lösning i lugn och ro, innan det blir bråttom.\n\nSkicka en bild på trädet så tittar vi. Det kostar inget att få en första bedömning.\n\n#trädfällning #riskträd #roslagen #åkersberga #trädvård",
-      "duration_ms": 2387,
+      "output": "”Det där tar vi nästa år.”\n\nDet är den vanligaste meningen jag hör när jag kommer ut till nya kunder. Trädproblemet har funnits länge, men det har skjutits på. Kanske för att det känns osäkert, dyrt eller bara krångligt. Men att vänta kan göra att trädet blir en risk, särskilt inför blåsten.\n\nEn första bedömning kostar inget. Du får ett rakt svar på om det behöver göras nu, nästa år, eller inte alls. Och vi kollar om RUT-avdraget kan sänka kostnaden.\n\nSkicka en bild på trädet och var det står, så återkommer vi.\n\n#trädfällning #riskträd #roslagen #åkersberga #trädvård",
+      "duration_ms": 3176,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [
-          "komplicerat"
+          "kanske"
         ],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 5,
-        "rostmarkorer_traffade": 5,
+        "rostmarkorer_traffade": 7,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "”Hur går det till när ni fäller träd?”\n\nEn vanlig fråga! Så här brukar det se ut när vi hjälper dig med ett träd på tomten:\n\n1. **Första kontakt:** Du ringer eller mejlar mig, Rickard, och beskriver läget. Ofta räcker en bild för att jag ska kunna göra en första bedömning och ge en uppskattning av priset.\n2. **Besök på plats:** Om det behövs, eller om du vill ha en mer exakt offert, kommer jag ut och tittar på trädet. Vi pratar om risker, önskemål och hur vi bäst löser det.\n3. **Planering och utförande:** Vi kommer överens om tid och metod. Nära hus eller byggnader fäller vi trädet bit för bit, säkert och kontrollerat. På öppnare ytor kan vi ibland fälla hela trädet i ett stycke.\n4. **Rent efteråt:** När jobbet är klart ser vi till att det är snyggt och rent på tomten. Vi tar hand om ris och stamdelar om du vill, annars lägger vi det i en hög.\n\nMålet är alltid att du ska få trädet borttaget lugnt, säkert och utan drama.\n\nSkicka ett meddelande eller en bild på trädet du funderar på, så tar vi det därifrån!\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
-      "duration_ms": 3254,
+      "output": "”Vi har pratat om det i flera år. Nu vill vi bara få det gjort.”\n\nDet är den vanligaste meningen jag hör när vi pratar om träd som ska fällas. Och det är precis därför vi jobbar för att göra hela processen så enkel och trygg som möjligt för dig:\n\n1.  **Första kontakt:** Du skickar en bild på trädet och berättar lite om vad du funderar på.\n2.  **Bedömning:** Jag återkommer med en första bedömning och prisuppskattning, helt utan kostnad.\n3.  **Hembesök:** Om det känns intressant, kommer jag ut och tittar på platsen. Då kan vi prata igenom allt och du får en exakt offert.\n4.  **Jobbet görs:** Vi fäller trädet säkert och städar upp efter oss.\n5.  **Klart!** Trädet borta, tomten hel och ingen stress.\n\nVill du också få det gjort? Skicka en bild på trädet och var det står.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
+      "duration_ms": 3126,
       "autochecks": {
         "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "Vi får ofta samma frågor. Här är tre av dem, och vad jag brukar svara:\n\n1.  **\"Är det inte för farligt att fälla det där trädet?\"** Vissa träd är riskabla, speciellt nära hus eller ledningar. Men med rätt utrustning och erfarenhet kan vi fälla de flesta träd säkert, bit för bit. Vi planerar alltid noga för att undvika drama.\n2.  **\"Är det här verkligen bråttom?\"** Inte alltid. Men om trädet lutar, har stora döda grenar eller står väldigt nära huset, är det smart att kolla upp det. Då kan vi bedöma om det behöver tas bort nu, eller om det kan vänta.\n3.  **\"Kommer det att bli jättedyrt?\"** Priset beror på läget, trädets storlek och vad du vill ha hjälp med efteråt. Med RUT-avdraget blir arbetskostnaden ofta lägre än du tror.\n\nHar du en fråga om ett träd på din tomt? Skicka en bild på det och var det står, så tar vi en titt.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
+      "duration_ms": 2993,
+      "autochecks": {
+        "cta_count": 1,
         "svag_hook": false,
         "forbjudna_ord": [],
         "floskler": [],
@@ -39,26 +55,10 @@
       }
     },
     {
-      "amne_id": "tre-fragor",
-      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "\"Hur vet jag om trädet behöver tas bort?\"\n\nDet är den vanligaste frågan jag får. Mitt jobb är att ge dig ett rakt svar. Vi börjar alltid med att titta på trädet och platsen, för att se om det lutar, har döda grenar eller står för nära huset. Ibland räcker det med beskärning, ibland behöver hela trädet bort, och ibland behöver inget göras alls.\n\nEn första bedömning kostar inget, och den hjälper dig att veta vad som är rimligt. Skicka en bild på trädet och var det står, så tittar jag på det.\n\n#trädfällning #riskträd #trädvård #roslagen #åkersberga",
-      "duration_ms": 2321,
-      "autochecks": {
-        "cta_count": 0,
-        "svag_hook": false,
-        "forbjudna_ord": [],
-        "floskler": [],
-        "tankstreck_i_loptext": false,
-        "hashtags": 5,
-        "rostmarkorer_traffade": 4,
-        "rostmarkorer_totalt": 24
-      }
-    },
-    {
       "amne_id": "tvekade",
       "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "\"Det där trädet får nog stå ett tag till.\"\n\nDet är en vanlig tanke, särskilt när trädet inte känns akut farligt. Men plötsligt är det höst, blåsten tar i, och det som kändes lugnt kan snabbt bli ett riskträd. Den här kunden tvekade, men när vi väl kom på plats var det inga problem att ta ner det bit för bit, säkert och kontrollerat.\n\nAtt vara proaktiv sparar inte bara stress, utan det kan också göra jobbet enklare och säkrare när det väl är dags. En första bedömning kostar inget, så du kan känna dig trygg med beslutet.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
-      "duration_ms": 2433,
+      "output": "”Vi har pratat om det i flera år.”\n\nDen meningen hör jag ofta. Och jag förstår det, ibland känns det inte bråttom eller så vet man inte riktigt vem man ska ringa. Men när det väl är gjort, är det nästan alltid skönt att slippa fundera mer. Det är roligare att använda gräsmattan än att oroa sig för trädet.\n\nHär blev det rent och snyggt efteråt. Resultat: trädet borta, tomten hel, alla glada.\n\nSkicka en bild på ditt träd och var det står. Du får ett rakt svar på om det är värt att kolla på plats.\n\n#trädfällning #riskträd #roslagen #åkersberga #trädgård",
+      "duration_ms": 2112,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -66,25 +66,25 @@
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 5,
-        "rostmarkorer_traffade": 4,
+        "rostmarkorer_traffade": 6,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "\"Det blir säkert billigare med någon annan.\"\n\nKanske. Men många av våra kunder har redan provat det. Och ofta slutar det med att vi får komma ut och lösa det en andra gång, fast då med mer utmanande förutsättningar.\n\nAtt få trädet borttaget säkert, snyggt och utan stress, det är vad du betalar för. Och att slippa oroa dig för tveksamma lösningar eller onödiga risker.\n\nDu får alltid en rak bedömning av vad som behöver göras. Skicka en bild på trädet så tittar vi.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
-      "duration_ms": 3827,
+      "output": "\"Det är alltid det billigaste alternativet som lockar, visst?\"\n\nInte alltid, faktiskt. När det kommer till trädfällning, särskilt nära hus eller med riskträd, handlar det inte bara om priset. Att välja rätt metod, se till att ingen skadas och att tomten är hel efteråt blir viktigare. En trygg och lugn process är värd mycket.\n\nMånga väljer bort det billigaste för att få en lugn känsla. Du vill att jobbet blir gjort säkert och kontrollerat, utan stress eller oväntade problem.\n\nSkicka en bild på trädet och var det står, så tittar vi.\n\n#trädfällning #riskträd #sektionsfällning #roslagen #åkersberga",
+      "duration_ms": 2493,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [
-          "kanske"
+          "billigaste"
         ],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 5,
-        "rostmarkorer_traffade": 1,
+        "rostmarkorer_traffade": 4,
         "rostmarkorer_totalt": 24
       }
     }

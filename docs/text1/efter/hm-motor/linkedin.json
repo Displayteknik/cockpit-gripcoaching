@@ -2,40 +2,16 @@
   "profil": "HM Motor Krokom",
   "client_id": "00000000-0000-0000-0000-000000000001",
   "flode": "linkedin",
-  "genererad": "2026-07-31T15:02:36.270Z",
+  "genererad": "2026-07-31T17:12:56.422Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "{\"hook\":\"Det vanligaste misstaget vi ser? Att vänta för länge.\",\"body\":\"Det vanligaste misstaget vi ser? Att vänta för länge.\\n\\nDu hör ett litet missljud. Eller så känns bromsarna aningen svampiga.\\n\\nKanske tänds en varningslampa som sedan slocknar.\\n\\nDu tänker \\\"det är nog ingen fara\\\" eller \\\"jag tar det sen\\\".\\n\\nProblemet är att små fel sällan läker sig själva. De tenderar att växa.\\n\\nEtt litet oljeläckage kan bli en motor som skär ihop. Ett litet knackande i framvagnen kan leda till en farlig situation på vägen.\\n\\nAtt ignorera ett litet problem idag leder nästan alltid till ett större, dyrare problem imorgon.\\n\\nDet är inte ekonomiskt smart, och det är definitivt inte säkert.\\n\\nHär är några tecken du aldrig ska ignorera:\\n\\n1. Alla nya missljud, knackande, vinande eller skrapande.\\n2. Varningslampor som lyser, även om de slocknar igen.\\n3. Förändringar i körupplevelsen, som vibrationer eller sämre bromsar.\\n4. Fläckar under bilen där den stått parkerad.\\n\\nAtt ta tag i det direkt sparar dig både tid och pengar.\\n\\nEn snabb kontroll hos oss kan vara skillnaden mellan en enkel justering och en dyr reparation.\\n\\nVilket är det konstigaste ljudet din bil har gjort?\\n\\n#bilverkstad #krokom #fordonsservice\",\"hashtags\":\"#bilverkstad #krokom #fordonsservice\",\"cta\":\"soft\",\"word_count\":204,\"notes\":\"Inlägget adresserar ett vanligt misstag (vänta för länge) för att bygga förtroende och utbilda kunden (Trust-port: know).\"}",
-      "duration_ms": 12394,
+      "output": "{\"hook\":\"Det största misstaget? Att låta Dr. Google ställa diagnosen.\",\"body\":\"Det största misstaget? Att låta Dr. Google ställa diagnosen.\\n\\nDu känner igen det.\\n\\nNågot låter fel med bilen eller fyrhjulingen. Du tar fram telefonen, skriver in symptomen och hamnar på ett forum från 2009 där tio olika personer gissar på tio olika fel.\\n\\nPlötsligt är du övertygad om att du behöver byta en del som kostar tusenlappar, när felet egentligen var en lös slang.\\n\\nDet här är det vanligaste mönstret vi ser. Man väntar för länge och försöker lösa det själv, vilket ofta gör ett litet problem större och dyrare än det hade behövt vara.\\n\\nInsikten är enkel: Tid är din viktigaste faktor.\\n\\nJu snabbare en expert får titta på problemet, desto enklare (och billigare) är det oftast att åtgärda. Innan du beställer hem delar eller skruvar isär något, fundera på det här:\\n\\n1.  **Symptomen är sällan hela sanningen.** Ett missljud kan komma från en helt annan plats än du tror. Vi har verktygen för att snabbt hitta källan.\\n\\n2.  **Fel delar kostar dubbelt.** Först kostar delen du köpte i onödan, sedan kostar den riktiga delen som faktiskt behövdes.\\n\\n3.  **Din tid är värdefull.** Timmar i garaget som slutar i frustration är sällan en bra investering. Vi gör jobbet snabbt för att du ska kunna använda ditt fordon.\\n\\nAtt fråga om råd kostar inget.\\n\\nVad är din erfarenhet av att felsöka på egen hand?\",\"hashtags\":\"#bilverkstad #krokom #felsökning\",\"cta\":\"soft\",\"word_count\":236,\"notes\":\"Fokuserar på det vanliga misstaget att självdiagnostisera via Google, vilket bygger know-förtroende genom att identifiera ett igenkännbart problem.\"}",
+      "duration_ms": 13034,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
-        "forbjudna_ord": [],
-        "floskler": [],
-        "tankstreck_i_loptext": false,
-        "hashtags": 6,
-        "rostmarkorer_traffade": 1,
-        "rostmarkorer_totalt": 7
-      },
-      "extra": {
-        "voice_score": {
-          "score": 85,
-          "verdict": "pass",
-          "issues": []
-        },
-        "sparad_rad_id": "ff6c6549-f7ea-4dd9-b715-c651fa96b540"
-      }
-    },
-    {
-      "amne_id": "bakom-kulisserna",
-      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "{\"hook\":\"Många tror att det är en lång, krånglig process att få hjälp med ett fordon.\",\"body\":\"Många tror att det är en lång, krånglig process att få hjälp med ett fordon.\\n\\nDu ringer runt, får vänta på en tid, lämnar in maskinen och hoppas på det bästa. Kanske vet du inte ens vad som är fel, bara att något inte stämmer.\\n\\nDen där osäkerheten gör att många drar sig för att söka hjälp. Man kör vidare tills det rasar helt.\\n\\nMen det behöver inte vara så. Transparens från start till mål är nyckeln.\\n\\nHär är exakt hur det fungerar hos oss, steg för steg:\\n\\n1. Första kontakten. Du ringer eller kommer förbi. Vi lyssnar och ställer frågor för att förstå problemet direkt. Ingen teknisk jargong, bara raka puckar.\\n\\n2. Felsökning. Vi tar en titt direkt om det går, eller bokar in en tid som passar. Du får en första bedömning av vad som kan vara fel och en uppskattning.\\n\\n3. Åtgärd & kommunikation. När vi börjar jobba håller vi dig uppdaterad. Hittar vi något oväntat? Då ringer vi dig direkt. Du har alltid kontroll och slipper överraskningar på fakturan.\\n\\n4. Klart för hämtning. Vi ringer och berättar att allt är klart. När du hämtar går vi igenom vad vi gjort, varför vi gjorde det och visar delarna vi bytt ut.\\n\\nInget mystiskt, inga konstigheter.\\n\\nBara ett problem som blir löst på ett sätt du förstår och känner dig trygg med.\\n\\nHar du haft en verkstadsupplevelse som känts otydlig?\",\"hashtags\":\"#verkstad #krokom #fordon\",\"cta\":\"soft\",\"word_count\":218,\"notes\":\"Inlägget följer kundens process för att avdramatisera verkstadsbesöket och bygga förtroende genom transparens.\"}",
-      "duration_ms": 13376,
-      "autochecks": {
-        "cta_count": 0,
-        "svag_hook": true,
         "forbjudna_ord": [],
         "floskler": [],
         "tankstreck_i_loptext": false,
@@ -49,16 +25,40 @@
           "verdict": "pass",
           "issues": []
         },
-        "sparad_rad_id": "063558ed-a8a1-4d56-ae54-89f1dd75f2dc"
+        "sparad_rad_id": "c25d08ab-e5f5-45e7-878d-9baed6d2d3b5"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Ett motorproblem är sällan bara ett motorproblem.\",\"body\":\"Ett motorproblem är sällan bara ett motorproblem.\\n\\nDet är en inställd resa, en missad arbetsdag eller den där gnagande oron för vad det kommer att kosta.\\n\\nKänslan av att vara utlämnad till tekniken är frustrerande. Du vill bara att det ska funka, utan krångel.\\n\\nVi ser det varje dag. Många tror att jobbet i en verkstad bara gäller att byta delar, men det är bara halva sanningen. Den andra halvan gäller att förstå vad problemet *egentligen* kostar dig i tid och sinnesro.\\n\\nDärför ser vår process alltid likadan ut, oavsett om det är en fyrhjuling eller skoter som krånglar.\\n\\n1. Lyssna först. Du beskriver problemet som du upplever det. Inga tekniska termer behövs. Vi ställer frågor tills vi förstår precis vad som händer (och vad som inte händer).\\n\\n2. Felsökning. Här går vi på djupet. Vi kopplar upp, mäter och testar systematiskt för att hitta grundorsaken, inte bara symptomen. Du får alltid en förklaring av vad vi hittat.\\n\\n3. Åtgärd och offert. Innan vi rör en enda skruv får du veta vad som behöver göras och vad det kommer att kosta. Inga överraskningar.\\n\\n4. Fixa det. När du gett grönt ljus gör vi jobbet. Vi använder rätt delar och rätt verktyg, och ser till att allt fungerar som det ska innan vi är klara.\\n\\nResultatet är inte bara en fixad maskin. Det är tryggheten i att veta att jobbet är ordentligt gjort.\\n\\nHur viktigt är det för dig att förstå *varför* något behöver repareras, inte bara att det blir gjort?\",\"hashtags\":\"#verkstad #krokom #motor\",\"cta\":\"soft\",\"word_count\":252,\"notes\":\"Posten är vinklad för att bygga förtroende (KNOW-port) genom att visa en transparent och kundcentrerad process, från problem till lösning.\"}",
+      "duration_ms": 12827,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "086f5d51-4c0e-4446-b45b-e1fbb76b68fd"
       }
     },
     {
       "amne_id": "tre-fragor",
       "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "{\"hook\":\"Kan ni serva min nya hoj? Måste jag boka tid? Får jag vänta kvar?\",\"body\":\"Kan ni serva min nya hoj? Måste jag boka tid? Får jag vänta kvar?\\n\\nDessa tre frågor får vi nästan varje vecka i verkstaden.\\n\\nOch det är bra. Tydlighet är allt när det kommer till service. Man vill veta vad som gäller innan man rullar in med sin ögonsten.\\n\\nDet finns mycket osäkerhet i branschen. Krångliga bokningssystem, otydliga garantivillkor och långa väntetider. Det ska inte behöva vara så.\\n\\nVi tror på raka rör. Här är våra ärliga svar på de vanligaste frågorna.\\n\\n1. Servar ni nya motorcyklar utan att garantin påverkas?\\nJa. Vi är en auktoriserad verkstad och använder alltid originaldelar eller delar med motsvarande kvalitet. Vi följer tillverkarens serviceschema till punkt och pricka och stämplar serviceboken. Din nygaranti är helt trygg hos oss.\\n\\n2. Måste jag boka tid för enklare jobb, som däckbyte?\\nNej, inte alltid. Vi vet att punkteringar och däckbyten sällan är planerade. Ring oss innan du kommer, så försöker vi alltid lösa det direkt. För större jobb som service är det bäst att boka för att garantera en tid.\\n\\n3. Kan jag vänta kvar medan ni fixar min hoj?\\nAbsolut. Vi har kaffe och oftast en bra historia att bjuda på. Vid mindre jobb som oljebyte eller felsökning är du välkommen att hänga kvar. Du får se exakt vad vi gör och kan ställa frågor direkt till mekanikern.\\n\\nKort sagt: vi försöker alltid göra det enkelt för dig.\\n\\nVilken är den viktigaste egenskapen hos en verkstad för dig?\",\"hashtags\":\"#motorcykel #mcservice #verkstad\",\"cta\":\"soft\",\"word_count\":257,\"notes\":\"Inlägget bygger förtroende genom att transparent besvara de tre vanligaste kundfrågorna, vilket positionerar HM Motor som ärliga och kundfokuserade.\"}",
-      "duration_ms": 12525,
+      "output": "{\"hook\":\"Behöver jag verkligen byta den där delen?\",\"body\":\"Behöver jag verkligen byta den där delen?\\n\\nAtt lämna in bilen kan kännas osäkert. Man är inte expert och vill bara ha ett rakt svar. Det förstår vi.\\n\\nFörtroende är inget man får, det är något man förtjänar. Vi tror på att vara helt öppna med vad som behövs, vad som kan vänta och vad som är onödigt.\\n\\nDärför delar vi med oss av de tre vanligaste frågorna vi får, och våra ärliga svar.\\n\\n1. ”Kan jag vänta med det här?”\\nIbland, ja. Om det är en slitdel som närmar sig slutet men inte är en säkerhetsrisk, säger vi det. Då kan du planera för bytet. Är det däremot något som påverkar säkerheten, som bromsar, är svaret alltid nej.\\n\\n2. ”Är det värt att laga på en så gammal bil?”\\nDet beror helt på dig och bilen. Vi ger dig kostnaden för reparationen och en bedömning av bilens skick. Beslutet är alltid ditt. Vi hjälper dig att väga för- och nackdelar utan att sälja på dig något.\\n\\n3. ”Varför kostar det så mycket?”\\nVi specificerar alltid vad som ingår: arbetstid, reservdelarnas kostnad och moms. En kvalitetsdel kostar mer men håller längre. Vi förklarar varför vi väljer en viss del och vilka alternativ som finns.\\n\\nTransparens bygger långsiktiga relationer. Det är så vi jobbar.\\n\\nHar du en annan fråga du brukar fundera på?\",\"hashtags\":\"#bilverkstad #krokom #bilservice\",\"cta\":\"soft\",\"word_count\":236,\"notes\":\"Inlägget bygger förtroende genom att transparent besvara vanliga kundfrågor, vilket positionerar företaget som ärligt och kundcentrerat.\"}",
+      "duration_ms": 11675,
       "autochecks": {
-        "cta_count": 5,
+        "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [],
         "floskler": [],
@@ -73,14 +73,14 @@
           "verdict": "pass",
           "issues": []
         },
-        "sparad_rad_id": "0a238151-c4cf-4457-bb0e-93ae6506da0b"
+        "sparad_rad_id": "48a1a861-698f-4d2b-afdd-67c2a8227919"
       }
     },
     {
       "amne_id": "tvekade",
       "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "{\"hook\":\"Ett litet missljud i motorn kan kosta 1 500 kr. Eller 50 000 kr.\",\"body\":\"Ett litet missljud i motorn kan kosta 1 500 kr. Eller 50 000 kr.\\n\\nSkillnaden? Tid.\\n\\nVi hade en kund nyligen som hört ett tickande ljud från motorn i flera månader.\\n\\nInget akut, men tillräckligt för att störa. \\\"Jag tar det sen\\\" blev hans mantra.\\n\\nKänns det igen? Man vet att man borde, men vardagen kommer emellan. Man hoppas att det försvinner av sig själv.\\n\\nProblemet är att små fel sällan läker sig själva. De växer. Ett litet glapp blir ett stort. En droppe olja blir en pöl.\\n\\nNär han till slut kom in hade det som kunde varit en enkel justering av en ventil blivit ett mycket större jobb. Kostnaden hade mångdubblats.\\n\\nDet är inte en kritik, det är ett mönster jag ser hela tiden.\\n\\nOfta är det inte priset på reparationen som är den verkliga kostnaden. Det är priset för att vänta.\\n\\nDen verkliga kostnaden är:\\n\\n1.  **Den mentala energin:** Att ständigt ha det där orosmolnet i bakhuvudet varje gång du startar bilen.\\n\\n2.  **Den förlorade tiden:** När bilen till slut stannar och du plötsligt måste lösa logistiken utan den.\\n\\n3.  **Den ekonomiska smällen:** När ett litet, förebyggande underhåll blir en stor, akut reparation.\\n\\nVi fixade hans bil, såklart. Men vi hade kunnat fixa den både billigare och snabbare om han kommit in direkt.\\n\\nSå nästa gång du hör eller känner något som inte är som det ska: vänta inte.\\n\\nÄr du osäker på ett ljud eller en känsla i din bil?\\n\\nSlå en signal eller kom förbi. En snabb titt kostar ingenting, men kan spara dig tusenlappar.\",\"hashtags\":\"#bilservice #krokom #bilverkstad\",\"cta\":\"soft\",\"word_count\":257,\"notes\":\"Använder en story om en tvekande kund för att illustrera insikten att kostnaden för att vänta ofta är högre än kostnaden för att agera.\"}",
-      "duration_ms": 13954,
+      "output": "{\"hook\":\"Han sköt på det i månader.\",\"body\":\"Han sköt på det i månader.\\n\\nEtt litet missljud från motorn som bara hördes ibland. En känsla av att något inte var helt hundra. Men det var ju ingen panik.\\n\\nDu känner igen det, eller hur?\\nMan tänker ”jag tar det sen” eller ”det är nog ingen fara”. Tills det plötsligt är det.\\n\\nNär han till slut rullade in på gården hos oss var han beredd på det värsta. En lång felsökning, dyra delar och en bil som skulle bli stående.\\n\\nMen sanningen är att de flesta problem är mycket enklare (och billigare) att lösa om man tar dem i tid. Oron för vad det KAN vara är ofta värre än vad det faktiskt ÄR.\\n\\nVi hittade felet ganska snabbt. Vad som hände sen?\\n\\n1. Felsökning: En sliten komponent som var enkel att komma åt.\\n2. Åtgärd: Bytet gjordes på plats medan han väntade.\\n3. Resultat: Missljudet försvann helt. Bilen gick som den skulle igen.\\n4. Känslan: Lättnad. Han slapp gå runt och oroa sig för ett haveri.\\n\\nAtt vänta löser sällan ett mekaniskt problem. Ofta gör det bara ett litet problem till ett stort.\\n\\nHar du något litet missljud du går och funderar på?\",\"hashtags\":\"#bilverkstad #krokom #bilservice\",\"cta\":\"soft\",\"word_count\":204,\"notes\":\"Använder en story om en tvekande kund för att bygga igenkänning och illustrera värdet av att agera i tid, positionerar HM Motor som den snabba, ärliga lösningen.\"}",
+      "duration_ms": 13653,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -97,14 +97,14 @@
           "verdict": "pass",
           "issues": []
         },
-        "sparad_rad_id": "b8f8a167-fa69-4665-b986-0efa80c4f9de"
+        "sparad_rad_id": "698a8d2a-d331-4240-9032-af515e014f42"
       }
     },
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "{\"hook\":\"Det billigaste priset är sällan den bästa affären.\",\"body\":\"Det billigaste priset är sällan den bästa affären.\\n\\nSpeciellt inte när din skoter, ATV eller motorcykel står still.\\n\\nDu kollar runt. En verkstad är 20% billigare på timmen. Det känns som ett självklart val. Men är den totala kostnaden verkligen bara prislappen?\\n\\nProblemet är att man ofta stirrar sig blind på timpriset. Man glömmer bort allt annat som faktiskt kostar.\\n\\nDen verkliga kostnaden är inte vad som står på kvittot. Den verkliga kostnaden är din tid, din frustration och risken att samma problem dyker upp igen om en månad.\\n\\nEn kund kom in till oss efter att ha valt ett billigare ställe. Problemet var kvar. Han hade förlorat en helg med fint väder och var tillbaka på ruta ett.\\n\\nVi ser det här hela tiden. Det som skiljer en bra verkstad från en billig verkstad är sällan priset, utan värdet du får för pengarna. Det gäller att:\\n\\n1.  **Få rätt diagnos direkt.** Ingen tid slösas på att gissa. Det sparar både timmar och pengar på onödiga reservdelar.\\n\\n2.  **Få jobbet gjort snabbt.** Stillestånd kostar. Att få tillbaka din maskin en dag tidigare kan vara värt mer än prisskillnaden.\\n\\n3.  **Få en långsiktig lösning.** Att lappa och laga för stunden är billigt. Att fixa grundorsaken är en investering som lönar sig.\\n\\nAtt välja verkstad gäller förtroende. Förtroende för att jobbet blir rätt, i tid, och att du slipper komma tillbaka med samma problem.\\n\\nNär har du senast valt ett dyrare alternativ och varit nöjd med beslutet?\",\"hashtags\":\"#verkstad #krokom #motor\",\"cta\":\"soft\",\"word_count\":252,\"notes\":\"Inlägget positionerar oss som ett värde-alternativ snarare än ett pris-alternativ, baserat på insikten om den 'verkliga kostnaden'.\"}",
-      "duration_ms": 12890,
+      "output": "{\"hook\":\"Det billigaste priset är sällan det bästa värdet.\",\"body\":\"Det billigaste priset är sällan det bästa värdet.\\n\\nDu känner igen det. Något på bilen, skotern eller fyrhjulingen krånglar. Du ringer runt, jämför priser och väljer det billigaste alternativet. En vecka senare är problemet tillbaka, och du är tillbaka på ruta ett. Fast med mindre pengar och ännu mindre tålamod.\\n\\nDet här är ett vanligt misstag: att bara se prislappen och inte vad som faktiskt ingår. En snabb och billig fix löser sällan grundorsaken. Det är som att sätta ett plåster på ett benbrott.\\n\\nInsikten är att trygghet och expertis har ett värde som inte alltid syns på kvittot. Det gäller att få rätt diagnos från början och en lösning som håller, så att du slipper oroa dig för att bli stående igen.\\n\\nKunder som väljer oss letar inte efter den billigaste timpenningen. De letar efter det bästa resultatet. Det innebär oftast:\\n\\n1. Rätt diagnos direkt. Vi lägger tid på att hitta grundorsaken, inte bara symtomet. Det sparar tid och pengar i längden.\\n\\n2. Tydlig kommunikation. Du får veta exakt vad vi gör och varför. Inga överraskningar.\\n\\n3. Långsiktiga lösningar. Vi använder rätt delar och metoder för att säkerställa att reparationen håller, så att du kan lita på ditt fordon.\\n\\nAtt välja verkstad gäller förtroende. Att veta att jobbet blir rätt gjort, från början till slut.\\n\\nVad värdesätter du mest när du lämnar in ditt fordon?\",\"hashtags\":\"#bilverkstad #krokom #fordon\",\"cta\":\"soft\",\"word_count\":222,\"notes\":\"Posten positionerar HM Motor som ett värde-alternativ framför ett pris-alternativ, byggt på Hakan Grips KNOW-port.\"}",
+      "duration_ms": 12711,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -121,7 +121,7 @@
           "verdict": "pass",
           "issues": []
         },
-        "sparad_rad_id": "fbfc84d7-e400-4fbc-b466-2fd628d58d88"
+        "sparad_rad_id": "d403b4be-758f-48fc-877f-5d17eb9f035b"
       }
     }
   ]

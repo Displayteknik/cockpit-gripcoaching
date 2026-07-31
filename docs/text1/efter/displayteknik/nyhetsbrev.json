@@ -2,31 +2,31 @@
   "profil": "Displayteknik",
   "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
   "flode": "nyhetsbrev",
-  "genererad": "2026-07-31T14:52:16.605Z",
+  "genererad": "2026-07-31T17:01:02.726Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "{\"subjects\":[\"Det vanligaste misstaget med digitala skärmar\",\"Ett tidigt samtal kan spara dig tusenlappar\",\"När är rätt läge att be om hjälp med skärmar?\",\"En sak jag ser att många företag gör fel\"],\"preheader\":\"Att försöka lösa allt själv kan bli dyrare än du tror. Här är varför vi rekommenderar ett annat sätt.\",\"greeting\":\"Hej!\",\"intro\":\"Känner du igen dig i att googla fram en lösning, köpa något halvbra på nätet eller fråga en bekant? Det är en vanlig start när man inser att man behöver synas bättre. Men när det gäller digitala skärmar kan den vägen snabbt bli både krokig och onödigt dyr.\",\"sections\":[{\"heading\":\"Priset för att vänta\",\"body\":\"Det vanligaste misstaget vi ser är inte tekniskt, det är att man väntar för länge med att be om råd. Man testar sig fram och när det inte fungerar har problemet ofta vuxit och kostat både tid och pengar helt i onödan.\"},{\"heading\":\"Fler val, bättre resultat\",\"body\":\"Vår erfarenhet är enkel: ett tidigt samtal ger nästan alltid fler valmöjligheter och en lägre totalkostnad. När vi är med från start kan vi hitta rätt lösning för just din plats och budget, istället för att laga en lösning som var fel från början.\"},{\"heading\":\"Det kostar inget att fråga\",\"body\":\"Ett råd från oss är alltid gratis. Du får ett ärligt svar, även om det betyder att du klarar dig bra utan oss just nu. Målet är att du ska få en skärm som fungerar för dig, år efter år.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
-      "duration_ms": 12126,
+      "output": "{\"subjects\":[\"Ett vanligt misstag med digitala skärmar\",\"Hur du sparar tid på din nästa skärm\",\"Innan du köper en ny skärm till butiken\",\"En reflektion om att göra rätt från början\"],\"preheader\":\"Att försöka lösa allt själv kostar ofta mer än att fråga. Få ett ärligt råd från start.\",\"greeting\":\"Hej!\",\"intro\":\"Jag pratar med många företagare som funderar på digital skyltning. Nästan alla berättar samma sak: de väntade för länge med att ställa den första frågan, och försökte lösa allt själva innan de hörde av sig.\",\"sections\":[{\"heading\":\"Risken med att chansa\",\"body\":\"Att googla sig fram eller köpa en skärm på nätet kan kännas snabbt. Men det slutar ofta med en lösning som inte syns i solljuset, inte tål vårt klimat eller som ingen hinner sköta. Det blir en onödig kostnad i både tid och pengar.\"},{\"heading\":\"Ett tidigt samtal ger fler val\",\"body\":\"När vi kommer in tidigt i processen finns det nästan alltid fler och bättre alternativ. Vi kan titta på din butik eller fasad tillsammans och hitta en lösning som fungerar för just dig, år efter år.\"},{\"heading\":\"Det kostar inget att fråga\",\"body\":\"Ett samtal eller en digital fika förbinder dig inte till något. Du får ett ärligt råd, även om det betyder att du klarar dig bra utan oss just nu. Målet är att du ska få en lösning som fungerar.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
+      "duration_ms": 12183,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [
-          "problem"
+          "jag"
         ],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 1,
+        "rostmarkorer_traffade": 0,
         "rostmarkorer_totalt": 11
       }
     },
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "{\"subjects\":[\"Från idé till färdig skärm: så går det till\",\"En kontakt för allt – från första samtal till support\",\"Ny skärm? Så ser processen ut hos oss\",\"Så får du en skärm som fungerar, utan krångel\"],\"preheader\":\"Vi tar hand om hela kedjan så du slipper bli din egen AV-tekniker. Läs om vår enkla process.\",\"greeting\":\"Hej!\",\"intro\":\"Funderar du på digitala skärmar men tvekar inför allt runtomkring? Många känner igen sig. Vem väljer rätt modell, vem installerar och vem ringer man om något strular? Jag vill visa hur enkelt det kan vara när du har en kontakt för allt, från första tanke till en skärm som fungerar år efter år.\",\"sections\":[{\"heading\":\"Det börjar med ett samtal\",\"body\":\"Vi startar alltid med att lyssna. Vilka kunder vill du nå och vad vill du uppnå? Vi ställer frågorna som ser till att du får en skärm som gör jobbet, oavsett om den sitter i ett soligt skyltfönster eller en mörk butik.\"},{\"heading\":\"Ett konkret förslag\",\"body\":\"Utifrån vårt samtal får du ett tydligt förslag med pris och en tidsplan. Inget fluff, bara en konkret lösning som passar din plats och dina mål. Du vet exakt vad du får och vad det kostar.\"},{\"heading\":\"Installation och support\",\"body\":\"När du är nöjd med förslaget tar vi hand om allt. Vi levererar, installerar och ser till att allt fungerar. Och viktigast av allt: vi finns kvar efteråt. Du har alltid en kontakt att vända dig till för support.\"}],\"cta_text\":\"Läs om processen i detalj\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
-      "duration_ms": 12439,
+      "output": "{\"subjects\":[\"Från idé till skärm som säljer, så går det till\",\"Funderar du på digital skyltning? Här är första steget.\",\"En trygg process för din nya digitala skyltning\",\"Så jobbar vi tillsammans, från start till mål\"],\"preheader\":\"Vi tittar på hur ett projekt går till, från första samtal till en skärm som fungerar år efter år.\",\"greeting\":\"Hej!\",\"intro\":\"Att investera i en ny skärm till butiken eller fasaden kan kännas som ett stort steg. Många funderar på vad som krävs, vad det kostar och vem som egentligen tar ansvar för att allt fungerar. Det ska inte vara krångligt. Därför har jag skrivit ner hur ett vanligt uppdrag ser ut hos oss, helt utan teknisk jargong.\",\"sections\":[{\"heading\":\"Det börjar med ett samtal\",\"body\":\"Allt startar med att vi lyssnar på vad du vill uppnå. Vi pratar om platsen, syftet och vad som är viktigast för dig. Det är grunden för att kunna ge ett bra förslag.\"},{\"heading\":\"Ett konkret förslag, inga konstigheter\",\"body\":\"Baserat på vårt samtal får du ett tydligt förslag med pris och en tidsplan. Du ser exakt vad som ingår, från val av skärm till installation och support.\"},{\"heading\":\"En kontakt från start till mål\",\"body\":\"När du gett klartecken tar vi hand om resten och håller dig uppdaterad längs vägen. Du har en och samma kontaktperson för hela projektet, från första idé till driftsatt lösning.\"}],\"cta_text\":\"Läs om hela processen här\",\"signoff\":\"Med vänlig hälsning,\\n/ Håkan på Displayteknik\"}",
+      "duration_ms": 13111,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -43,28 +43,10 @@
     {
       "amne_id": "tre-fragor",
       "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "{\"subjects\":[\"Tre vanliga frågor om digitala skärmar\",\"Ärliga svar om pris, tid och behov\",\"Vad kostar en skärm? Här är vårt svar.\",\"Tänker du på digitala skärmar? Börja här.\"],\"preheader\":\"Vi svarar på de tre vanligaste frågorna vi får – helt utan omsvep. Läs om pris, tid och verkligt behov.\",\"greeting\":\"Hej,\",\"intro\":\"När man funderar på digitala skärmar för sin butik, fasad eller bilhall dyker nästan alltid samma tre frågor upp. Istället för att linda in svaren tänkte jag dela dem rakt av, precis som jag gör när vi tar en digital fika.\",\"sections\":[{\"heading\":\"Vad kostar det?\",\"body\":\"Det korta svaret är att det beror på storlek, ljusstyrka och miljö. Men det viktiga för dig är att du alltid får ett fast pris av oss innan vi startar. Inga dolda avgifter eller överraskningar längs vägen.\"},{\"heading\":\"Hur lång tid tar det?\",\"body\":\"Ofta går en installation snabbare än många tror. Vi ger dig en tydlig tidsplan som vi vet att vi kan hålla, så att du kan planera din verksamhet utan osäkerhet. Vi tar ansvar för hela kedjan, från val till driftsatt lösning.\"},{\"heading\":\"Behöver vi verkligen det här?\",\"body\":\"Ibland är svaret faktiskt nej. Om vi inte ser att en skärm kommer att hjälpa dig att synas och sälja mer, då säger vi det. Vårt mål är inte en snabb affär, utan ett långsiktigt samarbete där du känner dig trygg.\"}],\"cta_text\":\"Läs våra svar i sin helhet\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
-      "duration_ms": 12086,
+      "output": "{\"subjects\":[\"Tre ärliga svar om digital skyltning\",\"Vad kostar en digital skärm, egentligen?\",\"Funderar du på skärmar? Läs detta först.\",\"Pris, tid och behov, våra raka svar\"],\"preheader\":\"Våra svar på de där frågorna om pris, tid och behov som alla undrar över men sällan frågar.\",\"greeting\":\"Hej,\",\"intro\":\"När man funderar på något nytt, som digitala skärmar till butiken eller fasaden, dyker nästan alltid samma tre frågor upp i huvudet. Istället för att linda in svaren tänkte jag dela dem rakt av, precis som jag gör när vi tar en digital fika.\",\"sections\":[{\"heading\":\"1. Vad kostar det?\",\"body\":\"Det korta svaret är att det beror på, men vi ger dig alltid ett fast pris innan vi börjar. En 43-tums skärm för skyltfönster börjar på 21 000 kr, installerad och klar. Inga dolda avgifter eller överraskningar.\"},{\"heading\":\"2. Hur lång tid tar det?\",\"body\":\"Oftast går det snabbare än du tror. Från första samtal till en driftsatt skärm som fångar kunders blickar är en smidig process. Vi sätter en tidsplan vi vet att vi kan hålla, så att du kan planera din verksamhet.\"},{\"heading\":\"3. Behöver jag verkligen detta?\",\"body\":\"Ibland är svaret faktiskt nej, och då är vi ärliga med det. Vårt mål är inte att sälja en skärm, utan att bygga en relation som håller i många år. En lösning ska ge verkligt värde, annars får det vara.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
+      "duration_ms": 11681,
       "autochecks": {
         "cta_count": 1,
-        "svag_hook": false,
-        "forbjudna_ord": [
-          "jag"
-        ],
-        "floskler": [],
-        "tankstreck_i_loptext": false,
-        "hashtags": 0,
-        "rostmarkorer_traffade": 2,
-        "rostmarkorer_totalt": 11
-      }
-    },
-    {
-      "amne_id": "tvekade",
-      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "{\"subjects\":[\"Kundens reaktion: varför väntade jag så länge?\",\"Tvekar du också inför digitala skärmar?\",\"Från ett års tvekan till resultat på några veckor\",\"Vad kostar det att vänta med att byta skyltning?\"],\"preheader\":\"En kund funderade i nästan ett år. Deras spontana reaktion efteråt är något vi hör ofta.\",\"greeting\":\"Hej!\",\"intro\":\"Känner du igen känslan av att gå och fundera på en investering? Man vet att något behöver göras, men steget känns stort och man är osäker på om det verkligen kommer att ge resultat. En av våra kunder var i precis den situationen i nästan ett helt år.\",\"sections\":[{\"heading\":\"Tveksamheten är den verkliga kostnaden\",\"body\":\"Att skjuta på beslutet kan kännas tryggt, men under tiden fortsätter den gamla, trötta skyltningen att inte fånga några nya kunder. Tiden man tvekar är ofta en större förlorad intäkt än vad själva lösningen kostar.\"},{\"heading\":\"Från fundering till fungerande skärm\",\"body\":\"När kunden väl bestämde sig gick det snabbt. Vi hjälpte till med rätt val av skärm för deras butiksfönster, skötte installationen och såg till att allt fungerade. Du får en kontakt för hela kedjan.\"},{\"heading\":\"Resultatet: \\\"Varför väntade jag?\\\"\",\"body\":\"Den spontana reaktionen efteråt var just den frågan. Skyltningen syntes direkt, fångade blickar från gatan och gav ett proffsigt intryck. Den osäkerhet som funnits där i ett år var helt bortblåst.\"}],\"cta_text\":\"Läs hela berättelsen här\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
-      "duration_ms": 12151,
-      "autochecks": {
-        "cta_count": 0,
         "svag_hook": false,
         "forbjudna_ord": [
           "jag"
@@ -77,10 +59,28 @@
       }
     },
     {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"subjects\":[\"”Varför väntade jag så länge?”\",\"Kostar det mer att vänta än att bestämma sig?\",\"Från fundering till resultat med digital skyltning\",\"En vanlig reaktion vi får från våra kunder\"],\"preheader\":\"En kund funderade i nästan ett år. Deras spontana reaktion efter installationen säger egentligen allt.\",\"greeting\":\"Hej!\",\"intro\":\"Har du också funderat på digitala skärmar men känt dig osäker på om det är värt investeringen? Du är inte ensam. En av våra kunder gick i precis samma tankar i nästan ett helt år, orolig för kostnaden och om det verkligen skulle göra skillnad.\",\"sections\":[{\"heading\":\"Från osäkerhet till en enkel lösning\",\"body\":\"När de väl bestämde sig gick det snabbt. Vi hjälpte dem att hitta rätt skärm för deras butiksfönster och tog hand om allt från installation till att innehållet kom på plats. Hela processen var smidig, med en kontakt för allt.\"},{\"heading\":\"Reaktionen efteråt\",\"body\":\"Deras spontana kommentar när skärmen var igång var: ”Varför väntade jag så länge?”. Det är en reaktion vi hör ofta. Tiden man funderar kostar ofta mer i förlorad synlighet och försäljning än vad själva beslutet gör.\"},{\"heading\":\"Vad är ditt nästa steg?\",\"body\":\"Att byta ut en trött skyltning behöver inte vara ett jätteprojekt. Ofta är det enklare och ger snabbare resultat än man tror. Det gäller att fånga de kunder som går förbi varje dag.\"}],\"cta_text\":\"Läs hela berättelsen här\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
+      "duration_ms": 12639,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "jag"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "{\"subjects\":[\"Vad kostar en skärm som slocknar?\",\"När det billigaste alternativet blir det dyraste\",\"En skärm som fungerar, år efter år\",\"Helheten avgör när du väljer skärm\"],\"preheader\":\"Det ser bra ut på pappret, men vad händer när tekniken strular? Vi tittar på den verkliga kostnaden.\",\"greeting\":\"Hej!\",\"intro\":\"Det är lätt att fastna för den lägsta prislappen när man jämför offerter. Men vad händer när skärmen i skyltfönstret slocknar mitt i en kampanj, eller när ingen svarar i supporten? Ofta blir det billigaste valet det dyraste i längden.\",\"sections\":[{\"heading\":\"Pris kontra verklig kostnad\",\"body\":\"En låg initial kostnad kan snabbt ätas upp av driftstopp, reparationer och förlorad försäljning. En skärm ska inte bara köpas, den ska fungera i vårt nordiska klimat och sälja åt dig – varje dag.\"},{\"heading\":\"En kontakt för allt\",\"body\":\"Vem tar ansvar när något krånglar? Hos oss får du en kontakt för hela kedjan: rätt val av skärm, installation, innehåll och support. Du slipper bli din egen tekniker.\"},{\"heading\":\"Ett val du är nöjd med länge\",\"body\":\"Vi tävlar inte om att vara billigast. Vi tävlar om att vara det val du är mest nöjd med om tre, fem eller sju år. Det är en investering som ska synas, sälja och fungera.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott, / Håkan på Displayteknik\"}",
-      "duration_ms": 12553,
+      "output": "{\"subjects\":[\"När det billigaste valet blir det dyraste\",\"Priset för en skärm, vad ingår egentligen?\",\"Tänker du på år ett, eller år tre?\",\"Räkna på hela kostnaden för din digitala skyltning\"],\"preheader\":\"En skärm som slocknar kostar mer i längden. Så här tänker du rätt från början.\",\"greeting\":\"Hej!\",\"intro\":\"Det är lätt att titta på den lägsta prislappen när man jämför digitala skärmar. Men ofta ser vi att den där första besparingen snabbt äts upp av strul, dolda kostnader eller en skärm som helt enkelt inte syns när solen ligger på. Det som ser billigt ut idag kan bli en dyr läxa imorgon.\",\"sections\":[{\"heading\":\"Helheten avgör\",\"body\":\"En skärm är mer än bara en panel. Vem installerar den? Vem ser till att den fungerar med ditt innehåll? Och vem svarar när du behöver hjälp? Vi ser till att du har en kontakt för allt, från första idé till driftsatt lösning som fungerar år efter år.\"},{\"heading\":\"Byggd för vårt klimat\",\"body\":\"En vanlig TV i ett skyltfönster ger ofta upp. Våra skärmar har den ljusstyrka som krävs för att synas i direkt solljus och är byggda för att klara nordiska vintrar utan att tappa prestanda. Det är en trygghet som lönar sig.\"},{\"heading\":\"Långsiktig nöjdhet, inte lägsta pris\",\"body\":\"Vi tävlar inte om att vara billigast i inköp. Vi tävlar om att vara det val du är mest nöjd med över tid. Våra kunder, som Toyota Sverige och X-Trafik, väljer oss för driftsäkerheten och för att de vet att lösningen fungerar, även på lång sikt.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott,\\n/ Håkan på Displayteknik\"}",
+      "duration_ms": 12230,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -88,9 +88,9 @@
           "billig"
         ],
         "floskler": [],
-        "tankstreck_i_loptext": true,
+        "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 0,
+        "rostmarkorer_traffade": 3,
         "rostmarkorer_totalt": 11
       }
     }

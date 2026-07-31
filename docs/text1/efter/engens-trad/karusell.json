@@ -2,13 +2,13 @@
   "profil": "Engens Träd & Trädgård",
   "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
   "flode": "karusell",
-  "genererad": "2026-07-31T14:56:11.450Z",
+  "genererad": "2026-07-31T17:05:58.220Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": "[{\"kind\":\"hook\",\"headline\":\"Vanligaste misstaget med träd?\",\"body\":\"Många skjuter upp bedömningen. Men att vänta kan göra ett litet problem stort.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Ignorera små signaler\",\"body\":\"Små lutningar eller döda grenar kan verka harmlösa. Men de är ofta tidiga tecken på att trädet är i obalans och kan bli en risk vid nästa storm.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vänta tills det är akut\",\"body\":\"När ett träd redan skadar något eller blockerar en väg, blir insatsen ofta dyrare och mer komplicerad. Att agera i tid är nästan alltid enklare.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Gissa istället för att fråga\",\"body\":\"Många är osäkra på om ett träd är farligt eller inte. Att få en expert att titta på det tidigt ger dig lugn och en klar plan, utan förpliktelser.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Känner du igen dig?\",\"body\":\"Skicka en bild på trädet som oroar dig. Vi säger rakt ut om det är värt att åtgärda.\",\"imageUrl\":\"\"}]",
-      "duration_ms": 3879,
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Vanligaste misstaget med träd?\",\"body\":\"Många skjuter upp bedömningen, tills det blir bråttom. Så undviker du det.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vänta inte för länge\",\"body\":\"Att vänta tills trädet är en uppenbar risk, eller efter en storm, kan göra jobbet mer akut och ibland mer omfattande än nödvändigt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Få en tidig bedömning\",\"body\":\"En tidig koll av trädet ger dig lugn. Du får veta om det är något att agera på nu, eller om det kan vänta ett tag till.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Rätt åtgärd i tid\",\"body\":\"Ibland räcker det med en beskärning istället för en hel fällning om vi är ute i god tid. Det är den klokaste vägen för både trädet och din plånbok.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Funderingar om dina träd?\",\"body\":\"Skicka en bild på trädet som oroar dig. Vi tar en första titt och säger om det är värt att komma ut på plats.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3434,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -16,31 +16,15 @@
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 2,
+        "rostmarkorer_traffade": 3,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": "[{\"kind\":\"hook\",\"headline\":\"Vad händer efter första samtalet?\",\"body\":\"Många undrar hur ett trädfällningsjobb går till, steg för steg. Så här ser vår process ut.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Steg 1: Första bedömningen\",\"body\":\"Du skickar en bild på trädet och var det står. Vi tittar på läge, storlek och eventuella risker. Du får ett rakt svar om det är värt att kolla på plats.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Steg 2: Planering på plats\",\"body\":\"Om det behövs kommer vi ut och går igenom detaljerna. Vi ser var trädet ska landa, hur vi säkrar omgivningen och vilken metod som passar bäst. En tydlig plan är allt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Steg 3: Säker fällning och rent efteråt\",\"body\":\"Vi fäller trädet bit för bit med rätt teknik, säkert och kontrollerat. Efteråt städar vi upp så tomten är hel och ren. Resultat: trädet borta, du är nöjd.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett träd du funderar på?\",\"body\":\"Skicka en bild så gör vi en första kostnadsfri bedömning. Inga förpliktelser, bara ett rakt svar.\",\"imageUrl\":\"\"}]",
-      "duration_ms": 3064,
-      "autochecks": {
-        "cta_count": 0,
-        "svag_hook": false,
-        "forbjudna_ord": [],
-        "floskler": [],
-        "tankstreck_i_loptext": false,
-        "hashtags": 0,
-        "rostmarkorer_traffade": 5,
-        "rostmarkorer_totalt": 24
-      }
-    },
-    {
-      "amne_id": "tre-fragor",
-      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": "[{\"kind\":\"hook\",\"headline\":\"Vanliga frågor om trädfällning?\",\"body\":\"Vi får samma frågor varje vecka. Här är våra raka svar på de vanligaste funderingarna.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Är det bråttom att fälla nu?\",\"body\":\"Inte alltid. Men om trädet lutar, har döda grenar eller står nära huset är det klokt att få det bedömt. Då vet du om det behöver göras nu, nästa år, eller inte alls.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Kan jag fälla trädet själv?\",\"body\":\"På öppna ytor kan vissa träd vara enkla. Men nära hus, el eller väg blir marginalerna små. Då är planeringen viktigare än själva sågningen för att trädet ska landa säkert.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Blir det inte jättedyrt?\",\"body\":\"Priset beror på läge, storlek, risk och vad du vill ha hjälp med efteråt. RUT-avdraget sänker arbetskostnaden direkt på fakturan, så jobbet hamnar ofta någon annanstans än du tror.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du en egen trädfråga?\",\"body\":\"Skicka oss en bild på trädet och var det står. Du får en första bedömning utan förpliktelser.\",\"imageUrl\":\"\"}]",
-      "duration_ms": 3245,
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Vad händer när du ringer oss?\",\"body\":\"Från första kontakt till ett säkert och snyggt resultat. Så här går det till.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Steg 1: Första kontakten\",\"body\":\"Du skickar en bild på trädet och var det står. Vi gör en första bedömning och säger om det är värt att kolla på plats.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Steg 2: Bedömning på plats\",\"body\":\"Jag kommer ut på ett kostnadsfritt besök i cirka 30 minuter. Vi går runt trädet, jag kollar stam och rötter, och vi pratar om vad du vill ha gjort.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Steg 3: Offert och utförande\",\"body\":\"Du får en offert oftast samma dag eller dagen efter. När du godkänt den planerar vi in jobbet och löser det säkert och kontrollerat.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett trädproblem?\",\"body\":\"Skicka en bild så tittar vi. Du får ett rakt svar på vad som är rimligt att göra.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2857,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
@@ -53,38 +37,50 @@
       }
     },
     {
-      "amne_id": "tvekade",
-      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": "[{\"kind\":\"hook\",\"headline\":\"Tvekade ni för länge?\",\"body\":\"Många villaägare skjuter upp trädproblemet. Men vad händer om man väntar för länge?\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Riskerna ökar med tiden\",\"body\":\"Ett träd som lutar eller har döda grenar blir farligare för varje säsong. Höststormarna är inte nådiga mot gamla, sjuka träd.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Det blev onödigt bråttom\",\"body\":\"När ett träd plötsligt hotar huset eller lekplatsen blir det ofta bråttom. Då får man mindre tid att planera och det kan bli mer komplicerat.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Säkert, snyggt och lugnt\",\"body\":\"Målet är alltid att få trädet borttaget säkert, snyggt och utan stress. Det är enklare att nå när man kan planera i lugn och ro.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Fundera inte ensam, hör av dig\",\"body\":\"Har du ett träd du funderar på? Skicka en bild på det och var det står. Du får ett rakt svar på om det är värt att se över.\",\"imageUrl\":\"\"}]",
-      "duration_ms": 3309,
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"3 frågor vi ofta hör om träd\",\"body\":\"De flesta villaägare har samma funderingar. Här är våra ärliga svar på dem.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"\\\"Är det verkligen bråttom?\\\"\",\"body\":\"Inte alltid, men om trädet lutar, har döda grenar eller står nära huset är en bedömning klokt. Vi ser om det behöver åtgärdas nu eller kan vänta.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"\\\"Blir det inte jättedyrt?\\\"\",\"body\":\"Priset påverkas av läge, storlek och risk. Men med RUT-avdraget blir arbetskostnaden ofta lägre än du tror. Vi ger dig en rak uppskattning.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"\\\"Måste hela trädet tas bort?\\\"\",\"body\":\"Nej, ibland räcker det med beskärning eller att ta bort en gren. Vi bedömer vad som är rimligt och säkert för ditt träd och din tomt.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett träd du funderar på?\",\"body\":\"Skicka en bild på trädet och var det står. Du får en första bedömning utan kostnad eller förpliktelser.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3015,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
-        "forbjudna_ord": [
-          "komplicerat"
-        ],
+        "forbjudna_ord": [],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 5,
+        "rostmarkorer_traffade": 6,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Skjuter du också upp trädfällningen?\",\"body\":\"Många villaägare tvekar. Men vad händer när du äntligen tar tag i det?\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Före: Skymd utsikt och oro\",\"body\":\"Ett stort träd skymde solen och kändes lite läskigt nära huset. Familjen hade pratat om det i flera år men kom sig inte för.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Under: Säkert och kontrollerat\",\"body\":\"Vi gick igenom riskerna och kom överens om en plan. Trädet togs ner bit för bit, säkert och utan drama, precis som utlovat.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Efter: Mer ljus och lugn\",\"body\":\"Resultatet blev en ljusare tomt, mindre oro och en gräsmatta de äntligen kan använda. De sa: 'Vi borde gjort detta för länge sedan!'\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett träd du tvekar över?\",\"body\":\"Skicka en bild på trädet och var det står. Du får en första bedömning, utan förpliktelser.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3307,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
         "rostmarkorer_totalt": 24
       }
     },
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": "[{\"kind\":\"hook\",\"headline\":\"Varför det billigaste kan bli dyrast?\",\"body\":\"Många tror att trädfällning är en kostnad. Vi ser det som en investering i trygghet.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Riskerna med fel fällning\",\"body\":\"Ett träd som faller fel kan skada hus, bilar eller dig själv. Att välja oerfaren hjälp kan kosta mer i slutändan än du sparar.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vad ingår i en trygg tjänst?\",\"body\":\"Det gäller rätt utrustning, försäkringar, kunskap om trädets anatomi och en noggrann plan. Allt för att jobbet ska bli säkert och rent.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Din lugna investering\",\"body\":\"När du väljer en erfaren aktör får du inte bara trädet borttaget. Du köper också lugn, säkerhet och en hel tomt efteråt. Och RUT-avdraget sänker priset direkt.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Osäker på vad ditt träd behöver?\",\"body\":\"Skicka en bild på trädet och var det står. Vi ger dig en första bedömning och ett rakt svar på vad som är rimligt.\",\"imageUrl\":\"\"}]",
-      "duration_ms": 3329,
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Varför väljer ingen \\\"billigast\\\"?\",\"body\":\"När det kommer till trädfällning är det sällan priset som avgör. Här är varför.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Säkerhet går alltid först\",\"body\":\"Många träd står nära hus, elkablar eller lekplatser. Då söker man trygghet och erfarenhet, inte \\\"billigast\\\".\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"En klok bedömning är avgörande\",\"body\":\"Ibland räcker beskärning, ibland måste hela trädet bort. Du vill ha en ärlig rekommendation, inte bara ett lågt pris.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Rent och snyggt efteråt\",\"body\":\"Ingen vill ha en tomt full av ris och grenar. Att jobbet blir färdigt och rent efteråt är viktigt för de flesta.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett träd du funderar på?\",\"body\":\"Skicka en bild på trädet och var det står. Du får en första bedömning, utan kostnad eller förpliktelser.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2904,
       "autochecks": {
         "cta_count": 0,
         "svag_hook": false,
-        "forbjudna_ord": [
-          "billigaste"
-        ],
+        "forbjudna_ord": [],
         "floskler": [],
         "tankstreck_i_loptext": false,
         "hashtags": 0,
-        "rostmarkorer_traffade": 5,
+        "rostmarkorer_traffade": 1,
         "rostmarkorer_totalt": 24
       }
     }
