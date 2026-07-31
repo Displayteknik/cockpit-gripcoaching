@@ -3,7 +3,6 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate, generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
-import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 import {
   WEEK_ROLES,
   DISC_GUIDE,
@@ -15,7 +14,7 @@ import {
 } from "@/lib/content-framework";
 import { getCompassSchedule } from "@/lib/content-compass/schedule";
 import { planWeek } from "@/lib/content-compass/rules";
-import { contentCompassBlock } from "@/lib/content-compass/prompt";
+import { byggCompassVeckaPrompt } from "@/lib/content-compass/vecka-prompt";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
 import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
@@ -219,9 +218,10 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
 // sparar dem som utkast i kalendern med föreslagen bästa-tid. Inget publiceras.
 async function generateCompassWeek(clientId: string, theme: string) {
   const sb = supabaseService();
+  // Bara existenskontroll — kundfakta i prompten ägs numera av kärnans brand-profil-lager.
   const { data: profile } = await sb
     .from("hm_brand_profile")
-    .select("*")
+    .select("client_id")
     .eq("client_id", clientId)
     .maybeSingle();
   if (!profile) return NextResponse.json({ error: "Brand-profil saknas" }, { status: 400 });
@@ -230,61 +230,19 @@ async function generateCompassWeek(clientId: string, theme: string) {
   const { posts, notes } = planWeek(schedule);
   if (!posts.length) return NextResponse.json({ error: "Schemat har inga aktiva dagar" }, { status: 400 });
 
-  const fp = await getVoiceFingerprint(clientId);
-  const voiceBlock = fingerprintToPromptBlock(fp);
-
-  // Ett block per planerad dag: dagens Compass-profil styr ton, form och CTA.
-  const dayBlocks = posts
-    .map((p, i) => {
-      const dateLabel = new Date(p.date).toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
-      const compass = contentCompassBlock({ funnel: p.funnel, four_a: p.four_a, disc: p.disc });
-      return `── INLÄGG ${i + 1} (${p.dayLabel}, ${dateLabel}) ──\n${compass}`;
-    })
-    .join("\n\n");
-
-  const system = `Du är världsklass copywriter. Du skriver en hel veckas innehåll enligt kundens Content Compass. Varje inlägg har sin egen roll (funnel, 4A, DISC) och sin egen anatomi nedan. Följ anatomin för varje inlägg exakt.
-
-═══ KUND ═══
-Företag: ${profile.company_name || "(saknas)"}
-Plats: ${profile.location || "(saknas)"}
-USP: ${profile.usp || "(saknas)"}
-Differentiatorer: ${profile.differentiators || "(saknas)"}
-ICP primär: ${profile.icp_primary || "(saknas)"}
-Smärtpunkter: ${profile.pain_points || "(saknas)"}
-Tjänster: ${profile.services || "(saknas)"}
-Bokningslänk: ${profile.booking_url || "(saknas)"}
-
-═══ VECKANS INLÄGG (följ Compass-blocket för varje) ═══
-${dayBlocks}
-
-═══ HOOK-REGLER ═══
-${KANE_HOOK_RULES}
-
-${voiceBlock}
-
-═══ KVALITETSKRAV ═══
-- Veckan ska ha progression och kännas som en serie, inte lösryckta inlägg.
-- Varje inlägg: en tydlig hook, känsla och igenkänning, kundens resultat, exakt EN CTA som matchar funnel-nivån.
-- ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "skalbar", "holistisk".
-- Skriv på svenska som personen själv hade skrivit.
-
-═══ OUTPUT JSON ═══
-{
-  "days": [
-    { "hook": "...", "body": "...", "cta": "...", "hashtags": ["..."] }
-  ]
-}
-Exakt ${posts.length} inlägg i "days", i samma ordning som INLÄGG 1..${posts.length} ovan.`;
-
-  const userPrompt = `Veckotema: ${theme}\n\nSkriv ${posts.length} inlägg som tillsammans tar målgruppen från medvetenhet till handling. Returnera enbart JSON.`;
+  // TEXT-1 T-3: prompten byggs av prompt-core via byggCompassVeckaPrompt — det gamla
+  // KUND-blocket (råfält) och voiceBlock ersätts av kärnans lager; per-dag-Compass-blocken
+  // (flödesdata) ligger i uppdraget. Paritetstest: tests/compass-vecka-paritet.test.ts.
+  const bygg = await byggCompassVeckaPrompt(clientId, theme, posts);
 
   const { text: raw, usage } = await generateWithUsage({
     model: "gemini-2.5-pro",
-    systemInstruction: system,
-    prompt: userPrompt,
+    systemInstruction: bygg.system,
+    prompt: bygg.user,
     temperature: 0.85,
     maxOutputTokens: 8000,
     jsonMode: true,
+    skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
   });
 
   let parsed: { days?: { hook?: string; body?: unknown; cta?: string; hashtags?: unknown }[] } = {};
@@ -347,7 +305,7 @@ Exakt ${posts.length} inlägg i "days", i samma ordning som INLÄGG 1..${posts.l
 
   // Faktisk token-användning per körning (förberett för credit-system). Fallback till
   // grovt estimat (tecken / 4) om API:t inte rapporterade usageMetadata.
-  const tokenTotal = usage.total || Math.round((system.length + userPrompt.length + raw.length) / 4);
+  const tokenTotal = usage.total || Math.round((bygg.system.length + bygg.user.length + raw.length) / 4);
   console.log(`[compass-week] client=${clientId} inlägg=${rows.length} tokens_in=${usage.input} tokens_out=${usage.output} tokens_total=${tokenTotal}`);
 
   return NextResponse.json({
