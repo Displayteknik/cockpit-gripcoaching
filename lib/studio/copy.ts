@@ -1,13 +1,12 @@
-// Studio — hook-driven textmotor. Kombinerar hook-playbook (Brendan Kane) + kundens
-// varumärkesprofil + voice-fingerprint + winning examples via iterateGenerate (Anthropic),
-// genererar flera varianter, filtrerar bort fragment/AI-språk och returnerar topp 3.
-// Återanvänds av Fas 3 (captions) och Fas 4 (blogg) — EN kvalitetskälla för all Studio-text.
+// Studio — hook-driven textmotor. Prompten byggs av lib/prompt-core (TEXT-1 T-3):
+// uppdraget här är affischreglerna, kärnan lägger hook-playbook, brand-profil (exakt en
+// gång — förr låg den dubbelt via getKnowledge + egen hämtning), röst, winning examples,
+// pa-bild-anatomin, kit-donts och skrivregler. iterateGenerate (Anthropic) får prebuilt
+// och genererar flera varianter; filtren efteråt tar bort fragment/AI-språk → topp 3.
 
 import { iterateGenerate } from "@/lib/iterate";
-import { getKnowledge, getProfileAsMarkdown } from "@/lib/knowledge";
+import { byggTextPrompt } from "@/lib/prompt-core";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
-import { getKitDirectives, dontsRule, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
-import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 
 export interface StudioCopySuggestion {
   hookType: string;
@@ -68,43 +67,27 @@ const CTA_ORD = /\b(boka|ring|kontakta|hör av dig|mejla|maila|swisha|beställ|o
 
 export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCopySuggestion[]> {
   const meta = getTemplateMeta(opts.templateId);
-  const [playbook, profile, directives] = await Promise.all([
-    getKnowledge("hook-playbook").catch(() => ""),
-    getProfileAsMarkdown().catch(() => ""),
-    getKitDirectives(opts.clientId).catch(() => NEUTRAL_DIRECTIVES),
-  ]);
   const brand = opts.brandName || "kunden";
   const industry = opts.industry ? ` (${opts.industry})` : "";
   const softMax = meta?.headlineSoftMax ?? 26;
-  const harSiffror = profilHarSiffror(profile);
-  const hooks = tillatnaHooks(opts.imageRole, harSiffror);
 
-  // Grundningsblock: knyt texten till inläggets grundtext + vad bilden föreställer.
+  // Bildgrundning: knyt texten till inläggets grundtext + vad bilden föreställer.
+  // Renderas av kärnan som "=== GRUNDA TEXTEN I INLÄGGET ===" (B-paketets mönster).
   const caption = (opts.caption || "").trim();
   const bildDesc = (opts.imageDescription || "").trim();
   const rollGuide =
     opts.imageRole === "problem"
-      ? "BILDENS ROLL: bilden föreställer PROBLEMET (före-läget). Texten ska sätta ord på problemet eller ställa frågan läsaren känner igen — presentera INTE lösningen och skriv INGEN säljande rubrik ovanpå. Det krockar med bilden. Låt bilden vara problemet och texten spegla det."
+      ? "Bilden föreställer PROBLEMET (före-läget). Texten ska sätta ord på problemet eller ställa frågan läsaren känner igen — presentera INTE lösningen och skriv INGEN säljande rubrik ovanpå. Det krockar med bilden. Låt bilden vara problemet och texten spegla det."
       : opts.imageRole === "losning"
-      ? "BILDENS ROLL: bilden föreställer LÖSNINGEN/det önskade resultatet (efter-läget). Texten ska landa påståendet eller resultatet som bilden visar."
+      ? "Bilden föreställer LÖSNINGEN/det önskade resultatet (efter-läget). Texten ska landa påståendet eller resultatet som bilden visar."
       : "";
-  const groundBlock = (caption || bildDesc || rollGuide)
-    ? [
-        "\n=== GRUNDA TEXTEN I INLÄGGET (viktigast av allt) ===",
-        caption ? `INLÄGGETS GRUNDTEXT (captionen läsaren ser): "${caption.slice(0, 700)}". Texten på bilden ska höra ihop med detta budskap — inte upprepa det ordagrant, utan fånga kärnan i några få ord.` : "",
-        bildDesc ? `BILDEN FÖRESTÄLLER: ${bildDesc}. Texten ska förstärka bildens roll i berättelsen, aldrig säga emot det man ser.` : "",
-        rollGuide,
-      ].filter(Boolean).join("\n")
-    : "";
 
-  const systemPrompt = [
+  const uppdrag = [
     `Du skriver text som ska tryckas PÅ EN BILD (affisch/social-media-inlägg) för ${brand}${industry}.`,
     "Det är INTE ett caption-inlägg — det är korta ord som ska rymmas i en grafisk mall.",
-    playbook,
-    profile
-      ? `\n=== KLIENTENS VARUMÄRKESPROFIL — grunda ALLT (röst, målgrupp, ord) på denna, uppfinn inget utanför den ===\n${profile.slice(0, 6000)}`
-      : "",
-    groundBlock,
+    // Kärnan renderar bildkontext-blocket bara när caption/bildbeskrivning finns —
+    // en ensam roll-styrning (t.ex. uppladdad bild utan analys) får ligga i uppdraget.
+    !caption && !bildDesc && rollGuide ? `\nBILDENS ROLL: ${rollGuide}` : "",
     "\n=== MALLENS FÄLT (tre korta fält, inget annat) ===",
     `Rubrik: "${meta?.fields.headline1 ?? "rubrik"}". Underrubrik: "${meta?.fields.headline2 ?? "underrubrik"}". Kort text: "${meta?.fields.body ?? "brödtext"}".`,
     "\n=== HÅRDA REGLER (affisch-format) ===",
@@ -113,18 +96,40 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     "- body: EN hel mening (två korta om det behövs), MAX ~90 tecken. Skriv som du pratar, inte som en punktlista i löptext.",
     "- FÖRBJUDET i body: stapla fristående fragment efter varandra. Aldrig så här: 'Syns i dagsljus. En kontakt för allt. Offert inom 24 timmar.' Skriv EN sammanhängande tanke istället.",
     "- INGEN uppmaning/CTA i något fält (inte 'boka', 'ring', 'kontakta oss', 'offert inom X'). Mallens fot har redan en CTA-knapp och bildtexten bär uppmaningen. Texten PÅ bilden ska bara få läsaren att stanna och känna igen sig.",
-    harSiffror
-      ? "- SIFFROR: använd bara tal, priser och procent som faktiskt STÅR i varumärkesprofilen ovan. Hitta ALDRIG på statistik ('400 % fler blickar'), kvoter ('8 av 10 kunder') eller priser — en kvot eller procentsats får bara användas om EXAKT den formuleringen står i profilen. Osäker på en siffra: skriv utan siffra."
-      : "- SIFFROR: INGA tal, priser eller procent alls i denna text (klienten har inga verifierade siffror inlagda). Statistik utan källa är förbjuden. Skriv helt utan siffror.",
+    "- SIFFROR: använd ENDAST tal, priser och procent som faktiskt STÅR i varumärkesprofilen — en kvot eller procentsats får bara användas om EXAKT den formuleringen står där. Hitta ALDRIG på statistik ('400 % fler blickar'), kvoter ('8 av 10 kunder') eller priser. Saknar profilen verifierade siffror: skriv helt utan siffror. Osäker på en siffra: skriv utan siffra.",
     "- VASSARE SPRÅK: konkret substantiv före abstrakt (skyltfönster, inte 'kommunikationsyta'), aktivt verb, vardagsord. Inga floskler, ingen svengelska, ingen myndighetston.",
     "- FÖRBJUDET i alla fält: emoji, symboler (✅▶•), punktlistor, radbrytningslistor, signatur (t.ex. '— Ingela'), telefonnummer, URL, hashtag. Kontaktuppgifter finns REDAN i mallen.",
     "- Använd EN tydlig hook-typ och gör den scrollstoppande enligt playbooken (komprimerad till affisch-längd).",
     "- Gyllene-zonen-kedjan: rubrik väcker → underrubrik skärper → body ger igenkänning eller konkret nytta.",
     "- Målgruppens EGNA ord ur profilen. Svenska tecken å/ä/ö korrekt. Uppfinn inget utanför kundens värld.",
-    dontsRule(directives.donts),
-    "",
-    WRITING_RULES_BLOCK,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
+
+  const b = await byggTextPrompt({
+    clientId: opts.clientId,
+    syfte: "studio-text", // pa-bild-anatomin — harmonierar med CTA-förbudet i uppdraget
+    uppdrag,
+    knowledge: ["hook-playbook"],
+    bildKontext:
+      caption || bildDesc
+        ? {
+            caption: caption
+              ? `"${caption.slice(0, 700)}". Texten på bilden ska höra ihop med detta budskap — inte upprepa det ordagrant, utan fånga kärnan i några få ord.`
+              : undefined,
+            bildbeskrivning: bildDesc
+              ? `${bildDesc}. Texten ska förstärka bildens roll i berättelsen, aldrig säga emot det man ser.`
+              : undefined,
+            bildRoll: rollGuide || undefined,
+          }
+        : undefined,
+  });
+
+  // Grindkälla för siffergrinden = profilen (lager 3) + winning examples. Samma innehåll
+  // som den gamla egen-hämtade profilen bar (getProfileAsMarkdown vävde in winning-blocket)
+  // — nu utan en andra DB-läsning, och alltid för RÄTT klient (förr: sessionshärledd,
+  // vilket i skript/cron tyst blev standardklientens profil).
+  const grindKalla = [b.profilText, ...b.winning].filter(Boolean).join("\n");
+  const harSiffror = profilHarSiffror(grindKalla);
+  const hooks = tillatnaHooks(opts.imageRole, harSiffror);
 
   const userPrompt = [
     `Ämne/vinkel: ${opts.topic?.trim() || (caption ? "utgå från inläggets grundtext ovan" : "välj den starkaste vinkeln för verksamheten")}. Postformat: ${opts.format}.`,
@@ -133,7 +138,7 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   ].join("\n");
 
   const result = await iterateGenerate({
-    systemPrompt,
+    prebuilt: { system: b.system, fingerprint: b.fingerprint, winning: b.winning },
     userPrompt,
     clientId: opts.clientId,
     category: "studio_copy",
@@ -153,10 +158,10 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   // "21 000 kr" → "21000". Används för att backa VARJE siffra i förslaget — även små tal
   // och kvoter som "7 av 10" (annars slipper påhittad statistik förbi).
   const profilTal = new Set<string>();
-  for (const m of profile.matchAll(/\d[\d\s.,]*\d|\d/g)) profilTal.add(m[0].replace(/[\s.,]/g, ""));
+  for (const m of grindKalla.matchAll(/\d[\d\s.,]*\d|\d/g)) profilTal.add(m[0].replace(/[\s.,]/g, ""));
   // Statistik-PÅSTÅENDEN ("8 av 10", "40 %") kräver att HELA frasen står i profilen —
   // lösa tal räcker inte ("8" och "10" finns som öppettider men "8 av 10 kunder" är påhitt).
-  const profilKomp = profile.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
+  const profilKomp = grindKalla.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
   const tillatna = new Set(hooks); // deterministisk backstop för roll-styrning + statistik-grind
   for (const v of result.all_variants) {
     const obj = parseJson(v.text);

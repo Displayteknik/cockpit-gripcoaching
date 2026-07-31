@@ -70,6 +70,9 @@ export interface ByggdPrompt {
   user: string;
   fingerprint: VoiceFingerprint | null;
   winning: string[];
+  /** Lager 3-texten (klippt profil) — för anroparens deterministiska grindar
+   *  (t.ex. copy.ts fail-closed siffergrind) utan en andra DB-läsning. */
+  profilText: string;
   meta: { lager: Record<string, boolean>; profilKlippt: string[] };
 }
 
@@ -186,6 +189,7 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
   const delar: string[] = [p.uppdrag.trim()];
   const lager: Record<string, boolean> = { uppdrag: true };
   let profilKlippt: string[] = [];
+  let profilText = "";
   let fingerprint: VoiceFingerprint | null = null;
   let winning: string[] = [];
 
@@ -207,6 +211,7 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
       if (raa) {
         const klippt = klippProfil(raa, p.maxProfilTecken ?? 6000);
         profilKlippt = klippt.klippta;
+        profilText = klippt.text;
         delar.push(`=== KLIENTENS VARUMÄRKESPROFIL ===\n${klippt.text}`);
         lager.brandProfil = true;
       }
@@ -296,6 +301,7 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     user: (p.underlag ?? "").trim(),
     fingerprint,
     winning,
+    profilText,
     meta: { lager, profilKlippt },
   };
 }

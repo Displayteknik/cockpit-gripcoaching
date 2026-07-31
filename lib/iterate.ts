@@ -10,7 +10,9 @@ import { SPECIALIST_GUARDRAILS } from "./specialists";
 import { WRITING_RULES_BLOCK } from "./content/writing-rules";
 
 export interface IterateOptions {
-  systemPrompt: string;
+  // Gamla vägen (utan prebuilt): flödets egen systemprompt — iterate väver då själv in
+  // röst/winning/skrivregler. Krävs när prebuilt saknas; ignoreras när prebuilt finns.
+  systemPrompt?: string;
   userPrompt: string;
   clientId?: string | null;
   model?: string;
@@ -71,7 +73,7 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
   }
 
   // Bygg ihop systemprompt med voice-block + winning examples
-  let fullSystem = opts.prebuilt ? opts.prebuilt.system : opts.systemPrompt;
+  let fullSystem = opts.prebuilt ? opts.prebuilt.system : (opts.systemPrompt ?? "");
   if (!opts.prebuilt) {
     if (fingerprint) {
       const { fingerprintToPromptBlock } = await import("./voice-fingerprint");
