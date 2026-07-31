@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generateCarousel } from "@/lib/studio/carousel";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
-import { contentCompassBlock } from "@/lib/content-compass/prompt";
+import type { CompassParams } from "@/lib/content-compass/prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
     const topic = String(body.topic || "").slice(0, 300);
     if (!topic) return NextResponse.json({ error: "Ämne saknas" }, { status: 400 });
     const points = Number(body.points) || 3;
-    const compass = body.compass && typeof body.compass === "object" ? contentCompassBlock(body.compass) : "";
+    // TEXT-1: skickas som parametrar — prompt-core renderar compass-blocket.
+    const compass = body.compass && typeof body.compass === "object" ? (body.compass as CompassParams) : undefined;
 
     const slides = await generateCarousel({
       clientId,
