@@ -244,6 +244,30 @@ describe("T-6b — sanningskravet: inga fabricerade berättelser/minnen/citat/si
     expect(SANNINGSKRAV).toContain("Hitta ALDRIG på ett specifikt minne");
   });
 
+  it("A2-skärpningen: ämnesformuleringen är inget mandat att fabricera", () => {
+    // Läckan i T-6-delbatchen: ämnet "En kund tvekade länge..." fick modellen att
+    // uppfinna minnet ("Jag minns en kund som tvekade länge..."). Regeln måste säga
+    // uttryckligen att uppdraget/ämnet aldrig upphäver sanningskravet.
+    expect(SANNINGSKRAV).toContain("ÄMNET ÄR INGET MANDAT ATT FABRICERA");
+    expect(SANNINGSKRAV).toContain("upphäver ALDRIG sanningskravet");
+    // …och anvisa vägen ut: skriv om ämnet som generell observation.
+    expect(SANNINGSKRAV).toContain("SKRIV OM ÄMNET som en generell observation");
+    expect(SANNINGSKRAV).toContain("Vi möter ofta kunder som tvekar länge");
+    // Minnesmarkörerna som avslöjar fabrikatet ska nämnas vid namn.
+    for (const markor of ["jag minns", "en av våra kunder", "häromdagen"]) {
+      expect(SANNINGSKRAV.toLowerCase(), markor).toContain(markor);
+    }
+  });
+
+  it("A2-skärpningen följer med i varje syfte (plattformsregel, inte flödesregel)", async () => {
+    for (const syfte of ["caption", "studio-text", "linkedin", "blogg", "veckoplan"] as const) {
+      const b = await byggTextPrompt({ ...BAS, syfte });
+      expect(b.system, syfte).toContain("ÄMNET ÄR INGET MANDAT ATT FABRICERA");
+    }
+    const anon = await byggTextPrompt({ clientId: null, syfte: "social", uppdrag: "U", datum: FAST_DATUM_JULI });
+    expect(anon.system).toContain("ÄMNET ÄR INGET MANDAT ATT FABRICERA");
+  });
+
   it("ligger sent (väger tyngst): efter klientens förbjudna ord, före formatkravet", async () => {
     const b = await byggTextPrompt({ ...BAS, syfte: "caption", jsonSchema: "{}" });
     const i = b.system.indexOf("=== SANNINGSKRAV");

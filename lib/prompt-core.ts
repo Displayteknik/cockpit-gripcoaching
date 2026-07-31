@@ -135,18 +135,30 @@ const CTA_GOLV = [
   "Innehåller varumärkesprofilen färdiga CTA-formuleringar (Erbjudande/CTA-sektion, kundens egna ord): FÖREDRA dem framför nyskrivna.",
 ].join("\n");
 
-// ── SANNINGSKRAV (T-6b) — KRITISK trovärdighetsregel, alla flöden ───────────
+// ── SANNINGSKRAV (T-6b, skärpt A2) — KRITISK trovärdighetsregel, alla flöden ─
 // Skarptestet fångade en caption som började "Jag minns en fastighetsägare som var
 // orolig..." — ett påhittat minne. Berättelser, kundcase, citat och siffror får
 // ENDAST bygga på verkligt material ur tenantens profil. Plattformsregel: gäller
 // varje tenant/bransch. Blocket ligger sent (sist väger tyngst) och gäller ÄVEN
 // pa-bild-texter. Den deterministiska siffergrinden i copy.ts är oberoende av detta
 // promptlager och rörs inte.
+//
+// A2-SKÄRPNINGEN (T-6-delbatchen): regeln läckte när ÄMNET SJÄLVT bad om en
+// kundberättelse. Ämnet "En kund tvekade länge, så blev resultatet" gav "Jag minns
+// en kund som tvekade länge..." för två av fyra profiler — modellen läste
+// ämnesformuleringen som ett mandat att uppfinna minnet den saknade. Därför säger
+// regeln nu uttryckligen att uppdraget/ämnet ALDRIG upphäver sanningskravet: ett
+// ämne som efterfrågar ett kundcase ska skrivas om till en generell observation när
+// grundat material saknas. Ämnet bestämmer VAD texten handlar om — aldrig att det
+// får hittas på.
 export const SANNINGSKRAV = [
   "=== SANNINGSKRAV (hård regel — trovärdighet, väger tyngst) ===",
   "Berättelser i jag-form, kundcase, kundminnen, kundcitat och specifika sifferpåståenden får ENDAST bygga på verkligt material ur klientens profil ovan (story-bank, kundröster/Customer Voice, verifierade siffror).",
   "Saknas passande material: skriv en GENERELL observation i stället. Tillåtet: 'Vi möter ofta fastighetsägare som oroar sig för...'. FÖRBJUDET: 'Jag minns en fastighetsägare som...' utan källa i profilen.",
   "Hitta ALDRIG på ett specifikt minne, ett kundnamn, ett citat eller en siffra. Hellre allmängiltigt och sant än specifikt och påhittat.",
+  "ÄMNET ÄR INGET MANDAT ATT FABRICERA: uppdraget, ämnesraden eller rubriken kan vara formulerad som en kundberättelse ('En kund tvekade länge...', 'Så räddade vi kundens...', 'Ett case där...'). Den formuleringen beskriver bara VAD texten ska handla om — den upphäver ALDRIG sanningskravet och ger ALDRIG tillåtelse att uppfinna kunden, minnet, citatet eller resultatet.",
+  "Ber ämnet om en kundberättelse och profilen saknar passande story-bank-material: SKRIV OM ÄMNET som en generell observation om mönstret, i samma anda. Tillåtet: 'Vi möter ofta kunder som tvekar länge...', 'Den tveksamheten hör vi varje vecka...', 'Många väntar för länge, och reaktionen efteråt är nästan alltid densamma.' FÖRBJUDET: 'Jag minns en kund som...', 'En av våra kunder berättade att...' när personen inte finns i profilen.",
+  "Formuleringar som signalerar ett specifikt minne — 'jag minns', 'en av våra kunder', 'häromdagen', 'förra veckan kom en kund', 'ett brudpar som' — får bara användas när personen eller händelsen faktiskt står i profilen ovan. Kan du inte peka på var i profilen den finns: skriv generellt i stället.",
 ].join("\n");
 
 // ── VARIANTREGELN (T-6c) — central regel för alla multivariant-flöden ────────
