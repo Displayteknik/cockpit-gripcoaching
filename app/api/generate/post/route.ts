@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
-import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { getWinningPatterns, patternsToPromptBlock } from "@/lib/insights";
-import { sanitizeGenerated } from "@/lib/content/writing-rules";
+import type { FunnelLevel } from "@/lib/content-compass/data";
 import {
   WEEK_ROLES,
   DISC_GUIDE,
@@ -85,11 +85,11 @@ export async function POST(req: NextRequest) {
       intent = "Anpassa till mål, ICP och funnel-läge.";
     }
 
-    // Hämta brand-profil
+    // Brand-profilen krävs (samma kontrakt som förut) — innehållet injiceras av prompt-core.
     const sb = supabaseService();
     const { data: profile } = await sb
       .from("hm_brand_profile")
-      .select("*")
+      .select("client_id")
       .eq("client_id", clientId)
       .maybeSingle();
 
@@ -97,40 +97,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Brand-profil saknas — fyll i den först" }, { status: 400 });
     }
 
-    // Hämta voice fingerprint + vinnar-mönster
-    const fp = await getVoiceFingerprint(clientId);
+    // Vinnar-mönster (insights, INTE winning examples — de ägs av prompt-core)
     const winning = await getWinningPatterns(clientId).catch(() => null);
 
     const platform = input.platform || "instagram";
     const formatLabel = FORMAT_LABELS[input.format];
 
-    // Bygg system-prompt
-    const system = buildSystemPrompt({
-      profile,
-      fp,
-      winning,
-      fourA,
-      disc,
-      funnel,
-      intent,
-      format: input.format,
-      formatLabel,
-      platform,
-    });
-
-    const userPrompt = `Ämne/vinkel: ${input.topic}
+    // TEXT-1 T-2: prompten byggs av prompt-core — KUND-blocket och rösten ägs av kärnan.
+    // Flödets riktiga 4A/DISC/funnel skickas som compass-parametrar (annars hade kärnans
+    // mjuka tofu-default kunnat motsäga vald funnel-nivå).
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "enskilt",
+      kanal: platform,
+      uppdrag: buildUppdrag({ winning, fourA, disc, funnel, intent, format: input.format, formatLabel, platform }),
+      underlag: `Ämne/vinkel: ${input.topic}
 ${input.angle ? `Specifik vinkel: ${input.angle}\n` : ""}
-Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
+Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`,
+      compass: { funnel: funnel.toLowerCase() as FunnelLevel, four_a: fourA, disc: [disc] },
+      jsonSchema: buildJsonSchema({ disc, funnel, format: input.format }),
+    });
 
     let raw = "";
     try {
       raw = await generate({
         model: "gemini-2.5-pro",
-        systemInstruction: system,
-        prompt: userPrompt,
+        systemInstruction: bygg.system,
+        prompt: bygg.user,
         temperature: 0.9,
         maxOutputTokens: 4500,
         jsonMode: true,
+        skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
       });
     } catch (e) {
       return NextResponse.json({ error: `AI-fel: ${(e as Error).message}` }, { status: 500 });
@@ -224,10 +221,13 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
     };
     const { scoreText } = await import("@/lib/voice-enforce");
     // Skyddsnät före scoring, så poängen speglar exakt den text användaren ser.
+    // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
     for (const v of variants) {
-      v.hook = sanitizeGenerated(v.hook, { hashtags: false });
-      v.body = sanitizeGenerated(v.body, { hashtags: false });
-      v.cta = sanitizeGenerated(v.cta, { hashtags: false });
+      [v.hook, v.body, v.cta] = await Promise.all([
+        saneraText(v.hook, clientId),
+        saneraText(v.body, clientId),
+        saneraText(v.cta, clientId),
+      ]);
       if (Array.isArray(v.hashtags)) v.hashtags = v.hashtags.slice(0, 5);
     }
 
@@ -255,7 +255,7 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
         disc,
         funnel,
         format: input.format,
-        voice_source_count: fp.source_asset_count,
+        voice_source_count: bygg.fingerprint?.source_asset_count ?? 0,
       },
     };
 
@@ -265,9 +265,10 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`;
   }
 }
 
-function buildSystemPrompt(args: {
-  profile: Record<string, unknown>;
-  fp: Awaited<ReturnType<typeof getVoiceFingerprint>>;
+// TEXT-1 T-2: uppdraget (flödets hårda regler). KUND-blocket och rösten ägs av prompt-core;
+// winningBlock (patternsToPromptBlock från lib/insights) är INSIGHTS, inte winning examples,
+// och hör därför till uppdraget.
+function buildUppdrag(args: {
   winning: Awaited<ReturnType<typeof getWinningPatterns>> | null;
   fourA: FourA;
   disc: Disc;
@@ -277,23 +278,9 @@ function buildSystemPrompt(args: {
   formatLabel: string;
   platform: string;
 }): string {
-  const p = args.profile;
-  const voiceBlock = fingerprintToPromptBlock(args.fp);
   const winningBlock = args.winning ? patternsToPromptBlock(args.winning) : "";
 
   return `Du är världsklass copywriter för svenska solo-företagare. Du skriver innehåll som STOPPAR scrollen och konverterar — utan att låta som en mall eller som AI.
-
-═══ KUND ═══
-Företag: ${p.company_name || "(saknas)"}
-Plats: ${p.location || "(saknas)"}
-Grundare: ${p.founder_name || "(saknas)"}
-Brand story: ${p.brand_story || "(saknas)"}
-USP: ${p.usp || "(saknas)"}
-Differentiatorer: ${p.differentiators || "(saknas)"}
-ICP primär: ${p.icp_primary || "(saknas)"}
-Smärtpunkter: ${p.pain_points || "(saknas)"}
-Tjänster: ${p.services || "(saknas)"}
-Bokningslänk: ${p.booking_url || "(saknas)"}
 
 ═══ VECKO-ROLL ═══
 4A: ${args.fourA.toUpperCase()} — ${FOURA_GUIDE[args.fourA]}
@@ -306,8 +293,6 @@ ${args.formatLabel} (${args.platform})
 
 ═══ HOOK-REGLER (Brendan Kane) ═══
 ${KANE_HOOK_RULES}
-
-${voiceBlock}
 
 ${winningBlock}
 
@@ -327,8 +312,11 @@ ${winningBlock}
 - "hashtags"-arrayen är ENBART hashtags utan #-tecken (vi lägger till # själva).
 - Allt ska vara copy-paste-färdigt direkt utan att användaren behöver redigera bort etiketter.
 
-═══ OUTPUT-SCHEMA (JSON, exakt struktur) ═══
-{
+VIKTIGT: De tre varianterna ska skilja sig STORT från varandra — olika hook-format, olika känsla, olika vinkel på samma ämne. Det är A/B-testning, inte tre versioner av samma idé.`;
+}
+
+function buildJsonSchema(args: { disc: Disc; funnel: Funnel; format: Format }): string {
+  return `{
   "variants": [
     {
       "hook": "Hook variant 1 — Gold (säkrast, mest beprövad)",
@@ -341,7 +329,5 @@ ${winningBlock}
     { ... Silver — djärvare, högre risk högre reward ... },
     { ... Bronze — mest experimentell, kontrast till de andra två ... }
   ]
-}
-
-VIKTIGT: De tre varianterna ska skilja sig STORT från varandra — olika hook-format, olika känsla, olika vinkel på samma ämne. Det är A/B-testning, inte tre versioner av samma idé.`;
+}`;
 }
