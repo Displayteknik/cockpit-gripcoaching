@@ -194,6 +194,24 @@ describe("compass-defaults", () => {
   });
 });
 
+describe("klientens förbjudna ord — hårt block sist (T-5)", () => {
+  it("förbjudna ord ligger som eget block EFTER skrivreglerna, FÖRE formatkravet", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption", jsonSchema: "{}" });
+    const forbjudna = b.system.indexOf("=== FÖRBJUDNA ORD FÖR DEN HÄR KLIENTEN");
+    expect(forbjudna).toBeGreaterThan(b.system.indexOf("=== GLOBALA SKRIVREGLER"));
+    expect(forbjudna).toBeLessThan(b.system.indexOf("=== SVARSFORMAT"));
+    expect(b.system).toContain("Använd ALDRIG: kraftfull");
+    expect(b.meta.lager.forbjudnaOrd).toBe(true);
+  });
+
+  it("hittaForbjudnaOrd träffar på ordgräns, inte delsträng", async () => {
+    const { hittaForbjudnaOrd } = await import("@/lib/content/writing-rules");
+    expect(hittaForbjudnaOrd("En riktigt billig skärm.", ["billig", "deal"])).toEqual(["billig"]);
+    expect(hittaForbjudnaOrd("En idealisk lösning.", ["deal"])).toEqual([]);
+    expect(hittaForbjudnaOrd("", ["deal"])).toEqual([]);
+  });
+});
+
 describe("skrivregler-flaggan styr båda lagren", () => {
   it("flagga av: inget regelblock i prompten, men floskelgolvet består i saneringen", async () => {
     skrivreglerPaMock.mockResolvedValue(false);

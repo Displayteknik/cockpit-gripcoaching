@@ -4,6 +4,7 @@
 
 import { supabaseService } from "./supabase-admin";
 import { generate } from "./gemini";
+import { hittaForbjudnaOrd } from "./content/writing-rules";
 
 export interface VoiceFingerprint {
   client_id: string;
@@ -200,8 +201,11 @@ function extractWordsList(text: string): string[] {
     .filter((s) => s.length > 1 && s.length < 50);
 }
 
-// Bygger en prompt-sektion som matas in i generator-anrop
-export function fingerprintToPromptBlock(fp: VoiceFingerprint): string {
+// Bygger en prompt-sektion som matas in i generator-anrop.
+// T-5 (3): medForbjudna:false utelämnar ANVÄND ALDRIG-raden — prompt-core lägger då
+// förbuden som ett eget HÅRT block sist i systemet (nära skrivreglerna) där det väger
+// tyngst. Omigrerade anropare (iterate utan prebuilt) behåller raden här (default true).
+export function fingerprintToPromptBlock(fp: VoiceFingerprint, opts?: { medForbjudna?: boolean }): string {
   const lines: string[] = [];
   lines.push("=== KUNDENS RÖST (måste imiteras) ===");
 
@@ -220,14 +224,21 @@ export function fingerprintToPromptBlock(fp: VoiceFingerprint): string {
   if (fp.joy_words.length > 0) {
     lines.push(`GLÄDJEORD (när du beskriver lösning): ${fp.joy_words.join(", ")}`);
   }
-  if (fp.forbidden_words.length > 0) {
+  if (fp.forbidden_words.length > 0 && opts?.medForbjudna !== false) {
     lines.push(`ANVÄND ALDRIG: ${fp.forbidden_words.join(", ")}`);
   }
 
-  if (fp.raw_samples.length > 0) {
+  // T-5 (3): exempel som innehåller klientens förbjudna ord tas bort ur urvalet —
+  // modellen imiterar exemplen ordagrant, och ett förbjudet ord I ett exempel väger
+  // tyngre än ett förbud i regeltext. Finns inga rena exempel visas inga (hellre
+  // röst via ton/rytm/uttryck än exempel som lär modellen fel ord).
+  const renaExempel = fp.forbidden_words.length
+    ? fp.raw_samples.filter((s) => hittaForbjudnaOrd(s, fp.forbidden_words).length === 0)
+    : fp.raw_samples;
+  if (renaExempel.length > 0) {
     lines.push("");
     lines.push("=== VERKLIGA INLÄGG SOM PERSONEN SJÄLV SKRIVIT (skriv som dessa) ===");
-    fp.raw_samples.slice(0, 4).forEach((s, i) => {
+    renaExempel.slice(0, 4).forEach((s, i) => {
       lines.push(`Exempel ${i + 1}:\n${s}`);
       lines.push("");
     });

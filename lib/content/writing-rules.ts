@@ -158,6 +158,26 @@ export async function skrivreglerPa(clientId: string | null | undefined): Promis
   }
 }
 
+/**
+ * T-5 (3): hitta klientens förbjudna ord/uttryck i en text (ordgräns, ej delsträng —
+ * "AI" ska inte träffa "maj"). KONTROLL, inte fix: godtyckliga klientord kan inte
+ * ersättas mekaniskt utan att grammatiken bryts, så träffar loggas i stället för
+ * att gissas bort. Används också för att filtrera röst-exempel i prompten.
+ */
+export function hittaForbjudnaOrd(text: string, ord: string[]): string[] {
+  const t = String(text || "");
+  if (!t) return [];
+  const traffar: string[] = [];
+  for (const o of ord || []) {
+    const w = String(o || "").trim();
+    if (w.length < 2) continue;
+    const esc = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(^|[^\\p{L}\\p{N}])${esc}(?=$|[^\\p{L}\\p{N}])`, "iu");
+    if (re.test(t)) traffar.push(w);
+  }
+  return traffar;
+}
+
 /** Regel 2 (kontroll, inte fix): öppnar texten med en generalisering? */
 export function harSvagHook(text: string): boolean {
   const forsta = String(text || "").split("\n").find((r) => r.trim())?.trim() || "";

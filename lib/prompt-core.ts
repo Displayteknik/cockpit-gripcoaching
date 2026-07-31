@@ -12,6 +12,7 @@
 //      eller mjuk default per syfte — aldrig bofu som default)
 //   7. Grafisk kontext (kit-donts) för bildnära syften
 //   8. Globala skrivregler (styrs av clients.writing_rules_enabled)
+//   8b. Klientens förbjudna ord (hårt block, T-5 — flyttat ur röstblocket)
 //   9. JSON-formatkrav (styr ENDAST formen)
 //
 // Dubblettregel: varje lager finns EXAKT en gång. Därför hämtas brand-profilen med
@@ -30,6 +31,7 @@ import {
 import type { FunnelLevel } from "@/lib/content-compass/data";
 import {
   WRITING_RULES_BLOCK,
+  hittaForbjudnaOrd,
   sanitizeGenerated,
   skrivreglerPa,
   taBortFloskler,
@@ -233,10 +235,12 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     }
 
     // 4. Röst-fingerprint. Fail-open som iterate: hellre text utan röst än inget svar.
+    // T-5 (3): medForbjudna:false — förbuden flyttas till ett eget HÅRT block sist
+    // (lager 8b nedan) där de väger tyngst, i stället för att drunkna i röstblocket.
     try {
       const { getVoiceFingerprint, fingerprintToPromptBlock } = await import("@/lib/voice-fingerprint");
       fingerprint = await getVoiceFingerprint(p.clientId);
-      delar.push(fingerprintToPromptBlock(fingerprint));
+      delar.push(fingerprintToPromptBlock(fingerprint, { medForbjudna: false }));
       lager.rost = true;
     } catch (e) {
       console.error("[prompt-core] fingerprint kunde inte hämtas:", e);
@@ -303,6 +307,18 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     lager.skrivregler = true;
   }
 
+  // 8b. Klientens förbjudna ord — HÅRT block sist bland innehållsreglerna (T-5).
+  // Flyttat ur röstblocket: sist = väger tyngst, och förbudet ska aldrig kunna
+  // "läsas förbi" mitt i rösten. Ingen mekanisk ersättning finns för godtyckliga
+  // klientord — prompten är förstahandsförsvaret, saneraText loggar träffar.
+  if (fingerprint?.forbidden_words?.length) {
+    delar.push(
+      "=== FÖRBJUDNA ORD FÖR DEN HÄR KLIENTEN (hård regel, väger tyngst) ===\n" +
+        `Använd ALDRIG: ${fingerprint.forbidden_words.join(", ")}. Formulera om med klientens egna ord i stället.`,
+    );
+    lager.forbjudnaOrd = true;
+  }
+
   // 9. Formatkrav — ALLTID sist. Styr formen, aldrig innehållsreglerna ovanför.
   if (p.jsonSchema) {
     delar.push(`=== SVARSFORMAT (styr ENDAST formen, aldrig innehållsreglerna ovan) ===\n${p.jsonSchema.trim()}`);
@@ -328,6 +344,37 @@ export async function saneraText(
   kanal?: HashtagKanal,
 ): Promise<string> {
   if (!text) return text;
-  if (await skrivreglerPa(clientId)) return sanitizeGenerated(text, { kanal });
-  return taBortFloskler(text);
+  const ut = (await skrivreglerPa(clientId)) ? sanitizeGenerated(text, { kanal }) : taBortFloskler(text);
+  // T-5 (3): DETEKTERING av klientens förbjudna ord — logg, INGEN ersättning.
+  // Godtyckliga klientord kan inte bytas mekaniskt utan att grammatiken bryts
+  // (designfråga — se TEXT1-rapporten). Fail-open: får aldrig stoppa en leverans.
+  if (clientId) {
+    try {
+      const traffar = hittaForbjudnaOrd(ut, await klientForbjudnaOrd(clientId));
+      if (traffar.length) {
+        console.warn(`[saneraText] klientens förbjudna ord kvar i färdig text (${clientId}): ${traffar.join(", ")}`);
+      }
+    } catch {}
+  }
+  return ut;
+}
+
+// Cache för klientens förbjudna ord (client_voice_profile.forbidden_words) — en
+// generering sanerar många fält; en DB-läsning per klient per 5 min räcker.
+const forbjudnaCache = new Map<string, { ord: string[]; ts: number }>();
+async function klientForbjudnaOrd(clientId: string): Promise<string[]> {
+  const c = forbjudnaCache.get(clientId);
+  if (c && Date.now() - c.ts < 5 * 60 * 1000) return c.ord;
+  let ord: string[] = [];
+  try {
+    const { supabaseService } = await import("@/lib/supabase-admin");
+    const { data } = await supabaseService()
+      .from("client_voice_profile")
+      .select("forbidden_words")
+      .eq("client_id", clientId)
+      .maybeSingle();
+    ord = ((data?.forbidden_words as string[]) || []).filter(Boolean);
+  } catch {}
+  forbjudnaCache.set(clientId, { ord, ts: Date.now() });
+  return ord;
 }
