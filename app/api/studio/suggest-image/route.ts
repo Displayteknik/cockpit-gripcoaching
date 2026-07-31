@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
-import { searchStockPhotos, generateImagen, visualScene, motivPassar, NO_DASH_IN_IMAGE_EN, DEPICTED_CONTENT_EN, DEPICTED_RELEVANCE_EN } from "@/lib/images";
+import { searchStockPhotos, generateImagen, visualScene, motivPassar, NO_DASH_IN_IMAGE_EN, DEPICTED_CONTENT_EN, DEPICTED_RELEVANCE_EN, PERSON_ATTENTION_EN } from "@/lib/images";
 import { genereraMedExaktText, type TextAspekt } from "@/lib/studio/text-in-image";
+import { stavningsgrind } from "@/lib/bildtext";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { seasonPromptLineEn } from "@/lib/content/sasong";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -21,10 +22,16 @@ const REALISM_BAS =
 // BILD-7a: avbildat exempelinnehåll ska ha relevans OCH budskap (DEPICTED_CONTENT_EN
 // bär även BILD-6a:s tankstrecksregel). Den gamla raden krävde bara "enkelt verkligt
 // innehåll" — skyltarna blev relevanta men tomma.
+// (DEPICTED_CONTENT_EN bär även BILD-8b:s blickriktningsregel.)
 const REALISM = `${REALISM_BAS} ${DEPICTED_CONTENT_EN}`;
 // Text-i-bild-vägen (B3) sätter den exakta texten själv — då gäller bara relevans-
-// halvan, annars konkurrerar två textkällor om samma yta.
-const REALISM_EXAKT_TEXT = `${REALISM_BAS} ${DEPICTED_RELEVANCE_EN} ${NO_DASH_IN_IMAGE_EN}`;
+// halvan, annars konkurrerar två textkällor om samma yta. BILD-8b gäller ändå: en
+// person i bilden ska vara vänd mot skylten som texten hamnar på.
+const REALISM_EXAKT_TEXT = `${REALISM_BAS} ${DEPICTED_RELEVANCE_EN} ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN}`;
+
+// BILD-8a: hela requestens tidsbudget. Grindens omtag får bara starta om det finns tid
+// kvar innan routens maxDuration (60 s) — annars släpps bilden igenom som den är.
+const MAX_MS = 46000;
 
 // POST /api/studio/suggest-image — { mode: "stock" | "ai", topic, aspect }
 // stock → Pexels-foton (publika URL:er, direkt användbara). ai → Imagen 4.0 → studio-images.
@@ -32,6 +39,7 @@ const REALISM_EXAKT_TEXT = `${REALISM_BAS} ${DEPICTED_RELEVANCE_EN} ${NO_DASH_IN
 export async function POST(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
+  const t0 = Date.now();
 
   try {
     const client = await getActiveClient();
@@ -54,8 +62,8 @@ export async function POST(req: NextRequest) {
       if (exactText) {
         const aspekt: TextAspekt = ar === "9:16" ? "9:16" : ar === "3:4" ? "3:4" : "1:1";
         const scen = await visualScene(topic, niche, { textYta: true });
-        const res = await genereraMedExaktText({
-          scen: `${scen} Verkligt foto, naturligt ljus.${REALISM_EXAKT_TEXT}${SEASON}`,
+        const korExakt = (skarpning: string) => genereraMedExaktText({
+          scen: `${scen} Verkligt foto, naturligt ljus.${REALISM_EXAKT_TEXT}${SEASON}${skarpning}`,
           text: exactText,
           aspekt,
           stil: body.textStil === "overlay" ? "overlay" : "lapp",
@@ -63,6 +71,21 @@ export async function POST(req: NextRequest) {
           // textForsok 0 = direkt programmatisk (garanterat rättstavat) — QA/kraftläge.
           maxForsok: typeof body.textForsok === "number" ? body.textForsok : undefined,
         });
+        const res = await korExakt("");
+        // BILD-8a: B3 verifierar sin EGEN text bokstav för bokstav — men modellen kan ha
+        // ritat annan text i bilden (bakgrundsskylt). Grinden dömer bara de orden, och
+        // bara om det finns tid kvar. Tom skylt är förbjuden här: texten ÄR poängen.
+        if (res.image) {
+          const grind = await stavningsgrind({
+            bild: res.image,
+            ignorera: exactText,
+            maxOmtag: 1,
+            tillatBlank: false,
+            tidsbudgetMs: MAX_MS - (Date.now() - t0),
+            generera: async ({ skarpning }) => korExakt(skarpning),
+          });
+          res.image = grind.image;
+        }
         const em = res.image?.match(/^data:image\/(\w+);base64,(.+)$/);
         if (res.error || !em) {
           return NextResponse.json({ error: res.error || "Kunde inte skapa bilden med texten — försök igen." }, { status: 500 });
@@ -85,15 +108,31 @@ export async function POST(req: NextRequest) {
       // Två steg: gör om ämnet/bildtexten (ofta prosa) till en visuell scen först — annars
       // svarar bildmodellen NO_IMAGE på ett meddelande/råd.
       const scene = await visualScene(topic, niche);
-      let gen = await generateImagen(`${scene} Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`, ar);
+      const bas = `${scene} Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`;
+      const branschKrav = `${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`;
       // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
       // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
       // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
+      let promptIBruk = bas;
+      let gen = await generateImagen(bas, ar);
       if (gen.image && !(await motivPassar(gen.image, niche))) {
-        gen = await generateImagen(`${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`, ar);
+        promptIBruk = branschKrav;
+        gen = await generateImagen(branschKrav, ar);
         if (gen.image && !(await motivPassar(gen.image, niche))) {
           return NextResponse.json({ error: "Motivet ville inte träffa er verksamhet den här gången. Prova “Sök foto”, eller skriv i ämnesraden vad bilden ska föreställa." }, { status: 500 });
         }
+      }
+      // BILD-8a: modellen ritar skyltar även utan att bli ombedd — och stavar fel när den
+      // gör det (skarpt fel: "VÅRA NYHIETES"). Grinden läser av teckenvis, begär omtag med
+      // skärpt stavningsinstruktion, och ber till sist om TOM skylt. Fail-open i alla led.
+      if (gen.image) {
+        const grind = await stavningsgrind({
+          bild: gen.image,
+          maxOmtag: 2,
+          tidsbudgetMs: MAX_MS - (Date.now() - t0),
+          generera: ({ skarpning }) => generateImagen(`${promptIBruk}${skarpning}`, ar),
+        });
+        gen = { ...gen, image: grind.image };
       }
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
       if (gen.error || !m) {

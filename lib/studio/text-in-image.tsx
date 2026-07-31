@@ -14,8 +14,11 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { generateImagen } from "@/lib/images";
+// BILD-8a: vision-avläsningarna och normaliseringen bor numera i lib/bildtext.ts —
+// samma primitiver används av stavningsgrinden. En källa, inga dubbletter.
+import { lasTextIBild, lasTeckenForTecken, normaliseraText, normaliseraTecken } from "@/lib/bildtext";
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
+export { lasTextIBild, lasTeckenForTecken, normaliseraText, normaliseraTecken };
 
 export type TextAspekt = "1:1" | "3:4" | "9:16";
 export type TextStil = "lapp" | "overlay";
@@ -34,74 +37,6 @@ const DIMS: Record<TextAspekt, { w: number; h: number }> = {
   "3:4": { w: 1080, h: 1440 },
   "9:16": { w: 1080, h: 1920 },
 };
-
-// Normalisering för jämförelse: gemener, radbrytningar/whitespace → ett mellanslag,
-// citattecken och skiljetecken i kanterna bort. å/ä/ö är SIGNIFIKANTA — det är poängen.
-export function normaliseraText(s: string): string {
-  return s
-    .normalize("NFC") // vision kan svara dekomponerat (O + kombinerande prickar) — jämför komponerat
-    .toLowerCase()
-    .replace(/["'”„“‘’«»]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^[.,!?:;\-–—\s]+|[.,!?:;\-–—\s]+$/g, "");
-}
-
-async function bildTillInline(image: string): Promise<{ mimeType: string; data: string } | null> {
-  const m = image.match(/^data:(image\/\w+);base64,(.+)$/);
-  if (m) return { mimeType: m[1], data: m[2] };
-  try {
-    const r = await fetch(image);
-    if (!r.ok) return null;
-    const buf = Buffer.from(await r.arrayBuffer());
-    return { mimeType: r.headers.get("content-type") || "image/jpeg", data: buf.toString("base64") };
-  } catch {
-    return null;
-  }
-}
-
-async function visionFraga(inline: { mimeType: string; data: string }, fraga: string): Promise<string> {
-  if (!GEMINI_KEY) return "";
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ inlineData: inline }, { text: fraga }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 300, thinkingConfig: { thinkingBudget: 0 } },
-      }),
-    });
-    if (!r.ok) return "";
-    const data = await r.json();
-    return (data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "").trim();
-  } catch {
-    return "";
-  }
-}
-
-// Läs av exakt synlig text i en bild (URL eller data-URL) via Gemini-vision, temp 0.
-export async function lasTextIBild(image: string): Promise<string> {
-  const inline = await bildTillInline(image);
-  if (!inline) return "";
-  const t = await visionFraga(inline, "Läs av EXAKT den text som syns i bilden (skylt, lapp, etikett). Återge varje bokstav precis som den ser ut, även felstavningar. Svara ENDAST med texten, inget annat. Om ingen text syns: svara INGEN.");
-  return t === "INGEN" ? "" : t;
-}
-
-// Bokstav-för-bokstav-avläsning. Holistisk läsning AUTOKORRIGERAR ("Öıpet" läses som
-// "Öppet") — teckenvis transkription bryter språkpriorn och fångar felstavningen.
-// Verifierat skarpt: bilden med "Öıpet i sommar" passerade holistisk läsning men
-// fälldes av teckenvis ("Ö i p e t / i s o m m a r").
-export async function lasTeckenForTecken(image: string): Promise<string> {
-  const inline = await bildTillInline(image);
-  if (!inline) return "";
-  return visionFraga(inline, "Transkribera texten i bilden TECKEN FÖR TECKEN, separera varje tecken med mellanslag och varje radbrytning med / . Autokorrigera INTE — återge exakt de glyfer som syns även om ordet blir felstavat. Svara ENDAST med teckensekvensen, eller INGEN om ingen text syns.");
-}
-
-// Teckenvis jämförelse: allt whitespace ignoreras (teckenseparationen gör ordgränser
-// omöjliga att skilja från teckenmellanrum), skiljetecken kvar.
-export function normaliseraTecken(s: string): string {
-  return s.normalize("NFC").toLowerCase().replace(/\//g, "").replace(/\s+/g, "").replace(/["'”„“‘’«»]/g, "");
-}
 
 // Ladda self-hostad TTF (samma filer som Studio-editorn använder). process.cwd() =
 // projektroten — officiellt Next-mönster, filerna spåras in i serverless-bundlen.

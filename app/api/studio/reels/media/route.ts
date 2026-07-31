@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
-import { generateFlux, searchStockPhotos, NO_DASH_IN_IMAGE_EN, DEPICTED_RELEVANCE_EN } from "@/lib/images";
+import { generateFlux, searchStockPhotos, NO_DASH_IN_IMAGE_EN, DEPICTED_RELEVANCE_EN, PERSON_ATTENTION_EN } from "@/lib/images";
 import { genereraMedExaktText } from "@/lib/studio/text-in-image";
+import { stavningsgrind } from "@/lib/bildtext";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { adoptReelMedia, listReelMedia } from "@/lib/studio/reel-media";
 import { supabaseService } from "@/lib/supabase-admin";

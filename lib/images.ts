@@ -19,6 +19,7 @@
 import { supabaseServer } from "./supabase-admin";
 import { assertSafePublicUrl } from "./safe-url";
 import { seasonPromptLineEn } from "./content/sasong";
+import { stavningsgrind, type TextOrsak } from "./bildtext";
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const FAL_KEY = process.env.FAL_KEY || "";
@@ -57,9 +58,20 @@ export const DEPICTED_MESSAGE_EN =
 export const DEPICTED_MESSAGE_SV =
   "AVBILDAD SKYLTNING SKA BÄRA ETT BUDSKAP: syns en skärm, skylt, tavla, skyltfönster eller affisch ska den ha BÅDE ett tydligt motiv OCH en kort trovärdig rad på svenska — ett erbjudande, ett pris, ett event eller en tid — som är rimlig för verksamheten. Principen: menyskärmen visar rätten plus \"DAGENS LUNCH 129 KR\"; skyltfönstret visar det butiken faktiskt säljer plus en kort kampanjrad. Håll det till två till fem korta, vanliga svenska ord, rättstavade: använd å, ä och ö BARA i ord som verkligen har dem (skriv IDAG, inte IDÅG; VÄLKOMMEN, inte VÄKLLOMMEN) och dubblera aldrig bokstäver. Skriv aldrig en uppmaning som konkurrerar med inläggets egen — inga \"RING NU\", inga telefonnummer, inga webbadresser.";
 
+// ── BILD-8b: blickriktning och uppmärksamhet ────────────────────────────────
+// Skarpt fel (Håkans skarptest 2026-07-31): butiksbild där kvinnan framför skärmen
+// tittade BORT från skärmen — hela poängen med bilden föll. En person i samma bild som
+// det som säljs ska vara vänd mot det och engagerad i det. Plattformsregel: samma krav
+// för blomsteraffär, bilhandlare och coach. Undantag bara när inläggets eget budskap
+// kräver det (t.ex. "vänd ryggen åt gammal vana").
+export const PERSON_ATTENTION_EN =
+  "PERSON AND SUBJECT MUST CONNECT: if a person appears together with the product, screen, sign or offer, they must be oriented towards it and visibly engaged — looking at the screen, reading the sign, holding or using the product. Never show the person looking away from or turned away from what the post is about. Their gaze, head and upper body should read as attention directed at it, and both the person and the thing must be clearly visible in the frame. Depart from this only if the post's own message explicitly requires it.";
+export const PERSON_ATTENTION_SV =
+  "PERSON OCH MOTIV SKA HÖRA IHOP: syns en person tillsammans med produkten, skärmen, skylten eller erbjudandet ska personen vara VÄND MOT det och synbart engagerad — tittar på skärmen, läser skylten, håller i eller använder produkten. Visa aldrig en person som tittar bort från eller står med ryggen mot det inlägget handlar om. Blick, huvud och överkropp ska läsas som uppmärksamhet riktad dit, och både personen och saken ska synas tydligt i bilden. Avvik bara om inläggets eget budskap uttryckligen kräver det.";
+
 /** Hela BILD-7a-regeln för flöden där avbildad skyltning får bära text. */
-export const DEPICTED_CONTENT_EN = `${DEPICTED_RELEVANCE_EN} ${DEPICTED_MESSAGE_EN} ${NO_DASH_IN_IMAGE_EN}`;
-export const DEPICTED_CONTENT_SV = `${DEPICTED_RELEVANCE_SV} ${DEPICTED_MESSAGE_SV} ${NO_DASH_IN_IMAGE_SV}`;
+export const DEPICTED_CONTENT_EN = `${DEPICTED_RELEVANCE_EN} ${DEPICTED_MESSAGE_EN} ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN}`;
+export const DEPICTED_CONTENT_SV = `${DEPICTED_RELEVANCE_SV} ${DEPICTED_MESSAGE_SV} ${PERSON_ATTENTION_SV} ${NO_DASH_IN_IMAGE_SV}`;
 
 export const IMAGE_STYLES = [
   { id: "cinematic", label: "Cinematic mörk", desc: "Filmisk, dramatisk belysning", prompt: "Cinematic commercial photography. Dramatic directional lighting with deep shadows. Film-grade color grading. Dark navy and warm accent tones. Shot on full-frame camera with 35mm lens." },
@@ -264,6 +276,7 @@ CRITICAL RULES (NEVER VIOLATE):
 5. NEVER let the generic style baseline override the industry rules.
 6. ${NO_DASH_IN_IMAGE_EN}
 7. ${DEPICTED_RELEVANCE_EN}
+8. ${PERSON_ATTENTION_EN}
 ${feedbackSection}
 
 Write ONLY the prompt, 3-4 sentences, hyper-specific about: subject, environment, lighting, mood, composition.` }] }],
@@ -338,7 +351,10 @@ export async function visualScene(topic: string, niche: string, opts?: { textYta
       `Använd ALDRIG metaforer eller motiv från andra branscher (kläder, kaffe, schack och liknande). ` +
       `Beskriv en VERKLIG vardagsmiljö, gärna med människor eller kunder när det passar — aldrig en steril arkitekturbild. ` +
       `${DEPICTED_RELEVANCE_SV} ${opts?.textYta ? "" : DEPICTED_MESSAGE_SV + " "}` +
-      `Nämn i scenbeskrivningen vad en eventuell skärm/skylt visar. `;
+      // BILD-8b: syns en person tillsammans med det som säljs ska scenen beskriva att
+      // hon är vänd mot det (skarpt fel: kvinnan framför skärmen tittade bort).
+      `${PERSON_ATTENTION_SV} ` +
+      `Nämn i scenbeskrivningen vad en eventuell skärm/skylt visar och, om en person syns, att hon är vänd mot den. `;
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -491,6 +507,9 @@ export async function editImagen(
     `Redigera bilden enligt instruktionen. Behåll allt annat oförändrat — samma komposition, ` +
     `stil, ljus, färgton och bildformat. Ändra endast det som efterfrågas. Inga texter, siffror eller bokstäver i bilden. ` +
     `${NO_DASH_IN_IMAGE_SV}\n` +
+    // BILD-8b: gäller även redigering — finns personer i bilden ska de vara vända mot
+    // det som säljs. Blickriktningen får aldrig försämras av en redigering.
+    `${PERSON_ATTENTION_SV}\n` +
     `Instruktion: ${instruction}`;
 
   const parts = [
@@ -567,7 +586,19 @@ export async function generateImageForPost(opts: {
   brandContext?: string;
   /** BILD-7b: motiv från de senaste genereringarna → "välj ett annat den här gången". */
   nyligenMotiv?: string[];
-}): Promise<{ success?: boolean; image?: string; error?: string; engine?: string; prompt?: string }> {
+  /** BILD-8a: stäng av stavningsgrinden (t.ex. batch-körningar utan tidsutrymme). */
+  stavningsgrind?: boolean;
+  /** BILD-8a: tak för hur länge grindens omtag får hålla på. */
+  stavningsbudgetMs?: number;
+}): Promise<{
+  success?: boolean;
+  image?: string;
+  error?: string;
+  engine?: string;
+  prompt?: string;
+  /** BILD-8a: vad stavningsgrinden gjorde (saknas när grinden inte kördes). */
+  textkontroll?: { orsak: TextOrsak; avlast: string; fel: string[]; omtag: number; blank: boolean };
+}> {
   const niche = opts.niche || "business";
   // Om ingen styleId angiven — välj smart baserat på bransch (INTE alltid "cinematic mörk")
   const resolvedStyleId = opts.styleId || defaultStyleForNiche(niche);
@@ -580,8 +611,43 @@ CRITICAL: Absolutely NO text, NO words, NO letters, NO numbers in the image.
 Photorealistic. Natural composition. 4K resolution feel.
 ${mode === "overlay" ? "Muted tones suitable for white text overlay — but never depressing." : "Beautiful composition, sharp focus, on-brand emotional tone."}`;
 
-  const result = FAL_KEY ? await generateFlux(fullPrompt, opts.aspect || "square") : await generateImagen(fullPrompt, opts.aspect === "portrait" ? "9:16" : opts.aspect === "landscape" ? "16:9" : "1:1");
-  return { ...result, engine: FAL_KEY ? "FLUX" : "Imagen", prompt: fullPrompt };
+  const rita = (tillagg: string) =>
+    FAL_KEY
+      ? generateFlux(`${fullPrompt}${tillagg}`, opts.aspect || "square")
+      : generateImagen(`${fullPrompt}${tillagg}`, opts.aspect === "portrait" ? "9:16" : opts.aspect === "landscape" ? "16:9" : "1:1");
+
+  const result = await rita("");
+  const engine = FAL_KEY ? "FLUX" : "Imagen";
+
+  // BILD-8a: bildmodellen ritar skyltar även när prompten förbjuder text — och stavar
+  // fel när den gör det. Grinden läser av, begär omtag, och ber till sist om TOM skylt.
+  // Fail-open: allt som går fel tekniskt lämnar bilden orörd.
+  if (result.image && opts.stavningsgrind !== false) {
+    try {
+      const grind = await stavningsgrind({
+        bild: result.image,
+        maxOmtag: 2,
+        tidsbudgetMs: opts.stavningsbudgetMs,
+        generera: ({ skarpning }) => rita(skarpning),
+      });
+      return {
+        ...result,
+        image: grind.image,
+        engine,
+        prompt: fullPrompt,
+        textkontroll: {
+          orsak: grind.utfall.orsak,
+          avlast: grind.utfall.text,
+          fel: grind.utfall.fel,
+          omtag: grind.omtag,
+          blank: grind.blank,
+        },
+      };
+    } catch (e) {
+      console.error("[images] stavningsgrind failade — bilden släpps igenom:", e);
+    }
+  }
+  return { ...result, engine, prompt: fullPrompt };
 }
 
 export async function ensurePublicImageUrl(imageData: string): Promise<{ url?: string; error?: string }> {
