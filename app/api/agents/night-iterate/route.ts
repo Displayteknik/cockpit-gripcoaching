@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
 import { iterateGenerate } from "@/lib/iterate";
+import { byggTextPrompt } from "@/lib/prompt-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -89,9 +90,18 @@ export async function GET(req: NextRequest) {
 
     for (const task of TASKS) {
       try {
+        // TEXT-1 T-3: prompt-core bygger hela lagerkakan (brand-profil saknades förut —
+        // nattflödet körde enbart på fingerprint + winning). Uppdrag = taskens systemprompt.
+        const bygg = await byggTextPrompt({
+          clientId,
+          syfte: "specialist",
+          uppdrag: task.systemPrompt,
+          underlag: task.userPrompt,
+          kategori: task.category,
+        });
         const result = await iterateGenerate({
-          systemPrompt: task.systemPrompt,
-          userPrompt: task.userPrompt,
+          prebuilt: { system: bygg.system, fingerprint: bygg.fingerprint, winning: bygg.winning },
+          userPrompt: bygg.user,
           clientId,
           variants: task.variants,
           targetLength: task.targetLength,
