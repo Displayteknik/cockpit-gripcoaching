@@ -76,6 +76,27 @@ export function taBortTankstreck(text: string): string {
     .join("\n");
 }
 
+/**
+ * Regel 1 för HTML (blogg-brödtext): tankstrecks-saneringen körs ENDAST på
+ * textnoderna. Taggar och attribut lämnas orörda — href="x-y", hex-färger i
+ * style-attribut och list-markup får aldrig gå genom textsaneringen. Hashtag-
+ * städet hör inte hit alls ("#fff" i markup är ingen hashtag) — därför finns
+ * det ingen hashtag-väg i den här funktionen.
+ */
+export function taBortTankstreckHtml(html: string): string {
+  return String(html || "")
+    .split(/(<[^>]+>)/)
+    .map((del, i) => {
+      if (i % 2 === 1) return del; // udda index = taggarna (capture-gruppen i split)
+      if (!del) return del;
+      // Direkt efter en inline-tagg ("</strong> — förklaring") är ett inledande
+      // tankstreck ett inskott, aldrig en listmarkör (HTML-listor är <li>): → komma.
+      const text = i > 0 ? del.replace(/^[ \t]*[–—][ \t]+/, ", ") : del;
+      return taBortTankstreck(text);
+    })
+    .join("");
+}
+
 /** AI-floskler som aldrig får nå kundtext (befintlig grind, nu global). */
 export function taBortFloskler(text: string): string {
   return String(text || "")

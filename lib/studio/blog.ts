@@ -5,6 +5,7 @@
 
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { skrivreglerPa, taBortTankstreckHtml } from "@/lib/content/writing-rules";
 
 export interface InternalLink { title: string; url: string }
 
@@ -93,9 +94,10 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
   const obj = parseJson(raw);
   if (!obj) throw new Error("Kunde inte tolka AI-svaret som artikel");
 
-  // TEXT-1: enhetlig sanering på textfälten. HTML-kroppen saneras (som förut) av
-  // anropande route med hashtag-städet AV — saneraText saknar den ventilen och
-  // "#fragment"/hex i markup får aldrig gå genom hashtag-begränsaren.
+  // TEXT-1: enhetlig sanering på textfälten. HTML-kroppen går genom den HTML-säkra
+  // tankstrecks-saneringen (justeringsrundan v2): endast textnoderna saneras —
+  // taggar/attribut (href, hex-färger) orörda, inget hashtag-städ i markup.
+  // Samma per-tenant-villkor som allt annat (skrivreglerPa).
   const title = await saneraText(str(obj.title) || opts.topic, opts.clientId);
   const [metaTitle, metaDescription] = await Promise.all([
     saneraText(str(obj.metaTitle) || title, opts.clientId),
@@ -104,12 +106,13 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
   const faq = Array.isArray(obj.faq)
     ? obj.faq.map((f: Record<string, unknown>) => ({ q: str(f.q), a: str(f.a) })).filter((f: { q: string; a: string }) => f.q && f.a).slice(0, 6)
     : [];
+  const html = (await skrivreglerPa(opts.clientId)) ? taBortTankstreckHtml(str(obj.html)) : str(obj.html);
   return {
     title,
     metaTitle: metaTitle.slice(0, 60),
     metaDescription: metaDescription.slice(0, 160),
     urlSlug: slugify(str(obj.urlSlug) || title),
-    html: str(obj.html),
+    html,
     faq,
     tags: Array.isArray(obj.tags) ? obj.tags.map(str).filter(Boolean).slice(0, 6) : [],
     coverImagePrompt: str(obj.coverImagePrompt),

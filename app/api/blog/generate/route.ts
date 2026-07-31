@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { skrivreglerPa, taBortTankstreckHtml } from "@/lib/content/writing-rules";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 
@@ -96,13 +97,15 @@ Skriv artikeln nu enligt dispositionen + reglerna.`,
       skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
     });
 
-    // TEXT-1: enhetlig sanering på textfälten (HTML-kroppen lämnas — markup ska inte
-    // genom hashtag-städet, samma princip som Studio-bloggen).
+    // TEXT-1: enhetlig sanering på textfälten. HTML-kroppen går genom den HTML-säkra
+    // tankstrecks-saneringen (justeringsrundan v2): endast textnoderna saneras —
+    // taggar/attribut orörda, inget hashtag-städ i markup. Samma villkor (skrivreglerPa).
     [article.title, article.excerpt, article.meta_description] = await Promise.all([
       saneraText(article.title, clientId),
       saneraText(article.excerpt, clientId),
       saneraText(article.meta_description, clientId),
     ]);
+    if (await skrivreglerPa(clientId)) article.content = taBortTankstreckHtml(article.content);
 
     const slug = (article.slug || topic.toLowerCase())
       .replace(/[åä]/g, "a")
