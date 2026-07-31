@@ -1,0 +1,107 @@
+{
+  "profil": "Displayteknik",
+  "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "flode": "social",
+  "genererad": "2026-07-31T14:51:39.839Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det vanligaste misstaget kostar tusenlappar och syns inte ens.\",\"caption\":\"Det vanligaste misstaget kostar tusenlappar och syns inte ens.\\n\\nFöretag köper en skärm. Ofta en vanlig TV. Den monteras i ett ljust rum eller i ett skyltfönster.\\n\\nResultatet blir en mörk ruta som reflekterar allt. Budskapet försvinner i solljuset. Skärmen är inte byggd för att vara igång hela dagarna, och garantin gäller sällan för företag.\\n\\nAtt välja rätt skärm för rätt miljö är avgörande. En skärm för ett skyltfönster behöver en helt annan ljusstyrka än en för ett konferensrum. En skärm för utomhusbruk måste tåla vårt nordiska klimat.\\n\\nVi hjälper dig välja rätt från början. Du får en kontakt för allt: val av skärm, installation, innehåll och support. En lösning som syns, säljer och fungerar år efter år.\",\"hashtags\":\"#digitalaskyltar #ledskärmar #skyltfönster #displayteknik\",\"cta\":\"Skicka en bild på platsen du vill ha en skärm, så får du ett förslag inom 24 timmar.\",\"format_note\":\"Karussell-inlägg. Bild 1: En mörk, oläslig TV-skärm i ett ljust skyltfönster med texten från hooken. Bild 2: En ljusstark, klar skärm från Displayteknik i samma miljö. Sista bilden: Uppmaningen från CTA:n med en bild på Håkan.\"}",
+      "duration_ms": 12642,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "sparad_rad_id": "eeaa4113-ae58-4a87-aab9-633323927b7d"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Från en bild på din fasad till en skärm som säljer. Hur går det till?\",\"caption\":\"Många tror det är krångligt att skaffa en digital skärm. Vi gör det enkelt.\\n\\nDu får en kontakt för allt, från första idé till driftsatt lösning.\\n\\nSå här ser processen ut:\\n\\n1. Digital fika eller telefonsamtal (30 min). Vi pratar om vad du vill uppnå, inte tekniska detaljer.\\n\\n2. Offert inom 24 timmar. Du skickar en bild på platsen, vi skickar ett konkret förslag med pris.\\n\\n3. Val av rätt skärm. Vi ser till att du får rätt ljusstyrka för skyltfönster i solljus eller en LED-vägg som tål nordiskt klimat.\\n\\n4. Installation. Våra tekniker monterar, drar el och ser till att allt fungerar som det ska.\\n\\n5. Innehåll och support. Vi hjälper dig komma igång med att visa ditt budskap och finns där om något behöver justeras.\\n\\nResultatet: En skärm som syns, säljer och fungerar. År efter år.\",\"hashtags\":\"#digitalaskyltar #ledskärmar #skyltfönster #butiksinredning #displayteknik\",\"cta\":\"Skicka en bild på din lokal i ett DM, så får du en offert inom 24 timmar.\",\"format_note\":\"Karussell-inlägg. Slide 1: Hook-texten på en bild av en imponerande installation. Slide 2-6: En bild per steg som visuellt visar processen (1: Zoom-möte, 2: Offertdokument, 3: Olika skärmtyper, 4: Installation, 5: Skärm med innehåll). Sista sliden: CTA.\"}",
+      "duration_ms": 11938,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "sparad_rad_id": "b88c2a67-e14a-4039-ba6f-a61f8f3b230d"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"De 3 vanligaste frågorna vi får om digitala skärmar (och svaren du behöver).\",\"caption\":\"Innan en kund investerar i digitala skärmar dyker nästan alltid samma tre frågor upp. Här är våra ärliga svar.\\n\\n1. \\\"Vad kostar det?\\\"\\nPriset beror på storlek, ljusstyrka och placering. En ljusstark 43-tums skärm för ett skyltfönster börjar runt 21 000 kr. Det viktiga är att välja rätt från start så du slipper köpa en ny när den första inte syns eller går sönder.\\n\\n2. \\\"Hur vet jag att den syns i direkt solljus?\\\"\\nEn vanlig skärm för inomhusbruk har cirka 350-500 nits i ljusstyrka. En skärm för ett ljust skyltfönster behöver minst 2 500 nits. Vi hjälper dig alltid att välja rätt ljusstyrka för just din miljö.\\n\\n3. \\\"Vem tar hand om allt?\\\"\\nVi gör det. Du får en kontakt för allt: från att välja rätt skärm till installation, montering, innehåll och support. Vi ser till att du har en lösning som fungerar, år efter år.\\n\\nHar du en fjärde fråga? Vi tar den gärna på en digital fika.\",\"hashtags\":\"#digitalaskyltar #ledskärmar #butiksinredning #skyltfönster #displayteknik\",\"cta\":\"Boka en digital fika, 30 minuter utan säljpitch. Länk i bio.\",\"format_note\":\"Karussell-inlägg. Slide 1: Hooken i stor text. Slide 2-4: En fråga och ett svar per slide. Sista slide: CTA med en bild på Håkan eller en skärm i en snygg miljö.\"}",
+      "duration_ms": 13454,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "jag"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "sparad_rad_id": "1d5e5548-73d0-4ebe-b2c7-622f1f943bda"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Från ”vi avvaktar” till ”varför väntade vi?”.\",\"caption\":\"En kund vi hjälpte nyligen visste att deras skyltfönster inte presterade. De såg konkurrenter med skärmar, men tvekade. Frågorna var många: Vilken skärm passar? Håller den i solljus? Vem installerar och ser till att den fungerar?\\n\\nKänslan är vanlig. Oron för teknikstrul och en stor investering gör att många väntar. Resultatet blir att man förlorar kunder man aldrig ens ser.\\n\\nVi tog ett möte, visade en lösning för deras skyltfönster och gav ett fast pris på en skärm som syns. Allt inkluderat: val, installation, innehållsstyrning och support.\\n\\nIdag säljer skärmen åt dem, varje dag. Kommentaren efteråt var talande: ”Det här skulle vi gjort för länge sedan.”.\",\"hashtags\":\"#digitalaskyltar #ledskärm #skyltfönster #displayteknik\",\"cta\":\"Känner du igen dig i tvekan?\",\"format_note\":\"Använd en karusell. Bild 1: En bild på en driftsatt skärm i ett snyggt skyltfönster med hook-texten ovanpå. Bild 2: En närbild på samma skärm som visar skärpan. Bild 3: En bild på teamet under installation, alternativt en bild på Håkan.\"}",
+      "duration_ms": 12198,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "sparad_rad_id": "1b66a8de-8bb2-4fbe-8c26-aecece55a58d"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Den billigaste skärmen är nästan alltid det dyraste köpet. Så här är det.\",\"caption\":\"Du hittar en skärm på nätet. Bra pris. Du beställer. Men efter några veckor i skyltfönstret ser du att den knappt syns i solljus. Efter första vintern slocknar den helt.\\n\\nKänns det igen? Det är skillnaden mellan en vanlig TV och en professionell skärm byggd för drift, år efter år.\\n\\nEn skärm som inte syns säljer ingenting. En skärm som är svart är en kostnad. En skärm som kräver att du själv letar montör och support stjäl din tid.\\n\\nVi hjälper butiker, kedjor och fastighetsägare att välja rätt från början. En helhetslösning där du får en kontakt för allt: val av rätt skärm, installation, innehåll och support. Det blir tryggare och mer lönsamt i längden.\",\"hashtags\":\"#digitalaskyltar #ledskärm #skyltfönster #butiksinredning #displayteknik\",\"cta\":\"Skicka en bild på ditt skyltfönster eller din fasad så får du en offert inom 24 timmar.\",\"format_note\":\"Karussell-inlägg. Slide 1: Hooken i fet text. Slide 2: Bild på en skärm som INTE syns i solljus (överexponerad/svart). Slide 3: Bild på en av era ljusstarka skärmar i ett soligt fönster. Slide 4: CTA.\"}",
+      "duration_ms": 12197,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "sparad_rad_id": "854ce6cb-c27e-449f-a36e-f73234ee524e"
+      }
+    }
+  ]
+}

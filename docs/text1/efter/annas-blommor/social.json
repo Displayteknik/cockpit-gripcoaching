@@ -1,0 +1,103 @@
+{
+  "profil": "Annas Blommor",
+  "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+  "flode": "social",
+  "genererad": "2026-07-31T15:08:59.512Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det vanligaste misstaget blivande brudpar gör? Att bli kär i en specifik bild på Pinterest.\",\"caption\":\"Det vanligaste misstaget blivande brudpar gör? Att bli kär i en specifik bild på Pinterest.\\n\\nVi förstår precis. Man hittar den där perfekta, vilda buketten med pioner och drömmer sig bort till en julidag i Jämtland.\\n\\nMen pionen blommar här i juni. I juli är den över för säsongen.\\n\\nAtt låsa fast sig vid en exakt blomma som kanske inte är i säsong just er vecka skapar stress och kompromisser. Istället för att jaga en specifik sort hjälper vi er att fånga en *känsla*.\\n\\nFärgpaletten. Formen. Känslan av sommaräng, av skog, av elegans.\\n\\nNär vi utgår från känslan kan vi välja de allra vackraste blommorna som är som bäst precis när ni gifter er. Då blir resultatet inte en kopia, utan något som är unikt ert. Och ofta vackrare än originalbilden.\\n\\nBerätta för oss, vad drömmer ni om för känsla på ert bröllop?\",\"hashtags\":\"#annasblommor #bröllopsblommor #bröllopöstersund #floristjämtland #bröllopsinspiration\",\"cta\":\"Kommentera\",\"format_note\":\"Använd en vacker bild på en säsongstypisk, unik brudbukett som inte ser ut som en stereotypisk Pinterest-bukett. Gärna närbild på hantverket.\"}",
+      "duration_ms": 12649,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "sparad_rad_id": "b3ec638b-9b96-41d0-96f4-cee8f775f2b4"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Från en Pinterest-board till ett färdigt bröllop.\",\"caption\":\"Så många undrar hur det går till när vi skapar blommorna till en hel bröllopsdag. Det är en process som är lika delar kreativitet och noggrann planering.\\n\\nAllt börjar med ett första möte, ofta över en kaffe här i butiken. Ni berättar om era tankar, visar bilder och vi pratar om vilken känsla ni vill att dagen ska ha. Är den romantisk, bohemisk, avskalad eller färgstark?\\n\\nDärefter skapar vi ett personligt förslag med en moodboard. Här ser ni färgpaletten, specifika blomstersorter och förslag på allt från brudbukett och corsage till dekorationer för vigsel och fest. Det är en visuell plan för hela er dag.\\n\\nNär ni känner er trygga och har godkänt förslaget beställer vi hem de finaste blommorna från våra odlare. Dagarna innan bröllopet är butiken en kreativ verkstad där vi binder, arrangerar och förbereder varje detalj.\\n\\nPå den stora dagen levererar vi och installerar allt på plats, så att ni kan fokusera på varandra. Att se allt komma samman och bli precis den dröm ni hade är det absolut bästa vi vet.\",\"hashtags\":\"#annasblommor #bröllopsblommor #bröllopsflorist #östersund #jämtland\",\"cta\":\"Går ni i bröllopstankar? Skicka ett DM så bokar vi in ett första förutsättningslöst möte.\",\"format_note\":\"Karussellinlägg. Bild 1: En vacker brudbukett med texten från hooken. Bild 2: Ett par som sitter i butiken med Anna. Bild 3: En närbild på en moodboard. Bild 4: Florister som binder blommor i verkstaden. Bild 5: En färdigdekorerad vigselplats. Sista bilden innehåller CTA-texten.\"}",
+      "duration_ms": 13694,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "sparad_rad_id": "91d9f940-244c-406f-af0f-5f0364b4cb1c"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Vad kostar bröllopsblommor egentligen? Här är våra ärliga svar på de 3 vanligaste frågorna.\",\"caption\":\"Vad kostar bröllopsblommor egentligen? Och när ska man boka? Vi får ofta samma fina frågor från blivande brudpar, så vi tänkte att vi samlar svaren här.\\n\\nFråga 1: ”Vad kostar det?”\\nSvar: Det beror helt på vilka blommor ni drömmer om, hur många ni är och vilken känsla ni vill skapa. En brudbukett kan kosta från 2000 kr och uppåt, men ett helt bröllop är unikt. Istället för en prislista tar vi ett första samtal där vi lyssnar in er vision. Då kan vi ge en personlig offert som faktiskt stämmer med era önskemål och er budget.\\n\\nFråga 2: ”När är det dags att boka florist?”\\nSvar: Så fort ni har bokat datum och lokal. Vi tar bara ett visst antal bröllop per helg för att kunna ge varje par vår fulla uppmärksamhet. Populära sommardatum blir ofta uppbokade 9-12 månader i förväg, så hör av er så snart ni kan för att säkra er plats.\\n\\nFråga 3: ”Måste vi veta exakt vilka blommor vi vill ha?”\\nSvar: Absolut inte! De flesta vet inte det. Det är vårt jobb som florister och kreatörer att hjälpa er hitta rätt. Det viktigaste är att ni kan beskriva känslan ni är ute efter. Är det romantiskt, vilt, avskalat, färgglatt? Vi översätter er känsla till blommor som är i säsong just er dag.\",\"hashtags\":\"#bröllopsblommor #bröllopsflorist #bröllopöstersund #jämtland #annasblommor\",\"cta\":\"Går ni i bröllopstankar? Skicka ett DM så bokar vi in ett första, förutsättningslöst samtal.\",\"format_note\":\"Karussellinlägg. Första bilden: Hook-texten på en vacker bild av en brudbukett. Nästa tre bilder: En fråga och ett svar per bild. Sista bilden: CTA-texten.\"}",
+      "duration_ms": 12476,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "sparad_rad_id": "19ac6aa6-1831-4f76-b616-2d0e6d02c385"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"”Vi vet inte ens var vi ska börja.”\",\"caption\":\"”Vi vet inte ens var vi ska börja.”\\n\\nDet var första meningen i ett mail vi fick från ett brudpar för nästan ett år sedan. De hade sett våra bilder, men kände sig helt överväldigade av alla val. Färger, sorter, budget, vad passar ens i augusti?\\n\\nDe sköt upp det. Tiden gick. Och för några månader sedan hörde de av sig igen, lite lätt stressade.\\n\\nVi bokade in en fika här i butiken. Pratade inte om specifika blommor, utan om känslan de ville ha på sin dag. Varmt, avslappnat, personligt, med doft av sommar. Vi tittade på bilder från deras festlokal. Utifrån det tog vi fram ett förslag, en röd tråd med sensommarblommor från svenska odlare.\\n\\nI helgen var det dags. Och att få se deras ansikten när de hämtade brudbuketten… det är precis därför vi gör det vi gör. Från total osäkerhet till ett lugn och en känsla av att allt blev precis rätt.\\n\\nKänner du igen dig i den där första känslan av överväldigande val? Du är inte ensam.\",\"hashtags\":\"#bröllopsblommor #annasblommor #östersund #bröllopjämtland #bröllopsinspiration\",\"cta\":\"Boka en förutsättningslös konsultation\",\"format_note\":\"Bild/karusell. Första bilden: citatet i hooken stort mot en vacker, drömsk blombild. Följande bilder: behind-the-scenes från butiken, en bild på den färdiga buketten, kanske en bild från festlokalen om brudparet godkänt det.\"}",
+      "duration_ms": 11529,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "sparad_rad_id": "f2e53363-3118-48d4-9a65-21df015aeda1"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Den billigaste brudbuketten är sällan den bästa.\",\"caption\":\"Den billigaste brudbuketten är sällan den bästa.\\n\\nNär ni väljer blommor till ert bröllop är det lätt att fastna i prislistor. Men blommor är så mycket mer än en siffra på en faktura. De är en känsla, ett minne och en del av er berättelse.\\n\\nEn florist som tar sig tid att förstå er vision väljer inte bara blommor. Vi väljer stjälkar som håller hela dagen, binder med en teknik som får buketten att se levande ut på bild och skapar en helhet som speglar precis vilka ni är.\\n\\nDå får ni inte bara blommor. Ni får trygghet och ett hantverk som lyfter hela er dag.\\n\\nDet är en investering i minnena ni kommer att se tillbaka på i årtionden.\",\"hashtags\":\"#bröllopsblommor #bröllopsflorist #jämtland #östersund #annasblommor\",\"cta\":\"Boka en konsultation\",\"format_note\":\"Bild på en detaljrik, handbunden brudbukett av hög kvalitet. Gärna i en miljö som andas Jämtland.\"}",
+      "duration_ms": 10669,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "sparad_rad_id": "cc5b11f7-bb2e-42aa-ba47-85519152a34b"
+      }
+    }
+  ]
+}

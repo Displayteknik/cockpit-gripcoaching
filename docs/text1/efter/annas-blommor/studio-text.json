@@ -1,0 +1,197 @@
+{
+  "profil": "Annas Blommor",
+  "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+  "flode": "studio-text",
+  "genererad": "2026-07-31T15:16:42.953Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hookType\":\"berättelse\",\"headline1\":\"Bröllopet om två veckor\",\"headline2\":\"Då ringer de flesta\",\"body\":\"Men blomsterdesign tar tid — vi behöver veta färg, känsla och plats för att binda rätt bukett till er dag.\"}",
+      "duration_ms": 5617,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "berättelse",
+            "headline1": "Bröllopet om två veckor",
+            "headline2": "Då ringer de flesta",
+            "body": "Men blomsterdesign tar tid — vi behöver veta färg, känsla och plats för att binda rätt bukett till er dag."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Du har redan valt blommor",
+            "headline2": "Fast du inte träffat oss än",
+            "body": "De flesta har en färdig bild när de ringer – men vi ritar alltid från grunden utifrån just din dag och säsong."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Bokar du bröllop före du vet?",
+            "headline2": "Vad kostar blommor egentligen?",
+            "body": "De flesta par väntar tills sista veckan med att fråga. Då är säsongens blommor redan bokade och vi kan inte ge det ni vill ha."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vad händer efter du ringer?\",\"headline2\":\"Från idé till blommor i kyrkan\",\"body\":\"Vi börjar med kaffe och dina önskemål. Sen skissar vi, väljer säsongens blommor och binder allt för hand dagen före.\"}",
+      "duration_ms": 5769,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Vad händer efter du ringer?",
+            "headline2": "Från idé till blommor i kyrkan",
+            "body": "Vi börjar med kaffe och dina önskemål. Sen skissar vi, väljer säsongens blommor och binder allt för hand dagen före."
+          },
+          {
+            "hookType": "berättelse",
+            "headline1": "Från första samtalet",
+            "headline2": "Till buketten i brudens hand",
+            "body": "Varje bröllop börjar med kaffe och skissblock. Vi ritar din dröm i blommor, handplockar från svenska odlare och binder på plats samma morgon."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Från idé till bukett",
+            "headline2": "Så arbetar vi med ditt bröllop",
+            "body": "Vi börjar med kaffe och skisser. Sedan följer vi årstiderna och binder varje bukett för hand dagen före."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Har ni blommor hela året?\",\"headline2\":\"Tre frågor vi alltid får\",\"body\":\"Ja, men inte vilka som helst — vi följer säsong och binder det som faktiskt växer i Sverige just nu.\"}",
+      "duration_ms": 8229,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Har ni blommor hela året?",
+            "headline2": "Tre frågor vi alltid får",
+            "body": "Ja, men inte vilka som helst — vi följer säsong och binder det som faktiskt växer i Sverige just nu."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Nej, vi gör inga paket",
+            "headline2": "Varför färdiga buketter aldrig funkar",
+            "body": "Varje bröllop är unikt och varje lokal annorlunda. Därför ritar vi alltid från grunden med säsongens blommor."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Nej, vi kopierar inte",
+            "headline2": "Tre frågor alla par ställer",
+            "body": "Kan ni göra exakt som den där buketten på Pinterest? Nej – vi ritar från grunden utifrån er säsong och er känsla."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vad händer när man säger ja?\",\"headline2\":\"Från tvivel till tårar av glädje\",\"body\":\"Sofia ringde i mars men avbokade två gånger. I maj kom hon ändå — och när buketten stod klar grät vi båda.\"}",
+      "duration_ms": 8542,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Vad händer när man säger ja?",
+            "headline2": "Från tvivel till tårar av glädje",
+            "body": "Sofia ringde i mars men avbokade två gånger. I maj kom hon ändå — och när buketten stod klar grät vi båda."
+          },
+          {
+            "hookType": "berättelse",
+            "headline1": "Hon ringde i mars",
+            "headline2": "Bröllopsblommorna ville hon visa dig",
+            "body": "Tvekade i fyra månader, sedan såg hon säsongens första dahlia. Nu har ni hennes brudbuketter att minnas."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Hon sa nej tre gånger",
+            "headline2": "Tills hon såg blommorna",
+            "body": "Ibland behöver man se med egna ögon vad säsongens svenska blommor faktiskt kan göra för ett bröllop."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Det billigaste är oftast dyrast\",\"headline2\":\"Varför brudpar väljer hantverksbuketten\",\"body\":\"När blommorna vissnar innan vigseln kostar ombeställningen mer än kvalitet från början.\"}",
+      "duration_ms": 5658,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Det billigaste är oftast dyrast",
+            "headline2": "Varför brudpar väljer hantverksbuketten",
+            "body": "När blommorna vissnar innan vigseln kostar ombeställningen mer än kvalitet från början."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Vad om billigast blir dyrast?",
+            "headline2": "Varför brudpar betalar mer för blommor",
+            "body": "När blommorna vissnar på dansgolvet efter tre timmar minns man priset. När de håller hela kvällen minns man känslan."
+          }
+        ]
+      }
+    }
+  ]
+}

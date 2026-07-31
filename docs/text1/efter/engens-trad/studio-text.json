@@ -1,0 +1,167 @@
+{
+  "profil": "Engens Träd & Trädgård",
+  "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
+  "flode": "studio-text",
+  "genererad": "2026-07-31T15:15:37.742Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hookType\":\"berättelse\",\"headline1\":\"Vänta tills det blåser\",\"headline2\":\"Det var planen. Tills grenen tog taket.\",\"body\":\"Ni tänkte ge det ett år till. Men höststormen bestämde annat och nu kostar det dubbelt.\"}",
+      "duration_ms": 8125,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "berättelse",
+            "headline1": "Vänta tills det blåser",
+            "headline2": "Det var planen. Tills grenen tog taket.",
+            "body": "Ni tänkte ge det ett år till. Men höststormen bestämde annat och nu kostar det dubbelt."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Det står för nära huset",
+            "headline2": "Men de väntar tills höststormen",
+            "body": "Trädet ska bedömas innan vädret avgör åt dig. En första koll kostar inget."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Kan man vänta tills nästa år?",
+            "headline2": "Det beror på trädet – inte på kalendern.",
+            "body": "Många tror att ett träd som stått där länge kan stå ett år till. Men lutar det, har döda grenar eller står nära hus avgör väder och vind – inte du."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Vi säljer inte trädfällning\",\"headline2\":\"Vi säljer ett lugnt beslut\",\"body\":\"Första steget är att du skickar en bild. Vi tittar, bedömer och säger rakt ut om trädet behöver åtgärd nu, nästa år eller inte alls.\"}",
+      "duration_ms": 28921,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Vi säljer inte trädfällning",
+            "headline2": "Vi säljer ett lugnt beslut",
+            "body": "Första steget är att du skickar en bild. Vi tittar, bedömer och säger rakt ut om trädet behöver åtgärd nu, nästa år eller inte alls."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Tre frågor alla ställer\",\"headline2\":\"Vad kostar det egentligen?\",\"body\":\"En första bedömning kostar inget och du får ett rakt svar på om det behöver göras nu eller nästa år.\"}",
+      "duration_ms": 5575,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Tre frågor alla ställer",
+            "headline2": "Vad kostar det egentligen?",
+            "body": "En första bedömning kostar inget och du får ett rakt svar på om det behöver göras nu eller nästa år."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Billigast blir dyrast",
+            "headline2": "Varför vi inte är lägsta priset",
+            "body": "Vi tar inte genvägar med säkerheten och lämnar alltid tomten ren. Det kostar lite mer än cowboys, men du slipper rädsla och skit i gräset."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vad händer när man väntar?\",\"headline2\":\"En kund ringde efter tre år\",\"body\":\"Trädet hade växt sig större, riskerna ökat och priset med det. Vi fixade jobbet säkert, men det hade varit enklare tidigare.\"}",
+      "duration_ms": 5381,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Vad händer när man väntar?",
+            "headline2": "En kund ringde efter tre år",
+            "body": "Trädet hade växt sig större, riskerna ökat och priset med det. Vi fixade jobbet säkert, men det hade varit enklare tidigare."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Billigast är dyrast\",\"headline2\":\"Varför väljer kunder bort lägsta priset?\",\"body\":\"För att de vet vad det kostar att göra om jobbet när det går snett.\"}",
+      "duration_ms": 8468,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Billigast är dyrast",
+            "headline2": "Varför väljer kunder bort lägsta priset?",
+            "body": "För att de vet vad det kostar att göra om jobbet när det går snett."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Billigast betyder inte tryggast",
+            "headline2": "Varför väljer kunder bort lägsta priset?",
+            "body": "För att det billigaste alternativet ofta saknar det som betyder mest: planering, erfarenhet och marginal för oväntade problem nära hus."
+          }
+        ]
+      }
+    }
+  ]
+}

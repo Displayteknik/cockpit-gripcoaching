@@ -1,0 +1,88 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "karusell",
+  "genererad": "2026-07-31T15:01:58.459Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"En ny bil? Vänta med det!\",\"body\":\"Många kunder gör ett enkelt misstag innan de kontaktar oss. Så undviker du det.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Sälj inte din gamla bil själv\",\"body\":\"Att sälja privat tar tid och energi. Du måste annonsera, svara på frågor och visa bilen flera gånger. Det fixar vi enklare.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Värdera inte bilen online\",\"body\":\"Onlineverktyg ger bara en uppskattning. Vi gör en riktig värdering av din bil, så du vet exakt vad den är värd hos oss.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Jämför inte bara priset\",\"body\":\"En billig bil kan bli dyr i längden. Vi hjälper dig hitta rätt bil för dig, med rätt utrustning och historik. Vi fixar det.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Nyfiken på att byta bil?\",\"body\":\"Hör av dig till oss på HM Motor. Vi hjälper dig med allt från värdering till att hitta din nästa bil.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3322,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"En bil har problem, vad händer nu?\",\"body\":\"Så jobbar vi när din bil behöver hjälp. Ingen krånglig process, bara raka rör.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Du ringer eller kör in direkt\",\"body\":\"Har du problem med bilen? Ring oss eller kör in till verkstaden. Du behöver inte boka tid för att vi ska kika på det.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vi fixar felet på plats\",\"body\":\"Våra mekaniker är snabba. Ofta kan vi diagnostisera problemet och fixa det direkt. Det är såhär vi jobbar.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Du kör iväg med en hel bil\",\"body\":\"När vi är klara får du tillbaka bilen. Oftast på mindre än en timme. Ett problem mindre, en körning rikare.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har din bil en \\\"hosta\\\" idag?\",\"body\":\"Kör in till oss på Rydells väg 9d i Krokom, eller ring oss direkt om du har frågor.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2999,
+      "autochecks": {
+        "cta_count": 3,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Sanningen om att köpa bil\",\"body\":\"Vi svarar på de vanligaste frågorna våra kunder har. Inga krusiduller.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Varför säljer ni just den här bilen?\",\"body\":\"Vi köper in bilar vi själva kan stå för. Varje bil som kommer in får en grundlig koll innan den ens hamnar på hemsidan.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Kan jag pruta på priset?\",\"body\":\"Vi sätter priserna så rättvist vi kan från början. Det gör att du slipper fundera på om du betalar för mycket.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vad händer om något går fel?\",\"body\":\"Om det mot förmodan dyker upp ett problem fixar vi det. Vi vill att du ska känna dig trygg med ditt bilköp, lång tid framöver.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du fler funderingar?\",\"body\":\"Kom förbi eller slå oss en signal. Vi svarar gärna på allt du undrar över.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3171,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Tvekade du för länge?\",\"body\":\"Många skjuter upp det de vet de borde göra. Så här gick det för en av våra kunder.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Bilen behövde service\",\"body\":\"Kunden visste att service behövdes. Men det sköts upp, vecka efter vecka. Vardagen kom emellan, som den gör.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"En onödig skada uppstod\",\"body\":\"Till slut blev det ett litet problem som växte till ett större. En del som borde ha bytts gick sönder helt i onödan.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vi fixade det snabbt\",\"body\":\"Kunden kom in med sin bil. Vi fixade det på en timme, inklusive delbyte. Det är såhär vi jobbar i Krokom.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Känner du igen dig?\",\"body\":\"Skjut inte upp det som borde göras. Kom in, vi hjälper dig med bilens service direkt.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3135,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 7
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Billigast är oftast dyrast?\",\"body\":\"Många kunder undviker det billigaste valet. Här är varför.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Kvalitet framför pris\",\"body\":\"Tjena! En kund vill ha en bil som bara funkar, inte en som krånglar efter en månad. De vill känna sig trygga med sitt köp, även om det kostar lite mer.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Tid är pengar\",\"body\":\"Om det billiga alternativet kräver ständig service eller reparationer, då förlorar man tid. Kunder vill undvika det 'jag vet att jag borde göra mer' problemet.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Trygghet och service\",\"body\":\"Vi fixade det för en kund på 30 minuter utan bokad tid. Den typen av trygghet och snabb service är värd mer än ett lågt pris för många. Det är såhär vi jobbar.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Vilken bil drömmer du om?\",\"body\":\"Besök oss i Krokom så hjälper vi dig hitta en bil som håller, utan att du behöver tänka på var nästa problem ska komma ifrån.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3276,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 6,
+        "rostmarkorer_totalt": 7
+      }
+    }
+  ]
+}

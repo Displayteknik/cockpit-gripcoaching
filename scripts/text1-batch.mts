@@ -72,7 +72,9 @@ if (TEST_MODE) {
   console.log("TESTLÄGE: 1 profil × 1 ämne × alla flöden");
 }
 
-const OUT_DIR = path.join(ROOT, "docs/text1/fore");
+// T-4: TEXT1_UT=docs/text1/efter för efter-batchen; TEXT1_SKIP=flöde1,flöde2 hoppar flöden.
+const OUT_DIR = path.join(ROOT, process.env.TEXT1_UT || "docs/text1/fore");
+const SKIP = new Set((process.env.TEXT1_SKIP || "").split(",").map((s) => s.trim()).filter(Boolean));
 const SCRATCH = "C:/Users/hakan/AppData/Local/Temp/claude/C--Users-hakan-OneDrive-Dokument-Antigravity/69f20a37-dcf3-4038-aa77-5c740de668f9/scratchpad";
 
 // ── 5. Autochecks ────────────────────────────────────────────────────────────
@@ -392,6 +394,7 @@ for (const profil of PROFILER) {
   console.log(`\n=== PROFIL: ${profil.name} (${profil.id}) ===`);
 
   for (const flow of FLOWS) {
+    if (SKIP.has(flow.namn)) { console.log(`  [hoppar ${flow.namn} — TEXT1_SKIP]`); continue; }
     const t0 = Date.now();
     const poster: PostResult[] = await pool(AMNEN, flow.concurrency, async (amne) => {
       const start = Date.now();

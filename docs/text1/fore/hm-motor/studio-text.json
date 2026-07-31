@@ -2,42 +2,195 @@
   "profil": "HM Motor Krokom",
   "client_id": "00000000-0000-0000-0000-000000000001",
   "flode": "studio-text",
-  "genererad": "2026-07-31T13:16:36.720Z",
+  "genererad": "2026-07-31T14:55:52.929Z",
   "poster": [
     {
       "amne_id": "misstag",
       "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
-      "output": null,
-      "duration_ms": 25008,
-      "fel": "Inga varianter genererades"
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Sluta ringa verkstäder\",\"headline2\":\"Det löser inte problemet\",\"body\":\"De flesta ringer runt och frågar vad felet kan vara. Men utan att se bilen är det bara gissningar.\"}",
+      "duration_ms": 5587,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score_vinnare": 88,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Sluta ringa verkstäder",
+            "headline2": "Det löser inte problemet",
+            "body": "De flesta ringer runt och frågar vad felet kan vara. Men utan att se bilen är det bara gissningar."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Det är inte bilen",
+            "headline2": "Det är väntan som kostar",
+            "body": "Ni bokar tid för problem som vi fixar på plats. Sluta vänta — kom in direkt."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Väntar du på rätt tillfälle?",
+            "headline2": "Det finns inget rätt tillfälle",
+            "body": "De flesta väntar tills allt känns perfekt. Men då har problemet redan kostat mer än lösningen."
+          }
+        ],
+        "omkord": "2026-07-31T14:54:45.601Z"
+      }
     },
     {
       "amne_id": "bakom-kulisserna",
       "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
-      "output": null,
-      "duration_ms": 14351,
-      "fel": "Inga varianter genererades"
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Sluta ringa runt\",\"headline2\":\"En kontakt räcker\",\"body\":\"Vi fixar allt från första samtalet till färdig bil – utan att du behöver jaga svar.\"}",
+      "duration_ms": 5839,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score_vinnare": 88,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Sluta ringa runt",
+            "headline2": "En kontakt räcker",
+            "body": "Vi fixar allt från första samtalet till färdig bil – utan att du behöver jaga svar."
+          },
+          {
+            "hookType": "berättelse",
+            "headline1": "Klockan var halv nio",
+            "headline2": "Då ringde telefonen",
+            "body": "En kund med trasig Jaguar. Fixade det samma dag utan bokning."
+          },
+          {
+            "hookType": "statistik",
+            "headline1": "30 minuter utan bokning",
+            "headline2": "Så fixar vi ditt problem",
+            "body": "De flesta bilverkstäder vill att du bokar tid veckor i förväg. Vi fixar det direkt när du kommer in."
+          }
+        ],
+        "omkord": "2026-07-31T14:54:45.601Z"
+      }
     },
     {
       "amne_id": "tre-fragor",
       "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
-      "output": null,
-      "duration_ms": 14703,
-      "fel": "Inga varianter genererades"
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Sluta fråga om pris först\",\"headline2\":\"Det är fel fråga\",\"body\":\"Fråga istället vad som faktiskt är fel och hur länge det tar att fixa. Priset kommer sen.\"}",
+      "duration_ms": 8430,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score_vinnare": 88,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Sluta fråga om pris först",
+            "headline2": "Det är fel fråga",
+            "body": "Fråga istället vad som faktiskt är fel och hur länge det tar att fixa. Priset kommer sen."
+          }
+        ],
+        "omkord": "2026-07-31T14:54:45.601Z"
+      }
     },
     {
       "amne_id": "tvekade",
       "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
-      "output": null,
-      "duration_ms": 15256,
-      "fel": "Inga varianter genererades"
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Att vänta kostar dig mer\",\"headline2\":\"Varför tveka när det funkar?\",\"body\":\"En kund väntade i tre månader. När vi fixade det tog det 30 minuter.\"}",
+      "duration_ms": 7826,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score_vinnare": 88,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Att vänta kostar dig mer",
+            "headline2": "Varför tveka när det funkar?",
+            "body": "En kund väntade i tre månader. När vi fixade det tog det 30 minuter."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Vet du vad väntan kostar?",
+            "headline2": "En kund tvekade i tre månader",
+            "body": "Sen kom han in och vi fixade det på en timme. Nu har han haft bilen i två år utan problem."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Sluta vänta på rätt tillfälle",
+            "headline2": "Det kommer aldrig",
+            "body": "En kund tvekade i tre månader. När han äntligen kom in fixade vi det på en dag."
+          }
+        ],
+        "omkord": "2026-07-31T14:54:45.601Z"
+      }
     },
     {
       "amne_id": "billigaste",
       "tema": "Därför väljer kunder bort det billigaste alternativet",
-      "output": null,
-      "duration_ms": 14803,
-      "fel": "Inga varianter genererades"
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Varför väljer de bort dig?\",\"headline2\":\"Det billigaste är sällan billigast\",\"body\":\"Kunder köper inte pris. De köper trygghet och att slippa oroa sig för vad som händer sen.\"}",
+      "duration_ms": 9557,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Varför väljer de bort dig?",
+            "headline2": "Det billigaste är sällan billigast",
+            "body": "Kunder köper inte pris. De köper trygghet och att slippa oroa sig för vad som händer sen."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Billigast vinner inte",
+            "headline2": "Varför väljer kunder bort lägsta priset?",
+            "body": "För att de vill känna sig trygga med valet, inte bara spara pengar."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Billigast är inte bäst",
+            "headline2": "Därför väljer kunderna oss",
+            "body": "De som bara jämför pris hittar problem. De som vill ha det fixat första gången hittar hit."
+          }
+        ],
+        "omkord": "2026-07-31T14:54:45.601Z"
+      }
     }
   ]
 }

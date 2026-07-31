@@ -1,0 +1,90 @@
+{
+  "profil": "Displayteknik",
+  "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "flode": "caption",
+  "genererad": "2026-07-31T14:50:15.365Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "Är din digitala skyltning trött, eller syns den inte i solljuset? Många företag har redan investerat i snygg branding, men glömmer att den också måste synas där kunderna faktiskt är. Det vanligaste misstaget vi ser är att man väljer en skärm som ser bra ut på pappret, men inte klarar av nordiskt klimat eller ljusförhållanden.\n\nHos oss får du en kontakt för allt, från första idé till driftsatt lösning som fungerar år efter år. Vi hjälper dig att välja rätt skärm för butiken, bilhallen, restaurangen eller fastigheten, så att den syns, säljer och klarar alla utmaningar.\n\nSkicka en bild på platsen idag så får du en offert inom 24 timmar.\n\n#Displayteknik #DigitalSkyltning #LEDskärm #Butiksskyltning #FångaFlerKunder",
+      "duration_ms": 13221,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "Från första kontakt till driftsatt lösning, så ser vår process ut när du beställer digitala skärmar för din verksamhet. Vi vet att du vill ha en skärm som syns, säljer och fungerar år efter år.\n\nDu får en kontakt för allt. Vi tar hand om val, installation, innehåll och löpande support. Enkelhet och trygghet för dig, oavsett om det är för butik, bilhall, trafik eller hotell.\n\n#Displayteknik #DigitalSkyltning #LEDskärm #Kunduppdrag #FångaFlerKunder",
+      "duration_ms": 13398,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "Många funderar över vad en digital skärm egentligen kostar och hur länge den håller. Det är frågor vi får ofta, och såklart ska du få ärliga svar.\n\n**1. Vad kostar en digital skärm?** En digital skyltfönsterskärm på 43 tum ligger från 21 000 kr.\n**2. Hur länge håller en digital skärm?** Våra skärmar har en garanterad drifttid på 70 000, 100 000 timmar. Det betyder att de håller i många år.\n**3. Vem hjälper oss om något strular?** Du får en kontakt för allt, från första idé till driftsatt lösning. Vi tar hand om val, installation, innehåll och support.\n\nKänner du igen dig? Skicka ett meddelande så tar vi en digital fika, helt utan säljprat.\n\n#DigitalSkyltning #Displayteknik #LEDskärmar #Butikskommunikation #Söderhamn",
+      "duration_ms": 14245,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": true,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "Vi hade en kund som tvekade länge med att byta ut sin trötta skyltning. De visste att den inte syntes i solljuset och att budskapen var svåra att uppdatera.\n\nEfter att ha visat dem hur enkelt det kan vara, från första idé till driftsatt lösning, bestämde de sig. Och resultatet? En digital skyltfönsterskärm som syns, säljer och fungerar år efter år. Det är vad vi menar med en partner för allt.\n\n#Displayteknik #DigitalaSkärmar #Skyltfönster #Butiksinredning",
+      "duration_ms": 2236,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "Våra kunder väljer sällan det billigaste alternativet. De vet att en digital skärm måste synas, sälja och fungera, år efter år, även i tufft nordiskt klimat.\n\nDu får en partner som tar ansvar för hela lösningen: från val och installation till innehåll och löpande support. En kontakt för allt, så att du kan fokusera på din egen verksamhet.\n\n#DigitalaSkärmar #LEDskärmar #Displayteknik #Skyltfönster #Butiksinredning",
+      "duration_ms": 2059,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      }
+    }
+  ]
+}

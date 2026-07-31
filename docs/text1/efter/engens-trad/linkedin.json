@@ -1,0 +1,142 @@
+{
+  "profil": "Engens Träd & Trädgård",
+  "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
+  "flode": "linkedin",
+  "genererad": "2026-07-31T14:56:49.115Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det absolut vanligaste misstaget jag ser hos nya kunder?\",\"body\":\"Det absolut vanligaste misstaget jag ser hos nya kunder?\\n\\nDet är inte att de väljer fel metod eller underskattar jobbet.\\n\\nDet är att de väntar ett år för länge.\\n\\nMan ser ett träd som börjar luta lite, tappar stora grenar, eller växer oroväckande nära huset. Tanken dyker upp: \\\"Det där borde vi nog ta tag i.\\\"\\n\\nMen sen händer livet. Sommaren kommer, andra projekt tar över. Man tänker att \\\"det klarar sig nog en vinter till\\\".\\n\\nInsikten är att ett problemträd sällan blir enklare eller billigare med tiden. Tvärtom.\\n\\nEtt träd som lutar lite idag kan luta mycket efter nästa höststorm. Ett friskt träd idag kan drabbas av röta. Ett hanterbart jobb kan bli ett akut jobb.\\n\\nAtt skjuta upp bedömningen är att låta slumpen och vädret bestämma.\\n\\nAtt agera gäller inte att fälla trädet imorgon. Det gäller att skaffa sig kontroll över situationen.\\n\\n*   Vad är den faktiska risken?\\n*   Vad är ett rimligt nästa steg?\\n*   Behöver något göras nu, eller kan det vänta till nästa år?\\n\\nEn professionell bedömning ger dig svar på de frågorna. Det ger dig en plan och tar bort oron.\\n\\nFunderar du på ett träd på din tomt? Skicka en bild så ger jag dig en första, ärlig bedömning utan förpliktelser.\",\"hashtags\":\"#trädfällning #riskträd #trädgård\",\"cta\":\"soft\",\"word_count\":224,\"notes\":\"Posten belyser misstaget att vänta för länge, vilket skapar igenkänning och positionerar en tidig bedömning som en klok och trygg handling.\"}",
+      "duration_ms": 12422,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score": {
+          "score": 86,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "73f07871-7ec3-4d2d-9f04-6a68d4a67520"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Funderar du på vad som händer efter att du ringt om ett träd?\",\"body\":\"Funderar du på vad som händer efter att du ringt om ett träd?\\n\\nMånga drar sig för det där första samtalet. Man kanske tror det är en krånglig process, att man binder upp sig eller att det direkt kommer kosta pengar bara att fråga.\\n\\nDet är inte så vi jobbar.\\n\\nFör oss handlar det om att göra processen så enkel och trygg som möjligt för dig som kund. Från första kontakt till att tomten är städad och klar.\\n\\nEtt vanligt uppdrag i Roslagen ser nästan alltid ut så här:\\n\\n1. Första kontakten. Du ringer eller skickar en bild på trädet. Vi pratar kort om läget, står det nära huset, skymmer det solen, ser det sjukt ut? En första bedömning över telefon eller mail kostar inget.\\n\\n2. Platsbesök. Om det behövs kommer jag ut och tittar. Vi går igenom vad som är rimligt att göra, hur vi gör det säkert och vad som ska hända med allt ris och virke efteråt. Du får ett fast pris att ta ställning till, helt utan förpliktelser.\\n\\n3. Jobbet utförs. Vi kommer på utsatt tid. Jobbet görs kontrollerat och säkert, bit för bit. Oavsett om det är sektionsfällning nära ett tak eller en vanlig fällning på öppen yta.\\n\\n4. Rent efteråt. Vi lämnar inte en stökig tomt. Vi städar, flisar eller transporterar bort allt enligt vår överenskommelse. Resultatet är att problemet är löst, utan drama.\\n\\nDet behöver inte vara mer komplicerat än så.\\n\\nHar du ett träd du funderat på? Skicka en bild i ett meddelande här på LinkedIn, så kan vi börja med steg ett.\",\"hashtags\":\"#trädfällning #sektionsfällning #roslagen\",\"cta\":\"soft\",\"word_count\":257,\"notes\":\"Inlägget demystifierar kundprocessen för att sänka tröskeln för en första kontakt, vilket bygger trygghet och positionerar företaget som enkelt och transparent.\"}",
+      "duration_ms": 12823,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "komplicerat",
+          "kanske"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score": {
+          "score": 56,
+          "verdict": "warn",
+          "issues": [
+            "Anvander forbjudet ord \"komplicerat\" (1x)",
+            "Anvander forbjudet ord \"kanske\" (1x)"
+          ]
+        },
+        "sparad_rad_id": "9be96dd7-db32-448c-a22d-0aff0e01392d"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"9 av 10 villaägare ställer samma tre frågor innan vi fäller ett träd. Här är mina raka svar.\",\"body\":\"9 av 10 villaägare ställer samma tre frågor innan vi fäller ett träd. Här är mina raka svar.\\n\\nOch det är helt rimligt.\\n\\nAtt ta ner ett stort träd på tomten är ett stort beslut. Det handlar mer om trygghet och klarhet än om själva sågningen. Oron handlar sällan om trädet i sig, utan om vad som händer om man inte gör något, eller om man gör fel sak.\\n\\nDärför är dessa frågor viktigare än någon motorsåg.\\n\\nFråga 1: \\\"Vad kommer det att kosta?\\\"\\nSvar: Priset beror på fyra saker: läge, storlek, risk och vad du vill ha hjälp med efteråt. RUT-avdraget sänker arbetskostnaden direkt på fakturan. En bild räcker ofta för en första uppskattning, så vet du vad du har att förhålla dig till.\\n\\nFråga 2: \\\"Måste hela trädet verkligen bort?\\\"\\nSvar: Inte alltid. Ibland är en säkerhetsbeskärning eller kronreducering rätt lösning. Mitt jobb är att ge ett ärligt råd om vad som är rimligt och säkert för just din situation, inte att sälja in största möjliga jobb.\\n\\nFråga 3: \\\"Kan det vänta till nästa år?\\\"\\nSvar: Kanske. Om trädet är friskt men bara skymmer solen är det sällan bråttom. Men om det lutar, har döda grenar eller sprickor är det klokt att agera innan höststormen gör valet åt dig. En bedömning ger dig svaret.\\n\\nAtt få svar på de där frågorna är ofta det som gör störst skillnad.\\n\\nHar du funderat på någon av dessa kring ett träd på din tomt?\",\"hashtags\":\"#trädfällning #riskträd #roslagen\",\"cta\":\"soft\",\"word_count\":251,\"notes\":\"Använder en 'vanliga frågor'-vinkel för att bygga förtroende (KNOW-port) genom att ärligt besvara de vanligaste kundfunderingarna.\"}",
+      "duration_ms": 13387,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "kanske"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 6,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score": {
+          "score": 72,
+          "verdict": "pass",
+          "issues": [
+            "Anvander forbjudet ord \"kanske\" (1x)"
+          ]
+        },
+        "sparad_rad_id": "7d574a1a-bd60-4499-95d9-dc67d0919c64"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"”Vi borde ha gjort det här för flera år sedan.”\",\"body\":\"”Vi borde ha gjort det här för flera år sedan.”\\n\\nDet var det första kunden i Vallentuna sa när vi var klara. \\n\\nDe hade levt med två stora, mörka granar som skuggade hela altanen och kändes lite för nära huset vid varje höststorm.\\n\\nI flera år var tanken: ”Vi tar det sen.”\\n\\nMen ”sen” blir sällan av. Oron ligger kvar i bakhuvudet. Gräsmattan under granarna är en lerfläck och eftermiddagssolen når aldrig fram.\\n\\nInsikten är ofta att det inte är själva jobbet man skjuter på, utan osäkerheten kring det. Vad kostar det? Hur stökigt blir det? Är det ens nödvändigt?\\n\\nNär vi väl tog ner dem, bit för bit, hände fyra saker direkt:\\n\\n1. Ljuset kom tillbaka. Hela baksidan kändes större.\\n2. Den där gnagande oron för stormar försvann.\\n3. De kunde äntligen planera för gräsmatta och rabatter.\\n4. De insåg att processen var enklare och lugnare än de föreställt sig.\\n\\nAtt skjuta upp ett trädproblem löser det sällan. Ofta gör det bara att du förlorar flera år av en ljusare och tryggare tomt.\\n\\nKänner du igen dig i tanken att ”ta det sen”?\\n\",\"hashtags\":\"#trädfällning #riskträd #roslagen\",\"cta\":\"soft\",\"word_count\":204,\"notes\":\"Inlägget använder en kundberättelse för att bygga igenkänning kring att skjuta upp beslut, och visar transformationen (resultatet) för att skapa förtroende.\"}",
+      "duration_ms": 14539,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score": {
+          "score": 86,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "d16df2ea-5c45-41b9-bd18-9e06d42e999d"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Den billigaste offerten är sällan den du borde välja.\",\"body\":\"Den billigaste offerten är sällan den du borde välja.\\n\\nJag ser det ofta. En villaägare i Roslagen får tre prisförslag på en trädfällning. Ett av dem är markant lägre än de andra. Det är frestande, absolut.\\n\\nMen det du betalar för är inte bara att trädet försvinner. Du betalar för att allt runt omkring ska förbli helt.\\n\\nLugnet i magen när du vet att trädet faller kontrollerat, bit för bit, utan att hota huset, altanen eller grannens staket. Det är vad ett seriöst pris innehåller.\\n\\nNär en offert är för låg, är det oftast något som saknas. Frågan är vad:\\n\\n1. Försäkringen? Utan en ansvarsförsäkring som täcker miljonbelopp kan ett misstag bli en privatekonomisk katastrof för dig som kund.\\n\\n2. Erfarenheten? Att fälla ett träd på en öppen åker är en sak. Att plocka ner det sektionsvis mellan ett hus och en elledning kräver helt annan kunskap.\\n\\n3. Utrustningen? Rätt utrustning betyder säkerhet och effektivitet. Improvisationer är en onödig risk på din tomt.\\n\\n4. Helheten? Ingår bortforsling? Städas det ordentligt efteråt? Eller är det låga priset bara för att få ner trädet, resten är ditt problem?\\n\\nJobbet är inte klart förrän tomten är hel, säker och ren. Det är den tryggheten du egentligen köper.\\n\\nHar du ett träd du funderar på? Skicka en bild så får du en rak bedömning av vad som är rimligt.\",\"hashtags\":\"#trädfällning #sektionsfällning #roslagen\",\"cta\":\"soft\",\"word_count\":252,\"notes\":\"Inlägget positionerar pris utifrån värde (trygghet) istället för kostnad, och utbildar kunden i vad som skiljer en seriös offert från en riskabelt billig.\"}",
+      "duration_ms": 11854,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billigaste"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 5,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "voice_score": {
+          "score": 56,
+          "verdict": "warn",
+          "issues": [
+            "Anvander forbjudet ord \"billigaste\" (2x)"
+          ]
+        },
+        "sparad_rad_id": "e3052b34-26d7-4e5a-9cb7-013069210a19"
+      }
+    }
+  ]
+}

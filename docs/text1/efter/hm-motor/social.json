@@ -1,0 +1,103 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "social",
+  "genererad": "2026-07-31T15:03:11.563Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Stirrar du dig blind på Blocket-priser? Det kan kosta dig tusenlappar.\",\"caption\":\"Stirrar du dig blind på Blocket-priser? Det kan kosta dig tusenlappar.\\n\\nVi ser det hela tiden. Någon har hittat en 'likadan' bil privat, lite billigare än den vi har. Problemet är att priset på en annons säger noll om bilens verkliga skick.\\n\\nDen där billigare bilen kan lätt bli en dyr historia med dolda fel, rost som inte syns på bild eller service som aldrig blev gjord.\\n\\nVarje bil vi tar in gås igenom från grunden. Vi ser till att den är i bra skick och att du får garanti på köpet. Du köper trygghet, inte bara en bil.\\n\\nSka du byta bil? Prata med oss först.\",\"hashtags\":\"#hmmotor #krokom #jämtland #bilköp #begagnadebilar\",\"cta\":\"Prata med oss först.\",\"format_note\":\"Bild på en bil i verkstaden som inspekteras, eller en närbild på en mekaniker som kollar en detalj. Texten 'Vanligaste misstaget vid bilköp?' kan läggas på bilden.\"}",
+      "duration_ms": 11622,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "57a8e0cd-3a83-4860-a9f1-649579be951d"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Vad händer egentligen när du ringer oss med ett problem?\",\"caption\":\"Många tror det är krångligt att få hjälp med sin maskin. Så här enkelt är det hos oss.\\n\\n1. Du ringer. Inga knappval. Du pratar direkt med oss i verkstaden i Krokom. Du förklarar vad som hänt, vi lyssnar.\\n\\n2. Vi ställer några kontrollfrågor. Ofta kan vi redan på telefon ringa in vad felet kan vara. Ibland är det en enkel sak du kan fixa själv. Då säger vi det.\\n\\n3. Du lämnar in maskinen. Vi ger dig en tid direkt. Ingen väntan i veckor. Vi kollar igenom den och ger dig ett fast pris på jobbet. Inga överraskningar.\\n\\n4. Vi fixar det. Vi beställer delarna som behövs och sätter igång. Vi skickar en bild eller ett meddelande när den är klar att hämta.\\n\\nInget krångel. Bara resultat. Det är så vi jobbar.\",\"hashtags\":\"#krokom #verkstad #atvservice #östersund\",\"cta\":\"Följ oss för fler tips direkt från verkstaden.\",\"format_note\":\"Karussell-inlägg. Slide 1: Hooken i fet text på en bild från verkstaden. Slide 2-5: En bild per punkt (1-4) som illustrerar steget, med texten från punkten på bilden.\"}",
+      "duration_ms": 12132,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "2d6c9d5f-c0c7-4604-a97b-1837728db4f8"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Tre ärliga svar på frågorna ALLA ställer innan de köper bil.\",\"caption\":\"Tjena! Vi får samma frågor varje dag. Helt rätt, man ska fråga. Här är våra raka svar på de vanligaste funderingarna.\\n\\n1. \\\"Vad är min gamla bil egentligen värd?\\\"\\nSvar: Mer än du tror, men kanske inte vad du hoppas. Vi tittar på skick, miltal och vad marknaden betalar just nu. Vi ger dig alltid ett schysst och ärligt bud direkt på plats. Ingen gissningslek.\\n\\n2. \\\"Vågar man köpa begagnat? Tänk om den går sönder?\\\"\\nSvar: Ja, om du köper från rätt ställe. Allt vi säljer är genomgånget i vår egen verkstad. Vi vet vad vi säljer och vi står för det. Hittar vi något som behöver fixas så fixar vi det innan bilen ens kommer ut i hallen.\\n\\n3. \\\"Är det billigaste alltid bäst?\\\"\\nSvar: Nästan aldrig. En bil som är billig i inköp kan snabbt bli dyr om den kräver reparationer. Vi hjälper dig hitta en bil som passar din plånbok både idag och imorgon. En som håller.\\n\\nHar du en annan fråga? Ställ den i kommentarsfältet.\",\"hashtags\":\"#hmmotor #bilköp #begagnadebilar #krokom #östersund\",\"cta\":\"Ställ din fråga i kommentarsfältet.\",\"format_note\":\"Använd en karusell. Slide 1: Hook-texten på en bild av bilhallen. Slide 2-4: En fråga och ett svar per slide, med en passande bild på en bil eller detalj från verkstaden. Slide 5: CTA-texten.\"}",
+      "duration_ms": 11797,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "0e267965-7a7b-491b-b0a0-dc96a886dde1"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Han tvekade i månader på att köpa sin ATV. Nu undrar han bara en sak.\",\"caption\":\"En kund kom in till oss flera gånger. Kikade på samma fyrhjuling, ställde frågor, åkte hem och funderade.\\n\\nKänslan är bekant. Är det rätt läge? Kommer jag använda den tillräckligt? Är det verkligen värt pengarna?\\n\\nVi pratade igenom vad han faktiskt behövde den till: skotta snö på vintern, köra ut ved från skogen och fixa med grejer på gården. Vi tvingade aldrig på ett köp. Vi bara lyssnade och gav raka svar.\\n\\nTill slut slog han till. Två veckor senare kom han förbi igen, bara för att snacka.\\n\\nDet enda han undrade nu var varför i hela friden han väntat så länge. Jobbet som brukade ta en hel helg var plötsligt fixat på en förmiddag.\\n\\nIbland är den största kostnaden inte pengarna, utan tiden man förlorar på att tveka.\",\"hashtags\":\"#hmmotor #krokom #atv #fyrhjuling #jämtland\",\"cta\":\"Känner du igen dig i tvekan? Skriv en kommentar.\",\"format_note\":\"Använd en bild på en kund som stolt poserar med sitt nya fordon, eller en bild på en ATV i en typisk jämtländsk miljö (skog, snö, gård).\"}",
+      "duration_ms": 12207,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "ae42b40f-53b7-4f4f-a92a-51f444637292"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Billigast på Blocket är sällan billigast i längden.\",\"caption\":\"Billigast på Blocket är sällan billigast i längden.\\n\\nDu hittar en fyrhjuling som ser bra ut. Priset är rätt. Du slår till. Två veckor senare börjar problemen.\\n\\nDet är ofta samma visa. Dolda fel, slarvig service eller en maskin som helt enkelt är slutkörd. Plötsligt är ditt \\\"fynd\\\" en pengaslukare som står stilla mer än den rullar.\\n\\nVi gör det annorlunda. Varje begagnad maskin vi säljer är genomgången i vår verkstad. Vi kollar motor, drivlina, bromsar och ram. Vi byter det som behöver bytas. Det som inte klarar våra krav säljer vi inte alls.\\n\\nDet betyder att du får en maskin som funkar från dag ett. Med garanti. Det är trygghet som är värd mer än en prislapp på en annonssajt.\\n\\nÄr det värt några tusenlappar extra för att slippa huvudvärken?\",\"hashtags\":\"#hmmotor #begagnatärbäst #fyrhjuling #atvlife #krokom\",\"cta\":\"Kommentera \\\"trygghet\\\" så skickar vi listan på våra senast inkomna, genomgångna maskiner.\",\"format_note\":\"Karussell-inlägg. Slide 1: Hooken i fet text över en bild på en ATV i verkstaden. Slide 2-4: Bilder på olika delar som gås igenom (motor, bromsar, däck). Sista slide: CTA i textformat.\"}",
+      "duration_ms": 11872,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 7
+      },
+      "extra": {
+        "sparad_rad_id": "146162b1-93dd-43d9-bd5b-b3e8e1a04687"
+      }
+    }
+  ]
+}
