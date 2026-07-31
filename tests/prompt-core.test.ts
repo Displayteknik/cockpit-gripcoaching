@@ -72,7 +72,7 @@ vi.mock("@/lib/content/writing-rules", async (importOriginal) => {
   return { ...riktig, skrivreglerPa: (...args: unknown[]) => skrivreglerPaMock(...(args as [])) };
 });
 
-import { anatomiBlock, byggTextPrompt, klippProfil, saneraText } from "@/lib/prompt-core";
+import { anatomiBlock, byggTextPrompt, klippProfil, saneraText, SANNINGSKRAV } from "@/lib/prompt-core";
 import { POST_ANATOMY } from "@/lib/content-compass/prompt";
 
 // Fast datum (BILD-5b): säsongsraden får ALDRIG göra testerna tidsberoende.
@@ -223,6 +223,33 @@ describe("T-6a — CTA-golvet är uppmaning i imperativ med väg", () => {
 
   it("pa-bild-varianten har fortfarande inget CTA-golv", () => {
     expect(anatomiBlock("pa-bild")).not.toContain("CTA-golv");
+  });
+});
+
+describe("T-6b — sanningskravet: inga fabricerade berättelser/minnen/citat/siffror", () => {
+  it("finns i alla syften — även pa-bild (studio-text) och utan clientId", async () => {
+    const caption = await byggTextPrompt({ ...BAS, syfte: "caption" });
+    const studio = await byggTextPrompt({ ...BAS, syfte: "studio-text" });
+    const anon = await byggTextPrompt({ clientId: null, syfte: "social", uppdrag: "U", datum: FAST_DATUM_JULI });
+    for (const b of [caption, studio, anon]) {
+      expect(b.system).toContain("=== SANNINGSKRAV");
+      expect(b.meta.lager.sanningskrav).toBe(true);
+    }
+  });
+
+  it("regeln skiljer tillåtet (generell observation) från förbjudet (påhittat minne) med källkrav", () => {
+    expect(SANNINGSKRAV).toContain("Vi möter ofta fastighetsägare");
+    expect(SANNINGSKRAV).toContain("Jag minns en fastighetsägare");
+    expect(SANNINGSKRAV).toContain("story-bank");
+    expect(SANNINGSKRAV).toContain("Hitta ALDRIG på ett specifikt minne");
+  });
+
+  it("ligger sent (väger tyngst): efter klientens förbjudna ord, före formatkravet", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption", jsonSchema: "{}" });
+    const i = b.system.indexOf("=== SANNINGSKRAV");
+    expect(i).toBeGreaterThan(b.system.indexOf("=== FÖRBJUDNA ORD FÖR DEN HÄR KLIENTEN"));
+    expect(i).toBeLessThan(b.system.indexOf("=== SVARSFORMAT"));
+    expect(b.system.split("=== SANNINGSKRAV").length - 1).toBe(1); // exakt en gång
   });
 });
 

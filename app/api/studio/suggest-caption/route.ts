@@ -103,7 +103,9 @@ export async function POST(req: NextRequest) {
     const ANGLAR: { angle: string; instruktion: string }[] = [
       { angle: "Fråga", instruktion: "Öppna med en rak, nyfiken FRÅGA som träffar målgruppens vardag." },
       { angle: "Påstående", instruktion: "Öppna med ett djärvt, konkret PÅSTÅENDE (en sanning eller en vanlig myt du motbevisar)." },
-      { angle: "Berättelse", instruktion: "Öppna med en kort BERÄTTELSE/scen (en kund, en situation) i första person." },
+      // T-6b: berättelse-vinkeln var kända syndaren för fabricerade minnen ("Jag minns en
+      // fastighetsägare...") — suffixet får aldrig UPPMANA till påhitt, bara till grundat material.
+      { angle: "Berättelse", instruktion: "Öppna med en kort BERÄTTELSE/scen — men ENDAST hämtad ur varumärkesprofilens story-bank eller kundröster. Finns inget sådant material: öppna med en generell igenkänningsscen ('Vi möter ofta...') i stället. Hitta ALDRIG på ett specifikt minne, en kund eller ett citat." },
       { angle: "Siffra", instruktion: "Öppna med en konkret SIFFRA eller ett resultat som skapar nyfikenhet (hitta inte på — bara om innehållet ger det, annars en tydlig observation)." },
     ];
 

@@ -131,6 +131,20 @@ const CTA_GOLV = [
   "Innehåller varumärkesprofilen färdiga CTA-formuleringar (Erbjudande/CTA-sektion, kundens egna ord): FÖREDRA dem framför nyskrivna.",
 ].join("\n");
 
+// ── SANNINGSKRAV (T-6b) — KRITISK trovärdighetsregel, alla flöden ───────────
+// Skarptestet fångade en caption som började "Jag minns en fastighetsägare som var
+// orolig..." — ett påhittat minne. Berättelser, kundcase, citat och siffror får
+// ENDAST bygga på verkligt material ur tenantens profil. Plattformsregel: gäller
+// varje tenant/bransch. Blocket ligger sent (sist väger tyngst) och gäller ÄVEN
+// pa-bild-texter. Den deterministiska siffergrinden i copy.ts är oberoende av detta
+// promptlager och rörs inte.
+export const SANNINGSKRAV = [
+  "=== SANNINGSKRAV (hård regel — trovärdighet, väger tyngst) ===",
+  "Berättelser i jag-form, kundcase, kundminnen, kundcitat och specifika sifferpåståenden får ENDAST bygga på verkligt material ur klientens profil ovan (story-bank, kundröster/Customer Voice, verifierade siffror).",
+  "Saknas passande material: skriv en GENERELL observation i stället. Tillåtet: 'Vi möter ofta fastighetsägare som oroar sig för...'. FÖRBJUDET: 'Jag minns en fastighetsägare som...' utan källa i profilen.",
+  "Hitta ALDRIG på ett specifikt minne, ett kundnamn, ett citat eller en siffra. Hellre allmängiltigt och sant än specifikt och påhittat.",
+].join("\n");
+
 export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
   if (variant === "pa-bild") {
     return [
@@ -338,6 +352,12 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     );
     lager.forbjudnaOrd = true;
   }
+
+  // 8c. Sanningskrav (T-6b) — ALLTID, alla syften (även pa-bild och utan clientId:
+  // utan profil finns INGET grundat material, då gäller förbudet fullt ut). Sent
+  // block = väger tyngst; formatkravet nedan styr bara formen.
+  delar.push(SANNINGSKRAV);
+  lager.sanningskrav = true;
 
   // 9. Formatkrav — ALLTID sist. Styr formen, aldrig innehållsreglerna ovanför.
   if (p.jsonSchema) {

@@ -37,7 +37,7 @@ Skapa ett glapp mellan vad läsaren vet och vill veta — och stäng det i inlä
 1. **Fråga** — "Vet du varför {vanligt problem} händer?" (talar direkt till läsarens oro)
 2. **Statistik/siffra** — "{X} av {Y} {målgrupp} {gör misstaget}. Så undviker du det." (specifikt, trovärdigt)
 3. **Konträr/utmanande** — "Sluta {vanligt råd}. Gör {detta} istället." (bryter mönster)
-4. **Berättelse-öppning** — "{Tidpunkt} kom en {person} in med {situation}…" (öppnar en loop)
+4. **Berättelse-öppning** — "{Tidpunkt} kom en {person} in med {situation}…" (öppnar en loop). OBS: bara med en VERKLIG händelse ur profilens story-bank/kundröster — finns ingen, använd generell igenkänning ("Vi möter ofta…"), hitta aldrig på ett minne.
 5. **Djärvt påstående** — "{Det du tror om X} stämmer inte." (utmanar en vedertagen sanning)
 
 ## De 4 zonerna (diagnostisera varje förslag) → sikta ALLTID på gyllene zonen
