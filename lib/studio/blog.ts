@@ -103,8 +103,18 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
     saneraText(str(obj.metaTitle) || title, opts.clientId),
     saneraText(str(obj.metaDescription), opts.clientId),
   ]);
+  // T-5 (2): FAQ och alt-text är också kundtext (FAQ-schema + rendering) — sanera.
   const faq = Array.isArray(obj.faq)
-    ? obj.faq.map((f: Record<string, unknown>) => ({ q: str(f.q), a: str(f.a) })).filter((f: { q: string; a: string }) => f.q && f.a).slice(0, 6)
+    ? await Promise.all(
+        obj.faq
+          .map((f: Record<string, unknown>) => ({ q: str(f.q), a: str(f.a) }))
+          .filter((f: { q: string; a: string }) => f.q && f.a)
+          .slice(0, 6)
+          .map(async (f: { q: string; a: string }) => ({
+            q: await saneraText(f.q, opts.clientId),
+            a: await saneraText(f.a, opts.clientId),
+          })),
+      )
     : [];
   const html = (await skrivreglerPa(opts.clientId)) ? taBortTankstreckHtml(str(obj.html)) : str(obj.html);
   return {
@@ -116,7 +126,7 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
     faq,
     tags: Array.isArray(obj.tags) ? obj.tags.map(str).filter(Boolean).slice(0, 6) : [],
     coverImagePrompt: str(obj.coverImagePrompt),
-    coverImageAlt: str(obj.coverImageAlt) || title,
+    coverImageAlt: (await saneraText(str(obj.coverImageAlt), opts.clientId)) || title,
   };
 }
 

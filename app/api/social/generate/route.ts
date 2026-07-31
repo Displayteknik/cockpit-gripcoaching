@@ -147,12 +147,21 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
     };
     // TEXT-1: den egna stripForbidden-funktionen ersatt av enhetlig saneraText.
     const kanal = body.platform === "facebook" ? "facebook" : "instagram";
-    [post.hook, post.caption, post.cta] = await Promise.all([
+    [post.hook, post.caption, post.cta, post.hashtags] = await Promise.all([
       saneraText(stripEmojiPrefix(stripLabels(post.hook)), clientId, kanal),
       saneraText(stripHashtagBlock(stripLabels(post.caption)), clientId, kanal),
       saneraText(stripLabels(post.cta), clientId, kanal),
+      saneraText(stripLabels(post.hashtags), clientId, kanal),
     ]);
-    post.hashtags = stripLabels(post.hashtags);
+    // T-5 (2): slides är också kundtext — samma sanering som huvudfälten.
+    if (Array.isArray(post.slides)) {
+      for (const s of post.slides) {
+        [s.headline, s.body] = await Promise.all([
+          saneraText(stripLabels(s.headline), clientId, kanal),
+          saneraText(stripLabels(s.body), clientId, kanal),
+        ]);
+      }
+    }
 
     const { data: saved, error } = await sb
       .from("hm_social_posts")

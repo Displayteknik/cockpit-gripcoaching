@@ -3,7 +3,7 @@
 // deterministiskt här, precis som Studio. AI hittar aldrig på länkar; CTA-URL:en
 // sätts av anroparen (bloggens publika URL eller bokningslänk).
 import { generateJSON } from "@/lib/gemini";
-import { byggTextPrompt } from "@/lib/prompt-core";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import type { CompassParams } from "@/lib/content-compass/prompt";
 import type { NewsletterContent } from "@/lib/newsletter-render";
 
@@ -57,15 +57,30 @@ export async function generateNewsletter(opts: NewsletterGenOpts): Promise<Newsl
   });
 
   const s = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  // T-5 (2): enhetlig sanering på ALLA textbärande fält — nyhetsbrevet saknade
+  // sanering helt (10 % tankstreck i mätningen). Flaggan avgörs i prompt-core.
+  const ren = (t: string) => saneraText(t, opts.clientId);
+  const [subjects, preheader, greeting, intro, sections, cta_text, signoff] = await Promise.all([
+    Promise.all((Array.isArray(raw.subjects) ? raw.subjects.map(s).filter(Boolean).slice(0, 6) : []).map(ren)),
+    ren(s(raw.preheader)),
+    ren(s(raw.greeting)),
+    ren(s(raw.intro)),
+    Promise.all(
+      (Array.isArray(raw.sections)
+        ? raw.sections.map((x) => ({ heading: s((x as { heading?: string }).heading), body: s((x as { body?: string }).body) })).filter((x) => x.body).slice(0, 6)
+        : []
+      ).map(async (x) => ({ heading: await ren(x.heading), body: await ren(x.body) })),
+    ),
+    ren(s(raw.cta_text)),
+    ren(s(raw.signoff)),
+  ]);
   return {
-    subjects: Array.isArray(raw.subjects) ? raw.subjects.map(s).filter(Boolean).slice(0, 6) : [],
-    preheader: s(raw.preheader),
-    greeting: s(raw.greeting) || "Hej!",
-    intro: s(raw.intro),
-    sections: Array.isArray(raw.sections)
-      ? raw.sections.map((x) => ({ heading: s((x as { heading?: string }).heading), body: s((x as { body?: string }).body) })).filter((x) => x.body).slice(0, 6)
-      : [],
-    cta_text: s(raw.cta_text) || "Läs mer",
-    signoff: s(raw.signoff),
+    subjects,
+    preheader,
+    greeting: greeting || "Hej!",
+    intro,
+    sections,
+    cta_text: cta_text || "Läs mer",
+    signoff,
   };
 }

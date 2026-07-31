@@ -17,7 +17,7 @@ import { planWeek } from "@/lib/content-compass/rules";
 import { byggCompassVeckaPrompt } from "@/lib/content-compass/vecka-prompt";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
-import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
+import { skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -264,17 +264,18 @@ async function generateCompassWeek(clientId: string, theme: string) {
   const firstLine = (s: string) => (s.split("\n")[0] || "").slice(0, 120).trim() || "Veckoinlägg";
 
   // Spara varje planerad dag som ett utkast (studio_posts) med Compass-metadata + bästa-tid.
+  // T-5 (2): fälten saneras VAR FÖR SIG innan de landar i payload — förr sanerades bara
+  // den hopslagna captionen medan payload.headline1/body/caption bar rå text.
   const nowIso = new Date().toISOString();
-  const rows = posts.map((p, i) => {
+  const rows = await Promise.all(posts.map(async (p, i) => {
     const ai = parsed.days![i] || {};
-    const hook = toStr(ai.hook);
-    const bodyTxt = toStr(ai.body);
-    const cta = toStr(ai.cta);
+    const [hook, bodyTxt, cta] = await Promise.all([
+      saneraText(toStr(ai.hook), clientId),
+      saneraText(toStr(ai.body), clientId),
+      saneraText(toStr(ai.cta), clientId),
+    ]);
     const hashtags = Array.isArray(ai.hashtags) ? ai.hashtags.map((h) => String(h).replace(/^#/, "")) : [];
-    // Skyddsnät: skrivreglerna gäller även den färdigprofilerade veckan.
-    const caption = sanitizeGenerated(
-      [hook, bodyTxt, cta, hashtags.slice(0, 5).map((h) => `#${h}`).join(" ")].filter(Boolean).join("\n\n"),
-    );
+    const caption = [hook, bodyTxt, cta, hashtags.slice(0, 5).map((h) => `#${h}`).join(" ")].filter(Boolean).join("\n\n");
     return {
       client_id: clientId,
       template_id: "ark-textkort",
@@ -298,7 +299,7 @@ async function generateCompassWeek(clientId: string, theme: string) {
       created_at: nowIso,
       updated_at: nowIso,
     };
-  });
+  }));
 
   const { data: inserted, error } = await sb.from("studio_posts").insert(rows).select("id, title, scheduled_at, funnel_level, four_a, disc");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
