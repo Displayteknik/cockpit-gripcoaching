@@ -11,6 +11,7 @@ import ArkTextkort from "./archetypes/ArkTextkort";
 import ArkKarusell from "./archetypes/ArkKarusell";
 import type { StudioPayload, StudioFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
+import type { LogoHint } from "@/lib/studio/logo-style";
 
 // templateId → mallkomponent + tillåtna format. Ny mall = en rad här + en komponent.
 
@@ -18,6 +19,9 @@ export interface TemplateProps {
   payload: StudioPayload;
   brand: StudioBrand;
   slideIndex?: number; // ark-karusell: vilken slide som renderas (0-baserad)
+  // BILD-5a: serverns val av ljus/mörk logga + ev. platta (ark-overlay/ark-karusell).
+  // Sätts av render-routen; saknas i live-editorn (client) → mallens fallback gäller.
+  logoHint?: LogoHint | null;
 }
 
 export interface TemplateDef {

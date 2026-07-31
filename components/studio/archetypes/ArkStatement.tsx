@@ -28,7 +28,7 @@ export default function ArkStatement({ payload, brand }: { payload: StudioPayloa
           <div data-drag="body" style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor(onPrimary, payload), opacity: 0.85, fontSize: fs(30, payload, "body"), lineHeight: lh(1.4, payload), marginTop: 22, maxWidth: 760, ...dragPos(payload, "body") }}><span data-edit="body" style={textPlate(payload)}>{payload.body}</span></div>
         ) : null}
       </div>
-      {portrait ? <KitFooter brand={brand} /> : <div style={{ height: 40 }} />}
+      {portrait ? <KitFooter brand={brand} format={payload.format} /> : <div style={{ height: 40 }} />}
     </div>
   );
 }

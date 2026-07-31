@@ -3,13 +3,14 @@ import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs } from "@/lib/studio/overrides";
 import { isLightColor } from "@/components/studio/StudioBits";
+import { logoImgStyle, logoPlateStyle, type LogoHint } from "@/lib/studio/logo-style";
 
 // Arketyp 9: Karusell. En slide per render (slideIndex från render-routens ?slide=n).
 // Exporten loopar över payload.slides och ger N PNG. slide.kind styr layouten:
 //   hook  = omslag/krok (färgstark helyta, stor rubrik, "svep"-hint)
 //   point = innehållspunkt (ljus yta, numrerad, rubrik + text)
 //   cta   = avslut (mörk yta, uppmaning + logga)
-export default function ArkKarusell({ payload, brand, slideIndex = 0 }: { payload: StudioPayload; brand: StudioBrand; slideIndex?: number }) {
+export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }: { payload: StudioPayload; brand: StudioBrand; slideIndex?: number; logoHint?: LogoHint | null }) {
   const { w, h } = FORMAT_DIMENSIONS[payload.format];
   const c = brand.colors;
   const slides = payload.slides.length ? payload.slides : [{ kind: "hook", headline: payload.headline1 || "Karusell", body: payload.body, imageUrl: payload.imageUrl } as StudioSlide];
@@ -86,15 +87,18 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0 }: { payloa
         ) : null}
       </div>
 
-      {/* Diskret varumärke nere — föredra alltid loggan (rätt version per faktisk bakgrundsljushet) före text */}
+      {/* Diskret varumärke nere — föredra alltid loggan (rätt version per faktisk bakgrundsljushet) före text.
+          BILD-5a: serverns hint vinner (den vet bakgrundens ljushet + kontrast); utan hint (editorn) → färglogik som förr. */}
       {(() => {
         const bgLight = isLightColor(bg) && !hasImg;
-        const chosenLogo = bgLight ? brand.assets.logo || brand.assets.logoOnDark : brand.assets.logoOnDark || brand.assets.logo;
+        const chosenLogo = logoHint?.url || (bgLight ? brand.assets.logo || brand.assets.logoOnDark : brand.assets.logoOnDark || brand.assets.logo);
         return (
           <div style={{ position: "absolute", bottom: 56, left: 80, right: 80, display: "flex", alignItems: "center", zIndex: 2 }}>
             {chosenLogo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={chosenLogo} alt="" style={{ maxHeight: 48, maxWidth: 280, objectFit: "contain" }} />
+              <div style={logoPlateStyle(logoHint?.plate)}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={chosenLogo} alt="" style={logoImgStyle(payload.format, { overPhoto: hasImg, maxWidth: 420 })} />
+              </div>
             ) : (
               <div style={{ fontFamily: `${brand.fonts.logo || brand.fonts.headline}, serif`, fontWeight: 800, fontSize: 30, color: slide.kind === "point" ? c.primary : ink }}>{brand.name}</div>
             )}

@@ -1,10 +1,12 @@
 import type { StudioBrand } from "@/lib/studio/brand";
+import type { StudioFormat } from "@/lib/studio/payload";
 import { isLightColor } from "@/components/studio/StudioBits";
+import { LOGO_MIN_HEIGHT, FOOTER_LOGO_MAX_WIDTH } from "@/lib/studio/logo-style";
 
 // Generisk fot för alla arketyper. Läser kitet — ingen kund-hårdkodning.
 // Prioritet: exakt fot-crop (footer.png) → kod-byggd fot ur kit (logga/namn + adress + CTA + QR).
 // Döljs helt om brand.footer.show === false.
-export default function KitFooter({ brand }: { brand: StudioBrand }) {
+export default function KitFooter({ brand, format = "1080x1350" }: { brand: StudioBrand; format?: StudioFormat }) {
   const c = brand.colors;
 
   // 100%-läge: kundens egna exakta fot-bild (t.ex. Opticur).
@@ -24,7 +26,7 @@ export default function KitFooter({ brand }: { brand: StudioBrand }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           {brand.assets.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={brand.assets.logo} alt="" style={{ maxHeight: 74, maxWidth: 360, objectFit: "contain", display: "block" }} />
+            <img src={brand.assets.logo} alt="" style={{ height: LOGO_MIN_HEIGHT[format], width: "auto", maxWidth: FOOTER_LOGO_MAX_WIDTH, objectFit: "contain", display: "block" }} />
           ) : (
             <div style={{ fontFamily: `${brand.fonts.logo || brand.fonts.headline}, serif`, fontWeight: 800, fontSize: 44, color: c.primary, lineHeight: 1 }}>
               {brand.name}

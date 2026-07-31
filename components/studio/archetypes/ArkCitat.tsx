@@ -29,7 +29,7 @@ export default function ArkCitat({ payload, brand }: { payload: StudioPayload; b
           </div>
         ) : null}
       </div>
-      {portrait ? <KitFooter brand={brand} /> : <div style={{ height: 40 }} />}
+      {portrait ? <KitFooter brand={brand} format={payload.format} /> : <div style={{ height: 40 }} />}
     </div>
   );
 }

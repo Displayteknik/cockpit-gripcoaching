@@ -30,7 +30,7 @@ export default function ArkLista({ payload, brand }: { payload: StudioPayload; b
           </div>
         ))}
       </div>
-      {portrait ? <KitFooter brand={brand} /> : <div style={{ height: 40 }} />}
+      {portrait ? <KitFooter brand={brand} format={payload.format} /> : <div style={{ height: 40 }} />}
     </div>
   );
 }

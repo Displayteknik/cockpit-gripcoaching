@@ -2,11 +2,12 @@ import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs, hlColor, bodyColor, imgPosition, imgScale, font, textPlate, lh, dragPos } from "@/lib/studio/overrides";
+import { logoImgStyle, logoPlateStyle, type LogoHint } from "@/lib/studio/logo-style";
 
 // Arketyp 6: Foto + text-overlay. Text ligger PÅ bilden med scrim för läsbarhet.
 // Stil ur brand.content.overlayStyle. För coaching/tjänst där bilden bär känslan
 // och texten är budskapet (motsats till affisch-rutan).
-export default function ArkOverlay({ payload, brand }: { payload: StudioPayload; brand: StudioBrand }) {
+export default function ArkOverlay({ payload, brand, logoHint }: { payload: StudioPayload; brand: StudioBrand; logoHint?: LogoHint | null }) {
   const { w, h } = FORMAT_DIMENSIONS[payload.format];
   const c = brand.colors;
   const style = brand.content.overlayStyle;
@@ -32,11 +33,14 @@ export default function ArkOverlay({ payload, brand }: { payload: StudioPayload;
       )}
       {scrim !== "none" ? <div style={{ position: "absolute", inset: 0, background: scrim }} /> : null}
 
-      {/* Logga/namn diskret uppe */}
+      {/* Logga/namn diskret uppe. BILD-5a: serverns hint väljer ljus/mörk variant efter
+          bakgrundens faktiska ljushet + ev. platta; utan hint (editorn) → mörk-variant som förr. */}
       <div style={{ position: "absolute", top: 44, left: 52, right: 52, display: "flex", alignItems: "center" }}>
-        {brand.assets.logoOnDark || brand.assets.logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={brand.assets.logoOnDark || brand.assets.logo} alt="" style={{ maxHeight: 56, maxWidth: 300, objectFit: "contain" }} />
+        {logoHint?.url || brand.assets.logoOnDark || brand.assets.logo ? (
+          <div style={logoPlateStyle(logoHint?.plate)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoHint?.url || brand.assets.logoOnDark || brand.assets.logo} alt="" style={logoImgStyle(payload.format, { overPhoto: Boolean(payload.imageUrl) })} />
+          </div>
         ) : (
           <div style={{ fontFamily: `${brand.fonts.logo || brand.fonts.headline}, serif`, fontWeight: 800, fontSize: 34, color: "#fff", textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}>{brand.name}</div>
         )}

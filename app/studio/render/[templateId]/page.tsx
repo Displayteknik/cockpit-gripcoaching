@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTemplate } from "@/components/studio/registry";
 import { normalizePayload, decodePayload, type StudioPayload } from "@/lib/studio/payload";
 import { loadBrand } from "@/lib/studio/brand";
+import { computeLogoHint } from "@/lib/studio/logo-contrast";
 
 // Ren render-yta (ingen Cockpit-chrome — undantagen i app/layout.tsx isHmMotorSurface).
 // Används av live-preview (iframe) OCH av Playwright-export. Payload via ?p=<base64-JSON>.
@@ -37,9 +38,12 @@ export default async function StudioRenderPage({
   const brand = await loadBrand(payload.clientId);
   const Template = def.component;
 
+  // BILD-5a: välj ljus/mörk loggvariant efter bakgrundens ljushet i loggzonen.
+  const logoHint = await computeLogoHint(templateId, payload, brand, slideIndex);
+
   return (
     <div id="studio-render-root">
-      <Template payload={payload} brand={brand} slideIndex={slideIndex} />
+      <Template payload={payload} brand={brand} slideIndex={slideIndex} logoHint={logoHint} />
     </div>
   );
 }

@@ -28,7 +28,7 @@ export default function ArkTextkort({ payload, brand }: { payload: StudioPayload
           <div data-drag="body" style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: bodyColor(c.ink, payload), opacity: 0.86, fontSize: fs(36, payload, "body"), lineHeight: lh(1.45, payload), maxWidth: 820, ...dragPos(payload, "body") }}><span data-edit="body" style={textPlate(payload)}>{payload.body}</span></div>
         ) : null}
       </div>
-      {portrait ? <KitFooter brand={brand} /> : <div style={{ height: 40 }} />}
+      {portrait ? <KitFooter brand={brand} format={payload.format} /> : <div style={{ height: 40 }} />}
     </div>
   );
 }

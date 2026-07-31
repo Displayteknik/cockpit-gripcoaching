@@ -46,7 +46,7 @@ export default function ArkFotoRuta({ payload, brand }: { payload: StudioPayload
         ) : null}
       </div>
 
-      {portrait ? <KitFooter brand={brand} /> : <div style={{ height: 44 }} />}
+      {portrait ? <KitFooter brand={brand} format={payload.format} /> : <div style={{ height: 44 }} />}
     </div>
   );
 }
