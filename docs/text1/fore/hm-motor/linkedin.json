@@ -1,0 +1,128 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "linkedin",
+  "genererad": "2026-07-31T06:13:09.207Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Du har redan testat systemet som skulle lösa allt.\",\"body\":\"Du har redan testat systemet som skulle lösa allt.\\n\\nKanske var det ett CRM, en ny e-postlista eller en avancerad annons-tratt.\\n\\nDu la ner helgen, konfigurerade allt och kände dig produktiv. Två veckor senare var du tillbaka på ruta ett. Systemet samlade digitalt damm.\\n\\nDet är det vanligaste mönstret jag ser.\\n\\nFöretagare som är experter på sin sak, men som tror att ett tekniskt verktyg ska lösa ett mänskligt problem.\\n\\nProblemet är sällan tekniken.\\nProblemet är att vi kör fast i våra egna huvuden.\\n\\n\\\"Jag vet att jag borde göra mer för att få kunder, men jag kör fast och gör inget alls.\\\"\\n\\nExakt så sa en kund till mig. Och det är där det riktiga arbetet börjar.\\n\\nInnan du letar efter nästa verktyg, stanna upp. Felet ligger nästan aldrig i att:\\n\\n1. Du har fel mjukvara.\\n2. Du saknar en teknisk finess.\\n3. Du inte har den senaste versionen.\\n\\nFelet ligger i att systemet inte är byggt för *dig* och dina mentala hinder. Det känns inte som en naturlig del av din vardag.\\n\\nEtt system ska inte kräva att du ändrar vem du är. Det ska förstärka den du redan är.\\n\\nDet är så vi jobbar.\\n\\nBörjar du känna igen mönstret hos dig själv?\",\"hashtags\":\"#företagande #soloföretagare #konsult\",\"cta\":\"soft\",\"word_count\":213,\"notes\":\"Positionerar problemet som internt/mänskligt snarare än tekniskt, vilket direkt kopplar till vår USP och bygger 'KNOW' hos rätt ICP.\"}",
+      "duration_ms": 12334,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "c49ff990-a104-4658-9193-b8f1aab6710d"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Tjena! En kund ringde precis. Motorlampan lyste och bilen lät konstigt.\",\"body\":\"Tjena! En kund ringde precis. Motorlampan lyste och bilen lät konstigt.\\n\\nHan lät stressad. Behövde bilen till jobbet imorgon.\\n\\nKänslan är bekant. Ett problem på sin bil är ett problem i hela vardagen.\\n\\nMen det behöver inte vara krångligt. Hos oss ser processen nästan alltid likadan ut, oavsett om det är en lampa som lyser eller en motor som knackar.\\n\\n1. Du ringer eller kommer förbi. Beskriver problemet.\\n2. Vi tar en snabb titt direkt. Oftast kan vi ge en första bedömning på plats.\\n3. Vi ger dig en plan och en tid. Inga gissningar.\\n4. Vi ringer när vi hittat felet och innan vi beställer delar. Du har alltid kontroll.\\n\\nResultatet den här gången?\\n\\nEn trasig tändspole. Vi hade en på hyllan.\\n\\nVi fixade det på 30 minuter. Utan att han behövde boka tid.\\n\\nDet är såhär vi jobbar. Snabbt, enkelt och ärligt.\\n\\nHur vill du att ett besök på bilverkstaden ska kännas?\",\"hashtags\":\"#bilverkstad #krokom #service\",\"cta\":\"soft\",\"word_count\":147,\"notes\":\"Ett inlägg som visar vår enkla och direkta process för att bygga förtroende och visa effektivitet.\"}",
+      "duration_ms": 11822,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "voice_score": {
+          "score": 100,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "250b49ac-ff44-400e-b7a7-7cad80d8ab4d"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Vi får samma 3 frågor varje vecka. Här är svaren.\",\"body\":\"Vi får samma 3 frågor varje vecka. Här är svaren.\\n\\nFolk kommer in till verkstan, pekar på sin bil eller snöskoter och undrar.\\n\\nOftast är det en av dessa tre:\\n\\n1. ”Måste jag boka tid för en sån här liten grej?”\\n\\nSvar: Oftast inte. Om det är ett litet problem på din bil, fyrhjuling eller skoter så kollar vi direkt. Häromdagen kom en kille in med en krånglande snöslunga. Vi fixade det på 30 minuter, utan att han behövde boka tid. Är det enklare att lösa direkt så gör vi det.\\n\\n2. ”Vad kommer det här att kosta, egentligen?”\\n\\nSvar: Du får alltid ett pris av oss *innan* vi börjar. Inga gissningar, inga överraskningar på fakturan. Vi säger vad som behöver göras och vad det kostar. Punkt.\\n\\n3. ”Är ni en märkesverkstad?”\\n\\nSvar: Nej, och det är vår styrka. Vi är en oberoende verkstad i Krokom som servar och reparerar de flesta märken. Vi är inte låsta till ett system. Vi hittar en lösning som funkar för dig och din maskin.\\n\\nInga konstigheter. \\n\\nDet är såhär vi jobbar.\",\"hashtags\":\"#verkstad #krokom #bilservice\",\"cta\":\"soft\",\"word_count\":204,\"notes\":\"Ett inlägg som bygger förtroende genom att ärligt besvara vanliga kundfrågor och förstärka verkstadens direkta, no-nonsense-attityd.\"}",
+      "duration_ms": 10360,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 6,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "voice_score": {
+          "score": 97,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "5b614e25-a552-43a9-8488-61b6a96a56cf"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Tjena! En kund hade ett problem på sin bil i tre månader.\",\"body\":\"Tjena! En kund hade ett problem på sin bil i tre månader.\\n\\nEtt litet missljud som han tänkte ”det där måste jag kolla upp”.\\n\\nMen du vet hur det är. Jobb, hämta på förskolan, livet kommer emellan. Och tanken på att boka tid, lämna in bilen, ordna med skjuts… det kändes för stort.\\n\\nIgår svängde han in hos oss på vinst och förlust.\\n\\nBerättade om sitt problem.\\n\\nVi tog in bilen direkt.\\n\\nVi fixade det. På 30 minuter.\\n\\nUtan att han behövde boka tid.\\n\\nHans reaktion? Lättnad. ”Varför gjorde jag inte det här direkt?” sa han och skakade på huvudet.\\n\\nDet är såhär vi jobbar. Inget krångel. Vi löser problemet så du kan fortsätta med din dag.\\n\\nHar du något litet problem som du skjutit upp?\",\"hashtags\":\"#verkstad #krokom #bilservice\",\"cta\":\"soft\",\"word_count\":125,\"notes\":\"Fokuserar på att avdramatisera verkstadsbesöket och visa hur snabbt och enkelt det kan vara, vilket bygger både förtroende (TRUST) och synlighet (KNOW).\"}",
+      "duration_ms": 10703,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "voice_score": {
+          "score": 100,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "d3d70f9b-a145-44e0-b81f-8818f4005b9c"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Tjena! Häromdagen kom en kund in med sin skoter.\",\"body\":\"Tjena! Häromdagen kom en kund in med sin skoter.\\n\\nHan hade ett problem på sin variator och fått ett prisförslag från en annan verkstad. Det var billigare än vårt.\\n\\nMen han valde oss ändå.\\n\\nVarför? För att det billigaste priset sällan är den billigaste lösningen.\\n\\nNär du bara ser en siffra på ett papper är det lätt att missa det som verkligen kostar:\\n\\n1. Tiden. Tiden du förlorar när du måste åka tillbaka för att samma fel återkommer.\\n2. Förtroendet. Känslan när du är mitt ute på fjället och inte kan lita på att grejerna håller.\\n3. Krånglet. Alla samtal och all energi som går åt när något inte blev rätt från början.\\n\\nVi tog in skotern. Hittade felet, och ett annat som snart skulle bli ett problem. Vi fixade det. På 30 minuter. Utan att han behövde boka tid.\\n\\nDet är inte alltid billigast på pappret. Men det är oftast billigast i längden.\\n\\nDet är såhär vi jobbar.\",\"hashtags\":\"#verkstad #krokom #skoter\",\"cta\":\"soft\",\"word_count\":169,\"notes\":\"Posten etablerar värde över pris genom en konkret berättelse, vilket bygger förtroende och positionerar HM Motor som den pålitliga experten.\"}",
+      "duration_ms": 11821,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "voice_score": {
+          "score": 100,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "6235b77c-fb27-434b-a6dd-c3bd5a8f40f0"
+      }
+    }
+  ]
+}

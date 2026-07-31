@@ -1,0 +1,92 @@
+{
+  "profil": "Displayteknik",
+  "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "flode": "karusell",
+  "genererad": "2026-07-31T05:58:33.462Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Syns din skylt inte i solljuset?\",\"body\":\"Många företag har skärmar som ingen ser. Du är inte ensam.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Fel skärm för rätt plats\",\"body\":\"Det vanligaste misstaget är att välja en standard-TV istället för en skärm byggd för utomhusbruk eller skyltfönster. De klarar inte ljus, kyla eller kondens.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Glömmer nordiskt klimat\",\"body\":\"En skärm måste tåla våra väderförhållanden. En vanlig inomhusskärm blir snabbt trött och går sönder när den exponeras för kyla, värme och fukt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Ingen plan för innehåll\",\"body\":\"En skärm är bara så bra som det den visar. Många köper hårdvaran men tänker inte på hur de ska skapa och uppdatera materialet över tid.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har ni en trött skyltning?\",\"body\":\"Skicka en bild på platsen till oss – du får en offert inom 24 timmar på en lösning som syns och säljer.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2948,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Vad händer när du ringer oss?\",\"body\":\"Från första tanken till en färdig digital skärm som bara fungerar.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"1. Idé och platsanalys\",\"body\":\"Vi startar med att förstå dina behov. Skicka en bild på platsen så återkommer vi med konkreta förslag och offert inom 24 timmar. Eller boka en digital fika.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"2. Skräddarsydd lösning & plan\",\"body\":\"Vi väljer rätt skärmtyp för just din miljö, oavsett om det är solljus, kyla eller fukt. Du får en tydlig plan för installation och vad du behöver tänka på.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"3. Installation, innehåll & support\",\"body\":\"Vi monterar allt på plats och ser till att skärmen är igång. Vi hjälper dig med innehållet och finns där med support år efter år.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Nyfiken på en digital fika?\",\"body\":\"Boka 30 minuter med Håkan. Ingen säljpitch, bara raka svar på dina frågor.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2780,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Syns skärmen verkligen i solen?\",\"body\":\"Får du rätt svar på dina frågor om digital skyltning? Här är tre vi alltid får.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Fråga 1: Syns den i solljus?\",\"body\":\"Ja. Med rätt nits (ljusstyrka) ser vi till att din skärm syns tydligt, även i direkt solljus. Det är avgörande för att fånga uppmärksamhet.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Fråga 2: Vem hjälper oss sen?\",\"body\":\"Vi är din enda kontakt. Från installation till innehåll och support, vi tar fullt ansvar. Du slipper bli din egen AV-tekniker.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Fråga 3: Vad kostar det?\",\"body\":\"Priset varierar. Men vi fokuserar på ROI. En skärm som syns, säljer och fungerar år efter år är en investering som betalar sig snabbt.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du fler frågor om skyltning?\",\"body\":\"Skicka en bild på platsen till oss så får du en offert inom 24 timmar. Eller boka en digital fika, ingen säljpitch.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2945,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Tvekade du också för länge?\",\"body\":\"Se hur en kund gick från tvekan till en lösning som verkligen syns.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Problemet: Skylten syntes inte\",\"body\":\"Vår kunds befintliga skyltning var trött och försvann i dagsljuset. De visste att de förlorade kunder.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Lösningen: En skärm som säljer\",\"body\":\"Vi designade och installerade en LED-skärm med 3000 nits. Nu syns budskapet klart, även i direkt solljus.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Resultatet: Fler kunder fångas\",\"body\":\"Skärmen drar blickar och säljer på plats, dygnet runt. En investering som betalar sig år efter år.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Är du redo att synas bättre?\",\"body\":\"Skicka en bild på din plats. Du får en offert inom 24 timmar – helt utan krångel.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2358,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "problem"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Varför väljer kunder dyrare skärmar?\",\"body\":\"Det billigaste alternativet är sällan bäst i längden. Här är varför.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Skärmen ska synas – året runt\",\"body\":\"I nordiskt klimat behövs teknik som klarar kyla, fukt och starkt solljus. En billig skärm blir snabbt en svart ruta som ingen ser.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Tänk helhet, inte bara pris\",\"body\":\"Vad händer när skärmen strular? Med en leverantör som tar ansvar för installation, innehåll och support sparar du tid och pengar i slutändan.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"En investering som säljer\",\"body\":\"En skärm som fungerar år efter år är en säljkraft. Den fångar blickar och säljer på plats när ingen annan gör det – en dyrbar tillgång.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Nyfiken på en driftsäker lösning?\",\"body\":\"Skicka en bild på platsen du tänkt dig – få en offert inom 24 timmar.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2563,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      }
+    }
+  ]
+}

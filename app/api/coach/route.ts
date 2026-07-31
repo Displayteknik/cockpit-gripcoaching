@@ -83,6 +83,7 @@ ${inventoryBlock}`;
         const conversationText = body.messages.map((m) => `${m.role === "user" ? "Kund" : "Coach"}: ${m.content}`).join("\n");
         const result = await generateJSON<{ score: number; reasoning: string }>({
           model: "gemini-2.5-flash",
+          skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
           systemInstruction: `Du bedömer hur köp-redo en lead är från en konversation. Skala 1–10:
 1–3 = bara nyfiken, ingen avsikt
 4–6 = intresserad men osäker, behöver tid

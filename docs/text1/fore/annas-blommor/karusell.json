@@ -1,0 +1,88 @@
+{
+  "profil": "Annas Blommor",
+  "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+  "flode": "karusell",
+  "genererad": "2026-07-31T06:18:57.927Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Vanliga missen med bröllopsblommor?\",\"body\":\"Många tror de måste ha en exakt plan. Men det behövs inte!\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Du behöver inte veta ALLT\",\"body\":\"Vi möter ofta par som känner sig stressade över att inte ha alla detaljer klara. Kom som ni är, med era lösa idéer och drömmar, så skapar vi magi tillsammans.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Färgpaletten är ingen måsten\",\"body\":\"Många försöker välja en exakt färgkod för blommorna. Fokusera istället på känslan och vilken stämning ni vill ha, så guidar vi er till en harmonisk palett med säsongens finaste.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Lita på säsongens skönhet\",\"body\":\"Att försöka få tag på specifika blommor utanför säsongen kan bli dyrt och ge ett sämre resultat. Vi älskar att jobba med det naturen erbjuder, vilket ger en mer personlig och levande känsla.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Vad drömmer ni om?\",\"body\":\"Boka en konsultation så pratar vi igenom era tankar och skapar något unikt för just er dag.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3067,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Nyfiken på bröllopsblommor?\",\"body\":\"Så här skapar vi era unika blomsterdrömmar, steg för steg.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"1. Idé & första mötet\",\"body\":\"Vi börjar med ett personligt möte för att förstå er vision, stil och vilka känslor ni vill förmedla med era blommor. Vi pratar säsong och era favoriter.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"2. Design & skiss\",\"body\":\"Utifrån era önskemål och säsongens utbud tar vi fram ett unikt designförslag. Det inkluderar skisser, färgpaletter och förslag på vilka snittblommor som passar bäst.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"3. Hantverk & leverans\",\"body\":\"När dagen närmar sig handplockar vi de finaste svenska snittblommorna. Varje bukett och arrangemang binds sedan för hand med omsorg, och levereras till er.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har ni en egen blomsterdröm?\",\"body\":\"Boka en kostnadsfri konsultation så pratar vi igenom hur vi kan skapa den perfekta blomsterupplevelsen för er.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2938,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"3 frågor vi alltid får om blommor\",\"body\":\"Och våra ärliga svar för dig som planerar bröllop eller event.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vad kostar bröllopsblommor?\",\"body\":\"Priset varierar stort beroende på val av blommor, storlek och omfattning. Vi ritar varje bröllop från grunden för att matcha er vision, inte färdiga paket.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Kan jag få vilka blommor jag vill?\",\"body\":\"Vi fokuserar på säsongens svenska snittblommor, vilket ger det vackraste resultatet och är mest hållbart. Vi guidar er till de perfekta blommorna för er dag.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Hur tidigt måste jag boka?\",\"body\":\"För bröllop rekommenderar vi att ni bokar minst 6-12 månader i förväg, särskilt under högsäsong. Det ger oss tid att planera i lugn och ro.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har ni frågor om era blommor?\",\"body\":\"Boka en personlig konsultation med oss. Vi älskar att prata blommor och hjälpa er visualisera er dröm.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2562,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Tvekade ni inför bröllopsblommor?\",\"body\":\"Så här blev resultatet när ett par vågade lita på säsongens magi.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Från skiss till verklighet\",\"body\":\"Vi började med en vision om naturnära elegans. Genom att fokusera på säsongens svenska snittblommor skapade vi en design som kändes både personlig och tidlös.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Färger som fångar känslan\",\"body\":\"Paret var osäkra på färgpaletten. Vi föreslog en mjuk blandning av ljusa rosor, yviga pioner och delikata luktärter som speglade den jämtländska sommaren perfekt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Varje detalj räknas\",\"body\":\"Från brudbuketten till bordsdekorationerna, allt var handbundet med känsla. Detaljerna gjorde att blommorna verkligen blev en del av parets stora dag, inte bara en dekoration.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Är ni redo att drömma fritt?\",\"body\":\"Boka en konsultation så ritar vi era unika bröllopsblommor från grunden, utan färdiga paket.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2679,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Bröllopsblommor: Därför väljer du bort det billigaste\",\"body\":\"När drömmen ska bli sann, spelar andra saker roll än pris.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Personlig stil, inte paket\",\"body\":\"Vi skapar en unik blomsterdesign som berättar er historia, istället för att välja ur standardpaket. Varje bröllop ritas från grunden.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Säsongens skönhet och kvalitet\",\"body\":\"Med säsongens svenska snittblommor garanterar vi fräschör och en naturnära känsla. Detaljer som lyfter hela dagen.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Hantverk som syns och känns\",\"body\":\"Våra handbundna arrangemang speglar åratal av erfarenhet och passion. Det är skillnad på att bara fylla en vas och att skapa konst.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Låt oss prata om era drömmar?\",\"body\":\"Boka en konsultation så utforskar vi hur vi kan förverkliga er vision med unika blommor.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2792,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    }
+  ]
+}

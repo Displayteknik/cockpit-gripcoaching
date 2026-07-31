@@ -1,0 +1,136 @@
+{
+  "profil": "Displayteknik",
+  "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "flode": "linkedin",
+  "genererad": "2026-07-31T05:59:12.003Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Den där 65-tummaren från hemelektronik-kedjan? Den kommer kosta dig mer än du tror.\",\"body\":\"Den där 65-tummaren från hemelektronik-kedjan?\\n\\nDen kommer kosta dig mer än du tror.\\n\\nDet vanligaste misstaget jag ser är när företag köper en vanlig konsument-TV för ett skyltfönster eller en butik. Man vill komma igång snabbt, få upp något som rör sig. Priset ser ju bra ut på kvittot.\\n\\nMan tänker: ”En skärm är en skärm”.\\n\\nMen den tanken blir dyr. För en vanlig TV är byggd för ett vardagsrum, inte en kommersiell miljö.\\n\\nResultatet är nästan alltid detsamma:\\n\\n1.  **Den syns inte.** Ljusstyrkan är för svag för dagsljus. Istället för en säljande skärm får du en svart spegel i skyltfönstret.\\n\\n2.  **Den dör i förtid.** En TV är gjord för 4–6 timmars drift per dag. I en butik körs den 10–16 timmar. Komponenterna överhettas och ger upp. Garantin gäller inte.\\n\\n3.  **Du blir din egen tekniker.** Vem ringer du när den strular? När innehållet ska uppdateras? När den behöver monteras säkert?\\n\\nEn professionell skärm är inte en kostnad – det är en investering i att synas, sälja och fungera. År efter år.\\n\\nKör du med en vanlig TV idag?\",\"hashtags\":\"#digitalskyltning #skyltfönster #butikskommunikation\",\"cta\":\"soft\",\"word_count\":194,\"notes\":\"Positionerar Displayteknik som experten genom att belysa ett vanligt och kostsamt misstag ICP gör – att välja en konsument-TV istället för en professionell lösning.\"}",
+      "duration_ms": 14040,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "jag"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score": {
+          "score": 70,
+          "verdict": "pass",
+          "issues": [
+            "Anvander forbjudet ord \"jag\" (1x)"
+          ]
+        },
+        "sparad_rad_id": "b4aa08bf-3fa3-4a6f-b044-68d97042c719"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Allt börjar ofta med en bild i ett mejl.\",\"body\":\"Allt börjar ofta med en bild i ett mejl.\\n\\nEn kund skickar en bild på sitt skyltfönster, sin reception eller tomma fasadvägg.\\nOfta med frågan: ”Vad skulle en skärm kosta här?”\\n\\nMen den riktiga frågan är: ”Vad krävs för att en skärm här ska fånga kunder och fungera – år efter år?”\\n\\nSvaret är att det inte bara är en skärm. Det är en kedja. Och om en länk brister, faller allt. Därför ser vår process ut så här, från bild till driftsatt lösning:\\n\\n1. Digital fika (30 min). Vi pratar inte teknik, vi pratar mål. Vilka kunder ska den fånga? Vilket intryck ska den ge? Vi tittar på bilden tillsammans och ringar in rätt typ av skärm – en som syns i direkt solljus, eller en som tål nordisk vinter.\\n\\n2. Offert inom 24h. En rad för hårdvara, en för installation, en för mjukvara och en för serviceavtal. Hela kedjan, ett pris. Inga överraskningar.\\n\\n3. Installation. Vi är på plats. Drar el, monterar fästen, ansluter till nätverket och kalibrerar skärmen för bästa bild. Du behöver inte koordinera med en elektriker eller IT-tekniker.\\n\\n4. Överlämning. Vi startar ditt konto i vår mjukvara (DT Player), visar hur du enkelt laddar upp en bild eller video, och lämnar inte förrän allt rullar.\\n\\nResultatet: En skärm som säljer. Inte ett teknikprojekt för dig.\\n\\nNyfiken på vad som skulle passa din vägg eller ditt fönster?\\nSkicka en bild. Du får ett konkret förslag tillbaka.\",\"hashtags\":\"#digitalskyltning #ledskärm #installation #företagande\",\"cta\":\"soft\",\"word_count\":257,\"notes\":\"Inlägget visar processen för att bygga förtroende och visa att vi tar ett helhetsansvar, vilket är en central USP.\"}",
+      "duration_ms": 13905,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "9e515b87-72f8-402e-bbf0-272bfff03793"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Vad kostar en digital skärm?\",\"body\":\"Vad kostar en digital skärm?\\n\\nDet är nästan alltid den första frågan. Tätt följd av två till.\\n\\nHär är de 3 vanligaste frågorna vi får från butiksägare, fastighetsansvariga och marknadschefer — och våra ärliga svar.\\n\\n\\n1. ”Vad kostar det egentligen?”\\n\\nSvar: En professionell 43” skärm för inomhusbruk börjar på 21 000 kr. En ljusstark skärm för skyltfönster (som syns i solljus) kostar mer. Priset beror på storlek, ljusstyrka och miljö. Vi ger alltid en offert inom 24 timmar om du skickar en bild på platsen. Ingen gissningslek.\\n\\n\\n2. ”Kommer den verkligen att synas i solljuset?”\\n\\nSvar: Ja, om du väljer rätt skärm. En vanlig TV har 300-500 nits (ljusstyrka). Våra skärmar för skyltfönster ligger på 2 500–3 500 nits. Det är skillnaden mellan en grå ruta och en kundmagnet när solen ligger på. Vi väljer hårdvara som fungerar i nordiskt ljus.\\n\\n\\n3. ”Vem hjälper oss om den slutar fungera?”\\n\\nSvar: Vi gör det. Hela poängen är att du slipper bli din egen AV-tekniker. Du har en kontakt för allt: val av skärm, installation, mjukvara och support. Går något snett ringer du ett enda nummer. Vårt.\\n\\n\\nKort sagt: priset är en del. Driftsäkerhet och en partner som tar ansvar är resten.\\n\\nVilken av dessa tre frågor funderar du mest på?\",\"hashtags\":\"#digitalskyltning #ledskärm #butik\",\"cta\":\"soft\",\"word_count\":221,\"notes\":\"Inlägget adresserar de tre vanligaste kundfrågorna (kostnad, synlighet, support) för att bygga förtroende och visa transparens.\"}",
+      "duration_ms": 12325,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "40ba1604-0333-4845-830a-0fd9c29d9c77"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"I nästan ett år låg offerten på deras skrivbord.\",\"body\":\"I nästan ett år låg offerten på deras skrivbord.\\n\\nButiken visste att deras skyltning såg trött ut. Konkurrenterna hade redan skärmar som lyste starkt.\\n\\nMen frågorna gnagde:\\nÄr det värt pengarna? \\nTänk om tekniken strular?\\nOch vem har tid att sköta innehållet?\\n\\nSå de väntade.\\n\\nTill slut tog de steget. Vi installerade en ljusstark skärm i deras skyltfönster, byggd för nordiskt klimat och för att synas även i lågt vintersolljus.\\n\\nTre månader senare ringde ägaren.\\n\\n”Vi har fler som stannar till, fler som kommer in. Den säljer när vi är upptagna med andra kunder. Vi skulle gjort det här för ett år sedan.”\\n\\nIbland är den största kostnaden inte investeringen – utan tiden man förlorar på att inte agera.\\n\\nEn skärm i skyltfönstret är inte en utgift. Det är en säljare som aldrig tar rast.\",\"hashtags\":\"#digitalskyltning #skyltfönster #butikskommunikation\",\"cta\":\"soft\",\"word_count\":149,\"notes\":\"Fokuserar på att omvandla kundens tvekan till ett konkret case som bygger förtroende och visar på ROI.\"}",
+      "duration_ms": 12353,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "22121bfc-af59-47ae-9134-3418bec86eea"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"En skärm som dog efter en vinter.\",\"body\":\"En skärm som dog efter en vinter.\\n\\nDet är ofta där samtalet börjar.\\n\\nKunden köpte den billigaste lösningen på nätet. Den såg bra ut på papperet, men var inte byggd för nordiskt klimat. Nu är den svart, fylld med kondens och garantin täcker inte installationsfelet.\\n\\nPriset på en digital skärm är inte vad som står på prislappen. Det är totalkostnaden över 3–5 år.\\n\\nEn billig skärm blir snabbt dyr när man räknar in:\\n\\n1.  **Driftstopp.** En svart skärm i skyltfönstret säljer noll. Den kostar dig förlorade kunder varje timme den är nere.\\n\\n2.  **Reparationer & byten.** Vem felsöker? Vem betalar för montören som ska ta ner den gamla och sätta upp en ny? Plötsligt har du betalat för två installationer.\\n\\n3.  **Dålig synlighet.** En skärm med för låg ljusstyrka (nits) syns inte i ett soligt skyltfönster. Investeringen är gjord, men effekten uteblir helt.\\n\\nDet är därför våra kunder som Toyota Sverige och X-Trafik inte bara köper en skärm. De investerar i en lösning som fungerar – år efter år.\\n\\nEn kontakt för allt: val, installation, innehåll och support.\\n\\nDet är inte den billigaste offerten. Men det är nästan alltid den lägsta totalkostnaden.\",\"hashtags\":\"#digitalskyltning #ledskärm #retail\",\"cta\":\"soft\",\"word_count\":213,\"notes\":\"Positionerar Displayteknik som det trygga, långsiktigt lönsamma valet genom att rama in 'billigt' som en risk.\"}",
+      "duration_ms": 12309,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score": {
+          "score": 70,
+          "verdict": "pass",
+          "issues": [
+            "Anvander forbjudet ord \"billig\" (1x)"
+          ]
+        },
+        "sparad_rad_id": "ecabba64-2b6b-4f7f-a466-cbc733431198"
+      }
+    }
+  ]
+}

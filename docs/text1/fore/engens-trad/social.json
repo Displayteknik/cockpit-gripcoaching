@@ -1,0 +1,103 @@
+{
+  "profil": "Engens Träd & Trädgård",
+  "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
+  "flode": "social",
+  "genererad": "2026-07-31T06:06:52.622Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det vanligaste misstaget? Att vänta tills höststormen kommer.\",\"caption\":\"Det vanligaste misstaget jag ser är att man väntar. Man ser att trädet lutar, att grenarna ser torra ut eller att det står lite för nära huset. Och så tänker man \\\"det klarar sig en säsong till\\\".\\n\\nProblemet är att väder och vind inte bryr sig om planer. Ett träd som är en liten risk i augusti kan bli ett akut problem när första höststormen drar in.\\n\\nAtt ta tag i det nu, när det är lugnt, är alltid enklare och tryggare. Du behöver inte bestämma dig för något, men det är klokt att veta vad du har att göra med.\\n\\nSkicka en bild på trädet och var det står. En första bedömning kostar inget. Du får ett rakt svar på om det är något att oroa sig för eller inte.\",\"hashtags\":\"#trädfällning #riskträd #sektionsfällning #trädgård #höststorm #roslagen #åkersberga #vallentuna #täby #norrtälje #trädvård #säkerhetförst\",\"cta\":\"Skicka en bild\",\"format_note\":\"Bild: Ett träd som lutar oroväckande nära ett hustak eller en altan. Gärna en lite mörk, molnig himmel för att förstärka känslan av annalkande höst/oväder.\"}",
+      "duration_ms": 10232,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 12,
+        "rostmarkorer_traffade": 6,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "sparad_rad_id": "f9bd166e-9da0-4d89-9adf-4aab0bc46ee0"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Funderat på hur det går till att fälla ett träd nära huset?\",\"caption\":\"Många drar sig för att ringa. Man tänker att det är en stor process. Men oftast är det enklare och lugnare än du tror.\\n\\nSå här går det till när du anlitar oss:\\n\\n1. Du skickar en bild. På trädet och var det står. Vi ställer några frågor och säger om det är värt att kolla på plats.\\n\\n2. Jag kommer ut. Vi tittar på trädet, platsen och riskerna tillsammans. Du får ett rakt svar och ett fast pris. Helt utan förpliktelser.\\n\\n3. Vi bokar en tid. Vi kommer när det passar, med rätt utrustning för just ditt träd.\\n\\n4. Jobbet görs. Säkert, lugnt och kontrollerat. Trädet tas ner bit för bit. Vi skyddar gräsmatta, rabatter och husvägg.\\n\\n5. Vi städar. När vi är klara är trädet borta och tomten är ren. Ofta renare än innan vi kom.\\n\\nResultat: trädet borta, tomten hel, alla glada. Precis så enkelt ska det vara.\",\"hashtags\":\"#trädfällning #sektionsfällning #åkersberga #roslagen #täby #vallentuna #trädgård #riskträd #trädvård #trygghet\",\"cta\":\"Skicka en bild\",\"format_note\":\"Använd en karusell med 5 bilder/videoklipp som visuellt följer de 5 stegen i texten. Bild 1: En bild på ett problemträd. Bild 2: Rickard som pratar med en kund på en tomt. Bild 3: Kalender/bokning. Bild 4: Actionbild/video när en bit av trädet firas ner kontrollerat. Bild 5: En ren och snygg tomt efter avslutat jobb.\"}",
+      "duration_ms": 12256,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 10,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "sparad_rad_id": "6c96eb0f-7b75-4123-8bb2-5d8dc6957a0e"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"3 frågor vi alltid får — och våra raka svar.\",\"caption\":\"När vi är ute hos kunder är det ofta samma tre funderingar som dyker upp. Här är de, med våra ärliga svar.\\n\\n1. \\\"Vad kostar det?\\\"\\nPriset beror på risk, storlek och hur nära trädet står hus eller annat känsligt. RUT-avdraget på arbetet gör stor skillnad och sänker kostnaden direkt på fakturan. Ofta är det ett mer rimligt pris än man först trott.\\n\\n2. \\\"Är det bråttom?\\\"\\nInte alltid. Vissa träd kan stå i flera år till. Men om det lutar, har döda grenar eller visar tecken på sjukdom är det klokt att agera innan höststormen gör det. En bedömning ger dig ett rakt svar.\\n\\n3. \\\"Vad händer med allt ris och grenar?\\\"\\nDet bestämmer du. Vi kan ta med allt, så tomten är helt ren när vi åker. Eller så kan vi kapa upp det till vedlängder åt dig. Vi gör det som passar dig bäst.\\n\\nHar du ett träd du funderar på? Skicka en bild på det och var det står. En första bedömning kostar inget.\",\"hashtags\":\"#trädfällning #riskträd #trädgård #roslagen #åkersberga #vallentuna #täby #vaxholm #norrtälje #sektionsfällning #rutavdrag\",\"cta\":\"Skicka en bild så tittar vi.\",\"format_note\":\"Använd en karusell med 4 bilder. Bild 1: Enkel textgrafik med hooken. Bild 2: Fråga 1 + svar. Bild 3: Fråga 2 + svar. Bild 4: Fråga 3 + svar. Alternativt, en bild på Rickard som pratar med en kund.\"}",
+      "duration_ms": 12473,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 11,
+        "rostmarkorer_traffade": 9,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "sparad_rad_id": "1a56f884-35a4-45fd-8a7b-e3dfb5018092"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"”Vi har pratat om det där trädet i flera år.”\",\"caption\":\"”Vi har pratat om det där trädet i flera år.”\\n\\nDet är den vanligaste meningen jag hör när jag kommer ut till en tomt. Ofta har ett träd skymt solen, känts lite för stort eller bara stått i vägen för en uteplats eller gräsmatta man vill kunna använda.\\n\\nMan skjuter på det. Det blir inte av. Tills en dag då det bara är gjort.\\n\\nDå hör jag ofta nästa mening: ”Tänk att vi inte gjorde det här tidigare.”\\n\\nKänner du igen dig? Du behöver inte bestämma dig idag. Men du kan ta reda på vad som är rimligt.\\n\\nSkicka en bild på trädet och var det står. En första bedömning kostar inget, och du får ett rakt svar.\",\"hashtags\":\"#trädfällning #sektionsfällning #riskträd #trädgård #roslagen #åkersberga #vallentuna #täby #norrtälje #trädvård #rutavdrag\",\"cta\":\"Skicka en bild\",\"format_note\":\"Före- och efterbild. Bild 1: Det stora, lite hotfulla trädet nära huset. Bild 2: Samma vinkel, men med trädet borta och en öppen, ljus yta. Solen ska gärna lysa i bild 2.\"}",
+      "duration_ms": 10615,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 11,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "sparad_rad_id": "b84a591a-726c-4609-9a5c-bfb9711de0a0"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Det viktigaste är inte vad trädfällningen kostar. Det är vad som står kvar på tomten efteråt.\",\"caption\":\"Många frågar om pris. Det är helt rimligt.\\n\\nMen den verkliga kostnaden syns inte alltid på offerten. Den syns i det som lämnas kvar:\\n\\nÄr huset helt?\\nÄr gräsmattan hel?\\nÄr altanen, staketet och rabatterna hela?\\n\\nJobbet är inte bara att få ner trädet. Jobbet är att få ner det utan drama, utan skador och utan att du behöver oroa dig en sekund. Det är den tryggheten du betalar för – att allt är kontrollerat från första snitt till sista gren.\\n\\nResultat: trädet borta, tomten hel, alla glada.\",\"hashtags\":\"#trädfällning #sektionsfällning #riskträd #trygghet #säkerhet #roslagen #åkersberga #vallentuna #täby #danderyd #norrtälje #trädgård #rutavdrag\",\"cta\":\"Skicka en bild så tittar vi.\",\"format_note\":\"Bild/video som visar ett träd som fälls med precision nära ett hus, eller en bild på Rickard som lugnt planerar ett jobb på en villatomt.\"}",
+      "duration_ms": 11595,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 13,
+        "rostmarkorer_traffade": 6,
+        "rostmarkorer_totalt": 24
+      },
+      "extra": {
+        "sparad_rad_id": "d3183df7-232b-4dc1-80c4-7f416de213e2"
+      }
+    }
+  ]
+}

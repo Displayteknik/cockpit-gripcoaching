@@ -79,6 +79,7 @@ Ge 5–7 sökord i grupp 1–3, max 3–4 frågor i grupp 4.`;
   try {
     const result = await generateJSON<KeywordIdeas>({
       model: "gemini-2.5-pro",
+      skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
       systemInstruction: system,
       prompt: "Föreslå sökorden nu.",
       temperature: 0.6,

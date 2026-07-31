@@ -1,0 +1,88 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "karusell",
+  "genererad": "2026-07-31T06:12:35.201Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Du jagar kunder – men kör fast?\",\"body\":\"Du har en grym tjänst, men kundflödet saknar ett system som bara funkar. Ett vanligt problem.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Fixa grunden först\",\"body\":\"Många testar nya system och verktyg, men ingen strategi 'fastnar'. Börja med att förstå ditt unika erbjudande.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Fokusera på flödet\",\"body\":\"Istället för att bara bygga tekniska system, tänk på hur du coachar dig själv genom mentala blockeringar. Det är såhär vi jobbar.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Automatiserad kundattraktion\",\"body\":\"Slipp tänka på var nästa kund ska komma ifrån. Vi bygger det tekniska flödet och coachar dig samtidigt.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Vill du ha ett system som funkar?\",\"body\":\"Skicka ett DM så pratar vi om hur vi kan hjälpa dig med ett förutsägbart kundflöde.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2894,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Du har bra tjänster, men...\",\"body\":\"Ditt system för att hitta kunder är fortfarande du, din kalender och en stor dos hopp. Känns det igen?\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Första steget: Problemet\",\"body\":\"Tjena! Vi börjar med att identifiera var problemet på din kundanskaffning ligger. Ofta handlar det om att 'inget fastnar' trots att du testat olika verktyg.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Lösningen: Systemet\",\"body\":\"Vi bygger det tekniska kundflödet åt dig. Ett system som bara funkar, så du slipper tänka på var nästa kund ska komma ifrån.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Resultatet: Din Frihet\",\"body\":\"Samtidigt coachar vi dig genom mentala blockeringar. Vi fixade det på 30 minuter för en kund, utan att han behövde boka tid. Det är såhär vi jobbar.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Vill du ha ett system som funkar?\",\"body\":\"Sluta hoppas på nästa kund. Kontakta oss på info@hmmotor.se eller 0640-62758 för ett förutsägbart kundflöde.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3188,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Vad kostar det att byta bil?\",\"body\":\"Tjena! Den frågan får vi ofta. Här är våra ärliga svar på det och två andra vanliga frågor.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vad är bilen värd?\",\"body\":\"Vi kollar alltid marknadsvärdet och bilens skick. Det ger dig ett rättvist pris direkt, utan krångel eller dolda avdrag. Det är såhär vi jobbar.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Kan jag få finansiering?\",\"body\":\"Ja, vi hjälper dig med finansiering på plats. Vi hittar en lösning som passar dig, så du slipper problem på sin bank. Vi fixade det.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Hur snabbt får jag bilen?\",\"body\":\"Oftast kan du köra iväg med din nya bil samma dag. Vi ser till att allt pappersarbete är klart på 30 minuter, utan att han behövde boka tid.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du fler frågor om bilbyte?\",\"body\":\"Kom förbi Rydells väg 9d i Krokom eller ring oss på 0640-62758. Vi svarar gärna!\",\"imageUrl\":\"\"}]",
+      "duration_ms": 3003,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Kör du fast med kundflödet?\",\"body\":\"Du har en bra tjänst, men kundsystemet är du, din kalender och hopp.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"En kund körde fast\",\"body\":\"Jag vet att jag borde göra mer för att få kunder, men jag kör fast och gör inget alls, sa han.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Vi fixade det\",\"body\":\"Vi byggde det tekniska flödet och coachade honom genom de mentala blockeringarna. På 30 minuter.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Systemet bara funkar\",\"body\":\"Nu slipper han tänka på var nästa kund ska komma ifrån. Det är såhär vi jobbar.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Vill du ha ett system som bara funkar?\",\"body\":\"Kontakta oss på HM Motor i Krokom så tar vi ett snack om hur vi kan hjälpa dig.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2236,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Varför väljer kunder dyrare?\",\"body\":\"Du bygger bra tjänster, men fastnar i prispress? Här är anledningen.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Förtroende trumfar pris\",\"body\":\"När kunden litar på din expertis och att du löser deras problem, blir priset sekundärt. Ett system som bara funkar ger trygghet.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Tid är den nya valutan\",\"body\":\"Att spara tid och slippa krångel är ovärderligt. Kunder betalar för att slippa tänka på var nästa lösning ska komma ifrån.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Enkelhet vinner alltid\",\"body\":\"Har du testat olika system men inget 'fastnar'? Kunder söker en naturlig del av vardagen, inte fler problem att lösa.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Vill du attrahera rätt kunder?\",\"body\":\"Vi på HM Motor i Krokom hjälper dig att förstå vad dina kunder verkligen söker. Hör av dig så pratar vi mer!\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2441,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 8
+      }
+    }
+  ]
+}

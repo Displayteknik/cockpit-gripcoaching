@@ -161,6 +161,7 @@ Analysera nu enligt instruktionerna ovan. Returnera bara JSON.`;
 
     const result = await generateJSON<AgentResult>({
       model: "gemini-2.5-pro",
+      skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
       systemInstruction: system,
       prompt: userPrompt,
       temperature: 0.5,

@@ -54,6 +54,7 @@ RETURNERA JSON:
 
     const result = await generateJSON<AnalysisResult>({
       model: "gemini-2.5-pro",
+      skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
       systemInstruction: system,
       prompt: `Analysera dessa topp-presterande inlägg:\n\n${sample}\n\nReturnera bara JSON.`,
       temperature: 0.6,

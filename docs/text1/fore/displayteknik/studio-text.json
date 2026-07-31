@@ -1,0 +1,207 @@
+{
+  "profil": "Displayteknik",
+  "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "flode": "studio-text",
+  "genererad": "2026-07-31T05:58:23.626Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Vem sköter skärmen när den strular?\",\"headline2\":\"Det vanligaste misstaget: köpa billigt utan support\",\"body\":\"Skärmen monteras, men ingen tar ansvar för drift. Du får en kontakt för allt hos oss.\"}",
+      "duration_ms": 16443,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score_vinnare": 88,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Vem sköter skärmen när den strular?",
+            "headline2": "Det vanligaste misstaget: köpa billigt utan support",
+            "body": "Skärmen monteras, men ingen tar ansvar för drift. Du får en kontakt för allt hos oss."
+          },
+          {
+            "hookType": "berättelse",
+            "headline1": "Hon ringde i panik",
+            "headline2": "Skärmen hade dött efter tre månader",
+            "body": "Fel skärm för klimatet. Vi hjälper dig välja rätt från start."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Fel skärm i solljuset",
+            "headline2": "Det dyraste misstaget",
+            "body": "De flesta köper en skärm som fungerar inne men dör i skyltfönstret efter första sommaren."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hookType\":\"konträr\",\"headline1\":\"Ingen katalog. Ingen offert först.\",\"headline2\":\"Så löser vi din skärm.\",\"body\":\"Vi börjar med platsen och ljuset – sedan väljer vi hårdvara som fungerar där, inte tvärtom.\"}",
+      "duration_ms": 5601,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "konträr",
+            "headline1": "Ingen katalog. Ingen offert först.",
+            "headline2": "Så löser vi din skärm.",
+            "body": "Vi börjar med platsen och ljuset – sedan väljer vi hårdvara som fungerar där, inte tvärtom."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "En kontakt för allt",
+            "headline2": "Så går ett typiskt uppdrag",
+            "body": "Du pratar direkt med Håkan från idé till driftsatt skärm – val, installation och support ingår."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Vem sköter allt?",
+            "headline2": "Från första idé till driftsatt skärm",
+            "body": "En kontakt gäller hela vägen – val, installation, innehåll och support ingår."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Kostar det verkligen?\",\"headline2\":\"Tre frågor vi alltid får — här är svaren\",\"body\":\"Pris, installation och vem som sköter innehållet. Vi svarar rakt på sak så du vet exakt vad du får.\"}",
+      "duration_ms": 5030,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Kostar det verkligen?",
+            "headline2": "Tre frågor vi alltid får — här är svaren",
+            "body": "Pris, installation och vem som sköter innehållet. Vi svarar rakt på sak så du vet exakt vad du får."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Sluta köpa lösningar",
+            "headline2": "Köp drift som fungerar",
+            "body": "En skärm som krånglar efter tre månader är ingen lösning. Köp rätt från början – en kontakt för allt."
+          },
+          {
+            "hookType": "berättelse",
+            "headline1": "Fråga nummer tre:",
+            "headline2": "Vem sköter skärmen sen?",
+            "body": "Vi gör. Installation, innehåll och support — en kontakt för allt från start till drift."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Var det värt att vänta?\",\"headline2\":\"En kund tvekade i 8 månader\",\"body\":\"Nu fångar skyltfönstret blickar varje dag och de säljer mer än när de hade tryckt skylt.\"}",
+      "duration_ms": 9080,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Var det värt att vänta?",
+            "headline2": "En kund tvekade i 8 månader",
+            "body": "Nu fångar skyltfönstret blickar varje dag och de säljer mer än när de hade tryckt skylt."
+          },
+          {
+            "hookType": "berättelse",
+            "headline1": "Tre år gick",
+            "headline2": "Sedan ringde de äntligen",
+            "body": "Skyltfönstret hade sett likadant ut hela tiden. Nu stoppar folk och tittar in – varje dag."
+          },
+          {
+            "hookType": "påstående",
+            "headline1": "Väntan kostade dem kunder",
+            "headline2": "Så blev det när de äntligen valde skärm",
+            "body": "Konkurrenten hade haft skärm i skyltfönstret i sex månader. Nu syns båda – men den som väntade fick springa om."
+          }
+        ]
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hookType\":\"fråga\",\"headline1\":\"Varför kostar det mer?\",\"headline2\":\"Det billigaste alternativet blir ofta dyrast\",\"body\":\"En skärm som dör efter en vinter kostar mer än rätt skärm från början.\"}",
+      "duration_ms": 7872,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      },
+      "extra": {
+        "voice_score_vinnare": 85,
+        "alla_forslag": [
+          {
+            "hookType": "fråga",
+            "headline1": "Varför kostar det mer?",
+            "headline2": "Det billigaste alternativet blir ofta dyrast",
+            "body": "En skärm som dör efter en vinter kostar mer än rätt skärm från början."
+          },
+          {
+            "hookType": "konträr",
+            "headline1": "Billigast kostar mest",
+            "headline2": "Varför kunder väljer trygghet före pris",
+            "body": "En skärm som dör efter en vinter kostar mer än den som fungerar i tio år."
+          },
+          {
+            "hookType": "fråga",
+            "headline1": "Vad kostar en skärm som slutar fungera?",
+            "headline2": "Billigast på papper kan bli dyrt i drift",
+            "body": "En skärm som inte tål nordiskt klimat strular efter en vinter. Då kostar den dig mer än prisskillnaden — i kundförlust, servicebesök och rykte."
+          }
+        ]
+      }
+    }
+  ]
+}

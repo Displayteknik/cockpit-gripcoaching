@@ -40,7 +40,11 @@ export async function getKnowledge(...names: string[]): Promise<string> {
 // som förut. Anropare som REDAN vet vilken klient de arbetar för (t.ex. reels-manusmotorn)
 // ska skicka in den — annars faller läsningen tillbaka på standardklienten i kontexter
 // utan session (skript, cron), vilket tyst ger fel varumärkesröst.
-export async function getProfileAsMarkdown(clientId?: string): Promise<string> {
+// opts.medVoice=false (TEXT-1): hoppar över voice-fingerprint- och winning-blocken —
+// prompt-core äger de lagren själv och profilen får inte bära dem dubbelt. Default true
+// = oförändrat beteende för alla befintliga anropare.
+export async function getProfileAsMarkdown(clientId?: string, opts?: { medVoice?: boolean }): Promise<string> {
+  const medVoice = opts?.medVoice !== false;
   try {
     // Service-role: hm_brand_profile har strikt RLS → anon får "permission denied" och
     // profilen föll tyst bort ur ALL AI-generering. Läsningen är alltid tenant-låst via
@@ -135,6 +139,7 @@ export async function getProfileAsMarkdown(clientId?: string): Promise<string> {
     // (lägg dem TIDIGT i prompten så AI:n ser dem som målbild)
     let winningBlock = "";
     try {
+      if (!medVoice) throw new Error("skip");
       const { data: wins } = await sb
         .from("client_assets")
         .select("title, body")
@@ -155,6 +160,7 @@ export async function getProfileAsMarkdown(clientId?: string): Promise<string> {
     // Voice fingerprint som inline-block (om finns) — delas av ALLA generatorer
     let voiceBlock = "";
     try {
+      if (!medVoice) throw new Error("skip");
       const { data: voice } = await sb
         .from("client_voice_profile")
         .select("signature_phrases, forbidden_words, pain_words, joy_words, tone_summary, rhythm_notes")

@@ -35,6 +35,7 @@ Generera 8–12 frågor som folk faktiskt söker. Inkludera "varför", "hur", "v
 
   const result = await generateJSON<PAA>({
     model: "gemini-2.5-pro",
+    skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
     systemInstruction: system,
     prompt: `Sökord: ${keyword}\n\nGenerera nu.`,
     temperature: 0.7,

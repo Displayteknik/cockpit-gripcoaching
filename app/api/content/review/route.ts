@@ -47,6 +47,7 @@ Om antal_cta inte är exakt 1, lägg det som en brist. Om nyttan handlar om ER t
       antal_cta?: number; cta_matchar_funnel?: boolean; brister?: unknown; sammanfattning?: string;
     }>({
       model: "gemini-2.5-flash",
+      skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
       systemInstruction: system,
       prompt: `Inlägg att granska:\n\n${text.slice(0, 4000)}`,
       temperature: 0.2,

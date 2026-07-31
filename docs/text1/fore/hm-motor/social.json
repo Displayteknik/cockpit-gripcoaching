@@ -1,0 +1,103 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "social",
+  "genererad": "2026-07-31T06:13:39.283Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det vanligaste felet folk gör när bilen krånglar?\",\"caption\":\"Tjena!\\n\\nDet vanligaste felet? Att fråga en kompis eller googla i tre timmar.\\n\\nResultatet blir ofta fel delar, mer strul och ett problem som växer.\\n\\nIdag kom en kund in. Han hade bytt en sensor själv efter tips från ett forum. Det löste ingenting. Bilen hade fortfarande ett problem.\\n\\nVi hittade felet och fixade det. På 30 minuter.\\n\\nSlösa inte din tid. Ring oss direkt istället.\\n\\nDet är såhär vi jobbar.\",\"hashtags\":\"#bilverkstad #krokom #jämtland #verkstad #bilservice #problemlösning #östersund #motor\",\"cta\":\"Ring oss\",\"format_note\":\"Bild på en mekaniker som felsöker en motor med diagnosverktyg, eller en närbild på en motordel. Fokus på hantverket.\"}",
+      "duration_ms": 10078,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 8,
+        "rostmarkorer_traffade": 5,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "sparad_rad_id": "b465cb93-358e-4e92-aa6d-7e6c886a550e"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Många frågar hur det funkar när man lämnar in bilen hos oss. Här är hela processen, steg för steg.\",\"caption\":\"Tjena!\\n\\nIgår ringde en kund. Han hade problem på sin pickup. Lampor som blinkade och motorn gick ojämnt.\\n\\nHan kom förbi direkt. Vi tog in bilen, kopplade upp datorn och hittade felet. En sliten givare.\\n\\nVi hade delen på hyllan, så vi bytte den direkt. Ingen väntetid på delar från nånstans i Tyskland.\\n\\nEn timme senare ringde vi kunden. Bilen var klar. Han hämtade den på vägen hem från jobbet.\\n\\nFrån problem till fixat på några timmar. Utan att han behövde boka tid långt i förväg.\\n\\nDet är såhär vi jobbar.\",\"hashtags\":\"#verkstad #bilverkstad #krokom #jämtland #östersund #bilreparation #service #hantverk #supportyourlocal #hmmotor\",\"cta\":\"Ring oss\",\"format_note\":\"Karussell-inlägg. Bild 1: Texten från hooken på en bild av verkstaden. Bild 2: Närbild på en felkodsläsare ansluten till en bil. Bild 3: En mekaniker som byter en liten del i ett motorutrymme. Bild 4: En bild på den klara, rena bilen med nycklarna på instrumentbrädan. Bild 5: Sista texten + telefonnummer stort.\"}",
+      "duration_ms": 10480,
+      "autochecks": {
+        "cta_count": 2,
+        "svag_hook": true,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 10,
+        "rostmarkorer_traffade": 4,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "sparad_rad_id": "d8ec46e7-d5e8-4d53-8ee4-b86ba0261b9a"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"Vi får alltid 3 frågor. Här är våra raka svar.\",\"caption\":\"Tjena! Folk frågar oss samma saker varje dag. Helt rätt. Man ska fråga.\\n\\n1. ”Är min gamla bil värd att laga?”\\nSvar: Oftast, ja. En reparation för 15.000 kr kan ge dig en bil som håller tre år till. Att köpa en annan begagnad för 50.000 kr är inte alltid ett bättre val. Vi säger som det är.\\n\\n2. ”Måste jag boka tid för en enkel koll?”\\nSvar: Nej. Kom förbi bara. Har vi en lucka så tittar vi direkt. Ofta har vi det. Det är såhär vi jobbar.\\n\\n3. ”Vilken ATV/släp passar egentligen mig?”\\nSvar: Den som löser ditt problem, inte den dyraste. Vi frågar alltid vad du ska ha den till innan vi rekommenderar något. Vi säljer hellre rätt grej än fel grej dyrt.\",\"hashtags\":\"#hmmotor #krokom #verkstad #jämtland #östersund #bilverkstad #bilfrågor #ärligasvar #atv #släpvagn #bilköp #begagnat\",\"cta\":\"DM ett ord\",\"format_note\":\"Karussell-inlägg. Slide 1: Hook-texten. Slide 2: Fråga 1 + svar. Slide 3: Fråga 2 + svar. Slide 4: Fråga 3 + svar. Sista slide: CTA 'Har du en annan fråga? DM:a oss!'\"}",
+      "duration_ms": 10853,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 12,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "sparad_rad_id": "b219aa5e-d4f7-44c8-8376-7c439429dc1f"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Kunden funderade i ett halvår. Sen kom han in.\",\"caption\":\"Tjena!\\n\\nEn kund har kikat på den här fyrhjulingen i månader. Mejlade, ringde, kom förbi. Men tvekade.\\n\\nIdag slog han till. Körde ut från gården här i Krokom med ett leende.\\n\\nTvå timmar senare ringde han. Inte för att det var något problem. Utan för att berätta att han redan hunnit hämta ett helt lass med ved från skogen. \\\"Skulle gjort det här för länge sen\\\", sa han.\\n\\nIbland är det enkla valet det rätta. Det är såhär vi jobbar. Vi säljer grejer som funkar.\",\"hashtags\":\"#hmmotor #krokom #jämtland #atv #fyrhjuling #cfmoto #skogsarbete #östersund #motorsport #gårdsliv\",\"cta\":\"Ring oss\",\"format_note\":\"Bild på en kund som stolt sitter på sin nya ATV utanför butiken i Krokom. Alternativt en bild på en ATV lastad med ved i en skogsmiljö.\"}",
+      "duration_ms": 9736,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 10,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "sparad_rad_id": "9cac2154-7781-4eb7-9bfc-6789e533c3fd"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Billigaste ATV:n kostar dig mest i längden.\",\"caption\":\"Tjena!\\n\\nEn kund kom in med en nästan ny fyrhjuling han köpt från ett annat ställe. Den startade inte.\\n\\nEtt klassiskt problem med elen. Felet satt i ett billigt relä som gett upp. Vi bytte ut det mot en ordentlig komponent som vi vet håller.\\n\\nHan sparade en tusenlapp på inköpet. Men förlorade en hel dags jobb och fick ett problem mitt i skogen.\\n\\nAtt köpa det billigaste är sällan det smartaste. Vi säljer bara grejer vi själva litar på. Det är såhär vi jobbar.\",\"hashtags\":\"#hmmotor #krokom #atv #fyrhjuling #jämtland #verkstad #östersund #motor #kvalitet #supportlocal\",\"cta\":\"Ring oss\",\"format_note\":\"Bild på en ATV i verkstaden med en mekaniker som pekar på en liten, utbytt elkomponent. Närbild på delen är ett plus.\"}",
+      "duration_ms": 9860,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 10,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 8
+      },
+      "extra": {
+        "sparad_rad_id": "186dceea-6ec9-432b-84e3-94a555904ab7"
+      }
+    }
+  ]
+}

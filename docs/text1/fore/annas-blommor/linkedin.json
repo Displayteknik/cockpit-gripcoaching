@@ -1,0 +1,140 @@
+{
+  "profil": "Annas Blommor",
+  "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+  "flode": "linkedin",
+  "genererad": "2026-07-31T06:19:39.053Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"hook\":\"Det vanligaste misstaget ett brudpar gör när de planerar sina bröllopsblommor?\",\"body\":\"Det vanligaste misstaget ett brudpar gör när de planerar sina bröllopsblommor?\\n\\nDe börjar med en bild på Pinterest.\\n\\nJag förstår precis varför. Man ser något vackert, en perfekt bukett, och tänker ”precis sådär vill jag ha det”. Men det är en fälla som ofta leder till mer stress än glädje.\\n\\nFör en bild visar inte känslan i rummet. Den berättar inte er historia. Och den tar sällan hänsyn till vad som faktiskt blommar i Jämtland just den där lördagen i augusti.\\n\\nIstället för att jaga en exakt kopia av någon annans dag, föreslår jag att ni börjar i en helt annan ände. Börja med er.\\n\\nVi gör såhär istället:\\n\\n1. Känslan: Hur vill ni att dagen ska *kännas*? Avslappnad, pampig, vild, romantisk?\\n\\n2. Platsen: Var gifter ni er? En lada i Åre, ett tält vid Storsjöns strand eller inne i stan? Blommorna ska passa platsen, inte tvärtom.\\n\\n3. Doften: Finns det en doft som betyder något extra? Kanske doften från mormors syrenberså eller luktärten från ert landställe.\\n\\nNär vi har de tre sakerna klara — då kan vi börja titta på bilder. Men som inspiration, inte som en beställning.\\n\\nDå blir blommorna inte en kopia. De blir era.\\n\\nOch det är hela poängen.\\n\\nVi erbjuder alltid en personlig konsultation för att hitta just er känsla. Helt utan kostnad.\",\"hashtags\":\"#annasblommor #bröllopsblommor #östersund #jämtland\",\"cta\":\"soft\",\"word_count\":226,\"notes\":\"Inlägget positionerar oss som guider genom att flytta fokus från bild (vad) till känsla (varför), vilket bygger förtroende mot brudpar.\"}",
+      "duration_ms": 12506,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "b8b85a1d-4133-4ba0-bfa2-c0e27a036efc"
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"hook\":\"Vi börjar aldrig med att prata om blommor.\",\"body\":\"Vi börjar aldrig med att prata om blommor.\\n\\nDet är ofta det första som förvånar brudpar som kommer till oss.\\n\\nDe har med sig bilder, färgkoder och en förväntan om att vi ska välja mellan ros och pion. Men vi börjar på en helt annan plats: med er berättelse. Känslan ni vill skapa.\\n\\nAtt rita ett bröllop från grunden, som vi gör, handlar inte om att kopiera en bild. Det handlar om att översätta en känsla till ett hantverk. Från första hej till sista gästen gått hem ser vår resa ut ungefär så här:\\n\\n1. **Berättelsen.** Vi tar en kaffe och pratar om er. Platsen, musiken, minnena. Vilken känsla ska gästerna bära med sig? Är det storslaget och romantiskt eller jordnära och intimt?\\n\\n2. **Ritbordet.** Först nu skissar vi. Vi tar fram en moodboard med säsongens svenska snittblommor – kanske dahlia och luktärt för sensommaren – som fångar just er känsla. Detta blir vår gemensamma karta.\\n\\n3. **Hantverket.** Några dagar innan bröllopet anländer blommorna direkt från odlaren. Vi snittar, vattnar och förbereder varje enskild stjälk. Dagen innan binder vi allt för hand i vår ateljé i Östersund.\\n\\n4. **Leveransen.** På den stora dagen är vi på plats och ser till att allt är perfekt. Från brudbuketten i handen till den lilla blomman på servetten. Allt hänger ihop.\\n\\nDet är en process byggd på förtroende, inte färdiga paket.\\n\\nFunderar ni på bröllop 2025? Vi har precis öppnat böckerna för ett fåtal konsultationer i höst.\",\"hashtags\":\"#annasblommor #bröllopsblommor #östersund #jämtland\",\"cta\":\"soft\",\"word_count\":248,\"notes\":\"Ett 'bakom kulisserna'-inlägg som visar processen för att bygga förtroende (KNOW-port) genom att fokusera på USP:n 'personligt och skräddarsytt'.\"}",
+      "duration_ms": 13614,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [
+          "handlar om"
+        ],
+        "tankstreck_i_loptext": true,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 77,
+          "verdict": "pass",
+          "issues": [
+            "AI-floskel: \"handlar om\""
+          ]
+        },
+        "sparad_rad_id": "2f7bd354-7f52-4882-bc88-e17a1808b624"
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"hook\":\"“Vad kostar det?”\",\"body\":\"“Vad kostar det?”\\n\\nDen frågan kommer nästan alltid först vid en bröllopsförfrågan.\\n\\nOch det är helt rimligt. Budgeten är verklig. Men vårt svar är kanske inte vad man väntar sig.\\n\\nIstället för en prislista ställer vi en motfråga: “Vilken känsla vill ni skapa?”\\n\\nDet finns tre frågor vi alltid får. Här är våra ärliga svar, för alla er som planerar just nu:\\n\\n1. “Vad kostar blommorna?”\\nSvar: Det beror inte på antalet stjälkar, utan på hantverket och känslan. En enkel bukett med exklusiv, svenskodlad luktärt kan kosta mer än en stor med enklare blommor. Vi pratar hellre om en budget som ram, och fyller den sedan med maximal känsla utifrån säsongen.\\n\\n2. “Kan vi få pioner i september?”\\nSvar: Tyvärr inte. Vi arbetar bara med blommor som är i säsong i Sverige. Det är inte en begränsning, det är vår största styrka. Istället för en trött importpion kan vi skapa magi med dahlior, astrar och anemoner som är på sin absoluta topp just då. Naturen ger oss en ny palett varje månad.\\n\\n3. “Vi vet inte vad vi vill ha, kan ni hjälpa oss?”\\nSvar: Absolut. Det är vårt jobb. Ni behöver inte kunna namnet på en enda blomma. Beskriv känslan, färgerna på kläderna, platsen. Visa oss en bild på dukningen. Vi ritar och översätter er vision till ett blomsterspråk.\\n\\nAllt börjar med en känsla, inte en checklista.\\n\\nHar ni en fjärde fråga ni funderar på? Ställ den gärna.\",\"hashtags\":\"#annasblommor #bröllopsblommor #östersund #jämtland\",\"cta\":\"soft\",\"word_count\":254,\"notes\":\"Inlägget adresserar vanliga kundfrågor för att bygga förtroende och utbilda ICP:n om vårt arbetssätt (säsong, känsla, hantverk), vilket positionerar oss som experter.\"}",
+      "duration_ms": 14584,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 85,
+          "verdict": "pass",
+          "issues": []
+        },
+        "sparad_rad_id": "e481db90-b81a-4a34-9b7f-1ce010d649c6"
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"hook\":\"Sex månaders tvekan. Ett möte. Sedan kom tårarna.\",\"body\":\"Sex månaders tvekan. Ett möte. Sedan kom tårarna.\\n\\nDet var glädjetårar, som tur var.\\n\\nEtt brudpar jag jobbade med i somras hade oss på sin radar länge. De följde oss, gillade bilder, men hörde aldrig av sig. När vi väl sågs berättade de att de var rädda för att deras idéer var för \\\"små\\\" eller \\\"fel\\\" för en florist.\\n\\nDe trodde att man måste komma med en färdig Pinterest-mapp och en exakt vision.\\n\\nDet är den största missuppfattningen jag ser.\\n\\nAtt skapa bröllopsblommor handlar inte om att ni ska vara experter. Det är mitt jobb. Det handlar om att hitta *känslan* ni vill ha på er dag. Vi ritar varje bröllop från grunden, för det finns inga färdiga paket för en personlig historia.\\n\\nDet vi behöver för att starta är inte en checklista, utan svar på frågor som:\\n\\n1. Hur ska dagen *kännas*? (Avslappnad, pampig, vild, intim?)\\n2. Vilken plats har ni valt? (Naturen runt omkring är vår största inspirationskälla.)\\n3. Vilken färg eller blomma får ditt hjärta att slå ett extra slag?\\n\\nDet är allt. Resten är hantverk, dialog och förtroende.\\n\\nSå om du sitter där och tvekar: din känsla är allt vi behöver för att börja skissa.\\n\\nFunderar du på bröllop 2025? Boka en kravlös konsultation så pratar vi känsla, inte paket.\",\"hashtags\":\"#bröllopsblommor #annasblommor #jämtland #östersund\",\"cta\":\"soft\",\"word_count\":218,\"notes\":\"Ett story-inlägg som bygger förtroende genom att adressera en vanlig kundrädsla (att inte ha en 'bra nog' vision) och positionerar vår personliga process som lösningen.\"}",
+      "duration_ms": 12671,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [
+          "handlar om"
+        ],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 77,
+          "verdict": "pass",
+          "issues": [
+            "AI-floskel: \"handlar om\""
+          ]
+        },
+        "sparad_rad_id": "da6c2338-558d-4ec0-a5d8-b90d7f9d4f18"
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"hook\":\"Förra veckan frågade en blivande brud: \\\"Varför är ni dyrare än de färdiga paketen online?\\\"\",\"body\":\"Förra veckan frågade en blivande brud: \\\"Varför är ni dyrare än de färdiga paketen online?\\\"\\n\\nEn helt rimlig fråga.\\n\\nHon hade jämfört priser. En siffra mot en annan. Men det är som att jämföra en måttsydd klänning med en från en klädkedja. Båda är klänningar, men känslan är helt olika.\\n\\nDet vi gör handlar inte om att sälja blommor. Det handlar om att fånga en känsla i ett hantverk. Att översätta en personlighet till en bukett. Det går inte att paketera.\\n\\nNär ett brudpar väljer oss framför det billigaste alternativet, väljer de oftast bort prispress för att få något av det här:\\n\\n1. Personlighet. Vi ritar varje bröllop från grunden. Vi pratar om era färger, er plats, er historia. Inte om ”paket silver” eller ”paket guld”.\\n\\n2. Säsongens bästa. Vi väljer inte blommor från en fast meny. Vi väljer det som är som vackrast just den veckan, ofta från svenska odlare. Som dahlian 'Café au Lait' i augusti eller anemonerna i april.\\n\\n3. Ett hantverk. Varje stjälk väljs för hand. Varje bukett binds med en tanke. Det är timmar av skissande, planerande och bindande som inte syns på prislappen.\\n\\nMan köper inte blommor för en dag. Man köper en del av minnet för ett helt liv.\\n\\nEtt personligt möte där vi skissar på era drömmar är alltid kostnadsfritt. Det är där magin börjar.\",\"hashtags\":\"#annasblommor #bröllopsblommor #östersund #hantverk\",\"cta\":\"soft\",\"word_count\":236,\"notes\":\"Inlägget positionerar pris som en konsekvens av värde (hantverk, personlighet, säsong) snarare än en kostnad, vilket tilltalar den primära ICP:n.\"}",
+      "duration_ms": 14828,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [
+          "handlar om"
+        ],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      },
+      "extra": {
+        "voice_score": {
+          "score": 77,
+          "verdict": "pass",
+          "issues": [
+            "AI-floskel: \"handlar om\""
+          ]
+        },
+        "sparad_rad_id": "82d493e2-7a28-4a6a-b854-f031f50989a7"
+      }
+    }
+  ]
+}

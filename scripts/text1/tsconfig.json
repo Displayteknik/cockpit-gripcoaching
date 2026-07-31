@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@/*": ["./*"],
+      "next/headers": ["./scripts/text1/shims/next-headers.ts"]
+    }
+  }
+}

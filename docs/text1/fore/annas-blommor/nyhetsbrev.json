@@ -1,0 +1,90 @@
+{
+  "profil": "Annas Blommor",
+  "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+  "flode": "nyhetsbrev",
+  "genererad": "2026-07-31T06:20:54.336Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"subjects\":[\"När är det dags att boka bröllopsblommor?\",\"Ett vanligt misstag många brudpar gör\",\"Få blommorna ni drömmer om (ett litet tips)\",\"Bröllopsplanering och blommor – en tanke\"],\"preheader\":\"Det handlar om tajming. Att prata med oss tidigt ger er fler valmöjligheter och ett vackrare resultat.\",\"greeting\":\"Hej!\",\"intro\":\"Mitt i all bröllopsplanering är det lätt att blommorna hamnar långt ner på listan. Man har ju tid, tänker många. Men jag har sett flera brudpar göra ett litet misstag som jag gärna vill hjälpa er att undvika, och det handlar just om när ni hör av er.\",\"sections\":[{\"heading\":\"Drömmar och verklighet\",\"body\":\"Många samlar inspiration på Pinterest och har en tydlig bild, men väntar med att kontakta en florist. När vi väl pratas vid har kanske datum, färgtema och klänningar redan bestämts – utan att ta hänsyn till vilka blommor som faktiskt finns i säsong just då.\"},{\"heading\":\"Fler valmöjligheter, mindre stress\",\"body\":\"Genom att prata med oss tidigt kan vi tillsammans väva in blommorna i helheten från start. Det ger er tillgång till de allra vackraste, närodlade sorterna och en trygghet i att allt kommer att harmonisera precis som ni tänkt er.\"},{\"heading\":\"Ett samtal kostar inget\",\"body\":\"Att bolla idéer med oss förpliktigar inte till något. Vi älskar att prata blommor och kan ge er en känsla för vad som är möjligt, långt innan ni behöver fatta några beslut. Det brukar vara ett av de roligaste mötena i hela planeringen.\"}],\"cta_text\":\"Läs hela tanken här\",\"signoff\":\"Allt gott,\\nAnna\"}",
+      "duration_ms": 12517,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"subjects\":[\"Hur går det till att beställa bröllopsblommor?\",\"Från första tanke till färdig bukett\",\"Bakom kulisserna hos oss på Annas Blommor\",\"Så skapar vi blommorna för er stora dag\"],\"preheader\":\"Följ med bakom kulisserna och se hur vi jobbar, från första samtal till leverans.\",\"greeting\":\"Hej!\",\"intro\":\"Har du någonsin undrat hur en brudbukett eller en hel bröllopsdekoration egentligen blir till? Det är så mycket mer än att bara välja blommor. Det är en resa vi gör tillsammans, och jag tänkte bjuda in dig att se hur den brukar se ut.\",\"sections\":[{\"heading\":\"Allt börjar med att lyssna\",\"body\":\"Det allra första steget är ett samtal där vi pratar om era drömmar och känslor. Vilken stämning vill ni skapa? Vad är viktigast för just er? Här är det era tankar som står i centrum.\"},{\"heading\":\"Ett konkret förslag, utan fluff\",\"body\":\"Efter vårt samtal tar vi fram ett personligt förslag med en tydlig idé och en plan. Inga konstigheter, bara ett genomtänkt hantverk anpassat för er.\"},{\"heading\":\"Från verkstad till verklighet\",\"body\":\"När ni gett oss ert förtroende börjar det roliga – att binda och skapa. Vi håller kontakten längs vägen och ser till att allt blir precis som vi kommit överens om.\"}],\"cta_text\":\"Läs om hela processen\",\"signoff\":\"Allt gott,\\nAnna\"}",
+      "duration_ms": 11715,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"subjects\":[\"Tre ärliga svar på era vanligaste frågor\",\"Planera bröllop? Här är tre saker vi ofta pratar om\",\"Vad kostar blommorna? Och två andra vanliga funderingar\",\"Våra ärliga svar på de vanligaste frågorna\"],\"preheader\":\"Om pris, tid och den där magkänslan av att välja rätt. Läs våra tankar här.\",\"greeting\":\"Hej!\",\"intro\":\"Att planera för en stor dag väcker många frågor, det vet vi. Stora, små, praktiska och känslomässiga. Vi tror på att vara helt öppna med hur vi jobbar, för trygghet är den bästa grunden för att skapa något vackert tillsammans. Därför har vi samlat svaren på de tre frågor vi oftast får.\",\"sections\":[{\"heading\":\"Vad kostar det?\",\"body\":\"Det korta svaret är 'det beror på'. Men det viktiga är att du alltid får ett fast, detaljerat prisförslag från oss innan vi börjar. Inga dolda avgifter eller tråkiga överraskningar, bara klarhet från start.\"},{\"heading\":\"Hinner vi verkligen?\",\"body\":\"Oftast går det snabbare än man tror. Vi ger dig en ärlig tidsplan som vi vet att vi kan hålla. Vi vill att du ska kunna slappna av och lita på att allt blir klart i tid, utan stress.\"},{\"heading\":\"Behöver jag verkligen allt det här?\",\"body\":\"Ibland är svaret faktiskt nej. Vårt mål är inte att sälja så mycket som möjligt, utan att skapa det som är rätt för just er. Vi vill bygga en relation som varar, och det börjar med ärlighet.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Allt gott,\\nAnna och gänget på Annas Blommor\"}",
+      "duration_ms": 11203,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"subjects\":[\"Känner du igen den här känslan?\",\"Från ett års tvekan till ren blomsterglädje\",\"Varför väntade vi så länge?\",\"När magkänslan och verkligheten möts\"],\"preheader\":\"En kunds berättelse om att våga ta steget – och varför det var värt allt.\",\"greeting\":\"Hej!\",\"intro\":\"Står du inför ett stort beslut? Kanske ett bröllop, en stor fest eller något annat som känns viktigt i hjärtat. Det är så lätt att fastna i tankar, väga för- och nackdelar och låta tiden gå. Vi hade en kund som kände precis så, i nästan ett helt år.\",\"sections\":[{\"heading\":\"Tvekan är helt naturlig\",\"body\":\"Att investera i blommor för en stor dag kan kännas som ett enormt steg. Kommer det att bli som man tänkt sig? Är det värt det? Den här osäkerheten är något vi möter ofta och har full förståelse för.\"},{\"heading\":\"Resultatet som överträffade allt\",\"body\":\"När kunden till slut bestämde sig och vi fick fria händer att skapa, var den spontana reaktionen efteråt: 'Varför väntade jag så länge?'. Den glädjen är anledningen till att vi gör det vi gör.\"},{\"heading\":\"Att vänta kostar också\",\"body\":\"Ibland är kostnaden för att *inte* fatta ett beslut – i form av stress och osäkerhet – högre än själva beslutet. Att få en viktig pusselbit på plats kan frigöra så mycket energi.\"}],\"cta_text\":\"Läs hela berättelsen här\",\"signoff\":\"Allt gott,\\nAnna och gänget på Annas Blommor\"}",
+      "duration_ms": 11144,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"subjects\":[\"Billigast, eller bäst för er stora dag?\",\"Mer än bara priset på blommorna\",\"Varför vi aldrig kompromissar med hantverket\",\"Känslan av blommor som håller\"],\"preheader\":\"Några tankar om att välja rätt, inte bara billigt, för livets viktigaste stunder.\",\"greeting\":\"Hej!\",\"intro\":\"När man planerar något stort, som ett bröllop eller en viktig fest, är det lätt att blicka mot prislappen. Men precis som med så mycket annat i livet är det sällan det billigaste valet som ger den där speciella känslan man drömmer om – eller som håller minnet levande längst.\",\"sections\":[{\"heading\":\"Det handlar om helheten\",\"body\":\"En bukett är mer än bara blommor. Det är hantverket bakom, tiden vi lägger på att förstå precis er känsla, och tryggheten i att veta att allt blir precis som ni tänkt er på den stora dagen.\"},{\"heading\":\"Kvalitet som syns och känns\",\"body\":\"Vi väljer alltid säsongens finaste, ofta svenskodlade, snittblommor. De har en helt annan lyster och doft, och de håller sig vackra längre. Det är en skillnad man verkligen ser på bilderna efteråt.\"},{\"heading\":\"Ett val ni är nöjda med länge\",\"body\":\"Vårt mål är inte att vara billigast. Det är att vara det val ni känner er varm och glad över, både på själva dagen och när ni ser tillbaka på minnena om tio år.\"}],\"cta_text\":\"Läs hela tanken här\",\"signoff\":\"All värme,\\nAnna och gänget på Annas Blommor\"}",
+      "duration_ms": 11887,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [
+          "handlar om"
+        ],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 0
+      }
+    }
+  ]
+}

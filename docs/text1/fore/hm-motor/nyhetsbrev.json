@@ -1,0 +1,88 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "nyhetsbrev",
+  "genererad": "2026-07-31T06:14:13.867Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "{\"subjects\":[\"Väntar du också för länge?\",\"Ett vanligt misstag som kostar pengar\",\"Googlat färdigt? Det finns ett enklare sätt.\",\"När ska man egentligen be om hjälp?\"],\"preheader\":\"Att försöka lösa allt själv kan bli dyrt. Vi ser det varje vecka. Här är varför ett snabbt samtal lönar sig.\",\"greeting\":\"Tjena!\",\"intro\":\"Känner du igen det här? Något börjar krångla. Du googlar, kollar ett forum, frågar en kompis. Du testar en egen lösning. Och plötsligt har ett litet problem på sin maskin blivit ett stort.\",\"sections\":[{\"heading\":\"Det blir ofta dyrare att vänta\",\"body\":\"Många kommer till oss när de redan lagt tid och pengar på delar som inte passade eller lösningar som inte fungerade. Oftast hade vi kunnat lösa ursprungsproblemet direkt, till en lägre kostnad.\"},{\"heading\":\"Fler valmöjligheter, mindre stress\",\"body\":\"Ju tidigare du hör av dig, desto fler alternativ finns det oftast. Ibland är det en enkel justering, ibland behövs en reservdel. Vi ger dig ett ärligt svar, så du slipper gissa.\"},{\"heading\":\"Det kostar inget att fråga\",\"body\":\"Ring eller sväng förbi. Ett samtal är gratis och du får veta direkt om det är något du kan fixa själv eller om vi behöver titta på det. Då har du ett rakt besked att utgå från.\"}],\"cta_text\":\"Läs hela tanken här\",\"signoff\":\"Vi hörs! \\n/Gänget på HM Motor\"}",
+      "duration_ms": 10358,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "{\"subjects\":[\"Så går ett jobb till hos oss\",\"Från första samtal till färdigt\",\"Bakom kulisserna på verkstaden\",\"Nyfiken på hur vi jobbar?\"],\"preheader\":\"Inga konstigheter. Vi lyssnar, ger ett fast pris och ser till att det blir rätt. Läs mer här.\",\"greeting\":\"Tjena!\",\"intro\":\"Funderat på hur det faktiskt går till när man lämnar in något hos oss? Många tror det är en lång process. Det är det inte. Vi har en enkel och rak process för att lösa ditt problem, från första hej till att du är ute på vägarna igen.\",\"sections\":[{\"heading\":\"Först: Vi lyssnar\",\"body\":\"Allt börjar med att du berättar vad som strular. Vi ställer frågor och lyssnar noga för att förstå exakt vad du behöver hjälp med. Inget fluff, bara raka rör.\"},{\"heading\":\"Sen: Ett tydligt förslag\",\"body\":\"Efter vårt samtal får du ett konkret förslag med pris och en tidsplan. Du vet exakt vad det kommer kosta och när det är klart innan vi ens börjar skruva.\"},{\"heading\":\"Till sist: Vi fixar det\",\"body\":\"När du gett oss grönt ljus sätter vi igång. Vi håller dig uppdaterad längs vägen och ser till att jobbet blir ordentligt gjort. Det är såhär vi jobbar.\"}],\"cta_text\":\"Läs hela processen här\",\"signoff\":\"Vi ses på verkstan,\\n/ Gänget på HM Motor\"}",
+      "duration_ms": 11411,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "{\"subjects\":[\"Tre vanliga frågor – och våra raka svar\",\"Vad kostar det? Och två andra frågor.\",\"Ärligt talat: om pris, tid och behov\",\"Frågorna vi alltid får i verkstaden\"],\"preheader\":\"Inga överraskningar, inga otydliga svar. Bara sånt som funkar. Det är såhär vi jobbar.\",\"greeting\":\"Tjena!\",\"intro\":\"Det finns några frågor som nästan alla ställer när de kommer in till oss i verkstaden. Och det är bra, för vi gillar raka puckar. Här är våra ärliga svar på de tre vanligaste funderingarna.\",\"sections\":[{\"heading\":\"Vad kostar det?\",\"body\":\"Svaret är alltid: du får ett fast pris innan vi rör en enda skruv. Inga dolda avgifter, inga överraskningar på fakturan. Du vet exakt vad det landar på. Punkt.\"},{\"heading\":\"Hur lång tid tar det?\",\"body\":\"Oftast snabbare än du tror. Vi ger dig en tid vi vet att vi kan hålla. Vi vet att du behöver din hoj eller bil, och vi ser till att du får tillbaka den när vi lovat.\"},{\"heading\":\"Behöver jag verkligen det här?\",\"body\":\"Ibland är svaret nej. Om vi inte tycker att en reparation är värd det, eller om det finns en enklare lösning, då säger vi det. Vi vill att du kommer tillbaka i tio år, inte att du känner dig lurad en gång.\"}],\"cta_text\":\"Läs hela artikeln här\",\"signoff\":\"Vi ses i verkstaden,\\n/ Gänget på HM Motor Krokom\"}",
+      "duration_ms": 11964,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "{\"subjects\":[\"Känner du igen dig i det här?\",\"Varför väntade jag så länge?\",\"Det där problemet med bilen...\",\"Vad kostar det att vänta?\"],\"preheader\":\"En kund tvekade i nästan ett år. Hans reaktion efteråt är något vi hör ofta här i verkstaden.\",\"greeting\":\"Tjena!\",\"intro\":\"Man går och funderar. Det där ljudet, den där lampan som lyser. Känns som en stor grej, en jobbig kostnad, och man skjuter på det. Vi hade en kund som gjorde precis så i nästan ett år.\",\"sections\":[{\"heading\":\"Tvekan kostar mer\",\"body\":\"Det är helt naturligt att tveka, men ofta kostar det mer i längden. Ett litet problem kan växa sig större. Kunden som väntade hade precis den känslan.\"},{\"heading\":\"När han väl kom in...\",\"body\":\"När han till slut svängde in på gården såg vi direkt vad som var problem på hans bil. Vi fixade det. Hans spontana reaktion? 'Varför väntade jag så länge?'\"},{\"heading\":\"Bara kom förbi\",\"body\":\"Har du något du funderar på med ditt fordon? Slå en signal eller kom förbi. Ibland löser vi det på 30 minuter utan att du ens behöver boka tid. Det är såhär vi jobbar.\"}],\"cta_text\":\"Läs hela berättelsen här\",\"signoff\":\"Vi ses i verkstaden,\\n/ Gänget på HM Motor\"}",
+      "duration_ms": 11899,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 6,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "{\"subjects\":[\"Billigast nu, dyrast sen?\",\"När det billigaste inte är det bästa valet\",\"Priset, kvaliteten och vad som händer sen\",\"En tanke om värde från oss på verkstan\"],\"preheader\":\"Det som avgör är ju helheten – vad som ingår, vem som svarar, och hur det ser ut om tre år.\",\"greeting\":\"Tjena!\",\"intro\":\"Man tittar på prislappen och tänker att man gör en bra affär. Det ser bra ut på pappret. Men vi har sett det så många gånger: ett billigt val blir snabbt ett dyrt problem när något går sönder och ingen svarar i telefon.\",\"sections\":[{\"heading\":\"Helheten är det som räknas\",\"body\":\"Det är lätt att bara jämföra siffror. Men vad ingår egentligen? Vem är det som fixar det när det uppstår problem på din maskin? Det är där den verkliga kostnaden visar sig.\"},{\"heading\":\"Vi tävlar inte om lägst pris\",\"body\":\"Vårt mål har aldrig varit att vara billigast. Vårt mål är att vara det val du är nöjd med längst. Att du ska veta att det bara funkar, och att vi finns här i Krokom när du behöver oss.\"}],\"cta_text\":\"Läs hela tanken här\",\"signoff\":\"Vi ses på verkstan,\\n/ Gänget på HM Motor\"}",
+      "duration_ms": 12260,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 8
+      }
+    }
+  ]
+}

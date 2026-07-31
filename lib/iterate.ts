@@ -20,6 +20,15 @@ export interface IterateOptions {
   category?: string; // for winning-example-fetch
   targetLength?: { min: number; max: number };
   contentCompass?: string; // Content Compass-block (anatomi + funnel/4A/DISC). Tomt = av.
+  // TEXT-1: färdigbyggd prompt från lib/prompt-core (byggTextPrompt). När den är satt
+  // används prebuilt.system rakt av och prebuilt.fingerprint/winning för scoring —
+  // iterate hämtar då INGET själv (ingen dubblering, inga extra DB-läsningar).
+  // systemPrompt/contentCompass ignoreras när prebuilt finns.
+  prebuilt?: {
+    system: string;
+    fingerprint: VoiceFingerprint | null;
+    winning: string[];
+  };
   // Per-variant-tillagg till userPrompt (index i = variant i). Tvingar spridning mellan
   // varianterna, t.ex. en hook-typ per forsok, istallet for att alla valjer samma vinkel.
   variantSuffixes?: string[];
@@ -48,10 +57,11 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
 
   const anthropic = new Anthropic({ apiKey });
 
-  // Hamta voice + winning examples om clientId finns
-  let fingerprint: VoiceFingerprint | null = null;
-  let winning: string[] = [];
-  if (opts.clientId) {
+  // Hamta voice + winning examples om clientId finns.
+  // TEXT-1: med prebuilt (fran lib/prompt-core) ar allt redan hopvavt — hamta inget.
+  let fingerprint: VoiceFingerprint | null = opts.prebuilt?.fingerprint ?? null;
+  let winning: string[] = opts.prebuilt?.winning ?? [];
+  if (!opts.prebuilt && opts.clientId) {
     try {
       fingerprint = await getVoiceFingerprint(opts.clientId);
       winning = await fetchWinningExamples(opts.clientId, opts.category);
@@ -61,22 +71,26 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
   }
 
   // Bygg ihop systemprompt med voice-block + winning examples
-  let fullSystem = opts.systemPrompt;
-  if (fingerprint) {
-    const { fingerprintToPromptBlock } = await import("./voice-fingerprint");
-    fullSystem += "\n\n" + fingerprintToPromptBlock(fingerprint);
+  let fullSystem = opts.prebuilt ? opts.prebuilt.system : opts.systemPrompt;
+  if (!opts.prebuilt) {
+    if (fingerprint) {
+      const { fingerprintToPromptBlock } = await import("./voice-fingerprint");
+      fullSystem += "\n\n" + fingerprintToPromptBlock(fingerprint);
+    }
+    if (winning.length > 0) {
+      fullSystem += "\n\n=== VINNANDE EXEMPEL (matcha denna kvalitet) ===\n";
+      winning.forEach((w, i) => {
+        fullSystem += `\nExempel ${i + 1}:\n${w}\n`;
+      });
+    }
+    // Lager 2 till 5 (inläggsanatomi + Content Compass), efter rösten och före guardrails.
+    if (opts.contentCompass) fullSystem += "\n\n" + opts.contentCompass;
   }
-  if (winning.length > 0) {
-    fullSystem += "\n\n=== VINNANDE EXEMPEL (matcha denna kvalitet) ===\n";
-    winning.forEach((w, i) => {
-      fullSystem += `\nExempel ${i + 1}:\n${w}\n`;
-    });
-  }
-  // Lager 2 till 5 (inläggsanatomi + Content Compass), efter rösten och före guardrails.
-  if (opts.contentCompass) fullSystem += "\n\n" + opts.contentCompass;
   // Globala skrivregler — kärnpunkt for Anthropic-vagen (studio-copy + alla specialister).
-  // Idempotent: laggs inte dubbelt om anroparen redan vavt in blocket.
-  if (!fullSystem.includes("GLOBALA SKRIVREGLER")) fullSystem += "\n\n" + WRITING_RULES_BLOCK;
+  // Idempotent: laggs inte dubbelt om anroparen redan vavt in blocket. Med prebuilt har
+  // prompt-core redan avgjort fragan (inkl. per-tenant-flaggan writing_rules_enabled) —
+  // skyddsnatet far inte kora over en avstangd flagga.
+  if (!opts.prebuilt && !fullSystem.includes("GLOBALA SKRIVREGLER")) fullSystem += "\n\n" + WRITING_RULES_BLOCK;
   fullSystem += SPECIALIST_GUARDRAILS;
 
   // Generera N varianter parallellt

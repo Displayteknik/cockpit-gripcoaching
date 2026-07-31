@@ -67,6 +67,7 @@ Var hård. Lögner snäll-poäng = noll värde.`;
 
   const audit = await generateJSON<ContentAudit>({
     model: "gemini-2.5-pro",
+    skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
     systemInstruction: system,
     prompt: `TEXT ATT GRANSKA:\n\n${text.slice(0, 8000)}`,
     temperature: 0.5,

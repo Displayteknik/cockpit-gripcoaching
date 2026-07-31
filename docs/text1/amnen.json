@@ -1,0 +1,31 @@
+{
+  "_kommentar": "TEXT-1 låst ämneslista. Samma ämnen körs i före-batch (mot dagens kod) och efter-batch (T-4, mot prompt-core). Ändras ALDRIG mellan batcherna — då bryts jämförbarheten.",
+  "profiler": ["Displayteknik", "Engens Träd", "HM Motor", "Annas Blommor"],
+  "amnen": [
+    {
+      "id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "underlag_artikel": "Många av våra kunder berättar samma sak: de väntade för länge med att höra av sig. De försökte lösa problemet själva, googlade sig fram, köpte något halvbra på nätet eller frågade en bekant. När de till slut kontaktade oss hade problemet ofta vuxit och kostat både tid och pengar i onödan. Vår erfarenhet är att ett tidigt samtal nästan alltid ger fler valmöjligheter och lägre totalkostnad. Det kostar inget att fråga, och du får ett ärligt svar även om svaret är att du klarar dig utan oss just nu."
+    },
+    {
+      "id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "underlag_artikel": "Det första steget är alltid ett samtal där vi lyssnar mer än vi pratar. Vad vill du uppnå, vad har du provat, vad är viktigast för dig? Sedan tar vi fram ett konkret förslag med pris och tidsplan, utan fluff. När du säger ja bokar vi in arbetet och håller dig uppdaterad hela vägen. Efter leverans följer vi upp: blev det som du tänkt dig? De flesta av våra kunder kommer tillbaka, och det är det bästa kvittot vi kan få."
+    },
+    {
+      "id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "underlag_artikel": "Vad kostar det? Det ärliga svaret är: det beror på, men du får alltid ett fast pris innan vi börjar, inga överraskningar. Hur lång tid tar det? Oftast kortare än folk tror, och vi säger alltid en tid vi kan hålla. Behöver jag verkligen detta? Ibland är svaret faktiskt nej, och då säger vi det. Vi vill ha kunder som kommer tillbaka i tio år, inte kunder som känner sig översålda en gång."
+    },
+    {
+      "id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "underlag_artikel": "En av våra kunder gick och funderade i nästan ett år. Det kändes som en stor kostnad och det var svårt att veta om det verkligen skulle göra skillnad. När de till slut hörde av sig löste vi det på kort tid, och deras spontana reaktion efteråt var: varför väntade jag så länge? Det är en reaktion vi hör ofta. Tveksamheten är naturlig, men den kostar ofta mer än själva beslutet."
+    },
+    {
+      "id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "underlag_artikel": "Det billigaste alternativet ser bra ut på pappret, ända tills det går sönder, tar dubbelt så lång tid eller måste göras om. Våra kunder som jämfört ordentligt brukar landa i samma slutsats: det som avgör är helheten. Vad ingår, vem svarar när något krånglar, och hur ser det ut om tre år? Vi tävlar inte om att vara billigast. Vi tävlar om att vara det val du är nöjd med längst."
+    }
+  ]
+}

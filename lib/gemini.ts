@@ -169,9 +169,10 @@ export async function groundedGenerate(
 }
 
 export async function generateJSON<T = unknown>(opts: GenerateOptions): Promise<T> {
-  // Strukturerad output (klassning, extraktion) = ingen kundtext → prosa-reglerna skulle
-  // bara bli brus. Anroparen kan sätta skrivregler: true om JSON:en bär kundtext.
-  const raw = await generate({ skrivregler: false, ...opts, jsonMode: true });
+  // TEXT-1: samma skrivregler-default som generate() — JSON-läget är ett FORMAT, inte
+  // ett undantag från innehållsreglerna. Kundtext i JSON (LinkedIn, nyhetsbrev, social)
+  // ska ha reglerna; rena klassnings-/extraktionsanrop sätter skrivregler: false EXPLICIT.
+  const raw = await generate({ ...opts, jsonMode: true });
   try {
     return JSON.parse(raw) as T;
   } catch {

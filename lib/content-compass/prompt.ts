@@ -2,7 +2,6 @@
 // Lager 1 (klientens röst) ligger kvar i knowledge/iterate. Detta bygger blocket som
 // vävs in efter rösten och före guardrails. Ren data → ok att importera var som helst.
 import { DISC_GUIDE, FOURA_GUIDE, FUNNEL_GUIDE, type FourA } from "@/lib/content-framework";
-import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 import type { FunnelLevel, DiscLetter } from "./data";
 
 export interface CompassParams {
@@ -83,8 +82,8 @@ export function contentCompassBlock(p: CompassParams): string {
   // BOFU-CTA-mall
   if (funnel === "bofu") lines.push(`BOFU-CTA-MALL: ${BOFU_CTA_MALL}`);
 
-  // Lager 6 — globala skrivregler. Sist så de väger tyngst av allt ovanför.
-  lines.push("", WRITING_RULES_BLOCK);
-
+  // TEXT-1: skrivreglerna bäddas INTE längre in här — de ägs av lager 8 i prompt-core
+  // (och skyddsnäten medSkrivregler/iterate lägger dem för omigrerade flöden). Att bära
+  // dem här gav dubbelt ägarskap och gjorde blocket omöjligt att lägga före rösten.
   return lines.join("\n");
 }

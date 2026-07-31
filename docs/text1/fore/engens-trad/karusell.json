@@ -1,0 +1,88 @@
+{
+  "profil": "Engens Träd & Trädgård",
+  "client_id": "e9e9e9e9-7e2d-4a2b-9c1f-e1ce115da001",
+  "flode": "karusell",
+  "genererad": "2026-07-31T06:05:42.317Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Väntar du för länge med trädet?\",\"body\":\"Många skjuter upp det där med trädfällning. Det kan bli onödigt dyrt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Riskträd blir farligare snabbt\",\"body\":\"Ett träd som lutar eller är sjukt kan snabbt bli en fara. Vänta inte tills stormen kommer, det är bättre att ta hand om det i lugn och ro.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Akut fällning kostar mer\",\"body\":\"När läget blir akut är det ofta dyrare att fälla ett träd. Planera i förväg så slipper du stress och extra utgifter.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Skador kan undvikas helt\",\"body\":\"Ett fallande träd kan orsaka stora skador på hus, bil eller tomt. En tidig bedömning kan förhindra allt drama.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Få en lugn bedömning av ditt träd\",\"body\":\"Skicka oss en bild eller ring så tittar vi på vad som är bäst för dig och din tomt.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2858,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Nyfiken på hur vi jobbar?\",\"body\":\"Från första samtalet till färdigt jobb – så här ser processen ut.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"1. Vi pratar om ditt träd\",\"body\":\"Du ringer eller mejlar mig, Rickard. Vi pratar om trädet, vad du vill göra och jag svarar på dina första frågor. Ett första enkelt steg.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"2. Jag kommer ut och tittar\",\"body\":\"Sedan kommer jag ut till dig i Roslagen eller norra Stockholm. Vi tittar tillsammans på trädet och jag bedömer hur vi bäst löser det säkert och lugnt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"3. Jobbet görs – säkert och rent\",\"body\":\"När vi är överens kommer jag och gör jobbet. Vi tar hand om allt från fällning till städning. Du får trädet borttaget utan drama.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett träd du funderar på?\",\"body\":\"Hör av dig till mig på 08-19 91 45 eller skicka ett mejl till info@engenstrad.se. Vi hjälper dig i Roslagen och norra Stockholm.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2992,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": true,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Vad kostar trädfällning?\",\"body\":\"Det här är den vanligaste frågan vi får. Men svaret är inte alltid enkelt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"1. Måste trädet verkligen bort?\",\"body\":\"Ofta finns det alternativ. Vi tittar på trädets hälsa, placering och hur det påverkar tomten innan vi ger råd.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"2. Hur vet jag att det blir säkert?\",\"body\":\"Vi är medlemmar i Svenska Trädföreningen och har försäkringar. Varje jobb planeras för att vara tryggt, även nära huset.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"3. Vad händer med ris och stubbar?\",\"body\":\"Vi tar hand om allt efteråt. Du får en ren och snygg tomt, som om trädet aldrig stått där.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett träd du funderar på?\",\"body\":\"Skicka ett meddelande eller ring oss, så tar vi en titt och ger dig en lugn bedömning.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2603,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Tvekade du med ditt träd?\",\"body\":\"Många skjuter upp det. Så här löste vi ett vanligt problem i Åkersberga.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Problemet: Skymde solen\",\"body\":\"Ett högt träd tog allt ljus på tomten. Ägarna hade tänkt på att fälla det i flera år, men tvekade.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Lösningen: Säker bit för bit\",\"body\":\"Vi klättrade upp och tog ner trädet säkert, bit för bit. Ingen risk för hus eller planteringar runtomkring.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Resultatet: Mer ljus och yta\",\"body\":\"Tomten fick tillbaka solen och gräsmattan kunde användas igen. Kunden var lättad att det äntligen var gjort.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Har du ett träd du tvekar om?\",\"body\":\"Skicka en bild så tittar vi på det. En trygg bedömning är första steget till en lugnare tomt.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2505,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 2,
+        "rostmarkorer_totalt": 24
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "[{\"kind\":\"hook\",\"headline\":\"Varför välja bort lägsta pris?\",\"body\":\"När det gäller träd och ditt hus är trygghet viktigare än billigt.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Inga oväntade skador\",\"body\":\"Ett träd som faller fel kan orsaka dyra skador på hus, staket eller grannens egendom. En expert vet hur man fäller säkert.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Försäkring och behörighet\",\"body\":\"En seriös aktör har rätt försäkringar och behörigheter. Det skyddar dig om olyckan skulle vara framme.\",\"imageUrl\":\"\"},{\"kind\":\"point\",\"headline\":\"Rent och snyggt efteråt\",\"body\":\"Du slipper oroa dig för grenar och spån över hela tomten. Vi lämnar alltid rent och snyggt när jobbet är klart.\",\"imageUrl\":\"\"},{\"kind\":\"cta\",\"headline\":\"Vill du ha en lugn trädfällning?\",\"body\":\"Hör av dig till Rickard för en kostnadsfri bedömning. Vi finns i Roslagen och norra Stockholm.\",\"imageUrl\":\"\"}]",
+      "duration_ms": 2767,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 0,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 24
+      }
+    }
+  ]
+}

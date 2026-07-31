@@ -1,0 +1,90 @@
+{
+  "profil": "Displayteknik",
+  "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "flode": "caption",
+  "genererad": "2026-07-31T05:58:27.952Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "Många tror att starkt solljus betyder att skylten inte syns.\n\nEtt vanligt misstag är att man väljer en skärm med för låg ljusstyrka, eller att man ger upp tanken helt för att det *är* så soligt. Med rätt nits (ljusstyrka) får du en skärm som syns även i direkt solljus, år efter år. Det är en investering som betalar sig när budskapet går fram oavsett väder.\n\nHar du en plats som är svår att exponera? Skicka en bild så får du en offert inom 24 timmar.\n\n#LEDskärm #DigitalSkyltning #Skyltfönster #Displayteknik",
+      "duration_ms": 2076,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": true,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "Nyfiken på hur vi jobbar? Här är processen, steg för steg!\n\nFrån första kontakten till färdig installation, vi vill att det ska vara enkelt och tryggt för dig. Oavsett om du behöver en skärm till skyltfönstret, en stor LED-vägg till fasaden eller en digital meny till restaurangen, så tar vi hand om allt.\n\nVi börjar med ett digitalt fika, där vi lyssnar på dina behov. Sen tar vi fram ett förslag som passar just din verksamhet och plats. När du känner dig nöjd, sköter vi allt från leverans till installation och ser till att allt fungerar som det ska, år efter år.\n\nSkicka ett DM med en bild på platsen du tänker dig, så får du en offert inom 24 timmar!\n\n#DigitalSkyltning #LEDskärmar #Displayteknik #Butiksskyltning",
+      "duration_ms": 2249,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 0,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "Vad kostar en digital skärm egentligen?\n\nDet är en av de vanligaste frågorna vi får, och en helt rimlig sådan! Men det enkla svaret är att det beror på, lite som att fråga vad en bil kostar. Det finns små, stora, utomhusskärmar, skärmar för skyltfönster, hög upplösning, mindre upplösning och så vidare.\n\nMen oroa dig inte, du slipper bli din egen tekniker. Vi hjälper dig att hitta rätt skärm för just dina behov och ger dig ett konkret prisförslag. Skicka ett DM med en bild på platsen där du vill ha din skärm, så får du en offert inom 24 timmar.\n\n#DigitalSkyltning #LEDskärmar #Displayteknik #SynsSäljerFungerar",
+      "duration_ms": 2435,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "\"Tänk om det inte blir bra?\"\n\nDen frågan fick vi ofta från en kund som tvekade länge. De visste att deras skyltfönster såg tråkigt ut, men var oroliga för både kostnad och krångel med tekniken. Våra konkurrenter hade redan digitala skärmar som fångade ögat.\n\nEfter en digital fika, där vi gick igenom deras behov och visade hur enkelt det kunde vara, vågade de äntligen satsa. Resultatet? Ett skyltfönster som nu säljer även när butiken är stängd, och som syns tydligt även i direkt solljus.\n\nNyfiken på att se hur det skulle kunna se ut för dig? Skicka en bild på din butik eller yta så får du ett konkret förslag inom 24 timmar.\n\n#DigitalSkyltning #LEDskärm #Butiksinredning #Displayteknik",
+      "duration_ms": 2250,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "Den billigaste skärmen kan bli den dyraste i längden.\n\nMånga kunder har berättat för mig om erfarenheten av att köpa en billigare LED-skärm, bara för att inse att den inte tål vårt nordiska klimat. Eller att den inte syns ordentligt i dagsljus, särskilt inte om solen ligger på. Då försvinner hela poängen.\n\nVi hjälper dig välja rätt skärm från början så att den syns, säljer och fungerar år efter år. Det är en trygg investering.\n\nSkicka ett mejl till support@displayteknik.se så hittar vi en lösning som håller.\n\n#DigitalSkyltning #LEDskärmar #Displayteknik #Hållbarhet #Synlighet",
+      "duration_ms": 2060,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [
+          "billig"
+        ],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 5,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 11
+      }
+    }
+  ]
+}

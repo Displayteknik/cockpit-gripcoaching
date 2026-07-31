@@ -80,6 +80,7 @@ Var konkret. Inte luddigt.`;
 
   const intel = await generateJSON<CompetitorIntel>({
     model: "gemini-2.5-pro",
+    skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
     systemInstruction: system,
     prompt: `Konkurrentens URL: ${url}\n\nKonkurrentens text:\n${text}`,
     temperature: 0.6,

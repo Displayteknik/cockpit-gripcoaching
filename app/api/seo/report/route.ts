@@ -208,6 +208,7 @@ ${signals.mainText}
   try {
     const report = await generateJSON<DeepReport>({
       model: "gemini-2.5-pro",
+      skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
       systemInstruction: system,
       prompt,
       temperature: 0.4,

@@ -52,6 +52,7 @@ Bedöm hur säker du är (confidence 0.0 till 1.0). Returnera:
 
     const parsed = await generateJSON<{ funnel?: string; four_a?: string; disc?: unknown; confidence?: number; motivering?: string }>({
       model: "gemini-2.5-flash",
+      skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
       systemInstruction: system,
       prompt: `Inlägg att klassa:\n\n${text.slice(0, 4000)}`,
       temperature: 0.2,

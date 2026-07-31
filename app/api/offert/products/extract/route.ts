@@ -77,6 +77,7 @@ export async function POST(req: Request) {
       if (raw.length < 30) return NextResponse.json({ error: "Kunde inte läsa text ur filen. Ladda upp .docx eller .pdf." }, { status: 400 });
       ex = await generateJSON<Ex>({
         model: "gemini-2.5-flash",
+        skrivregler: false, // klassning/analys, ingen kundtext (TEXT-1)
         systemInstruction: PROMPT,
         prompt: `Prislistan:\n\n${raw.slice(0, 24000)}`,
         temperature: 0.1,

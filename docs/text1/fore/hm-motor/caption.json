@@ -1,0 +1,88 @@
+{
+  "profil": "HM Motor Krokom",
+  "client_id": "00000000-0000-0000-0000-000000000001",
+  "flode": "caption",
+  "genererad": "2026-07-31T06:12:29.755Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": "Du har byggt en bra tjänst. Men ditt system för att hitta kunder är fortfarande du, din kalender och en stor dos hopp.\n\nDet vanligaste problemet vi ser hos nya kunder är att de tror att de måste ha *alla* delar på plats innan de börjar automatisera sitt kundflöde. De har testat olika system och verktyg men inget \"fastnar\" som en naturlig del av vardagen. Det leder bara till att de kör fast och inte gör något alls.\n\nVi vet att du \"borde göra mer för att få kunder\", men det är precis därför vi är här. Vi hjälper dig att komma igång med ett system som bara funkar, så du slipper tänka på var nästa kund ska komma ifrån.\n\nKommentera ”KUNDFLÖDE” så berättar vi mer om hur vi kan hjälpa dig.\n\n#hmmotor #krokom #kundflöde",
+      "duration_ms": 2300,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": "Du har byggt en bra tjänst. Men ditt system för att hitta kunder är fortfarande du, din kalender och en stor dos hopp.\n\nTjena! Igår kom en kund in som hade problem med att få igång en webbshop. Han hade testat olika system men inget \"fastnade\" som en naturlig del av vardagen.\n\nVi fixade det på 30 minuter, utan att han behövde boka tid. Nu har han en lätthanterlig e-handel som bara funkar, så han slipper tänka på var nästa kund ska komma ifrån. Det är såhär vi jobbar.\n\nVill du också ha ett system som bara funkar? Spara inlägget så du kommer ihåg oss.\n\n#hmmotor #krokom #webbshop",
+      "duration_ms": 2178,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": "Du har byggt en bra tjänst. Men ditt system för att hitta kunder är fortfarande du, din kalender och en stor dos hopp.\n\nHär är de 3 vanligaste frågorna vi får från kunder, och våra raka svar:\n\n**1. \"Jag vet att jag borde göra mer för att få kunder, men jag kör fast och gör inget alls.\"**\nDet är så lätt att fastna i det där. Vi hjälper dig att bygga ett system som bara funkar, så du slipper tänka på var nästa kund ska komma ifrån.\n\n**2. \"Kommer det här verkligen att funka för mitt företag?\"**\nJa! Vi jobbar med etablerade soloföretagare som dig, som har en fungerande verksamhet men behöver ett förutsägbart sätt att attrahera nya kunder. Vi ser till att systemet anpassas till just dina behov.\n\n**3. \"Tar det inte jättelång tid att komma igång?\"**\nNej. Det är såhär vi jobbar: effektivt. Vi bygger det tekniska kundflödet åt dig och coachar dig samtidigt genom de mentala blockeringarna som kan hindra dig. Vi vill att du ska få konkreta resultat, snabbt.\n\nÄr du trött på att köra fast? Boka en gratis rådgivning med oss!\n\n#Hmmotor #Krokom #AutomatiseratKundflöde #Soloföretagare",
+      "duration_ms": 3060,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 1,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": "Du har byggt en bra tjänst. Men ditt system för att hitta kunder är fortfarande du, din kalender och en stor dos hopp.\n\nEn kund sa nyligen \"Jag vet att jag borde göra mer för att få kunder, men jag kör fast och gör inget alls.\" Han hade tvekat länge men bestämde sig till slut för att ta tag i problemet.\n\nVi satte upp ett system som bara funkar, och nu slipper han tänka på var nästa kund ska komma ifrån. Vi fixade det.\n\nVill du också slippa fundera på var nästa kund kommer ifrån? Skicka ett DM.\n\n#hmmotor #krokom #soloföretagare #kundflöde",
+      "duration_ms": 1861,
+      "autochecks": {
+        "cta_count": 0,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 4,
+        "rostmarkorer_traffade": 3,
+        "rostmarkorer_totalt": 8
+      }
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": "Du har byggt en bra tjänst. Men ditt system för att hitta kunder är fortfarande du, din kalender och en stor dos hopp.\n\nVi har alla varit där. Att välja det billigaste alternativet känns smart, tills det visar sig vara problem på sin...\n\nEn kund kom in till oss med ett oljud. Han hade precis bytt bromsar på ett annat ställe, för att det var billigast. Vi fixade det på 30 minuter, utan att han behövde boka tid. Det visade sig vara en bromsbeläggskloss som satt fel.\n\nDet är såhär vi jobbar. Vi löser problemet direkt, så du slipper krångla.\n\nSpara inlägget om du vill ha konkreta tips om hur du bygger en kundresa som bara funkar.\n\n#Krokom #Bilverkstad #HMmotor",
+      "duration_ms": 3751,
+      "autochecks": {
+        "cta_count": 1,
+        "svag_hook": false,
+        "forbjudna_ord": [],
+        "floskler": [],
+        "tankstreck_i_loptext": false,
+        "hashtags": 3,
+        "rostmarkorer_traffade": 7,
+        "rostmarkorer_totalt": 8
+      }
+    }
+  ]
+}

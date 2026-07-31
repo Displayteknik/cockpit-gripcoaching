@@ -1,0 +1,43 @@
+{
+  "profil": "Annas Blommor",
+  "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+  "flode": "studio-text",
+  "genererad": "2026-07-31T13:17:53.173Z",
+  "poster": [
+    {
+      "amne_id": "misstag",
+      "tema": "Det vanligaste misstaget nya kunder gör innan de hör av sig till oss",
+      "output": null,
+      "duration_ms": 15450,
+      "fel": "Inga varianter genererades"
+    },
+    {
+      "amne_id": "bakom-kulisserna",
+      "tema": "Bakom kulisserna: så går ett typiskt kunduppdrag till, från första kontakt till leverans",
+      "output": null,
+      "duration_ms": 15041,
+      "fel": "Inga varianter genererades"
+    },
+    {
+      "amne_id": "tre-fragor",
+      "tema": "Tre frågor vi alltid får av kunder, och våra ärliga svar",
+      "output": null,
+      "duration_ms": 14605,
+      "fel": "Inga varianter genererades"
+    },
+    {
+      "amne_id": "tvekade",
+      "tema": "En kund tvekade länge, så blev resultatet när de till slut slog till",
+      "output": null,
+      "duration_ms": 15291,
+      "fel": "Inga varianter genererades"
+    },
+    {
+      "amne_id": "billigaste",
+      "tema": "Därför väljer kunder bort det billigaste alternativet",
+      "output": null,
+      "duration_ms": 16056,
+      "fel": "Inga varianter genererades"
+    }
+  ]
+}
