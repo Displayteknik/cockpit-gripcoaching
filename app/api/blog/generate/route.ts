@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getKnowledge } from "@/lib/knowledge";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 
@@ -34,8 +34,6 @@ export async function POST(req: NextRequest) {
       await sb.from("hm_blog_queue").update({ status: "generating" }).eq("id", queueId).eq("client_id", clientId);
     }
 
-    const knowledge = await getKnowledge("blog-playbook", "conversion");
-
     // Befintliga artiklar för internal linking (per klient)
     const { data: existing } = await sb
       .from("hm_blog")
@@ -47,9 +45,9 @@ export async function POST(req: NextRequest) {
 
     const outlineCtx = outlineHint ? `\n\nGODKÄND DISPOSITION (FÖLJ DENNA EXAKT):\n${JSON.stringify(outlineHint, null, 2)}\n` : "";
 
-    const system = `Du är klientens bloggförfattare. SEO-artiklar med Voice-of-Customer-känsla.
-
-${knowledge}
+    // TEXT-1 T-2: prompten byggs av prompt-core (kunskap, brand-profil, röst, winning,
+    // anatomi/compass och skrivregler ägs av kärnan). Uppdraget = flödets hårda regler.
+    const uppdrag = `Du är klientens bloggförfattare. SEO-artiklar med Voice-of-Customer-känsla.
 
 EXISTERANDE ARTIKLAR (länka aktivt till relevanta):
 ${existingCtx || "(inga än)"}
@@ -63,10 +61,9 @@ HÅRDA REGLER:
 - Internal links: <a href="/blogg/[slug]">text</a> där det är RELEVANT — ej forcerat.
 - 600–1500 ord. FAQ-sektion i slutet med <h3> + <p>.
 - Direkta svar i första meningen efter varje H2 (AEO-bonus).
-- Inkludera schema-vänliga element: tydliga frågor, listor, definitioner.
+- Inkludera schema-vänliga element: tydliga frågor, listor, definitioner.`;
 
-RETURNERA JSON:
-{
+    const jsonSchema = `{
   "title": "Rubrik (utan H1-taggar)",
   "slug": "url-slug-utan-svenska-tecken",
   "excerpt": "1–2 meningar (max 160 tecken)",
@@ -76,19 +73,36 @@ RETURNERA JSON:
   "internal_links_used": ["/blogg/slug1", "/blogg/slug2"]
 }`;
 
-    const prompt = `Ämne: ${topic}
+    const b2 = await byggTextPrompt({
+      clientId,
+      syfte: "blogg",
+      kanal: "webb",
+      uppdrag,
+      underlag: `Ämne: ${topic}
 ${angle ? `Vinkel: ${angle}` : ""}
 ${keyword ? `Primärt sökord: ${keyword}` : ""}
 
-Skriv artikeln nu enligt dispositionen + reglerna.`;
+Skriv artikeln nu enligt dispositionen + reglerna.`,
+      knowledge: ["blog-playbook", "conversion"],
+      jsonSchema,
+    });
 
     const article = await generateJSON<Generated>({
       model: "gemini-2.5-pro",
-      systemInstruction: system,
-      prompt,
+      systemInstruction: b2.system,
+      prompt: b2.user,
       temperature: 0.8,
       maxOutputTokens: 8000,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
     });
+
+    // TEXT-1: enhetlig sanering på textfälten (HTML-kroppen lämnas — markup ska inte
+    // genom hashtag-städet, samma princip som Studio-bloggen).
+    [article.title, article.excerpt, article.meta_description] = await Promise.all([
+      saneraText(article.title, clientId),
+      saneraText(article.excerpt, clientId),
+      saneraText(article.meta_description, clientId),
+    ]);
 
     const slug = (article.slug || topic.toLowerCase())
       .replace(/[åä]/g, "a")
