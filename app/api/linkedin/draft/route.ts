@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getKnowledge } from "@/lib/knowledge";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
@@ -65,7 +65,6 @@ export async function POST(req: NextRequest) {
         ? "350-500 ord. Story-inlägg eller fördjupning. Hook + scen + insikt + 4-5 punkter + sammanfattning + soft CTA."
         : "200-300 ord. Hook + igenkänning + insikt + 3-4 punkter + soft CTA.";
 
-    const knowledge = await getKnowledge("linkedin-foundation", "linkedin-formats", "linkedin-advanced");
     const isCarousel = (seed.format ?? "text") === "carousel";
 
     const slideSchema = isCarousel
@@ -80,11 +79,11 @@ export async function POST(req: NextRequest) {
       ? "\n\nDETTA ÄR EN KARUSELL: 6-9 slides. Slide 1 = hook + 'Swipe →'. Slide 2 = problemramning. Slides 3-7 = en princip per slide (5-7 ord rubrik, 1-2 meningar body). Sista slide = soft CTA. Body-fältet ovan ska sammanfatta hela karusellens budskap i 80-120 ord (det som postas ovanför karusellen)."
       : "";
 
-    const system = `Du är ${client?.name || "klientens"} egna LinkedIn-skribent.
+    // TEXT-1 T-2: prompten byggs av prompt-core (kunskap, brand-profil, röst, winning,
+    // anatomi/compass och skrivregler ägs av kärnan). Uppdraget = flödets hårda regler.
+    const uppdrag = `Du är ${client?.name || "klientens"} egna LinkedIn-skribent.
 
 Du följer Hakan Grips kursmetodik "Från Okänd till Kund" och dessa hårda regler:
-
-${knowledge}
 
 INSTRUKTION FÖR DETTA INLÄGG:
 - Längd: ${lengthGuide}
@@ -99,10 +98,9 @@ KRITISKT:
 - Max 3-4 hashtags, alla relevanta.
 - Hook MÅSTE klara Triple S-testet.
 - Skriv direkt — inte "i detta inlägg" eller "vi kommer att".
-- Använd radbrytningar generöst — varje 1-2 meningar = ny rad.
+- Använd radbrytningar generöst — varje 1-2 meningar = ny rad.`;
 
-RETURNERA JSON:
-{
+    const jsonSchema = `{
   "hook": "Den första raden — det som stoppar scrollen",
   "body": "HELA inlägget som det ska klistras in på LinkedIn (inkl hook). Behåll radbrytningar.",
   "hashtags": "#tag1 #tag2 #tag3",
@@ -116,13 +114,40 @@ ${seed.angle ? `Vinkel: ${seed.angle}` : ""}
 
 Skriv inlägget nu. Returnera bara JSON.`;
 
+    const b = await byggTextPrompt({
+      clientId,
+      syfte: "linkedin",
+      kanal: "linkedin",
+      uppdrag,
+      underlag: userPrompt,
+      knowledge: ["linkedin-foundation", "linkedin-formats", "linkedin-advanced"],
+      jsonSchema,
+    });
+
     const draft = await generateJSON<DraftResult>({
       model: "gemini-2.5-pro",
-      systemInstruction: system,
-      prompt: userPrompt,
+      systemInstruction: b.system,
+      prompt: b.user,
       temperature: 0.92,
       maxOutputTokens: isCarousel ? 4000 : 2500,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
     });
+
+    // TEXT-1: enhetlig sanering — flödet saknade sanering helt före migreringen.
+    [draft.hook, draft.body, draft.cta, draft.hashtags] = await Promise.all([
+      saneraText(draft.hook, clientId, "linkedin"),
+      saneraText(draft.body, clientId, "linkedin"),
+      saneraText(draft.cta, clientId, "linkedin"),
+      saneraText(draft.hashtags, clientId, "linkedin"),
+    ]);
+    if (Array.isArray(draft.slides)) {
+      for (const s of draft.slides) {
+        [s.headline, s.body] = await Promise.all([
+          saneraText(s.headline, clientId, "linkedin"),
+          saneraText(s.body, clientId, "linkedin"),
+        ]);
+      }
+    }
 
     const updatePayload: Record<string, unknown> = {
       hook: draft.hook,
