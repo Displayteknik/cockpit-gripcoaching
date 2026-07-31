@@ -139,14 +139,17 @@ export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParam
 
 // ── Profilklippning med fast prioritet ───────────────────────────────────────
 // Tonregler, GÖR/GÖR INTE och USP överlever ALLTID klippet (Håkans tillägg till
-// TEXT1-PLAN avsnitt 2). Story-bank och Customer Voice klipps först, därefter övriga
-// sektioner i omvänd viktordning. Klipp sker på hel sektion — aldrig mitt i mening.
+// TEXT1-PLAN avsnitt 2). Story-bank klipps först (längst och minst ordförråds-tät),
+// därefter övriga sektioner i omvänd viktordning. Customer Voice bär klientens
+// eget ordförråd (röst-träffen sjönk när den klipptes tidigt — justeringsrundan v2)
+// och klipps därför först EFTER Sekundär ICP. Klipp sker på hel sektion — aldrig
+// mitt i mening.
 const KLIPPORDNING = [
   "Story-bank",
-  "Customer Voice",
   "Kundresa",
   "Konkurrenter",
   "Sekundär ICP",
+  "Customer Voice",
   "Voice of Customer (kundord)",
   "Hashtag-bas",
   "Brand story",
@@ -209,7 +212,9 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
       const { getProfileAsMarkdown } = await import("@/lib/knowledge");
       const raa = await getProfileAsMarkdown(p.clientId, { medVoice: false });
       if (raa) {
-        const klippt = klippProfil(raa, p.maxProfilTecken ?? 6000);
+        // 9000 (höjt från 6000 i justeringsrundan v2): 6000 klippte bort röstbärande
+        // sektioner för de fylligare profilerna och röst-träffen sjönk mätbart.
+        const klippt = klippProfil(raa, p.maxProfilTecken ?? 9000);
         profilKlippt = klippt.klippta;
         profilText = klippt.text;
         delar.push(`=== KLIENTENS VARUMÄRKESPROFIL ===\n${klippt.text}`);

@@ -195,6 +195,17 @@ describe("klippProfil — fast prioritet", () => {
     expect(klippta[0]).toBe("Story-bank");
     expect(text).not.toContain("Story-bank");
     expect(klippta.length).toBeGreaterThan(1);
+    // Justeringsrundan v2: Customer Voice bär klientens ordförråd och överlever
+    // ett måttligt klipp (klipps först efter Sekundär ICP).
+    expect(text).toContain("det bara funkar");
+  });
+
+  it("Customer Voice klipps EFTER Sekundär ICP (röstviktad ordning, v2)", () => {
+    const { klippta } = klippProfil(PROFIL_MD, 300);
+    expect(klippta[0]).toBe("Story-bank");
+    expect(klippta).toContain("Sekundär ICP");
+    expect(klippta).toContain("Customer Voice");
+    expect(klippta.indexOf("Customer Voice")).toBeGreaterThan(klippta.indexOf("Sekundär ICP"));
   });
 
   it("profil under taket klipps inte alls", () => {
