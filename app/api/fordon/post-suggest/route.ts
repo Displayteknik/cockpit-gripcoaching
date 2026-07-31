@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
-import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
-import { sanitizeGenerated } from "@/lib/content/writing-rules";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -39,30 +38,15 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
     if (!v) return NextResponse.json({ error: "Fordonet hittades inte" }, { status: 404 });
 
-    const { data: profile } = await sb
-      .from("hm_brand_profile")
-      .select("*")
-      .eq("client_id", clientId)
-      .maybeSingle();
-
-    const fp = await getVoiceFingerprint(clientId);
-    const voiceBlock = fingerprintToPromptBlock(fp);
-
     const specs =
       v.specs && typeof v.specs === "object"
         ? Object.entries(v.specs as Record<string, string>).map(([k, val]) => `${k}: ${val}`).join("\n")
         : "";
     const priceText = v.price > 0 ? `${Number(v.price).toLocaleString("sv-SE")} kr` : v.price_label || "Kontakta oss";
 
-    const system = `Du är en vass svensk copywriter för en lokal bil- och fordonshandlare. Du skriver ett ${platform === "facebook" ? "Facebook" : "Instagram"}-inlägg som säljer EN specifik begagnad bil/fordon — personligt, konkret och förtroendeingivande. Aldrig malligt, aldrig AI-språk.
-
-═══ HANDLARE ═══
-Företag: ${profile?.company_name || "HM Motor"}
-Plats: ${profile?.location || "Krokom"}
-USP: ${profile?.usp || "Lokal handlare, genomgångna fordon, personlig service"}
-Bokningslänk: ${profile?.booking_url || "(ingen)"}
-
-${voiceBlock}
+    // TEXT-1 T-2: prompten byggs av prompt-core — HANDLARE-blocket (råfält) är ersatt av
+    // kärnans brand-profil-lager, rösten ägs av kärnan. Uppdraget = flödets kvalitetskrav.
+    const uppdrag = `Du är en vass svensk copywriter för en lokal bil- och fordonshandlare. Du skriver ett ${platform === "facebook" ? "Facebook" : "Instagram"}-inlägg som säljer EN specifik begagnad bil/fordon — personligt, konkret och förtroendeingivande. Aldrig malligt, aldrig AI-språk.
 
 ═══ KVALITETSKRAV ═══
 - Svenska tecken å/ä/ö korrekt.
@@ -81,29 +65,34 @@ ${voiceBlock}
   3) Blankrad, sedan EN kort avslutande rad.
 - Använd riktiga radbrytningar (\\n) rikligt. Korta rader. Luftigt. Sparsamt med emoji — bara i spec-listan, inte i löptext.
 - CTA = EN sak (t.ex. "Boka provkörning" eller "Hör av dig"). Inte flera.
-- Hashtags: 6-10, blanda bilnischat + lokalt (Krokom/Jämtland/Östersund) + märke. Utan #-tecken.
+- Hashtags: 6-10, blanda bilnischat + lokalt (Krokom/Jämtland/Östersund) + märke. Utan #-tecken.`;
 
-═══ OUTPUT (JSON, exakt) ═══
-{ "hook": "kort hook utan emoji-prefix", "body": "Luftig caption med radbrytningar:\\nKort intro-rad.\\nEn rad till.\\n\\n📅 Årsmodell: 2019\\n🛣️ Miltal: 9 000 mil\\n⛽ Bränsle: Bensin\\n💰 Pris: 119 900 kr\\n\\nAvslutande rad.", "cta": "en mening", "hashtags": ["bil", "krokom"] }`;
-
-    const userPrompt = `FORDON ATT SÄLJA:
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "enskilt",
+      kanal: platform === "facebook" ? "facebook" : "instagram",
+      uppdrag,
+      underlag: `FORDON ATT SÄLJA:
 Rubrik: ${v.title}
 Märke/modell: ${v.brand || ""} ${v.model || ""}
 Pris: ${priceText}
 ${specs}
 ${v.description ? `\nAnnonsbeskrivning (referens, korta ner):\n${String(v.description).slice(0, 700)}` : ""}
 
-Skriv ETT inlägg i JSON-formatet. Inget annat.`;
+Skriv ETT inlägg i JSON-formatet. Inget annat.`,
+      jsonSchema: `{ "hook": "kort hook utan emoji-prefix", "body": "Luftig caption med radbrytningar:\\nKort intro-rad.\\nEn rad till.\\n\\n📅 Årsmodell: 2019\\n🛣️ Miltal: 9 000 mil\\n⛽ Bränsle: Bensin\\n💰 Pris: 119 900 kr\\n\\nAvslutande rad.", "cta": "en mening", "hashtags": ["bil", "krokom"] }`,
+    });
 
     let raw = "";
     try {
       raw = await generate({
         model: "gemini-2.5-pro",
-        systemInstruction: system,
-        prompt: userPrompt,
+        systemInstruction: bygg.system,
+        prompt: bygg.user,
         temperature: 0.85,
         maxOutputTokens: 2000,
         jsonMode: true,
+        skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
       });
     } catch (e) {
       return NextResponse.json({ error: `AI-fel: ${(e as Error).message}` }, { status: 500 });
@@ -126,10 +115,16 @@ Skriv ETT inlägg i JSON-formatet. Inget annat.`;
     if (!hook && !body) return NextResponse.json({ error: "AI returnerade ingen text — försök igen" }, { status: 500 });
 
     const gallery = Array.isArray(v.gallery) ? (v.gallery as string[]) : [];
+    // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
+    const [renHook, renBody, renCta] = await Promise.all([
+      saneraText(hook, clientId),
+      saneraText(body, clientId),
+      saneraText(cta, clientId),
+    ]);
     return NextResponse.json({
-      hook: sanitizeGenerated(hook, { hashtags: false }),
-      body: sanitizeGenerated(body, { hashtags: false }),
-      cta: sanitizeGenerated(cta, { hashtags: false }),
+      hook: renHook,
+      body: renBody,
+      cta: renCta,
       hashtags: Array.isArray(hashtags) ? hashtags.slice(0, 5) : hashtags,
       image_url: v.image_url || gallery[0] || null,
       gallery,
