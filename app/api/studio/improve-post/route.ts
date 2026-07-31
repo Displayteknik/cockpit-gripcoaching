@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
-import { getProfileAsMarkdown } from "@/lib/knowledge";
-import { getKitDirectives, dontsRule } from "@/lib/studio/kit";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { DISC_TONE, DISC_HOOK } from "@/lib/content-compass/prompt";
 import { DISC_LABEL_SV } from "@/lib/content-compass/labels";
 import type { DiscLetter } from "@/lib/content-compass/data";
-import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -82,7 +80,7 @@ async function genGuarded(system: string, prompt: string, temperature = 0.7, max
   let out = "";
   for (let attempt = 0; attempt < 3; attempt++) {
     const sys = attempt === 0 ? system : `${system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående svar bröt mot reglerna (förbjudet uttryck eller påhittad statistik). Skriv om helt. Använd inga siffror, procenttal eller studier som inte står i originalet.`;
-    out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? temperature : 0.6, maxOutputTokens })).trim();
+    out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? temperature : 0.6, maxOutputTokens, skrivregler: false /* prompt-core äger skrivregler-flaggan (TEXT-1) */ })).trim();
     if (!hasBanned(out) && !(original && inventedStats(out, original))) break;
   }
   const clean = sanitize(out);
@@ -104,27 +102,39 @@ export async function POST(req: NextRequest) {
     if (!text) return NextResponse.json({ error: "Klistra in ett inlägg först." }, { status: 400 });
     const mode = (b.mode || "improve").toString();
 
-    const profile = await getProfileAsMarkdown().catch(() => "");
-    const directives = await getKitDirectives(await resolveClientId());
-    // Brand-profilen används VILLKORAT: inlägget självt är primär källa. Passar profilen
-    // inläggets bransch/röst är den förstärkande kontext, annars ignoreras den helt så
-    // tenantens bransch aldrig blöder in i ett inlägg från en annan värld.
-    const profilBlock = profile
-      ? [
-          "\n=== TENANTENS BRAND-PROFIL (villkorad referens, INTE facit) ===",
-          profile.slice(0, 5000),
-          "\n=== SÅ ANVÄNDER DU PROFILEN ===",
-          "1. Härled FÖRST bransch, målgrupp, erbjudande, ton och tilltal ur det inklistrade inlägget. Det är din primära källa.",
-          "2. Jämför sedan med profilen ovan. Samma bransch och röst: använd profilen som förstärkning (ton, målgruppsdetaljer).",
-          "3. Olika bransch eller röst: IGNORERA profilen helt för den här körningen och arbeta enbart utifrån inlägget.",
-          "4. Blanda ALDRIG in tenantens bransch, produkter, tjänster eller exempel i ett inlägg som handlar om något annat.",
-        ].join("\n")
-      : "";
+    const clientId = await resolveClientId();
+    // TEXT-1 T-2: brand-profilen injiceras av prompt-core (lager 3). Flödets villkorade
+    // användning behålls som regler i uppdraget: inlägget självt är primär källa, profilen
+    // får aldrig blöda in bransch i ett inlägg från en annan värld.
+    const profilRegler = [
+      "\n=== SÅ ANVÄNDER DU VARUMÄRKESPROFILEN (om en sådan finns nedan — villkorad referens, INTE facit) ===",
+      "1. Härled FÖRST bransch, målgrupp, erbjudande, ton och tilltal ur det inklistrade inlägget. Det är din primära källa.",
+      "2. Jämför sedan med profilen nedan. Samma bransch och röst: använd profilen som förstärkning (ton, målgruppsdetaljer).",
+      "3. Olika bransch eller röst: IGNORERA profilen helt för den här körningen och arbeta enbart utifrån inlägget.",
+      "4. Blanda ALDRIG in tenantens bransch, produkter, tjänster eller exempel i ett inlägg som handlar om något annat.",
+    ].join("\n");
 
     // ── Läge DISC: fyra varianter av samma inlägg, en per personlighetstyp ──
     if (mode === "disc") {
       const LETTERS: DiscLetter[] = ["D", "I", "S", "C"];
       const COLOR: Record<DiscLetter, string> = { D: "röd", I: "gul", S: "grön", C: "blå" };
+      // OBS (TEXT-1-beslut): DISC skickas INTE som compass-param här. Flödet styr medvetet
+      // om D- och C-krokarna ("rak siffra"/"överraskande fakta" lockar modellen att uppfinna
+      // statistik) — compass-lagrets DISC-hookar skulle återinföra den risken. Egna
+      // DISC-rader behålls; kärnan ger bar anatomi (kanal-anpassning har ingen default).
+      const bygg = await byggTextPrompt({
+        clientId,
+        syfte: "kanal-anpassning",
+        uppdrag: [
+          `Du skriver om ett socialt inlägg för ${client?.name || "kunden"} så att det talar till EN personlighetstyp.`,
+          profilRegler,
+          "\nBehåll budskapet, erbjudandet och svarsordet identiskt. Ändra bara tilltal, krok och rytm så det passar typen.",
+          "Inlägget självt styr bransch, målgrupp och erbjudande. Handlar det om något annat än profilen nedan: ignorera profilen helt och blanda aldrig in tenantens bransch eller produkter.",
+          REGLER,
+          "- Uppfinn ALDRIG statistik, procenttal, forskningsresultat eller studier. Inga siffror som inte står i originalet.",
+          "\nReturnera ENDAST det omskrivna inlägget, ingen rubrik och ingen förklaring.",
+        ].join("\n"),
+      });
       const variants = await Promise.all(
         LETTERS.map(async (letter) => {
           // Krokarna för D och C ("rak siffra", "överraskande fakta") lockar modellen att
@@ -134,19 +144,13 @@ export async function POST(req: NextRequest) {
             : letter === "D"
               ? "rakt, kort påstående. Använd bara siffror som redan finns i originalet, hitta aldrig på nya."
               : DISC_HOOK[letter];
+          // Variantblocket läggs som suffix (samma mönster som captionens krok-vinkel).
           const system = [
-            `Du skriver om ett socialt inlägg för ${client?.name || "kunden"} så att det talar till EN personlighetstyp.`,
-            profilBlock,
+            bygg.system,
             `\n=== MÅLGRUPPSTYP: ${COLOR[letter]} (${DISC_LABEL_SV[letter]}) ===`,
             `Ton: ${DISC_TONE[letter]}.`,
             `Krok: ${krok}.`,
-            "\nBehåll budskapet, erbjudandet och svarsordet identiskt. Ändra bara tilltal, krok och rytm så det passar typen.",
-            "Inlägget självt styr bransch, målgrupp och erbjudande. Handlar det om något annat än profilen ovan: ignorera profilen helt och blanda aldrig in tenantens bransch eller produkter.",
-            REGLER,
-            "- Uppfinn ALDRIG statistik, procenttal, forskningsresultat eller studier. Inga siffror som inte står i originalet.",
-            dontsRule(directives.donts),
-            "\nReturnera ENDAST det omskrivna inlägget, ingen rubrik och ingen förklaring.",
-          ].filter(Boolean).join("\n");
+          ].join("\n");
           const t = await genGuarded(system, `Originalinlägg:\n${text}\n\nSkriv om det för ${COLOR[letter]} nu.`, 0.75, 800, text);
           return { letter, label: DISC_LABEL_SV[letter], color: COLOR[letter], text: t };
         }),
@@ -155,9 +159,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Läge Förbättra: analys + EN förbättrad huvudversion ──
-    const system = [
+    const uppdrag = [
       `Du är en erfaren copywriter som hjälper ${client?.name || "kunden"} att göra sitt sociala inlägg vassare.`,
-      profilBlock,
+      profilRegler,
       "\n=== METODEN (arbeta i den här ordningen, varje steg är obligatoriskt) ===",
       "",
       "STEG 1. MÅLGRUPPSTEST: symptom, inte lösning.",
@@ -195,14 +199,20 @@ export async function POST(req: NextRequest) {
       "2 till 4 korta punkter på uppmuntrande svenska, som en kollega och inte en lärare. Säg först vad som redan fungerar, peka sedan ut vad som saknas enligt stegen ovan (särskilt lösningsspråk i målgruppen och ett löfte som stannar i abstraktion).",
       "Exempel på ton: \"Tydligt svarsord, bra. Målgruppen är beskriven genom din lösning: hur känns problemet för henne innan hon vet vad det heter?\"",
       REGLER,
-      dontsRule(directives.donts),
-      "\n=== SVARSFORMAT (exakt) ===",
-      "Returnera ENDAST giltig JSON, inget annat:",
-      '{"profileMatch":true,"analysis":["punkt 1","punkt 2"],"improved":"hela det förbättrade inlägget med radbrytningar"}',
-      'Sätt "profileMatch" till true om du använde Brand-profilen (samma bransch och röst), annars false.',
     ].filter(Boolean).join("\n");
 
-    const raw = await genGuarded(system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text, false);
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "kanal-anpassning",
+      uppdrag,
+      jsonSchema: [
+        "Returnera ENDAST giltig JSON, inget annat:",
+        '{"profileMatch":true,"analysis":["punkt 1","punkt 2"],"improved":"hela det förbättrade inlägget med radbrytningar"}',
+        'Sätt "profileMatch" till true om du använde Brand-profilen (samma bransch och röst), annars false.',
+      ].join("\n"),
+    });
+
+    const raw = await genGuarded(bygg.system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text, false);
     const jsonStr = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
     let parsed: { analysis?: unknown; improved?: unknown; profileMatch?: unknown } = {};
     try {
@@ -219,11 +229,12 @@ export async function POST(req: NextRequest) {
     if (!improved) return NextResponse.json({ error: "Kunde inte förbättra inlägget just nu. Prova igen." }, { status: 502 });
 
     // Utan profil finns inget att matcha mot → visa ingen infotext alls.
-    const profileMatch = profile ? parsed.profileMatch === true : null;
-    const reglerPa = await skrivreglerPa(await resolveClientId().catch(() => null));
+    // (b.meta.lager.brandProfil = fanns en profil i prompten, från prompt-core.)
+    const profileMatch = bygg.meta.lager.brandProfil ? parsed.profileMatch === true : null;
+    // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
     return NextResponse.json({
-      analysis: reglerPa ? analysis.map((a) => sanitizeGenerated(a, { hashtags: false })) : analysis,
-      improved: reglerPa ? sanitizeGenerated(improved) : improved,
+      analysis: await Promise.all(analysis.map((a) => saneraText(a, clientId))),
+      improved: await saneraText(improved, clientId),
       profileMatch,
     });
   } catch (e) {
