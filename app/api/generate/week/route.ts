@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate, generateWithUsage } from "@/lib/gemini";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
 import {
   WEEK_ROLES,
@@ -17,7 +18,7 @@ import { planWeek } from "@/lib/content-compass/rules";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
-import { sanitizeGenerated, skrivreglerPa, WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
+import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -64,16 +65,13 @@ export async function POST(req: NextRequest) {
     const sb = supabaseService();
     const { data: profile } = await sb
       .from("hm_brand_profile")
-      .select("*")
+      .select("client_id")
       .eq("client_id", clientId)
       .maybeSingle();
 
     if (!profile) {
       return NextResponse.json({ error: "Brand-profil saknas" }, { status: 400 });
     }
-
-    const fp = await getVoiceFingerprint(clientId);
-    const voiceBlock = fingerprintToPromptBlock(fp);
 
     // Bygg en kombinerad prompt som genererar 7 inlägg i en JSON-call
     const dayLines = WEEK_ROLES.map((role, i) => {
@@ -82,17 +80,10 @@ export async function POST(req: NextRequest) {
       return `Dag ${i + 1} (${role.day}): 4A=${role.fourA}, DISC=${role.disc}, Funnel=${role.funnel}, Format=${FORMAT_LABELS[format]} (${format}). Intent: ${role.intent}`;
     }).join("\n");
 
-    const system = `Du är världsklass copywriter. Du genererar 7 inlägg för en hel vecka — ETT inlägg per dag enligt veckorytmen. Varje dag har sin egen roll i 4A × DISC × Funnel.
-
-═══ KUND ═══
-Företag: ${profile.company_name || "(saknas)"}
-Plats: ${profile.location || "(saknas)"}
-USP: ${profile.usp || "(saknas)"}
-Differentiatorer: ${profile.differentiators || "(saknas)"}
-ICP primär: ${profile.icp_primary || "(saknas)"}
-Smärtpunkter: ${profile.pain_points || "(saknas)"}
-Tjänster: ${profile.services || "(saknas)"}
-Bokningslänk: ${profile.booking_url || "(saknas)"}
+    // TEXT-1 T-2: prompten byggs av prompt-core — KUND-blocket (råfält) är ersatt av
+    // kärnans brand-profil-lager, rösten/winning/skrivreglerna ägs av kärnan. Uppdraget =
+    // WEEK_ROLES + 4A/DISC/Funnel-guiderna + Kane-hookreglerna + kvalitetskraven.
+    const uppdrag = `Du är världsklass copywriter. Du genererar 7 inlägg för en hel vecka — ETT inlägg per dag enligt veckorytmen. Varje dag har sin egen roll i 4A × DISC × Funnel.
 
 ═══ VECKO-ROLLER ═══
 ${dayLines}
@@ -109,19 +100,14 @@ ${Object.entries(FUNNEL_GUIDE).map(([k, v]) => `- ${k}: ${v}`).join("\n")}
 ═══ HOOK-REGLER ═══
 ${KANE_HOOK_RULES}
 
-${voiceBlock}
-
 ═══ KVALITETSKRAV ═══
 - Veckan ska ha PROGRESSION — söndag ska kännas annorlunda från måndag
 - Variera HOOK-FORMAT över veckan: fråga, statistik, kontrast, story, påstående
 - ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "skalbar"
 - Skriv på svenska som personen själv hade skrivit
-- Varje CTA är EN sak att göra — varierande över veckan
+- Varje CTA är EN sak att göra — varierande över veckan`;
 
-${WRITING_RULES_BLOCK}
-
-═══ OUTPUT JSON ═══
-{
+    const jsonSchema = `{
   "days": [
     {
       "day": "Måndag",
@@ -134,17 +120,24 @@ ${WRITING_RULES_BLOCK}
   ]
 }`;
 
-    const userPrompt = `Veckotema: ${theme}
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "veckoplan",
+      uppdrag,
+      underlag: `Veckotema: ${theme}
 
-Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handling över veckan. Varje inlägg står på egna ben men de ska kännas som en serie. Returnera enbart JSON.`;
+Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handling över veckan. Varje inlägg står på egna ben men de ska kännas som en serie. Returnera enbart JSON.`,
+      jsonSchema,
+    });
 
     const raw = await generate({
       model: "gemini-2.5-pro",
-      systemInstruction: system,
-      prompt: userPrompt,
+      systemInstruction: bygg.system,
+      prompt: bygg.user,
       temperature: 0.85,
       maxOutputTokens: 8000,
       jsonMode: true,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
     });
 
     let parsed: { days?: { day: string; hook: string; body: unknown; cta: string; hashtags: string[] }[] } = {};
@@ -182,14 +175,19 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
       };
     });
 
-    // Skyddsnät före visning: tankstreck, floskler och hashtag-tak.
+    // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
+    // Hashtag-taket på arrayen gäller bara när skrivreglerna är på (samma som förut).
+    await Promise.all(
+      days.map(async (d) => {
+        [d.hook, d.body, d.cta] = await Promise.all([
+          saneraText(d.hook, clientId),
+          saneraText(d.body, clientId),
+          saneraText(d.cta, clientId),
+        ]);
+      }),
+    );
     if (await skrivreglerPa(clientId)) {
-      for (const d of days) {
-        d.hook = sanitizeGenerated(d.hook, { hashtags: false });
-        d.body = sanitizeGenerated(d.body, { hashtags: false });
-        d.cta = sanitizeGenerated(d.cta, { hashtags: false });
-        d.hashtags = d.hashtags.slice(0, 5);
-      }
+      for (const d of days) d.hashtags = d.hashtags.slice(0, 5);
     }
 
     // Auto voice-score varje dag — användaren ser score per inlägg.
@@ -207,7 +205,7 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
 
     return NextResponse.json({
       theme,
-      voice_source_count: fp.source_asset_count,
+      voice_source_count: bygg.fingerprint?.source_asset_count ?? 0,
       days: scoredDays,
     });
   } catch (e) {
