@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
-import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { byggTextPrompt, saneraText, VARIANTREGEL } from "@/lib/prompt-core";
 import { getWinningPatterns, patternsToPromptBlock } from "@/lib/insights";
 import type { FunnelLevel } from "@/lib/content-compass/data";
 import {
@@ -312,7 +312,8 @@ ${winningBlock}
 - "hashtags"-arrayen är ENBART hashtags utan #-tecken (vi lägger till # själva).
 - Allt ska vara copy-paste-färdigt direkt utan att användaren behöver redigera bort etiketter.
 
-VIKTIGT: De tre varianterna ska skilja sig STORT från varandra — olika hook-format, olika känsla, olika vinkel på samma ämne. Det är A/B-testning, inte tre versioner av samma idé.`;
+${VARIANTREGEL}
+Det är A/B-testning, inte tre versioner av samma idé — olika hook-format, olika känsla, olika retorisk ingång på samma ämne.`;
 }
 
 function buildJsonSchema(args: { disc: Disc; funnel: Funnel; format: Format }): string {

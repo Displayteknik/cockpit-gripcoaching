@@ -7,7 +7,7 @@
 // med contentCompassBlock: det är FLÖDESDATA (schemats profilering per planerad dag),
 // därför ligger de i uppdraget och ingen compass-param sätts på toppnivå.
 
-import { byggTextPrompt, type ByggdPrompt } from "@/lib/prompt-core";
+import { byggTextPrompt, VARIANTREGEL, type ByggdPrompt } from "@/lib/prompt-core";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
 import { KANE_HOOK_RULES } from "@/lib/content-framework";
 import type { PlannedPost } from "@/lib/content-compass/rules";
@@ -38,7 +38,10 @@ ${KANE_HOOK_RULES}
 - Veckan ska ha progression och kännas som en serie, inte lösryckta inlägg.
 - Varje inlägg: en tydlig hook, känsla och igenkänning, kundens resultat, exakt EN CTA som matchar funnel-nivån.
 - ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "skalbar", "holistisk".
-- Skriv på svenska som personen själv hade skrivit.`;
+- Skriv på svenska som personen själv hade skrivit.
+
+${VARIANTREGEL}
+(Veckans inlägg räknas som varianter: två inlägg får aldrig dela retorisk ingång eller öppningsfras.)`;
 
   const jsonSchema = `{
   "days": [

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { byggTextPrompt, saneraText, VARIANTREGEL } from "@/lib/prompt-core";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
       .order("sort_order", { ascending: true });
     const pillars = (pillarsData ?? []).map((p) => `- ${p.name}${p.description ? `: ${p.description}` : ""}`).join("\n");
 
+    // T-6c (rotation): historiken skickas via kärnans nyligen-param och renderas som
+    // "NYLIGEN ANVÄNT — undvik dessa ingångar/öppningar" (förr ett eget block i uppdraget).
     const { data: recentPosts } = await sb
       .from("linkedin_posts")
       .select("hook, pillar")
@@ -46,7 +48,9 @@ export async function POST(req: NextRequest) {
       .in("status", ["posted", "approved", "draft"])
       .order("created_at", { ascending: false })
       .limit(20);
-    const recentHooks = (recentPosts ?? []).map((p) => `- (${p.pillar ?? "—"}) ${p.hook ?? ""}`).join("\n");
+    const recentHooks = (recentPosts ?? [])
+      .filter((p) => p.hook)
+      .map((p) => `(${p.pillar ?? "—"}) ${p.hook}`);
 
     const pillarFilter = body.pillar
       ? `\n\nFOKUSPELARE: Generera ALLA idéer kring pelaren "${body.pillar}".`
@@ -61,15 +65,14 @@ Du följer Hakan Grips kursmetodik "Från Okänd till Kund" och de hårda princi
 KLIENTENS PELARE (content-teman):
 ${pillars || "(inga definierade — använd brand-profilens pain points som proxy)"}
 
-SENASTE ${recentPosts?.length ?? 0} HOOKS (undvik att upprepa):
-${recentHooks || "(inga ännu)"}
-
 UPPGIFT: Generera ${count} skarpa idéer för LinkedIn-inlägg som låter EXAKT som denna klient. Varje idé ska:
 - Ha en hook som följer Triple S (Stop, Specify, Sell the read)
 - Vara konkret nog att kunna skrivas direkt utan extra research
 - Variera mellan format (text dominerar, men minst 1-2 karuseller och 1 poll)
 - Variera mellan trust-portar (mestadels know/like/trust för fritt content; max 20% try/buy)
-- Aldrig återanvända en hook från senaste inläggen${pillarFilter}`;
+- Aldrig återanvända en hook eller öppning ur "NYLIGEN ANVÄNT" nedan${pillarFilter}
+
+${VARIANTREGEL}`;
 
     const jsonSchema = `{
   "ideas": [
@@ -91,6 +94,7 @@ UPPGIFT: Generera ${count} skarpa idéer för LinkedIn-inlägg som låter EXAKT 
       uppdrag,
       underlag: `Generera ${count} idéer nu. Returnera bara JSON.`,
       knowledge: ["linkedin-foundation", "linkedin-formats", "linkedin-advanced"],
+      nyligen: recentHooks,
       jsonSchema,
     });
 

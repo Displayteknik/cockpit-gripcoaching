@@ -73,6 +73,23 @@ export async function POST(req: NextRequest) {
       ? "Karusellens slides:\n" + slides.map((s, i) => `${i + 1}. [${s.kind || "slide"}] ${s.headline || ""}${s.body ? ` — ${s.body}` : ""}`).join("\n")
       : [headline ? `Rubrik på bilden: ${headline}.` : "", headline2 ? `Underrubrik: ${headline2}.` : "", body ? `Text på bilden: ${body}.` : ""].filter(Boolean).join("\n");
 
+    // T-6c (rotation): senaste sparade captions (första raden = öppningen) → "NYLIGEN
+    // ANVÄNT" i kärnan, så nästa caption inte återanvänder samma ingång. Fail-open.
+    let nyligen: string[] = [];
+    try {
+      const { supabaseService } = await import("@/lib/supabase-admin");
+      const { data: senaste } = await supabaseService()
+        .from("studio_posts")
+        .select("caption")
+        .eq("client_id", clientId)
+        .not("caption", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      nyligen = (senaste ?? [])
+        .map((p) => (String(p.caption || "").split("\n").find((r) => r.trim()) || "").trim())
+        .filter(Boolean);
+    } catch {}
+
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "caption",
@@ -84,6 +101,7 @@ export async function POST(req: NextRequest) {
         "\nSkriv captionen nu — strukturerad enligt reglerna.",
       ].filter(Boolean).join("\n"),
       compass: b.compass && typeof b.compass === "object" ? b.compass : undefined,
+      nyligen,
     });
 
     // Generera EN caption med given krok-vinkel + grinda mot AI-språk (regenerera 2 ggr).

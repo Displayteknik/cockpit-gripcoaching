@@ -72,7 +72,7 @@ vi.mock("@/lib/content/writing-rules", async (importOriginal) => {
   return { ...riktig, skrivreglerPa: (...args: unknown[]) => skrivreglerPaMock(...(args as [])) };
 });
 
-import { anatomiBlock, byggTextPrompt, klippProfil, saneraText, SANNINGSKRAV } from "@/lib/prompt-core";
+import { anatomiBlock, byggTextPrompt, klippProfil, saneraText, SANNINGSKRAV, VARIANTREGEL } from "@/lib/prompt-core";
 import { POST_ANATOMY } from "@/lib/content-compass/prompt";
 
 // Fast datum (BILD-5b): säsongsraden får ALDRIG göra testerna tidsberoende.
@@ -250,6 +250,59 @@ describe("T-6b — sanningskravet: inga fabricerade berättelser/minnen/citat/si
     expect(i).toBeGreaterThan(b.system.indexOf("=== FÖRBJUDNA ORD FÖR DEN HÄR KLIENTEN"));
     expect(i).toBeLessThan(b.system.indexOf("=== SVARSFORMAT"));
     expect(b.system.split("=== SANNINGSKRAV").length - 1).toBe(1); // exakt en gång
+  });
+});
+
+describe("T-6c — variation: variantregeln, rotationsregeln och NYLIGEN ANVÄNT", () => {
+  it("VARIANTREGEL listar retoriska ingångar och förbjuder delad tankefigur/öppningsfras", () => {
+    const low = VARIANTREGEL.toLowerCase();
+    for (const ingang of ["mytkrossning", "kundscenario", "konkret siffra", "målgruppsvinkel", "hantverksstolthet", "före/efter"]) {
+      expect(low, ingang).toContain(ingang);
+    }
+    expect(VARIANTREGEL).toContain("öppningsfras");
+    expect(VARIANTREGEL).toContain("tankefigur");
+  });
+
+  it("rotationsregeln följer med profillagret (rotera mellan tenantens sanningar)", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption" });
+    expect(b.system).toContain("ROTATION: bygg inte varje text på samma profilfakta");
+    expect(b.meta.lager.rotation).toBe(true);
+    // Ligger ihop med profilen — före rösten.
+    expect(b.system.indexOf("ROTATION:")).toBeGreaterThan(b.system.indexOf("=== KLIENTENS VARUMÄRKESPROFIL ==="));
+    expect(b.system.indexOf("ROTATION:")).toBeLessThan(b.system.indexOf("=== KUNDENS RÖST"));
+  });
+
+  it("utan clientId: ingen rotationsregel (ingen profil att rotera i)", async () => {
+    const b = await byggTextPrompt({ clientId: null, syfte: "social", uppdrag: "U", datum: FAST_DATUM_JULI });
+    expect(b.system).not.toContain("ROTATION:");
+    expect(b.meta.lager.rotation).toBeUndefined();
+  });
+
+  it("nyligen renderas som NYLIGEN ANVÄNT — trimmat, tak 20, långa hookar klipps", async () => {
+    const manga = Array.from({ length: 30 }, (_, i) => `  Hook nummer ${i}${i === 3 ? " x".repeat(200) : ""}  `);
+    const b = await byggTextPrompt({ ...BAS, syfte: "veckoplan", nyligen: manga });
+    expect(b.system).toContain("=== NYLIGEN ANVÄNT — undvik dessa ingångar/öppningar ===");
+    expect(b.system).toContain("- Hook nummer 0");
+    expect(b.system).toContain("- Hook nummer 19");
+    expect(b.system).not.toContain("Hook nummer 20");
+    expect(b.meta.lager.nyligen).toBe(true);
+    // 160-teckenstaket per hook
+    for (const rad of b.system.split("\n")) {
+      if (rad.startsWith("- Hook nummer 3")) expect(rad.length).toBeLessThanOrEqual(162);
+    }
+  });
+
+  it("tom eller utebliven nyligen ger inget block", async () => {
+    const b1 = await byggTextPrompt({ ...BAS, syfte: "veckoplan" });
+    const b2 = await byggTextPrompt({ ...BAS, syfte: "veckoplan", nyligen: ["", "   "] });
+    expect(b1.system).not.toContain("NYLIGEN ANVÄNT");
+    expect(b2.system).not.toContain("NYLIGEN ANVÄNT");
+    expect(b2.meta.lager.nyligen).toBeUndefined();
+  });
+
+  it("nyligen-blocket är kontext: före anatomin", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "veckoplan", nyligen: ["En gammal hook"] });
+    expect(b.system.indexOf("NYLIGEN ANVÄNT")).toBeLessThan(b.system.indexOf("=== INLÄGGSANATOMI"));
   });
 });
 

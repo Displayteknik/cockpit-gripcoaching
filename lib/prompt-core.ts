@@ -68,6 +68,10 @@ export interface ByggParams {
   maxProfilTecken?: number;
   /** BILD-5b: datum för säsongskontexten — injiceras i tester (fast datum), default nu. */
   datum?: Date;
+  /** T-6c (rotation): senaste genererade hookar/öppningar ur flödets historik —
+   *  renderas som "NYLIGEN ANVÄNT — undvik dessa ingångar/öppningar". Flödet läser
+   *  sin egen tabell (linkedin_posts/hm_social_posts/studio_posts); ingen ny datamodell. */
+  nyligen?: string[];
 }
 
 export interface ByggdPrompt {
@@ -144,6 +148,24 @@ export const SANNINGSKRAV = [
   "Saknas passande material: skriv en GENERELL observation i stället. Tillåtet: 'Vi möter ofta fastighetsägare som oroar sig för...'. FÖRBJUDET: 'Jag minns en fastighetsägare som...' utan källa i profilen.",
   "Hitta ALDRIG på ett specifikt minne, ett kundnamn, ett citat eller en siffra. Hellre allmängiltigt och sant än specifikt och påhittat.",
 ].join("\n");
+
+// ── VARIANTREGELN (T-6c) — central regel för alla multivariant-flöden ────────
+// När flera idéer/varianter genereras i samma anrop ska de skilja sig i RETORISK
+// INGÅNG, inte bara format. Flödena (enskilt/A-B, veckoplan, linkedin-idéer m.fl.)
+// refererar konstanten i sina uppdrag; parallella en-variant-per-anrop-flöden
+// (studio-copy, caption-A/B) sprider i stället via variantSuffixes/vinklar.
+export const VARIANTREGEL = [
+  "=== VARIANTREGEL (när flera idéer/varianter genereras) ===",
+  "Varje variant ska ha en EGEN RETORISK INGÅNG — inte bara olika format. Välj olika ingångar ur listan: mytkrossning, kundscenario, konkret siffra (endast verifierad ur profilen), målgruppsvinkel, personlig hantverksstolthet, före/efter, rak fråga, konträrt påstående.",
+  "Två varianter får ALDRIG dela tankefigur eller öppningsfras. Läser man bara första raden av varje ska de kännas som olika ingångar till samma budskap.",
+].join("\n");
+
+// ── ROTATIONSREGELN (T-6c) — sprid profilfakta över tid ──────────────────────
+// Prompten instruerar att inte bygga varje text på samma profilfakta. Där flödet
+// enkelt kan läsa inläggshistorik skickas de senaste hookarna in via p.nyligen och
+// renderas som "NYLIGEN ANVÄNT" — ingen ny datamodell.
+export const ROTATIONSREGEL =
+  "ROTATION: bygg inte varje text på samma profilfakta. Rotera mellan klientens sanningar — olika USP:ar, vertikaler/tjänster, verifierade siffror, berättelser och CTA-varianter — så att flödet inte upprepar samma vinkel i inlägg efter inlägg.";
 
 export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
   if (variant === "pa-bild") {
@@ -261,8 +283,9 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
           console.log(`[prompt-core] profil klippt (${p.syfte}, ${p.clientId}): ${klippt.klippta.join(" → ")} (${raa.length} → ${klippt.text.length} tecken)`);
         }
         profilText = klippt.text;
-        delar.push(`=== KLIENTENS VARUMÄRKESPROFIL ===\n${klippt.text}`);
+        delar.push(`=== KLIENTENS VARUMÄRKESPROFIL ===\n${klippt.text}\n\n${ROTATIONSREGEL}`);
         lager.brandProfil = true;
+        lager.rotation = true;
       }
     } catch (e) {
       console.error("[prompt-core] brand-profil kunde inte hämtas:", e);
@@ -294,6 +317,21 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     } catch (e) {
       console.error("[prompt-core] winning examples kunde inte hämtas:", e);
     }
+  }
+
+  // 5b. Nyligen använt (T-6c rotation) — flödets senaste hookar, så nästa text inte
+  // återanvänder samma ingång/öppning. Trimmas och tak-begränsas defensivt.
+  const nyligen = (p.nyligen ?? [])
+    .map((h) => String(h ?? "").replace(/\s+/g, " ").trim().slice(0, 160))
+    .filter(Boolean)
+    .slice(0, 20);
+  if (nyligen.length) {
+    delar.push(
+      "=== NYLIGEN ANVÄNT — undvik dessa ingångar/öppningar ===\n" +
+        nyligen.map((h) => `- ${h}`).join("\n") +
+        "\nVälj en annan retorisk ingång och en annan öppningsfras än ovanstående.",
+    );
+    lager.nyligen = true;
   }
 
   // Bildkontext — grunda texten i inlägget (mönstret ur B-paketet/copy.ts).

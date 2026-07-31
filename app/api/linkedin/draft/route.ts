@@ -114,6 +114,21 @@ ${seed.angle ? `Vinkel: ${seed.angle}` : ""}
 
 Skriv inlägget nu. Returnera bara JSON.`;
 
+    // T-6c (rotation): de senaste genererade hookarna → "NYLIGEN ANVÄNT" i kärnan,
+    // så nästa utkast inte återanvänder samma ingång/öppning. Det egna utkastets
+    // hook-utgångspunkt (seed) ska förstås INTE undvikas — filtreras bort.
+    const { data: senaste } = await sb
+      .from("linkedin_posts")
+      .select("hook")
+      .eq("client_id", clientId)
+      .not("hook", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(6);
+    const nyligen = (senaste ?? [])
+      .map((p) => String(p.hook || ""))
+      .filter((h) => h && h !== seed.hook)
+      .slice(0, 5);
+
     const b = await byggTextPrompt({
       clientId,
       syfte: "linkedin",
@@ -121,6 +136,7 @@ Skriv inlägget nu. Returnera bara JSON.`;
       uppdrag,
       underlag: userPrompt,
       knowledge: ["linkedin-foundation", "linkedin-formats", "linkedin-advanced"],
+      nyligen,
       jsonSchema,
     });
 

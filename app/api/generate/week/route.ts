@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate, generateWithUsage } from "@/lib/gemini";
-import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { byggTextPrompt, saneraText, VARIANTREGEL } from "@/lib/prompt-core";
 import {
   WEEK_ROLES,
   DISC_GUIDE,
@@ -104,7 +104,10 @@ ${KANE_HOOK_RULES}
 - Variera HOOK-FORMAT över veckan: fråga, statistik, kontrast, story, påstående
 - ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "skalbar"
 - Skriv på svenska som personen själv hade skrivit
-- Varje CTA är EN sak att göra — varierande över veckan`;
+- Varje CTA är EN sak att göra — varierande över veckan
+
+${VARIANTREGEL}
+(Veckans 7 inlägg räknas som varianter: två dagar får aldrig dela retorisk ingång eller öppningsfras.)`;
 
     const jsonSchema = `{
   "days": [

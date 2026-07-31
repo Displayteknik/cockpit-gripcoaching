@@ -109,6 +109,17 @@ ${resourceCtx}
 
 Skriv det konverterande inlägget enligt reglerna nu.`;
 
+    // T-6c (rotation): de senaste genererade hookarna → "NYLIGEN ANVÄNT" i kärnan,
+    // så nästa inlägg inte återanvänder samma ingång/öppning.
+    const { data: senaste } = await sb
+      .from("hm_social_posts")
+      .select("hook")
+      .eq("client_id", clientId)
+      .not("hook", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(5);
+    const nyligen = (senaste ?? []).map((p) => String(p.hook || "")).filter(Boolean);
+
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "social",
@@ -116,6 +127,7 @@ Skriv det konverterande inlägget enligt reglerna nu.`;
       uppdrag,
       underlag: userPrompt,
       knowledge: ["viral-hooks", "conversion"],
+      nyligen,
       jsonSchema,
     });
 
