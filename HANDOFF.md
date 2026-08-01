@@ -93,12 +93,12 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 | Beställning | Beställd | Status | Not |
 |---|---|---|---|
 | ~~UTKAST-1 (autospar 5 ytor)~~ | 31/7 | **LEVERERAD** `6be991c` | BILD-2:s autospar skrev men läste aldrig tillbaka; nyckeln byggdes på tom slug → tenants delade hink. Ny hook `lib/studio/useUtkast.ts` |
-| IDÉ-1 rester: 3-av-3, interpunktion, sanningskrav i pitch | 31/7 | **Pågår** (KVALITET-3 p2) | Variantvariationen levererades via T-6c; resten saknades |
+| ~~IDÉ-1 rester: 3-av-3, interpunktion, sanning i pitch~~ | 31/7 | **LEVERERAD** `8014b29`+`4bc0bd4` | Interpunktionens rotorsak var UI-rendering `{headline2}: {body}` — prompten var oskyldig. 3-av-3 med omgenerering; ordform-löften ("betalar sig på tre månader") grindade fail-closed |
 | ~~Idé som underlag, aldrig publik text~~ | 1/8 | **LEVERERAD** `7f5c515` | Rotorsak: VECKOPLANEN skrev captionens hook/body till payload.headline1/body (text för ett format återbrukad i ett annat). Studios idéflöde var oskyldigt |
-| Perspektivregel (talar som tenanten) | 1/8 | **Pågår** (KVALITET-3 p4) | |
-| Prisregel (inga egna priser i genererad text) | 1/8 | **Pågår** (KVALITET-3 p5) | Skärpt av att F1 nu ger modellen riktiga priser |
+| ~~Perspektivregel (talar som tenanten)~~ | 1/8 | **LEVERERAD** `74a5a3c` | Kontrollfråga i regeln: byt varje "vi" mot klientens namn — blir meningen sann? |
+| ~~Prisregel (inga egna priser i genererad text)~~ | 1/8 | **LEVERERAD** `bc8ad9b` | "Att känna till priset och att skriva ut priset är två olika saker." Undantag öppnas bara av användaren eller ett flöde som kräver pris — aldrig av profilens egna priser. BILD-7:s skyltbudskap orört |
 | ~~Loggval: render-bevis + manuell override~~ | 1/8 | **LEVERERAD** `b392cd4` | ⚠ Fynd: render-routen är INTE publiceringsvägen (Playwright 501 i molnet → html-to-image ur live-editorn). Ny `/api/studio/logo-hint` ger klienten samma beslut. Manuellt val Auto/Ljus/Mörk/Platta i `overrides.logoVariant` |
-| Småfixar: raknaCta-ordlista, "hög ljusstyrka" | 1/8 | **Pågår** (KVALITET-3 p7) | |
+| ~~Småfixar: raknaCta-ordlista, "hög ljusstyrka"~~ | 1/8 | **LEVERERAD** `62621a4` | CTA-golvets egen exempelmening räknades förut som noll CTA:er |
 | ~~"Prata in" läcker systeminstruktionen~~ | 1/8 | **LEVERERAD** `b6e2ed9` | Rotorsak: Gemini ekar sin egen instruktion vid för kort ljud (HTTP 200, finishReason STOP). Grind mot promptekon på server + klient, tre routes drabbade (transcribe, assets/transcribe, intake/upload) |
 | DM: lead via bild stannar på mållinjen | 1/8 | **Pågår** (KVALITET-3 p10) | Talarattribution omkastad, ingen förifyllnad, Messenger blockeras av IG-handle-krav. Måttstock: noll manuell inmatning från skärmdump till förberedd kontakt i Fokus |
 | BILD-8 DoD-genereringar | 31/7 | **Ej gjort** | Koden grön, men bilderna som bevisar stavningsgrinden skarpt saknas |
