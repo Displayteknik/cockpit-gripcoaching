@@ -102,6 +102,10 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join("\n"),
       compass: b.compass && typeof b.compass === "object" ? b.compass : undefined,
       nyligen,
+      // KVALITET-3/punkt 5: ämnet är det användaren själv skrev. Skrev hen in ett
+      // pris där är det hens beslut och undantaget öppnas. Rubrik/brödtext på bilden
+      // räknas INTE som medgivande — de är genererade och kan bära ett läckt pris.
+      anvandarText: topic,
     });
 
     // Generera EN caption med given krok-vinkel + grinda mot AI-språk (regenerera 2 ggr).

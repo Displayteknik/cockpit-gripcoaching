@@ -6,6 +6,8 @@
 import { describe, expect, it } from "vitest";
 import {
   fixaTerminologi,
+  harPrisuppgift,
+  hittaPrisuppgifter,
   raknaCta,
   sanitizeGenerated,
   taBortFloskler,
@@ -91,5 +93,32 @@ describe("punkt 7 — terminologi: högt ljus blir hög ljusstyrka", () => {
   it("fixen körs ALLTID: både i full sanering och i floskelgolvet (flagga av)", () => {
     expect(taBortFloskler("Högt ljus, riktigt kraftfullt.")).toContain("Hög ljusstyrka");
     expect(sanitizeGenerated("Skärmen har högt ljus.")).toBe("Skärmen har hög ljusstyrka.");
+  });
+});
+
+// ── KVALITET-3 / punkt 5 ─────────────────────────────────────────────────────
+describe("punkt 5 — prisdetektering (grind och undantag)", () => {
+  it("hittar priser med valutamarkör, även med hårt blanksteg", () => {
+    expect(harPrisuppgift("Kostar från 21 000 kr.")).toBe(true);
+    expect(harPrisuppgift("Kostar från 21 000 kr.")).toBe(true);
+    expect(harPrisuppgift("Servicebesök 1 850:-")).toBe(true);
+    expect(harPrisuppgift("995 kr/mån")).toBe(true);
+    expect(harPrisuppgift("SEK 400 för montaget")).toBe(true);
+    expect(harPrisuppgift("Priset är 300kr")).toBe(true);
+  });
+
+  it("tal UTAN valutamarkör är inget pris (43 tum, årtal, telefonnummer)", () => {
+    expect(harPrisuppgift("En 43 tums skärm från 2026.")).toBe(false);
+    expect(harPrisuppgift("Vi svarar inom 24 timmar.")).toBe(false);
+  });
+
+  it('"3 sek" är en videolängd, inte ett pris (reels-flödet)', () => {
+    expect(harPrisuppgift("Scenen är 3 sek lång.")).toBe(false);
+    expect(harPrisuppgift("5 sekunder kvar.")).toBe(false);
+  });
+
+  it("hittaPrisuppgifter listar träffarna för logg och granskning", () => {
+    expect(hittaPrisuppgifter("Från 21 000 kr, service 1 850:-")).toEqual(["21 000 kr", "1 850:-"]);
+    expect(hittaPrisuppgifter("")).toEqual([]);
   });
 });

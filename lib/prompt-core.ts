@@ -31,7 +31,9 @@ import {
 import type { FunnelLevel } from "@/lib/content-compass/data";
 import {
   WRITING_RULES_BLOCK,
+  harPrisuppgift,
   hittaForbjudnaOrd,
+  hittaPrisuppgifter,
   sanitizeGenerated,
   skrivreglerPa,
   taBortFloskler,
@@ -72,6 +74,14 @@ export interface ByggParams {
    *  renderas som "NYLIGEN ANVÄNT — undvik dessa ingångar/öppningar". Flödet läser
    *  sin egen tabell (linkedin_posts/hm_social_posts/studio_posts); ingen ny datamodell. */
   nyligen?: string[];
+  /** KVALITET-3/punkt 5: den text ANVÄNDAREN själv skrev (ämne/instruktion). Enda
+   *  källan som kan öppna prisundantaget. Sätts av flöden som vet vad användaren
+   *  skrev; utan den faller kärnan tillbaka på `underlag`. Profilens priser räknas
+   *  ALDRIG som medgivande — de är sanningsunderlag, inte citatmaterial. */
+  anvandarText?: string;
+  /** KVALITET-3/punkt 5: flödet har uttryckligen bett om ett pris (t.ex. reel-mallen
+   *  "Pris rakt ut", som användaren väljer aktivt). Öppnar samma undantag. */
+  prisTillatet?: boolean;
 }
 
 export interface ByggdPrompt {
@@ -160,6 +170,48 @@ export const SANNINGSKRAV = [
   "Ber ämnet om en kundberättelse och profilen saknar passande story-bank-material: SKRIV OM ÄMNET som en generell observation om mönstret, i samma anda. Tillåtet: 'Vi möter ofta kunder som tvekar länge...', 'Den tveksamheten hör vi varje vecka...', 'Många väntar för länge, och reaktionen efteråt är nästan alltid densamma.' FÖRBJUDET: 'Jag minns en kund som...', 'En av våra kunder berättade att...' när personen inte finns i profilen.",
   "Formuleringar som signalerar ett specifikt minne — 'jag minns', 'en av våra kunder', 'häromdagen', 'förra veckan kom en kund', 'ett brudpar som' — får bara användas när personen eller händelsen faktiskt står i profilen ovan. Kan du inte peka på var i profilen den finns: skriv generellt i stället.",
 ].join("\n");
+
+// ── PRISREGELN (KVALITET-3/punkt 5) — Håkans beslut, plattformsregel ─────────
+// Verifierat brott: en caption innehöll "kostar från 21 000 kr" och "43-tums".
+// Beslutet: värdet beskrivs i texten, priset hör hemma i samtalet eller offerten —
+// dit CTA:n leder. Ett pris i inlägget tar bort själva anledningen att höra av sig.
+//
+// ⚠ VIKTIG KONTEXT (PROFIL-1/F1): pricing_notes kopplades nyss in i lager 3, så
+// modellen SER numera riktiga priser i profilen. Regeln behövs alltså MER än förut,
+// och den måste vara tydlig med skillnaden: prisuppgifterna är SANNINGSUNDERLAG
+// (de gör det möjligt att säga "prisvärt" utan att ljuga, och att peka CTA:n rätt),
+// inte citatmaterial. Det är exakt den distinktionen som formuleras nedan.
+//
+// AVGRÄNSNING: den här regeln gäller TEXT (inlägg, caption, text på bilden) och
+// byggs bara av byggTextPrompt. Avbildad demo-skyltning i en genererad BILD
+// ("DAGENS LUNCH 129 KR" på en skärm i motivet) styrs av BILD-7:s budskapsregel i
+// lib/images.ts och rörs INTE härifrån — den ligger i bildprompten, inte textprompten.
+//
+// Plattformstest: fungerar lika för blomsteraffär (ingen buketprislista i captionen),
+// bilhandlare (ingen "från 189 000 kr") och coach (ingen "1 495 kr per session").
+const PRISREGEL_BAS = [
+  "=== PRISREGEL (hård regel — priset hör hemma i samtalet, inte i inlägget) ===",
+  "Skriv ALDRIG ut priser, prisintervall, månadskostnader, rabattsatser eller andra kostnadsuppgifter för klientens egna produkter och tjänster. Inte \"från 21 000 kr\", inte \"995 kr/mån\", inte \"20 % rabatt\", inte \"halva priset\".",
+  "Beskriv VÄRDET i stället: vad kunden får, vad det löser och vad det gör för vardagen. Uppmaningen leder till samtalet eller offerten, och där tas priset.",
+  "PRISUPPGIFTERNA I VARUMÄRKESPROFILEN ÄR SANNINGSUNDERLAG, INTE CITATMATERIAL. De står där för att du ska VETA vad saker kostar: så att ett ord som prisvärt eller överkomligt är sant när du använder det, och så att uppmaningen pekar rätt. De ska ALDRIG kopieras in i texten. Att känna till priset och att skriva ut priset är två olika saker.",
+  "SPECIFIKATIONER följer samma grind: mått, tumtal, modellbeteckningar, effekt, vikt, garantitid och andra tekniska tal får bara skrivas ut om EXAKT den uppgiften står ORDAGRANT i varumärkesprofilen ovan. Står den inte där: beskriv i ord (\"en skärm som syns även i solljus\") i stället för att gissa ett tal.",
+].join("\n");
+
+// Undantaget: användaren har själv skrivit in ett pris i sitt ämne eller sin instruktion,
+// eller valt en mall/ett flöde som uttryckligen ska handla om priset (reel-mallen "Pris
+// rakt ut"). Då är priset användarens eget beslut och ska inte skalas bort — men det
+// öppnar bara för DEN uppgiften, aldrig för egna påhitt.
+const PRISREGEL_UNDANTAG = [
+  "UNDANTAG (gäller i den här körningen): priset är uttryckligen efterfrågat — användaren har själv skrivit in det i sitt ämne eller sin instruktion, eller valt en mall som ska handla om priset. Just den uppgiften får skrivas ut, ordagrant som användaren angav den.",
+  "Undantaget gäller ENDAST den uppgiften. Lägg aldrig till egna priser, avrundningar eller intervall utöver den, och hitta aldrig på ett pris som saknas.",
+].join("\n");
+
+export const PRISREGEL = PRISREGEL_BAS;
+
+/** Prisregeln med eller utan undantagsstycket. Exporterad för test och granskning. */
+export function prisregelBlock(prisTillatet: boolean): string {
+  return prisTillatet ? `${PRISREGEL_BAS}\n${PRISREGEL_UNDANTAG}` : PRISREGEL_BAS;
+}
 
 // ── PERSPEKTIVREGELN (KVALITET-3/punkt 4) — vem som talar, alla flöden ───────
 // Verifierat fel i skarp drift: en studio-text löd "Tills vi satte upp skärmen skrev
@@ -455,6 +507,18 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
   delar.push(PERSPEKTIVREGEL);
   lager.perspektiv = true;
 
+  // 8e. Prisregel (KVALITET-3/punkt 5) — ALLTID, alla syften. Undantaget öppnas bara
+  // när priset är användarens eget beslut: antingen har flödet sagt det uttryckligen
+  // (prisTillatet, t.ex. reel-mallen "Pris rakt ut") eller så står prisuppgiften i den
+  // text ANVÄNDAREN skrev. anvandarText är den precisa källan där flödet kan peka ut
+  // den; saknas den faller vi tillbaka på underlaget, som i de flesta flöden ÄR
+  // användarens ämne. Profilens priser räknas aldrig som ett sådant medgivande —
+  // det är hela poängen med regeln.
+  const prisTillatet = p.prisTillatet === true || harPrisuppgift(p.anvandarText ?? p.underlag ?? "");
+  delar.push(prisregelBlock(prisTillatet));
+  lager.prisregel = true;
+  if (prisTillatet) lager.prisUndantag = true;
+
   // 9. Formatkrav — ALLTID sist. Styr formen, aldrig innehållsreglerna ovanför.
   if (p.jsonSchema) {
     delar.push(`=== SVARSFORMAT (styr ENDAST formen, aldrig innehållsreglerna ovan) ===\n${p.jsonSchema.trim()}`);
@@ -478,9 +542,22 @@ export async function saneraText(
   text: string,
   clientId: string | null | undefined,
   kanal?: HashtagKanal,
+  opts?: { prisTillatet?: boolean },
 ): Promise<string> {
   if (!text) return text;
   const ut = (await skrivreglerPa(clientId)) ? sanitizeGenerated(text, { kanal }) : taBortFloskler(text);
+  // KVALITET-3/punkt 5: DETEKTERING av prisuppgifter — logg, INGEN borttagning.
+  // FAIL-SAFE är hela poängen: en siffra som användaren själv skrivit in får aldrig
+  // skalas bort, och saneringen kan inte veta vems siffra det är. Att klippa ett tal
+  // ur en färdig mening bryter dessutom grammatiken. Enforcement sker där flödet har
+  // alternativ att välja mellan (lib/studio/copy.ts filtrerar och genererar om);
+  // här är det ett kvitto som gör brott synliga i loggen.
+  if (!opts?.prisTillatet) {
+    const priser = hittaPrisuppgifter(ut);
+    if (priser.length) {
+      console.warn(`[saneraText] prisuppgift kvar i genererad text (${clientId ?? "utan klient"}): ${priser.join(", ")}`);
+    }
+  }
   // T-5 (3): DETEKTERING av klientens förbjudna ord — logg, INGEN ersättning.
   // Godtyckliga klientord kan inte bytas mekaniskt utan att grammatiken bryts
   // (designfråga — se TEXT1-rapporten). Fail-open: får aldrig stoppa en leverans.

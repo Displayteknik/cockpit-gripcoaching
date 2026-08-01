@@ -6,6 +6,7 @@
 
 import { iterateGenerate } from "@/lib/iterate";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { harPrisuppgift } from "@/lib/content/writing-rules";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
 
 export interface StudioCopySuggestion {
@@ -105,6 +106,9 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     syfte: "studio-text", // pa-bild-anatomin — harmonierar med CTA-förbudet i uppdraget
     uppdrag,
     knowledge: ["hook-playbook"],
+    // KVALITET-3/punkt 5: ämnet och inläggets grundtext är det ANVÄNDAREN skrev.
+    // Står ett pris där är det hens beslut; annars gäller prisregeln fullt ut.
+    anvandarText: [opts.topic || "", caption].filter(Boolean).join("\n"),
     bildKontext:
       caption || bildDesc
         ? {
@@ -125,6 +129,10 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   // vilket i skript/cron tyst blev standardklientens profil).
   const grindKalla = [b.profilText, ...b.winning].filter(Boolean).join("\n");
   const harSiffror = profilHarSiffror(grindKalla);
+  // KVALITET-3/punkt 5: undantaget läses ur ANVÄNDARENS text (ämne + inläggets
+  // grundtext), aldrig ur profilen. Samma källa som kärnan använder för promptlagret,
+  // så prompt och grind aldrig kan säga emot varandra.
+  const prisTillatet = harPrisuppgift([opts.topic || "", caption].filter(Boolean).join("\n"));
   const hooks = tillatnaHooks(opts.imageRole, harSiffror);
 
   const userPrompt = [
@@ -179,6 +187,14 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     if ([s.headline1, s.headline2, s.body].some(harCta)) continue; // CTA hör i bildtext + fot-knapp
     if ([s.headline1, s.headline2, s.body].some((f) => harObackadSiffra(f, profilTal))) continue; // aldrig påhittade siffror (även "7 av 10")
     if ([s.headline1, s.headline2, s.body].some((f) => harObackadStatistikfras(f, profilKomp))) continue; // kvot/procent-påståenden kräver frasen i profilen
+    // KVALITET-3/punkt 5: siffergrinden ovan backar tal MOT PROFILEN — och sedan
+    // PROFIL-1/F1 kopplade in pricing_notes står de riktiga priserna där. Ett pris
+    // passerar alltså numera den grinden med heder i behåll. Det är precis vad
+    // prisregeln säger nej till: priset ska tas i samtalet, inte i inlägget. Här
+    // finns flera kandidater att välja mellan, så grinden kan vara hård utan att
+    // riskera en tom leverans (3-av-3-loopen genererar om). Undantaget: användaren
+    // skrev själv in ett pris i ämnet eller grundtexten.
+    if (!prisTillatet && [s.headline1, s.headline2, s.body].some(harPrisuppgift)) continue;
     if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 150) continue;
     // Likhets-dedup: normalisera bort småord/skiljetecken så nästan-dubbletter
     // ("Vad säger blommorna?" vs "Vad säger dina blommor?") räknas som samma.

@@ -89,6 +89,12 @@ export async function byggReelPrompt(opts: ReelGenOpts): Promise<{ system: strin
     knowledge: ["hook-playbook"],
     // Mallens funnel/4A är flödesdata; DISC kommer från anroparen.
     compass: { funnel: mall.funnel, four_a: mall.fourA, disc: opts.disc || [] },
+    // KVALITET-3/punkt 5: prisregeln gäller även reels. Två vägar till undantaget:
+    // ägarens egen idétext (skrev hen in ett pris är det hens beslut) och mallen
+    // "Pris rakt ut", som användaren väljer aktivt och vars fakta-scen ÄR priset.
+    // Övriga mallar får inget undantag — värdet beskrivs, priset tas i samtalet.
+    anvandarText: String(opts.ide || ""),
+    prisTillatet: mall.key === "pris",
     jsonSchema: `{"title":"kort intern titel","caption":"...","scenes":[${mall.scenes.map(() => '{"line1":"...","line2":"...","imagePrompt":"..."}').join(",")}]}`,
   });
 

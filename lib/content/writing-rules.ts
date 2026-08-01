@@ -233,3 +233,42 @@ export function raknaCta(text: string): number {
   );
   return m ? m.length : 0;
 }
+
+// ── Prisgrind (KVALITET-3/punkt 5) ───────────────────────────────────────────
+// Plattformsregel: genererade inlägg, captions och bildtexter skriver inte ut priser
+// på klientens egna produkter och tjänster. Värdet beskrivs i texten, priset tas i
+// samtalet eller offerten dit uppmaningen leder.
+//
+// Här ligger BARA detektering — ingen mekanisk borttagning. Att klippa bort ett tal
+// ur en färdig mening bryter grammatiken, och undantaget (användaren skrev själv in
+// priset) kan inte avgöras av en regex på utdatan. Prompten är förstahandsförsvaret,
+// den här funktionen är kvittot: flöden med flera kandidater kan välja bort, och
+// saneringen loggar det som ändå slinker igenom.
+//
+// Mönstret kräver en VALUTAMARKÖR intill talet ("21 000 kr", "1 850:-", "SEK 400",
+// "995 kr/mån"). Ett ensamt tal är inte ett pris — annars hade "43 tum" och "2026"
+// fällts, och grinden hade blivit brus i stället för signal.
+// "sek" i gemener är UTESLUTET som efterställd markör: "3 sek" är en videolängd, inte
+// ett pris (reels-flödet är fullt av dem). Versalt SEK är däremot alltid valuta.
+// Hårt blanksteg tas med i teckenklassen: profilernas tusenavgränsare är ofta just det.
+const PRIS_MONSTER: RegExp[] = [
+  /\d[\d\s\u00a0.,]*\s*(?::-|(?:kr|kronor)\b)/gi,
+  /\d[\d\s\u00a0.,]*\s*SEK\b/g,
+  /\b(?:kr|sek)\s*\d[\d\s\u00a0.,]*\d|\b(?:kr|sek)\s*\d/gi,
+];
+
+/** Alla prisuppgifter i texten (råa träffar, för logg och granskning). */
+export function hittaPrisuppgifter(text: string): string[] {
+  const t = String(text || "");
+  if (!t) return [];
+  const traffar: string[] = [];
+  for (const re of PRIS_MONSTER) {
+    for (const m of t.matchAll(re)) traffar.push(m[0].trim());
+  }
+  return [...new Set(traffar)];
+}
+
+/** Innehåller texten en prisuppgift? Används både för grind och för undantaget. */
+export function harPrisuppgift(text: string): boolean {
+  return hittaPrisuppgifter(text).length > 0;
+}
