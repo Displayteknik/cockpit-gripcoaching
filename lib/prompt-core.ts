@@ -161,6 +161,27 @@ export const SANNINGSKRAV = [
   "Formuleringar som signalerar ett specifikt minne — 'jag minns', 'en av våra kunder', 'häromdagen', 'förra veckan kom en kund', 'ett brudpar som' — får bara användas när personen eller händelsen faktiskt står i profilen ovan. Kan du inte peka på var i profilen den finns: skriv generellt i stället.",
 ].join("\n");
 
+// ── PERSPEKTIVREGELN (KVALITET-3/punkt 4) — vem som talar, alla flöden ───────
+// Verifierat fel i skarp drift: en studio-text löd "Tills vi satte upp skärmen skrev
+// vi menyn för hand... nu hinner vi laga mat istället". Texten talade SOM restaurangen
+// — alltså som tenantens KUND — i stället för som tenanten som säljer skärmen. Två fel
+// i ett: fel avsändare, och en antydd kundhistoria utan täckning i story-banken.
+//
+// Regeln är en PLATTFORMSREGEL, inte en bransch-regel: den fungerar likadant för en
+// blomsteraffär (texten talar som floristen, inte som brudparet), för en bilhandlare
+// (som handlaren, inte som köparen) och för en coach (som coachen, inte som klienten).
+// Perspektivbytet lockar mest när ämnet är ett kundscenario, därför ligger blocket
+// direkt efter sanningskravet: de två griper i varandra (ett bytt perspektiv är nästan
+// alltid också ett påhittat kundminne).
+export const PERSPEKTIVREGEL = [
+  "=== PERSPEKTIV (hård regel — vem som talar) ===",
+  "Texten talar ALLTID SOM klienten i varumärkesprofilen ovan, och TILL klientens kund. \"Vi\", \"jag\", \"oss\" och \"vår\" är alltid klienten, aldrig kunden.",
+  "Skriv ALDRIG en text där \"vi\" är kundens verksamhet. FÖRBJUDET när klienten levererar skärmen: \"Tills vi satte upp skärmen skrev vi menyn för hand, nu hinner vi laga mat i stället.\" Där talar restaurangen, alltså kunden, och avsändaren har försvunnit.",
+  "Kundernas upplevelser återges i TREDJE PERSON: \"restaurangägare berättar att...\", \"flera av våra kunder säger att...\", \"för en verkstad betyder det att...\". Ett direkt citat kräver att personen eller händelsen står i story-banken eller kundrösterna ovan.",
+  "KONTROLLFRÅGA innan du lämnar ifrån dig texten: byt ut varje \"vi\" mot klientens namn. Blir meningen fortfarande sann? Blir den det inte har du bytt perspektiv, och då ska meningen skrivas om.",
+  "Du-tilltalet pekar på kunden: \"du\" är den som läser inlägget, aldrig klienten själv.",
+].join("\n");
+
 // ── VARIANTREGELN (T-6c) — central regel för alla multivariant-flöden ────────
 // När flera idéer/varianter genereras i samma anrop ska de skilja sig i RETORISK
 // INGÅNG, inte bara format. Flödena (enskilt/A-B, veckoplan, linkedin-idéer m.fl.)
@@ -427,6 +448,12 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
   // block = väger tyngst; formatkravet nedan styr bara formen.
   delar.push(SANNINGSKRAV);
   lager.sanningskrav = true;
+
+  // 8d. Perspektiv (KVALITET-3/punkt 4) — ALLTID, alla syften. Ligger direkt efter
+  // sanningskravet: reglerna griper i varandra (ett bytt perspektiv är nästan alltid
+  // också ett påhittat kundminne) och båda ska väga tyngre än stil- och formatlagren.
+  delar.push(PERSPEKTIVREGEL);
+  lager.perspektiv = true;
 
   // 9. Formatkrav — ALLTID sist. Styr formen, aldrig innehållsreglerna ovanför.
   if (p.jsonSchema) {
