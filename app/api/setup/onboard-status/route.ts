@@ -59,9 +59,13 @@ async function computeStatus(
   const sb = supabaseService();
 
   const [profile, fingerprint, assets, winning, visits, gscRow, ideas] = await Promise.all([
+    // PROFIL-1/F5: kolumnen target_audience finns INTE i hm_brand_profile (PostgREST
+    // svarade 42703). Hela profilfrågan felade tyst, profile.data blev null och steget
+    // "Brand-profil" kunde därför aldrig bli grönt för någon klient. Frågan läser nu
+    // bara kolumner som finns; målgruppen heter icp_primary.
     sb
       .from("hm_brand_profile")
-      .select("client_id, tone_rules, dos, donts, usp, target_audience")
+      .select("client_id, tone_rules, dos, donts, usp, icp_primary")
       .eq("client_id", clientId)
       .maybeSingle(),
     sb
@@ -94,7 +98,7 @@ async function computeStatus(
     dos: string | null;
     donts: string | null;
     usp: string | null;
-    target_audience: string | null;
+    icp_primary: string | null;
   } | null;
   const f = fingerprint.data as {
     source_asset_count: number | null;
