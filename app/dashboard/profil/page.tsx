@@ -95,12 +95,15 @@ export default function ProfilPage() {
   // Klick på ett completeness-område i QualityMeter → scrolla till rätt sektion + kort highlight
   // så man ser var man ska jobba vidare. Keys från /api/profile/quality.
   function scrollToDimension(key: string) {
+    // PROFIL-1/F-mätare: nycklarna är kriterierna i lib/profil/kvalitet.ts.
     const targets: Record<string, string> = {
-      voice: "sec-ton",
-      icp: "sec-malgrupp",
-      authority: "sec-berattelse",
-      proof: "sec-kunskapsbank",
-      offer: "sec-erbjudande",
+      berattelser: "sec-berattelse",
+      kundrost: "sec-malgrupp",
+      donts: "sec-ton",
+      siffror: "sec-erbjudande",
+      vinnande: "sec-kunskapsbank",
+      egenrost: "sec-kunskapsbank",
+      grundfakta: "sec-erbjudande",
     };
     const el = document.getElementById(targets[key] || "");
     if (!el) return;

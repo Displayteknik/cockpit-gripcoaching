@@ -1,175 +1,39 @@
+// /api/profile/quality — profilens kvalitet, EN källa (PROFIL-1/F-mätare).
+//
+// Före: fem dimensioner som räknade `trim().length >= tröskel`. 593 tecken tomfraser
+// plus sex uppladdningar gav 100 % och "Klar att producera"; Displaytekniks riktiga
+// profil gav 89 %. Mätaren belönade ifyllnad och straffade substans.
+//
+// Nu: lib/profil/kvalitet.ts — deterministiska kriterier (K1–K8), viktade, med
+// generisk-detektor, dubblettkontroll och förankringsgrind. Ingen AI i beräkningen.
+// Svaret bär NIVÅ (uppsättning A), inte procent: procenttalet visas aldrig i UI:t.
+
 import { NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
-import { supabaseService } from "@/lib/supabase-admin";
-import { countAssetsByType } from "@/lib/assets";
+import { profilKvalitet } from "@/lib/profil/las";
+import { racker } from "@/lib/profil/kvalitet";
 
 export const runtime = "nodejs";
-
-interface DimensionScore {
-  key: string;
-  label: string;
-  status: "red" | "yellow" | "green";
-  score: number;        // 0-100
-  filled: number;
-  total: number;
-  missing: string[];
-  hint: string;
-}
-
-interface QualityReport {
-  overall: number;
-  ready_to_produce: boolean;
-  dimensions: DimensionScore[];
-}
-
-function len(s: unknown): number {
-  return typeof s === "string" ? s.trim().length : 0;
-}
-function has(s: unknown, min = 10): boolean {
-  return len(s) >= min;
-}
 
 export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
   try {
     const clientId = await getActiveClientId();
-    const sb = supabaseService();
+    const rapport = await profilKvalitet(clientId);
 
-    const { data: profile } = await sb
-      .from("hm_brand_profile")
-      .select("*")
-      .eq("client_id", clientId)
-      .maybeSingle();
-
-    const counts = await countAssetsByType(clientId);
-    const p = profile || {};
-
-    const dims: DimensionScore[] = [];
-
-    // ========== 1. RÖST ==========
-    {
-      const checks = [
-        { ok: has(p.tone_rules, 30), label: "Tonregler" },
-        { ok: has(p.dos, 10), label: "GÖR-lista" },
-        { ok: has(p.donts, 10), label: "GÖR INTE-lista" },
-        { ok: counts.post >= 5, label: "Minst 5 egna inlägg" },
-        { ok: counts.audio + counts.video >= 1, label: "Minst 1 ljud/video-inspelning" },
-      ];
-      const filled = checks.filter((c) => c.ok).length;
-      const missing = checks.filter((c) => !c.ok).map((c) => c.label);
-      const score = Math.round((filled / checks.length) * 100);
-      dims.push({
-        key: "voice",
-        label: "Röst",
-        status: filled >= 5 ? "green" : filled >= 3 ? "yellow" : "red",
-        score,
-        filled,
-        total: checks.length,
-        missing,
-        hint: "AI:n imiterar bara så bra som den får exempel. Lägg in fler riktiga inlägg och en ljudinspelning.",
-      });
-    }
-
-    // ========== 2. ICP ==========
-    {
-      const checks = [
-        { ok: has(p.icp_primary, 50), label: "Din viktigaste målgrupp" },
-        { ok: has(p.icp_secondary, 30), label: "Mindre målgrupp" },
-        { ok: has(p.pain_points, 50), label: "Smärtpunkter" },
-        { ok: has(p.customer_quotes, 80), label: "Riktiga kundord" },
-      ];
-      const filled = checks.filter((c) => c.ok).length;
-      const score = Math.round((filled / checks.length) * 100);
-      dims.push({
-        key: "icp",
-        label: "Målgrupp — vem du skriver för",
-        status: filled >= 4 ? "green" : filled >= 2 ? "yellow" : "red",
-        score,
-        filled,
-        total: checks.length,
-        missing: checks.filter((c) => !c.ok).map((c) => c.label),
-        hint: "Utan tydlig målgrupp blir innehållet generiskt. Kör \"Hitta din målgrupp\" om den saknas.",
-      });
-    }
-
-    // ========== 3. AUKTORITET ==========
-    {
-      const checks = [
-        { ok: has(p.usp, 40), label: "Det som gör dig unik" },
-        { ok: has(p.brand_story, 100), label: "Berättelsen" },
-        { ok: has(p.differentiators, 30), label: "Tre saker bara du kan säga" },
-      ];
-      const filled = checks.filter((c) => c.ok).length;
-      const score = Math.round((filled / checks.length) * 100);
-      dims.push({
-        key: "authority",
-        label: "Auktoritet & differentiering",
-        status: filled >= 3 ? "green" : filled >= 2 ? "yellow" : "red",
-        score,
-        filled,
-        total: checks.length,
-        missing: checks.filter((c) => !c.ok).map((c) => c.label),
-        hint: "Tre saker bara du kan säga är hjärtat i alla bra inlägg. Skriv ned dem.",
-      });
-    }
-
-    // ========== 4. BEVIS ==========
-    {
-      const checks = [
-        { ok: counts.testimonial >= 3, label: "Minst 3 vittnesmål med namn" },
-        { ok: counts.photo >= 3, label: "Minst 3 foton från verksamheten" },
-        { ok: has(p.customer_journey, 80), label: "Kundresan (5 stadier)" },
-      ];
-      const filled = checks.filter((c) => c.ok).length;
-      const score = Math.round((filled / checks.length) * 100);
-      dims.push({
-        key: "proof",
-        label: "Bevis",
-        status: filled >= 3 ? "green" : filled >= 2 ? "yellow" : "red",
-        score,
-        filled,
-        total: checks.length,
-        missing: checks.filter((c) => !c.ok).map((c) => c.label),
-        hint: "Vittnesmål och riktiga foton slår all stockfoto-design. Ladda upp.",
-      });
-    }
-
-    // ========== 5. ERBJUDANDE ==========
-    {
-      const checks = [
-        { ok: has(p.services, 30), label: "Tjänster/produkter" },
-        { ok: has(p.booking_url, 8) && /^https?:\/\//i.test(String(p.booking_url || "")), label: "Bokningslänk (giltig URL)" },
-        { ok: has(p.pricing_notes, 10), label: "Prisnotiser (valfritt)", optional: true },
-      ];
-      // Kärnkraven är de två första — pricing_notes är valfri
-      const core = checks.slice(0, 2);
-      const filledCore = core.filter((c) => c.ok).length;
-      const filled = checks.filter((c) => c.ok).length;
-      const score = Math.round((filledCore / 2) * 100);
-      dims.push({
-        key: "offer",
-        label: "Erbjudande & CTA",
-        status: filledCore >= 2 ? "green" : filledCore >= 1 ? "yellow" : "red",
-        score,
-        filled,
-        total: checks.length,
-        missing: core.filter((c) => !c.ok).map((c) => c.label),
-        hint: "Ett inlägg utan tydlig nästa-handling konverterar inte. Bokningslänken måste fungera.",
-      });
-    }
-
-    const overall = Math.round(dims.reduce((s, d) => s + d.score, 0) / dims.length);
-    const ready = dims.every((d) => d.status === "green");
-
-    const report: QualityReport = {
-      overall,
-      ready_to_produce: ready,
-      dimensions: dims,
-    };
-
-    return NextResponse.json(report);
+    return NextResponse.json({
+      niva: rapport.niva,
+      niva_namn: rapport.nivaNamn,
+      niva_konsekvens: rapport.nivaKonsekvens,
+      ready_to_produce: racker(rapport),
+      forankringsflagga: rapport.forankringsflagga,
+      forankring_varning: rapport.forankringsVarning,
+      tak_orsak: rapport.takOrsak,
+      atgarder: rapport.atgarder,
+      kriterier: rapport.kriterier,
+    });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

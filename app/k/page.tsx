@@ -5,6 +5,8 @@ import CustomerModuleCards from "@/components/CustomerModuleCards";
 import CustomerSteps, { type Step } from "@/components/CustomerSteps";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import { supabaseService } from "@/lib/supabase-admin";
+import { profilKvalitet } from "@/lib/profil/las";
+import { brandProfilKlar } from "@/lib/profil/kvalitet";
 import { buildDashboardData } from "@/lib/dashboard-data";
 import { computeFocusInsights, type FocusIcon, type FocusInsight } from "@/lib/dashboard-insights";
 import { Sparkles, Users, Target, Trophy, FileText, AlertTriangle, TrendingUp, ArrowRight, Eye, Search, Bot, BookOpen, Zap, MousePointerClick, Repeat, Mail, Calendar } from "lucide-react";
@@ -42,9 +44,9 @@ export default async function CustomerHome() {
     showSocialStats
       ? sb.from("cockpit_dm_contacts").select("stage").eq("client_id", cid)
       : Promise.resolve({ data: null }),
-    has("profil")
-      ? sb.from("hm_brand_profile").select("usp, icp_primary, tone_rules, customer_quotes, booking_url").eq("client_id", cid).maybeSingle()
-      : Promise.resolve({ data: null }),
+    // PROFIL-1/F-mätare: kundportalen hade en EGEN kompletthetsdefinition (fem fält
+    // över 10 tecken). Den är borta — samma källa som kvalitetsmätaren används nu.
+    has("profil") ? profilKvalitet(cid) : Promise.resolve(null),
     showSeo
       ? sb.from("hm_seo_audits").select("seo_score, aeo_score, url, audited_at").eq("client_id", cid).order("audited_at", { ascending: false }).limit(1).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -64,11 +66,10 @@ export default async function CustomerHome() {
   const totalContacts = contacts.length;
   const wonContacts = contacts.filter((c) => c.stage === "won").length;
 
-  const profile = (qualityRes.data || {}) as Record<string, unknown>;
-  const profileFilled = ["usp", "icp_primary", "tone_rules", "customer_quotes", "booking_url"].filter(
-    (k) => profile[k] && String(profile[k]).length > 10
-  ).length;
-  const profileOK = !has("profil") || profileFilled >= 4;
+  const kvalitet = qualityRes as unknown as Awaited<ReturnType<typeof profilKvalitet>> | null;
+  const profilKlar = !!kvalitet && brandProfilKlar(kvalitet);
+  const profileOK = !has("profil") || profilKlar;
+  const profilAtgard = kvalitet?.atgarder?.[0] ?? null;
 
   const audit = seoAuditRes.data as { seo_score?: number; aeo_score?: number; url?: string; audited_at?: string } | null;
   const kws = ((seoKwRes.data as { current_rank: number | null }[] | null) || []);
@@ -109,7 +110,7 @@ export default async function CustomerHome() {
     todos = focusInsights.map((a) => ({ icon: FOCUS_ICON[a.icon], accent: a.accent, title: a.title, detail: a.detail, href: "/k/besokare" }));
   } else {
     const starters: TodoCard[] = [];
-    if (has("profil") && profileFilled < 4) starters.push({ icon: Target, accent: "emerald", title: "Fyll i din Brand-profil", detail: "Din röst, ditt erbjudande och dina kunder, grunden allt annat bygger på.", href: "/k/profil" });
+    if (has("profil") && !profilKlar) starters.push({ icon: Target, accent: "emerald", title: "Fyll i din Brand-profil", detail: profilAtgard || "Din röst, ditt erbjudande och dina kunder, grunden allt annat bygger på.", href: "/k/profil" });
     if (has("skapa")) starters.push({ icon: Sparkles, accent: "amber", title: totalPosts === 0 ? "Skapa ditt första inlägg" : "Skapa ett nytt inlägg", detail: totalPosts === 0 ? "Låt Skrivhjälpen föreslå text i din röst, och en bild på köpet." : "Håll flödet igång. Skrivhjälpen ger dig text och bild på minuter.", href: "/k/studio" });
     if (has("blog")) starters.push({ icon: BookOpen, accent: "violet", title: "Skriv ett blogginlägg", detail: "Längre texter som rankar i Google. Skrivhjälpen skriver i din röst.", href: "/k/blogg" });
     if (has("newsletter")) starters.push({ icon: Mail, accent: "blue", title: "Gör ett nyhetsbrev", detail: "Förvandla din text eller ett blogginlägg till ett nyhetsbrev i din röst.", href: "/k/nyhetsbrev" });
@@ -123,7 +124,7 @@ export default async function CustomerHome() {
   // "Kom igång"-steg: pedagogiskt flöde ur kundens riktiga läge. Visas bara tills
   // grunden är på plats (alla steg klara → göms, ingen nag för vana användare).
   const steps: Step[] = [];
-  if (has("profil")) steps.push({ title: "Fyll i din Brand-profil", desc: "Din röst, dina kunder och ditt erbjudande, grunden allt annat bygger på.", href: "/k/profil", cta: "Fyll i", done: profileFilled >= 4 });
+  if (has("profil")) steps.push({ title: "Fyll i din Brand-profil", desc: "Din röst, dina kunder och ditt erbjudande, grunden allt annat bygger på.", href: "/k/profil", cta: "Fyll i", done: profilKlar });
   if (has("skapa")) steps.push({ title: "Skapa ditt första inlägg", desc: "Låt Skrivhjälpen föreslå text i din röst, lägg till en bild och du är klar.", href: "/k/studio", cta: "Skapa", done: totalPosts > 0 });
   if (has("compass")) steps.push({ title: "Planera din vecka", desc: "Få en hel veckas innehåll färdigt att granska och lägga i kalendern.", href: "/k/kalender", cta: "Planera", done: published > 0 });
   else if (has("veckoplan")) steps.push({ title: "Planera din vecka", desc: "Sju färdiga inlägg enligt veckorytmen, redo att granska.", href: "/k/veckoplan", cta: "Planera", done: published > 0 });
@@ -250,7 +251,8 @@ export default async function CustomerHome() {
           <div className="flex-1">
             <div className="font-semibold text-amber-900 text-sm">Din profil behöver kompletteras</div>
             <div className="text-sm text-amber-800 mt-1">
-              Ju mer din profil är ifylld, desto bättre blir Skrivhjälpen på att skriva i din röst.{" "}
+              {kvalitet ? `Så här långt: ${kvalitet.nivaKonsekvens}. ` : ""}
+              {profilAtgard ? `${profilAtgard}. ` : "Ju mer underlag profilen har, desto mer låter texterna som du. "}
               <Link href="/k/profil" className="underline font-medium">Komplettera nu →</Link>
             </div>
           </div>

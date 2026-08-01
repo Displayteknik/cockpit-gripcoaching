@@ -1,6 +1,7 @@
 "use client";
 
 import SmartTextarea from "@/components/SmartTextarea";
+import ProfilGrind from "@/components/profile/ProfilGrind";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -130,22 +131,16 @@ export default function SkapaPage() {
   }
 
   useEffect(() => {
-    fetch("/api/profile/quality")
+    // PROFIL-1/F6: här hämtades /api/profile/quality bara för att sedan slängas —
+    // rapporten användes som villkor för att räkna assets. Räkningen görs nu direkt,
+    // och kvalitetsrapporten visas där den hör hemma (ProfilGrind nedan).
+    fetch("/api/assets")
       .then((r) => r.json())
-      .then((d) => {
-        if (d?.dimensions) {
-          // Hämta source-count från voice-fingerprint genom att kalla rebuild dry — använd istället assets-räkning
-          fetch("/api/assets")
-            .then((r) => r.json())
-            .then((a) => {
-              const c =
-                (a.assets || []).filter((x: { asset_type: string }) =>
-                  ["post", "audio", "video"].includes(x.asset_type)
-                ).length;
-              setVoiceCount(c);
-            });
-        }
-      });
+      .then((a) => {
+        const c = (a.assets || []).filter((x: { asset_type: string }) => ["post", "audio", "video"].includes(x.asset_type)).length;
+        setVoiceCount(c);
+      })
+      .catch(() => {});
   }, []);
 
   async function generate() {
@@ -224,6 +219,7 @@ export default function SkapaPage() {
       {mode === "review" && <OwnPostReview />}
 
       {mode === "generate" && <>
+      <ProfilGrind />
       <VoiceStatus
         count={voiceCount}
         onRebuild={rebuildVoice}

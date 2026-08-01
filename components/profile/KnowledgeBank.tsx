@@ -42,6 +42,8 @@ interface Asset {
   created_at: string;
 }
 
+// minRecommended = uppladdningsmål per flik, vägledning i inmatningen.
+// Bedömningen av profilen görs på ETT ställe: lib/profil/kvalitet.ts (PROFIL-1).
 const TABS: { key: AssetType; label: string; icon: React.ComponentType<{ className?: string }>; hint: string; minRecommended: number }[] = [
   { key: "post", label: "Egna inlägg", icon: FileText, hint: "Klistra in 5–10 av dina egna inlägg. Skrivhjälpen imiterar din röst.", minRecommended: 5 },
   { key: "photo", label: "Foton", icon: ImageIcon, hint: "Person, lokal, process, kunder. Slår alla stockfoton.", minRecommended: 5 },

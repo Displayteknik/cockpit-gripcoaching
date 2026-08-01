@@ -2,6 +2,7 @@
 
 import SmartTextarea from "@/components/SmartTextarea";
 import { FunctionGuide } from "@/components/FunctionGuide";
+import ProfilGrind from "@/components/profile/ProfilGrind";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -1272,6 +1273,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             </div>
           </div>
         </div>
+
+        {/* PROFIL-1: mjuk grind — blockerar inget, men säger var kvaliteten sitter. */}
+        <ProfilGrind href={customerMode ? "/k/profil" : "/dashboard/profil"} />
 
         {error && (
           <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>

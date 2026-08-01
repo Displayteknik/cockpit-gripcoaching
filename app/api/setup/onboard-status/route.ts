@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
+import { profilKvalitet } from "@/lib/profil/las";
+import { brandProfilKlar } from "@/lib/profil/kvalitet";
 
 export const runtime = "nodejs";
 
@@ -58,16 +60,13 @@ async function computeStatus(
 ): Promise<{ steps: StepStatus[]; stats: Record<string, number> }> {
   const sb = supabaseService();
 
-  const [profile, fingerprint, assets, winning, visits, gscRow, ideas] = await Promise.all([
+  const [kvalitet, fingerprint, assets, winning, visits, gscRow, ideas] = await Promise.all([
     // PROFIL-1/F5: kolumnen target_audience finns INTE i hm_brand_profile (PostgREST
     // svarade 42703). Hela profilfrågan felade tyst, profile.data blev null och steget
-    // "Brand-profil" kunde därför aldrig bli grönt för någon klient. Frågan läser nu
-    // bara kolumner som finns; målgruppen heter icp_primary.
-    sb
-      .from("hm_brand_profile")
-      .select("client_id, tone_rules, dos, donts, usp, icp_primary")
-      .eq("client_id", clientId)
-      .maybeSingle(),
+    // "Brand-profil" kunde därför aldrig bli grönt för någon klient.
+    // PROFIL-1/F-mätare: bedömningen görs nu av lib/profil/kvalitet.ts — samma källa
+    // som kvalitetsmätaren och kundportalen, inte en fjärde egen definition.
+    profilKvalitet(clientId),
     sb
       .from("client_voice_profile")
       .select("source_asset_count, signature_phrases, last_built_at")
@@ -93,20 +92,13 @@ async function computeStatus(
     sb.from("ideas_bank").select("id", { count: "exact", head: true }).eq("client_id", clientId),
   ]);
 
-  const p = profile.data as {
-    tone_rules: string | null;
-    dos: string | null;
-    donts: string | null;
-    usp: string | null;
-    icp_primary: string | null;
-  } | null;
   const f = fingerprint.data as {
     source_asset_count: number | null;
     signature_phrases: string[] | null;
     last_built_at: string | null;
   } | null;
 
-  const brandComplete = !!(p?.tone_rules && p?.dos && p?.donts && p?.usp);
+  const brandComplete = brandProfilKlar(kvalitet);
   const voiceBuilt = !!f?.last_built_at && (f.source_asset_count ?? 0) >= 5;
   const winningOK = (winning.count ?? 0) >= 3;
   const pixelOK = (visits.count ?? 0) > 0;
@@ -118,10 +110,10 @@ async function computeStatus(
       label: "Brand-profil",
       done: brandComplete,
       detail: brandComplete
-        ? "Tone, dos/donts, USP ifyllda."
-        : p
-        ? "Profilen finns men något saknas (USP, tone, dos eller donts)."
-        : "Ingen profil skapad än.",
+        ? `Nivå ${kvalitet.niva} (${kvalitet.nivaNamn}): ${kvalitet.nivaKonsekvens}.`
+        : kvalitet.forankringsflagga
+        ? `Förankringsvarning: ${kvalitet.forankringsVarning}`
+        : `Nivå ${kvalitet.niva} (${kvalitet.nivaNamn}). Närmast: ${kvalitet.atgarder[0] ?? "fyll i profilen"}.`,
       cta_label: brandComplete ? "Granska" : "Fyll i",
       cta_href: `/dashboard/profil?client=${clientId}`,
     },
