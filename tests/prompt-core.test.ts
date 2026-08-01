@@ -12,12 +12,16 @@ const PROFIL_MD = [
   "## Företagsnamn\nTestbolaget",
   "## Tagline\nVi testar allt",
   "## USP (det som skiljer oss)\nSnabbast i test",
+  "## Differentiering\nCertifierad sedan 2009. Egen verkstad i Krokom.",
   "## Tonregler\nRakt och vänligt. Inga floskler.",
   "## Primär ICP\nSmåföretagare",
   "## Sekundär ICP\nCoacher",
   "## Smärtpunkter kunden har\nTidsbrist",
   "## Kundresa\nLång text om kundresan. ".repeat(20).trim(),
   "## Konkurrenter\nKonkurrent AB. ".repeat(20).trim(),
+  "## Erbjudande: tjänster och produkter\nMontage, service, support. ".repeat(10).trim(),
+  "## Erbjudande: priser (verifierade siffror)\nStartpaket 21 000 kr. Servicebesök 1 850 kr.",
+  "## Erbjudande: CTA-väg (bokningslänk)\nhttps://exempel.se/boka",
   "## GÖR\nDu-tilltal",
   "## GÖR INTE\nUtropstecken i rad",
   "## Hashtag-bas\n#test #bolag",
@@ -388,7 +392,9 @@ describe("skrivregler-flaggan styr båda lagren", () => {
 
 describe("klippProfil — fast prioritet", () => {
   it("Tonregler, GÖR/GÖR INTE och USP överlever; Story-bank klipps först; meta listar klippen", () => {
-    const { text, klippta } = klippProfil(PROFIL_MD, 900);
+    // 1400 (var 900): fixturen växte med F1-sektionerna, så "måttligt klipp" ligger
+    // på en högre siffra nu. Avsikten är oförändrad — Customer Voice ska överleva.
+    const { text, klippta } = klippProfil(PROFIL_MD, 1400);
     expect(text).toContain("## Tonregler");
     expect(text).toContain("## GÖR\n");
     expect(text).toContain("## GÖR INTE");
@@ -413,6 +419,38 @@ describe("klippProfil — fast prioritet", () => {
     const { text, klippta } = klippProfil(PROFIL_MD, 100000);
     expect(text).toBe(PROFIL_MD);
     expect(klippta).toEqual([]);
+  });
+
+  // PROFIL-1/F1: de nykopplade fälten är konkreta och klientunika. Priser och
+  // CTA-väg står inte i KLIPPORDNING alls (överlever alltid), tjänster/
+  // differentiering klipps sent — efter allt allmänt material.
+  it("F1: verifierade priser och CTA-vägen överlever även ett hårt klipp", () => {
+    const { text } = klippProfil(PROFIL_MD, 700);
+    expect(text).toContain("## Erbjudande: priser (verifierade siffror)");
+    expect(text).toContain("21 000 kr");
+    expect(text).toContain("## Erbjudande: CTA-väg (bokningslänk)");
+  });
+
+  it("F1: allmänt material klipps före tjänster och differentiering", () => {
+    const { klippta } = klippProfil(PROFIL_MD, 1200);
+    for (const tidigt of ["Story-bank", "Kundresa", "Konkurrenter"]) {
+      expect(klippta, tidigt).toContain(tidigt);
+    }
+    const sent = ["Erbjudande: tjänster och produkter", "Differentiering"];
+    for (const namn of sent) {
+      if (klippta.includes(namn)) {
+        expect(klippta.indexOf(namn)).toBeGreaterThan(klippta.indexOf("Konkurrenter"));
+      }
+    }
+    // Priser/CTA-väg får ALDRIG hamna i klipplistan.
+    expect(klippta).not.toContain("Erbjudande: priser (verifierade siffror)");
+    expect(klippta).not.toContain("Erbjudande: CTA-väg (bokningslänk)");
+  });
+
+  it("F1: profiler under det nya taket (11000) klipps inte alls", async () => {
+    const b = await byggTextPrompt({ ...BAS, syfte: "caption" });
+    expect(b.meta.profilKlippt).toEqual([]);
+    expect(b.system).toContain("## Erbjudande: priser (verifierade siffror)");
   });
 
   it("byggTextPrompt exponerar klippen i meta.profilKlippt", async () => {

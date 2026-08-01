@@ -212,6 +212,15 @@ export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParam
 // eget ordförråd (röst-träffen sjönk när den klipptes tidigt — justeringsrundan v2)
 // och klipps därför först EFTER Sekundär ICP. Klipp sker på hel sektion — aldrig
 // mitt i mening.
+//
+// PROFIL-1/F1: de fyra nykopplade fälten placeras efter sin klientunikhet.
+// "Erbjudande: priser (verifierade siffror)" och "Erbjudande: CTA-väg" står med
+// FLIT INTE i listan — de överlever alltså alltid (som Tonregler/USP/GÖR/GÖR INTE).
+// Motivering: priserna är den enda källan till konkreta tal som SANNINGSKRAVET
+// tillåter, och CTA-vägen är exakt det CTA-golvet hänvisar till. "Differentiering"
+// och "Erbjudande: tjänster" är också klientunika och konkreta och klipps därför
+// sent — efter allt allmänt material (kundresa, konkurrenter, brand story), men före
+// de billiga grundfakta-raderna längst ned (att klippa 30 tecken sparar ingenting).
 const KLIPPORDNING = [
   "Story-bank",
   "Kundresa",
@@ -222,6 +231,8 @@ const KLIPPORDNING = [
   "Hashtag-bas",
   "Brand story",
   "Smärtpunkter kunden har",
+  "Erbjudande: tjänster och produkter",
+  "Differentiering",
   "Kontakt",
   "Grundare",
   "Plats",
@@ -287,7 +298,15 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
       if (raa) {
         // 9000 (höjt från 6000 i justeringsrundan v2): 6000 klippte bort röstbärande
         // sektioner för de fylligare profilerna och röst-träffen sjönk mätbart.
-        const klippt = klippProfil(raa, p.maxProfilTecken ?? 9000);
+        // 11000 (PROFIL-1/F1): de fyra nykopplade fälten lägger ~3 100 tecken på
+        // Displaytekniks profil (9 396 → 13 086). Vid 9000 hade klippet gått ända ned
+        // i "Voice of Customer (kundord)" och "Brand story" — exakt de röstbärande
+        // sektioner som v2-höjningen infördes för att skydda. Vid 11000 klipps bara
+        // det allmänna materialet (mätt: DT klipper Kundresa + Konkurrenter, 13 086 →
+        // 10 842) och de verifierade priserna kommer in utan att kosta kundorden.
+        // Taket är mätt mot plattformens största profil, inte gissat
+        // (scripts/profil1/f1-verifiera.mts).
+        const klippt = klippProfil(raa, p.maxProfilTecken ?? 11000);
         profilKlippt = klippt.klippta;
         // T-5 (5): synliggör klipputfallet i loggen (batch + prod). Klipps röst-
         // bärande sektioner (Customer Voice) är det en profilfråga att agera på.

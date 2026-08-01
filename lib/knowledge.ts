@@ -57,6 +57,13 @@ export async function getProfileAsMarkdown(clientId?: string, opts?: { medVoice?
     const { data } = await sb.from("hm_brand_profile").select("*").eq("client_id", id).maybeSingle();
     if (!data) return "";
 
+    // PROFIL-1/F1: differentiators, services, pricing_notes och booking_url fanns i
+    // formuläret men saknades här — de nådde alltså ALDRIG en textprompt. Samtidigt
+    // förbjuder SANNINGSKRAVET påhittade siffror och CTA-golvet pekar uttryckligen på
+    // en "Erbjudande/CTA-sektion". Ordningen nedan: identitet → berättelse/USP/
+    // differentiering → ton → målgrupp → marknad → ERBJUDANDE (sanningsunderlaget:
+    // tjänster, verifierade priser, CTA-väg) → skrivregler. Rubrikerna på erbjudande-
+    // sektionerna börjar med "Erbjudande:" så CTA-golvets hänvisning landar rätt.
     const sections: [string, string | null][] = [
       ["Företagsnamn", data.company_name],
       ["Tagline", data.tagline],
@@ -65,6 +72,7 @@ export async function getProfileAsMarkdown(clientId?: string, opts?: { medVoice?
       ["Kontakt", [data.founder_phone, data.founder_email].filter(Boolean).join(" · ")],
       ["Brand story", data.brand_story],
       ["USP (det som skiljer oss)", data.usp],
+      ["Differentiering", data.differentiators],
       ["Tonregler", data.tone_rules],
       ["Primär ICP", data.icp_primary],
       ["Sekundär ICP", data.icp_secondary],
@@ -72,6 +80,9 @@ export async function getProfileAsMarkdown(clientId?: string, opts?: { medVoice?
       ["Voice of Customer (kundord)", data.customer_quotes],
       ["Konkurrenter", data.competitors],
       ["Kundresa", data.customer_journey],
+      ["Erbjudande: tjänster och produkter", data.services],
+      ["Erbjudande: priser (verifierade siffror)", data.pricing_notes],
+      ["Erbjudande: CTA-väg (bokningslänk)", data.booking_url],
       ["GÖR", data.dos],
       ["GÖR INTE", data.donts],
       ["Hashtag-bas", data.hashtags_base],
