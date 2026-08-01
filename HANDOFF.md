@@ -92,12 +92,12 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 
 | Beställning | Beställd | Status | Not |
 |---|---|---|---|
-| UTKAST-1 (autospar Studio + blogg/nyhetsbrev/veckoplan/reels) | 31/7 | **Pågår** (KVALITET-3 p1) | Byggdes aldrig; verifierat 1/8 att refresh nollar allt |
+| ~~UTKAST-1 (autospar 5 ytor)~~ | 31/7 | **LEVERERAD** `6be991c` | BILD-2:s autospar skrev men läste aldrig tillbaka; nyckeln byggdes på tom slug → tenants delade hink. Ny hook `lib/studio/useUtkast.ts` |
 | IDÉ-1 rester: 3-av-3, interpunktion, sanningskrav i pitch | 31/7 | **Pågår** (KVALITET-3 p2) | Variantvariationen levererades via T-6c; resten saknades |
-| Idé som underlag, aldrig publik text | 1/8 | **Pågår** (KVALITET-3 p3) | Idé-beskrivning kopierades ordagrant till bildtext |
+| ~~Idé som underlag, aldrig publik text~~ | 1/8 | **LEVERERAD** `7f5c515` | Rotorsak: VECKOPLANEN skrev captionens hook/body till payload.headline1/body (text för ett format återbrukad i ett annat). Studios idéflöde var oskyldigt |
 | Perspektivregel (talar som tenanten) | 1/8 | **Pågår** (KVALITET-3 p4) | |
 | Prisregel (inga egna priser i genererad text) | 1/8 | **Pågår** (KVALITET-3 p5) | Skärpt av att F1 nu ger modellen riktiga priser |
-| Loggval: render-bevis + manuell override | 1/8 | **Pågår** (KVALITET-3 p6) | |
+| ~~Loggval: render-bevis + manuell override~~ | 1/8 | **LEVERERAD** `b392cd4` | ⚠ Fynd: render-routen är INTE publiceringsvägen (Playwright 501 i molnet → html-to-image ur live-editorn). Ny `/api/studio/logo-hint` ger klienten samma beslut. Manuellt val Auto/Ljus/Mörk/Platta i `overrides.logoVariant` |
 | Småfixar: raknaCta-ordlista, "hög ljusstyrka" | 1/8 | **Pågår** (KVALITET-3 p7) | |
 | ~~"Prata in" läcker systeminstruktionen~~ | 1/8 | **LEVERERAD** `b6e2ed9` | Rotorsak: Gemini ekar sin egen instruktion vid för kort ljud (HTTP 200, finishReason STOP). Grind mot promptekon på server + klient, tre routes drabbade (transcribe, assets/transcribe, intake/upload) |
 | DM: lead via bild stannar på mållinjen | 1/8 | **Pågår** (KVALITET-3 p10) | Talarattribution omkastad, ingen förifyllnad, Messenger blockeras av IG-handle-krav. Måttstock: noll manuell inmatning från skärmdump till förberedd kontakt i Fokus |
