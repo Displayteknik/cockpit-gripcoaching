@@ -154,18 +154,42 @@ function tokens(s: string): string[] {
   return s.toLowerCase().replace(/[^\p{L}\s]/gu, " ").split(/\s+/).filter((w) => w.length > 3);
 }
 
+// ── Vinnande exempel (lager 5) ───────────────────────────────────────────────
+// PROFIL-1/F2: filtret `.eq("subcategory", category)` stängde av hela lagret i
+// praktiken — samtliga winning_example-rader på plattformen har subcategory = NULL
+// (ingen UI-yta skriver fältet; bara setup-agentens mark_winning_example gör det).
+// Engens 14 godkända exempel nådde alltså noll av tio syften.
+//
+// Ny regel, ingen DB-skrivning: en rad med RÄTT subcategory väljs först, därefter
+// OKLASSADE rader (subcategory saknas = exemplet är inte bundet till någon kanal).
+// Rader med en ANNAN kanals subcategory väljs aldrig — ett mejlexempel ska inte
+// styra en Instagram-caption. Rangordning inom respektive grupp: voice_score, sedan
+// nyast först. Utan kategori (kanal-anpassning) gäller allt, som förut.
+export interface WinningRad {
+  body: string | null;
+  subcategory?: string | null;
+}
+
+export function valjWinningExamples(rader: WinningRad[], category?: string, limit = 3): string[] {
+  const dugliga = rader.filter((r) => r.body && r.body.length > 30) as { body: string; subcategory?: string | null }[];
+  if (!category) return dugliga.slice(0, limit).map((r) => r.body);
+  const norm = (s: string | null | undefined) => String(s ?? "").trim().toLowerCase();
+  const traff = dugliga.filter((r) => norm(r.subcategory) === norm(category));
+  const oklassade = dugliga.filter((r) => !norm(r.subcategory));
+  return [...traff, ...oklassade].slice(0, limit).map((r) => r.body);
+}
+
 export async function fetchWinningExamples(clientId: string, category?: string, limit = 3): Promise<string[]> {
   const sb = supabaseService();
-  let q = sb
+  const { data } = await sb
     .from("client_assets")
-    .select("body, voice_score, category")
+    .select("body, voice_score, subcategory")
     .eq("client_id", clientId)
     .eq("status", "active")
     .eq("category", "winning_example")
     .not("body", "is", null)
-    .order("voice_score", { ascending: false })
-    .limit(limit);
-  if (category) q = q.eq("subcategory", category);
-  const { data } = await q;
-  return (data || []).map((d) => (d as { body: string }).body).filter((b) => b && b.length > 30);
+    .order("voice_score", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(Math.max(limit * 10, 30));
+  return valjWinningExamples((data || []) as WinningRad[], category, limit);
 }
