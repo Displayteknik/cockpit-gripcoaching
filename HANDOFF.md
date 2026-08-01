@@ -99,7 +99,7 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 | Prisregel (inga egna priser i genererad text) | 1/8 | **Pågår** (KVALITET-3 p5) | Skärpt av att F1 nu ger modellen riktiga priser |
 | Loggval: render-bevis + manuell override | 1/8 | **Pågår** (KVALITET-3 p6) | |
 | Småfixar: raknaCta-ordlista, "hög ljusstyrka" | 1/8 | **Pågår** (KVALITET-3 p7) | |
-| "Prata in" läcker systeminstruktionen | 1/8 | **Pågår** (KVALITET-3 p9) | Transkriptionsprompten hamnade i ämnesfältet i bloggverktyget |
+| ~~"Prata in" läcker systeminstruktionen~~ | 1/8 | **LEVERERAD** `b6e2ed9` | Rotorsak: Gemini ekar sin egen instruktion vid för kort ljud (HTTP 200, finishReason STOP). Grind mot promptekon på server + klient, tre routes drabbade (transcribe, assets/transcribe, intake/upload) |
 | DM: lead via bild stannar på mållinjen | 1/8 | **Pågår** (KVALITET-3 p10) | Talarattribution omkastad, ingen förifyllnad, Messenger blockeras av IG-handle-krav. Måttstock: noll manuell inmatning från skärmdump till förberedd kontakt i Fokus |
 | BILD-8 DoD-genereringar | 31/7 | **Ej gjort** | Koden grön, men bilderna som bevisar stavningsgrinden skarpt saknas |
 | REVISION-1: REV-1 → REV-4 | 30/7 | **Ej startad** | Rapport godkänd, tre frågor besvarade |
