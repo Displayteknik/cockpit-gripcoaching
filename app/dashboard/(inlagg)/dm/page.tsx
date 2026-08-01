@@ -2,8 +2,9 @@
 
 import SmartTextarea from "@/components/SmartTextarea";
 import { CoachPanel, type ScoredCard } from "@/components/FokusClient";
+import { KANALER, kanalEtikett } from "@/lib/dm/skarmdump";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   UserPlus,
   Handshake,
@@ -23,19 +24,26 @@ import {
   Pencil,
   RotateCcw,
   Sparkles,
+  Image as ImageIcon,
+  CalendarClock,
+  Bell,
 } from "lucide-react";
 
 type Stage = "new" | "acknowledge" | "connect" | "offer" | "won" | "lost";
 
 interface Contact {
   id: string;
-  ig_username: string;
+  /** Saknas för kanaler utan handle (Messenger, LinkedIn) — namnet bär kontakten då. */
+  ig_username: string | null;
   display_name: string | null;
+  channel: string | null;
   source: string | null;
   source_post: string | null;
   stage: Stage;
   notes: string | null;
   next_action: string | null;
+  next_action_at: string | null;
+  reminder_at: string | null;
   ghl_contact_id: string | null;
   synced_to_ghl: boolean;
   created_at: string;
@@ -279,7 +287,7 @@ function PipelineView() {
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${c.stage === "won" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>
                   {c.stage === "won" ? "Bokad" : "Förlorad"}
                 </span>
-                <span className="text-sm text-gray-800 font-medium truncate flex-1">{c.display_name || c.ig_username}</span>
+                <span className="text-sm text-gray-800 font-medium truncate flex-1">{c.display_name || c.ig_username || "Kontakt"}</span>
                 <button onClick={() => moveStage(c.id, "offer")} className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-800 flex-shrink-0">
                   <RotateCcw className="w-3.5 h-3.5" /> Tillbaka till pipeline
                 </button>
@@ -311,7 +319,7 @@ function kortFranKontakt(c: Contact): ScoredCard {
   const dagar = Math.max(0, Math.floor((Date.now() - new Date(c.updated_at || c.created_at).getTime()) / 86400000));
   return {
     id: c.id,
-    namn: c.display_name || c.ig_username,
+    namn: c.display_name || c.ig_username || "Kontakt",
     foretag: "",
     varde: 0,
     stegNamn: STAGES.find((s) => s.id === c.stage)?.label || (c.stage === "won" ? "Bokad" : c.stage === "lost" ? "Förlorad" : ""),
@@ -369,13 +377,17 @@ function ContactCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm text-gray-900 truncate">@{contact.ig_username}</div>
-          {contact.display_name && (
-            <div className="text-xs text-gray-500 truncate">{contact.display_name}</div>
+          {/* Namnet först. Användarnamnet finns bara på kanaler som har handles. */}
+          <div className="font-semibold text-sm text-gray-900 truncate">
+            {contact.display_name || `@${contact.ig_username}`}
+          </div>
+          {contact.display_name && contact.ig_username && (
+            <div className="text-xs text-gray-500 truncate">@{contact.ig_username}</div>
           )}
-          {contact.source && (
-            <div className="text-xs text-gray-400 mt-0.5">via {contact.source}</div>
-          )}
+          <div className="text-xs text-gray-400 mt-0.5 truncate">
+            {kanalEtikett(contact.channel, contact.ig_username)}
+            {contact.source ? ` · via ${contact.source}` : ""}
+          </div>
         </div>
         <div className="flex gap-0.5">
           <button onClick={() => setEditing(!editing)} className="p-1.5 text-gray-400 rounded-lg hover:text-gray-700 hover:bg-gray-100 transition-colors" title="Redigera">
@@ -425,6 +437,18 @@ function ContactCard({
             <div className="mt-2 text-xs text-purple-700 font-medium flex items-start gap-1">
               <Target className="w-3 h-3 mt-0.5 flex-shrink-0" />
               {contact.next_action}
+            </div>
+          )}
+          {contact.next_action_at && (
+            <div className="mt-1.5 text-xs text-emerald-700 font-medium flex items-start gap-1">
+              <CalendarClock className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              Bokat {narTid(contact.next_action_at)}
+            </div>
+          )}
+          {contact.reminder_at && (
+            <div className="mt-1 text-xs text-gray-500 flex items-start gap-1">
+              <Bell className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              Påminnelse {narTid(contact.reminder_at)}
             </div>
           )}
         </>
@@ -477,67 +501,331 @@ function ContactCard({
   );
 }
 
+// ── Tid: ISO ↔ fältet <input type="datetime-local"> (webbläsarens lokala tid) ──
+function isoTillFalt(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function faltTillIso(v: string): string | null {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+/** "måndag 3 augusti kl 10:00" — samma formulering som resten av flödet. */
+function narTid(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d
+    .toLocaleString("sv-SE", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+    .replace(/(\d{2}:\d{2})$/, "kl $1")
+    .replace(" kl kl ", " kl ");
+}
+
+interface Forifyllnad {
+  display_name: string;
+  ig_username: string;
+  channel: string;
+  source: string;
+  stage: Stage;
+  notes: string;
+  next_action: string;
+  next_action_at: string | null;
+  reminder_at: string | null;
+}
+interface Tolkning {
+  fas: string;
+  utfall: string;
+  varme: string;
+  foreslogAv: string | null;
+  bekraftadAv: string | null;
+  motestidText: string;
+  motestidLasbar: string;
+  paminnelseLasbar: string;
+}
+
+const STEG_VAL: { id: Stage; label: string }[] = [
+  { id: "new", label: "Ny" },
+  { id: "acknowledge", label: "Bekräftad" },
+  { id: "connect", label: "Dialog" },
+  { id: "offer", label: "Erbjudande" },
+  { id: "won", label: "Bokad" },
+  { id: "lost", label: "Förlorad" },
+];
+
 function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
   const [username, setUsername] = useState("");
+  const [namn, setNamn] = useState("");
+  const [kanal, setKanal] = useState("instagram");
   const [source, setSource] = useState("kommentar");
+  const [stage, setStage] = useState<Stage>("new");
   const [notes, setNotes] = useState("");
+  const [nastaSteg, setNastaSteg] = useState("");
+  const [motesTid, setMotesTid] = useState("");
+  const [paminnelse, setPaminnelse] = useState("");
   const [saving, setSaving] = useState(false);
+  const [laser, setLaser] = useState(false);
+  const [fel, setFel] = useState<string | null>(null);
+  const [tolkning, setTolkning] = useState<Tolkning | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // Skärmdump → färdigt formulär. Allt bildläsningen får ut fyller fälten direkt:
+  // användaren ska aldrig skriva in det som redan står i bilden.
+  async function lasAvBild(file: File | Blob) {
+    setFel(null);
+    if (file.size > 8 * 1024 * 1024) {
+      setFel("Bilden är för stor (max 8 MB)");
+      return;
+    }
+    setLaser(true);
+    try {
+      const dataUrl: string = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result));
+        fr.onerror = () => rej(new Error("läsfel"));
+        fr.readAsDataURL(file);
+      });
+      const r = await fetch("/api/dm/extract-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: dataUrl }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.formular) {
+        setFel(d.error || "Kunde inte läsa av bilden");
+        return;
+      }
+      const f = d.formular as Forifyllnad;
+      if (f.display_name) setNamn(f.display_name);
+      if (f.ig_username) setUsername(f.ig_username);
+      if (f.channel) setKanal(f.channel);
+      if (f.source) setSource(f.source);
+      if (f.stage) setStage(f.stage);
+      if (f.notes) setNotes(f.notes);
+      if (f.next_action) setNastaSteg(f.next_action);
+      setMotesTid(isoTillFalt(f.next_action_at));
+      setPaminnelse(isoTillFalt(f.reminder_at));
+      setTolkning(d.tolkning as Tolkning);
+    } catch {
+      setFel("Kunde inte läsa av bilden");
+    } finally {
+      setLaser(false);
+    }
+  }
+
+  // Ctrl+V var som helst i dialogen — även inne i anteckningsfältet. Fångas i
+  // capture-fasen så att en inklistrad skärmdump ALLTID går till avläsningen som
+  // förifyller formuläret, aldrig till den fria sammanfattningen. Text klistras in som vanligt.
+  function onPasteCapture(e: React.ClipboardEvent) {
+    if (laser) return;
+    const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith("image/"));
+    const f = item?.getAsFile();
+    if (f) {
+      e.preventDefault();
+      e.stopPropagation();
+      lasAvBild(f);
+    }
+  }
+
+  const kanFortsatta = !!(namn.trim() || username.trim());
 
   async function save() {
-    if (!username.trim()) return;
+    if (!kanFortsatta) return;
     setSaving(true);
-    await fetch("/api/dm/contacts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ig_username: username, source, notes }),
-    });
-    setSaving(false);
-    onAdded();
-    onClose();
+    try {
+      const r = await fetch("/api/dm/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ig_username: username,
+          display_name: namn,
+          channel: kanal,
+          source,
+          stage,
+          notes,
+          next_action: nastaSteg,
+          next_action_at: faltTillIso(motesTid),
+          reminder_at: faltTillIso(paminnelse),
+        }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setFel(d.error || "Kunde inte spara kontakten");
+        return;
+      }
+      onAdded();
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   }
+
+  const kraverHandle = kanal === "instagram";
+  const falt = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <div
+        onPasteCapture={onPasteCapture}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const f = e.dataTransfer.files?.[0];
+          if (f && f.type.startsWith("image/")) lasAvBild(f);
+        }}
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
+      >
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
             <UserPlus className="w-[18px] h-[18px] text-purple-600" />
           </div>
           <h3 className="font-display font-bold text-lg text-gray-900">Lägg till kontakt</h3>
         </div>
-        <div className="space-y-3">
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Instagram-användarnamn (utan @)"
-            autoFocus
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
-          />
-          <select
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
-          >
-            <option value="kommentar">Kommentar</option>
-            <option value="dm">DM</option>
-            <option value="manuell">Manuellt tillagd</option>
-            <option value="import">Import</option>
-          </select>
-          <SmartTextarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Anteckningar, eller klistra in en skärmdump av DM:et / prata in det (valfritt)"
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
-          />
+
+        {/* Skärmdumpen först: den fyller resten av formuläret. */}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={laser}
+          className="w-full border-2 border-dashed border-purple-200 bg-purple-50/50 rounded-xl px-4 py-4 text-left hover:bg-purple-50 transition-colors disabled:opacity-60"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white border border-purple-100 flex items-center justify-center flex-shrink-0">
+              {laser ? <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> : <ImageIcon className="w-4 h-4 text-purple-600" />}
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-gray-900">
+                {laser ? "Läser av skärmdumpen…" : "Läs av en skärmdump av chatten"}
+              </div>
+              <div className="text-xs text-gray-500 mt-0.5">
+                Klistra in (Ctrl+V), släpp bilden här eller välj fil. Messenger, Instagram DM och LinkedIn.
+              </div>
+            </div>
+          </div>
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) lasAvBild(f);
+            e.target.value = "";
+          }}
+        />
+
+        {fel && <div className="mt-3 text-sm text-red-600">{fel}</div>}
+
+        {/* Vad bilden gav — med rätt person på rätt replik. */}
+        {tolkning && (
+          <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 space-y-1">
+            <div className="text-sm font-semibold text-emerald-900">Avläst ur skärmdumpen</div>
+            {tolkning.motestidText && (
+              <div className="text-xs text-emerald-900/80">
+                {tolkning.foreslogAv === "kontakt" ? (namn || "Kontakten") : "Du"} föreslog {tolkning.motestidText}
+                {tolkning.bekraftadAv
+                  ? ` · ${tolkning.bekraftadAv === "kontakt" ? (namn || "kontakten") : "du"} bekräftade`
+                  : " · ingen bekräftelse än"}
+              </div>
+            )}
+            {tolkning.motestidLasbar && (
+              <div className="text-xs text-emerald-900/80">Möte: {tolkning.motestidLasbar}</div>
+            )}
+            {tolkning.paminnelseLasbar && (
+              <div className="text-xs text-emerald-900/80">Påminnelse: {tolkning.paminnelseLasbar}</div>
+            )}
+            <div className="text-xs text-emerald-900/60">Ändra fritt nedan innan du lägger till.</div>
+          </div>
+        )}
+
+        <div className="space-y-3 mt-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Namn</label>
+            <input value={namn} onChange={(e) => setNamn(e.target.value)} placeholder="För- och efternamn" autoFocus className={falt} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Kanal</label>
+              <select value={kanal} onChange={(e) => setKanal(e.target.value)} className={falt}>
+                {KANALER.map((k) => (
+                  <option key={k.id} value={k.id}>{k.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Användarnamn <span className="font-normal text-gray-400">{kraverHandle ? "(om du har det)" : "(valfritt)"}</span>
+              </label>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={kraverHandle ? "utan @" : "finns sällan här"}
+                className={falt}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Läge i pipelinen</label>
+              <select value={stage} onChange={(e) => setStage(e.target.value as Stage)} className={falt}>
+                {STEG_VAL.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Kom in via</label>
+              <select value={source} onChange={(e) => setSource(e.target.value)} className={falt}>
+                <option value="kommentar">Kommentar</option>
+                <option value="dm">DM</option>
+                <option value="manuell">Manuellt tillagd</option>
+                <option value="import">Import</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Bokad tid</label>
+              <input type="datetime-local" value={motesTid} onChange={(e) => setMotesTid(e.target.value)} className={falt} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Påminnelse</label>
+              <input type="datetime-local" value={paminnelse} onChange={(e) => setPaminnelse(e.target.value)} className={falt} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Nästa steg</label>
+            <input value={nastaSteg} onChange={(e) => setNastaSteg(e.target.value)} placeholder="Vad som ska hända härnäst" className={falt} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Anteckningar</label>
+            <SmartTextarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Vad som sagts hittills, eller prata in det"
+              className={falt}
+            />
+          </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors">
               Avbryt
             </button>
             <button
               onClick={save}
-              disabled={saving || !username.trim()}
+              disabled={saving || !kanFortsatta}
+              title={kanFortsatta ? "" : "Fyll i namn eller användarnamn"}
               className="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
