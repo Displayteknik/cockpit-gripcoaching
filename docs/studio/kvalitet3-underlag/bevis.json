@@ -1,0 +1,37 @@
+{
+  "kord": "2026-08-01T11:28:02.806Z",
+  "tenant": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+  "tema": "Skyltfönstret som säljer när butiken är stängd",
+  "vinkel": "Digitala menyskärmar i skyltfönster syns även i dagsljus",
+  "underlag": "Veckotema: Skyltfönstret som säljer när butiken är stängd\nDagens vinkel: Digitala menyskärmar i skyltfönster syns även i dagsljus",
+  "caption": "Undrar du hur du får ditt skyltfönster att sälja även när butiken är stängd? Med en digital menyskärm syns ditt budskap tydligt, oavsett om solen skiner eller om mörkret faller.\n\nVi hjälper dig att välja en skärm som tål nordiska förhållanden och har tillräckligt hög ljusstyrka för att synas i direkt solljus. En enkel lösning som informerar dina kunder dygnet runt.\n\nSkicka en bild på ditt skyltfönster, få offert inom 24 timmar.\n\n#digitalskyltning #digitalsignage #skyltfönster #menyskärm #retail",
+  "sparat_pa_bilden": {
+    "headline1": "",
+    "headline2": "",
+    "body": ""
+  },
+  "genererad_bildtext": [
+    {
+      "hookType": "fråga",
+      "headline1": "Vem ser din meny klockan åtta på kvällen?",
+      "headline2": "Skyltfönstret säljer även när butiken är stängd",
+      "body": "Med en digital menyskärm syns ditt budskap dygnet runt, även i direkt solljus.",
+      "beskrivning": "Skyltfönstret säljer även när butiken är stängd. Med en digital menyskärm syns ditt budskap dygnet runt, även i direkt solljus."
+    },
+    {
+      "hookType": "konträr",
+      "headline1": "Stängt är det nya öppet",
+      "headline2": "Menyn syns dygnet runt",
+      "body": "Skyltfönstret säljer även när du låst för dagen. Med rätt ljusstyrka syns budskapet i fullt solljus.",
+      "beskrivning": "Menyn syns dygnet runt. Skyltfönstret säljer även när du låst för dagen."
+    },
+    {
+      "hookType": "påstående",
+      "headline1": "Skyltfönstret säljer dygnet runt",
+      "headline2": "Dagsljus är ingen ursäkt längre",
+      "body": "En digital menyskärm med 3 000 nits syns även i direkt solljus, kunden läser menyn när du är stängd.",
+      "beskrivning": "Dagsljus är ingen ursäkt längre. En digital menyskärm med 3 000 nits syns även i direkt solljus, kunden läser menyn när du är stängd."
+    }
+  ],
+  "ordagranna_kopior": []
+}
