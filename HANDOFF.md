@@ -86,6 +86,25 @@ Metod: 4 klientprofiler (Displayteknik, Engens Träd, HM Motor, Annas Blommor) �
 
 ---
 
+## 2b. Beställt men ej levererat (STÅENDE SEKTION — töms aldrig, uppdateras)
+
+Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst — varken levererade eller listade som pågående. Varje beställning som inte är klar ska stå här tills den är det. En rad som försvinner utan att vara levererad är ett fel i sig.
+
+| Beställning | Beställd | Status | Not |
+|---|---|---|---|
+| UTKAST-1 (autospar Studio + blogg/nyhetsbrev/veckoplan/reels) | 31/7 | **Pågår** (KVALITET-3 p1) | Byggdes aldrig; verifierat 1/8 att refresh nollar allt |
+| IDÉ-1 rester: 3-av-3, interpunktion, sanningskrav i pitch | 31/7 | **Pågår** (KVALITET-3 p2) | Variantvariationen levererades via T-6c; resten saknades |
+| Idé som underlag, aldrig publik text | 1/8 | **Pågår** (KVALITET-3 p3) | Idé-beskrivning kopierades ordagrant till bildtext |
+| Perspektivregel (talar som tenanten) | 1/8 | **Pågår** (KVALITET-3 p4) | |
+| Prisregel (inga egna priser i genererad text) | 1/8 | **Pågår** (KVALITET-3 p5) | Skärpt av att F1 nu ger modellen riktiga priser |
+| Loggval: render-bevis + manuell override | 1/8 | **Pågår** (KVALITET-3 p6) | |
+| Småfixar: raknaCta-ordlista, "hög ljusstyrka" | 1/8 | **Pågår** (KVALITET-3 p7) | |
+| BILD-8 DoD-genereringar | 31/7 | **Ej gjort** | Koden grön, men bilderna som bevisar stavningsgrinden skarpt saknas |
+| REVISION-1: REV-1 → REV-4 | 30/7 | **Ej startad** | Rapport godkänd, tre frågor besvarade |
+| PROFIL-2: yta för berättelser/kundord | 1/8 | **Ej startad** | Mätaren uppmanar till material som inte går att fylla i |
+| Blindbedömningen (Håkan) | 31/7 | **Ej gjord** | Avgör röstträff-frågan för LinkedIn |
+| HM Motors profilinnehåll rättas i DB | 1/8 | **Ej gjort** | Koden hindrar nästa olycka, städar inte den gamla |
+
 ## 3. Öppet just nu
 
 **Pågår:** BILD-8 — (a) vision-baserad stavningsgrind för avbildad text: transkribera bokstav för bokstav och jämför programmatiskt, eftersom vision-modellen autokorrigerar och "läser" NYHETER där bilden säger NYHIETES; vid fel omgenerering, annars hellre blank skylt än felstavad. (b) blickriktningsregel: person i bild ska vara vänd mot och engagerad i produkten/skärmen/skylten.
