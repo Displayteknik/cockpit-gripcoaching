@@ -33,7 +33,14 @@ export async function POST(req: NextRequest) {
 
   const prompt =
     b.prompt ||
-    "Detta är en skärmbild kopplad till en säljaffär (t.ex. ett mejl, en chatt eller ett offertsvar från kunden). " +
+    // Talarattributionen står FÖRST: skarpt fel där sammanfattningen tillskrev kunden
+    // det kontoägaren hade skrivit. Vem som föreslog en tid avgör hur varmt läget är.
+    "VEM SKREV VAD (gäller alla chattar: Messenger, Instagram DM, LinkedIn, SMS):\n" +
+      "- VARJE bubbla till HÖGER, med färgad bakgrund (blå, lila, grön), är skriven av kontoägaren — den som tog skärmbilden. Skriv 'du' om dem.\n" +
+      "- VARJE bubbla till VÄNSTER, oftast grå eller vit och ofta med den andra personens profilbild bredvid, är kundens.\n" +
+      "- Avgör ALLTID utifrån placeringen, aldrig utifrån vad texten säger. En högerbubbla kan låta precis som kunden och är ändå kontoägarens.\n" +
+      "- Var särskilt noga med vem som föreslog en tid och vem som bekräftade den.\n\n" +
+      "Detta är en skärmbild kopplad till en säljaffär (t.ex. ett mejl, en chatt eller ett offertsvar från kunden). " +
       "Sammanfatta i 1–3 meningar på svenska: vad kunden säger/gör, kundens ton, och ev. invändning eller nästa steg. " +
       "Ta ALLTID med eventuella datum du ser (när mejlet/meddelandet skickades, utlovade tider, deadlines) — de säger mycket om tempot. " +
       "Läs av text ordagrant där det är relevant. Skriv bara sammanfattningen, inga rubriker.";
