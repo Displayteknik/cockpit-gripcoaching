@@ -97,9 +97,44 @@ export function taBortTankstreckHtml(html: string): string {
     .join("");
 }
 
+// ── Terminologi (KVALITET-3/punkt 7) ─────────────────────────────────────────
+// Generella språkfixar på plattformsnivå: uttryck som är fel svenska eller fel
+// fackterm oavsett bransch. INTE en tenant-ordlista — varje rad här ska vara lika
+// riktig för en blomsteraffär som för en bilhandlare eller en coach.
+//
+// "högt ljus" är ljudteknik-svenska som smugit in i skärmtexter. Rätt term för hur
+// starkt en skärm lyser är LJUSSTYRKA, och den böjs som utrum: hög ljusstyrka.
+// Ordgränsen skyddar sammansättningar ("högt ljusinsläpp" rörs inte).
+const TERMINOLOGI: { re: RegExp; ratt: string }[] = [
+  { re: /\bhögt\s+ljus\b/gi, ratt: "hög ljusstyrka" },
+  { re: /\bhögre\s+ljus\b/gi, ratt: "högre ljusstyrka" },
+  { re: /\bhögsta\s+ljuset\b/gi, ratt: "högsta ljusstyrkan" },
+];
+
+/** Behåll versal begynnelsebokstav när ett uttryck byts ut mitt i en text. */
+function medSammaVersal(original: string, ersattning: string): string {
+  if (!original || !ersattning) return ersattning;
+  const forsta = original[0];
+  if (forsta !== forsta.toLowerCase() && forsta === forsta.toUpperCase()) {
+    return ersattning[0].toUpperCase() + ersattning.slice(1);
+  }
+  return ersattning;
+}
+
+/**
+ * Generella terminologifixar. Körs ALLTID (ingår i taBortFloskler, som är plattformens
+ * kvalitetsgolv och inte kan stängas av per tenant) — en felaktig fackterm är lika fel
+ * oavsett om klienten kört sina egna skrivregler eller inte.
+ */
+export function fixaTerminologi(text: string): string {
+  let ut = String(text || "");
+  for (const t of TERMINOLOGI) ut = ut.replace(t.re, (m) => medSammaVersal(m, t.ratt));
+  return ut;
+}
+
 /** AI-floskler som aldrig får nå kundtext (befintlig grind, nu global). */
 export function taBortFloskler(text: string): string {
-  return String(text || "")
+  return fixaTerminologi(String(text || ""))
     .replace(/\bhandlar\s+inte\s+om\b/gi, "gäller inte")
     .replace(/\bhandlar\s+om\b/gi, "gäller")
     .replace(/\bkraftfullt\b/gi, "starkt").replace(/\bkraftfulla\b/gi, "starka").replace(/\bkraftfull\b/gi, "stark")
@@ -184,8 +219,17 @@ export function harSvagHook(text: string): boolean {
   return /^(många|de flesta|alla|i dagens|i en värld|det är viktigt|numera|nuförtiden|allt fler)\b/i.test(forsta);
 }
 
-/** Regel 4 (kontroll): fler än en uppmaning? Grov heuristik för granskning. */
+/**
+ * Regel 4 (kontroll): fler än en uppmaning? Grov heuristik för granskning.
+ *
+ * KVALITET-3/punkt 7: ordlistan saknade "skicka" och "mejla", så CTA-golvets egna
+ * exempelverb ("Skicka en bild på platsen...") räknades som NOLL CTA:er. Mätningen
+ * underskattade därför varje korrekt imperativ-CTA. Listan ska spegla verben som
+ * CTA-golvet i prompt-core faktiskt föreskriver.
+ */
 export function raknaCta(text: string): number {
-  const m = String(text || "").match(/\b(svara|skriv|dm:?a|boka|ring|klicka|läs mer|anmäl dig|kommentera|dela|följ)\b/gi);
+  const m = String(text || "").match(
+    /\b(svara|skriv|skicka|mejla|maila|dm:?a|boka|ring|klicka|läs mer|anmäl dig|kommentera|dela|följ)\b/gi,
+  );
   return m ? m.length : 0;
 }

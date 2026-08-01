@@ -4,7 +4,14 @@
 // splittar på taggar och sanerar ENDAST textnoderna. Inga nycklar, inget nät.
 
 import { describe, expect, it } from "vitest";
-import { taBortTankstreck, taBortTankstreckHtml } from "@/lib/content/writing-rules";
+import {
+  fixaTerminologi,
+  raknaCta,
+  sanitizeGenerated,
+  taBortFloskler,
+  taBortTankstreck,
+  taBortTankstreckHtml,
+} from "@/lib/content/writing-rules";
 
 describe("taBortTankstreckHtml", () => {
   it("tankstreck i löptext försvinner (både – och —)", () => {
@@ -44,5 +51,45 @@ describe("taBortTankstreckHtml", () => {
   it("ren text (inga taggar) beter sig som taBortTankstreck", () => {
     const s = "Först – sedan. En lista:\n- punkt ett\n- punkt två";
     expect(taBortTankstreckHtml(s)).toBe(taBortTankstreck(s));
+  });
+});
+
+// ── KVALITET-3 / punkt 7 ─────────────────────────────────────────────────────
+describe("punkt 7 — raknaCta räknar CTA-golvets egna verb", () => {
+  it("skicka, ring, mejla, kommentera och svara räknas var för sig", () => {
+    for (const verb of ["Skicka", "Ring", "Mejla", "Kommentera", "Svara"]) {
+      expect(raknaCta(`${verb} oss i dag.`), verb).toBe(1);
+    }
+  });
+
+  it("CTA-golvets exempelmening räknas som exakt en CTA (räknades förr som noll)", () => {
+    expect(raknaCta("Skicka en bild på platsen du vill skylta, få en offert inom 24 timmar.")).toBe(1);
+  });
+
+  it("två uppmaningar ger två träffar, ren text ger noll", () => {
+    expect(raknaCta("Boka ett möte. Mejla oss också.")).toBe(2);
+    expect(raknaCta("Vi bygger skyltar i Krokom sedan 2009.")).toBe(0);
+  });
+
+  it("maila stavat med i räknas också", () => {
+    expect(raknaCta("Maila oss så hörs vi.")).toBe(1);
+  });
+});
+
+describe("punkt 7 — terminologi: högt ljus blir hög ljusstyrka", () => {
+  it("byter uttrycket och behåller versal i meningsbörjan", () => {
+    expect(fixaTerminologi("Skärmen har högt ljus.")).toBe("Skärmen har hög ljusstyrka.");
+    expect(fixaTerminologi("Högt ljus gör den läsbar i sol.")).toBe("Hög ljusstyrka gör den läsbar i sol.");
+    expect(fixaTerminologi("Ännu högre ljus än förra modellen.")).toBe("Ännu högre ljusstyrka än förra modellen.");
+  });
+
+  it("sammansättningar med ljus- rörs inte (ordgräns)", () => {
+    const orort = "Rummet har högt ljusinsläpp och högt i tak.";
+    expect(fixaTerminologi(orort)).toBe(orort);
+  });
+
+  it("fixen körs ALLTID: både i full sanering och i floskelgolvet (flagga av)", () => {
+    expect(taBortFloskler("Högt ljus, riktigt kraftfullt.")).toContain("Hög ljusstyrka");
+    expect(sanitizeGenerated("Skärmen har högt ljus.")).toBe("Skärmen har hög ljusstyrka.");
   });
 });
