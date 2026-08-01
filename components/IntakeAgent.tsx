@@ -84,6 +84,9 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resultSummary, setResultSummary] = useState<Record<string, number> | null>(null);
+  // PROFIL-1/F-intake: fält som beskriver vilka klienten är får inte skrivas över
+  // osett. Servern svarar med en diff i stället för att spara, och den visas här.
+  const [identitetsDiff, setIdentitetsDiff] = useState<{ field: string; label: string; current: string; proposed: string }[] | null>(null);
 
   const [transcript, setTranscript] = useState("");
   const [sourceLabel, setSourceLabel] = useState("");
@@ -301,14 +304,16 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
     setBusy(null);
   };
 
-  const commit = async () => {
+  const commit = async (konflikt_beslut?: "skriv_over" | "behall") => {
     setBusy("committing");
     setError(null);
     try {
-      const r = await fetch("/api/intake/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: activeSessionId }) });
+      const r = await fetch("/api/intake/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: activeSessionId, konflikt_beslut }) });
       const j = await r.json();
       if (j.error) setError(j.error);
+      else if (j.needs_confirmation) setIdentitetsDiff(j.diff ?? []);
       else {
+        setIdentitetsDiff(null);
         setResultSummary(j.summary);
         setStep("done");
         onChanged();
@@ -588,11 +593,60 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                 <div className="flex gap-2">
                   <button onClick={acceptAll} disabled={busy === "accepting" || pendingCount === 0} className="text-xs px-3 py-1.5 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">Acceptera alla återstående</button>
                   <button onClick={dismiss} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Avsluta utan commit</button>
-                  <button onClick={commit} disabled={busy === "committing" || acceptedCount === 0} className="text-xs px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white flex items-center gap-1.5 font-medium">
+                  <button onClick={() => commit()} disabled={busy === "committing" || acceptedCount === 0} className="text-xs px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white flex items-center gap-1.5 font-medium">
                     {busy === "committing" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Commit {acceptedCount} ändringar
                   </button>
                 </div>
               </div>
+
+              {identitetsDiff && identitetsDiff.length > 0 && (
+                <div className="mb-4 rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-display font-bold text-gray-900 text-sm">
+                        {identitetsDiff.length} fält som beskriver vilka ni är skrivs över
+                      </h4>
+                      <p className="text-xs text-gray-700 mt-1">
+                        Ingenting är sparat än. Läs vad som försvinner, välj sedan.
+                      </p>
+                      <div className="mt-3 space-y-3">
+                        {identitetsDiff.map((d) => (
+                          <div key={d.field} className="rounded-lg bg-white border border-amber-200 p-3">
+                            <div className="text-xs font-semibold text-gray-900 mb-2">{d.label}</div>
+                            <div className="grid gap-2 md:grid-cols-2">
+                              <div>
+                                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Nuvarande</div>
+                                <p className="text-xs text-gray-800 whitespace-pre-wrap">{d.current}</p>
+                              </div>
+                              <div>
+                                <div className="text-[11px] uppercase tracking-wide text-amber-700 mb-1">Föreslaget</div>
+                                <p className="text-xs text-gray-800 whitespace-pre-wrap">{d.proposed}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => commit("behall")}
+                          disabled={busy === "committing"}
+                          className="text-xs px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:opacity-50 font-medium"
+                        >
+                          Behåll nuvarande, spara resten
+                        </button>
+                        <button
+                          onClick={() => commit("skriv_over")}
+                          disabled={busy === "committing"}
+                          className="text-xs px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 font-medium"
+                        >
+                          Skriv över med det föreslagna
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {proposals.length === 0 ? (
                 <p className="text-gray-500 text-sm">Inga förslag.</p>

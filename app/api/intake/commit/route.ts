@@ -2,12 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { berakraIdentitetsDiff } from "@/lib/intake/identitet";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+// PROFIL-1/F-intake: routen skrev över identitetsfälten rakt av. En Ikigai-körning
+// mot standardtenanten gjorde bilhandlaren HM Motor till en coachingverksamhet —
+// usp, icp_primary och services byttes ut utan att någon fick se vad som försvann.
+// Ingen mätning i systemet kunde upptäcka det efteråt.
+//
+// Regeln nu: en överskrivning som ERSÄTTER ett ifyllt identitetsfält kräver ett
+// uttryckligt beslut. Tomt → ifyllt skrivs direkt (ingen förlust), och tillägg
+// (appendUnique) rör aldrig befintlig text. Utan beslut skrivs INGENTING alls —
+// routen svarar med en diff (nuvarande värde vs föreslaget) och väntar.
+// Diff-regeln bor i lib/intake/identitet.ts (ren funktion, enhetstestad).
 interface CommitBody {
   session_id: string;
+  /** "skriv_over" = ersätt ändå · "behall" = behåll nuvarande värden, commita resten */
+  konflikt_beslut?: "skriv_over" | "behall";
 }
 
 const BRAND_FIELDS = new Set([
@@ -47,7 +60,7 @@ function uniqueArray(existing: string[] | null | undefined, addition: string): s
 export async function POST(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
-  const { session_id }: CommitBody = await req.json();
+  const { session_id, konflikt_beslut }: CommitBody = await req.json();
   if (!session_id) return NextResponse.json({ error: "session_id krävs" }, { status: 400 });
 
   const sb = supabaseService();
@@ -73,13 +86,17 @@ export async function POST(req: NextRequest) {
 
   // BRAND PROFILE
   const profileUpdates: Record<string, string> = {};
+  // Fält där skrivningen ERSÄTTER befintlig text (till skillnad från appendUnique).
+  const overskrivna = new Set<string>();
   let { data: profile } = await sb.from("hm_brand_profile").select("*").eq("client_id", clientId).maybeSingle();
 
   for (const p of accepted) {
     if (p.target === "brand_profile" && p.field && BRAND_FIELDS.has(p.field)) {
       const val = effectiveValue(p);
-      if (p.action === "update" || p.action === "confirm") profileUpdates[p.field] = val;
-      else if (p.action === "add") profileUpdates[p.field] = appendUnique(profile?.[p.field] as string, val);
+      if (p.action === "update" || p.action === "confirm") {
+        profileUpdates[p.field] = val;
+        overskrivna.add(p.field);
+      } else if (p.action === "add") profileUpdates[p.field] = appendUnique(profile?.[p.field] as string, val);
       summary.brand_profile++;
     } else if (
       ["differentiators", "service", "icp_primary", "icp_secondary"].includes(p.target) &&
@@ -89,6 +106,26 @@ export async function POST(req: NextRequest) {
       const f = fieldMap[p.target];
       profileUpdates[f] = appendUnique(profile?.[f] as string, effectiveValue(p));
       summary.brand_profile++;
+    }
+  }
+
+  // ── Diff-grind: ersätts ett IFYLLT identitetsfält? ─────────────────────────
+  const diff = berakraIdentitetsDiff(profile as Record<string, unknown> | null, profileUpdates, overskrivna);
+
+  if (diff.length > 0 && !konflikt_beslut) {
+    // INGENTING skrivs: varken profil, pelare, röst, kundröster eller idéer, och
+    // sessionen står kvar som den är. Klienten kommer tillbaka med ett beslut.
+    return NextResponse.json({
+      ok: false,
+      needs_confirmation: true,
+      diff,
+      message: `${diff.length} fält som beskriver vilka ni är skrivs över. Granska innan du sparar.`,
+    });
+  }
+  if (diff.length > 0 && konflikt_beslut === "behall") {
+    for (const d of diff) {
+      delete profileUpdates[d.field];
+      summary.brand_profile = Math.max(0, summary.brand_profile - 1);
     }
   }
 
@@ -197,11 +234,13 @@ export async function POST(req: NextRequest) {
     .update({ status: "committed", committed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", session_id);
 
+  const konfliktText =
+    diff.length > 0 ? ` · ${diff.length} identitetsfält ${konflikt_beslut === "behall" ? "behölls" : "skrevs över efter bekräftelse"} (${diff.map((d) => d.field).join(", ")})` : "";
   await logActivity(
     clientId,
     "intake_committed",
-    `Intake commit: ${summary.brand_profile} brand-fält, ${summary.pillars} pelare, ${summary.voice} voice, ${summary.customer_voice} VoC, ${summary.post_ideas} post-idéer`,
+    `Intake commit: ${summary.brand_profile} brand-fält, ${summary.pillars} pelare, ${summary.voice} voice, ${summary.customer_voice} VoC, ${summary.post_ideas} post-idéer${konfliktText}`,
     "/dashboard/profil",
   );
-  return NextResponse.json({ ok: true, summary });
+  return NextResponse.json({ ok: true, summary, konflikter: diff.length, konflikt_beslut: konflikt_beslut ?? null });
 }
