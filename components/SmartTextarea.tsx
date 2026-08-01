@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Image as ImageIcon, Loader2 } from "lucide-react";
+import { arPromptEko, ROST_FELMEDDELANDE } from "@/lib/ai/transkription";
 
 // Drop-in-ersättning för <textarea> med röstinmatning + bildanalys.
 // Byt bara ut taggen: <textarea .../> → <SmartTextarea .../>. Samma props (value/onChange/
@@ -90,10 +91,11 @@ export default function SmartTextarea({
           fd.append("audio", blob, `rost.${ext}`);
           const r = await fetch("/api/ai/transcribe", { method: "POST", body: fd });
           const d = await r.json();
-          if (d.text) append(d.text);
-          else setFel(d.error || "Kunde inte transkribera");
+          // Andra skyddsnätet: systeminstruktionen får aldrig hamna i fältet.
+          if (d.text && !arPromptEko(d.text)) append(d.text);
+          else setFel(ROST_FELMEDDELANDE);
         } catch {
-          setFel("Kunde inte transkribera");
+          setFel(ROST_FELMEDDELANDE);
         } finally {
           setJobbar(null);
         }

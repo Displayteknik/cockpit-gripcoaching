@@ -3,6 +3,13 @@ import { getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
+import { rensaTranskription } from "@/lib/ai/transkription";
+
+const VOICE_SAMPLE_PROMPT =
+  "Transkribera detta tal ord för ord på svenska. Behåll talspråk, tvekljud, " +
+  "satsbyggnad och uttryck exakt som personen säger det — det här ska användas " +
+  "som voice-sample för en AI som ska imitera personens röst. Returnera enbart " +
+  "transkriptionen, inga rubriker eller kommentarer.";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -60,13 +67,7 @@ export async function POST(req: NextRequest) {
           role: "user",
           parts: [
             { inlineData: { mimeType: asset.mime_type || "audio/mpeg", data: base64 } },
-            {
-              text:
-                "Transkribera detta tal ord för ord på svenska. Behåll talspråk, tvekljud, " +
-                "satsbyggnad och uttryck exakt som personen säger det — det här ska användas " +
-                "som voice-sample för en AI som ska imitera personens röst. Returnera enbart " +
-                "transkriptionen, inga rubriker eller kommentarer.",
-            },
+            { text: VOICE_SAMPLE_PROMPT },
           ],
         },
       ],
@@ -88,9 +89,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Transkribering misslyckades: ${res.status}` }, { status: 500 });
     }
     const data = await res.json();
-    const transcript = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Skyddsnät: modellen ekar ibland tillbaka instruktionen i stället för att transkribera.
+    // Ett eko får aldrig sparas som voice-sample — då skulle prompten bli klientens "röst".
+    const transcript = rensaTranskription(
+      data?.candidates?.[0]?.content?.parts?.[0]?.text,
+      VOICE_SAMPLE_PROMPT,
+    );
     if (!transcript) {
-      return NextResponse.json({ error: "Tomt svar från Gemini" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Kunde inte uppfatta något tal i filen, försök igen med en tydligare inspelning" },
+        { status: 422 },
+      );
     }
 
     // Snabb summering för listvisning

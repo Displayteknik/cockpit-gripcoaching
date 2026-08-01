@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { rensaTranskription } from "@/lib/ai/transkription";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -42,9 +43,11 @@ async function geminiInline(buf: Buffer, mimeType: string, prompt: string, model
   });
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = await res.json();
-  const out: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!out) throw new Error("Tomt Gemini-svar");
-  return out.trim();
+  // Skyddsnät: modellen ekar ibland tillbaka instruktionen när filen saknar tal/text.
+  // Ett eko får aldrig bli ett "transkript" — det matar identitetsfälten i intake.
+  const out = rensaTranskription(data?.candidates?.[0]?.content?.parts?.[0]?.text, prompt);
+  if (!out) throw new Error("Kunde inte uppfatta något innehåll i filen — försök med en tydligare inspelning");
+  return out;
 }
 
 /**
@@ -113,9 +116,11 @@ async function geminiTranscribeFromUri(fileUri: string, mimeType: string, prompt
   });
   if (!res.ok) throw new Error(`Gemini fileData ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = await res.json();
-  const out: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!out) throw new Error("Tomt Gemini-svar");
-  return out.trim();
+  // Skyddsnät: modellen ekar ibland tillbaka instruktionen när filen saknar tal/text.
+  // Ett eko får aldrig bli ett "transkript" — det matar identitetsfälten i intake.
+  const out = rensaTranskription(data?.candidates?.[0]?.content?.parts?.[0]?.text, prompt);
+  if (!out) throw new Error("Kunde inte uppfatta något innehåll i filen — försök med en tydligare inspelning");
+  return out;
 }
 
 const TRANSCRIBE_PROMPT = "Transkribera detta innehåll ordagrant till svenska. Markera olika talare som [Talare A], [Talare B] om flera personer pratar. För video-innehåll: fokusera på talet, ignorera bakgrundsljud. Returnera ENDAST transkriptet — ingen kommentar, ingen sammanfattning.";

@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import {
+  TRANSKRIBERINGS_PROMPT,
+  ROST_FELMEDDELANDE,
+  rensaTranskription,
+} from "@/lib/ai/transkription";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -36,11 +41,7 @@ export async function POST(req: NextRequest) {
         role: "user",
         parts: [
           { inlineData: { mimeType: mime, data: base64 } },
-          {
-            text:
-              "Transkribera detta tal på svenska, ordagrant men med korrekt interpunktion. " +
-              "Returnera ENBART den transkriberade texten — inga rubriker, inga kommentarer.",
-          },
+          { text: TRANSKRIBERINGS_PROMPT },
         ],
       },
     ],
@@ -48,9 +49,14 @@ export async function POST(req: NextRequest) {
   };
 
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) return NextResponse.json({ error: `Transkribering misslyckades: ${res.status}` }, { status: 500 });
+  if (!res.ok) {
+    console.error(`[transcribe] Gemini svarade ${res.status}`);
+    return NextResponse.json({ error: ROST_FELMEDDELANDE }, { status: 502 });
+  }
   const data = await res.json();
-  const text = (data?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
-  if (!text) return NextResponse.json({ error: "Tomt svar från Gemini" }, { status: 500 });
+  // Skyddsnät: modellen ekar ibland tillbaka instruktionen när ljudet saknar tal.
+  // Bara ett godkänt transkript får lämna routen — aldrig systeminstruktionen.
+  const text = rensaTranskription(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+  if (!text) return NextResponse.json({ error: ROST_FELMEDDELANDE }, { status: 422 });
   return NextResponse.json({ text });
 }

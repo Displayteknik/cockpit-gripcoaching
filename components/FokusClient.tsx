@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import PipelineStegRad from "./PipelineStegRad";
 import { FunctionGuide } from "@/components/FunctionGuide";
+import { arPromptEko, ROST_FELMEDDELANDE } from "@/lib/ai/transkription";
 import {
   Zap,
   Loader2,
@@ -1063,10 +1064,11 @@ function CoachContextInput({
           fd.append("audio", blob, `rost.${ext}`);
           const r = await fetch("/api/ai/transcribe", { method: "POST", body: fd });
           const d = await r.json();
-          if (d.text) append(d.text);
-          else setFel(d.error || "Kunde inte transkribera");
+          // Andra skyddsnätet: systeminstruktionen får aldrig hamna i fältet.
+          if (d.text && !arPromptEko(d.text)) append(d.text);
+          else setFel(ROST_FELMEDDELANDE);
         } catch {
-          setFel("Kunde inte transkribera");
+          setFel(ROST_FELMEDDELANDE);
         } finally {
           setJobbar(null);
         }
