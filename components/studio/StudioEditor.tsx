@@ -5,6 +5,7 @@ import { STUDIO_TEMPLATES } from "@/components/studio/registry";
 import type { StudioPayload, StudioOverrides } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
+import type { LogoHint } from "@/lib/studio/logo-style";
 
 // Live-editor: renderar mall-komponenten DIREKT i sidan (inte iframe) → WYSIWYG med
 // export + direkt-manipulation. Samma komponent som export-rendern använder.
@@ -41,7 +42,7 @@ const SNAP_PCT = 1.5;
 export default function StudioEditor({
   templateId, payload, brand, scale, onImagePatch, slideIndex,
   editMode = false, onEditField, onEditImage, editColor = "#6366f1",
-  onTextPatch,
+  onTextPatch, logoHint,
 }: {
   templateId: string;
   payload: StudioPayload;
@@ -49,6 +50,9 @@ export default function StudioEditor({
   scale: number;
   onImagePatch: (p: ImagePatch) => void;
   slideIndex?: number;
+  // KVALITET-3/6b: serverns loggval (mätt med sharp) — samma hint som render-routen får,
+  // så exporten/publiceringen (som fångas HÄR, inte i render-routen) väljer rätt variant.
+  logoHint?: LogoHint | null;
   // Inline-redigering (Fas C): klicka text→skriv direkt (contentEditable, commit-on-blur),
   // klicka bild→byt. Mallen markerar noder med data-edit="<fält>" / data-edit-image.
   editMode?: boolean;
@@ -209,7 +213,7 @@ export default function StudioEditor({
         <style>{`[data-edit]:hover{outline:2px dashed ${editColor}88;outline-offset:3px;border-radius:2px}[data-edit]:focus{outline:2px solid ${editColor};outline-offset:3px}[data-edit-image]:hover{outline:3px dashed ${editColor}88;outline-offset:-3px}`}</style>
       )}
       <div ref={canvasRef} style={{ width: w, height: h, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-        <Tpl payload={payload} brand={brand} slideIndex={slideIndex} />
+        <Tpl payload={payload} brand={brand} slideIndex={slideIndex} logoHint={logoHint} />
       </div>
       {canDragImage && (
         <div

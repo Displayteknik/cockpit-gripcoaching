@@ -1,0 +1,87 @@
+{
+  "kord": "2026-08-01T11:21:26.325Z",
+  "autoval": [
+    {
+      "fall": "kraftskiva-trad-fasad",
+      "bild": "fore-4-annas-blommor.png",
+      "beskrivning": "Kräftskive-bilden: blomsteraffär med stort fönster — träd och ljus fasad utanför, mörkare interiör och svarta griffeltavlor i samma toppzon.",
+      "zon": {
+        "mean": 0.769,
+        "p05": 0.311,
+        "p95": 0.991,
+        "spann": 0.68
+      },
+      "fore_medelvarderegel": {
+        "variant": "mörk original",
+        "platta": null
+      },
+      "efter_bild6b": {
+        "variant": "mörk original",
+        "platta": "light"
+      },
+      "andrades": true
+    },
+    {
+      "fall": "menyskarm-skyltfonster",
+      "bild": "efter-2-displayteknik.png",
+      "beskrivning": "Menyskärms-bilden: lunchrestaurang med skärmen i fönstret — ljust trätak och solbelyst fönsterparti mot mörka takskenor.",
+      "zon": {
+        "mean": 0.523,
+        "p05": 0.152,
+        "p95": 0.803,
+        "spann": 0.652
+      },
+      "fore_medelvarderegel": {
+        "variant": "vit variant",
+        "platta": null
+      },
+      "efter_bild6b": {
+        "variant": "mörk original",
+        "platta": "light"
+      },
+      "andrades": true
+    },
+    {
+      "fall": "menyskarm-kvall",
+      "bild": "fore-1-displayteknik.png",
+      "beskrivning": "Kontrollfall, entydigt mörk toppzon: skyltfönster i kvällsljus.",
+      "zon": {
+        "mean": 0.173,
+        "p05": 0.016,
+        "p95": 0.429,
+        "spann": 0.413
+      },
+      "fore_medelvarderegel": {
+        "variant": "vit variant",
+        "platta": null
+      },
+      "efter_bild6b": {
+        "variant": "vit variant",
+        "platta": null
+      },
+      "andrades": false
+    }
+  ],
+  "manuellt_val": [
+    {
+      "val": "auto",
+      "variant": "mörk original",
+      "platta": "light"
+    },
+    {
+      "val": "ljus",
+      "variant": "mörk original",
+      "platta": null
+    },
+    {
+      "val": "mork",
+      "variant": "vit variant",
+      "platta": null
+    },
+    {
+      "val": "platta",
+      "variant": "mörk original",
+      "platta": "light"
+    }
+  ]
+}

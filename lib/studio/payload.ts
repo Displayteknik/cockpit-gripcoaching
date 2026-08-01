@@ -22,6 +22,15 @@ export function isStoryFormat(f: StudioFormat): boolean {
   return f === "1080x1920";
 }
 
+// Manuellt loggval i editorn. "" = auto (serverns mätning bestämmer).
+export type LogoVariantVal = "" | "ljus" | "mork" | "platta";
+export const LOGO_VARIANT_LABELS: Record<LogoVariantVal, string> = {
+  "": "Auto",
+  ljus: "Ljus bakgrund",
+  mork: "Mörk bakgrund",
+  platta: "Platta bakom",
+};
+
 export interface StudioBadge {
   enabled: boolean;
   line1: string;
@@ -42,6 +51,11 @@ export interface StudioOverrides {
   imageX: number; // -50..50 horisontell panorering (%)
   hideBrush: boolean;
   hideBadge: boolean;
+  // KVALITET-3/6b: manuellt loggval som overridar autovalet (BILD-5a/6b).
+  // "" = auto (mät bakgrunden), "ljus" = ljus bakgrund → mörk originallogga,
+  // "mork" = mörk bakgrund → vit variant, "platta" = auto-variant + platta bakom.
+  // Automatik som grund, sista ordet till människan.
+  logoVariant: LogoVariantVal;
   // Fritt placerbara textrutor (B2): offset i % av canvasmått från mallens naturliga
   // position. 0 = mallens standard. Läses av både live-editor och export-render (WYSIWYG).
   h1X: number; h1Y: number;
@@ -85,6 +99,7 @@ export function emptySlide(kind: StudioSlide["kind"] = "point"): StudioSlide {
 
 export const DEFAULT_OVERRIDES: StudioOverrides = {
   fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false,
+  logoVariant: "",
   h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0,
 };
 
@@ -173,6 +188,7 @@ function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOv
     imageX: clamp(Number(o.imageX ?? 0), -50, 50),
     hideBrush: Boolean(o.hideBrush),
     hideBadge: Boolean(o.hideBadge),
+    logoVariant: o.logoVariant === "ljus" || o.logoVariant === "mork" || o.logoVariant === "platta" ? o.logoVariant : "",
     h1X: clamp(Number(o.h1X ?? 0), -100, 100),
     h1Y: clamp(Number(o.h1Y ?? 0), -100, 100),
     h2X: clamp(Number(o.h2X ?? 0), -100, 100),

@@ -11,9 +11,9 @@ import type { LogoHint } from "@/lib/studio/logo-style";
 // Ljus bakgrund (solid färg) ≥ 0.60 — harmonierar med isLightColor (0.62) i StudioBits.
 const LIGHT_BG = 0.6;
 // BILD-6b: foto-zoner bedöms stramare — hellre mörk logga "för tidigt" än tunn vit.
-const IMAGE_LIGHT_BG = 0.55;
+export const IMAGE_LIGHT_BG = 0.55;
 // |logglum − bakgrundslum| under detta → platta bakom loggan.
-const PLATE_CONTRAST = 0.3;
+export const PLATE_CONTRAST = 0.3;
 // BILD-6b: blandad zon när spännvidden (p95−p05) är stor — medelvärdet döljer mixen.
 const MIXED_SPAN = 0.45;
 
@@ -73,11 +73,11 @@ async function fetchBuffer(url: string): Promise<Buffer | null> {
   }
 }
 
-interface Zone { left: number; top: number; width: number; height: number } // relativa 0..1
+export interface Zone { left: number; top: number; width: number; height: number } // relativa 0..1
 
 // Zonstatistik (medel + p05/p95) i en relativ zon av bilden. Approximation: zonen
 // mäts i källbilden (objectFit cover kan beskära något annorlunda) — gott nog.
-function zoneStats(url: string, zone: Zone): Promise<ZonStats | null> {
+export function zoneStats(url: string, zone: Zone): Promise<ZonStats | null> {
   const key = `zon:${url}:${zone.left},${zone.top},${zone.width},${zone.height}`;
   const hit = statsCache.get(key);
   if (hit) return hit;
@@ -153,7 +153,7 @@ function logoLuminance(url: string): Promise<number | null> {
 // Loggzonen i ark-overlay: loggans FAKTISKA ruta topp-vänster (top 44px, left 52px,
 // logga ≤ 450px bred på 1080-kanvas). BILD-6b: stramad från 55 % bredd — den gamla
 // zonen samplade långt förbi loggans högerkant och spädde ut det som ligger bakom den.
-const OVERLAY_TOP_ZONE: Zone = { left: 0.04, top: 0.02, width: 0.45, height: 0.12 };
+export const OVERLAY_TOP_ZONE: Zone = { left: 0.04, top: 0.02, width: 0.45, height: 0.12 };
 
 export async function computeLogoHint(
   templateId: string,
@@ -164,6 +164,12 @@ export async function computeLogoHint(
   const light = brand.assets.logo || ""; // original — för ljus bakgrund
   const dark = brand.assets.logoOnDark || ""; // vit variant — för mörk bakgrund
   if (!light && !dark) return null;
+
+  // KVALITET-3/6b: har människan valt manuellt behövs ingen mätning. "platta" är
+  // undantaget — den behåller autovalet och lägger bara plattan på, så den mäter vidare.
+  const val = payload.overrides?.logoVariant;
+  if (val === "ljus") return { url: light || dark, plate: null };
+  if (val === "mork") return { url: dark || light, plate: null };
 
   let zon: ZonStats | null = null;
   let troskel = LIGHT_BG;

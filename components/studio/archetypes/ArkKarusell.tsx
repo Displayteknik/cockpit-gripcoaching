@@ -3,7 +3,7 @@ import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs } from "@/lib/studio/overrides";
 import { isLightColor } from "@/components/studio/StudioBits";
-import { logoImgStyle, logoPlateStyle, type LogoHint } from "@/lib/studio/logo-style";
+import { logoImgStyle, logoPlateStyle, valjLogga, type LogoHint } from "@/lib/studio/logo-style";
 
 // Arketyp 9: Karusell. En slide per render (slideIndex från render-routens ?slide=n).
 // Exporten loopar över payload.slides och ger N PNG. slide.kind styr layouten:
@@ -91,13 +91,20 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
           BILD-5a: serverns hint vinner (den vet bakgrundens ljushet + kontrast); utan hint (editorn) → färglogik som förr. */}
       {(() => {
         const bgLight = isLightColor(bg) && !hasImg;
-        const chosenLogo = logoHint?.url || (bgLight ? brand.assets.logo || brand.assets.logoOnDark : brand.assets.logoOnDark || brand.assets.logo);
+        // KVALITET-3/6b: manuellt val vinner, sedan serverns mätning, sist färglogiken.
+        const logga = valjLogga({
+          val: payload.overrides?.logoVariant,
+          hint: logoHint,
+          ljusBakgrundLogga: brand.assets.logo || "",
+          morkBakgrundLogga: brand.assets.logoOnDark || "",
+          fallback: bgLight ? brand.assets.logo || brand.assets.logoOnDark || "" : brand.assets.logoOnDark || brand.assets.logo || "",
+        });
         return (
           <div style={{ position: "absolute", bottom: 56, left: 80, right: 80, display: "flex", alignItems: "center", zIndex: 2 }}>
-            {chosenLogo ? (
-              <div style={logoPlateStyle(logoHint?.plate)}>
+            {logga.url ? (
+              <div style={logoPlateStyle(logga.plate)}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={chosenLogo} alt="" style={logoImgStyle(payload.format, { overPhoto: hasImg, maxWidth: 420 })} />
+                <img src={logga.url} alt="" style={logoImgStyle(payload.format, { overPhoto: hasImg, maxWidth: 420 })} />
               </div>
             ) : (
               <div style={{ fontFamily: `${brand.fonts.logo || brand.fonts.headline}, serif`, fontWeight: 800, fontSize: 30, color: slide.kind === "point" ? c.primary : ink }}>{brand.name}</div>

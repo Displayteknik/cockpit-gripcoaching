@@ -2,7 +2,7 @@ import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs, hlColor, bodyColor, imgPosition, imgScale, font, textPlate, lh, dragPos } from "@/lib/studio/overrides";
-import { logoImgStyle, logoPlateStyle, type LogoHint } from "@/lib/studio/logo-style";
+import { logoImgStyle, logoPlateStyle, valjLogga, type LogoHint } from "@/lib/studio/logo-style";
 
 // Arketyp 6: Foto + text-overlay. Text ligger PÅ bilden med scrim för läsbarhet.
 // Stil ur brand.content.overlayStyle. För coaching/tjänst där bilden bär känslan
@@ -33,18 +33,29 @@ export default function ArkOverlay({ payload, brand, logoHint }: { payload: Stud
       )}
       {scrim !== "none" ? <div style={{ position: "absolute", inset: 0, background: scrim }} /> : null}
 
-      {/* Logga/namn diskret uppe. BILD-5a: serverns hint väljer ljus/mörk variant efter
-          bakgrundens faktiska ljushet + ev. platta; utan hint (editorn) → mörk-variant som förr. */}
+      {/* Logga/namn diskret uppe. KVALITET-3/6b: användarens manuella val vinner, annars
+          serverns mätning (BILD-5a/6b), annars mallens gamla fallback (mörk-variant). */}
+      {(() => {
+      const logga = valjLogga({
+        val: payload.overrides?.logoVariant,
+        hint: logoHint,
+        ljusBakgrundLogga: brand.assets.logo || "",
+        morkBakgrundLogga: brand.assets.logoOnDark || "",
+        fallback: brand.assets.logoOnDark || brand.assets.logo || "",
+      });
+      return (
       <div style={{ position: "absolute", top: 44, left: 52, right: 52, display: "flex", alignItems: "center" }}>
-        {logoHint?.url || brand.assets.logoOnDark || brand.assets.logo ? (
-          <div style={logoPlateStyle(logoHint?.plate)}>
+        {logga.url ? (
+          <div style={logoPlateStyle(logga.plate)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoHint?.url || brand.assets.logoOnDark || brand.assets.logo} alt="" style={logoImgStyle(payload.format, { overPhoto: Boolean(payload.imageUrl) })} />
+            <img src={logga.url} alt="" style={logoImgStyle(payload.format, { overPhoto: Boolean(payload.imageUrl) })} />
           </div>
         ) : (
           <div style={{ fontFamily: `${brand.fonts.logo || brand.fonts.headline}, serif`, fontWeight: 800, fontSize: 34, color: "#fff", textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}>{brand.name}</div>
         )}
       </div>
+      );
+      })()}
 
       {/* Textblock */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: centered ? 0 : "auto", display: "flex", flexDirection: "column", justifyContent: centered ? "center" : "flex-end", padding: "0 56px 64px" }}>

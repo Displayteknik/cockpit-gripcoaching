@@ -15,8 +15,8 @@ import {
   ExternalLink, CalendarClock, ClipboardCheck, X, Pencil, LayoutGrid, Sparkles,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
-import type { StudioFormat, StudioOverrides, StudioSlide } from "@/lib/studio/payload";
-import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, STUDIO_FONTS } from "@/lib/studio/payload";
+import type { StudioFormat, StudioOverrides, StudioSlide, LogoVariantVal } from "@/lib/studio/payload";
+import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, STUDIO_FONTS, LOGO_VARIANT_LABELS } from "@/lib/studio/payload";
 import { laddaBitmap, renderImageEdit, normalizeImageEdit, type ImageEdit } from "@/lib/studio/image-edit";
 import BildRedigerare from "@/components/studio/BildRedigerare";
 import { profileForDate, type CompassSchedule, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
@@ -349,6 +349,30 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }, 400);
     return () => clearTimeout(t);
   }, [payload, templateId, nonce, isCarousel, slideIdx]);
+
+  // KVALITET-3/6b — serverns loggval in i live-editorn.
+  // Rendern (/studio/render) hade hinten, men det är INTE den som blir de publicerade
+  // pixlarna: export, "spara i biblioteket" och publicering fångar den dolda live-editorn
+  // med html-to-image. Utan hint föll den tillbaka på vit-variant oavsett bakgrund.
+  // Bara det som påverkar beslutet i beroendelistan — inte hela payloaden (varje
+  // tangenttryck hade blivit ett anrop).
+  const [logoHint, setLogoHint] = useState<{ url: string; plate: "dark" | "light" | null } | null>(null);
+  const logoBild = isCarousel ? (slides[slideIdx]?.imageUrl || "") : imageUrl;
+  useEffect(() => {
+    let avbruten = false;
+    const t = setTimeout(() => {
+      fetch("/api/studio/logo-hint", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload, slideIndex: isCarousel ? slideIdx : 0 }),
+      })
+        .then((r) => r.json())
+        .then((d) => { if (!avbruten) setLogoHint(d?.hint ?? null); })
+        .catch(() => { if (!avbruten) setLogoHint(null); });
+    }, 500);
+    return () => { avbruten = true; clearTimeout(t); };
+    // payload läses inne i effekten men får inte styra den — se kommentaren ovan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateId, format, logoBild, slideIdx, isCarousel, overrides.logoVariant, brand?.content.overlayStyle, slug]);
 
   // Håll slide-index inom gränserna när slides ändras.
   useEffect(() => {
@@ -2249,7 +2273,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
               <div className={`relative mx-auto ${isCarousel && slideCount > 1 ? "px-11" : ""}`}>
                 <div className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
-                  <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} onTextPatch={setOv} editColor={primary} slideIndex={isCarousel ? slideIdx : undefined} />
+                  <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} onTextPatch={setOv} editColor={primary} slideIndex={isCarousel ? slideIdx : undefined} logoHint={logoHint} />
                   {!imageUrl && !videoUrl && !headline1.trim() && !body.trim() && (!isCarousel || slides.every((s) => !s.headline?.trim() && !s.body?.trim())) && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 p-6 bg-white/85 backdrop-blur-sm">
                       <span className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primary}1a` }}>
@@ -2660,7 +2684,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-100 shadow-sm flex-shrink-0" style={{ width: w * editScale }}>
                       <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={editScale}
                         onImagePatch={onImagePatch} slideIndex={isCarousel ? slideIdx : undefined}
-                        editMode onEditField={onEditField} onEditImage={() => fileRef.current?.click()} editColor={primary} />
+                        editMode onEditField={onEditField} onEditImage={() => fileRef.current?.click()} editColor={primary} logoHint={logoHint} />
                     </div>
                   ); })()}
                   {isCarousel && (
@@ -2689,7 +2713,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             så DESIGNEN publiceras, inte råfotot. Off-screen, påverkar inte layouten. */}
         <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, width: w, height: h, pointerEvents: "none", opacity: 0, zIndex: -1 }}>
           <div ref={captureRef}>
-            <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={1} onImagePatch={() => {}} slideIndex={isCarousel ? slideIdx : undefined} />
+            <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={1} onImagePatch={() => {}} slideIndex={isCarousel ? slideIdx : undefined} logoHint={logoHint} />
           </div>
         </div>
       </div>
@@ -2817,6 +2841,26 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
           <input type="range" min={1} max={3} step={0.05} value={overrides.imageScale} onChange={(e) => setOv({ imageScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
         </div>
       )}
+      {/* KVALITET-3/6b — loggan väljs automatiskt efter bakgrunden, men du bestämmer.
+          Automatiken är grunden, sista ordet är ditt. Sparas med inlägget. */}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-1.5">Logotypen på bilden</label>
+        <div className="flex flex-wrap gap-1.5">
+          {(Object.keys(LOGO_VARIANT_LABELS) as LogoVariantVal[]).map((v) => {
+            const aktiv = (overrides.logoVariant || "") === v;
+            return (
+              <button key={v || "auto"} onClick={() => setOv({ logoVariant: v })}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                style={aktiv ? { borderColor: primary, background: `${primary}14`, color: primary } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                {LOGO_VARIANT_LABELS[v]}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-gray-400 mt-1.5">
+          Auto mäter bakgrunden bakom loggan och väljer ljus eller mörk variant. Ser den fel ut — välj själv.
+        </p>
+      </div>
       {(showBrush || showBadge) && (
         <div className="flex flex-wrap gap-4 pt-1">
           {showBrush && (
