@@ -16,8 +16,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       "notes",
       "next_action",
       "next_action_at",
+      "reminder_at",
       "display_name",
       "ig_username",
+      "channel",
+      "source",
       "source_post",
     ];
     const patch: Record<string, unknown> = {};

@@ -20,25 +20,48 @@ export async function GET() {
   }
 }
 
+const STEG = ["new", "acknowledge", "connect", "offer", "won", "lost"];
+
+/** Tom sträng ska bli null i databasen, inte ett tomt fält som ser ifyllt ut. */
+function text(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim() : "";
+  return s ? s : null;
+}
+
+/** Tidsfält: bara giltiga tidpunkter sparas, aldrig "Invalid Date". */
+function tid(v: unknown): string | null {
+  if (typeof v !== "string" || !v.trim()) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 export async function POST(req: NextRequest) {
   try {
     const clientId = await getActiveClientId();
     const body = await req.json();
-    if (!body.ig_username) {
-      return NextResponse.json({ error: "ig_username krävs" }, { status: 400 });
+    // Kanaler utan användarnamn (Messenger, LinkedIn) får aldrig blockeras:
+    // namnet räcker. Bara när BÅDA saknas vet vi inte vem kontakten är.
+    const anvandarnamn = text(typeof body.ig_username === "string" ? body.ig_username.replace(/^@/, "") : "");
+    const namn = text(body.display_name);
+    if (!anvandarnamn && !namn) {
+      return NextResponse.json({ error: "Namn eller användarnamn krävs" }, { status: 400 });
     }
+    const stage = STEG.includes(body.stage) ? body.stage : "new";
     const sb = supabaseService();
     const { data, error } = await sb
       .from("cockpit_dm_contacts")
       .insert({
         client_id: clientId,
-        ig_username: String(body.ig_username).replace(/^@/, "").trim(),
-        display_name: body.display_name || null,
-        source: body.source || "manuell",
-        source_post: body.source_post || null,
-        stage: body.stage || "new",
-        notes: body.notes || null,
-        next_action: body.next_action || null,
+        ig_username: anvandarnamn,
+        display_name: namn,
+        channel: text(body.channel),
+        source: text(body.source) || "manuell",
+        source_post: text(body.source_post),
+        stage,
+        notes: text(body.notes),
+        next_action: text(body.next_action),
+        next_action_at: tid(body.next_action_at),
+        reminder_at: tid(body.reminder_at),
       })
       .select()
       .single();
