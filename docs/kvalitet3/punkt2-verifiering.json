@@ -1,0 +1,248 @@
+{
+  "amne": "Varför det lönar sig att göra jobbet nu i stället för att vänta",
+  "korningar": 3,
+  "kord": "2026-08-01T11:38:28.191Z",
+  "godkand": true,
+  "rapport": [
+    {
+      "tenant": "Displayteknik",
+      "korning": 1,
+      "amne": "Varför det lönar sig att göra jobbet nu i stället för att vänta",
+      "begart": 3,
+      "levererat": 3,
+      "forsok": 2,
+      "ms": 11100,
+      "godkand": true,
+      "idéer": [
+        {
+          "hookType": "konträr",
+          "headline1": "Det billigaste är att köpa nu",
+          "headline2": "Varje vecka du väntar kostar pengar",
+          "body": "Tryckt skyltmaterial blir dyrare för varje kampanj. En skärm betalar sin plats varje dag den syns.",
+          "beskrivning": "Varje vecka du väntar kostar pengar. Tryckt skyltmaterial blir dyrare för varje kampanj."
+        },
+        {
+          "hookType": "fråga",
+          "headline1": "Vad kostar en tom skylt?",
+          "headline2": "Varje dag utan skärm är en dag utan kunder.",
+          "body": "Din konkurrent fångar blickar medan din skylt står stilla. Skärmen som syns i solljus finns redan, frågan är vad du förlorar medan du väntar.",
+          "beskrivning": "Varje dag utan skärm är en dag utan kunder. Din konkurrent fångar blickar medan din skylt står stilla."
+        },
+        {
+          "hookType": "påstående",
+          "headline1": "Varje dag utan skärm",
+          "headline2": "är kunder som aldrig ser er",
+          "body": "Skyltfönstret står tomt medan konkurrenten visar kampanj. Du vet att det behövs, men väntan kostar dig fler kunder än vad skärmen gör.",
+          "beskrivning": "Skyltfönstret står tomt medan konkurrenten visar kampanj. Du vet att det behövs, men väntan kostar dig fler kunder än vad skärmen gör."
+        }
+      ],
+      "avvikelser": {
+        "kolonfragment": [],
+        "oavslutad": [],
+        "hook_upprepad": [],
+        "priser": [],
+        "ordlofte": []
+      }
+    },
+    {
+      "tenant": "Displayteknik",
+      "korning": 2,
+      "amne": "Varför det lönar sig att göra jobbet nu i stället för att vänta",
+      "begart": 3,
+      "levererat": 3,
+      "forsok": 1,
+      "ms": 8239,
+      "godkand": true,
+      "idéer": [
+        {
+          "hookType": "konträr",
+          "headline1": "Skyltfönstret säljer bäst när ingen tittar",
+          "headline2": "Därför lönar det sig att sätta upp skärmen nu",
+          "body": "Semestern är slut och kunderna är tillbaka, men din konkurrent hade skärmen i skyltfönstret redan i juli. Den har sålt varje dag medan du funderat.",
+          "beskrivning": "Därför lönar det sig att sätta upp skärmen nu. Semestern är slut och kunderna är tillbaka, men din konkurrent hade skärmen i skyltfönstret redan i juli."
+        },
+        {
+          "hookType": "påstående",
+          "headline1": "Rätt tidpunkt finns inte",
+          "headline2": "Men rätt skärm gör skillnad direkt",
+          "body": "Många väntar på perfekt tillfälle. Medan konkurrenten sätter upp en skärm och fångar de kunder som går förbi just nu.",
+          "beskrivning": "Men rätt skärm gör skillnad direkt. Många väntar på perfekt tillfälle."
+        },
+        {
+          "hookType": "berättelse",
+          "headline1": "Sensommarens solljus",
+          "headline2": "Varför just nu är rätt tid",
+          "body": "Augusti ger starkast solljus, när du monterar skärmen nu ser du direkt om den syns i verkligheten.",
+          "beskrivning": "Varför just nu är rätt tid. Augusti ger starkast solljus, när du monterar skärmen nu ser du direkt om den syns i verkligheten."
+        }
+      ],
+      "avvikelser": {
+        "kolonfragment": [],
+        "oavslutad": [],
+        "hook_upprepad": [],
+        "priser": [],
+        "ordlofte": []
+      }
+    },
+    {
+      "tenant": "Displayteknik",
+      "korning": 3,
+      "amne": "Varför det lönar sig att göra jobbet nu i stället för att vänta",
+      "begart": 3,
+      "levererat": 3,
+      "forsok": 2,
+      "ms": 10692,
+      "godkand": true,
+      "idéer": [
+        {
+          "hookType": "konträr",
+          "headline1": "Vänta tills hösten?",
+          "headline2": "Då missar du säsongens bästa försäljning.",
+          "body": "Sommaren är när folk är ute, och passerar din skyltning. En skärm som syns i solljus fångar dem medan de handlar, inte när höstmörkret kommit.",
+          "beskrivning": "Då missar du säsongens bästa försäljning. Sommaren är när folk är ute, och passerar din skyltning."
+        },
+        {
+          "hookType": "fråga",
+          "headline1": "Vad kostar det att vänta?",
+          "headline2": "Tre somrar utan skärm, tre säsonger utan kunder",
+          "body": "Många fastighetsägare skjuter på beslutet. Men varje dag utan skyltfönsterskärm är en dag du förlorar kunder du aldrig ser.",
+          "beskrivning": "Tre somrar utan skärm, tre säsonger utan kunder. Många fastighetsägare skjuter på beslutet."
+        },
+        {
+          "hookType": "statistik",
+          "headline1": "3 000 nits syns i solljus",
+          "headline2": "Men bara om skärmen sitter uppe",
+          "body": "Varje dag du väntar är en dag färre kunder ser ditt budskap i skyltfönstret.",
+          "beskrivning": "Men bara om skärmen sitter uppe. Varje dag du väntar är en dag färre kunder ser ditt budskap i skyltfönstret."
+        }
+      ],
+      "avvikelser": {
+        "kolonfragment": [],
+        "oavslutad": [],
+        "hook_upprepad": [],
+        "priser": [],
+        "ordlofte": []
+      }
+    },
+    {
+      "tenant": "Engens Träd & Trädgård",
+      "korning": 1,
+      "amne": "Varför det lönar sig att göra jobbet nu i stället för att vänta",
+      "begart": 3,
+      "levererat": 3,
+      "forsok": 1,
+      "ms": 6249,
+      "godkand": true,
+      "idéer": [
+        {
+          "hookType": "fråga",
+          "headline1": "Väntar du på lugnt väder?",
+          "headline2": "Då hinner trädet hinna först.",
+          "body": "När du tänker 'det kan vänta' räknar trädet ner. Varje storm, varje blåst, varje dag utan åtgärd ökar risken att det avgör åt dig.",
+          "beskrivning": "Då hinner trädet hinna först. När du tänker 'det kan vänta' räknar trädet ner."
+        },
+        {
+          "hookType": "påstående",
+          "headline1": "Blåsten väljer åt dig",
+          "headline2": "Om du väntar tar trädet beslutet",
+          "body": "Ett lutande träd nära hus faller inte enligt plan. Det faller när vinden bestämmer, och då är det för sent att välja riktning.",
+          "beskrivning": "Om du väntar tar trädet beslutet. Ett lutande träd nära hus faller inte enligt plan."
+        },
+        {
+          "hookType": "påstående",
+          "headline1": "Hösten avgör åt dig",
+          "headline2": "Om du inte gör det nu",
+          "body": "Blåsten kommer ändå. Då väljer trädet var det landar, och du står med ett akutjobb i stället för ett planerat.",
+          "beskrivning": "Om du inte gör det nu. Blåsten kommer ändå."
+        }
+      ],
+      "avvikelser": {
+        "kolonfragment": [],
+        "oavslutad": [],
+        "hook_upprepad": [],
+        "priser": [],
+        "ordlofte": []
+      }
+    },
+    {
+      "tenant": "Engens Träd & Trädgård",
+      "korning": 2,
+      "amne": "Varför det lönar sig att göra jobbet nu i stället för att vänta",
+      "begart": 3,
+      "levererat": 3,
+      "forsok": 1,
+      "ms": 8399,
+      "godkand": true,
+      "idéer": [
+        {
+          "hookType": "påstående",
+          "headline1": "Vänta tills nästa år?",
+          "headline2": "Då riskerar du att trädet avgör åt dig.",
+          "body": "Höststormarna väljer inte de träd som du har tid med. De väljer de som redan lutar, har döda grenar eller står för nära huset.",
+          "beskrivning": "Då riskerar du att trädet avgör åt dig. Höststormarna väljer inte de träd som du har tid med."
+        },
+        {
+          "hookType": "fråga",
+          "headline1": "Varför vänta till höststormen?",
+          "headline2": "Ju tidigare du kollar, desto mer väljer du själv.",
+          "body": "När trädet ändå ska bedömas får du bestämma tid, pris och metod. Väntar du riskerar du att väder och vind väljer åt dig.",
+          "beskrivning": "Ju tidigare du kollar, desto mer väljer du själv. När trädet ändå ska bedömas får du bestämma tid, pris och metod."
+        },
+        {
+          "hookType": "konträr",
+          "headline1": "Vänta tills i vår?",
+          "headline2": "Då väljer du när du är bortrest.",
+          "body": "Vintern ger bättre sikt, fryst mark och ingen häckfågel. Det betyder säkrare jobb och mindre risk för skador på trädgården.",
+          "beskrivning": "Då väljer du när du är bortrest. Vintern ger bättre sikt, fryst mark och ingen häckfågel."
+        }
+      ],
+      "avvikelser": {
+        "kolonfragment": [],
+        "oavslutad": [],
+        "hook_upprepad": [],
+        "priser": [],
+        "ordlofte": []
+      }
+    },
+    {
+      "tenant": "Engens Träd & Trädgård",
+      "korning": 3,
+      "amne": "Varför det lönar sig att göra jobbet nu i stället för att vänta",
+      "begart": 3,
+      "levererat": 3,
+      "forsok": 2,
+      "ms": 10515,
+      "godkand": true,
+      "idéer": [
+        {
+          "hookType": "påstående",
+          "headline1": "Trädet väntar inte",
+          "headline2": "Väder och vind avgör, inte kalendern",
+          "body": "Du bestämmer inte när nästa höststorm kommer eller när grenarna blir för tunga. Men du kan bestämma att jobbet görs innan det händer.",
+          "beskrivning": "Väder och vind avgör, inte kalendern. Du bestämmer inte när nästa höststorm kommer eller när grenarna blir för tunga."
+        },
+        {
+          "hookType": "konträr",
+          "headline1": "Vänta tills det blåser?",
+          "headline2": "Då avgör vädret var trädet landar.",
+          "body": "Många tror att det blir billigare att vänta. Men ett träd som faller själv kostar mer än ett som fälls kontrollerat.",
+          "beskrivning": "Då avgör vädret var trädet landar. Många tror att det blir billigare att vänta."
+        },
+        {
+          "hookType": "fråga",
+          "headline1": "Väntar du på hösten?",
+          "headline2": "Då är det redan för sent.",
+          "body": "När blåsten kommer avgör trädet själv var det ska landa. Då är det inte längre ditt val.",
+          "beskrivning": "Då är det redan för sent. När blåsten kommer avgör trädet själv var det ska landa."
+        }
+      ],
+      "avvikelser": {
+        "kolonfragment": [],
+        "oavslutad": [],
+        "hook_upprepad": [],
+        "priser": [],
+        "ordlofte": []
+      }
+    }
+  ]
+}

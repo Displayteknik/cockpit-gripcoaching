@@ -180,6 +180,17 @@ describe("punkt 2b — beskrivningen är 1–2 fullständiga meningar, aldrig ko
     expect(ut.split(/[.!?]/).filter((d) => d.trim()).length).toBe(2);
   });
 
+  it("en fortsättning på rubriken (liten begynnelsebokstav) räknas inte som mening", () => {
+    // Fångad i skarptestet 1/8: modellen delade meningen över headline1 → headline2.
+    // På affischen läses de ihop, i idélistan blir fortsättningen ett fragment.
+    const ut = byggBeskrivning("Varje dag du väntar", "passerar kunder utan att se dig.", "Rätt skärm i skyltfönstret säljer dygnet runt.");
+    expect(ut).toBe("Rätt skärm i skyltfönstret säljer dygnet runt.");
+  });
+
+  it("faller allt bort behålls originalet — hellre svag rad än tom", () => {
+    expect(byggBeskrivning("Rubrik", "fortsättning på rubriken.", "")).toBe("fortsättning på rubriken.");
+  });
+
   it("tom underrubrik ger en enda hel mening ur brödtexten", () => {
     expect(byggBeskrivning("Rubrik", "", "Skärmen visar dagens rätt")).toBe("Skärmen visar dagens rätt.");
     expect(byggBeskrivning("Rubrik", "", "")).toBe("");
@@ -228,6 +239,21 @@ describe("punkt 2c — kvantifierade löften i ordform faller", () => {
     const r = await generateStudioCopyResultat(OPTS);
     expect(r.levererat).toBe(1);
     expect(r.suggestions[0].headline1).toBe(GILTIG_A.headline1);
+  });
+
+  it("uppfunnen jämförelse i ordform fälls, idiomet 'mer än en gång' gör det inte", async () => {
+    // Fångad i skarptestet 1/8 (Engens Träd), efter första omgången grindar.
+    iterateMock.mockResolvedValue({
+      all_variants: [medLofte("Ett träd som faller fel kostar mer än tio offertsamtal."), v(GILTIG_A)],
+    });
+    const r = await generateStudioCopyResultat(OPTS);
+    expect(r.suggestions.map((s) => s.body).join(" ")).not.toContain("mer än tio");
+
+    iterateMock.mockReset();
+    iterateMock.mockResolvedValue({ all_variants: [] });
+    iterateMock.mockResolvedValueOnce({ all_variants: [medLofte("Det har hänt mer än en gång i höst.")] });
+    const idiom = await generateStudioCopyResultat(OPTS);
+    expect(idiom.levererat).toBe(1);
   });
 
   it("utfall UTAN storlek går igenom — det är formuleringen regeln pekar mot", async () => {
@@ -288,6 +314,67 @@ describe("punkt 2c — sanningskravet säger uttryckligen att ordformen räknas"
     for (const block of [SANNINGSKRAV, PERSPEKTIVREGEL, PRISREGEL]) {
       expect(block.length).toBeGreaterThan(200);
     }
+  });
+});
+
+describe("punkt 2c — uppfunna kundcase i idéerna", () => {
+  const medCase = (text: string) => v({ hookType: "påstående", headline1: "Vänta inte för länge", headline2: "Kort och tydligt.", body: text });
+
+  it("minnesmarkörer utan täckning faller (skarpt utfall 1/8)", async () => {
+    iterateMock.mockResolvedValue({
+      all_variants: [
+        medCase("Förra sommaren fick vi ett samtal om en tom skylt."),
+        medCase("Kunden hade väntat i tre år på sin skärm."),
+        medCase("Häromdagen ringde oss en butik med samma fråga."),
+        v(GILTIG_A),
+      ],
+    });
+    const r = await generateStudioCopyResultat(OPTS);
+    expect(r.levererat).toBe(1);
+    expect(r.suggestions[0].headline1).toBe(GILTIG_A.headline1);
+  });
+
+  it("generell observation går igenom — vägen ut som sanningskravet anvisar", async () => {
+    iterateMock.mockResolvedValueOnce({
+      all_variants: [medCase("Vi möter ofta butiker som väntar för länge."), v(GILTIG_A), v(GILTIG_C)],
+    });
+    const r = await generateStudioCopyResultat(OPTS);
+    expect(r.levererat).toBe(3);
+    expect(r.suggestions.some((s) => s.body.includes("Vi möter ofta"))).toBe(true);
+  });
+
+  it('hook-typen "berättelse" begärs inte alls när profilen saknar story-bank', async () => {
+    iterateMock.mockResolvedValue({ all_variants: [v(GILTIG_A)] });
+    await generateStudioCopyResultat(OPTS);
+    const anrop = iterateMock.mock.calls[0][0] as { variantSuffixes: string[]; userPrompt: string };
+    expect(anrop.variantSuffixes.join(" ")).not.toContain("berättelse");
+    expect(anrop.userPrompt).not.toContain("berättelse");
+  });
+
+  it('med story-bank i profilen begärs "berättelse" igen', async () => {
+    const { byggTextPrompt } = await import("@/lib/prompt-core");
+    (byggTextPrompt as unknown as { mockResolvedValue: (v: unknown) => void }).mockResolvedValue({
+      system: "SYSTEM",
+      user: "",
+      fingerprint: null,
+      winning: [],
+      profilText: `${PROFIL}\n# ═══ Story-bank ═══\n- Butiken på Prästgatan bytte till skärm efter tre säsonger med blekta affischer i fönstret.`,
+      meta: { lager: {}, profilKlippt: [] },
+    });
+    iterateMock.mockResolvedValue({ all_variants: [v(GILTIG_A)] });
+    await generateStudioCopyResultat(OPTS);
+    const anrop = iterateMock.mock.calls[0][0] as { variantSuffixes: string[] };
+    expect(anrop.variantSuffixes.join(" ")).toContain("berättelse");
+
+    // Återställ mocken för efterföljande test.
+    (byggTextPrompt as unknown as { mockResolvedValue: (v: unknown) => void }).mockResolvedValue({
+      system: "SYSTEM",
+      user: "",
+      fingerprint: null,
+      winning: [],
+      profilText: PROFIL,
+      meta: { lager: {}, profilKlippt: [] },
+    });
   });
 });
 

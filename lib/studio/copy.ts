@@ -57,12 +57,31 @@ export interface StudioCopyOpts {
 // Vilka hook-typer passar en bild i respektive roll?
 // Problembild → sätt ord på problemet / ställ frågan (aldrig säljande påstående ovanpå).
 // Lösningsbild → landa påståendet/resultatet. Statistik kräver ALLTID verifierade siffror.
-function tillatnaHooks(role: StudioCopyOpts["imageRole"], harSiffror: boolean): string[] {
+//
+// KVALITET-3/punkt 2c: "berättelse" grindas nu på samma sätt som "statistik". Skarpt
+// utfall 1/8: idé-flödet levererade "Förra sommaren fick vi ett samtal / Kunden hade
+// väntat i tre år" — ett uppfunnet kundcase. Sanningskravet i prompten säger redan nej,
+// men så länge berättelse-hooken BEGÄRS av flödet frestas modellen att uppfinna det
+// material den saknar. Utan story-bank eller kundröster i profilen begärs den inte.
+function tillatnaHooks(role: StudioCopyOpts["imageRole"], harSiffror: boolean, harBerattelser: boolean): string[] {
   const bas =
-    role === "problem" ? ["fråga", "konträr", "berättelse"]
-    : role === "losning" ? ["påstående", "konträr", "berättelse"]
-    : ["fråga", "konträr", "berättelse", "påstående"];
-  return harSiffror ? [...bas, "statistik"] : bas;
+    role === "problem" ? ["fråga", "konträr"]
+    : role === "losning" ? ["påstående", "konträr"]
+    : ["fråga", "konträr", "påstående"];
+  const ut = harBerattelser ? [...bas, "berättelse"] : bas;
+  return harSiffror ? [...ut, "statistik"] : ut;
+}
+
+// Har tenanten verkligt berättelsematerial? Story-bank och kundröster är de sektioner
+// sanningskravet pekar på som enda tillåtna källa för ett kundcase. Rubriken räcker
+// inte — den finns även när sektionen är tom, så innehållet under den måste väga något.
+function profilHarBerattelser(profile: string): boolean {
+  for (const namn of ["Story-bank", "Customer Voice", "Voice of Customer", "Kundröster"]) {
+    const re = new RegExp(`(?:^|\\n)#{1,3}\\s*(?:═+\\s*)?${namn}[^\\n]*\\n([\\s\\S]*?)(?=\\n#|$)`, "i");
+    const m = profile.match(re);
+    if (m && m[1].replace(/[\s\-*_"'.]/g, "").length >= 40) return true;
+  }
+  return false;
 }
 
 // Har tenanten verifierade siffror inlagda (t.ex. priser/statistik i Brand-profilen)?
@@ -160,7 +179,7 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
   // så prompt och grind aldrig kan säga emot varandra.
   const anvandarKalla = [opts.topic || "", caption].filter(Boolean).join("\n");
   const prisTillatet = harPrisuppgift(anvandarKalla);
-  const hooks = tillatnaHooks(opts.imageRole, harSiffror);
+  const hooks = tillatnaHooks(opts.imageRole, harSiffror, profilHarBerattelser(grindKalla));
 
   const userPrompt = [
     `Ämne/vinkel: ${opts.topic?.trim() || (caption ? "utgå från inläggets grundtext ovan" : "välj den starkaste vinkeln för verksamheten")}. Postformat: ${opts.format}.`,
@@ -220,6 +239,10 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
       // innehåller ingen siffra — men de lovar en mätbar storlek eller tid och kräver
       // därför samma täckning i profilen.
       if ([s.headline1, s.headline2, s.body].some((f) => harObackatKvantLofte(f, profilKomp))) continue;
+      // KVALITET-3/punkt 2c: ett uppfunnet kundcase ("Förra sommaren fick vi ett
+      // samtal") är samma sorts brott som en uppfunnen siffra — en idé som lovar
+      // något den inte kan backa. Fail-closed mot story-bank och kundröster.
+      if ([s.headline1, s.headline2, s.body].some((f) => harObackatMinne(f, profilKomp))) continue;
       // KVALITET-3/punkt 5: siffergrinden ovan backar tal MOT PROFILEN — och sedan
       // PROFIL-1/F1 kopplade in pricing_notes står de riktiga priserna där. Ett pris
       // passerar alltså numera den grinden med heder i behåll. Det är precis vad
@@ -358,9 +381,14 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
  */
 export function byggBeskrivning(headline1: string, headline2: string, body: string): string {
   const hook = normalizeHeadline(headline1 || "");
-  const kandidater = [...delaMeningar(headline2), ...delaMeningar(body)]
-    .map(avslutaMening)
-    .filter(Boolean);
+  const alla = [...delaMeningar(headline2), ...delaMeningar(body)].map(avslutaMening).filter(Boolean);
+  // En del som börjar med liten bokstav är en FORTSÄTTNING på rubriken, inte en egen
+  // mening: modellen delar ibland en mening över headline1 → headline2 ("Varje dag du
+  // väntar" / "passerar kunder utan att se dig."). På affischen läses de ihop, men i
+  // idélistan står rubriken för sig och fortsättningen blir ett fragment. Faller allt
+  // bort behåller vi originalet — hellre en svag rad än en tom.
+  const helaMeningar = alla.filter((m) => /^[^a-zåäö]/.test(m));
+  const kandidater = helaMeningar.length ? helaMeningar : alla;
   const ut: string[] = [];
   const sedda = new Set<string>();
   for (const m of kandidater) {
@@ -498,13 +526,58 @@ const KVANT_MONSTER: RegExp[] = [
   /\b(?:dubbelt|dubbla|tredubbelt|tredubbla|fyrdubbelt|tiodubbelt|hälften|halva\s+(?:tiden|priset|kostnaden|jobbet|arbetet))\b/gi,
   // "tre gånger fler", "två ggr så snabbt".
   new RegExp(`\\b${ORDTAL}\\s+(?:gånger|ggr)\\b`, "gi"),
-  // Återbetalningslöften: "betalar sig själv", "tjänar in sig".
-  /\b(?:betalar\s+sig|tjänar\s+in\s+sig)\b/gi,
-  // Tidslöften i ordform: "på tre månader", "redan efter en vecka".
+  // Återbetalningslöften. Både infinitiv och presens: skarptestet gav "börjar tjäna
+  // in sig redan första veckan" där en presensbunden lista ("tjänar") missade träffen.
+  /\b(?:betalar?\s+sig|tjänar?\s+in\s+sig)\b/gi,
+  // Tidslöften i ordform: "på tre månader", "redan efter en vecka", "redan första veckan".
   // Tidsordet matchas på STAM + böjning ("vecka", "veckor", "månader", "året") —
   // en handskriven ändelselista missade "vecka" och släppte igenom hela löftet.
-  new RegExp(`\\b(?:på|inom|redan\\s+efter|efter|ta[gr]?\\s+bara)\\s+${ORDTAL}\\s+(?:sekund|minut|timm|dygn|dag|veck|månad|kvartal|år)[a-zåäö]*\\b`, "gi"),
+  // "i" är med: skarptestet gav "Kunden hade väntat i tre år" — samma mätbara tid.
+  // Ordningstalen med: "första veckan" lovar lika mycket som "en vecka".
+  new RegExp(
+    `\\b(?:i|på|inom|redan(?:\\s+efter)?|efter|ta[gr]?\\s+bara)\\s+(?:den\\s+)?(?:${ORDTAL}|första|andra|tredje|fjärde|femte)\\s+(?:sekund|minut|timm|dygn|dag|veck|månad|kvartal|år)[a-zåäö]*\\b`,
+    "gi",
+  ),
+  // Kvantitativa jämförelser i ordform. Fångad i skarptestet 1/8: "Ett träd som
+  // faller fel kostar mer än tio offertsamtal" — en uppfunnen storlek, klädd i ord.
+  // "en/ett" är uteslutet: "mer än en gång" är idiom, inte ett mätbart påstående.
+  /\b(?:mer|mindre|fler|färre|över|under)\s+än\s+(?:två|tre|fyra|fem|sex|sju|åtta|nio|tio|elva|tolv)\b/gi,
 ];
+
+/**
+ * KVALITET-3/punkt 2c: MINNESMARKÖRER — ett specifikt kundcase utan täckning.
+ *
+ * Sanningskravet i prompt-core förbjuder redan uppfunna minnen, men skarptestet 1/8
+ * visade att idé-flödet ändå levererade "Förra sommaren fick vi ett samtal. Kunden
+ * hade väntat i tre år." Regeln behöver alltså en deterministisk backstop, precis
+ * som statistikfraserna har.
+ *
+ * Markörerna är formuleringar som PÅSTÅR en specifik händelse: en tidpunkt i det
+ * förflutna, en namngiven part eller ett samtal som ska ha ägt rum. Generella
+ * observationer ("vi möter ofta", "vi hör det varje höst") träffas inte — det är
+ * exakt den formuleringen sanningskravet anvisar som väg ut.
+ *
+ * Fail-closed mot samma källa som siffrorna: står händelsen i story-banken eller
+ * bland kundrösterna passerar den.
+ */
+const MINNESMARKORER: RegExp[] = [
+  /\b(?:förra|i)\s+(?:somras|våras|höstas|vintras|sommaren|våren|hösten|vintern|veckan|månaden|året)\b/gi,
+  /\b(?:häromdagen|häromveckan|nyligen kom|för ett tag sedan)\b/gi,
+  /\bjag\s+minns\b/gi,
+  /\b(?:en|ett)\s+(?:av\s+våra\s+)?kund(?:er|)\w*\s+(?:som|berättade|hörde|ringde|sa)\b/gi,
+  /\b(?:fick|hade)\s+vi\s+(?:ett|en)\s+(?:samtal|telefonsamtal|mejl|förfrågan)\b/gi,
+  /\bringde\s+(?:oss|mig)\b/gi,
+];
+
+function harObackatMinne(s: string, profilKomp: string): boolean {
+  const komp = (fras: string) => fras.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
+  for (const re of MINNESMARKORER) {
+    for (const m of String(s || "").matchAll(re)) {
+      if (!profilKomp.includes(komp(m[0]))) return true;
+    }
+  }
+  return false;
+}
 
 function harObackatKvantLofte(s: string, profilKomp: string): boolean {
   const komp = (fras: string) => fras.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");

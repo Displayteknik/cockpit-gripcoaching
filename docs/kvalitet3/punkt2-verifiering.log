@@ -1,0 +1,64 @@
+
+=== Displayteknik — ämne: "Varför det lönar sig att göra jobbet nu i stället för att vänta" ===
+[prompt-core] profil klippt (studio-text, a6a33547-5ca7-475f-9a62-43ff2c74d000): Kundresa → Konkurrenter (13086 → 10842 tecken)
+[studio/copy] runda 1: 1/3 idéer överlevde grindarna, genererar om.
+
+  Körning 1: 3/3 idéer, 2 runda(or), 11089 ms OK
+    1. [konträr] Det billigaste är att köpa nu
+       beskrivning: Varje vecka du väntar kostar pengar. Tryckt skyltmaterial blir dyrare för varje kampanj.
+    2. [fråga] Vad kostar en tom skylt?
+       beskrivning: Varje dag utan skärm är en dag utan kunder. Din konkurrent fångar blickar medan din skylt står stilla.
+    3. [påstående] Varje dag utan skärm
+       beskrivning: Skyltfönstret står tomt medan konkurrenten visar kampanj. Du vet att det behövs, men väntan kostar dig fler kunder än vad skärmen gör.
+[prompt-core] profil klippt (studio-text, a6a33547-5ca7-475f-9a62-43ff2c74d000): Kundresa → Konkurrenter (13086 → 10842 tecken)
+
+  Körning 2: 3/3 idéer, 1 runda(or), 8239 ms OK
+    1. [konträr] Skyltfönstret säljer bäst när ingen tittar
+       beskrivning: Därför lönar det sig att sätta upp skärmen nu. Semestern är slut och kunderna är tillbaka, men din konkurrent hade skärmen i skyltfönstret redan i juli.
+    2. [påstående] Rätt tidpunkt finns inte
+       beskrivning: Men rätt skärm gör skillnad direkt. Många väntar på perfekt tillfälle.
+    3. [berättelse] Sensommarens solljus
+       beskrivning: Varför just nu är rätt tid. Augusti ger starkast solljus, när du monterar skärmen nu ser du direkt om den syns i verkligheten.
+[prompt-core] profil klippt (studio-text, a6a33547-5ca7-475f-9a62-43ff2c74d000): Kundresa → Konkurrenter (13086 → 10842 tecken)
+[studio/copy] runda 1: 2/3 idéer överlevde grindarna, genererar om.
+
+  Körning 3: 3/3 idéer, 2 runda(or), 10691 ms OK
+    1. [konträr] Vänta tills hösten?
+       beskrivning: Då missar du säsongens bästa försäljning. Sommaren är när folk är ute, och passerar din skyltning.
+    2. [fråga] Vad kostar det att vänta?
+       beskrivning: Tre somrar utan skärm, tre säsonger utan kunder. Många fastighetsägare skjuter på beslutet.
+    3. [statistik] 3 000 nits syns i solljus
+       beskrivning: Men bara om skärmen sitter uppe. Varje dag du väntar är en dag färre kunder ser ditt budskap i skyltfönstret.
+    · siffror i texten (backade mot profilen): Varje dag du väntar är en dag färre kunder ser ditt budskap i skyltfönstret.
+
+=== Engens Träd & Trädgård — ämne: "Varför det lönar sig att göra jobbet nu i stället för att vänta" ===
+
+  Körning 1: 3/3 idéer, 1 runda(or), 6249 ms OK
+    1. [fråga] Väntar du på lugnt väder?
+       beskrivning: Då hinner trädet hinna först. När du tänker 'det kan vänta' räknar trädet ner.
+    2. [påstående] Blåsten väljer åt dig
+       beskrivning: Om du väntar tar trädet beslutet. Ett lutande träd nära hus faller inte enligt plan.
+    3. [påstående] Hösten avgör åt dig
+       beskrivning: Om du inte gör det nu. Blåsten kommer ändå.
+
+  Körning 2: 3/3 idéer, 1 runda(or), 8399 ms OK
+    1. [påstående] Vänta tills nästa år?
+       beskrivning: Då riskerar du att trädet avgör åt dig. Höststormarna väljer inte de träd som du har tid med.
+    2. [fråga] Varför vänta till höststormen?
+       beskrivning: Ju tidigare du kollar, desto mer väljer du själv. När trädet ändå ska bedömas får du bestämma tid, pris och metod.
+    3. [konträr] Vänta tills i vår?
+       beskrivning: Då väljer du när du är bortrest. Vintern ger bättre sikt, fryst mark och ingen häckfågel.
+[studio/copy] runda 1: 2/3 idéer överlevde grindarna, genererar om.
+
+  Körning 3: 3/3 idéer, 2 runda(or), 10514 ms OK
+    1. [påstående] Trädet väntar inte
+       beskrivning: Väder och vind avgör, inte kalendern. Du bestämmer inte när nästa höststorm kommer eller när grenarna blir för tunga.
+    2. [konträr] Vänta tills det blåser?
+       beskrivning: Då avgör vädret var trädet landar. Många tror att det blir billigare att vänta.
+    3. [fråga] Väntar du på hösten?
+       beskrivning: Då är det redan för sent. När blåsten kommer avgör trädet själv var det ska landa.
+
+→ C:\Users\hakan\OneDrive\Dokument\Antigravity\hmmotor-next\docs\kvalitet3\punkt2-verifiering.json
+Städat agent_experiments: 9 rader raderade.
+Verifiering: 0 rader kvar (ska vara 0).
+KLART — alla körningar godkända.
