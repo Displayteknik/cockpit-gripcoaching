@@ -15,6 +15,7 @@ import {
 import { getCompassSchedule } from "@/lib/content-compass/schedule";
 import { planWeek } from "@/lib/content-compass/rules";
 import { byggCompassVeckaPrompt } from "@/lib/content-compass/vecka-prompt";
+import { dagensStudioPayload } from "@/lib/studio/pa-bild";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
 import { skrivreglerPa } from "@/lib/content/writing-rules";
@@ -285,12 +286,11 @@ async function generateCompassWeek(clientId: string, theme: string) {
       format: "1080x1350",
       title: firstLine(hook || bodyTxt),
       caption,
+      // KVALITET-3/3: dagens text är en CAPTION. Den får ALDRIG skrivas rakt in i
+      // headline1/body — det är texten PÅ BILDEN, ett annat format med egen anatomi.
+      // Dagen går in som underlag (brief + caption); affischtexten genereras i Studio.
       payload: {
-        templateId: "ark-textkort",
-        format: "1080x1350",
-        headline1: hook,
-        body: bodyTxt,
-        caption,
+        ...dagensStudioPayload({ theme, hook, body: bodyTxt, caption }),
         compass: { funnel: p.funnel, four_a: p.four_a, disc: p.disc },
       },
       image_url: null,

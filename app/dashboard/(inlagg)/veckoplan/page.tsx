@@ -17,6 +17,7 @@ import {
 import KnowledgeText from "@/components/KnowledgeText";
 import UtkastRad from "@/components/UtkastRad";
 import { useUtkast } from "@/lib/studio/useUtkast";
+import { dagensStudioPayload } from "@/lib/studio/pa-bild";
 import { CompassBadges } from "@/components/content-compass/badges";
 import { FORMAT_LABELS, type Format } from "@/lib/content-framework";
 
@@ -97,19 +98,11 @@ export default function VeckoplanPage() {
       const caption = [day.hook, day.body, day.cta, hashtags].filter(Boolean).join("\n\n");
       // Spara som Studio-inlägg: då hamnar de på rätt datum i kalendern, kan öppnas
       // och redigeras i inläggsverktyget, och kan få en bild.
+      // KVALITET-3/3: dagens text är en CAPTION, inte affischtext. Den skrivs som
+      // underlag (brief + caption) — texten PÅ BILDEN genereras i Studio, aldrig kopieras.
       const body: Record<string, unknown> = {
         title: (day.hook || day.body || "Inlägg").split("\n")[0].slice(0, 120),
-        payload: {
-          templateId: "ark-textkort",
-          // day.format är veckoplanens innehållsformat (t.ex. big_stat), INTE ett bildmått.
-          // Studion slår upp måtten på format, så här måste ett giltigt bildformat stå.
-          format: "1080x1350",
-          headline1: day.hook || "",
-          headline2: "",
-          body: day.body || "",
-          caption,
-          mode: "template",
-        },
+        payload: dagensStudioPayload({ theme, hook: day.hook || "", body: day.body || "", caption }),
       };
       if (scheduleAll) body.scheduledAt = new Date(startMs + i * 24 * 3600 * 1000).toISOString();
       try {

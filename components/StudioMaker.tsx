@@ -892,12 +892,32 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     if (id) { setSaved(true); setTimeout(() => setSaved(false), 1500); }
   }, [savePost]);
 
+  // KVALITET-3/3: veckoplanens inlägg bär bara UNDERLAG (brief + caption) — texten på
+  // bilden ärvs aldrig från captionen. Öppnas ett sådant inlägg genereras affischtexten
+  // ur inlägget (pa-bild-anatomin i lib/studio/copy.ts) och användaren väljer bland tre.
+  const [behoverPabildText, setBehoverPabildText] = useState(false);
+
   // Öppna en sparad skapelse i editorn för återanvändning/redigering.
   const openPost = useCallback((p: StudioPost) => {
     applyPayload(p.payload);
     setLoadedPostId(p.id);
+    const d = (p.payload || {}) as Record<string, unknown>;
+    const harPabild = Boolean(
+      String(d.headline1 ?? "").trim() || String(d.body ?? "").trim() ||
+      (Array.isArray(d.slides) && d.slides.length > 0),
+    );
+    const harUnderlag = Boolean(String(d.caption ?? "").trim() || String(d.brief ?? "").trim());
+    setBehoverPabildText(!harPabild && harUnderlag);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [applyPayload]);
+
+  // Kör genereringen när captionen/briefen landat i state (applyPayload är asynkron mot render).
+  useEffect(() => {
+    if (!behoverPabildText || suggesting || suggestions.length > 0) return;
+    if (!caption.trim() && !topic.trim()) return;
+    setBehoverPabildText(false);
+    void suggest();
+  }, [behoverPabildText, suggesting, suggestions.length, caption, topic, suggest]);
 
   // Djuplänk från kalendern: /dashboard/studio?post=<id> öppnar inlägget med alla inställningar.
   const openedFromUrl = useRef(false);
@@ -1678,7 +1698,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   placeholder={isCarousel ? "Ämne för karusellen, t.ex. 3 misstag att undvika, 5 tips" : "t.ex. ett erbjudande, en nyhet, veckans bukett"}
                   className={inputCls} />
                 {!isCarousel && (
-                  <button onClick={suggest} disabled={suggesting}
+                  <button onClick={() => suggest()} disabled={suggesting}
                     className="shrink-0 inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     style={{ background: STEG_FARGER[0] }}>
                     {suggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Ge mig 3 idéer
@@ -1687,7 +1707,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
               {!isCarousel && suggestions.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs font-medium text-gray-500">Välj en idé, klicka för att fylla i rubrik och text:</div>
+                  {/* KVALITET-3/3: förslagen ÄR färdigskriven text till bilden — skriven ur
+                      ämnet och din röst, aldrig en avskrift av ämnet eller bildtexten. */}
+                  <div className="text-xs font-medium text-gray-500">Välj text till bilden — alla tre är skrivna ur ditt ämne och din röst:</div>
                   {suggestions.map((s, i) => (
                     <button key={i} onClick={() => applySuggestion(s)}
                       className="w-full text-left rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 p-3 transition-colors">
@@ -1943,7 +1965,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="rounded-xl border p-3 space-y-3" style={{ borderColor: `${STEG_FARGER[3]}33`, background: `${STEG_FARGER[3]}0a` }}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <p className="text-sm text-gray-600">Vet du inte vad du ska skriva? Låt <strong>Skrivhjälpen</strong> föreslå rubrik och text{topic ? " utifrån ditt ämne" : ""}.</p>
-                  <button onClick={suggest} disabled={suggesting}
+                  <button onClick={() => suggest()} disabled={suggesting}
                     className="shrink-0 inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     style={{ background: STEG_FARGER[3] }}>
                     {suggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Föreslå rubrik &amp; text
@@ -1974,7 +1996,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                 <label className="block text-sm font-medium text-gray-600">Har du ett eget utkast? Klistra in. Skrivhjälpen delar upp i rubrik och text</label>
                 <SmartTextarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={2} placeholder="Klistra in din egen text här…" className={inputCls} />
-                <button onClick={applyPaste} disabled={applyingPaste || !pasteText.trim()}
+                <button onClick={() => applyPaste()} disabled={applyingPaste || !pasteText.trim()}
                   className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
                   {applyingPaste ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Använd min text
                 </button>
