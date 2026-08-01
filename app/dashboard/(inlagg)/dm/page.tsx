@@ -813,8 +813,11 @@ function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="Vad som sagts hittills, eller prata in det"
+              placeholder="Vad som sagts hittills, klistra in eller ladda upp en skärmdump, eller prata in det"
               className={falt}
+              // KVALITET-3/10: Bild-knappen ska gå till den strukturerade avläsningen,
+              // inte den fria sammanfattningen — den kastade om vem som sagt vad.
+              onBild={async (f) => { await lasAvBild(f); return true; }}
             />
           </div>
 

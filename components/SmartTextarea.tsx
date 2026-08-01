@@ -12,6 +12,14 @@ import { arPromptEko, ROST_FELMEDDELANDE } from "@/lib/ai/transkription";
 type Props = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   tools?: boolean;
   hint?: boolean;
+  /**
+   * KVALITET-3/10: låter en yta ta hand om bilden själv i stället för den fria
+   * sammanfattningen i /api/ai/vision. DM-flödet skickar skärmdumpen till den
+   * strukturerade avläsningen (lib/dm/skarmdump), där bubblornas placering avgör
+   * vem som sagt vad — den fria texten kastade om talarna. Returnera true när
+   * bilden är omhändertagen; false/utelämnad faller tillbaka på vision-vägen.
+   */
+  onBild?: (file: File | Blob) => boolean | Promise<boolean>;
 };
 
 export default function SmartTextarea({
@@ -21,6 +29,7 @@ export default function SmartTextarea({
   value,
   onChange,
   onPaste,
+  onBild,
   ...rest
 }: Props) {
   const [recording, setRecording] = useState(false);
@@ -118,6 +127,17 @@ export default function SmartTextarea({
     if (file.size > 8 * 1024 * 1024) {
       setFel("Bilden är för stor (max 8 MB)");
       return;
+    }
+    // Ytans egen hantering först (DM: strukturerad skärmdumpsavläsning).
+    if (onBild) {
+      setJobbar("bild");
+      try {
+        if (await onBild(file)) return;
+      } catch {
+        // faller igenom till den generella bildanalysen nedan
+      } finally {
+        setJobbar(null);
+      }
     }
     setJobbar("bild");
     try {
