@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Sparkles,
   Loader2,
@@ -15,6 +15,8 @@ import {
   Pencil,
 } from "lucide-react";
 import KnowledgeText from "@/components/KnowledgeText";
+import UtkastRad from "@/components/UtkastRad";
+import { useUtkast } from "@/lib/studio/useUtkast";
 import { CompassBadges } from "@/components/content-compass/badges";
 import { FORMAT_LABELS, type Format } from "@/lib/content-framework";
 
@@ -53,8 +55,12 @@ const FOURA_BADGE: Record<string, string> = {
 export default function VeckoplanPage() {
   // Alltid kundens färg: hämta aktiv klient (kundens egen i /k, vald klient i admin).
   const [accent, setAccent] = useState("#7c3aed");
+  const [klientId, setKlientId] = useState<string | null>(null);
   useEffect(() => {
-    fetch("/api/clients/active").then((r) => (r.ok ? r.json() : null)).then((c) => { if (c?.primary_color) setAccent(c.primary_color); }).catch(() => {});
+    fetch("/api/clients/active").then((r) => (r.ok ? r.json() : null)).then((c) => {
+      if (c?.primary_color) setAccent(c.primary_color);
+      if (c?.id) setKlientId(String(c.id));
+    }).catch(() => {});
   }, []);
   const [theme, setTheme] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -185,8 +191,34 @@ export default function VeckoplanPage() {
   // återkopplingsrutan renderas bara efter en sparning (client-only) så ingen SSR-mismatch.
   const calHref = typeof window !== "undefined" && window.location.pathname.startsWith("/k") ? "/k/kalender" : "/dashboard/studio/kalender";
 
+  // ── UTKAST-1: autospar av veckan (per klient-id) ──
+  // Sju genererade inlägg är 45–60 sekunders AI-arbete. En omladdning slängde alltihop,
+  // inklusive de inline-redigeringar man hunnit göra i dagarna.
+  const utkast = useMemo(
+    () => ({ theme, response, startDate, scheduleAll }),
+    [theme, response, startDate, scheduleAll],
+  );
+  type VeckoUtkast = typeof utkast;
+  const { aterupptaget, sparatVid, glomUtkast } = useUtkast<VeckoUtkast>({
+    yta: "veckoplan",
+    klientId,
+    data: utkast,
+    aterstall: useCallback((d: VeckoUtkast) => {
+      setTheme(d.theme ?? "");
+      setResponse(d.response ?? null);
+      if (d.startDate) setStartDate(d.startDate);
+      setScheduleAll(Boolean(d.scheduleAll));
+    }, []),
+    harInnehall: useCallback((d: VeckoUtkast) => Boolean(d.response || d.theme?.trim()), []),
+  });
+  const borjaOm = useCallback(() => {
+    glomUtkast();
+    setTheme(""); setResponse(null); setError(null); setSaveResult(null); setSavedCount(0);
+  }, [glomUtkast]);
+
   return (
     <div className="max-w-5xl space-y-6">
+      <UtkastRad aterupptaget={aterupptaget} sparatVid={sparatVid} onBorjaOm={borjaOm} />
       <div className="flex items-start gap-3">
         <span
           className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"

@@ -7,8 +7,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mail, Loader2, Sparkles, Save, Copy, Check, Send, Trash2, FileText } from "lucide-react";
 import { renderNewsletterHtml, type NewsletterContent } from "@/lib/newsletter-render";
 import Select from "@/components/ui/Select";
+import UtkastRad from "@/components/UtkastRad";
+import { useUtkast } from "@/lib/studio/useUtkast";
 
-interface ClientInfo { name: string; primary_color: string }
+interface ClientInfo { id: string; name: string; primary_color: string }
 interface BlogItem { id: string; title: string; text: string }
 interface DraftItem { id: string; subject: string; updated_at: string }
 
@@ -67,6 +69,32 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
     if (!content) return "";
     return renderNewsletterHtml(content, { brandName: client?.name || "", primaryColor: primary, ctaUrl: ctaUrl || undefined });
   }, [content, client?.name, primary, ctaUrl]);
+
+  // ── UTKAST-1: autospar av pågående nyhetsbrev (per klient-id) ──
+  // Ett genererat nyhetsbrev är en dyr AI-körning — en omladdning fick förr allt att försvinna.
+  const utkast = useMemo(
+    () => ({ pasteMode, pasteTitle, pasteText, blogId, content, subject, ctaUrl, sourceBlogId, loadedId }),
+    [pasteMode, pasteTitle, pasteText, blogId, content, subject, ctaUrl, sourceBlogId, loadedId],
+  );
+  type NyhetsbrevUtkast = typeof utkast;
+  const { aterupptaget, sparatVid, glomUtkast } = useUtkast<NyhetsbrevUtkast>({
+    yta: "nyhetsbrev",
+    klientId: client?.id,
+    data: utkast,
+    aterstall: useCallback((d: NyhetsbrevUtkast) => {
+      setPasteMode(d.pasteMode ?? true);
+      setPasteTitle(d.pasteTitle ?? ""); setPasteText(d.pasteText ?? "");
+      setBlogId(d.blogId ?? "");
+      setContent(d.content ?? null); setSubject(d.subject ?? ""); setCtaUrl(d.ctaUrl ?? "");
+      setSourceBlogId(d.sourceBlogId ?? null); setLoadedId(d.loadedId ?? null);
+    }, []),
+    harInnehall: useCallback((d: NyhetsbrevUtkast) => Boolean(d.content || d.pasteText?.trim() || d.pasteTitle?.trim()), []),
+  });
+  const borjaOm = useCallback(() => {
+    glomUtkast();
+    setPasteTitle(""); setPasteText(""); setBlogId("");
+    setContent(null); setSubject(""); setCtaUrl(""); setSourceBlogId(null); setLoadedId(null); setErr("");
+  }, [glomUtkast]);
 
   const updateContent = (patch: Partial<NewsletterContent>) => { setContent((c) => (c ? { ...c, ...patch } : c)); setSaved(false); };
   const updateSection = (i: number, patch: Partial<{ heading: string; body: string }>) => {
@@ -140,6 +168,7 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
 
   return (
     <div className="space-y-6">
+      <UtkastRad aterupptaget={aterupptaget} sparatVid={sparatVid} onBorjaOm={borjaOm} />
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <span className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: `${primary}1a` }}>

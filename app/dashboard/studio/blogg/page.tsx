@@ -2,9 +2,11 @@
 
 import SmartTextarea from "@/components/SmartTextarea";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileText, Loader2, Wand2, Send, Check, Eye, Code, Link2, Layers, Image as ImageIcon, PenLine } from "lucide-react";
 import { DashHero, LivePill } from "@/components/ui/dash";
+import UtkastRad from "@/components/UtkastRad";
+import { useUtkast } from "@/lib/studio/useUtkast";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
 interface BlogSite { id: string; name: string }
@@ -74,6 +76,11 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
   const [publishedUrl, setPublishedUrl] = useState("");
   const [destination, setDestination] = useState<"ghl" | "native">("ghl");
   const [blogSchedule, setBlogSchedule] = useState("");
+  // Djuplänk (?post=<id>) → öppna det sparade inlägget, inte utkastet.
+  const [djuplankPost] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(new URLSearchParams(window.location.search).get("post"));
+  });
 
   const inputCls = "w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
 
@@ -232,9 +239,41 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
     return doRepurpose(b.title, b.text, "");
   }, [savedBlogs, selBlog, doRepurpose]);
 
+  // ── UTKAST-1: autospar av pågående artikel (per klient-id) ──
+  // En genererad artikel på 800–1600 ord försvann helt vid en omladdning.
+  const utkast = useMemo(
+    () => ({ topic, wordCount, title, metaTitle, metaDescription, urlSlug, html, coverImageUrl, coverImageAlt, internalLinks, hasArticle, manualMode, plainBody, loadedBlogId }),
+    [topic, wordCount, title, metaTitle, metaDescription, urlSlug, html, coverImageUrl, coverImageAlt, internalLinks, hasArticle, manualMode, plainBody, loadedBlogId],
+  );
+  type BloggUtkast = typeof utkast;
+  const { aterupptaget, sparatVid, glomUtkast } = useUtkast<BloggUtkast>({
+    yta: "blogg",
+    // Djuplänk (?post=) öppnar ett sparat inlägg och ska vinna över utkastet.
+    klientId: djuplankPost ? null : client?.id,
+    data: utkast,
+    aterstall: useCallback((d: BloggUtkast) => {
+      setTopic(d.topic ?? ""); setWordCount(d.wordCount ?? 800);
+      setTitle(d.title ?? ""); setMetaTitle(d.metaTitle ?? ""); setMetaDescription(d.metaDescription ?? "");
+      setUrlSlug(d.urlSlug ?? ""); setHtml(d.html ?? "");
+      setCoverImageUrl(d.coverImageUrl ?? ""); setCoverImageAlt(d.coverImageAlt ?? "");
+      setInternalLinks(d.internalLinks ?? 0); setHasArticle(Boolean(d.hasArticle));
+      setManualMode(Boolean(d.manualMode)); setPlainBody(d.plainBody ?? "");
+      setLoadedBlogId(d.loadedBlogId ?? "");
+    }, []),
+    harInnehall: useCallback((d: BloggUtkast) => Boolean(d.topic?.trim() || d.title?.trim() || d.html?.trim() || d.plainBody?.trim()), []),
+  });
+  const borjaOm = useCallback(() => {
+    glomUtkast();
+    setTopic(""); setTitle(""); setMetaTitle(""); setMetaDescription(""); setUrlSlug("");
+    setHtml(""); setCoverImageUrl(""); setCoverImageAlt(""); setInternalLinks(0);
+    setHasArticle(false); setManualMode(false); setPlainBody(""); setLoadedBlogId("");
+    setPublishedUrl(""); setError("");
+  }, [glomUtkast]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <UtkastRad aterupptaget={aterupptaget} sparatVid={sparatVid} onBorjaOm={borjaOm} />
         <DashHero
           title="Blogg"
           subtitle={`Skriv en artikel själv eller låt Skrivhjälpen skapa ett förslag — publicera sedan på din sajt.${client ? ` · ${client.name}` : ""}`}

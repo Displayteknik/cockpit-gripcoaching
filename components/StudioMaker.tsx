@@ -3,6 +3,8 @@
 import SmartTextarea from "@/components/SmartTextarea";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import ProfilGrind from "@/components/profile/ProfilGrind";
+import UtkastRad from "@/components/UtkastRad";
+import { useUtkast } from "@/lib/studio/useUtkast";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -172,7 +174,6 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [suggesting, setSuggesting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [hasDraft, setHasDraft] = useState(false); // finns ett sparat utkast i webbläsaren? styr "Återuppta utkast"
   const [error, setError] = useState("");
   const [imgResults, setImgResults] = useState<{ url: string; thumb: string; credit: string }[]>([]);
   const [searchingImg, setSearchingImg] = useState<"stock" | "ai" | "">("");
@@ -760,17 +761,6 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     a.click();
   }, [payload, slug, templateId]);
 
-  // ── Utkast (localStorage) ──
-  const draftKey = `studio-draft:${slug}`;
-
-  // BILD-2: autospar i alla steg — inget försvinner vid fel eller navigering. Debounce så
-  // varje tangenttryck inte skriver; localStorage-draften öppnas via "Fortsätt där du slutade".
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try { localStorage.setItem(draftKey, JSON.stringify(payload)); setHasDraft(true); } catch { /* ignore */ }
-    }, 800);
-    return () => clearTimeout(t);
-  }, [payload, draftKey]);
   // Fyller hela editorn från en payload (delas av utkast + bibliotek).
   const applyPayload = useCallback((d: Record<string, unknown>) => {
     const badge = (d.badge ?? {}) as { enabled?: boolean; line1?: string; line2?: string };
@@ -799,13 +789,67 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setMode(sparatLage ?? (harMallText ? "template" : "simple"));
   }, []);
 
-  const loadDraft = useCallback(() => {
-    const raw = localStorage.getItem(draftKey);
-    if (!raw) { setHasDraft(false); return; }
-    try { applyPayload(JSON.parse(raw)); setLoadedPostId(null); } catch { /* ignore */ }
-  }, [draftKey, applyPayload]);
-  // Visa "Återuppta utkast" bara när det faktiskt finns ett sparat utkast (annars gjorde knappen tyst intet).
-  useEffect(() => { try { setHasDraft(!!localStorage.getItem(draftKey)); } catch { /* ignore */ } }, [draftKey]);
+  // ── UTKAST-1: autospar av HELA sessionen, per klient-id ──
+  // Payloaden ensam räckte inte: bildtext, kanal-captions, valda kanaler, förslagslistan,
+  // Compass-chipsen och texten i bilden låg utanför den och nollades vid en omladdning.
+  const utkastData = useMemo(
+    () => ({ payload, caption, channelCaptions, selectedChannels, suggestions, compass, imgText, loadedPostId }),
+    [payload, caption, channelCaptions, selectedChannels, suggestions, compass, imgText, loadedPostId],
+  );
+  type StudioUtkast = typeof utkastData;
+
+  const aterstallUtkast = useCallback((d: StudioUtkast) => {
+    if (d.payload) applyPayload(d.payload as unknown as Record<string, unknown>);
+    setCaption(d.caption ?? "");
+    if (d.channelCaptions) setChannelCaptions(d.channelCaptions);
+    if (Array.isArray(d.selectedChannels) && d.selectedChannels.length) {
+      setSelectedChannels(d.selectedChannels);
+      setChannelsSeeded(true); // annars skriver kopplings-seeden över det återställda valet
+    }
+    if (Array.isArray(d.suggestions)) setSuggestions(d.suggestions);
+    if (d.compass) setCompass(d.compass);
+    setImgText(d.imgText ?? "");
+    setLoadedPostId(d.loadedPostId ?? null);
+  }, [applyPayload]);
+
+  // Tomt läge sparas aldrig — annars "återupptar" man ingenting och raden blir brus.
+  const utkastHarInnehall = useCallback((d: StudioUtkast) => {
+    const p = d.payload;
+    if (!p) return false;
+    return Boolean(
+      p.headline1?.trim() || p.headline2?.trim() || p.body?.trim() || p.imageUrl || p.videoUrl ||
+      p.brief?.trim() || d.caption?.trim() || d.imgText?.trim() ||
+      (Array.isArray(d.suggestions) && d.suggestions.length > 0) ||
+      (Array.isArray(p.slides) && p.slides.some((s) => s.imageUrl || s.headline?.trim() || s.body?.trim())),
+    );
+  }, []);
+
+  // Djuplänk från kalendern (?post=<id>) ska alltid vinna över utkastet — annars öppnar
+  // man ett planerat inlägg och får förra sessionen i stället.
+  const [djuplankPost] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(new URLSearchParams(window.location.search).get("post"));
+  });
+
+  const { aterupptaget, sparatVid, glomUtkast } = useUtkast<StudioUtkast>({
+    yta: "studio",
+    klientId: djuplankPost ? null : client?.id,
+    data: utkastData,
+    aterstall: aterstallUtkast,
+    harInnehall: utkastHarInnehall,
+  });
+
+  // "Börja om" = släng utkastet OCH töm ytan, så raden inte kommer tillbaka direkt.
+  const borjaOm = useCallback(() => {
+    glomUtkast();
+    setHeadline1(""); setHeadline2(""); setBody(""); setTopic("");
+    setImageUrl(""); setImageEdit(null); setEditedPreview(""); setAiImageDesc(null);
+    setImgText(""); setImgTextInfo(null); setVideoUrl("");
+    setCaption(""); setChannelCaptions({ ig: "", fb: "", li: "" });
+    setSuggestions([]); setSlides([]); setSlideIdx(0);
+    setOverrides(DEFAULT_OVERRIDES); setBadgeEnabled(false);
+    setLoadedPostId(null); setError("");
+  }, [glomUtkast]);
 
   // ── Bibliotek: tidigare skapelser (studio_posts) ──
   const refreshPosts = useCallback(async () => {
@@ -841,14 +885,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }
   }, [headline1, body, caption, channelCaptions, loadedPostId, payload, refreshPosts, compass]);
 
-  // "Spara utkast" = spara lokalt (snabb återuppta) OCH i biblioteket så det syns i
-  // "Tidigare skapelser" längst ner. Tidigare sparade "Spara utkast" bara localStorage →
-  // utkastet dök aldrig upp i listan, vilket förvirrade.
+  // "Spara utkast" = spara i biblioteket så det syns i "Tidigare skapelser" längst ner.
+  // Det lokala autosparet sköts av useUtkast och behöver ingen knapp.
   const saveDraftPersistent = useCallback(async () => {
-    try { localStorage.setItem(draftKey, JSON.stringify(payload)); setHasDraft(true); } catch { /* ignore */ }
     const id = await savePost(false);
     if (id) { setSaved(true); setTimeout(() => setSaved(false), 1500); }
-  }, [draftKey, payload, savePost]);
+  }, [savePost]);
 
   // Öppna en sparad skapelse i editorn för återanvändning/redigering.
   const openPost = useCallback((p: StudioPost) => {
@@ -1262,17 +1304,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {hasDraft && (
-                <button onClick={loadDraft} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
-                  <FolderOpen className="w-4 h-4" /> Återuppta utkast
-                </button>
-              )}
-              <button onClick={saveDraftPersistent} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+              <button onClick={() => saveDraftPersistent()} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                 {saved ? <Check className="w-4 h-4 text-emerald-600" /> : <Save className="w-4 h-4" />} Spara utkast
               </button>
             </div>
           </div>
         </div>
+
+        {/* UTKAST-1: allt du hade kvar efter en omladdning — plus vägen att börja om. */}
+        <UtkastRad aterupptaget={aterupptaget} sparatVid={sparatVid} onBorjaOm={borjaOm} />
 
         {/* PROFIL-1: mjuk grind — blockerar inget, men säger var kvaliteten sitter. */}
         <ProfilGrind href={customerMode ? "/k/profil" : "/dashboard/profil"} />

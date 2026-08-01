@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Film, Sparkles, AlertTriangle, Clock, Copy, CheckCircle2, Loader2, Image as ImageIcon, Type, ShieldAlert, Save, Play, Download } from "lucide-react";
 import { renderReel, kanRendera, NEUTRAL_BRAND, type RenderBrand } from "@/lib/studio/reel-render";
 import { DashHero, LivePill, HeroChip } from "@/components/ui/dash";
 import ReelSceneMedia from "@/components/studio/ReelSceneMedia";
+import UtkastRad from "@/components/UtkastRad";
+import { useUtkast } from "@/lib/studio/useUtkast";
 import { REEL_TEMPLATE_LIST, MAX_WORDS_PER_LINE, SAFE_ZONE, ordCount, type ReelStoryboard, type ReelTemplateKey, type ReelSceneKind, type ReelMediaSource } from "@/lib/studio/reels";
 
 const KIND_LABEL: Record<ReelSceneKind, string> = {
@@ -49,6 +51,8 @@ export default function ReelsPage() {
   const [sparade, setSparade] = useState<
     { id: string; title: string | null; template_key: string; duration_ms: number | null; updated_at: string; storyboard: ReelStoryboard }[]
   >([]);
+  // Aktiv klient — utkastnyckeln måste vara tenant-låst.
+  const [klientId, setKlientId] = useState<string | null>(null);
 
   async function laddaSparade() {
     try {
@@ -62,6 +66,7 @@ export default function ReelsPage() {
 
   useEffect(() => {
     void laddaSparade();
+    fetch("/api/clients/active").then((r) => (r.ok ? r.json() : null)).then((c) => { if (c?.id) setKlientId(String(c.id)); }).catch(() => {});
   }, []);
 
   function oppnaSparad(id: string) {
@@ -99,6 +104,34 @@ export default function ReelsPage() {
       .catch(() => {});
     kanRendera().then(setStod).catch(() => setStod({ ok: false, skal: "Kunde inte kontrollera videostödet." }));
   }, []);
+
+  // ── UTKAST-1: autospar av pågående reel (per klient-id) ──
+  // Storyboardet är en AI-körning + allt manuellt pillande efteråt. Videofilen (blob-URL)
+  // sparas ALDRIG — den överlever inte en omladdning och en död URL vore värre än ingen.
+  const utkast = useMemo(
+    () => ({ templateKey, ide, disc: [...disc], board, reelId, aiBekraftad }),
+    [templateKey, ide, disc, board, reelId, aiBekraftad],
+  );
+  type ReelUtkast = typeof utkast;
+  const { aterupptaget, sparatVid, glomUtkast } = useUtkast<ReelUtkast>({
+    yta: "reels",
+    klientId,
+    data: utkast,
+    aterstall: useCallback((d: ReelUtkast) => {
+      if (d.templateKey) setTemplateKey(d.templateKey);
+      setIde(d.ide ?? "");
+      setDisc(new Set(Array.isArray(d.disc) ? d.disc : []));
+      setBoard(d.board ?? null);
+      setReelId(d.reelId ?? null);
+      setAiBekraftad(Boolean(d.aiBekraftad));
+    }, []),
+    harInnehall: useCallback((d: ReelUtkast) => Boolean(d.board || d.ide?.trim()), []),
+  });
+  const borjaOm = useCallback(() => {
+    glomUtkast();
+    setIde(""); setBoard(null); setReelId(null); setSparad(false);
+    setAiBekraftad(false); setDisc(new Set()); setError(null);
+  }, [glomUtkast]);
 
   const mall = REEL_TEMPLATE_LIST.find((m) => m.key === templateKey);
 
@@ -206,6 +239,7 @@ export default function ReelsPage() {
 
   return (
     <div className="space-y-6">
+      <UtkastRad aterupptaget={aterupptaget} sparatVid={sparatVid} onBorjaOm={borjaOm} />
       <DashHero
         title="Reels"
         subtitle="Skriv en idé, få ett färdigt reel-manus scen för scen. Bilder och rendering kommer i nästa steg."
