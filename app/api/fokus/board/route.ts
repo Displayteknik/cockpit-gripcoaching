@@ -5,9 +5,97 @@ import { resolveCoachContext, resolveCoachGhl } from "@/lib/coach-bridge";
 import { supabaseService } from "@/lib/supabase-admin";
 import { buildConfigFromStages } from "@/lib/fokus/config";
 import { prioritize } from "@/lib/fokus/priority";
-import type { RawOpportunity } from "@/lib/fokus/types";
+import type { RawOpportunity, ScoredCard } from "@/lib/fokus/types";
 
 export const runtime = "nodejs";
+
+const DM_ETIKETTER: Record<string, string> = { new: "Ny", acknowledge: "Bekräftad", connect: "Dialog", offer: "Erbjudande", won: "Bokad", lost: "Förlorad" };
+
+// Tid alltid i svensk tidszon: servern kör UTC, annars visas 14.00 som 12:00.
+const TZ = "Europe/Stockholm";
+const dagIStockholm = (d: Date) => d.toLocaleDateString("sv-SE", { timeZone: TZ });
+function tidText(iso: string): string {
+  const d = new Date(iso);
+  const idag = dagIStockholm(new Date());
+  const imorgon = dagIStockholm(new Date(Date.now() + 86400000));
+  const dStr = dagIStockholm(d);
+  const dag = dStr === idag ? "idag" : dStr === imorgon ? "imorgon" : d.toLocaleDateString("sv-SE", { timeZone: TZ, day: "numeric", month: "short" });
+  return `${dag} ${d.toLocaleTimeString("sv-SE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" })}`;
+}
+
+interface DmRad {
+  id: string;
+  ig_username: string | null;
+  display_name: string | null;
+  channel: string | null;
+  stage: string | null;
+  notes: string | null;
+  next_action: string | null;
+  next_action_at: string | null;
+  reminder_at: string | null;
+}
+
+type DmInfoRad = { etikett: string | null; forslag: string | null; bokad: string | null; bokadNot: string | null };
+
+/**
+ * Bokade DM-kontakter som EGNA kort i Fokus idag. Utan detta syns en kontakt som
+ * bokats via DM bara i DM-pipelinen — och en skärmdump som ger ett bokat möte
+ * hamnade aldrig i "Bokat"-sektionen. Kort-id:t prefixas "dm:" så det aldrig
+ * krockar med ett GHL-affärs-id. Värde 0 → Pengalinjen påverkas inte.
+ */
+export function dmKortFranRader(rader: DmRad[], redanIPipeline: Set<string>, nu: number) {
+  const kort: ScoredCard[] = [];
+  const info: Record<string, DmInfoRad> = {};
+  for (const d of rader) {
+    if (d.stage !== "won" || !d.next_action_at) continue;
+    const namn = (d.display_name || d.ig_username || "").trim();
+    if (!namn) continue;
+    if (redanIPipeline.has(namn.toLowerCase())) continue; // affären äger kortet
+    const id = `dm:${d.id}`;
+    const dagar = Math.max(0, Math.floor((nu - new Date(d.next_action_at).getTime()) / 86400000));
+    kort.push({
+      id,
+      namn,
+      foretag: "",
+      varde: 0,
+      stegNamn: "Möte bokat",
+      typ: "kontakt",
+      dagarISteget: Math.max(0, dagar),
+      sla: null,
+      dagarOverSla: 0,
+      vardepoang: 1,
+      bradskepoang: 1,
+      stegvikt: 1.5,
+      prioritet: 1.5,
+      zon: "frisk",
+      farg: "neutral",
+      sektion: "dagens_drag",
+      okantVarde: true,
+      lagesText: `Bokat möte ${tidText(d.next_action_at)}`,
+      rekommenderatDrag: d.next_action || "Förbered mötet",
+    });
+    info[id] = {
+      etikett: "Bokad",
+      forslag: null,
+      bokad: tidText(d.next_action_at),
+      bokadNot: d.next_action || (d.notes || "").split("\n")[0] || null,
+    };
+  }
+  return { kort, info };
+}
+
+async function bokadeDmKort(
+  sb: ReturnType<typeof supabaseService>,
+  clientId: string,
+  redanIPipeline: Set<string> = new Set(),
+): Promise<{ kort: ScoredCard[]; info: Record<string, DmInfoRad>; rader: DmRad[] }> {
+  const { data } = await sb
+    .from("cockpit_dm_contacts")
+    .select("id, ig_username, display_name, channel, stage, notes, next_action, next_action_at, reminder_at")
+    .eq("client_id", clientId);
+  const rader = (data as DmRad[] | null) || [];
+  return { ...dmKortFranRader(rader, redanIPipeline, Date.now()), rader };
+}
 
 // GET /api/fokus/board — den prioriterade IDAG-vyn (spec §6), read-mostly.
 // Läser fokus_opportunities (GHL-spegeln, fylld av standalone Coach) via identitetsbryggan,
@@ -19,9 +107,31 @@ export async function GET() {
 
   const clientId = await getActiveClientId();
   const ctx = await resolveCoachContext(clientId);
-  if (!ctx.ids.length) return NextResponse.json({ linked: false });
-
   const sb = supabaseService();
+
+  // Bokade DM-kontakter hör hemma i Fokus även utan Coach-koppling: en tid som
+  // bokats i ett DM är lika mycket en bokning som en affär ur pipelinen.
+  const dmKort = await bokadeDmKort(sb, clientId);
+  if (!ctx.ids.length) {
+    if (!dmKort.kort.length) return NextResponse.json({ linked: false });
+    return NextResponse.json({
+      linked: true,
+      prioritering: {
+        dagensDrag: dmKort.kort,
+        avgor: [],
+        pengalinjen: { frisk: 0, risk: 0, kallnar: 0, totalt: 0 },
+        antalKallnar: 0,
+      },
+      syncedAt: null,
+      antal: dmKort.kort.length,
+      locationId: "",
+      planering: {},
+      attGoraIdag: [],
+      stegKarta: {},
+      dmInfo: dmKort.info,
+    });
+  }
+
   const { data: rows, error } = await sb
     .from("fokus_opportunities")
     .select(
@@ -98,29 +208,13 @@ export async function GET() {
   // Förslagsraden ska komma ur kontaktens verkliga läge (steg, anteckning, nästa steg),
   // inte generiska fraser. Bokade kontakter ska INTE föreslås som drag. Samma datakälla
   // som Säljcoachen läser, så vyerna aldrig motsäger varandra.
-  const { data: dmRows } = await sb
-    .from("cockpit_dm_contacts")
-    .select("display_name, stage, notes, next_action, next_action_at")
-    .eq("client_id", clientId);
-
-  type DmRad = { display_name: string | null; stage: string | null; notes: string | null; next_action: string | null; next_action_at: string | null };
+  const dmRows = dmKort.rader; // hämtade redan ovan — en läsning räcker
   const dmByNamn = new Map<string, DmRad>();
-  for (const d of (dmRows as DmRad[] | null) || []) {
+  for (const d of dmRows) {
     if (d.display_name) dmByNamn.set(d.display_name.trim().toLowerCase(), d);
   }
 
-  const DM_ETIKETT: Record<string, string> = { new: "Ny", acknowledge: "Bekräftad", connect: "Dialog", offer: "Erbjudande", won: "Bokad", lost: "Förlorad" };
-  // Tid alltid i svensk tidszon: servern kör UTC, annars visas 14.00 som 12:00.
-  const TZ = "Europe/Stockholm";
-  const dagIStockholm = (d: Date) => d.toLocaleDateString("sv-SE", { timeZone: TZ });
-  const tidText = (iso: string) => {
-    const d = new Date(iso);
-    const idag = dagIStockholm(new Date());
-    const imorgon = dagIStockholm(new Date(Date.now() + 86400000));
-    const dStr = dagIStockholm(d);
-    const dag = dStr === idag ? "idag" : dStr === imorgon ? "imorgon" : d.toLocaleDateString("sv-SE", { timeZone: TZ, day: "numeric", month: "short" });
-    return `${dag} ${d.toLocaleTimeString("sv-SE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" })}`;
-  };
+  const DM_ETIKETT = DM_ETIKETTER;
 
   // Per affär: etikett ur DM-steget, förslag ur kontexten, och bokad tid när den finns.
   const dmInfo: Record<string, { etikett: string | null; forslag: string | null; bokad: string | null; bokadNot: string | null }> = {};
@@ -163,6 +257,16 @@ export async function GET() {
       }
     }
     dmInfo[o.id] = { etikett, forslag, bokad: null, bokadNot: null };
+  }
+
+  // Bokade DM-kontakter UTAN affär i pipelinen får egna kort — annars skulle en tid
+  // som bokats i ett DM aldrig synas i Fokus. Kontakter som redan äger en affär
+  // hoppas över: affärskortet bär dem (raden ovan).
+  const iPipeline = new Set(opps.map((o) => (o.namn || "").trim().toLowerCase()).filter(Boolean));
+  const egnaDmKort = dmKortFranRader(dmRows, iPipeline, Date.now());
+  if (egnaDmKort.kort.length) {
+    prioritering.dagensDrag = [...prioritering.dagensDrag, ...egnaDmKort.kort];
+    Object.assign(dmInfo, egnaDmKort.info);
   }
 
   // Grafisk pipeline-stegrad: hela pipelinen (steg i ordning) från GHL, per affär.
