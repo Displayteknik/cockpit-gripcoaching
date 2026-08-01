@@ -98,24 +98,54 @@ ${VARIANTREGEL}`;
       jsonSchema,
     });
 
-    const result = await generateJSON<GenResponse>({
-      model: "gemini-2.5-pro",
-      systemInstruction: b.system,
-      prompt: b.user,
-      temperature: 0.95,
-      maxOutputTokens: 4000,
-      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
-    });
+    // KVALITET-3/punkt 2a: aldrig tyst färre än utlovat. Modellen levererar ibland
+    // färre idéer än begärt, och tomma/dubblerade hookar faller i städningen efteråt.
+    // Ett bortfall ska GENERERA OM, inte tyst krympa leveransen. Taket på tre rundor
+    // finns för att en tunn profil aldrig ska kunna hålla anropet uppe i det oändliga.
+    const idéer: IdeaSeed[] = [];
+    const seddaHookar = new Set<string>();
+    const nyckel = (h: string) => h.toLowerCase().replace(/[^a-zåäö0-9\s]/gi, " ").replace(/\s+/g, " ").trim();
+    let forsok = 0;
+    for (let runda = 1; runda <= 3 && idéer.length < count; runda++) {
+      forsok = runda;
+      const saknas = count - idéer.length;
+      let result: GenResponse;
+      try {
+        result = await generateJSON<GenResponse>({
+          model: "gemini-2.5-pro",
+          systemInstruction: b.system,
+          prompt: runda === 1 ? b.user : `Generera ${saknas} HELT NYA idéer nu, med andra ingångar än dessa: ${idéer.map((i) => i.hook).join(" | ")}. Returnera bara JSON.`,
+          temperature: runda === 1 ? 0.95 : 1,
+          maxOutputTokens: 4000,
+          skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+        });
+      } catch (e) {
+        // Fail-open: ett tappat omtag får aldrig radera det som redan lyckats.
+        console.error(`[linkedin/ideas] runda ${runda} misslyckades:`, e);
+        break;
+      }
+      for (const i of result.ideas ?? []) {
+        if (idéer.length >= count) break;
+        const hook = String(i?.hook || "").trim();
+        const k = nyckel(hook);
+        if (!k || seddaHookar.has(k)) continue;
+        seddaHookar.add(k);
+        idéer.push(i);
+      }
+      if (idéer.length < count) {
+        console.warn(`[linkedin/ideas] runda ${runda}: ${idéer.length}/${count} idéer, genererar om.`);
+      }
+    }
 
     // TEXT-1: enhetlig sanering — flödet saknade sanering helt före migreringen.
-    for (const i of result.ideas ?? []) {
+    for (const i of idéer) {
       [i.hook, i.angle] = await Promise.all([
         saneraText(i.hook, clientId, "linkedin"),
         saneraText(i.angle, clientId, "linkedin"),
       ]);
     }
 
-    const inserts = (result.ideas ?? []).map((i) => ({
+    const inserts = idéer.map((i) => ({
       client_id: clientId,
       status: "idea" as const,
       pillar: i.pillar,
@@ -133,7 +163,13 @@ ${VARIANTREGEL}`;
     }
 
     await logActivity(clientId, "linkedin_ideas", `Genererade ${saved.length} LinkedIn-idéer`, "/dashboard/linkedin");
-    return NextResponse.json({ ideas: saved });
+    return NextResponse.json({
+      ideas: saved,
+      begart: count,
+      levererat: saved.length,
+      forsok,
+      meddelande: saved.length < count ? `${saved.length} av ${count} klara, generera fler` : "",
+    });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

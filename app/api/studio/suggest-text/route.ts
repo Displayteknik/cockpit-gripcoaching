@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient } from "@/lib/client-context";
-import { generateStudioCopy } from "@/lib/studio/copy";
+import { ANTAL_IDEER, byggBeskrivning, generateStudioCopyResultat, ideerMeddelande } from "@/lib/studio/copy";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 import { analyzeImageRole, classifyImageRoleFromText, type BildRoll } from "@/lib/images";
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       bildroll = a.role;
     }
 
-    const suggestions = await generateStudioCopy({
+    const resultat = await generateStudioCopyResultat({
       clientId: client?.id || "",
       templateId: String(body.templateId || ""),
       format: String(body.format || "1080x1350"),
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
       imageRole: bildroll,
     });
 
+    const suggestions = resultat.suggestions;
     if (suggestions.length === 0) {
       return NextResponse.json({ error: "Kunde inte skapa förslag — försök igen." }, { status: 502 });
     }
@@ -60,15 +61,26 @@ export async function POST(req: NextRequest) {
         s.headline1 = sanitizeGenerated(s.headline1, { hashtags: false });
         s.headline2 = sanitizeGenerated(s.headline2, { hashtags: false });
         s.body = sanitizeGenerated(s.body, { hashtags: false });
+        // Beskrivningen speglar de sanerade fälten — annars kan listan visa ord
+        // som inte längre står på bilden.
+        s.beskrivning = byggBeskrivning(s.headline1, s.headline2, s.body);
       }
     }
     const top = suggestions[0];
+    // KVALITET-3/punkt 2a: aldrig tyst färre än utlovat. Gränssnittet får både
+    // siffrorna och en färdig, klarspråkig rad att visa när löftet inte kunde hållas.
+    const levererat = suggestions.length;
+    const meddelande = ideerMeddelande(levererat);
     // Bakåtkompatibelt: toppförslagets fält direkt + hela listan i suggestions.
     return NextResponse.json({
       headline1: top.headline1,
       headline2: top.headline2,
       body: top.body,
       suggestions,
+      begart: ANTAL_IDEER,
+      levererat,
+      forsok: resultat.forsok,
+      meddelande,
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

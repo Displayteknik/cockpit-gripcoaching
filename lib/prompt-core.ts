@@ -169,6 +169,14 @@ export const SANNINGSKRAV = [
   "ÄMNET ÄR INGET MANDAT ATT FABRICERA: uppdraget, ämnesraden eller rubriken kan vara formulerad som en kundberättelse ('En kund tvekade länge...', 'Så räddade vi kundens...', 'Ett case där...'). Den formuleringen beskriver bara VAD texten ska handla om — den upphäver ALDRIG sanningskravet och ger ALDRIG tillåtelse att uppfinna kunden, minnet, citatet eller resultatet.",
   "Ber ämnet om en kundberättelse och profilen saknar passande story-bank-material: SKRIV OM ÄMNET som en generell observation om mönstret, i samma anda. Tillåtet: 'Vi möter ofta kunder som tvekar länge...', 'Den tveksamheten hör vi varje vecka...', 'Många väntar för länge, och reaktionen efteråt är nästan alltid densamma.' FÖRBJUDET: 'Jag minns en kund som...', 'En av våra kunder berättade att...' när personen inte finns i profilen.",
   "Formuleringar som signalerar ett specifikt minne — 'jag minns', 'en av våra kunder', 'häromdagen', 'förra veckan kom en kund', 'ett brudpar som' — får bara användas när personen eller händelsen faktiskt står i profilen ovan. Kan du inte peka på var i profilen den finns: skriv generellt i stället.",
+  // KVALITET-3/punkt 2c: skarptestet av idé-flödet fällde "dubbelt så många gäster"
+  // och "betalar sig själv på tre månader". Ingen av dem innehåller en SIFFRA, så
+  // varken modellen eller den deterministiska siffergrinden såg dem som sifferpåstå-
+  // enden. De är det ändå: ett mätbart löfte om storlek eller tid. Regeln måste därför
+  // säga uttryckligen att ordformen räknas.
+  "SIFFERPÅSTÅENDEN GÄLLER ÄVEN I ORDFORM. 'Dubbelt så många gäster', 'tre gånger fler förfrågningar', 'halva tiden', 'betalar sig själv på tre månader', 'lönsam redan efter en vecka' är exakt lika mycket sifferpåståenden som '200 %' — de lovar en mätbar storlek eller en mätbar tid. De kräver samma täckning i profilen som ett tal med siffror.",
+  "Saknas täckningen: skriv utfallet UTAN storlek. Tillåtet: 'fler gäster ser menyn', 'sparar tryckkostnader', 'du slipper skriva om tavlan varje morgon'. FÖRBJUDET: 'dubbelt så många gäster', 'betalar sig på tre månader', 'sparar tusenlappar i månaden'.",
+  "Det gäller ALLA led i leveransen, även idéer, rubrikförslag och korta pitchar. En idé med en påhittad siffra är ett löfte som följer med: väljs idén följer siffran med in i den färdiga texten, eller så tappar inlägget sin poäng när grinden skalar bort den. Håll löftet sant redan i idén.",
 ].join("\n");
 
 // ── PRISREGELN (KVALITET-3/punkt 5) — Håkans beslut, plattformsregel ─────────

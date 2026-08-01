@@ -14,6 +14,32 @@ export interface StudioCopySuggestion {
   headline1: string;
   headline2: string;
   body: string;
+  /** KVALITET-3/punkt 2b: färdig beskrivningsrad för idélistan — 1–2 fullständiga
+   *  meningar, byggd av underrubrik + brödtext. Se byggBeskrivning för varför den
+   *  finns: gränssnittet limmade förr ihop delarna med kolon och fick fragment. */
+  beskrivning: string;
+}
+
+/** Antal idéer flödet lovar användaren ("Ge mig 3 idéer"). Löftet är en siffra, inte en gissning. */
+export const ANTAL_IDEER = 3;
+
+/**
+ * KVALITET-3/punkt 2a — raden användaren ska se när löftet inte kunde hållas.
+ * En källa, så gränssnittet och API:t aldrig säger olika saker. Tom sträng när
+ * allt levererades: då finns inget att meddela.
+ */
+export function ideerMeddelande(levererat: number, begart: number = ANTAL_IDEER): string {
+  return levererat >= begart ? "" : `${levererat} av ${begart} klara, generera fler`;
+}
+
+export interface StudioCopyResultat {
+  suggestions: StudioCopySuggestion[];
+  /** Vad som utlovades (ANTAL_IDEER). */
+  begart: number;
+  /** Vad som faktiskt kunde levereras. Understiger den begart har flödet gett upp efter omgenerering. */
+  levererat: number;
+  /** Antal genereringsrundor som kördes (1 = allt överlevde första gången). */
+  forsok: number;
 }
 
 export interface StudioCopyOpts {
@@ -62,7 +88,7 @@ const DANGLING = /\b(och|att|som|en|ett|för|med|på|till|av|den|det|är|kan|nä
 // CTA hör i bildtexten och i mallens fot-knapp, aldrig i texten PÅ bilden.
 const CTA_ORD = /\b(boka|ring|kontakta|hör av dig|mejla|maila|swisha|beställ|offert inom|slå en signal|besök oss|klicka)\b/i;
 
-export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCopySuggestion[]> {
+export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<StudioCopyResultat> {
   const meta = getTemplateMeta(opts.templateId);
   const brand = opts.brandName || "kunden";
   const industry = opts.industry ? ` (${opts.industry})` : "";
@@ -132,7 +158,8 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
   // KVALITET-3/punkt 5: undantaget läses ur ANVÄNDARENS text (ämne + inläggets
   // grundtext), aldrig ur profilen. Samma källa som kärnan använder för promptlagret,
   // så prompt och grind aldrig kan säga emot varandra.
-  const prisTillatet = harPrisuppgift([opts.topic || "", caption].filter(Boolean).join("\n"));
+  const anvandarKalla = [opts.topic || "", caption].filter(Boolean).join("\n");
+  const prisTillatet = harPrisuppgift(anvandarKalla);
   const hooks = tillatnaHooks(opts.imageRole, harSiffror);
 
   const userPrompt = [
@@ -141,92 +168,228 @@ export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCo
     `{"hookType":"${hooks.join("|")}","headline1":"...","headline2":"...","body":"..."}`,
   ].join("\n");
 
-  const result = await iterateGenerate({
-    prebuilt: { system: b.system, fingerprint: b.fingerprint, winning: b.winning },
-    userPrompt,
-    clientId: opts.clientId,
-    category: "studio_copy",
-    variants: 7, // fler råförslag → större chans att ≥3 distinkta överlever filter + dedup
-    // En hook-typ per försök, men BARA hooks som passar bildens roll (problembild → problem/fråga,
-    // lösningsbild → påstående/resultat) och med statistik bortgrindad utan verifierade siffror.
-    variantSuffixes: hooks.map(
-      (h) => `DITT FÖRSÖK: använd hook-typen "${h}" och en egen vinkel som de andra försöken inte kan råka landa på. Sätt hookType till exakt "${h}".`,
-    ),
-    temperature: 0.9,
-    maxTokens: 400,
-  });
-
-  const out: { s: StudioCopySuggestion; score: number }[] = [];
-  const seen = new Set<string>();
   // Alla siffer-/pris-tokens i profilen som en mängd (utan mellanslag/tusenavgränsare).
   // "21 000 kr" → "21000". Används för att backa VARJE siffra i förslaget — även små tal
   // och kvoter som "7 av 10" (annars slipper påhittad statistik förbi).
+  //
+  // KVALITET-3/punkt 5 (fail-safe): ANVÄNDARENS egen text räknas som källa här, inte
+  // bara profilen. Grindens uppgift är att stoppa PÅHITTADE tal, och ett tal användaren
+  // själv skrivit in i sitt ämne är per definition inte påhittat av modellen — det ska
+  // aldrig skalas bort. Vilka HOOK-TYPER som är tillåtna avgörs däremot fortsatt av
+  // profilen ensam (profilHarSiffror ovan): statistik-hooken kräver verifierade siffror
+  // i varumärket, inte ett tal någon råkade nämna i ämnesraden.
+  const backningsKalla = [grindKalla, anvandarKalla].filter(Boolean).join("\n");
   const profilTal = new Set<string>();
-  for (const m of grindKalla.matchAll(/\d[\d\s.,]*\d|\d/g)) profilTal.add(m[0].replace(/[\s.,]/g, ""));
+  for (const m of backningsKalla.matchAll(/\d[\d\s.,]*\d|\d/g)) profilTal.add(m[0].replace(/[\s.,]/g, ""));
   // Statistik-PÅSTÅENDEN ("8 av 10", "40 %") kräver att HELA frasen står i profilen —
   // lösa tal räcker inte ("8" och "10" finns som öppettider men "8 av 10 kunder" är påhitt).
-  const profilKomp = grindKalla.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
+  const profilKomp = backningsKalla.normalize("NFC").toLowerCase().replace(/[\s\u00a0]/g, "");
   const tillatna = new Set(hooks); // deterministisk backstop för roll-styrning + statistik-grind
-  for (const v of result.all_variants) {
-    const obj = parseJson(v.text);
-    if (!obj) continue;
-    const s: StudioCopySuggestion = {
-      hookType: str(obj.hookType),
-      headline1: str(obj.headline1),
-      headline2: str(obj.headline2),
-      body: str(obj.body),
-    };
-    if (!s.headline1 || !s.body) continue;
-    // Statistik utan verifierade siffror, eller en hook-typ som krockar med bildens roll → bort.
-    if (s.hookType && !tillatna.has(s.hookType)) continue;
-    if (![s.headline1, s.headline2, s.body].filter(Boolean).every(looksComplete)) continue;
-    if (![s.headline1, s.headline2, s.body].every(noForbidden)) continue;
-    if ([s.headline1, s.headline2, s.body].some(hasEmojiOrList)) continue; // affisch-format: rent
-    if (hasContactInfo(s.body)) continue; // telefon/URL finns redan i mallens fot
-    if (arStaplad(s.body)) continue; // telegramspråk: staplade fragment
-    if ([s.headline1, s.headline2, s.body].some(harCta)) continue; // CTA hör i bildtext + fot-knapp
-    if ([s.headline1, s.headline2, s.body].some((f) => harObackadSiffra(f, profilTal))) continue; // aldrig påhittade siffror (även "7 av 10")
-    if ([s.headline1, s.headline2, s.body].some((f) => harObackadStatistikfras(f, profilKomp))) continue; // kvot/procent-påståenden kräver frasen i profilen
-    // KVALITET-3/punkt 5: siffergrinden ovan backar tal MOT PROFILEN — och sedan
-    // PROFIL-1/F1 kopplade in pricing_notes står de riktiga priserna där. Ett pris
-    // passerar alltså numera den grinden med heder i behåll. Det är precis vad
-    // prisregeln säger nej till: priset ska tas i samtalet, inte i inlägget. Här
-    // finns flera kandidater att välja mellan, så grinden kan vara hård utan att
-    // riskera en tom leverans (3-av-3-loopen genererar om). Undantaget: användaren
-    // skrev själv in ett pris i ämnet eller grundtexten.
-    if (!prisTillatet && [s.headline1, s.headline2, s.body].some(harPrisuppgift)) continue;
-    if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 150) continue;
-    // Likhets-dedup: normalisera bort småord/skiljetecken så nästan-dubbletter
-    // ("Vad säger blommorna?" vs "Vad säger dina blommor?") räknas som samma.
-    const key = normalizeHeadline(s.headline1);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push({ s, score: v.score?.total ?? 0 });
+
+  // Kandidater som överlevt grindarna, delade mellan genereringsrundorna.
+  const out: { s: StudioCopySuggestion; score: number }[] = [];
+  const seen = new Set<string>();
+
+  // Grindarna i EN funktion, så omgenereringen döms med exakt samma måttstock som
+  // första rundan. Returnerar antalet nya kandidater som överlevde.
+  const samlaKandidater = (varianter: { text: string; score: { total: number } | null }[]): number => {
+    let nya = 0;
+    for (const v of varianter) {
+      const obj = parseJson(v.text);
+      if (!obj) continue; // parsningsfall — räknas som ett bortfall, rättas av omgenereringen
+      const s: StudioCopySuggestion = {
+        hookType: str(obj.hookType),
+        headline1: str(obj.headline1),
+        headline2: str(obj.headline2),
+        body: str(obj.body),
+        beskrivning: "",
+      };
+      if (!s.headline1 || !s.body) continue;
+      // Statistik utan verifierade siffror, eller en hook-typ som krockar med bildens roll → bort.
+      if (s.hookType && !tillatna.has(s.hookType)) continue;
+      if (![s.headline1, s.headline2, s.body].filter(Boolean).every(looksComplete)) continue;
+      if (![s.headline1, s.headline2, s.body].every(noForbidden)) continue;
+      if ([s.headline1, s.headline2, s.body].some(hasEmojiOrList)) continue; // affisch-format: rent
+      if (hasContactInfo(s.body)) continue; // telefon/URL finns redan i mallens fot
+      if (arStaplad(s.body)) continue; // telegramspråk: staplade fragment
+      if ([s.headline1, s.headline2, s.body].some(harCta)) continue; // CTA hör i bildtext + fot-knapp
+      if ([s.headline1, s.headline2, s.body].some((f) => harObackadSiffra(f, profilTal))) continue; // aldrig påhittade siffror (även "7 av 10")
+      if ([s.headline1, s.headline2, s.body].some((f) => harObackadStatistikfras(f, profilKomp))) continue; // kvot/procent-påståenden kräver frasen i profilen
+      // KVALITET-3/punkt 2c: kvantifierade löften i ORDFORM ("dubbelt så många gäster",
+      // "betalar sig själv på tre månader"). Siffergrinden ovan ser dem inte — de
+      // innehåller ingen siffra — men de lovar en mätbar storlek eller tid och kräver
+      // därför samma täckning i profilen.
+      if ([s.headline1, s.headline2, s.body].some((f) => harObackatKvantLofte(f, profilKomp))) continue;
+      // KVALITET-3/punkt 5: siffergrinden ovan backar tal MOT PROFILEN — och sedan
+      // PROFIL-1/F1 kopplade in pricing_notes står de riktiga priserna där. Ett pris
+      // passerar alltså numera den grinden med heder i behåll. Det är precis vad
+      // prisregeln säger nej till: priset ska tas i samtalet, inte i inlägget. Här
+      // finns flera kandidater att välja mellan, så grinden kan vara hård utan att
+      // riskera en tom leverans (3-av-3-loopen genererar om). Undantaget: användaren
+      // skrev själv in ett pris i ämnet eller grundtexten.
+      if (!prisTillatet && [s.headline1, s.headline2, s.body].some(harPrisuppgift)) continue;
+      if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 150) continue;
+      // Likhets-dedup: normalisera bort småord/skiljetecken så nästan-dubbletter
+      // ("Vad säger blommorna?" vs "Vad säger dina blommor?") räknas som samma.
+      // Gäller ÄVEN över rundgränser: en omgenerering får inte ge samma idé igen.
+      const key = normalizeHeadline(s.headline1);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      s.beskrivning = byggBeskrivning(s.headline1, s.headline2, s.body);
+      out.push({ s, score: v.score?.total ?? 0 });
+      nya++;
+    }
+    return nya;
+  };
+
+  // Välj topp N, men prioritera OLIKA hook-typer så idéerna känns distinkta.
+  const valj = (): StudioCopySuggestion[] => {
+    const sorterade = [...out].sort((a, b) => b.score - a.score);
+    const picked: StudioCopySuggestion[] = [];
+    const usedHooks = new Set<string>();
+    for (const p of sorterade) {
+      if (picked.length >= ANTAL_IDEER) break;
+      if (!usedHooks.has(p.s.hookType)) { picked.push(p.s); usedHooks.add(p.s.hookType); }
+    }
+    for (const p of sorterade) {
+      if (picked.length >= ANTAL_IDEER) break;
+      if (!picked.includes(p.s)) picked.push(p.s);
+    }
+    return picked;
+  };
+
+  // KVALITET-3/punkt 2a: 3-av-3 DETERMINISTISKT. Förr kunde antalet variera mellan 2
+  // och 3 mellan körningar på samma ämne: 7 råförslag gick genom parsning, tolv
+  // kvalitetsgrindar och en likhets-dedup, och hur många som överlevde var slumpens
+  // sak. Ett bortfall är inte ett fel i grindarna — de ska vara hårda — utan ett skäl
+  // att GENERERA OM. Loopen kör därför nya rundor tills löftet är infriat, med
+  // hook-typerna som saknas först och ett uttryckligt "de andra föll på kvalitets-
+  // grindarna" i instruktionen. Taket på tre rundor finns för att en profil som helt
+  // saknar underlag aldrig ska kunna hålla anropet uppe i det oändliga; då levereras
+  // det som finns, och anroparen får begart/levererat och kan säga det rakt ut i UI:t.
+  const MAX_RUNDOR = 3;
+  let forsok = 0;
+  let picked: StudioCopySuggestion[] = [];
+  for (let runda = 1; runda <= MAX_RUNDOR; runda++) {
+    const saknas = ANTAL_IDEER - picked.length;
+    // Runda 1 tar hela bredden. Omgenereringen behöver bara täcka bortfallet, men med
+    // marginal: grindarna fäller en del av dem också.
+    const variants = runda === 1 ? 7 : Math.min(7, Math.max(3, saknas * 2 + 1));
+    // Hook-typer som ännu inte gett en vald idé först — så omgenereringen fyller
+    // luckan i stället för att producera en fjärde variant av det som redan finns.
+    const anvanda = new Set(picked.map((p) => p.hookType));
+    const kvar = hooks.filter((h) => !anvanda.has(h));
+    const rundansHooks = kvar.length ? kvar : hooks;
+    forsok = runda;
+
+    let result;
+    try {
+      result = await iterateGenerate({
+        prebuilt: { system: b.system, fingerprint: b.fingerprint, winning: b.winning },
+        userPrompt: runda === 1 ? userPrompt : `${userPrompt}\n\nOMTAG: tidigare förslag föll på kvalitetsgrindarna (avhugget fragment, uppmaning i affischtexten, obackad siffra eller pris, eller för likt ett annat förslag). Skriv en HELT NY idé med en egen vinkel, hela meningar och inga tal som inte står i varumärkesprofilen.`,
+        clientId: opts.clientId,
+        category: "studio_copy",
+        variants,
+        // En hook-typ per försök, men BARA hooks som passar bildens roll (problembild → problem/fråga,
+        // lösningsbild → påstående/resultat) och med statistik bortgrindad utan verifierade siffror.
+        variantSuffixes: rundansHooks.map(
+          (h) => `DITT FÖRSÖK: använd hook-typen "${h}" och en egen vinkel som de andra försöken inte kan råka landa på. Sätt hookType till exakt "${h}".`,
+        ),
+        // Höjd temperatur i omtagen: samma prompt vid samma temperatur tenderar att ge
+        // tillbaka samma förslag, och dedupen slänger det direkt.
+        temperature: runda === 1 ? 0.9 : 1,
+        maxTokens: 400,
+      });
+    } catch (e) {
+      // Fail-open: ett tappat omtag får aldrig radera det som redan lyckats.
+      console.error(`[studio/copy] genereringsrunda ${runda} misslyckades:`, e);
+      break;
+    }
+
+    samlaKandidater(result.all_variants);
+    picked = valj();
+    if (picked.length >= ANTAL_IDEER) break;
+    console.warn(`[studio/copy] runda ${runda}: ${picked.length}/${ANTAL_IDEER} idéer överlevde grindarna, genererar om.`);
   }
-  out.sort((a, b) => b.score - a.score);
-  // Topp 3 men prioritera OLIKA hook-typer så de tre känns distinkta, inte tre likadana frågor.
-  const picked: StudioCopySuggestion[] = [];
-  const usedHooks = new Set<string>();
-  for (const p of out) {
-    if (picked.length >= 3) break;
-    if (!usedHooks.has(p.s.hookType)) { picked.push(p.s); usedHooks.add(p.s.hookType); }
-  }
-  for (const p of out) {
-    if (picked.length >= 3) break;
-    if (!picked.includes(p.s)) picked.push(p.s);
-  }
+
   // TEXT-1 justeringsrundan (v2): fälten gick aldrig genom saneringen — tankstreck
   // läckte rakt ut på bilderna (20 %→50 % i mätningen). Saneras EFTER score/dedup
   // (scoren ska mäta modellens råa träffsäkerhet som förut), FÖRE retur. Hashtag-
   // städet är verkningslöst här (fälten har inga hashtags) men skadar inte.
-  return Promise.all(
-    picked.map(async (s) => ({
-      hookType: s.hookType,
-      headline1: await saneraText(s.headline1, opts.clientId),
-      headline2: await saneraText(s.headline2, opts.clientId),
-      body: await saneraText(s.body, opts.clientId),
-    })),
+  const suggestions = await Promise.all(
+    picked.map(async (s) => {
+      const [headline1, headline2, body] = await Promise.all([
+        saneraText(s.headline1, opts.clientId, undefined, { prisTillatet }),
+        saneraText(s.headline2, opts.clientId, undefined, { prisTillatet }),
+        saneraText(s.body, opts.clientId, undefined, { prisTillatet }),
+      ]);
+      // Beskrivningen byggs OM efter saneringen: saneraText kan ändra orden
+      // (tankstreck, floskler, terminologi) och beskrivningen ska visa det som
+      // faktiskt hamnar på bilden, inte den osanerade råtexten.
+      return { hookType: s.hookType, headline1, headline2, body, beskrivning: byggBeskrivning(headline1, headline2, body) };
+    }),
   );
+
+  if (suggestions.length < ANTAL_IDEER) {
+    console.warn(`[studio/copy] levererar ${suggestions.length}/${ANTAL_IDEER} idéer efter ${forsok} rundor (${opts.clientId}).`);
+  }
+  return { suggestions, begart: ANTAL_IDEER, levererat: suggestions.length, forsok };
+}
+
+/**
+ * Bakåtkompatibel form: bara listan. Skripten (scripts/text1-*.mts) och äldre
+ * anropare vill ha en array. Löftesräkningen finns i generateStudioCopyResultat.
+ */
+export async function generateStudioCopy(opts: StudioCopyOpts): Promise<StudioCopySuggestion[]> {
+  return (await generateStudioCopyResultat(opts)).suggestions;
+}
+
+/**
+ * KVALITET-3/punkt 2b — beskrivningsraden för idélistan.
+ *
+ * ROTORSAK till de trasiga beskrivningarna ("aktuell?:", "gäster.:"): gränssnittet
+ * renderade `{headline2}: {body}`. Underrubriken är i regel en HEL mening med egen
+ * slutpunkt eller frågetecken, så kolonet hamnade efter ett avslutat påstående och
+ * gav ett fragment. Felet satt alltså varken i prompten eller i parsningen utan i
+ * hopfogningen — och därför byggs raden nu på servern, en gång, som riktig text.
+ *
+ * Regler: 1–2 FULLSTÄNDIGA meningar. Varje del avslutas med skiljetecken. Hooken
+ * (headline1) är rubriken och upprepas aldrig i beskrivningen. Dubbletter faller.
+ */
+export function byggBeskrivning(headline1: string, headline2: string, body: string): string {
+  const hook = normalizeHeadline(headline1 || "");
+  const kandidater = [...delaMeningar(headline2), ...delaMeningar(body)]
+    .map(avslutaMening)
+    .filter(Boolean);
+  const ut: string[] = [];
+  const sedda = new Set<string>();
+  for (const m of kandidater) {
+    // normalizeHeadline städar bort småord och kan ge tom sträng för en kort mening
+    // ("Ett. Två."). Rå gemener som reserv, annars tappas meningen helt.
+    const n = normalizeHeadline(m) || m.toLowerCase();
+    if (sedda.has(n)) continue;
+    if (hook && n === hook) continue; // hooken är rubriken, inte beskrivning
+    sedda.add(n);
+    ut.push(m);
+    if (ut.length === 2) break;
+  }
+  return ut.join(" ");
+}
+
+/** Dela upp i meningar och behåll skiljetecknet. Tom sträng ger tom lista. */
+function delaMeningar(s: string): string[] {
+  return (String(s || "").match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g) || []).map((m) => m.trim()).filter(Boolean);
+}
+
+/**
+ * Gör delen till en avslutad mening. Släpande kolon, semikolon och komma tas bort
+ * först: det är just de tecknen som gjorde raden till ett fragment när delarna
+ * limmades ihop.
+ */
+function avslutaMening(s: string): string {
+  const t = String(s || "").trim().replace(/[\s:;,]+$/, "");
+  if (!t) return "";
+  return /[.!?…]$/.test(t) ? t : `${t}.`;
 }
 
 // Normalisera en rubrik för likhets-jämförelse: gemener, bort skiljetecken + vanliga småord.
@@ -317,6 +480,42 @@ function harObackadSiffra(s: string, profilTal: Set<string>): boolean {
  * Token-grinden ovan räcker inte — "8" och "10" kan finnas som öppettider i profilen
  * medan "8 av 10 kunder" är ren fabrikation (hände skarpt för Displayteknik).
  */
+/**
+ * KVALITET-3/punkt 2c: kvantifierade löften i ORDFORM.
+ *
+ * Skarptestet av idé-flödet fällde "dubbelt så många gäster" och "betalar sig själv
+ * på tre månader". Ingen av dem innehåller en siffra, så både modellen och den
+ * teckenbaserade siffergrinden ovan såg rakt igenom dem. De är ändå sifferpåståenden:
+ * de lovar en mätbar STORLEK eller en mätbar TID. Fail-closed på samma sätt som
+ * statistikfraserna — hela uttrycket måste stå i profilen, annars faller förslaget.
+ *
+ * Mönstren är branschneutrala: de träffar löftets FORM, inte en viss produkt. Samma
+ * grind fäller "dubbelt så många bröllop" hos floristen och "halva tiden" hos coachen.
+ */
+const ORDTAL = "(?:en|ett|två|tre|fyra|fem|sex|sju|åtta|nio|tio|elva|tolv)";
+const KVANT_MONSTER: RegExp[] = [
+  // Multiplikatorer och andelar: "dubbelt så många", "halva tiden", "hälften av".
+  /\b(?:dubbelt|dubbla|tredubbelt|tredubbla|fyrdubbelt|tiodubbelt|hälften|halva\s+(?:tiden|priset|kostnaden|jobbet|arbetet))\b/gi,
+  // "tre gånger fler", "två ggr så snabbt".
+  new RegExp(`\\b${ORDTAL}\\s+(?:gånger|ggr)\\b`, "gi"),
+  // Återbetalningslöften: "betalar sig själv", "tjänar in sig".
+  /\b(?:betalar\s+sig|tjänar\s+in\s+sig)\b/gi,
+  // Tidslöften i ordform: "på tre månader", "redan efter en vecka".
+  // Tidsordet matchas på STAM + böjning ("vecka", "veckor", "månader", "året") —
+  // en handskriven ändelselista missade "vecka" och släppte igenom hela löftet.
+  new RegExp(`\\b(?:på|inom|redan\\s+efter|efter|ta[gr]?\\s+bara)\\s+${ORDTAL}\\s+(?:sekund|minut|timm|dygn|dag|veck|månad|kvartal|år)[a-zåäö]*\\b`, "gi"),
+];
+
+function harObackatKvantLofte(s: string, profilKomp: string): boolean {
+  const komp = (fras: string) => fras.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
+  for (const re of KVANT_MONSTER) {
+    for (const m of String(s || "").matchAll(re)) {
+      if (!profilKomp.includes(komp(m[0]))) return true;
+    }
+  }
+  return false;
+}
+
 function harObackadStatistikfras(s: string, profilKomp: string): boolean {
   const komp = (fras: string) => fras.normalize("NFC").toLowerCase().replace(/[\s ]/g, "");
   for (const m of s.matchAll(/\d+\s*av\s*\d+/gi)) {
