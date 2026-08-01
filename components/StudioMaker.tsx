@@ -29,7 +29,10 @@ import ScheduleQueue from "@/components/studio/ScheduleQueue";
 import { toBlob } from "html-to-image";
 
 interface ClientInfo { id: string; name: string; slug: string; primary_color: string }
-interface Suggestion { hookType: string; headline1: string; headline2: string; body: string }
+// KVALITET-3/2b: `beskrivning` byggs på servern (byggBeskrivning i lib/studio/copy.ts) —
+// 1–2 fullständiga meningar. Valfri här: äldre sparade förslag saknar fältet, då faller
+// listan tillbaka på headline2/body (utan det gamla kolonlimmet som gav "aktuell?:").
+interface Suggestion { hookType: string; headline1: string; headline2: string; body: string; beskrivning?: string }
 interface StudioPost { id: string; template_id: string; format: StudioFormat; title: string; image_url: string | null; payload: Record<string, unknown>; updated_at: string }
 interface GhlAccount { id: string; name: string; platform: string; type: string; avatar?: string; isExpired?: boolean }
 
@@ -1743,7 +1746,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         </span>
                         <span className="text-sm font-bold text-gray-900 truncate">{s.headline1}</span>
                       </div>
-                      <div className="text-xs text-gray-500 line-clamp-2">{s.headline2}: {s.body}</div>
+                      <div className="text-xs text-gray-500 line-clamp-2">{s.beskrivning || [s.headline2, s.body].filter(Boolean).join(". ")}</div>
                     </button>
                   ))}
                 </div>
@@ -2007,7 +2010,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           </span>
                           <span className="text-sm font-bold text-gray-900 truncate">{s.headline1}</span>
                         </div>
-                        <div className="text-xs text-gray-500 line-clamp-2">{s.headline2}: {s.body}</div>
+                        <div className="text-xs text-gray-500 line-clamp-2">{s.beskrivning || [s.headline2, s.body].filter(Boolean).join(". ")}</div>
                       </button>
                     ))}
                   </div>
