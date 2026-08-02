@@ -8,6 +8,14 @@ import {
   nollstallBudgetCache,
   type Felklass,
 } from "@/lib/ai-usage";
+import {
+  aktuellPeriod,
+  arFelprissatt,
+  beslutaTopupOrder,
+  laggTillCredits,
+  sakerstallKonto,
+  nollstallCreditPrisCache,
+} from "@/lib/credits";
 
 export const runtime = "nodejs";
 
@@ -63,6 +71,17 @@ export async function GET() {
       sb.from("fasta_kostnader").select("id, namn, kategori, belopp_sek, note, aktiv, sort_order").order("sort_order"),
     ]);
 
+  // ETAPP K2-3: creditsidan av samma bild. Credits och kronor ska stå SIDA VID SIDA —
+  // divergerar de betyder det att creditpriserna är felsatta, och det syns bara här.
+  const [{ data: konton }, { data: creditPriser }, { data: ordrar }] = await Promise.all([
+    sb.from("credit_accounts").select("tenant_id, monthly_quota, extra_credits, period_start, used_this_period"),
+    sb.from("credit_pricing").select("action, credits, label, active").order("credits"),
+    sb.from("topup_orders")
+      .select("id, tenant_id, credits, price_sek, status, created_at, decided_at, decided_by")
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
   const rader = (handelser || []) as Rad[];
   const kr = (r: Rad) => Number(r.estimated_cost_sek) || 0;
 
@@ -94,12 +113,31 @@ export async function GET() {
     (tenantTak || []).map((t) => [(t as { tenant_id: string }).tenant_id, Number((t as { tak_sek: number }).tak_sek)]),
   );
 
+  // Konton per tenant. ⚠ Ett konto vars period inte nollställts än (cron har inte hunnit)
+  // ska visa 0 använt, inte förra månadens siffra — annars ser adminvyn fel ut den 1:a.
+  const period = aktuellPeriod();
+  const kontoPerTenant = new Map(
+    ((konton || []) as Array<{ tenant_id: string; monthly_quota: number; extra_credits: number; period_start: string; used_this_period: number }>)
+      .map((k) => [k.tenant_id, {
+        kvot: Number(k.monthly_quota) || 0,
+        extra: Number(k.extra_credits) || 0,
+        anvant: k.period_start === period ? Number(k.used_this_period) || 0 : 0,
+        periodStart: k.period_start,
+      }]),
+  );
+
   const perTenant = gruppera((r) => r.tenant_id || "").map((g) => {
     const tak = takPerTenant.get(g.nyckel) || TENANT_TAK_SEK;
+    const konto = kontoPerTenant.get(g.nyckel) || null;
+    const creditSaldo = konto ? konto.kvot + konto.extra - konto.anvant : null;
     return {
       tenantId: g.nyckel || null,
       namn: g.nyckel ? namn.get(g.nyckel) || "Okänd klient" : "Utan klient (byråns egna körningar)",
       kostnad: g.kostnad,
+      credits: konto,
+      creditSaldo,
+      // Larmet ur beställningen. Regeln bor i lib/credits — den är en bedömning, inte en formel.
+      felprissatt: arFelprissatt(g.kostnad, tak, creditSaldo),
       anrop: g.anrop,
       fel: g.fel,
       tak,
@@ -155,6 +193,12 @@ export async function GET() {
     },
     fel: rader.filter((r) => r.status === "error").slice(0, 50),
     antalHandelser: rader.length,
+    creditPriser: (creditPriser || []).map((p) => ({ ...(p as object) })),
+    ordrar: ((ordrar || []) as Array<{ tenant_id: string }>).map((o) => ({
+      ...o,
+      namn: namn.get(o.tenant_id) || "Okänd klient",
+    })),
+    period,
   });
 }
 
@@ -167,6 +211,11 @@ export async function PATCH(req: NextRequest) {
     tenantId?: string; tak?: number; plattformTak?: number | null; varningProcent?: number;
     fastId?: string; belopp?: number; aktiv?: boolean;
     nyFast?: { namn: string; kategori?: string; belopp?: number };
+    // ETAPP K2-3
+    orderId?: string; godkann?: boolean;
+    insattning?: { tenantId: string; credits: number; note: string };
+    kvot?: { tenantId: string; credits: number };
+    creditPris?: { action: string; credits: number };
   };
   try {
     b = await req.json();
@@ -217,6 +266,54 @@ export async function PATCH(req: NextRequest) {
       sort_order: 200,
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // ── ETAPP K2-3: creditåtgärder ───────────────────────────────────────────
+
+  if (b.orderId) {
+    const ok = await beslutaTopupOrder(b.orderId, b.godkann !== false, "owner");
+    if (!ok) return NextResponse.json({ error: "Beställningen är redan beslutad eller saknas" }, { status: 400 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (b.insattning) {
+    const { tenantId, credits, note } = b.insattning;
+    // Noteringen är OBLIGATORISK: en insättning utan skäl går inte att förklara i efterhand.
+    if (!tenantId || !note?.trim()) return NextResponse.json({ error: "Klient och notering krävs" }, { status: 400 });
+    const antal = Number(credits);
+    if (!Number.isFinite(antal) || antal === 0) return NextResponse.json({ error: "Ange ett antal credits" }, { status: 400 });
+    const ok = await laggTillCredits({ tenantId, credits: antal, typ: "manual_grant", note, createdBy: "owner" });
+    if (!ok) return NextResponse.json({ error: "Insättningen gick inte igenom" }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (b.kvot) {
+    const antal = Number(b.kvot.credits);
+    if (!b.kvot.tenantId || !Number.isFinite(antal) || antal < 0) {
+      return NextResponse.json({ error: "Kvoten måste vara ett tal, noll eller mer" }, { status: 400 });
+    }
+    // Kontot kan saknas för en tenant som aldrig genererat media — skapa det först.
+    await sakerstallKonto(b.kvot.tenantId);
+    const { error } = await sb
+      .from("credit_accounts")
+      .update({ monthly_quota: antal, updated_at: new Date().toISOString() })
+      .eq("tenant_id", b.kvot.tenantId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (b.creditPris) {
+    const antal = Number(b.creditPris.credits);
+    if (!b.creditPris.action || !Number.isFinite(antal) || antal < 0) {
+      return NextResponse.json({ error: "Priset måste vara ett tal, noll eller mer" }, { status: 400 });
+    }
+    const { error } = await sb
+      .from("credit_pricing")
+      .update({ credits: antal, updated_at: new Date().toISOString() })
+      .eq("action", b.creditPris.action);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    nollstallCreditPrisCache(); // priset cachas 5 min — töm så ändringen gäller direkt
     return NextResponse.json({ ok: true });
   }
 

@@ -278,3 +278,25 @@ Utan fix hade en spärrad kund fått **"Kunde inte skapa en bild för det här �
 **Bevis:** 26 enhetstester i `tests/k2-credits.test.ts` (fyra nya på klartexten), 399 totalt, `tsc` och build rena, båda nya routerna med i bygget.
 
 ⚠ **Ärlig kvarleva:** kundvyn är inte sedd med en riktig inloggad kund, för modulen är av för alla tenants. Det är avsiktligt — utrullningen är K2-4. När Displayteknik slås på som pilot ska vyn granskas med kundens egna ögon innan fler får den.
+
+---
+
+## 10. ETAPP K2-3 — owner-admin (STEG 3, fas 3 av 4)
+
+Allt ligger i `/dashboard/kostnader`, så credits och kronor står i samma vy. Det är hela poängen: skiljer de sig åt är priserna fel, och det syns bara när man ser båda samtidigt.
+
+**Per klient** står nu creditsaldot bredvid kronorna: hur många credits som är kvar av kvoten, hur många som är köpta, hur många som använts. Kvoten ändras direkt på raden.
+
+**Larmet om felprissatta credits** (`arFelprissatt` i `lib/credits`): slår när kostnadstaket nås **medan credits finns kvar**. Då har kunden blivit lovad ett utrymme hon inte får använda, och felet sitter i prissättningen, inte i spärren. Omvänt är det helt normalt att creditsen tar slut medan kronorna räcker, och det larmar inte. Larmet visas både överst i vyn och på klientens egen rad.
+
+**Påfyllningar** listas med kund, antal och belopp. Godkänn så sätts creditsen in och beställningen stämplas med tidpunkt och beslutsfattare. Avslag stämplas likadant. Antalet väntande syns överst så det inte behöver letas upp.
+
+**Manuell insättning** per klient med **obligatorisk notering**. En insättning utan skäl går inte att förklara i efterhand, så tomt fält avvisas i både API och UI.
+
+**Creditpriserna** redigeras i vyn och cachen töms vid sparning, så ett nytt pris gäller direkt i stället för att slå igenom när cachen råkar löpa ut fem minuter senare.
+
+⚠ **Månadsskiftesdetalj:** ett konto vars period inte nollställts än (cron har inte hunnit) visas som 0 använda credits, inte förra månadens siffra. Annars hade adminvyn sett fel ut varje den 1:a.
+
+**Bevis:** 31 enhetstester i credit-sviten (fem nya på larmregeln), 404 totalt, plus 10 kontroller mot den riktiga databasen (`scripts/k2-3-dod.mts`): kvoten ändras och slår igenom i saldot, insättning utan notering avvisas, insättning med notering är spårbar med skäl och avsändare, priset cachas och det nya priset gäller direkt efter tömning. Kast-tenanten städades och creditpriset återställdes.
+
+**Kvar i etappen:** bara K2-4, utrullning bakom entitlement med Displayteknik som pilot. Modulen `credits` finns i registret med default av.

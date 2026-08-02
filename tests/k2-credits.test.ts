@@ -5,7 +5,7 @@
 // testas mot en fejkad Supabase-klient så hela kedjan körs utan databas.
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { aktuellPeriod, raknaSaldo, videoKlipp, forbrukningKlartext, STANDARDKVOT, type Konto } from "@/lib/credits";
+import { aktuellPeriod, raknaSaldo, videoKlipp, forbrukningKlartext, arFelprissatt, STANDARDKVOT, type Konto } from "@/lib/credits";
 
 const konto = (o: Partial<Konto> = {}): Konto => ({
   tenant_id: "t1",
@@ -85,6 +85,32 @@ describe("K2-2 · förbrukningen i klartext", () => {
   it("tom månad får en mening, inte en nolla", () => {
     // "0" som svar på "vad har du skapat?" är ingen information.
     expect(forbrukningKlartext({})).toBe("inget än den här månaden");
+  });
+});
+
+describe("K2-3 · larmet om felprissatta credits", () => {
+  it("kronorna tar slut medan credits finns kvar = felprissatt", () => {
+    // Kunden ser 120 credits kvar men blir stoppad av kostnadstaket. Hon har blivit
+    // lovad ett utrymme hon inte får använda.
+    expect(arFelprissatt(200, 200, 120)).toBe(true);
+    expect(arFelprissatt(240, 200, 5)).toBe(true);
+  });
+
+  it("credits tar slut medan kronorna räcker är NORMALT, inte ett larm", () => {
+    // Det är precis vad kvoten ska göra: bromsa innan marginalen gör det.
+    expect(arFelprissatt(90, 200, 0)).toBe(false);
+  });
+
+  it("under taket med credits kvar är inget larm", () => {
+    expect(arFelprissatt(50, 200, 200)).toBe(false);
+  });
+
+  it("en tenant utan creditkvot kan inte vara felprissatt", () => {
+    expect(arFelprissatt(500, 200, null)).toBe(false);
+  });
+
+  it("tak noll ger inget larm — då finns ingen gräns att slå i", () => {
+    expect(arFelprissatt(500, 0, 100)).toBe(false);
   });
 });
 

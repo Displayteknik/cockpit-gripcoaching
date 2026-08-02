@@ -8,7 +8,16 @@ import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
 // Endast huvudadmin (API:t grindar). Klarspråk, inga tankstreck i UI-texterna.
 
 interface Grupp { nyckel: string; kostnad: number; anrop: number; fel: number }
-interface TenantRad { tenantId: string | null; namn: string; kostnad: number; anrop: number; fel: number; tak: number; procent: number }
+interface Kontodata { kvot: number; extra: number; anvant: number; periodStart: string }
+interface TenantRad {
+  tenantId: string | null; namn: string; kostnad: number; anrop: number; fel: number; tak: number; procent: number;
+  credits: Kontodata | null; creditSaldo: number | null; felprissatt: boolean;
+}
+interface Prisrad { action: string; credits: number; label: string; active: boolean }
+interface Orderrad {
+  id: string; tenant_id: string; namn: string; credits: number; price_sek: number;
+  status: string; created_at: string; decided_at: string | null; decided_by: string | null;
+}
 interface HealthRad {
   provider: string; senaste_ok: string | null; senaste_fel: string | null;
   senaste_felklass: string | null; senaste_httpstatus: number | null; senaste_svarskropp: string | null;
@@ -29,6 +38,9 @@ interface Data {
   plattform: { tak: number | null; varningProcent: number; manad: number };
   fel: FelRad[];
   antalHandelser: number;
+  creditPriser: Prisrad[];
+  ordrar: Orderrad[];
+  period: string;
 }
 
 const kr = (n: number) => `${n.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`;
@@ -85,6 +97,9 @@ export default function KostnaderPage() {
   const [sparar, setSparar] = useState(false);
   const [fastUtkast, setFastUtkast] = useState<Record<string, string>>({});
   const [nyttNamn, setNyttNamn] = useState("");
+  const [prisUtkast, setPrisUtkast] = useState<Record<string, string>>({});
+  const [kvotUtkast, setKvotUtkast] = useState<Record<string, string>>({});
+  const [insattning, setInsattning] = useState<{ tenantId: string; credits: string; note: string } | null>(null);
 
   const hamta = useCallback(async () => {
     setLaddar(true);
@@ -141,6 +156,8 @@ export default function KostnaderPage() {
   }
 
   const roda = data?.health.filter((h) => h.rod) || [];
+  const vantande = data?.ordrar.filter((o) => o.status === "pending") || [];
+  const felprissatta = data?.perTenant.filter((t) => t.felprissatt) || [];
   const maxProvider = Math.max(0, ...(data?.perProvider.map((g) => g.kostnad) || [0]));
   const maxFlow = Math.max(0, ...(data?.perFlow.map((g) => g.kostnad) || [0]));
   const plattformProcent =
@@ -194,6 +211,20 @@ export default function KostnaderPage() {
           </div>
         </div>
       ))}
+
+      {/* Två saker kräver en handling av dig och ska inte behöva letas upp. */}
+      {vantande.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          <strong>{vantande.length} {vantande.length === 1 ? "kund väntar" : "kunder väntar"} på påfyllning.</strong>{" "}
+          {vantande.map((o) => o.namn).join(", ")}. Godkänn längre ner, så sätts creditsen in direkt.
+        </div>
+      )}
+      {felprissatta.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          <strong>Creditsen är felprissatta för {felprissatta.map((t) => t.namn).join(", ")}.</strong>{" "}
+          Kostnadstaket nås trots att credits finns kvar, alltså kostar en bild mer i verkligheten än den gör i credits.
+        </div>
+      )}
 
       {data && (
         <>
@@ -262,9 +293,61 @@ export default function KostnaderPage() {
                       <div className="mt-2 h-2 w-full rounded-full bg-gray-100">
                         <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(100, Math.max(1, t.procent))}%`, background: rod ? "#dc2626" : gul ? "#d97706" : "linear-gradient(90deg,#34d399,#059669)" }} />
                       </div>
+                      {/* K2-3: credits SIDA VID SIDA med kronorna. Divergerar de är priserna fel. */}
+                      {t.credits && (
+                        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
+                          <span className="tabular-nums">
+                            <strong className="text-gray-900">{t.creditSaldo}</strong> credits kvar av {t.credits.kvot + t.credits.extra}
+                            {t.credits.extra > 0 ? ` (varav ${t.credits.extra} köpta)` : ""}
+                          </span>
+                          <span className="tabular-nums text-gray-500">{t.credits.anvant} använda</span>
+                          {t.tenantId && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <input type="number" min={0}
+                                value={kvotUtkast[t.tenantId] ?? String(t.credits.kvot)}
+                                onChange={(e) => setKvotUtkast({ ...kvotUtkast, [t.tenantId!]: e.target.value })}
+                                className="w-20 rounded-lg border border-gray-200 px-2 py-0.5 text-right tabular-nums" />
+                              <span className="text-gray-500">credits per månad</span>
+                              {(kvotUtkast[t.tenantId] ?? String(t.credits.kvot)) !== String(t.credits.kvot) && (
+                                <button onClick={() => patcha({ kvot: { tenantId: t.tenantId, credits: Number(kvotUtkast[t.tenantId!]) } })}
+                                  disabled={sparar} className="rounded-lg bg-gray-900 px-2 py-0.5 font-medium text-white disabled:opacity-50">Spara</button>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Larmet ur beställningen: kronorna tar slut trots att credits finns kvar. */}
+                      {t.felprissatt && (
+                        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                          <strong>Creditsen är felprissatta för den här klienten.</strong> Kostnadstaket är nått men {t.creditSaldo} credits
+                          finns kvar, så kunden tror att hon har utrymme och blir stoppad ändå. Höj creditpriset eller taket.
+                        </div>
+                      )}
+
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
                         <span>{t.anrop} anrop{t.fel > 0 ? `, ${t.fel} fel` : ""}</span>
                         {rod && <span className="font-medium text-red-600">Nya genereringar är stoppade för den här klienten tills taket höjs eller månaden vänder.</span>}
+                        {t.tenantId && (
+                          insattning?.tenantId === t.tenantId ? (
+                            <span className="inline-flex flex-wrap items-center gap-2">
+                              <input type="number" value={insattning.credits} placeholder="antal"
+                                onChange={(e) => setInsattning({ ...insattning, credits: e.target.value })}
+                                className="w-20 rounded-lg border border-gray-200 px-2 py-1" />
+                              <input value={insattning.note} placeholder="Notering (obligatorisk)"
+                                onChange={(e) => setInsattning({ ...insattning, note: e.target.value })}
+                                className="w-64 rounded-lg border border-gray-200 px-2 py-1" />
+                              <button
+                                onClick={async () => { await patcha({ insattning: { tenantId: t.tenantId, credits: Number(insattning.credits), note: insattning.note } }); setInsattning(null); }}
+                                disabled={sparar || !insattning.note.trim() || !insattning.credits}
+                                className="rounded-lg bg-gray-900 px-2.5 py-1 font-medium text-white disabled:opacity-40">Sätt in</button>
+                              <button onClick={() => setInsattning(null)} className="text-gray-500 underline">Avbryt</button>
+                            </span>
+                          ) : (
+                            <button onClick={() => setInsattning({ tenantId: t.tenantId!, credits: "", note: "" })}
+                              className="font-medium text-gray-700 underline">Sätt in credits</button>
+                          )
+                        )}
                         {t.tenantId && (redigerar === t.tenantId ? (
                           <span className="inline-flex items-center gap-2">
                             <input type="number" min={0} value={nyttTak} onChange={(e) => setNyttTak(e.target.value)}
@@ -283,6 +366,75 @@ export default function KostnaderPage() {
                 })}
               </ul>
             )}
+          </section>
+
+          {/* K2-3: påfyllningar att besluta. Ingen betalning i systemet — du godkänner,
+              creditsen sätts in, fakturan går utanför. */}
+          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 px-5 py-3.5">
+              <h2 className="font-display text-lg font-semibold text-gray-900">Påfyllningar</h2>
+              {vantande.length > 0 && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                  {vantande.length} väntar på ditt beslut
+                </span>
+              )}
+            </div>
+            {data.ordrar.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-gray-500">Inga kunder har beställt påfyllning än.</p>
+            ) : (
+              <ul className="divide-y divide-gray-50">
+                {data.ordrar.map((o) => (
+                  <li key={o.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+                    <span className="font-medium text-gray-900">{o.namn}</span>
+                    <span className="tabular-nums text-gray-600">{o.credits} credits för {kr(Number(o.price_sek))}</span>
+                    <span className="text-xs text-gray-400">beställd {tid(o.created_at)}</span>
+                    {o.status === "pending" ? (
+                      <span className="ml-auto flex items-center gap-2">
+                        <button onClick={() => patcha({ orderId: o.id, godkann: true })} disabled={sparar}
+                          className="rounded-lg bg-emerald-600 px-3 py-1 font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                          Godkänn och sätt in
+                        </button>
+                        <button onClick={() => patcha({ orderId: o.id, godkann: false })} disabled={sparar}
+                          className="rounded-lg border border-gray-200 px-3 py-1 font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+                          Avslå
+                        </button>
+                      </span>
+                    ) : (
+                      <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-medium ${o.status === "approved" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
+                        {o.status === "approved" ? "Godkänd" : "Avslagen"}{o.decided_at ? ` ${tid(o.decided_at)}` : ""}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* K2-3: creditpriserna, ägarstyrda utan deploy. */}
+          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 px-5 py-3.5">
+              <h2 className="font-display text-lg font-semibold text-gray-900">Vad saker kostar i credits</h2>
+              <span className="text-sm text-gray-500">Ändringen gäller direkt, ingen ny version behövs.</span>
+            </div>
+            <ul className="divide-y divide-gray-50">
+              {data.creditPriser.map((p) => (
+                <li key={p.action} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+                  <span className="font-medium text-gray-900">{p.label}</span>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{p.action}</span>
+                  <span className="ml-auto flex items-center gap-2">
+                    <input type="number" min={0}
+                      value={prisUtkast[p.action] ?? String(p.credits)}
+                      onChange={(e) => setPrisUtkast({ ...prisUtkast, [p.action]: e.target.value })}
+                      className="w-20 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                    <span className="text-gray-500">credits</span>
+                    {(prisUtkast[p.action] ?? String(p.credits)) !== String(p.credits) && (
+                      <button onClick={() => patcha({ creditPris: { action: p.action, credits: Number(prisUtkast[p.action]) } })}
+                        disabled={sparar} className="rounded-lg bg-gray-900 px-2.5 py-1 font-medium text-white disabled:opacity-50">Spara</button>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white">

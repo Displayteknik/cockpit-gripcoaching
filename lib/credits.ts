@@ -246,6 +246,22 @@ export function forbrukningKlartext(antalPerAtgard: Record<string, number>): str
   return delar.length ? delar.join(", ") : "inget än den här månaden";
 }
 
+/**
+ * ETAPP K2-3: är creditsen felprissatta för den här kunden?
+ *
+ * Systemet har två oberoende bromsar: creditsaldot (det kunden ser) och kostnadstaket i
+ * kronor (det som skyddar marginalen). Slår kronorsbromsen FÖRST, medan credits finns
+ * kvar, har kunden blivit lovad ett utrymme hon inte får använda. Det är inte ett fel i
+ * spärren utan i prissättningen: en bild kostar mer i verkligheten än den gör i credits.
+ *
+ * Omvänt är det helt normalt att creditsen tar slut medan kronorna räcker — då är
+ * marginalen intakt och kvoten gör sitt jobb.
+ */
+export function arFelprissatt(kostnadSek: number, takSek: number, creditSaldo: number | null): boolean {
+  if (creditSaldo === null) return false; // ingen creditkvot → inget att prissätta fel
+  return takSek > 0 && kostnadSek >= takSek && creditSaldo > 0;
+}
+
 /** Video prissätts per PÅBÖRJAT femsekundersklipp. 6 sekunder = 2 klipp. */
 export function videoKlipp(sekunder: number): number {
   return Math.max(1, Math.ceil((Number(sekunder) || 0) / 5));
