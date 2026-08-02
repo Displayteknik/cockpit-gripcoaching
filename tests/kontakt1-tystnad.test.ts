@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  harledBollen, dagarSedanKontakt, tystnadsniva, sortera, regelrader, adressUr,
+  harledBollen, dagarSedanKontakt, tystnadsniva, sortera, regelrader, adressUr, arAutosvar,
   type Rad, type Regel,
 } from "@/lib/hq/kontakt";
 
@@ -176,5 +176,37 @@ describe("adressparsning", () => {
   // faller inkommande bort och bollen hamnar fel.
   it("matchar oavsett versaler", () => {
     expect(adressUr("<HAKAN@Displayteknik.SE>")).toBe("hakan@displayteknik.se");
+  });
+});
+
+describe("autosvar", () => {
+  // Fyndet ur skarp körning 2026-08-02: "Autosvar: Förfrågan – Leverans" la Tomas
+  // Lundborg överst som om han väntade på svar. Ett frånvarosvar är inte en väntande kund,
+  // och en lista som ropar varg slutar man läsa.
+  it("känner igen svenska frånvarosvar", () => {
+    expect(arAutosvar("Autosvar: Förfrågan om leverans", "")).toBe(true);
+    expect(arAutosvar("Automatiskt svar: Semester", "")).toBe(true);
+    expect(arAutosvar("Frånvaro till och med 15 augusti", "")).toBe(true);
+    expect(arAutosvar("Sv: Autosvar: Förfrågan", "")).toBe(true);
+  });
+
+  it("känner igen engelska frånvarosvar", () => {
+    expect(arAutosvar("Out of office", "")).toBe(true);
+    expect(arAutosvar("Automatic reply: vacation", "")).toBe(true);
+  });
+
+  // Rubriken enligt RFC 3834 är säkrare än ämnesraden när den finns.
+  it("litar på Auto-Submitted-rubriken", () => {
+    expect(arAutosvar("Helt vanligt ämne", "auto-replied")).toBe(true);
+    expect(arAutosvar("Helt vanligt ämne", "auto-generated")).toBe(true);
+    expect(arAutosvar("Helt vanligt ämne", "no")).toBe(false);
+    expect(arAutosvar("Helt vanligt ämne", "")).toBe(false);
+  });
+
+  it("dömer aldrig ett riktigt svar som autosvar", () => {
+    expect(arAutosvar("Re: The Tivoli, Ledskärm", "")).toBe(false);
+    expect(arAutosvar("Sv: LED Skärm", "")).toBe(false);
+    expect(arAutosvar("Tack för offerten, en fråga om automatisk uppdatering", "")).toBe(false);
+    expect(arAutosvar("", "")).toBe(false);
   });
 });

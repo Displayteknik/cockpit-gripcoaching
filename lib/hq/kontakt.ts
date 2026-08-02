@@ -180,12 +180,26 @@ export function adressUr(header: string): string {
   return (m ? m[1] : header).trim().toLowerCase();
 }
 
-interface Meta { datum: string; amne: string; fran: string }
+export interface Meta { datum: string; amne: string; fran: string; autosvar: boolean }
+
+/**
+ * Ett automatiskt frånvarosvar är INTE en kund som väntar på svar.
+ * Utan den här kontrollen la sig "Autosvar: Förfrågan" överst i listan som om Tomas
+ * satt och väntade, och en lista som ropar varg slutar man läsa.
+ *
+ * Två källor, i ordning: rubriken `Auto-Submitted` (RFC 3834, sätts av seriösa
+ * frånvarosvar) och sedan ämnesraden, eftersom långt ifrån alla sätter rubriken.
+ */
+export function arAutosvar(amne: string, autoSubmitted: string): boolean {
+  const a = (autoSubmitted || "").toLowerCase();
+  if (a && a !== "no") return true;
+  return /^\s*(re:\s*)?(sv:\s*)?(autosvar|automatiskt svar|auto-?reply|automatic reply|out of office|frånvaro|franvaro|semestermeddelande|frånvarande)\b/i.test(amne || "");
+}
 
 async function metaFor(token: string, id: string): Promise<Meta | null> {
   // format=metadata + uttrycklig rubriklista. Brödtexten begärs aldrig.
   const r = await fetch(
-    `${GMAIL}/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+    `${GMAIL}/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=Auto-Submitted`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!r.ok) return null;
@@ -193,18 +207,33 @@ async function metaFor(token: string, id: string): Promise<Meta | null> {
   const h = (namn: string) => d.payload?.headers?.find((x) => x.name.toLowerCase() === namn)?.value || "";
   const ms = Number(d.internalDate || 0);
   if (!ms) return null;
-  return { datum: new Date(ms).toISOString(), amne: h("subject").slice(0, 300), fran: adressUr(h("from")) };
+  const amne = h("subject").slice(0, 300);
+  return { datum: new Date(ms).toISOString(), amne, fran: adressUr(h("from")), autosvar: arAutosvar(amne, h("auto-submitted")) };
 }
 
-/** Nyaste meddelandet som matchar frågan. Gmail listar nyast först. */
-async function nyaste(token: string, fraga: string): Promise<Meta | null> {
-  const r = await fetch(`${GMAIL}/messages?maxResults=1&q=${encodeURIComponent(fraga)}`, {
+/**
+ * Nyaste RIKTIGA meddelandet som matchar frågan. Gmail listar nyast först, men det
+ * nyaste kan vara ett autosvar. Då går vi vidare nedåt i stället för att låta ett
+ * frånvarosvar avgöra vem som har bollen. Fem kandidater räcker: fler autosvar än så
+ * i rad betyder att kontakten faktiskt inte svarat.
+ */
+async function nyaste(token: string, fraga: string, slappIgenomAutosvar = false): Promise<Meta | null> {
+  const r = await fetch(`${GMAIL}/messages?maxResults=5&q=${encodeURIComponent(fraga)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!r.ok) throw Object.assign(new Error("gmailfel"), { google: tolkaGoogleFel(r.status, await r.text(), "gmail") });
   const d = (await r.json()) as { messages?: Array<{ id: string }> };
-  const id = d.messages?.[0]?.id;
-  return id ? metaFor(token, id) : null;
+  const ids = (d.messages || []).map((m) => m.id);
+  let forstaAutosvar: Meta | null = null;
+  for (const id of ids) {
+    const m = await metaFor(token, id);
+    if (!m) continue;
+    if (!m.autosvar) return m;
+    if (!forstaAutosvar) forstaAutosvar = m;
+  }
+  // Bara autosvar hittade. På den utgående sidan spelar det ingen roll, men på den
+  // inkommande får ett autosvar aldrig ensamt lägga bollen hos oss.
+  return slappIgenomAutosvar ? forstaAutosvar : null;
 }
 
 export interface SynkResultat { ok: boolean; antal?: number; hoppadeOver?: boolean; fel?: string; lank?: string; lankText?: string }
@@ -269,7 +298,7 @@ export async function synkaKontakter(tvinga = false): Promise<SynkResultat> {
         try {
           [inn, ut] = await Promise.all([
             nyaste(token, `from:${adress}`),
-            nyaste(token, `to:${adress} in:sent`),
+            nyaste(token, `to:${adress} in:sent`, true),
           ]);
         } catch (e) {
           const g = (e as { google?: GoogleFel }).google;
