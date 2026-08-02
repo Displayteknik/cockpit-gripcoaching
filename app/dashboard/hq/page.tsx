@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, CalendarCheck, Coins, Command, ExternalLink, Flag, RefreshCw,
-  Server, Sunrise, Target, TrendingUp, Trash2, Users,
+  AlertTriangle, CalendarCheck, Coins, Command, ExternalLink, Flag, Receipt, RefreshCw,
+  Server, Sunrise, Target, TrendingUp, Trash2, Users, Wallet,
 } from "lucide-react";
 import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
+import LikviditetsVy, { type CashRad, type Likviditet } from "./Likviditet";
 
 // HQ-1 — Founder HQ, ägarens kommandobrygga.
 // Grip driver återkommande intäkt, Displayteknik driver pipeline. Båda ligger på samma
@@ -26,6 +27,29 @@ interface PipelineKort {
   senast_uppdaterad: string | null;
   uppfoljning_datum: string | null;
   uppfoljning_titel: string | null;
+  // LIKVID-1: betalstatusen följer med kortet, så tabellen slipper en andra hämtning.
+  finans: {
+    fakturerat: number;
+    betalt: number;
+    forvantat_betaldatum: string | null;
+    forfallodatum: string | null;
+    notering: string | null;
+  };
+  sannolikhet: number;
+}
+
+interface LarmRad {
+  id: string;
+  text: string;
+  niva: "gul" | "rod";
+}
+
+interface SannolikhetRad {
+  steg_id: string;
+  steg_namn: string | null;
+  position: number | null;
+  procent: number;
+  agarsatt: boolean;
 }
 
 interface MrrRad {
@@ -40,15 +64,23 @@ interface TaskRad { id: string; titel: string; bolag: string; datum: string | nu
 interface Data {
   idag: string;
   vecka: { start: string; slut: string };
-  morgonlistan: { kort: PipelineKort[]; uppgifter: TaskRad[] };
+  morgonlistan: { larm: LarmRad[]; kort: PipelineKort[]; uppgifter: TaskRad[] };
   grip: { mrr: number; pionjarer: number; pionjarMal: number; gdam: number; gdamMal: number; mal: number; procent: number };
   mrr: MrrRad[];
   dt: {
     summaOppna: number; antalOppna: number;
-    perSteg: { steg: string; pipeline: string; antal: number; summa: number }[];
+    perSteg: { steg: string; steg_id?: string | null; pipeline: string; antal: number; summa: number }[];
     vunnetManaden: number; antalVunna: number; uppfoljningarVeckan: number;
+    // LIKVID-1: de tre summorna som ersatte klumpsumman.
+    iSpelOfakturerat: number; antalISpel: number;
+    fakturreratObetalt: number; antalFakturerade: number;
+    aldstaForfallodatum: string | null; antalForfallna: number;
+    betalt: number;
   };
   pipeline: PipelineKort[];
+  likviditet: Likviditet[];
+  cash: CashRad[];
+  sannolikheter: SannolikhetRad[];
   fasta: FastRad[];
   kostnadPerBolag: { bolag: string; perValuta: { valuta: string; summa: number }[]; saknarBelopp: number }[];
   aiPerKund: { kund: string; intakt: number; aiKostnad: number }[];
@@ -83,6 +115,9 @@ export default function HqPage() {
   const [nyFast, setNyFast] = useState({ tjanst: "", bolag: "grip", belopp_per_man: "", valuta: "SEK", notering: "" });
   const [fastUtkast, setFastUtkast] = useState<Record<string, string>>({});
   const [mrrUtkast, setMrrUtkast] = useState<Record<string, string>>({});
+  // LIKVID-1: utkast för betalstatus per affär och för sannolikhet per steg.
+  const [finansUtkast, setFinansUtkast] = useState<Record<string, string>>({});
+  const [sannUtkast, setSannUtkast] = useState<Record<string, string>>({});
 
   const hamta = useCallback(async (tvinga = false) => {
     setLaddar(true);
@@ -134,7 +169,10 @@ export default function HqPage() {
     }
   }
 
-  const antalIMorgonlistan = (data?.morgonlistan.kort.length || 0) + (data?.morgonlistan.uppgifter.length || 0);
+  const antalIMorgonlistan =
+    (data?.morgonlistan.larm?.length || 0) +
+    (data?.morgonlistan.kort.length || 0) +
+    (data?.morgonlistan.uppgifter.length || 0);
 
   return (
     <div className="space-y-6">
@@ -148,7 +186,8 @@ export default function HqPage() {
             <>
               <HeroChip icon={Sunrise} label={`${antalIMorgonlistan} att ta tag i idag`} />
               <HeroChip icon={TrendingUp} label={`${kr(data.grip.mrr)} i månadsintäkt`} />
-              <HeroChip icon={Target} label={`${kr(data.dt.summaOppna)} i pipeline`} />
+              <HeroChip icon={Target} label={`${kr(data.dt.iSpelOfakturerat)} i spel, ofakturerat`} />
+              <HeroChip icon={Receipt} label={`${kr(data.dt.fakturreratObetalt)} fakturerat, obetalt`} />
             </>
           ) : undefined
         }
@@ -195,6 +234,25 @@ export default function HqPage() {
               </p>
             ) : (
               <ul className="divide-y divide-gray-50">
+                {/* Likviditetslarmet ligger överst i samma lista som allt annat som
+                    förfaller. Ingen egen banner, ingen andra väg in i vyn. */}
+                {(data.morgonlistan.larm || []).map((larm) => (
+                  <li key={larm.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        larm.niva === "rod" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900"
+                      }`}
+                    >
+                      Likviditet
+                    </span>
+                    <span className={`font-medium ${larm.niva === "rod" ? "text-red-700" : "text-amber-800"}`}>
+                      {larm.text}
+                    </span>
+                    <a href="#likviditet" className="ml-auto font-medium text-indigo-600 hover:text-indigo-800">
+                      Se prognosen
+                    </a>
+                  </li>
+                ))}
                 {data.morgonlistan.kort.map((k) => {
                   const lank = mysalesLank(k);
                   const forsenad = k.uppfoljning_datum ? datum(k.uppfoljning_datum) < datum(`${data.idag}T12:00:00Z`) : false;
@@ -396,27 +454,83 @@ export default function HqPage() {
                 och räknas inte här.
               </p>
             )}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatTile label="Pipeline som är i spel" value={Math.round(data.dt.summaOppna)} sub={`${kr(data.dt.summaOppna)} fördelat på ${data.dt.antalOppna} affärer`} icon={Target} tone="blue" i={0} />
-              <StatTile label="Affärer i spel" value={data.dt.antalOppna} sub={`${data.dt.perSteg.length} steg med affärer i`} icon={Command} tone="slate" i={1} />
-              <StatTile label="Vunnet denna månad" value={Math.round(data.dt.vunnetManaden)} sub={`${kr(data.dt.vunnetManaden)} på ${data.dt.antalVunna} affärer`} icon={TrendingUp} tone="emerald" i={2} />
-              <StatTile label="Uppföljningar denna vecka" value={data.dt.uppfoljningarVeckan} sub={`${data.vecka.start} till ${data.vecka.slut}`} icon={CalendarCheck} tone="violet" i={3} />
+            {/* Den gamla klumpsumman blandade in delbetalda affärer. Nu står de tre
+                lägena var för sig: det som inte är fakturerat, det som är fakturerat
+                men obetalt, och det som faktiskt kommit in. */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StatTile
+                label="I spel, ofakturerat"
+                value={Math.round(data.dt.iSpelOfakturerat)}
+                sub={`${kr(data.dt.iSpelOfakturerat)} på ${data.dt.antalISpel} affärer, viktat på steget`}
+                icon={Target}
+                tone="blue"
+                i={0}
+              />
+              <StatTile
+                label="Fakturerat, obetalt"
+                value={Math.round(data.dt.fakturreratObetalt)}
+                sub={
+                  data.dt.antalFakturerade === 0
+                    ? "Inga obetalda fakturor inlagda"
+                    : `${data.dt.antalFakturerade} fakturor${
+                        data.dt.aldstaForfallodatum ? `, äldsta förfaller ${data.dt.aldstaForfallodatum}` : ""
+                      }${data.dt.antalForfallna ? `, varav ${data.dt.antalForfallna} passerade` : ""}`
+                }
+                icon={Receipt}
+                tone={data.dt.antalForfallna > 0 ? "amber" : "slate"}
+                i={1}
+              />
+              <StatTile
+                label="Betalt i år"
+                value={Math.round(data.dt.betalt)}
+                sub={`${kr(data.dt.betalt)} inbokat som betalt`}
+                icon={Wallet}
+                tone="emerald"
+                i={2}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StatTile label="Affärer i spel" value={data.dt.antalOppna} sub={`${data.dt.perSteg.length} steg med affärer i`} icon={Command} tone="slate" i={0} />
+              <StatTile label="Vunnet denna månad" value={Math.round(data.dt.vunnetManaden)} sub={`${kr(data.dt.vunnetManaden)} på ${data.dt.antalVunna} affärer`} icon={TrendingUp} tone="emerald" i={1} />
+              <StatTile label="Uppföljningar denna vecka" value={data.dt.uppfoljningarVeckan} sub={`${data.vecka.start} till ${data.vecka.slut}`} icon={CalendarCheck} tone="violet" i={2} />
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-              <h3 className="border-b border-gray-100 px-5 py-3.5 font-display text-lg font-semibold text-gray-900">Så ligger affärerna</h3>
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 px-5 py-3.5">
+                <h3 className="font-display text-lg font-semibold text-gray-900">Så ligger affärerna</h3>
+                <span className="text-sm text-gray-500">
+                  Sannolikheten styr viktningen i I spel och i likviditetsprognosen. Ändra den och den blir din.
+                </span>
+              </div>
               {data.dt.perSteg.length === 0 ? (
                 <p className="px-5 py-6 text-sm text-gray-500">Inga affärer i spel just nu.</p>
               ) : (
                 <ul className="divide-y divide-gray-50">
-                  {data.dt.perSteg.map((s) => (
-                    <li key={`${s.pipeline}|${s.steg}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2.5 text-sm">
-                      <span className="font-medium text-gray-900">{s.steg}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{s.pipeline}</span>
-                      <span className="ml-auto tabular-nums text-gray-600">{s.antal} {s.antal === 1 ? "affär" : "affärer"}</span>
-                      <span className="w-32 text-right tabular-nums text-gray-900">{kr(s.summa)}</span>
-                    </li>
-                  ))}
+                  {data.dt.perSteg.map((s) => {
+                    const sann = data.sannolikheter.find((x) => x.steg_id === s.steg_id);
+                    const nyckel = `sann-${s.steg_id}`;
+                    const varde = sannUtkast[nyckel] ?? String(sann?.procent ?? 50);
+                    return (
+                      <li key={`${s.pipeline}|${s.steg}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2.5 text-sm">
+                        <span className="font-medium text-gray-900">{s.steg}</span>
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{s.pipeline}</span>
+                        <span className="ml-auto inline-flex items-center gap-1.5">
+                          <input type="number" min={0} max={100} value={varde} disabled={sparar || !s.steg_id}
+                            onChange={(e) => setSannUtkast({ ...sannUtkast, [nyckel]: e.target.value })}
+                            aria-label={`Sannolikhet för ${s.steg}`}
+                            className="w-16 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                          <span className="text-xs text-gray-500">procent</span>
+                          {varde !== String(sann?.procent ?? 50) && (
+                            <button onClick={() => skicka("PATCH", { typ: "sannolikhet", steg_id: s.steg_id, procent: Number(varde) })}
+                              disabled={sparar} className="rounded-lg bg-gray-900 px-2 py-1 text-xs font-medium text-white disabled:opacity-50">Spara</button>
+                          )}
+                          {!sann?.agarsatt && <span className="text-xs text-gray-400">utgångspunkt</span>}
+                        </span>
+                        <span className="w-24 text-right tabular-nums text-gray-600">{s.antal} {s.antal === 1 ? "affär" : "affärer"}</span>
+                        <span className="w-32 text-right tabular-nums text-gray-900">{kr(s.summa)}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
@@ -424,33 +538,49 @@ export default function HqPage() {
             <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 px-5 py-3.5">
                 <h3 className="font-display text-lg font-semibold text-gray-900">Korten</h3>
-                <span className="text-sm text-gray-500">Sorterade på uppföljningsdatum. Kort utan uppföljning ligger sist.</span>
+                <span className="text-sm text-gray-500">
+                  Sorterade på uppföljningsdatum. Fakturerat, betalt och datumen fyller du i här, affären ändrar du i MySales.
+                </span>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[52rem] text-sm">
+                <table className="w-full min-w-[74rem] text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
                       <th className="px-5 py-2.5 font-medium">Affär</th>
-                      <th className="px-3 py-2.5 font-medium">Företag</th>
                       <th className="px-3 py-2.5 font-medium">Steg</th>
                       <th className="px-3 py-2.5 text-right font-medium">Värde</th>
-                      <th className="px-3 py-2.5 font-medium">Uppföljning</th>
-                      <th className="px-3 py-2.5 font-medium">Ändrad</th>
+                      <th className="px-3 py-2.5 text-right font-medium">Fakturerat</th>
+                      <th className="px-3 py-2.5 text-right font-medium">Betalt</th>
+                      <th className="px-3 py-2.5 text-right font-medium">Kvar</th>
+                      <th className="px-3 py-2.5 font-medium">Förväntat betalt</th>
+                      <th className="px-3 py-2.5 font-medium">Förfaller</th>
                       <th className="px-5 py-2.5 font-medium">MySales</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.pipeline.length === 0 && (
-                      <tr><td colSpan={7} className="px-5 py-6 text-sm text-gray-500">
+                      <tr><td colSpan={9} className="px-5 py-6 text-sm text-gray-500">
                         Ingen pipeline hämtad än. Tryck på Uppdatera nu.
                       </td></tr>
                     )}
                     {data.pipeline.map((k) => {
                       const lank = mysalesLank(k);
+                      const f = k.finans;
+                      // Kvar att fakturera lagras aldrig. Den räknas alltid som affärens
+                      // belopp minus det som fakturerats, så två fält aldrig säger emot varandra.
+                      const kvar = Math.max(0, k.varde - f.fakturerat);
+                      const obetalt = Math.max(0, f.fakturerat - f.betalt);
+                      const forfallen = !!f.forfallodatum && obetalt > 0 && f.forfallodatum < data.idag;
+                      const falt = (namn: "fakturerat" | "betalt") => `${k.ghl_opportunity_id}|${namn}`;
+                      const varde = (namn: "fakturerat" | "betalt") =>
+                        finansUtkast[falt(namn)] ?? String(f[namn]);
+                      const andrad = (namn: "fakturerat" | "betalt") => varde(namn) !== String(f[namn]);
                       return (
-                        <tr key={k.ghl_opportunity_id} className="border-b border-gray-50 last:border-0">
-                          <td className="px-5 py-2.5 font-medium text-gray-900">{k.namn || k.kontakt || "Namnlös affär"}</td>
-                          <td className="px-3 py-2.5 text-gray-600">{k.foretag || ""}</td>
+                        <tr key={k.ghl_opportunity_id} className={`border-b border-gray-50 last:border-0 ${forfallen ? "bg-red-50/60" : ""}`}>
+                          <td className="px-5 py-2.5">
+                            <span className="font-medium text-gray-900">{k.namn || k.kontakt || "Namnlös affär"}</span>
+                            {k.foretag && <span className="ml-2 text-xs text-gray-500">{k.foretag}</span>}
+                          </td>
                           <td className="px-3 py-2.5">
                             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                               k.harledd_status === "won" ? "bg-emerald-100 text-emerald-700"
@@ -460,14 +590,42 @@ export default function HqPage() {
                             </span>
                           </td>
                           <td className="px-3 py-2.5 text-right tabular-nums text-gray-900">{k.varde > 0 ? kr(k.varde) : ""}</td>
-                          <td className="px-3 py-2.5 tabular-nums text-gray-600">
-                            {k.uppfoljning_datum ? (
-                              <span title={k.uppfoljning_titel || ""}>{datum(k.uppfoljning_datum)}</span>
-                            ) : (
-                              <span className="text-gray-300">ingen</span>
-                            )}
+                          {(["fakturerat", "betalt"] as const).map((namn) => (
+                            <td key={namn} className="px-3 py-2.5 text-right">
+                              <span className="inline-flex items-center gap-1">
+                                <input type="number" min={0} step="0.01" value={varde(namn)} disabled={sparar}
+                                  aria-label={`${namn} för ${k.namn || k.ghl_opportunity_id}`}
+                                  onChange={(e) => setFinansUtkast({ ...finansUtkast, [falt(namn)]: e.target.value })}
+                                  className="w-24 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                                {andrad(namn) && (
+                                  <button
+                                    onClick={() => skicka("PATCH", { typ: "finans", opportunity_id: k.ghl_opportunity_id, [namn]: Number(varde(namn)) })}
+                                    disabled={sparar}
+                                    className="rounded-lg bg-gray-900 px-2 py-1 text-xs font-medium text-white disabled:opacity-50">Spara</button>
+                                )}
+                              </span>
+                            </td>
+                          ))}
+                          <td className="px-3 py-2.5 text-right tabular-nums text-gray-600">{kvar > 0 ? kr(kvar) : ""}</td>
+                          <td className="px-3 py-2.5">
+                            <input type="date" value={f.forvantat_betaldatum || ""} disabled={sparar}
+                              aria-label={`Förväntat betaldatum för ${k.namn || k.ghl_opportunity_id}`}
+                              onChange={(e) => skicka("PATCH", { typ: "finans", opportunity_id: k.ghl_opportunity_id, forvantat_betaldatum: e.target.value })}
+                              className="rounded-lg border border-gray-200 px-2 py-1 text-sm" />
                           </td>
-                          <td className="px-3 py-2.5 tabular-nums text-gray-500">{datum(k.senast_uppdaterad)}</td>
+                          <td className="px-3 py-2.5">
+                            <span className="inline-flex items-center gap-1.5">
+                              <input type="date" value={f.forfallodatum || ""} disabled={sparar}
+                                aria-label={`Faktura förfallodatum för ${k.namn || k.ghl_opportunity_id}`}
+                                onChange={(e) => skicka("PATCH", { typ: "finans", opportunity_id: k.ghl_opportunity_id, forfallodatum: e.target.value })}
+                                className="rounded-lg border border-gray-200 px-2 py-1 text-sm" />
+                              {forfallen && (
+                                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                                  Passerad
+                                </span>
+                              )}
+                            </span>
+                          </td>
                           <td className="px-5 py-2.5">
                             {lank && (
                               <a href={lank} target="_blank" rel="noreferrer"
@@ -484,6 +642,11 @@ export default function HqPage() {
               </div>
             </div>
           </section>
+
+          {/* ── Likviditet ───────────────────────────────────────────────── */}
+          <div id="likviditet" className="scroll-mt-6">
+            <LikviditetsVy likviditet={data.likviditet} cash={data.cash} sparar={sparar} skicka={skicka} taBort={taBort} />
+          </div>
 
           {/* ── Kostnader ────────────────────────────────────────────────── */}
           <section className="space-y-4">
