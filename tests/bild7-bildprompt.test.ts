@@ -66,6 +66,16 @@ describe("BILD-7a — avbildat exempelinnehåll: relevans OCH budskap", () => {
     expect(DEPICTED_MESSAGE_SV).toContain("rättstavade");
   });
 
+  it("bakgrundsskyltar får inte annonsera högtider eller datum (BILD-8c)", () => {
+    // Skarpt fall (BILD-8 DoD, kvarleva 6): `KRÄFTSKIVA 8 AUGUSTI` dök upp på en
+    // griffeltavla i bakgrunden i två bilder. BILD-7b:s rotation styr bildprompten,
+    // inte vad modellen ritar på en tavla som inte är motivet.
+    expect(DEPICTED_MESSAGE_EN).toContain("not itself the subject of the post");
+    expect(DEPICTED_MESSAGE_EN).toContain("never announce a holiday or a dated event");
+    expect(DEPICTED_MESSAGE_SV).toContain("inte är inläggets ämne");
+    expect(DEPICTED_MESSAGE_SV).toContain("högtid eller ett daterat evenemang");
+  });
+
   it("den fulla regeln bär BILD-6a:s tankstrecksförbud vidare (bygger på, ersätter inte)", () => {
     expect(DEPICTED_CONTENT_EN).toContain(NO_DASH_IN_IMAGE_EN);
     expect(DEPICTED_CONTENT_EN).toContain(DEPICTED_RELEVANCE_EN);
