@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 import { hamtaValdaPipelines, lasPipeline, senastSynkad, synkaPipeline, type PipelineRad } from "@/lib/hq/pipeline";
+import {
+  byggPrognos,
+  pipelineSummor,
+  type AffarFinans,
+  type Bolag,
+  type CashPost,
+} from "@/lib/hq/likviditet";
 
 export const runtime = "nodejs";
 
@@ -66,6 +73,54 @@ interface TaskRad {
   klar: boolean;
 }
 
+// ── LIKVID-1 ──────────────────────────────────────────────────────────────────
+interface FinansRad {
+  opportunity_id: string;
+  fakturerat: number | string;
+  betalt: number | string;
+  forvantat_betaldatum: string | null;
+  forfallodatum: string | null;
+  notering: string | null;
+}
+
+interface SaldoRad {
+  id: string;
+  bolag: string;
+  saldo: number | string;
+  datum: string;
+  notering: string | null;
+}
+
+interface CashRad {
+  id: string;
+  bolag: string;
+  titel: string;
+  belopp: number | string;
+  datum: string;
+  typ: string;
+  status: string;
+  notering: string | null;
+}
+
+interface KonfigRad {
+  bolag: string;
+  buffertmal: number | string;
+  gul_grans_veckor: number;
+  usd_kurs: number | string;
+  notering: string | null;
+}
+
+interface SannolikhetRad {
+  steg_id: string;
+  pipeline_id: string | null;
+  steg_namn: string | null;
+  position: number | null;
+  procent: number;
+  agarsatt: boolean;
+}
+
+const KONFIG_STANDARD = { buffertmal: 0, gul_grans_veckor: 4, usd_kurs: 11 };
+
 export async function GET(req: NextRequest) {
   const denied = await ownerGrind();
   if (denied) return denied;
@@ -76,12 +131,28 @@ export async function GET(req: NextRequest) {
   const synk = await synkaPipeline(tvinga);
 
   const sb = supabaseService();
-  const [{ data: mrrData }, { data: fastData }, { data: taskData }, allaKort, synkadTid] = await Promise.all([
+  const [
+    { data: mrrData },
+    { data: fastData },
+    { data: taskData },
+    allaKort,
+    synkadTid,
+    { data: finansData },
+    { data: saldoData },
+    { data: cashData },
+    { data: konfigData },
+    { data: sannData },
+  ] = await Promise.all([
     sb.from("hq_mrr_entries").select("*").order("bolag").order("kund"),
     sb.from("hq_fasta_kostnader").select("*").order("bolag").order("tjanst"),
     sb.from("hq_tasks").select("*").order("datum", { nullsFirst: false }),
     lasPipeline(),
     senastSynkad(),
+    sb.from("hq_deal_finance").select("*"),
+    sb.from("hq_bank_saldo").select("*").order("datum", { ascending: false }).order("skapad", { ascending: false }),
+    sb.from("hq_cash_items").select("*").order("datum"),
+    sb.from("hq_likvid_konfig").select("*"),
+    sb.from("hq_steg_sannolikhet").select("*"),
   ]);
 
   // Håkans beslut 2026-08-02: bara den pipeline han faktiskt jobbar i ska räknas.
@@ -126,11 +197,15 @@ export async function GET(req: NextRequest) {
 
   // ── Displayteknik: pipelinen ur MySales ─────────────────────────────────
   const oppna = pipeline.filter((p) => p.harledd_status === "open");
-  const perSteg = new Map<string, { steg: string; pipeline: string; position: number; antal: number; summa: number }>();
+  const perSteg = new Map<
+    string,
+    { steg: string; steg_id: string | null; pipeline: string; position: number; antal: number; summa: number }
+  >();
   for (const p of oppna) {
     const nyckel = `${p.pipeline_namn || ""}|${p.steg_namn || "okänt steg"}`;
     const g = perSteg.get(nyckel) || {
       steg: p.steg_namn || "okänt steg",
+      steg_id: p.steg_id || null,
       pipeline: p.pipeline_namn || "",
       position: p.steg_position ?? 99,
       antal: 0,
@@ -172,6 +247,98 @@ export async function GET(req: NextRequest) {
     };
   });
 
+  // ── LIKVID-1: betalstatus, tre pipelinesummor och kassaflödesprognos ────
+  const finans = new Map(
+    ((finansData as FinansRad[] | null) || []).map((r) => [
+      r.opportunity_id,
+      {
+        fakturerat: Number(r.fakturerat) || 0,
+        betalt: Number(r.betalt) || 0,
+        forvantat_betaldatum: r.forvantat_betaldatum,
+        forfallodatum: r.forfallodatum,
+        notering: r.notering,
+      },
+    ]),
+  );
+  const sannolikhetPerSteg = new Map(
+    ((sannData as SannolikhetRad[] | null) || []).map((r) => [r.steg_id, r]),
+  );
+  const saldon = ((saldoData as SaldoRad[] | null) || []).map((r) => ({ ...r, saldo: Number(r.saldo) || 0 }));
+  const cash = ((cashData as CashRad[] | null) || []).map((r) => ({ ...r, belopp: Number(r.belopp) || 0 }));
+  const konfigPerBolag = new Map(
+    ((konfigData as KonfigRad[] | null) || []).map((r) => [
+      r.bolag,
+      {
+        bolag: r.bolag,
+        buffertmal: Number(r.buffertmal) || 0,
+        gul_grans_veckor: Number(r.gul_grans_veckor) || KONFIG_STANDARD.gul_grans_veckor,
+        usd_kurs: Number(r.usd_kurs) || KONFIG_STANDARD.usd_kurs,
+        notering: r.notering,
+      },
+    ]),
+  );
+  const konfigFor = (bolag: string) =>
+    konfigPerBolag.get(bolag) || { bolag, ...KONFIG_STANDARD, notering: null };
+
+  // Affärerna med sin betalstatus. Sannolikheten kommer ur tabellen; saknas raden
+  // används 50 procent och det står i vyn, i stället för att viktningen tyst blir noll.
+  const affarerFinans: AffarFinans[] = pipeline.map((p) => {
+    const f = finans.get(p.ghl_opportunity_id);
+    return {
+      id: p.ghl_opportunity_id,
+      varde: p.varde,
+      fakturerat: f?.fakturerat ?? 0,
+      betalt: f?.betalt ?? 0,
+      forvantat_betaldatum: f?.forvantat_betaldatum ?? null,
+      forfallodatum: f?.forfallodatum ?? null,
+      harledd_status: p.harledd_status,
+      sannolikhet: p.steg_id ? sannolikhetPerSteg.get(p.steg_id)?.procent ?? 50 : 50,
+    };
+  });
+  const summor = pipelineSummor(affarerFinans, idag);
+
+  // Fasta kostnader räknas om till kronor. USD med kursen ur konfigen, som VISAS i vyn.
+  // En valuta utan kurs räknas ALDRIG om, den listas separat så totalen inte ljuger.
+  const fastaSekFor = (bolag: string, usdKurs: number) => {
+    let sek = 0;
+    const utanKurs = new Map<string, number>();
+    for (const f of fasta.filter((x) => x.bolag === bolag)) {
+      if (f.valuta === "SEK") sek += f.belopp_per_man;
+      else if (f.valuta === "USD") sek += f.belopp_per_man * usdKurs;
+      else utanKurs.set(f.valuta, (utanKurs.get(f.valuta) || 0) + f.belopp_per_man);
+    }
+    return { sek, utanKurs: [...utanKurs.entries()].map(([valuta, summa]) => ({ valuta, summa })) };
+  };
+
+  const likviditet = (["grip", "dt"] as Bolag[]).map((bolag) => {
+    const k = konfigFor(bolag);
+    const senasteSaldo = saldon.find((s) => s.bolag === bolag) || null;
+    const { sek, utanKurs } = fastaSekFor(bolag, k.usd_kurs);
+    const poster: CashPost[] = cash
+      .filter((c) => c.bolag === bolag)
+      .map((c) => ({ id: c.id, titel: c.titel, belopp: c.belopp, datum: c.datum }));
+    const prognos = byggPrognos({
+      bolag,
+      idag,
+      startSaldo: senasteSaldo ? senasteSaldo.saldo : null,
+      saldoDatum: senasteSaldo?.datum ?? null,
+      // Pipelinen ligger hos Displayteknik. GripCoaching drivs av återkommande intäkt.
+      affarer: bolag === "dt" ? affarerFinans : [],
+      mrrPerManad: mrr.filter((r) => r.bolag === bolag && r.status === "aktiv").reduce((s, r) => s + r.belopp_ex_moms, 0),
+      fastaSek: sek,
+      poster,
+      buffertmal: k.buffertmal,
+      gulGransVeckor: k.gul_grans_veckor,
+    });
+    return { ...prognos, konfig: k, fastaSek: sek, fastaUtanKurs: utanKurs, saldoHistorik: saldon.filter((s) => s.bolag === bolag).slice(0, 8) };
+  });
+
+  // Larmet går in i morgonlistan, samma lista och samma rendering som allt annat som
+  // förfaller. Ingen egen banner, ingen andra väg in.
+  const larm = likviditet
+    .filter((l) => l.trafikljus === "gul" || l.trafikljus === "rod")
+    .map((l) => ({ id: `likvid-${l.bolag}`, text: l.klartext, niva: l.trafikljus as "gul" | "rod" }));
+
   // AI-kostnad per klient den här månaden, ur samma händelselogg som /dashboard/kostnader.
   // Kopplas till MRR-raden när klientens namn matchar kundnamnet. Ingen match = inget påstående.
   const manadStartIso = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth(), 1)).toISOString();
@@ -194,11 +361,28 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     idag,
     vecka,
-    morgonlistan: { kort: forfallnaKort, uppgifter: forfallnaTasks },
+    morgonlistan: { larm, kort: forfallnaKort, uppgifter: forfallnaTasks },
     grip,
     mrr,
-    dt,
-    pipeline: [...pipeline].sort(sorteraPaUppfoljning),
+    dt: { ...dt, ...summor },
+    // Korten bär sin betalstatus med sig, så DT-tabellen kan visa och ändra den utan
+    // en andra hämtning.
+    pipeline: [...pipeline].sort(sorteraPaUppfoljning).map((p) => ({
+      ...p,
+      finans: finans.get(p.ghl_opportunity_id) || {
+        fakturerat: 0,
+        betalt: 0,
+        forvantat_betaldatum: null,
+        forfallodatum: null,
+        notering: null,
+      },
+      sannolikhet: p.steg_id ? sannolikhetPerSteg.get(p.steg_id)?.procent ?? 50 : 50,
+    })),
+    likviditet,
+    cash,
+    sannolikheter: [...sannolikhetPerSteg.values()]
+      .filter((s) => !valda.size || (s.pipeline_id && valda.has(s.pipeline_id)))
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
     fasta,
     kostnadPerBolag,
     aiPerKund,
@@ -226,6 +410,14 @@ const BOLAG_TASK = ["grip", "dt", "privat"];
 const NIVAER = ["grund", "pro", "gdam", "bollplanket", "konsult", "ovrigt"];
 const STATUSAR = ["aktiv", "pausad", "avslutad"];
 const VALUTOR = ["SEK", "USD", "EUR"];
+const CASH_TYPER = ["leverantorsbetalning", "moms", "skatt", "inkasso", "lan", "ovrigt"];
+const CASH_STATUSAR = ["planerad", "klar"];
+
+/** ÅÅÅÅ-MM-DD eller null. Ett halvt datum sparas aldrig, då är fältet tomt. */
+function dagEllerNull(v: unknown): string | null {
+  const s = String(v ?? "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+}
 
 // POST — skapa en rad. { typ: "mrr" | "fast" | "task", ...falt }
 export async function POST(req: NextRequest) {
@@ -287,6 +479,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // LIKVID-1 — banksaldo. Senaste raden per bolag gäller, historiken sparas.
+  if (b.typ === "saldo") {
+    const saldo = Number(b.saldo);
+    if (!Number.isFinite(saldo)) return NextResponse.json({ error: "Saldot måste vara ett tal" }, { status: 400 });
+    const dag = dagEllerNull(b.datum);
+    if (!dag) return NextResponse.json({ error: "Ett datum behövs, annars går prognosen inte att räkna" }, { status: 400 });
+    const { error } = await sb.from("hq_bank_saldo").insert({
+      bolag: BOLAG.includes(String(b.bolag)) ? b.bolag : "grip",
+      saldo,
+      datum: dag,
+      notering: text(b.notering, 400) || null,
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // LIKVID-1 — känd in- eller utbetalning. Positivt = in, negativt = ut.
+  if (b.typ === "cash") {
+    const titel = text(b.titel, 200);
+    if (!titel) return NextResponse.json({ error: "Skriv vad posten gäller" }, { status: 400 });
+    const belopp = Number(b.belopp);
+    if (!Number.isFinite(belopp) || belopp === 0)
+      return NextResponse.json({ error: "Beloppet måste vara ett tal skilt från noll" }, { status: 400 });
+    const dag = dagEllerNull(b.datum);
+    if (!dag) return NextResponse.json({ error: "Ett datum behövs för att posten ska hamna rätt i prognosen" }, { status: 400 });
+    const { error } = await sb.from("hq_cash_items").insert({
+      bolag: BOLAG.includes(String(b.bolag)) ? b.bolag : "grip",
+      titel,
+      belopp,
+      datum: dag,
+      typ: CASH_TYPER.includes(String(b.typ_post)) ? b.typ_post : "ovrigt",
+      status: CASH_STATUSAR.includes(String(b.status)) ? b.status : "planerad",
+      notering: text(b.notering, 400) || null,
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: "Okänd typ" }, { status: 400 });
 }
 
@@ -301,11 +531,79 @@ export async function PATCH(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Ogiltig förfrågan" }, { status: 400 });
   }
+  const sb = supabaseService();
+  const text = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
+
+  // ── LIKVID-1 ────────────────────────────────────────────────────────────
+  // De här raderna har inte ett uuid som nyckel, så de tas före id-kontrollen.
+
+  // Betalstatus per affär. Nyckeln är GHL:s opportunity-id. "Kvar att fakturera"
+  // sparas ALDRIG, den räknas som affärens belopp minus fakturerat.
+  if (b.typ === "finans") {
+    const oid = text(b.opportunity_id, 60);
+    if (!oid) return NextResponse.json({ error: "Affären saknas" }, { status: 400 });
+    const rad: Record<string, unknown> = { opportunity_id: oid, uppdaterad: new Date().toISOString() };
+    for (const falt of ["fakturerat", "betalt"] as const) {
+      if (b[falt] === undefined) continue;
+      const n = Number(b[falt]);
+      if (!Number.isFinite(n) || n < 0)
+        return NextResponse.json({ error: "Beloppet måste vara ett tal, noll eller mer" }, { status: 400 });
+      rad[falt] = n;
+    }
+    if (b.forvantat_betaldatum !== undefined) rad.forvantat_betaldatum = dagEllerNull(b.forvantat_betaldatum);
+    if (b.forfallodatum !== undefined) rad.forfallodatum = dagEllerNull(b.forfallodatum);
+    if (b.notering !== undefined) rad.notering = text(b.notering, 400) || null;
+    const { error } = await sb.from("hq_deal_finance").upsert(rad, { onConflict: "opportunity_id" });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Inställningar per bolag: buffertmål, larmgräns i veckor och USD-kursen.
+  if (b.typ === "konfig") {
+    const bolag = String(b.bolag || "");
+    if (!BOLAG.includes(bolag)) return NextResponse.json({ error: "Okänt bolag" }, { status: 400 });
+    const rad: Record<string, unknown> = { bolag, uppdaterad: new Date().toISOString() };
+    if (b.buffertmal !== undefined) {
+      const n = Number(b.buffertmal);
+      if (!Number.isFinite(n) || n < 0) return NextResponse.json({ error: "Buffertmålet måste vara ett tal, noll eller mer" }, { status: 400 });
+      rad.buffertmal = n;
+    }
+    if (b.gul_grans_veckor !== undefined) {
+      const n = Math.round(Number(b.gul_grans_veckor));
+      if (!Number.isFinite(n) || n < 1 || n > 12)
+        return NextResponse.json({ error: "Larmgränsen måste vara mellan 1 och 12 veckor" }, { status: 400 });
+      rad.gul_grans_veckor = n;
+    }
+    if (b.usd_kurs !== undefined) {
+      const n = Number(b.usd_kurs);
+      if (!Number.isFinite(n) || n <= 0) return NextResponse.json({ error: "Kursen måste vara större än noll" }, { status: 400 });
+      rad.usd_kurs = n;
+    }
+    if (b.notering !== undefined) rad.notering = text(b.notering, 400) || null;
+    const { error } = await sb.from("hq_likvid_konfig").upsert(rad, { onConflict: "bolag" });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Sannolikhet per steg. Sätter ägaren en egen siffra flaggas raden, och synken
+  // rör den aldrig mer.
+  if (b.typ === "sannolikhet") {
+    const stegId = text(b.steg_id, 60);
+    if (!stegId) return NextResponse.json({ error: "Steget saknas" }, { status: 400 });
+    const n = Math.round(Number(b.procent));
+    if (!Number.isFinite(n) || n < 0 || n > 100)
+      return NextResponse.json({ error: "Sannolikheten måste vara mellan 0 och 100" }, { status: 400 });
+    const { error } = await sb
+      .from("hq_steg_sannolikhet")
+      .update({ procent: n, agarsatt: true, uppdaterad: new Date().toISOString() })
+      .eq("steg_id", stegId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   const id = String(b.id || "");
   if (!id) return NextResponse.json({ error: "Rad saknas" }, { status: 400 });
-  const sb = supabaseService();
   const rad: Record<string, unknown> = { uppdaterad: new Date().toISOString() };
-  const text = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
   if (b.typ === "mrr") {
     if (b.kund !== undefined) {
@@ -361,20 +659,55 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  if (b.typ === "cash") {
+    if (b.titel !== undefined) {
+      const titel = text(b.titel, 200);
+      if (!titel) return NextResponse.json({ error: "Skriv vad posten gäller" }, { status: 400 });
+      rad.titel = titel;
+    }
+    if (b.belopp !== undefined) {
+      const belopp = Number(b.belopp);
+      if (!Number.isFinite(belopp) || belopp === 0)
+        return NextResponse.json({ error: "Beloppet måste vara ett tal skilt från noll" }, { status: 400 });
+      rad.belopp = belopp;
+    }
+    if (b.datum !== undefined) {
+      const dag = dagEllerNull(b.datum);
+      if (!dag) return NextResponse.json({ error: "Ett datum behövs för att posten ska hamna rätt i prognosen" }, { status: 400 });
+      rad.datum = dag;
+    }
+    if (b.bolag !== undefined && BOLAG.includes(String(b.bolag))) rad.bolag = b.bolag;
+    if (b.typ_post !== undefined && CASH_TYPER.includes(String(b.typ_post))) rad.typ = b.typ_post;
+    if (b.status !== undefined && CASH_STATUSAR.includes(String(b.status))) rad.status = b.status;
+    if (b.notering !== undefined) rad.notering = text(b.notering, 400) || null;
+    const { error } = await sb.from("hq_cash_items").update(rad).eq("id", id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: "Okänd typ" }, { status: 400 });
 }
 
-// DELETE — ta bort en rad. ?typ=mrr|fast|task&id=<uuid>
+// DELETE — ta bort en rad. ?typ=mrr|fast|task|saldo|cash&id=<uuid>
+// eller ?typ=finans&id=<opportunity_id>
 export async function DELETE(req: NextRequest) {
   const denied = await ownerGrind();
   if (denied) return denied;
 
   const typ = req.nextUrl.searchParams.get("typ") || "";
   const id = req.nextUrl.searchParams.get("id") || "";
-  const tabell = typ === "mrr" ? "hq_mrr_entries" : typ === "fast" ? "hq_fasta_kostnader" : typ === "task" ? "hq_tasks" : "";
-  if (!tabell || !id) return NextResponse.json({ error: "Rad saknas" }, { status: 400 });
+  const TABELLER: Record<string, { tabell: string; nyckel: string }> = {
+    mrr: { tabell: "hq_mrr_entries", nyckel: "id" },
+    fast: { tabell: "hq_fasta_kostnader", nyckel: "id" },
+    task: { tabell: "hq_tasks", nyckel: "id" },
+    saldo: { tabell: "hq_bank_saldo", nyckel: "id" },
+    cash: { tabell: "hq_cash_items", nyckel: "id" },
+    finans: { tabell: "hq_deal_finance", nyckel: "opportunity_id" },
+  };
+  const mal = TABELLER[typ];
+  if (!mal || !id) return NextResponse.json({ error: "Rad saknas" }, { status: 400 });
 
-  const { error } = await supabaseService().from(tabell).delete().eq("id", id);
+  const { error } = await supabaseService().from(mal.tabell).delete().eq(mal.nyckel, id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

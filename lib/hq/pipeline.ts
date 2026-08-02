@@ -15,6 +15,7 @@
 // Vunnet/förlorat härleds därför ur STEGET, inte ur status.
 
 import { supabaseService } from "@/lib/supabase-admin";
+import { standardSannolikhet } from "@/lib/hq/likviditet";
 
 const BASE = "https://services.leadconnectorhq.com";
 const VERSION = "2021-07-28";
@@ -228,6 +229,57 @@ export async function hamtaValdaPipelines(locationId: string): Promise<Set<strin
   return (await hamtaStegFacit(locationId)).pipelines;
 }
 
+/**
+ * LIKVID-1 — ser till att varje steg har en sannolikhet att väga med.
+ *
+ * Viktningen i "I spel, ofakturerat" och i likviditetsprognosens kundinbetalningar
+ * måste bygga på en siffra per steg. Den siffran får inte vara hårdkodad i en formel
+ * ingen ser, därför läggs den i en tabell ägaren kan ändra. Utgångspunkten räknas ur
+ * stegets plats bland de steg som är i spel.
+ *
+ * ⚠ En rad där ägaren satt sin egen siffra (`agarsatt`) skrivs ALDRIG över av synken.
+ */
+async function seedaSannolikheter(
+  steg: Map<string, Steg>,
+  facit: { vinnare: Set<string>; forlorare: Set<string> },
+): Promise<void> {
+  const sb = supabaseService();
+  const { data } = await sb.from("hq_steg_sannolikhet").select("steg_id, agarsatt, procent");
+  const kanda = new Map(
+    ((data as Array<{ steg_id: string; agarsatt: boolean; procent: number }> | null) || []).map((r) => [r.steg_id, r]),
+  );
+
+  const perPipeline = new Map<string, Array<{ id: string; s: Steg; status: "open" | "won" | "lost" }>>();
+  for (const [id, s] of steg) {
+    const lista = perPipeline.get(s.pipelineId) || [];
+    lista.push({ id, s, status: harledStatus(id, s.namn, facit.vinnare, facit.forlorare) });
+    perPipeline.set(s.pipelineId, lista);
+  }
+
+  const rader: Array<Record<string, unknown>> = [];
+  for (const [pipelineId, lista] of perPipeline) {
+    const iSpel = lista.filter((x) => x.status === "open").sort((a, b) => a.s.position - b.s.position);
+    for (const x of lista) {
+      const befintlig = kanda.get(x.id);
+      if (befintlig?.agarsatt) continue; // ägarens egen siffra vinner alltid
+      const plats = iSpel.findIndex((y) => y.id === x.id);
+      const procent =
+        x.status === "won" ? 100 : x.status === "lost" ? 0 : standardSannolikhet(plats, iSpel.length);
+      if (befintlig && befintlig.procent === procent) continue;
+      rader.push({
+        steg_id: x.id,
+        pipeline_id: pipelineId,
+        steg_namn: x.s.namn,
+        position: x.s.position,
+        procent,
+        agarsatt: false,
+        uppdaterad: new Date().toISOString(),
+      });
+    }
+  }
+  if (rader.length) await sb.from("hq_steg_sannolikhet").upsert(rader, { onConflict: "steg_id" });
+}
+
 export interface SynkResultat {
   ok: boolean;
   antal?: number;
@@ -265,6 +317,13 @@ export async function synkaPipeline(tvinga = false): Promise<SynkResultat> {
     if (!cfg) return { ok: false, fel: "Ingen koppling till MySales är inlagd. Sätt HQ_GHL_PIT och HQ_GHL_LOCATION_ID." };
 
     const [steg, facit] = await Promise.all([hamtaSteg(cfg), hamtaStegFacit(cfg.locationId)]);
+    // Sannolikheterna hålls i takt med pipelinen. Faller det lämnas synken orörd:
+    // en vikt som saknas får aldrig stoppa spegeln.
+    try {
+      await seedaSannolikheter(steg, facit);
+    } catch {
+      /* prognosen faller tillbaka på 50 procent och säger det i vyn */
+    }
     const affarer = await hamtaAffarer(cfg);
 
     // Uppgifter bara för affärer som fortfarande är i spel.
