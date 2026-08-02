@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Info, Coins, TrendingUp, CalendarDays, Wallet, Server, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { AlertTriangle, Info, Coins, TrendingUp, CalendarDays, Wallet, Server, ChevronDown, ChevronRight, RefreshCw, ShoppingCart, Percent, ExternalLink } from "lucide-react";
 import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
 
 // KOSTNAD-1 K3 — vad AI:n kostar, var pengarna går och vilken provider som är nere.
@@ -28,6 +28,29 @@ interface FelRad {
   error_class: string | null; http_status: number | null; error_body: string | null;
 }
 interface FastRad { id: string; namn: string; kategori: string; belopp_sek: number; note: string | null; aktiv: boolean }
+
+// ── K3-INKÖP ───────────────────────────────────────────────────────────────
+interface Takt { snittPerDag: number; summa: number; fonster: number; namnare: number; tunt: boolean }
+interface Larmrad { id: string; text: string; niva: "gul" | "rod"; etikett: string; lank: string }
+interface Inkopsrad {
+  id: string; provider: string; etikett: string; typ: "forbetalt" | "efterskott";
+  saldo_belopp: number | null; saldo_valuta: string; saldo_kalla: "api" | "manuellt";
+  saldo_uppdaterad: string | null; saldo_fel: string | null; saldoAlderDagar: number | null;
+  betalkort_sista_fyra: string | null;
+  forra_fakturan_sek: number | null; forra_fakturan_datum: string | null;
+  pafyllningssteg: number | null; fakturalank: string | null; notering: string | null;
+  saldoSek: number | null; kurs: number;
+  takt7: Takt; takt30: Takt; dagarKvar: number | null; prognosSek: number; manadHittills: number;
+  larmniva: "gron" | "gul" | "rod"; larmorsak: string; billingfelSenasteDygnet: boolean;
+  rekommendation: { belopp: number; valuta: string; beloppSek: number; senast: string | null; klartext: string } | null;
+  harApi: boolean;
+}
+interface MarginalRad {
+  tenantId: string; namn: string; abonnemangSek: number | null; topupSek: number; aiKostnadSek: number;
+  intaktSek: number | null; marginalSek: number | null; marginalProcent: number | null; prisSaknas: boolean;
+}
+interface MrrVal { id: string; kund: string; bolag: string; belopp_ex_moms: number; client_id: string | null }
+
 interface Data {
   summa: { idag: number; vecka: number; manad: number; prognos: number; fast: number; totaltNu: number; totaltPrognos: number };
   fasta: FastRad[];
@@ -41,10 +64,32 @@ interface Data {
   creditPriser: Prisrad[];
   ordrar: Orderrad[];
   period: string;
+  inkop: {
+    idag: string;
+    trosklar: { gulDagar: number; rodDagar: number; gulPrognosProcent: number };
+    rader: Inkopsrad[];
+    larm: Larmrad[];
+  };
+  marginal: {
+    rader: MarginalRad[];
+    summa: { intaktSek: number; aiKostnadSek: number; marginalSek: number; marginalProcent: number | null; utanPris: number };
+    mrrVal: MrrVal[];
+    manad: string;
+  };
 }
 
 const kr = (n: number) => `${n.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`;
+const krHel = (n: number) => `${Math.round(n).toLocaleString("sv-SE")} kr`;
 const tid = (s: string | null) => (s ? new Date(s).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : "aldrig");
+const valutabelopp = (n: number, valuta: string) =>
+  `${n.toLocaleString("sv-SE", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })} ${valuta}`;
+
+/** Saldots ålder i klarspråk. Aldrig en färsk siffra som i själva verket är gammal. */
+function alderText(dagar: number | null, kalla: string): string {
+  if (dagar === null) return `${kalla === "api" ? "hämtas automatiskt" : "manuellt"}, aldrig ifyllt`;
+  const nar = dagar === 0 ? "idag" : dagar === 1 ? "1 dag gammalt" : `${dagar} dagar gammalt`;
+  return `${kalla === "api" ? "hämtat automatiskt" : "manuellt"}, ${nar}`;
+}
 
 const FELKLASS_TEXT: Record<string, string> = {
   billing: "Betalning",
@@ -100,6 +145,9 @@ export default function KostnaderPage() {
   const [prisUtkast, setPrisUtkast] = useState<Record<string, string>>({});
   const [kvotUtkast, setKvotUtkast] = useState<Record<string, string>>({});
   const [insattning, setInsattning] = useState<{ tenantId: string; credits: string; note: string } | null>(null);
+  // K3-INKÖP: utkast per fält, nyckeln är kontots id plus fältnamnet.
+  const [kontoUtkast, setKontoUtkast] = useState<Record<string, string>>({});
+  const [troskelUtkast, setTroskelUtkast] = useState<Record<string, string>>({});
 
   const hamta = useCallback(async () => {
     setLaddar(true);
@@ -226,6 +274,22 @@ export default function KostnaderPage() {
         </div>
       )}
 
+      {/* K3-INKÖP: samma larmrader som ligger överst i Founder HQ:s morgonlista, från
+          samma källa (lib/inkop). Poängen är förvarning: betalningsspärren 1 augusti
+          syntes först när allt redan stod stilla. */}
+      {(data?.inkop.larm || []).map((larm) => (
+        <div key={larm.id}
+          className={`flex items-start gap-3 rounded-2xl border px-5 py-4 text-sm ${
+            larm.niva === "rod" ? "border-red-200 bg-red-50 text-red-800" : "border-amber-200 bg-amber-50 text-amber-900"
+          }`}>
+          <AlertTriangle className={`mt-0.5 h-5 w-5 shrink-0 ${larm.niva === "rod" ? "text-red-600" : "text-amber-600"}`} />
+          <p className="min-w-0 flex-1">
+            <span className="font-semibold">{larm.text}</span>{" "}
+            <a href="#inkop" className="font-medium underline">Se inköpsläget</a>
+          </p>
+        </div>
+      ))}
+
       {data && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -260,6 +324,300 @@ export default function KostnaderPage() {
               </div>
             </div>
           )}
+
+          {/* ── K3-INKÖP: saldon, takt, prognos och köprekommendation ──────────
+              Förbrukningen kommer ur samma händelselogg som resten av sidan. Ingen
+              siffra hittas på: saknas underlag står det, saknas saldo står det. */}
+          <section id="inkop" className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 px-5 py-3.5">
+              <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-gray-900">
+                <ShoppingCart className="h-5 w-5 text-indigo-500" /> Inköp och saldon
+              </h2>
+              <span className="text-sm text-gray-500">
+                Gult under {data.inkop.trosklar.gulDagar} dagar kvar, rött under {data.inkop.trosklar.rodDagar}.
+                Inga automatiska köp görs någonsin.
+              </span>
+            </div>
+
+            <ul className="divide-y divide-gray-100">
+              {data.inkop.rader.map((r) => {
+                const rod = r.larmniva === "rod";
+                const gul = r.larmniva === "gul";
+                const nyckel = (falt: string) => `${r.id}:${falt}`;
+                const utkast = (falt: string, varde: string) => kontoUtkast[nyckel(falt)] ?? varde;
+                const andrat = (falt: string, varde: string) => (kontoUtkast[nyckel(falt)] ?? varde) !== varde;
+                const satt = (falt: string, v: string) => setKontoUtkast({ ...kontoUtkast, [nyckel(falt)]: v });
+                return (
+                  <li key={r.id} className={`px-5 py-4 ${rod ? "bg-red-50/50" : gul ? "bg-amber-50/40" : ""}`}>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${rod ? "bg-red-500" : gul ? "bg-amber-400" : "bg-emerald-500"}`} />
+                      <span className="font-medium text-gray-900">{r.etikett}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                        {r.typ === "forbetalt" ? "Förbetalt" : "Efterskott"}
+                      </span>
+                      {r.betalkort_sista_fyra && (
+                        <span className="text-xs text-gray-500">kort som slutar på {r.betalkort_sista_fyra}</span>
+                      )}
+                      {r.fakturalank && (
+                        <a href={r.fakturalank} target="_blank" rel="noreferrer"
+                          className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                          Öppna hos leverantören <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                    </div>
+
+                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-5">
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-gray-500">Saldo</dt>
+                        <dd className="tabular-nums font-medium text-gray-900">
+                          {r.saldo_belopp === null ? "inte ifyllt" : valutabelopp(r.saldo_belopp, r.saldo_valuta)}
+                        </dd>
+                        <dd className="text-xs text-gray-500">
+                          {alderText(r.saldoAlderDagar, r.saldo_kalla)}
+                          {r.saldoSek !== null && r.saldo_valuta !== "SEK"
+                            ? ` · ${krHel(r.saldoSek)} med kursen ${r.kurs.toLocaleString("sv-SE")}`
+                            : ""}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-gray-500">Takt per dag</dt>
+                        <dd className="tabular-nums font-medium text-gray-900">{kr(r.takt7.snittPerDag)}</dd>
+                        <dd className="text-xs text-gray-500">
+                          {r.takt7.tunt ? "för kort mätperiod än så länge" : `snitt över ${r.takt7.namnare} dagar`}
+                          {" · 30 dagar: "}{kr(r.takt30.snittPerDag)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-gray-500">Dagar kvar</dt>
+                        <dd className={`tabular-nums font-medium ${rod ? "text-red-700" : gul ? "text-amber-700" : "text-gray-900"}`}>
+                          {r.typ === "efterskott" ? "gäller inte" : r.dagarKvar === null ? "går inte att räkna" : Math.floor(r.dagarKvar)}
+                        </dd>
+                        <dd className="text-xs text-gray-500">
+                          {r.typ === "efterskott"
+                            ? "faktureras i efterskott"
+                            : r.dagarKvar === null
+                              ? r.saldo_belopp === null ? "saldot saknas" : "ingen uppmätt förbrukning"
+                              : "med sjudagarssnittet"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-gray-500">Prognos månad</dt>
+                        <dd className="tabular-nums font-medium text-gray-900">{krHel(r.prognosSek)}</dd>
+                        <dd className="text-xs text-gray-500">
+                          {r.forra_fakturan_sek
+                            ? `förra fakturan ${krHel(r.forra_fakturan_sek)}`
+                            : r.typ === "efterskott" ? "fyll i förra fakturan nedan" : "trettiodagarssnittet gånger 30"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-gray-500">Denna månad</dt>
+                        <dd className="tabular-nums font-medium text-gray-900">{kr(r.manadHittills)}</dd>
+                        <dd className="text-xs text-gray-500">uppmätt hittills</dd>
+                      </div>
+                    </dl>
+
+                    {r.larmniva !== "gron" && (
+                      <p className={`mt-3 rounded-lg px-3 py-2 text-sm ${rod ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>
+                        <strong>{r.larmorsak.charAt(0).toUpperCase() + r.larmorsak.slice(1)}.</strong>{" "}
+                        {r.rekommendation ? r.rekommendation.klartext : "Fyll på hos leverantören innan det tar stopp."}
+                      </p>
+                    )}
+
+                    {r.saldo_fel && (
+                      <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                        Saldot gick inte att hämta automatiskt: {r.saldo_fel}. Siffran ovan är den senast kända.
+                      </p>
+                    )}
+                    {r.notering && <p className="mt-2 text-xs text-gray-500">{r.notering}</p>}
+
+                    {/* Ägarstyrda fält. Ett konto med automatiskt saldo får inget manuellt
+                        saldofält: hade det skrivits över hade hämtningen tystnat. */}
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-600">
+                      {!r.harApi && (
+                        <label className="inline-flex items-center gap-2">
+                          <span>Saldo ({r.saldo_valuta})</span>
+                          <input type="number" min={0} step="0.01" placeholder="skriv in"
+                            value={utkast("saldo_belopp", r.saldo_belopp === null ? "" : String(r.saldo_belopp))}
+                            onChange={(e) => satt("saldo_belopp", e.target.value)}
+                            className="w-28 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                          {andrat("saldo_belopp", r.saldo_belopp === null ? "" : String(r.saldo_belopp)) && (
+                            <button disabled={sparar}
+                              onClick={() => patcha({ konto: { id: r.id, saldo_belopp: kontoUtkast[nyckel("saldo_belopp")] === "" ? null : Number(kontoUtkast[nyckel("saldo_belopp")]) } })}
+                              className="rounded-lg bg-gray-900 px-2 py-1 font-medium text-white disabled:opacity-50">Spara</button>
+                          )}
+                        </label>
+                      )}
+                      <label className="inline-flex items-center gap-2">
+                        <span>Förra fakturan (kr)</span>
+                        <input type="number" min={0} step="1" placeholder="skriv in"
+                          value={utkast("forra_fakturan_sek", r.forra_fakturan_sek === null ? "" : String(r.forra_fakturan_sek))}
+                          onChange={(e) => satt("forra_fakturan_sek", e.target.value)}
+                          className="w-28 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                        {andrat("forra_fakturan_sek", r.forra_fakturan_sek === null ? "" : String(r.forra_fakturan_sek)) && (
+                          <button disabled={sparar}
+                            onClick={() => patcha({ konto: { id: r.id, forra_fakturan_sek: kontoUtkast[nyckel("forra_fakturan_sek")] === "" ? null : Number(kontoUtkast[nyckel("forra_fakturan_sek")]) } })}
+                            className="rounded-lg bg-gray-900 px-2 py-1 font-medium text-white disabled:opacity-50">Spara</button>
+                        )}
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <span>Påfyllningssteg ({r.saldo_valuta})</span>
+                        <input type="number" min={0} step="1" placeholder="okänt"
+                          value={utkast("pafyllningssteg", r.pafyllningssteg === null ? "" : String(r.pafyllningssteg))}
+                          onChange={(e) => satt("pafyllningssteg", e.target.value)}
+                          className="w-24 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                        {andrat("pafyllningssteg", r.pafyllningssteg === null ? "" : String(r.pafyllningssteg)) && (
+                          <button disabled={sparar}
+                            onClick={() => patcha({ konto: { id: r.id, pafyllningssteg: kontoUtkast[nyckel("pafyllningssteg")] === "" ? null : Number(kontoUtkast[nyckel("pafyllningssteg")]) } })}
+                            className="rounded-lg bg-gray-900 px-2 py-1 font-medium text-white disabled:opacity-50">Spara</button>
+                        )}
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <span>Kort slutar på</span>
+                        <input inputMode="numeric" maxLength={4} placeholder="1234"
+                          value={utkast("betalkort_sista_fyra", r.betalkort_sista_fyra || "")}
+                          onChange={(e) => satt("betalkort_sista_fyra", e.target.value)}
+                          className="w-16 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                        {andrat("betalkort_sista_fyra", r.betalkort_sista_fyra || "") && (
+                          <button disabled={sparar}
+                            onClick={() => patcha({ konto: { id: r.id, betalkort_sista_fyra: kontoUtkast[nyckel("betalkort_sista_fyra")] } })}
+                            className="rounded-lg bg-gray-900 px-2 py-1 font-medium text-white disabled:opacity-50">Spara</button>
+                        )}
+                      </label>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Trösklarna. De ligger i databasen så de går att skruva utan ny version. */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-gray-100 bg-gray-50 px-5 py-3 text-xs text-gray-600">
+              <span className="font-medium text-gray-700">Larmgränser</span>
+              {([
+                ["gulDagar", "Gult under (dagar)", data.inkop.trosklar.gulDagar],
+                ["rodDagar", "Rött under (dagar)", data.inkop.trosklar.rodDagar],
+                ["gulPrognosProcent", "Gult över (procent av förra fakturan)", data.inkop.trosklar.gulPrognosProcent],
+              ] as const).map(([falt, etikett, varde]) => (
+                <label key={falt} className="inline-flex items-center gap-2">
+                  <span>{etikett}</span>
+                  <input type="number" min={1}
+                    value={troskelUtkast[falt] ?? String(varde)}
+                    onChange={(e) => setTroskelUtkast({ ...troskelUtkast, [falt]: e.target.value })}
+                    className="w-20 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums" />
+                  {(troskelUtkast[falt] ?? String(varde)) !== String(varde) && (
+                    <button disabled={sparar}
+                      onClick={() => patcha({ trosklar: { [falt]: Number(troskelUtkast[falt]) } })}
+                      className="rounded-lg bg-gray-900 px-2 py-1 font-medium text-white disabled:opacity-50">Spara</button>
+                  )}
+                </label>
+              ))}
+            </div>
+          </section>
+
+          {/* ── K3-INKÖP: bruttomarginal per kund ──────────────────────────────
+              Intäkten kommer ur HQ:s intäktsrader, kostnaden ur händelseloggen.
+              En kund utan ifyllt pris får ALDRIG marginalen noll: då hade en lucka
+              sett ut som en mätning. */}
+          <section id="marginal" className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 px-5 py-3.5">
+              <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-gray-900">
+                <Percent className="h-5 w-5 text-emerald-500" /> Marginal per kund
+              </h2>
+              <span className="text-sm text-gray-500">
+                {data.marginal.manad}. Abonnemang plus sålda påfyllningar minus faktisk AI-kostnad.
+              </span>
+            </div>
+
+            <div className="grid gap-4 border-b border-gray-100 px-5 py-4 sm:grid-cols-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">Intäkt</p>
+                <p className="tabular-nums text-lg font-semibold text-gray-900">{krHel(data.marginal.summa.intaktSek)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">AI-kostnad</p>
+                <p className="tabular-nums text-lg font-semibold text-gray-900">{kr(data.marginal.summa.aiKostnadSek)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">Bruttomarginal</p>
+                <p className="tabular-nums text-lg font-semibold text-emerald-700">
+                  {krHel(data.marginal.summa.marginalSek)}
+                  {data.marginal.summa.marginalProcent !== null && ` (${Math.round(data.marginal.summa.marginalProcent)} procent)`}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">Utan pris</p>
+                <p className="tabular-nums text-lg font-semibold text-amber-600">{data.marginal.summa.utanPris}</p>
+                <p className="text-xs text-gray-500">räknas inte in i totalen</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[42rem] text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
+                    <th className="px-5 py-2.5 font-medium">Kund</th>
+                    <th className="px-3 py-2.5 text-right font-medium">Abonnemang</th>
+                    <th className="px-3 py-2.5 text-right font-medium">Påfyllningar</th>
+                    <th className="px-3 py-2.5 text-right font-medium">AI-kostnad</th>
+                    <th className="px-3 py-2.5 text-right font-medium">Marginal</th>
+                    <th className="px-5 py-2.5 text-right font-medium">Procent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.marginal.rader.map((m) => (
+                    <tr key={m.tenantId} className="border-b border-gray-50 last:border-0">
+                      <td className="px-5 py-2.5 font-medium text-gray-800">
+                        {m.namn}
+                        {m.prisSaknas && (
+                          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            pris saknas
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-gray-900">
+                        {m.abonnemangSek === null ? <span className="text-amber-600">saknas</span> : krHel(m.abonnemangSek)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-gray-600">{m.topupSek ? krHel(m.topupSek) : "0 kr"}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-gray-600">{kr(m.aiKostnadSek)}</td>
+                      <td className={`px-3 py-2.5 text-right tabular-nums font-medium ${m.marginalSek === null ? "text-gray-400" : m.marginalSek < 0 ? "text-red-600" : "text-emerald-700"}`}>
+                        {m.marginalSek === null ? "går inte att räkna" : krHel(m.marginalSek)}
+                      </td>
+                      <td className={`px-5 py-2.5 text-right tabular-nums ${m.marginalProcent === null ? "text-gray-400" : m.marginalProcent < 0 ? "text-red-600" : "text-gray-700"}`}>
+                        {m.marginalProcent === null ? "" : `${Math.round(m.marginalProcent)} procent`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Kopplingen mellan intäktsrad och kund. Utan den gissar uträkningen på
+                namnlikhet, och en felmatchad rad hade sett ut som en sanning. */}
+            <div className="border-t border-gray-100 bg-gray-50 px-5 py-3">
+              <p className="text-xs font-medium text-gray-700">Koppla intäktsrad till kund</p>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Raderna kommer från Founder HQ. Är namnen olika i HQ och i plattformen behöver kopplingen sättas här,
+                annars står kunden som &quot;pris saknas&quot;.
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {data.marginal.mrrVal.map((v) => (
+                  <li key={v.id} className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                    <span className="min-w-32 font-medium text-gray-800">{v.kund}</span>
+                    <span className="tabular-nums text-gray-500">{krHel(v.belopp_ex_moms)} per månad</span>
+                    <select
+                      value={v.client_id || ""}
+                      onChange={(e) => patcha({ mrrKoppling: { mrrId: v.id, tenantId: e.target.value || null } })}
+                      disabled={sparar}
+                      className="rounded-lg border border-gray-200 bg-white px-2 py-1">
+                      <option value="">Ingen koppling (matchas på namn)</option>
+                      {data.marginal.rader.map((m) => (
+                        <option key={m.tenantId} value={m.tenantId}>{m.namn}</option>
+                      ))}
+                    </select>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
 
           {/* Providerhälsa */}
           <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white">

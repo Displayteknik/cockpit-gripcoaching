@@ -42,6 +42,10 @@ interface LarmRad {
   id: string;
   text: string;
   niva: "gul" | "rod";
+  /** Vad larmet gäller: "Likviditet" (LIKVID-1) eller "Inköp" (K3). */
+  etikett?: string;
+  /** Vart man går för att göra något åt det. */
+  lank?: string;
 }
 
 interface SannolikhetRad {
@@ -234,8 +238,9 @@ export default function HqPage() {
               </p>
             ) : (
               <ul className="divide-y divide-gray-50">
-                {/* Likviditetslarmet ligger överst i samma lista som allt annat som
-                    förfaller. Ingen egen banner, ingen andra väg in i vyn. */}
+                {/* Larmen ligger överst i samma lista som allt annat som förfaller.
+                    Ingen egen banner, ingen andra väg in i vyn. Likviditet kommer ur
+                    LIKVID-1, inköpslarmen ur K3 och lib/inkop, båda i samma form. */}
                 {(data.morgonlistan.larm || []).map((larm) => (
                   <li key={larm.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm">
                     <span
@@ -243,13 +248,13 @@ export default function HqPage() {
                         larm.niva === "rod" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900"
                       }`}
                     >
-                      Likviditet
+                      {larm.etikett || "Likviditet"}
                     </span>
                     <span className={`font-medium ${larm.niva === "rod" ? "text-red-700" : "text-amber-800"}`}>
                       {larm.text}
                     </span>
-                    <a href="#likviditet" className="ml-auto font-medium text-indigo-600 hover:text-indigo-800">
-                      Se prognosen
+                    <a href={larm.lank || "#likviditet"} className="ml-auto font-medium text-indigo-600 hover:text-indigo-800">
+                      {larm.lank && !larm.lank.startsWith("#") ? "Se inköpsläget" : "Se prognosen"}
                     </a>
                   </li>
                 ))}
