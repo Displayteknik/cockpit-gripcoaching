@@ -265,7 +265,8 @@ export default function HqPage() {
                       {larm.text}
                     </span>
                     <a href={larm.lank || "#likviditet"} className="ml-auto font-medium text-indigo-600 hover:text-indigo-800">
-                      {larm.lank && !larm.lank.startsWith("#") ? "Se inköpsläget" : "Se prognosen"}
+                      {larm.etikett === "Uppstart" ? "Öppna uppstarten"
+                        : larm.lank && !larm.lank.startsWith("#") ? "Se inköpsläget" : "Se prognosen"}
                     </a>
                   </li>
                 ))}

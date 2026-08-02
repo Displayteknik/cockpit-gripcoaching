@@ -351,6 +351,32 @@ export async function GET(req: NextRequest) {
   const { inkopLarm } = await import("@/lib/inkop");
   larm.push(...(await inkopLarm(nu)));
 
+  // START-1: uppstartsraden ligger ÖVERST i samma lista. Så länge grunden inte är på
+  // plats är den viktigare än dagens enskilda uppgifter, för allt annat vilar på den.
+  // Uppstartsstegen dubbleras aldrig som vanliga uppgifter i hq_tasks.
+  const uppstart = await (async () => {
+    const { data } = await sb.from("hq_uppstart_steg").select("titel, status, kategori, sortering").order("sortering");
+    const rader = (data as Array<{ titel: string; status: string; kategori: string }> | null) || [];
+    if (!rader.length) return null;
+    const kvar = rader.filter((r) => r.status !== "klar" && r.status !== "skjutet");
+    const mysalesKlart = rader.filter((r) => r.kategori === "mysales").every((r) => r.status === "klar");
+    if (!kvar.length) return { text: "Uppstarten är klar. Systemet står på egna ben.", niva: "klar" as const };
+    return {
+      text: `Uppstart: ${kvar.length} ${kvar.length === 1 ? "steg" : "steg"} kvar, nästa är ${kvar[0].titel}`,
+      niva: mysalesKlart ? ("klar" as const) : ("gul" as const),
+      mysalesKlart,
+    };
+  })();
+  if (uppstart) {
+    larm.unshift({
+      id: "uppstart",
+      text: uppstart.text,
+      niva: uppstart.niva === "klar" ? "gul" : uppstart.niva,
+      etikett: "Uppstart",
+      lank: "/dashboard/hq/uppstart",
+    });
+  }
+
   // PLAN-1: dagens kalenderhändelser överst i morgonlistan, ur SAMMA spegel som
   // planeringsvyn läser. Ingen egen hämtning och ingen andra klassificering, annars
   // kan de två vyerna säga emot varandra om samma dag.
