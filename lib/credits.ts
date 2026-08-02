@@ -228,6 +228,11 @@ const ETIKETT: Record<string, { ental: string; flertal: string }> = {
   "social-bild": { ental: "bild", flertal: "bilder" },
   "hero-bild": { ental: "stor bild", flertal: "stora bilder" },
   video: { ental: "video", flertal: "videor" },
+  // K3-INKÖP: raderna finns i prislistan men är avstängda och kostar noll tills
+  // ICP-motorns kostnadskarta finns. Etiketterna läggs in SAMTIDIGT som raderna:
+  // utan dem hade kunden fått läsa "3 lead_niva_a" den dag de slås på.
+  lead_niva_a: { ental: "lead nivå A", flertal: "leads nivå A" },
+  lead_niva_b: { ental: "lead nivå B", flertal: "leads nivå B" },
 };
 
 /**
