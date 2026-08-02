@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
-import { byggLista, loggaSamtal, regelrader, senastSynkad, synkaKontakter } from "@/lib/hq/kontakt";
+import { byggLista, loggaSamtal, regelrader, senastSynkad, sparaKommentar, synkaKontakter } from "@/lib/hq/kontakt";
 import { kalenderAuthUrl, kopplingsScope } from "@/lib/hq/kalender";
 
 export const runtime = "nodejs";
@@ -75,6 +75,16 @@ export async function PATCH(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Ogiltig förfrågan" }, { status: 400 });
   }
+  // Kommentar per affär. Rör aldrig tystnaden: en anteckning om vad som är på gång är
+  // inte samma sak som kontakt. Texten kan skrivas, klistras in eller dikteras i vyn.
+  if (b.opportunityId !== undefined) {
+    const oid = String(b.opportunityId || "");
+    if (!oid) return NextResponse.json({ error: "Affären saknas" }, { status: 400 });
+    const ok = await sparaKommentar(oid, String(b.kommentar ?? ""));
+    if (!ok) return NextResponse.json({ error: "Kunde inte spara kommentaren" }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   const id = String(b.id || "");
   if (!id) return NextResponse.json({ error: "Regeln saknas" }, { status: 400 });
 

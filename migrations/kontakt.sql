@@ -49,3 +49,11 @@ select * from (values
 where not exists (select 1 from public.hq_kontakt_regler);
 
 notify pgrst, 'reload schema';
+
+-- KONTAKT-1b (Håkans order 2026-08-02): kommentarer per affär, som ska gå att klistra in
+-- eller prata in. Skild från logg_notering med flit: en kommentar är MINNE och rör inte
+-- tystnaden, ett loggat samtal är en HÄNDELSE som nollställer den.
+alter table public.hq_kontakt_status add column if not exists kommentar text;
+alter table public.hq_kontakt_status add column if not exists kommentar_uppdaterad timestamptz;
+
+notify pgrst, 'reload schema';

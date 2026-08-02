@@ -135,8 +135,11 @@ export default function PlaneringPage() {
     return true;
   }, [data, hamta, vald]);
 
+  // ⚠ Andra försvarslinjen mot samma krasch: även om ett svar någon gång skulle sakna
+  // ett fält får sidan aldrig dö på det. En vy som inte går att öppna är värre än en
+  // vy som visar noll.
   const kt = data?.nyckeltal;
-  const antalHandelser = data?.handelser.filter((h) => !h.heldag).length || 0;
+  const handelser = data?.handelser ?? [];
 
   const mobilDag = useMemo(
     () => (mobil && data ? data.vecka.dagar[Math.max(0, Math.min(6, mobilDagIdx))] : undefined),
@@ -187,7 +190,7 @@ export default function PlaneringPage() {
         </div>
       )}
 
-      {data?.kopplad && (
+      {data?.kopplad && kt && (
         <>
           {!data.synk.ok && (
             <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
@@ -211,7 +214,7 @@ export default function PlaneringPage() {
           <section className="rounded-2xl border border-gray-100 bg-white px-5 py-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="font-display text-lg font-semibold text-gray-900">Så fördelas veckan</h2>
-              <span className="text-sm text-gray-500">{tim(kt!.bokadeTimmar)} bokat, {dagStr(data.vecka.start)} till {dagStr(data.vecka.slut)}</span>
+              <span className="text-sm text-gray-500">{tim(kt.bokadeTimmar)} bokat, {dagStr(data.vecka.start)} till {dagStr(data.vecka.slut)}</span>
             </div>
             {data.fordelning.length === 0 ? (
               <p className="mt-3 text-sm text-gray-500">Inget tidsatt den här veckan än.</p>
@@ -236,11 +239,11 @@ export default function PlaneringPage() {
           </section>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile label="Bokade timmar" value={Math.round(kt!.bokadeTimmar)} sub={tim(kt!.bokadeTimmar)} icon={CalendarDays} tone="blue" i={0} />
-            <StatTile label="Timmar bokade på white space-dagar" value={Math.round(kt!.timmarWhiteSpace)} sub={`${tim(kt!.timmarWhiteSpace)} på måndag, onsdag och fredag`} icon={Sunrise} tone="amber" i={1} />
-            <StatTile label="Antal möten" value={kt!.antalMoten} sub="block i Coaching och kunder" icon={LayoutGrid} tone="violet" i={2} />
-            <StatTile label="Andel arbetstid på tisdag och torsdag i procent" value={kt!.lifestyle === null ? 0 : Math.round(kt!.lifestyle)}
-              sub={kt!.lifestyle === null ? "ingen arbetstid inlagd" : `${tim(kt!.arbetstimmar)} arbetstid totalt`} icon={Target} tone="emerald" i={3} />
+            <StatTile label="Bokade timmar" value={Math.round(kt.bokadeTimmar)} sub={tim(kt.bokadeTimmar)} icon={CalendarDays} tone="blue" i={0} />
+            <StatTile label="Timmar bokade på white space-dagar" value={Math.round(kt.timmarWhiteSpace)} sub={`${tim(kt.timmarWhiteSpace)} på måndag, onsdag och fredag`} icon={Sunrise} tone="amber" i={1} />
+            <StatTile label="Antal möten" value={kt.antalMoten} sub="block i Coaching och kunder" icon={LayoutGrid} tone="violet" i={2} />
+            <StatTile label="Andel arbetstid på tisdag och torsdag i procent" value={kt.lifestyle === null ? 0 : Math.round(kt.lifestyle)}
+              sub={kt.lifestyle === null ? "ingen arbetstid inlagd" : `${tim(kt.arbetstimmar)} arbetstid totalt`} icon={Target} tone="emerald" i={3} />
           </div>
 
           {/* Nästa vecka: avvikelser ska synas innan de inträffar. */}
@@ -296,7 +299,7 @@ export default function PlaneringPage() {
 
           <Veckovy
             dagar={data.vecka.dagar}
-            handelser={data.handelser}
+            handelser={handelser}
             idag={data.idag}
             mobilDag={mobilDag}
             onFlytta={flytta}

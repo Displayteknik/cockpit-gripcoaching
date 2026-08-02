@@ -27,6 +27,7 @@ export interface KontaktStatus {
   senaste_ut_amne: string | null;
   senaste_kortandring: string | null;
   logg_notering: string | null;
+  kommentar: string | null;
   dagar_sedan_kontakt: number | null;
   bollen_hos: Bollen;
   senast_synkad: string;
@@ -89,6 +90,7 @@ export interface Rad {
   dagar: number | null;
   bollen: Bollen;
   senasteAmne: string | null;
+  kommentar: string | null;
   matbar: boolean;
   ghl_contact_id: string | null;
   location_id: string;
@@ -244,9 +246,9 @@ export async function synkaKontakter(tvinga = false): Promise<SynkResultat> {
 
     // Behåll ett tidigare loggat samtal: det är ägarens egen uppgift och får aldrig
     // skrivas bort av en synk.
-    const { data: gamla } = await sb.from("hq_kontakt_status").select("opportunity_id, senaste_kortandring, logg_notering");
+    const { data: gamla } = await sb.from("hq_kontakt_status").select("opportunity_id, senaste_kortandring, logg_notering, kommentar");
     const tidigare = new Map(
-      ((gamla as Array<{ opportunity_id: string; senaste_kortandring: string | null; logg_notering: string | null }> | null) || [])
+      ((gamla as Array<{ opportunity_id: string; senaste_kortandring: string | null; logg_notering: string | null; kommentar: string | null }> | null) || [])
         .map((r) => [r.opportunity_id, r]),
     );
 
@@ -289,6 +291,8 @@ export async function synkaKontakter(tvinga = false): Promise<SynkResultat> {
           senaste_ut_amne: ut?.amne || null,
           senaste_kortandring: kortandring,
           logg_notering: gammal?.logg_notering || null,
+          // Kommentaren ar agarens egen text och far ALDRIG skrivas bort av en synk.
+          kommentar: gammal?.kommentar || null,
           dagar_sedan_kontakt: dagarSedanKontakt(inn?.datum || null, ut?.datum || null, kortandring, nu),
           bollen_hos: harledBollen(inn?.datum || null, ut?.datum || null),
           senast_synkad: new Date().toISOString(),
@@ -351,6 +355,7 @@ export async function byggLista(): Promise<{ rader: Rad[]; regler: Regel[] }> {
       dagar,
       bollen: matbar && s ? s.bollen_hos : "okant",
       senasteAmne: s ? (nyareAv(s) || null) : null,
+      kommentar: s?.kommentar || null,
       matbar,
       ghl_contact_id: a.ghl_contact_id,
       location_id: a.location_id,
@@ -387,6 +392,28 @@ export async function loggaSamtal(opportunityId: string, notering: string): Prom
   const { error } = await sb.from("hq_kontakt_status").insert({
     opportunity_id: opportunityId, senaste_kortandring: nu, logg_notering: text,
     dagar_sedan_kontakt: 0, bollen_hos: "okant", senast_synkad: nu,
+  });
+  return !error;
+}
+
+/**
+ * Sparar ägarens kommentar på en affär. Till skillnad från ett loggat samtal rör den
+ * ALDRIG tystnaden: en anteckning om vad som är på gång är inte samma sak som kontakt.
+ * Texten kan skrivas, klistras in eller dikteras i vyn.
+ */
+export async function sparaKommentar(opportunityId: string, kommentar: string): Promise<boolean> {
+  const sb = supabaseService();
+  const text = kommentar.trim().slice(0, 2000) || null;
+  const nu = new Date().toISOString();
+  const { data } = await sb.from("hq_kontakt_status").select("opportunity_id").eq("opportunity_id", opportunityId).maybeSingle();
+  if (data) {
+    const { error } = await sb.from("hq_kontakt_status")
+      .update({ kommentar: text, kommentar_uppdaterad: nu }).eq("opportunity_id", opportunityId);
+    return !error;
+  }
+  const { error } = await sb.from("hq_kontakt_status").insert({
+    opportunity_id: opportunityId, kommentar: text, kommentar_uppdaterad: nu,
+    bollen_hos: "okant", senast_synkad: nu,
   });
   return !error;
 }

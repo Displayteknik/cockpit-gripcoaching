@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, ExternalLink, HelpCircle, Phone, RefreshCw } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, ExternalLink, HelpCircle, MessageSquarePlus, Phone, RefreshCw } from "lucide-react";
+import SmartTextarea from "@/components/SmartTextarea";
 
 // KONTAKT-1 — tystnadslistan. Delas av den egna vyn och sektionen i Founder HQ, så de
 // två aldrig kan visa olika sanning om samma affär.
@@ -18,6 +19,7 @@ export interface Rad {
   dagar: number | null;
   bollen: "kund" | "oss" | "okant";
   senasteAmne: string | null;
+  kommentar: string | null;
   matbar: boolean;
   ghl_contact_id: string | null;
   location_id: string;
@@ -74,6 +76,29 @@ export default function Tystnadslistan({ data, laddar, onUppdatera, onFel }: {
 }) {
   const [loggar, setLoggar] = useState<{ id: string; notering: string } | null>(null);
   const [sparar, setSparar] = useState(false);
+  // Kommentaren redigeras direkt i raden. Utkastet hålls per affär så flera rader kan
+  // vara öppna samtidigt utan att skriva över varandra.
+  const [kommentarer, setKommentarer] = useState<Record<string, string>>({});
+  const [oppenKommentar, setOppenKommentar] = useState<string | null>(null);
+
+  async function sparaKommentar(id: string) {
+    setSparar(true);
+    try {
+      const r = await fetch("/api/hq/kontakt", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opportunityId: id, kommentar: kommentarer[id] ?? "" }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Kunde inte spara kommentaren");
+      setOppenKommentar(null);
+      onUppdatera();
+    } catch (e) {
+      onFel((e as Error).message);
+    } finally {
+      setSparar(false);
+    }
+  }
 
   async function loggaSamtal() {
     if (!loggar) return;
@@ -163,7 +188,8 @@ export default function Tystnadslistan({ data, laddar, onUppdatera, onFel }: {
                   const n = niva(r.dagar);
                   const lank = mysalesLank(r);
                   return (
-                    <tr key={r.opportunity_id}
+                    <React.Fragment key={r.opportunity_id}>
+                    <tr
                       className={`border-b border-gray-50 last:border-0 ${
                         r.bollen === "oss" ? "bg-red-50/60" : n === "rod" ? "bg-red-50/30" : n === "gul" ? "bg-amber-50/40" : ""}`}>
                       <td className="px-5 py-2.5 font-medium text-gray-900">{r.namn || "Namnlös affär"}</td>
@@ -196,6 +222,14 @@ export default function Tystnadslistan({ data, laddar, onUppdatera, onFel }: {
                       </td>
                       <td className="px-5 py-2.5">
                         <span className="flex flex-wrap items-center gap-2">
+                          <button onClick={() => {
+                              setKommentarer((k) => ({ ...k, [r.opportunity_id]: k[r.opportunity_id] ?? r.kommentar ?? "" }));
+                              setOppenKommentar(oppenKommentar === r.opportunity_id ? null : r.opportunity_id);
+                            }}
+                            className={`inline-flex items-center gap-1 text-xs font-medium underline ${
+                              r.kommentar ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}>
+                            <MessageSquarePlus className="h-3 w-3" /> {r.kommentar ? "Kommentar" : "Kommentera"}
+                          </button>
                           <button onClick={() => setLoggar({ id: r.opportunity_id, notering: "" })}
                             className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 underline hover:text-gray-900">
                             <Phone className="h-3 w-3" /> Loggade ett samtal
@@ -209,6 +243,33 @@ export default function Tystnadslistan({ data, laddar, onUppdatera, onFel }: {
                         </span>
                       </td>
                     </tr>
+                    {/* Kommentaren. Skriv, klistra in eller diktera. Den rör aldrig
+                        tystnaden: en anteckning om vad som är på gång är inte kontakt. */}
+                    {oppenKommentar === r.opportunity_id && (
+                      <tr key={`${r.opportunity_id}-kommentar`} className="border-b border-gray-50 bg-gray-50/60">
+                        <td colSpan={7} className="px-5 py-3">
+                          <label className="text-xs font-medium text-gray-700">Kommentar om {r.namn || "affären"}</label>
+                          <SmartTextarea
+                            value={kommentarer[r.opportunity_id] ?? ""}
+                            onChange={(e) => setKommentarer((k) => ({ ...k, [r.opportunity_id]: e.target.value }))}
+                            rows={3}
+                            placeholder="Vad är på gång? Skriv, klistra in, eller tryck på mikrofonen och prata."
+                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                          />
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <button onClick={() => sparaKommentar(r.opportunity_id)} disabled={sparar}
+                              className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">Spara</button>
+                            <button onClick={() => setOppenKommentar(null)} className="text-xs text-gray-500 underline">Stäng</button>
+                            {r.kommentar && (
+                              <button onClick={() => { setKommentarer((k) => ({ ...k, [r.opportunity_id]: "" })); }}
+                                className="text-xs text-gray-500 underline">Töm fältet</button>
+                            )}
+                            <span className="text-xs text-gray-400">Kommentaren påverkar inte antalet dagar sedan kontakt.</span>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

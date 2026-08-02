@@ -15,7 +15,7 @@ const REGLER: Regel[] = [
 
 const rad = (o: Partial<Rad> & { opportunity_id: string }): Rad => ({
   namn: "Affär", varde: 0, steg_namn: "Offert skickad", epost: "kund@exempel.se",
-  dagar: 0, bollen: "kund", senasteAmne: null, matbar: true,
+  dagar: 0, bollen: "kund", senasteAmne: null, kommentar: null, matbar: true,
   ghl_contact_id: "c1", location_id: "loc1", ...o,
 });
 

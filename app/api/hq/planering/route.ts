@@ -80,12 +80,26 @@ export async function GET(req: NextRequest) {
 
   // Inte kopplad än: vyn ska säga det rakt ut och erbjuda knappen, inte visa en tom vecka
   // som såg ut att vara sann.
+  //
+  // ⚠ Svaret bär ÄNDÅ hela formen, med tomma listor och nollställda tal. Ett svar som
+  // saknade fält kraschade sidan: `data.handelser.filter(...)` kastade innan något ens
+  // hann renderas, och felet syntes som att sidan inte gick att öppna trots att servern
+  // svarade 200. En delmängd av formen är farligare än tom data.
   if (!koppling) {
     return NextResponse.json({
       kopplad: false,
       authUrl: kalenderAuthUrl(req.nextUrl.origin),
       idag: idagSvenskt(),
       vecka: v,
+      handelser: [],
+      fordelning: [],
+      nyckeltal: { bokadeTimmar: 0, timmarWhiteSpace: 0, antalMoten: 0, lifestyle: null, arbetstimmar: 0 },
+      flaggor: [],
+      tidstyper: [],
+      mall: [],
+      mallForslag: [],
+      uppgifter: [],
+      synk: { senastSynkad: null, ok: true, fel: null },
     });
   }
 

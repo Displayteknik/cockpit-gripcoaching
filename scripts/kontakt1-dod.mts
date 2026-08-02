@@ -67,8 +67,8 @@ kolla("vänt fall: kunden svarade sist ger oss bollen",
 
 console.log("\n== 5. Sorteringen ==");
 const konst = [
-  { opportunity_id: "a", namn: "Gammal", varde: 0, steg_namn: null, epost: "a@b.se", dagar: 90, bollen: "kund" as const, senasteAmne: null, matbar: true, ghl_contact_id: null, location_id: "l" },
-  { opportunity_id: "b", namn: "Ny men vår boll", varde: 0, steg_namn: null, epost: "b@b.se", dagar: 1, bollen: "oss" as const, senasteAmne: null, matbar: true, ghl_contact_id: null, location_id: "l" },
+  { opportunity_id: "a", namn: "Gammal", varde: 0, steg_namn: null, epost: "a@b.se", dagar: 90, bollen: "kund" as const, senasteAmne: null, kommentar: null, matbar: true, ghl_contact_id: null, location_id: "l" },
+  { opportunity_id: "b", namn: "Ny men vår boll", varde: 0, steg_namn: null, epost: "b@b.se", dagar: 1, bollen: "oss" as const, senasteAmne: null, kommentar: null, matbar: true, ghl_contact_id: null, location_id: "l" },
 ];
 kolla("bollen hos oss ligger överst oavsett dagar", K.sortera(konst)[0].opportunity_id === "b");
 
