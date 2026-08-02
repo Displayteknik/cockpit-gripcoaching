@@ -104,25 +104,29 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 | ~~DM: lead via bild stannar på mållinjen~~ | 1/8 | **LEVERERAD** `bb06b33`+`d1c46cd`+`63a43bc`+`34199ae` | Rotorsak: den fria AI-sammanfattningen fick avgöra vem som sagt vad. Nu bestämmer bubblans placering (`lib/dm/skarmdump.ts`), och fas/datum/påminnelse räknas ut i kod. Messenger-skärmdumpen ger namn, kanal, fas BOKAD, måndag 3 augusti 10:00 och påminnelse — utan en enda manuell inmatning. Kontakten syns i Fokus idag. Även "Bild"-knappen går nu till den strukturerade avläsningen (`0495ef5`, `onBild`-prop i SmartTextarea) |
 | ~~BILD-8 DoD-genereringar~~ | 31/7 | **LEVERERAD** `545d5ae` | Del A 9/10, Del B 9/10. Bevisningen avslöjade tre fel i grinden (närmiss fällde rättstavat, teckenvis `\|` misstolkat, vision autokorrigerar) — alla fixade. ⚠ SLUTSATS: stavning går INTE att garantera, varken via prompt eller vision-grind (2/20 tog sig igenom) |
 | Siffergrinden når inte veckoplanen | 2/8 | **Ej gjort** | Skärpningen 2/8 gav deterministisk siffergrind i captionvägen (`sakerstallCaption`). Veckoplanens brödtext har bara promptregeln — DoD-omkörningen gav fortfarande "en standardskärm har cirka 400 nits" (obackat) i måndagens text. Kräver omgenerering av dagens body, inte bara CTA:n |
-| KOSTNAD-1 | 2/8 | **Ej startad — SPECEN SAKNAS** | Endast namnet och "central AI-kostnadsmätning" har nått denna session. Skicka beställningstexten så startar nästa session direkt |
-| BESLUT: grindens pris vs BILD-7a | 2/8 | **Väntar på Håkan** | 6 av 20 bilder tömdes på skyltext av sista utvägen — det motverkar BILD-7a:s krav att skyltar ska säga något. Balansen behöver ställas in mot verklig användning |
-| BILD-8b når inte reels | 2/8 | **Ej gjort** | Blickriktningsregeln har en dead import i reels-vägen sedan `77b8564` |
-| REVISION-1: REV-1 → REV-4 | 30/7 | **Ej startad** | Rapport godkänd, tre frågor besvarade. Ligger EFTER KOSTNAD-1 |
-| KOSTNAD-1 (central AI-kostnadsmätning) | 2/8 | **Ej startad** | Startar efter steg 2. ETAPP K2 väntar tills KOSTNAD-1 är verifierad |
-| HANDBOK-1 (H-0, H-1) | 2/8 | **Ej startad** | Ägarskapet flyttat hit; Håkan skickar prompten separat |
-| ICP-motorn (ICP-0..7) | 2/8 | **Ej startad** | Ägarskapet flyttat hit; Håkan skickar prompten separat |
-| PROFIL-2: yta för berättelser/kundord | 1/8 | **Ej startad** | Mätaren uppmanar till material som inte går att fylla i |
+| ~~BESLUT: grindens pris vs BILD-7a~~ | 2/8 | **LEVERERAD** `c7e4209` | Håkans svar: sista utvägen ber om ett TEXTLÖST MOTIV (ingen textbärande yta i bild), aldrig en tom skylt. Samma commit bär B3-rekommendationen i UI och bakgrundsfiltret. Beslut: `docs/studio/DECISIONS.md` D-010 |
+| ~~BILD-8b når inte reels~~ | 2/8 | **LEVERERAD** `e18362c` | `PERSON_ATTENTION_EN` vävs in i reels-vägens båda bildprompter, död `stavningsgrind`-import borta |
+| ~~Säsongsmarkör på bakgrundsskyltar~~ | 2/8 | **LEVERERAD** `81cc8a0` | `KRÄFTSKIVA 8 AUGUSTI` på griffeltavlan i bakgrunden. Negativ instruktion i `DEPICTED_MESSAGE_EN/SV`: skyltning som inte är inläggets ämne får inte annonsera högtid eller datum |
+| **STEG 2 · KOSTNAD-1 (K1–K5)** | 2/8 | **Ej startad — SPEC MOTTAGEN** | Specen kom med masterkön 2/8 (central anropslogg `lib/ai-usage.ts`, felklassning, `/dashboard/kostnader`, budgetgrindar, migrering av alla direktanrop). Nästa etapp i kön |
+| **STEG 3 · ETAPP K2 Cockpit Credits** | 2/8 | **Ej startad** | Bygger ovanpå KOSTNAD-1:s ledger. K2-1 … K2-4, hårt stopp efter varje |
+| **STEG 4 · HANDBOK-1 (H-0, H-1)** | 2/8 | **Ej startad** | H-0 = plan med hårt stopp innan bygge |
+| **STEG 5 · ICP-motorn (ICP-0..7)** | 2/8 | **Ej startad** | ICP-0 = spec + datamodell + säkerhetsgenomgång, godkännande före kod |
+| **STEG 6a · REVISION-1: REV-1 → REV-4** | 30/7 | **Ej startad** | Rapport godkänd, tre frågor besvarade (`284f4c6`) |
+| **STEG 6b · PROFIL-2: yta för berättelser/kundord** | 1/8 | **Ej startad** | Mätaren uppmanar till material som inte går att fylla i |
+| **STEG 7 · Städning och inventering** | 2/8 | **Ej startad** | SMS-fullversion (status, bygg inget), `docs/plattform/ONBOARDA-NY-KUND-INSTAGRAM.md` ospårad, verifiera BILD-1..3 + ANSLUT-1..4 i skarp tenant |
 | Blindbedömningen (Håkan) | 31/7 | **Ej gjord** | Avgör röstträff-frågan för LinkedIn |
 | HM Motors profilinnehåll rättas i DB | 1/8 | **Ej gjort** | Koden hindrar nästa olycka, städar inte den gamla |
 
 ## 3. Öppet just nu
 
-**Pågår:** BILD-8 — (a) vision-baserad stavningsgrind för avbildad text: transkribera bokstav för bokstav och jämför programmatiskt, eftersom vision-modellen autokorrigerar och "läser" NYHETER där bilden säger NYHIETES; vid fel omgenerering, annars hellre blank skylt än felstavad. (b) blickriktningsregel: person i bild ska vara vänd mot och engagerad i produkten/skärmen/skylten.
+**Pågår:** inget bygge. STEG 1 i masterkön (2026-08-02) är stängt: KVALITET-3 p11 levererades `ea53435`, BILD-8 DoD `545d5ae`, och BILD-8c `c7e4209` + `e18362c` + `81cc8a0`. Nästa etapp är STEG 2 (KOSTNAD-1), som inte startar utan Håkans klartecken.
+
+**BILD-8 slutläge:** grinden minskar felen men garanterar dem inte bort (2 av 20 tog sig igenom DoD-körningen). Enda garantin är fältet "Text i bilden" (B3), och det står nu i klartext i Bildhjälpen. Sista utvägen ber om ett textlöst motiv i stället för en tom skylt, och bakgrundstext som läsriktningarna är oense om lämnas odömd. Kvar medvetet: ingen efterkontroll som mäter blickriktning (motsvarande `motivPassar`).
 
 **Väntar på Håkan:**
 - **Blindbedömningen** (bilaga B): 10 texter per profil, nivå 1 publicerar direkt / nivå 2 en minuts puts / nivå 3 omskrivning. Ribba 7/10 på nivå 1–2. Under ribban justeras profilens material, inte arkitekturen.
 - **REVISION-1** (REV-0-rapporten godkänd, etapperna ej startade): REV-1 felhantering → REV-2 kvitton → REV-3 tomma lägen och UI → REV-4 FunctionGuide och språk. **De tre frågorna är besvarade:** kunden ser ordet "rådgivare"; `hq` och `webbdata-demo` flyttas ut ur menyn bakom admin-flagga; `SkapaInlaggMaker.tsx` tas bort efter grep-kontroll av dynamiska importer.
-- **BILD-8:s DoD-genereringar** (se ovan).
+- **Klartecken för STEG 2 (KOSTNAD-1).** Specen finns, kön är stoppad tills du säger kör.
 - **Parkerat, inget byggs:** automatisk omgenerering vid detekterat förbjudet klientord (i dag detektering + logg), röstträff-åtgärderna för linkedin, WIZARD-1/2/3, samt en UI-yta för story-bank och Customer Voice.
 
 **Dataproblem, inte kodproblem:** HM Motor-tenanten `00000000-…001` har en coaching-/kundflödesprofil i databasen, inte bilhandel. Rotorsaken är stängd i koden (diff-bekräftelse), men **profilens innehåll behöver fortfarande rättas manuellt**.
