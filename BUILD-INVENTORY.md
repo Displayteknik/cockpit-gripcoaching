@@ -120,7 +120,8 @@
 |---|---|---|
 | Analytics-dashboard | `/dashboard/analytics`? → `/dashboard/(inlagg)/analytics`, `components/AnalyticsDashboard.tsx`, `components/CustomerAnalytics.tsx`, `/api/analytics/*` | GA4/GSC-dashboard, kundvänd analys |
 | Veckorapport | `/dashboard/rapport`, `/api/reports/weekly*`, `/api/reports/weekly/[id]/mail` | Automatisk veckorapport + mejl |
-| HQ | `/dashboard/hq` | Byrå-översikt |
+| Founder HQ | `/dashboard/hq`, `/api/hq`, `lib/hq/pipeline.ts`, `migrations/hq.sql` | Ägarsida: morgonlista, MRR-motor (grip), DT-pipeline läst från MySales (read-only), fasta kostnader |
+| Genvägar och appar | `/dashboard/genvagar` | Gamla HQ-länklistan, flyttad ut ur menyn (REV-0) |
 | Insikter | `lib/{dashboard-data,dashboard-insights,insights}.ts` | "Att göra nu"-insikter |
 | Aktivitet/spårning | `/api/activity`, `/api/track`, `/api/share`, `/api/share/[token]`, `/api/lead` | Lead-fångst, delning, pixel-spårning |
 

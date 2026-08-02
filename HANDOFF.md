@@ -300,3 +300,34 @@ Allt ligger i `/dashboard/kostnader`, så credits och kronor står i samma vy. D
 **Bevis:** 31 enhetstester i credit-sviten (fem nya på larmregeln), 404 totalt, plus 10 kontroller mot den riktiga databasen (`scripts/k2-3-dod.mts`): kvoten ändras och slår igenom i saldot, insättning utan notering avvisas, insättning med notering är spårbar med skäl och avsändare, priset cachas och det nya priset gäller direkt efter tömning. Kast-tenanten städades och creditpriset återställdes.
 
 **Kvar i etappen:** bara K2-4, utrullning bakom entitlement med Displayteknik som pilot. Modulen `credits` finns i registret med default av.
+
+## 11. HQ-1 — Founder HQ, ägarens kommandobrygga (levererad 2026-08-02)
+
+`/dashboard/hq` är byggd på nytt. Den gamla länklistan (530 rader eget mörkt tema) flyttades till `/dashboard/genvagar` och ligger med flit **utanför menyn**, enligt REV-0. Nya HQ följer designsystemet (`components/ui/dash.tsx`). Inga AI-anrop i modulen.
+
+**Principen:** affärspipelinen ägs av MySales. HQ läser den, skriver aldrig tillbaka. Ingen egen offerttabell finns, så dubbelinmatning kan aldrig uppstå.
+
+### Tabeller (`migrations/hq.sql`, körd via Management API)
+`hq_mrr_entries` · `hq_fasta_kostnader` · `hq_tasks` · `hq_pipeline_cache`. Alla har RLS på och **noll policies** — anon-nyckeln ser noll rader och får 401 på skrivning (verifierat live). All åtkomst går via service-role i `/api/hq`, som grindas på huvudadmin: klient-scopad session får 403 på GET, POST och DELETE, och proxy:n skickar den till `/dashboard/fordon` innan sidan ens laddas.
+
+### MySales-läsningen (`lib/hq/pipeline.ts`)
+GET `/opportunities/pipelines` + GET `/opportunities/search` (snake_case query, POST-body ger 422) + GET `/contacts/<id>/tasks`. Nyckeln läses ur `HQ_GHL_PIT` + `HQ_GHL_LOCATION_ID` och faller tillbaka på Displayteknik-klientens redan sparade koppling, så modulen fungerar utan ny konfiguration. Nyckeln lämnar aldrig servern. Synk vid sidladdning, högst var tionde minut, plus knappen "Uppdatera nu". Sidbrytning hanteras, annars tappas allt över 100 affärer tyst.
+
+⚠ **GHL:s status-fält är inte sanningen om vunnet.** Alla 51 DT-affärer svarar `status: "open"`, varav 11 står i steget "Vunnen (order)" och 11 i "Förlorad / Paus". Vunnet och förlorat härleds därför ur **steget**: Håkans egna inställda steg-id:n i `coach_users.personal_os` är facit, stegnamnet är reserv. Räknar man på status blir "vunnet denna månad" alltid noll och pipelinesumman räknar in både vunnet och förlorat.
+
+⚠ **Uppgiften sitter på kontakten, inte på affären.** Samma kontakt kan bära flera affärer, så en vunnen affär ärvde kontaktens uppföljning och dök upp i morgonlistan. Uppföljning fästs nu bara på affärer som är i spel. Fyndet kom ur DoD-körningen, inte ur enhetstesterna.
+
+**Faller GHL:** spegeln lämnas orörd och vyn visar sparad data med tidsstämpel plus en gul banner med orsaken. Verifierat med trasig nyckel: `{ok:false, fel:"Pipelinerna svarade 401"}`, 51 rader kvar, samma tidsstämpel, ingen krasch.
+
+### Vyerna
+Morgonlistan (affärer vars uppföljning förfaller idag eller är passerad + öppna `hq_tasks` med samma regel, med avbockning) · GripCoaching (fyra kort: aktiv MRR, pionjärer av 15, GDÅM av 2, andel av 50 000 kr, plus tabell med CRUD) · Displayteknik (pipelinesumma i spel, affärer i spel, vunnet denna månad, uppföljningar denna vecka, tabell sorterad på uppföljningsdatum med länk till MySales) · Fasta kostnader (summa per bolag och valuta, CRUD) samt intäkt mot AI-kostnad för de kunder vars namn matchar en klient i plattformen.
+
+Tid räknas alltid i svensk tidszon. Valutor summeras **per valuta** och räknas aldrig om åt varandra — en påhittad växelkurs gör totalen osann.
+
+**Bevis:** 8 enhetstester (`tests/hq1-aggregering.test.ts`), 412 totalt, tsc och next build rena, plus 20 kontroller mot riktig databas och riktigt MySales-API (`scripts/hq1-dod.mts`), alla gröna. CRUD körd skarpt i webbläsaren och återställd: MRR 15 460 kr → paus → 13 470 kr och 3 pionjärer → återställd till 15 460 kr och 4 pionjärer. Mobilt 375 px: sidan scrollar inte i sidled, båda tabellerna scrollar i egna behållare.
+
+### Håkans två beslut 2026-08-02
+1. **Bara den pipeline han jobbar i räknas.** Urvalet styrs av `coach_users.personal_os.__ghl_pipeline_id` (DT: `2UpfDncGleH6fe9cLSpq`, "Kund pipeline DT"), inte av en hårdkodad lista. Spegeln lagrar fortfarande **allt**, filtret sitter i `/api/hq`, och antalet bortsorterade kort skrivs ut i vyn så inget döljs tyst. Effekt: 21 affärer i spel i stället för 29, summan oförändrad 799 000 kr (de åtta gamla korten i GHL:s "Sales Pipeline" stod på 0 kr). ⚠ Saknas inställningen visas allt, hellre för mycket än en tyst tom vy.
+2. **Länken går till kontakten i MySales**, inte till affärskortet. En deep link rakt till affären gick inte att verifiera och gissades därför inte.
+
+⚠ **Följd av beslut 1:** morgonlistans pipelinehalva är just nu **tom**. Båda uppgifterna med förfallodatum satt på kort i "Sales Pipeline". Ingen affär i Kund pipeline DT har någon uppgift i MySales än, så listan fylls först när uppgifter läggs på de korten.
