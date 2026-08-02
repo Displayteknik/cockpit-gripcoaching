@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
     mall: typer.mall,
     mallForslag: mallForslag(typer.mall, denna.handelser, denna.vecka),
     uppgifter: await oppnaUppgifter(),
-    synk: { senastSynkad: synkadTid, ok: synk.ok, fel: synk.fel || null },
+    synk: { senastSynkad: synkadTid, ok: synk.ok, fel: synk.fel || null, lank: synk.lank || null, lankText: synk.lankText || null },
   });
 }
 

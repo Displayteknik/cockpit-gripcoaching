@@ -26,6 +26,7 @@
 
 import { supabaseService } from "@/lib/supabase-admin";
 import { exchangeCode, refreshAccessToken } from "@/lib/google";
+import { tolkaGoogleFel, type GoogleFel } from "@/lib/hq/google-fel";
 
 const API = "https://www.googleapis.com/calendar/v3";
 const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -231,7 +232,7 @@ async function lasFranGoogle(fran: Date, till: Date): Promise<Handelse[]> {
     const r = await fetch(`${API}/calendars/${encodeURIComponent(kalenderId)}/events?${p}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!r.ok) throw new Error(`Kalendern svarade ${r.status}: ${(await r.text()).slice(0, 160)}`);
+    if (!r.ok) throw Object.assign(new Error("kalenderfel"), { google: tolkaGoogleFel(r.status, await r.text(), "kalender") });
     const d = (await r.json()) as { items?: RaHandelse[]; nextPageToken?: string };
     for (const h of d.items || []) {
       if (h.status === "cancelled") continue; // avbokad instans i en serie
@@ -243,7 +244,7 @@ async function lasFranGoogle(fran: Date, till: Date): Promise<Handelse[]> {
   return ut;
 }
 
-export interface SynkResultat { ok: boolean; antal?: number; hoppadeOver?: boolean; fel?: string }
+export interface SynkResultat { ok: boolean; antal?: number; hoppadeOver?: boolean; fel?: string; lank?: string; lankText?: string }
 
 /** Tidsstämpeln på spegeln. null = aldrig synkad. */
 export async function senastSynkad(): Promise<string | null> {
@@ -288,6 +289,9 @@ export async function synkaKalender(fran: Date, till: Date, tvinga = false): Pro
     }
     return { ok: true, antal: rader.length };
   } catch (e) {
+    // Ett fel som redan är översatt bär sin klartext med sig hit.
+    const g = (e as { google?: GoogleFel }).google;
+    if (g) return { ok: false, fel: g.text, lank: g.lank, lankText: g.lankText };
     return { ok: false, fel: (e as Error).message };
   }
 }
@@ -307,7 +311,7 @@ export async function lasCache(fran: Date, till: Date): Promise<Handelse[]> {
 
 // ── Skrivningar. Fyra tillåtna, inga andra. Varje anrop kommer från ett klick. ──
 
-async function skrivning(vag: string, metod: string, kropp?: unknown): Promise<{ ok: boolean; id?: string; fel?: string }> {
+async function skrivning(vag: string, metod: string, kropp?: unknown): Promise<{ ok: boolean; id?: string; fel?: string; lank?: string; lankText?: string }> {
   try {
     const { token, kalenderId } = await accessToken();
     const url = `${API}/calendars/${encodeURIComponent(kalenderId)}/events${vag}${vag.includes("?") ? "&" : "?"}sendUpdates=none`;
@@ -316,7 +320,10 @@ async function skrivning(vag: string, metod: string, kropp?: unknown): Promise<{
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       ...(kropp ? { body: JSON.stringify(kropp) } : {}),
     });
-    if (!r.ok) return { ok: false, fel: `Kalendern svarade ${r.status}: ${(await r.text()).slice(0, 200)}` };
+    if (!r.ok) {
+      const g = tolkaGoogleFel(r.status, await r.text(), "kalender");
+      return { ok: false, fel: g.text, lank: g.lank, lankText: g.lankText };
+    }
     if (metod === "DELETE") return { ok: true };
     const d = (await r.json()) as { id?: string };
     return { ok: true, id: d.id };

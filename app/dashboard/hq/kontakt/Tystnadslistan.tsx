@@ -30,7 +30,7 @@ export interface Data {
   authUrl: string | null;
   rader: Rad[];
   antal: { totalt: number; matbara: number; omatbara: number; bollenHosOss: number };
-  synk: { senastSynkad: string | null; ok: boolean; fel: string | null };
+  synk: { senastSynkad: string | null; ok: boolean; fel: string | null; lank?: string | null; lankText?: string | null };
 }
 
 const kr = (n: number) => `${Math.round(n).toLocaleString("sv-SE")} kr`;
@@ -144,8 +144,16 @@ export default function Tystnadslistan({ data, laddar, onUppdatera, onFel }: {
         <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
           <div>
-            <p className="font-semibold">Kunde inte läsa e-posten just nu.</p>
-            <p className="mt-1">Siffrorna kommer från senast sparade hämtning: {tid(data.synk.senastSynkad)}. Orsak: {data.synk.fel}</p>
+            <p className="font-semibold">{data.synk.fel}</p>
+            {data.synk.senastSynkad && (
+              <p className="mt-1">Siffrorna kommer från senast sparade hämtning: {tid(data.synk.senastSynkad)}.</p>
+            )}
+            {data.synk.lank && (
+              <a href={data.synk.lank} target="_blank" rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700">
+                {data.synk.lankText || "Åtgärda hos Google"} <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            )}
           </div>
         </div>
       )}

@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       omatbara: rader.filter((r) => !r.matbar).length,
       bollenHosOss: rader.filter((r) => r.bollen === "oss").length,
     },
-    synk: { senastSynkad: await senastSynkad(), ok: synk.ok, fel: synk.fel || null },
+    synk: { senastSynkad: await senastSynkad(), ok: synk.ok, fel: synk.fel || null, lank: synk.lank || null, lankText: synk.lankText || null },
   });
 }
 

@@ -11,6 +11,7 @@
 
 import { supabaseService } from "@/lib/supabase-admin";
 import { agarToken, kopplingsScope } from "@/lib/hq/kalender";
+import { tolkaGoogleFel, type GoogleFel } from "@/lib/hq/google-fel";
 
 const GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -200,13 +201,13 @@ async function nyaste(token: string, fraga: string): Promise<Meta | null> {
   const r = await fetch(`${GMAIL}/messages?maxResults=1&q=${encodeURIComponent(fraga)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!r.ok) throw new Error(`Gmail svarade ${r.status}: ${(await r.text()).slice(0, 160)}`);
+  if (!r.ok) throw Object.assign(new Error("gmailfel"), { google: tolkaGoogleFel(r.status, await r.text(), "gmail") });
   const d = (await r.json()) as { messages?: Array<{ id: string }> };
   const id = d.messages?.[0]?.id;
   return id ? metaFor(token, id) : null;
 }
 
-export interface SynkResultat { ok: boolean; antal?: number; hoppadeOver?: boolean; fel?: string }
+export interface SynkResultat { ok: boolean; antal?: number; hoppadeOver?: boolean; fel?: string; lank?: string; lankText?: string }
 
 export async function senastSynkad(): Promise<string | null> {
   const { data } = await supabaseService()
@@ -256,6 +257,8 @@ export async function synkaKontakter(tvinga = false): Promise<SynkResultat> {
     const nu = Date.now();
     const rader: KontaktStatus[] = [];
     let felmeddelande = "";
+    let felLank: string | undefined;
+    let felLankText: string | undefined;
 
     for (let i = 0; i < affarer.length; i += 6) {
       const grupp = affarer.slice(i, i + 6);
@@ -269,7 +272,9 @@ export async function synkaKontakter(tvinga = false): Promise<SynkResultat> {
             nyaste(token, `to:${adress} in:sent`),
           ]);
         } catch (e) {
-          felmeddelande = (e as Error).message;
+          const g = (e as { google?: GoogleFel }).google;
+          felmeddelande = g?.text || (e as Error).message;
+          if (g?.lank) { felLank = g.lank; felLankText = g.lankText; }
           return;
         }
         // Skyddsnät: ett svar där avsändaren INTE är kontakten är inte inkommande.
@@ -300,10 +305,10 @@ export async function synkaKontakter(tvinga = false): Promise<SynkResultat> {
       }));
     }
 
-    if (!rader.length) return { ok: false, fel: felmeddelande || "Ingen affär kunde läsas." };
+    if (!rader.length) return { ok: false, fel: felmeddelande || "Ingen affär kunde läsas.", lank: felLank, lankText: felLankText };
     const { error } = await sb.from("hq_kontakt_status").upsert(rader, { onConflict: "opportunity_id" });
     if (error) return { ok: false, fel: `Kunde inte spara: ${error.message}` };
-    return { ok: !felmeddelande, antal: rader.length, fel: felmeddelande || undefined };
+    return { ok: !felmeddelande, antal: rader.length, fel: felmeddelande || undefined, lank: felLank, lankText: felLankText };
   } catch (e) {
     return { ok: false, fel: (e as Error).message };
   }
