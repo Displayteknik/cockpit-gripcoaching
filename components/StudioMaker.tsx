@@ -1644,6 +1644,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2"
                   style={{ ["--tw-ring-color" as string]: `${primary}55` }}
                 />
+                {/* BILD-8c: säg rakt ut att fältet är enda garantin. Bevisat i DoD-körningen
+                    (docs/studio/bild8-exempel): 2 av 20 felstavningar tog sig igenom både
+                    prompten och stavningsgrinden. Antyd aldrig att skyltar i miljön är säkrade. */}
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Ska ett ord synas exakt i bilden? Skriv det här. Skyltar som Bildhjälpen ritar på egen hand kan bli felstavade,
+                  och det här fältet är enda sättet att få texten exakt rätt.
+                </p>
                 <div className="flex gap-2">
                   <button onClick={() => suggestImage("ai")} disabled={!!searchingImg}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"

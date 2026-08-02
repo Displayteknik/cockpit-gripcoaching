@@ -5,6 +5,35 @@ Nyast överst. Regler här är plattformsregler — de gäller varje tenant och 
 
 ---
 
+## 2026-08-02 — En grind som inte kan garantera något ska säga det till användaren
+
+**Vad som hände.** Stavningsgrinden för avbildad text (BILD-8a) byggdes i två lager:
+prompten ber om rätt stavning, och en vision-grind läser av bilden och begär omtag.
+Den skarpa DoD-körningen (20 genereringar, två tenants,
+`docs/studio/bild8-exempel/`) gav 9 av 10 rätt — men **2 av 20 felstavningar tog sig
+igenom hela kedjan**: skärmen sa `DAGENS LUNSCH`, griffeltavlan sa `SOMMARÖPPET TITLL`,
+och båda läsriktningarna svarade det rättstavade ordet. Autokorrigeringen finns kvar
+även när man läser baklänges.
+
+**Vad det kostade.** Två publicerbara bilder med felstavning som såg verifierade ut, och
+sex av tjugo bilder som tömdes på skyltext av sista utvägen — precis den tomma skylt
+BILD-7a byggdes för att få bort.
+
+**Regel.** En sannolikhetsgrind (modell dömer modell) minskar fel, den tar inte bort dem.
+Där en garanti finns i ett annat lager ska den vägen **rekommenderas i UI:t med
+klarspråk**, och grindens skydd får aldrig beskrivas som säkert. För avbildad text är
+garantin fältet "Text i bilden" (B3), som sätter texten programmatiskt.
+
+**Följdregel.** Mät alltid grindens PRIS, inte bara dess träffar. En grind vars sista
+utväg gör resultatet sämre än problemet den löser är felinställd: sista utvägen ska vara
+ett *textlöst motiv* (ingen textbärande yta i bild), aldrig en tom skylt.
+
+**Följdregel 2.** När två oberoende avläsningar är oense om ett ord är det en signal om
+avläsningens kvalitet, inte om stavningen. Signalen får bara frikänna text som ligger
+UTANFÖR motivet: oenighet om huvudskylten är precis det fel grinden finns för.
+
+---
+
 ## 2026-08-01 — Ett fel som döljer sin egen orsak kostar mer än felet självt
 
 **Vad som hände.** Röstinmatningen ("Prata in") slutade fungera. Användaren fick

@@ -4,6 +4,30 @@ Beslutslogg. Ett beslut per rad-block: vad, varför, när, status.
 
 ---
 
+## D-010 · BILD-8c — grinden ska vara ärlig, billig och slippa bakgrundsklottret
+- **Datum:** 2026-08-02 (efter BILD-8 DoD-rapporten)
+- **Status:** BESLUTAT av Håkan, tre delbeslut i samma etapp.
+- **Vad:**
+  1. **B3 rekommenderas i UI.** Fältet "Text i bilden" är enda garantin för rätt stavad
+     avbildad text. Bildhjälpen säger det rakt ut i klartext. Stavningsgrinden beskrivs
+     aldrig som en garanti, varken i UI eller i dokumentation.
+  2. **Sista utvägen = textlöst motiv, inte tom skylt.** `TEXTFRITT_MOTIV_EN/SV` ersätter
+     `BLANK_SIGN_EN/SV`: modellen ska komponera om scenen så att ingen textbärande yta är
+     i bild, i stället för att visa en tom skylt.
+  3. **Bakgrundstext ignoreras vid riktningsoenighet.** Ord som bara en av de två
+     läsriktningarna såg, och som inte hör till bildens huvudskylt, lämnas odömda.
+- **Varför:** DoD-bevisningen (`docs/studio/bild8-exempel/README.md`) visade att (1) 2 av
+  20 felstavningar tog sig igenom hela kedjan, (2) 6 av 20 bilder tömdes på skyltext,
+  vilket motverkar BILD-7a:s krav att avbildad skyltning ska säga något, och (3) grinden
+  fällde uppfunna butiksnamn på fasader i bakgrunden (`BRYGGARI`, `DELBRAUCH`, `SLOGEUM`)
+  som varken var läsbara eller en del av budskapet.
+- **Gräns som INTE får glida:** oenighet mellan läsriktningarna frikänner aldrig ensam.
+  I fall a8 sa framlänges `NYHETER` och baklänges `NYHIETER` om huvudmotivets affisch, och
+  det är exakt det felet grinden finns för. Därför avgör en separat huvudskyltsavläsning,
+  och jämförelsen mot den är luddig (den avläsningen autokorrigerar också).
+- **Fail-open:** svarar huvudskyltsavläsningen inte alls döms allt som förut. En falsk
+  misstanke kostar ett omtag, ett missat fel når kunden.
+
 ## D-001 · Export-arkitektur: A (lokal Playwright-CLI) för Fas 1–2
 - **Datum:** 2026-07-15 (Fas 0)
 - **Status:** GODKÄNT (Håkan: "kör" med defaults). Playwright 1.61 + tsx som devDependencies. Chromium installerat lokalt. Produktionsval (B/C) omprövas vid Fas 3-stoppet.

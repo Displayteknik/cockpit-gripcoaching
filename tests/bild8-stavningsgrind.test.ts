@@ -11,6 +11,10 @@ import {
   okandaOrd,
   stavningsgrind,
   normaliseraTecken,
+  oenigaRiskord,
+  ordAttIgnorera,
+  tillhorHuvudtext,
+  TEXTFRITT_MOTIV_EN,
   type StavUtfall,
 } from "@/lib/bildtext";
 
@@ -113,16 +117,27 @@ describe("BILD-8 · grinden: omtag, tom skylt som sista utväg, fail-open", () =
     expect(skarpningar[0]).toContain("SPELLING");
   });
 
-  it("envis felstavning → sista försöket ber om TOM skylt", async () => {
+  it("envis felstavning → sista försöket ber om ett TEXTLÖST MOTIV, inte en tom skylt", async () => {
+    // BILD-8c: den gamla sista utvägen ("lämna skylten tom") gav vita skärmar och tomma
+    // etikettrutor i 6 av 20 DoD-bilder — precis det BILD-7a byggdes för att få bort.
     const blanka: boolean[] = [];
+    const skarpningar: string[] = [];
     const r = await stavningsgrind({
       bild: "b0",
       kontrollera: async (b) => (b === "blank" ? ok({ orsak: "ingen-text" }) : nej(["ERBJUONDE"])),
-      generera: async ({ blank }) => { blanka.push(blank); return { image: blank ? "blank" : "b" }; },
+      generera: async ({ blank, skarpning }) => {
+        blanka.push(blank);
+        skarpningar.push(skarpning);
+        return { image: blank ? "blank" : "b" };
+      },
     });
     expect(blanka).toEqual([false, false, true]);
     expect(r.blank).toBe(true);
     expect(r.utfall.orsak).toBe("ingen-text");
+    const sista = skarpningar[skarpningar.length - 1];
+    expect(sista).toBe(TEXTFRITT_MOTIV_EN);
+    expect(sista).toContain("NO text-bearing surface is in the frame");
+    expect(sista).toContain("Do NOT show a blank or empty sign");
   });
 
   it("tom skylt är FÖRBJUDEN när ett annat lager äger texten (B3)", async () => {
@@ -162,5 +177,45 @@ describe("BILD-8 · grinden: omtag, tom skylt som sista utväg, fail-open", () =
   it("teckenjämförelsen struntar i mellanrum men aldrig i å/ä/ö", () => {
     expect(normaliseraTecken("V Ä L K O M M E N")).toBe(normaliseraTecken("VÄLKOMMEN"));
     expect(normaliseraTecken("IDAG")).not.toBe(normaliseraTecken("IDÅG"));
+  });
+});
+
+describe("BILD-8c · bakgrundstext ignoreras vid riktningsoenighet", () => {
+  // Skarpt fall a1: uppfunna butiksnamn på fasader i BAKGRUNDEN fälldes, ett omtag brändes
+  // och skylten som bar budskapet tömdes. Riktningarna var helt oense om vad som stod där.
+  const fram = ["VECKANS", "ERBJUDANDE", "BRYGGARI", "DELBRAUCH"];
+  const bak = ["VECKANS", "ERBJUDANDE", "SLOGEUM"];
+  const bedomda = [...fram, "SLOGEUM"];
+
+  it("ord som BÅDA riktningarna såg är aldrig kandidat för att ignoreras", () => {
+    const kandidater = oenigaRiskord(bedomda, fram, bak);
+    expect(kandidater).not.toContain("VECKANS");
+    expect(kandidater).not.toContain("ERBJUDANDE");
+    expect(kandidater).toEqual(expect.arrayContaining(["BRYGGARI", "DELBRAUCH", "SLOGEUM"]));
+  });
+
+  it("bakgrundsklottret lämnas odömt när huvudskylten säger något annat", () => {
+    const huvud = ["VECKANS", "ERBJUDANDE", "199", "KR"];
+    expect(ordAttIgnorera(oenigaRiskord(bedomda, fram, bak), huvud))
+      .toEqual(["BRYGGARI", "DELBRAUCH", "SLOGEUM"]);
+  });
+
+  it("⚠ oenighet ensam frikänner ALDRIG — a8:s NYHIETER står på huvudaffischen och döms", () => {
+    // Framlänges autokorrigerade till NYHETER, baklänges läste NYHIETER. Huvudskyltens
+    // egen avläsning är också holistisk och svarar NYHETER — därför är jämförelsen luddig.
+    const a8fram = ["HÖSTENS", "NYHETER"];
+    const a8bak = ["HÖSTENS", "NYHIETER"];
+    const kandidater = oenigaRiskord([...a8fram, "NYHIETER"], a8fram, a8bak);
+    expect(kandidater).toContain("NYHIETER");
+    expect(ordAttIgnorera(kandidater, ["HÖSTENS", "NYHETER"])).toEqual([]);
+    expect(tillhorHuvudtext("NYHIETER", ["HÖSTENS", "NYHETER"])).toBe(true);
+  });
+
+  it("saknas en läsriktning finns ingen oenighet att mäta → allt döms som förut", () => {
+    expect(oenigaRiskord(bedomda, fram, [])).toEqual([]);
+  });
+
+  it("ingen tydlig huvudskylt → all oenig bakgrundstext ignoreras", () => {
+    expect(ordAttIgnorera(["BRYGGARI"], [])).toEqual(["BRYGGARI"]);
   });
 });

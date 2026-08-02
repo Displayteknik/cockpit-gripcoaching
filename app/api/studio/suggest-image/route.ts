@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         const res = await korExakt("");
         // BILD-8a: B3 verifierar sin EGEN text bokstav för bokstav — men modellen kan ha
         // ritat annan text i bilden (bakgrundsskylt). Grinden dömer bara de orden, och
-        // bara om det finns tid kvar. Tom skylt är förbjuden här: texten ÄR poängen.
+        // bara om det finns tid kvar. Sista utvägen är förbjuden här: texten ÄR poängen.
         if (res.image) {
           const grind = await stavningsgrind({
             bild: res.image,
@@ -124,7 +124,8 @@ export async function POST(req: NextRequest) {
       }
       // BILD-8a: modellen ritar skyltar även utan att bli ombedd — och stavar fel när den
       // gör det (skarpt fel: "VÅRA NYHIETES"). Grinden läser av teckenvis, begär omtag med
-      // skärpt stavningsinstruktion, och ber till sist om TOM skylt. Fail-open i alla led.
+      // skärpt stavningsinstruktion, och ber till sist om ett TEXTLÖST MOTIV (BILD-8c —
+      // tomma skyltar motverkade BILD-7a). Fail-open i alla led.
       let stavning: Record<string, unknown> | undefined;
       if (gen.image) {
         // Ren observabilitet (BILD-8 DoD): varje avläsning sparas via den seam som redan

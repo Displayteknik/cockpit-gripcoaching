@@ -14,6 +14,12 @@
 //      den får bara yttra sig om ord programmatiken INTE känner igen, och kan aldrig
 //      underkänna ett ord som ordlistan känner igen.
 //
+// BILD-8c (2026-08-02, efter DoD-bevisningen): två beteendeändringar.
+//   a) Sista utvägen ber om ett TEXTLÖST MOTIV, inte om en tom skylt (kvarleva 2).
+//   b) Bakgrundstext som läsriktningarna är OENSE om lämnas odömd (kvarleva 3).
+// Grinden garanterar fortfarande INTE rätt stavning — 2 av 20 tog sig igenom i DoD:n.
+// Garantin finns bara i fältet "Text i bilden" (B3), och det ska sägas rakt ut i UI:t.
+//
 // ⚠ FÄLLA 2 (BILD-8 DoD, skarpt fall a1): ordlistan är liten med flit, och korta svenska
 // ord ligger tätt i redigeringsavstånd — "FÅ" i "KÖP 2 FÅ 1" är rättstavat men ligger ett
 // tecken från "får". Närmiss är därför en MISSTANKE som textmodellen får bekräfta, inte en
@@ -46,6 +52,8 @@ export interface StavUtfall {
   raw?: string;
   /** Orden som fälldes (tomt när ok). */
   fel: string[];
+  /** BILD-8c: bakgrundsklotter som lämnades odömt (riktningsoenighet, ej huvudskylt). */
+  ignorerad?: string[];
   orsak: TextOrsak;
 }
 
@@ -150,7 +158,28 @@ const FRAGA_BAKLANGES =
   "Läs av de glyfer som FAKTISKT står där, en i taget — rätta inte stavningen och fyll inte i vad du tror att det borde stå. " +
   "Svara ENDAST med sekvensen, eller INGEN om ingen text alls syns.";
 
+// BILD-8c: avläsning av vad som står på bildens HUVUDsakliga skylt. Används BARA för att
+// avgöra om ett ord riktningarna är oense om hör till motivet eller är bakgrundsklotter —
+// aldrig som stavningsdom (den här läsningen autokorrigerar som alla andra holistiska).
+const FRAGA_HUVUDTEXT =
+  "Vilken text i bilden står på bildens HUVUDSAKLIGA skylt, skärm, affisch, tavla eller prislapp — den som är stor, i fokus och en del av bildens motiv? " +
+  "Text som står smått i bakgrunden, på fasader eller skyltar längre bort, på förbipasserande föremål, eller som är suddig och svårläst räknas INTE med. " +
+  "Svara ENDAST med orden som står på huvudskylten, separerade med | . Finns ingen tydlig huvudskylt: svara INGEN.";
+
 const vandOrd = (s: string) => Array.from(s.normalize("NFC")).reverse().join("");
+
+/**
+ * Orden på bildens huvudskylt. `null` = tekniskt fel eller inget svar → anroparen ska
+ * döma som förut (ingen filtrering), `[]` = ingen tydlig huvudskylt finns.
+ */
+export async function lasHuvudskyltOrd(bild: string): Promise<string[] | null> {
+  const inline = await bildTillInline(bild);
+  if (!inline) return null;
+  const svar = await visionFraga(inline, FRAGA_HUVUDTEXT, 200);
+  if (!svar) return null;
+  if (svar.trim().toUpperCase() === "INGEN") return [];
+  return svar.split(/[|/\n]+/).map((o) => o.trim()).filter(Boolean);
+}
 
 /**
  * Teckenvis transkription MED ordgränser, läst BÅDE framlänges och baklänges.
@@ -388,6 +417,55 @@ export function okandaOrd(ord: string[]): string[] {
 }
 
 /**
+ * BILD-8c, steg 1: ord som (a) bara EN av läsriktningarna såg och (b) skulle kunna fällas.
+ *
+ * ⚠ Skarpt fall (BILD-8 DoD, kvarleva 3): i a1 fälldes uppfunna butiksnamn på fasader i
+ * BAKGRUNDEN (`BRYGGARI`, `DELBRAUCH`, `SLOGEUM`) — text som varken var läsbar i
+ * sammanhanget eller en del av budskapet. Riktningarna var helt oense om vad som stod
+ * där, vilket är signalen att texten är för liten för att bedöma. Kostnaden blev ett
+ * omtag och till sist en tömd skylt på en bild vars poäng var att skylten sa något.
+ *
+ * Oenighet ensam får ALDRIG frikänna: i a8 sa framlänges `NYHETER` och baklänges
+ * `NYHIETER` om huvudmotivets affisch, och det är exakt det felet grinden finns för.
+ * Därför är det här bara steg 1 — steg 2 (`ordAttIgnorera`) kräver att ordet inte hör
+ * till huvudskylten.
+ */
+export function oenigaRiskord(bedomda: string[], ord: string[], ordBak: string[]): string[] {
+  if (!ord.length || !ordBak.length) return []; // en riktning saknas → ingen oenighet att mäta
+  const iFram = new Set(ord.map(normaliseraTecken));
+  const iBak = new Set(ordBak.map(normaliseraTecken));
+  return bedomda.filter((o) => {
+    const n = normaliseraTecken(o);
+    if (iFram.has(n) && iBak.has(n)) return false; // båda riktningarna såg ordet
+    const s = ordStatus(o);
+    return s === "otillaten" || s === "dubblering" || s === "narmiss" || s === "okant";
+  });
+}
+
+/**
+ * Hör ordet till huvudskylten? Jämförelsen är LUDD med flit: huvudskyltsavläsningen är
+ * holistisk och autokorrigerar, så den svarar gärna `NYHETER` där bilden säger `NYHIETER`.
+ * Ett exakt medlemskapstest hade då klassat själva felstavningen som bakgrund och släppt
+ * igenom den — precis det fel BILD-8 byggdes för att fånga.
+ */
+export function tillhorHuvudtext(ord: string, huvud: string[]): boolean {
+  const n = rensaOrd(ord);
+  if (!n) return true;
+  const tak = narmissTak(n.length);
+  return huvud.some((h) => {
+    const hn = rensaOrd(h);
+    if (!hn) return false;
+    if (hn === n) return true;
+    return Math.abs(hn.length - n.length) <= tak && avstand(hn, n) <= tak;
+  });
+}
+
+/** BILD-8c, steg 2: vilka av riskorden som ska lämnas odömda (bakgrundsklotter). */
+export function ordAttIgnorera(kandidater: string[], huvud: string[]): string[] {
+  return kandidater.filter((o) => !tillhorHuvudtext(o, huvud));
+}
+
+/**
  * Andra åsikt om ord programmatiken INTE känner igen (okända + närmissar). Ren TEXT-fråga
  * (ingen bild) — autokorrigeringsfällan gäller bildavläsning, inte textbedömning. Modellen
  * får bara yttra sig om de ord som skickas in, aldrig om ord ordlistan redan känner igen
@@ -439,6 +517,10 @@ export async function kontrolleraAvbildadText(
     /** Ord som redan är verifierade av ett annat lager (B3:s exakta text) — döms inte om. */
     ignorera?: string;
     fragaModellenOmOkanda?: boolean;
+    /** false = hoppa över BILD-8c:s bakgrundsfilter (test/offline). */
+    huvudskylt?: boolean;
+    /** Injicerbar huvudskyltsavläsning för test. */
+    lasHuvudskylt?: (bild: string) => Promise<string[] | null>;
   },
 ): Promise<StavUtfall> {
   if (!geminiNyckel()) return { ok: true, text: "", ord: [], fel: [], orsak: "ingen-nyckel" };
@@ -468,7 +550,7 @@ export async function kontrolleraAvbildadText(
   // åt bedöms BÅDA formerna — den felstavade fälls då även om den andra läsningen städat
   // felet (skarpt fall a8: fram "NYHETER", bak "NYHIETER", affischen sa NYHIETER).
   const sedda = new Set<string>();
-  const bedomda = [...ord, ...ordBak].filter((o) => {
+  let bedomda = [...ord, ...ordBak].filter((o) => {
     const n = normaliseraTecken(o);
     if (!n || sedda.has(n)) return false;
     sedda.add(n);
@@ -477,9 +559,27 @@ export async function kontrolleraAvbildadText(
     return !opts?.ignorera?.trim() || !normaliseraTecken(opts.ignorera).includes(n);
   });
 
+  // BILD-8c (Håkans beslut 2/8): bakgrundstext IGNORERAS när läsriktningarna är oense om
+  // den. Avläsningen av huvudskylten hämtas bara när det faktiskt finns ett riskord att
+  // avgöra — kostar inget i det vanliga fallet. Svarar den inte (null) döms allt som förut:
+  // en falsk misstanke kostar ett omtag, ett missat fel når kunden.
+  let ignorerad: string[] = [];
+  const riskord = opts?.huvudskylt === false ? [] : oenigaRiskord(bedomda, ord, ordBak);
+  if (riskord.length) {
+    const huvud = await (opts?.lasHuvudskylt || lasHuvudskyltOrd)(bild);
+    if (huvud) {
+      const bort = new Set(ordAttIgnorera(riskord, huvud).map(normaliseraTecken));
+      if (bort.size) {
+        ignorerad = bedomda.filter((o) => bort.has(normaliseraTecken(o)));
+        bedomda = bedomda.filter((o) => !bort.has(normaliseraTecken(o)));
+      }
+    }
+  }
+  const medIgnorerad = ignorerad.length ? { ignorerad } : {};
+
   // 1. Strukturfel fälls direkt — otillåtna glyfer och bokstavsgröt finns inte i svenska.
   const struktur = strukturfel(bedomda);
-  if (struktur.length) return { ok: false, text, ord, ordBak, raw, fel: struktur, orsak: "felstavning" };
+  if (struktur.length) return { ok: false, text, ord, ordBak, raw, ...medIgnorerad, fel: struktur, orsak: "felstavning" };
 
   // 2. Misstänkta (närmiss) + okända ord avgörs av textmodellen. Ordlistan är för liten
   //    för att ensam fälla ett ord den inte har ("FÅ" i "KÖP 2 FÅ 1" — skarpt fall).
@@ -488,17 +588,17 @@ export async function kontrolleraAvbildadText(
   if (opts?.fragaModellenOmOkanda === false) {
     // Programmatiskt läge (test/offline): misstanken står kvar som dom.
     return misstankta.length
-      ? { ok: false, text, ord, ordBak, raw, fel: misstankta, orsak: "felstavning" }
-      : { ok: true, text, ord, ordBak, raw, fel: [], orsak: "godkand" };
+      ? { ok: false, text, ord, ordBak, raw, ...medIgnorerad, fel: misstankta, orsak: "felstavning" }
+      : { ok: true, text, ord, ordBak, raw, ...medIgnorerad, fel: [], orsak: "godkand" };
   }
   if (misstankta.length || okanda.length) {
     const dom = await bedomOkandaOrd([...misstankta, ...okanda]);
     // Svarade modellen inte alls: närmissarna fälls (fail-closed på misstanken),
     // helt okända ord släpps (fail-open — de har aldrig haft någon grund).
     const fel = dom === null ? misstankta : dom;
-    if (fel.length) return { ok: false, text, ord, ordBak, raw, fel, orsak: "felstavning" };
+    if (fel.length) return { ok: false, text, ord, ordBak, raw, ...medIgnorerad, fel, orsak: "felstavning" };
   }
-  return { ok: true, text, ord, ordBak, raw, fel: [], orsak: "godkand" };
+  return { ok: true, text, ord, ordBak, raw, ...medIgnorerad, fel: [], orsak: "godkand" };
 }
 
 // ── Promptskärpningar (centrala, samma text i alla flöden) ─────────────────
@@ -507,22 +607,31 @@ export const SPELLING_REINFORCEMENT_EN =
   " SPELLING CORRECTION: the previous attempt rendered misspelled Swedish text on a sign in the scene. " +
   "Every Swedish word that appears on a screen, sign, board, poster, label or packaging must be spelled correctly, " +
   "letter by letter: use å, ä and ö only in words that actually have them, and never double, drop, reorder or invent letters. " +
-  "Keep it to two to five short, ordinary Swedish words. If you cannot render the words correctly, leave the sign blank instead.";
+  "Keep it to two to five short, ordinary Swedish words. If you cannot render the words correctly, keep the sign out of the frame entirely — never show it blank.";
 
-export const BLANK_SIGN_EN =
-  " IMPORTANT: leave every sign, screen, board, poster and label in the scene completely BLANK — " +
-  "no letters, no words, no numbers anywhere in the image. Show the product, the people and the environment only. " +
-  "A blank sign is required; misspelled text is not acceptable.";
+// ── Sista utvägen: TEXTLÖST MOTIV, inte tom skylt ──────────────────────────
+// ⚠ Skarpt fall (BILD-8 DoD, kvarleva 2): den gamla sista utvägen bad om TOM skylt och
+// gav vita skärmar och tomma etikettrutor i 6 av 20 bilder — precis det BILD-7a byggdes
+// för att få bort. Kravet "rätt stavat eller blankt" var uppfyllt, men blankt är ett
+// sämre inlägg: en tom skylt läses som trasig, inte som ren.
+// Håkans beslut 2/8: be om ett motiv UTAN textbärande yta i bild i stället.
+export const TEXTFRITT_MOTIV_EN =
+  " LAST RESORT, RECOMPOSE THE SCENE: show this subject from an angle where NO text-bearing surface is in the frame at all. " +
+  "Do NOT show a blank or empty sign, screen, board, poster, menu or price tag — an empty sign reads as broken, not as clean. " +
+  "Instead build the picture around the people, their hands at work, the product itself, the room and the light, " +
+  "and leave signs and screens out of frame or naturally absent. No letters, no words and no numbers anywhere in the image.";
 
 export const SPELLING_REINFORCEMENT_SV =
   " STAVNING: förra försöket skrev felstavad svenska på en skylt i bilden. Varje svenskt ord på skärmar, " +
   "skyltar, tavlor, affischer, etiketter och förpackningar ska vara rättstavat, bokstav för bokstav: " +
   "å, ä och ö bara i ord som verkligen har dem, aldrig dubblerade, tappade, omkastade eller påhittade bokstäver. " +
-  "Håll det till två till fem korta, vanliga svenska ord. Går det inte att stava rätt — lämna skylten tom i stället.";
+  "Håll det till två till fem korta, vanliga svenska ord. Går det inte att stava rätt: håll skylten utanför bild i stället, visa den aldrig tom.";
 
-export const BLANK_SIGN_SV =
-  " VIKTIGT: lämna varje skylt, skärm, tavla, affisch och etikett i scenen HELT TOM — inga bokstäver, " +
-  "inga ord, inga siffror någonstans i bilden. Visa bara produkten, människorna och miljön.";
+export const TEXTFRITT_MOTIV_SV =
+  " SISTA UTVÄGEN, KOMPONERA OM SCENEN: visa motivet från ett håll där ingen textbärande yta alls är i bild. " +
+  "Visa INTE en tom skylt, skärm, tavla, affisch, meny eller prislapp — en tom skylt läses som trasig, inte som ren. " +
+  "Bygg bilden kring människorna, händerna som arbetar, produkten, rummet och ljuset, och låt skyltar och skärmar " +
+  "hamna utanför bild eller saknas naturligt. Inga bokstäver, inga ord och inga siffror någonstans i bilden.";
 
 export interface GrindResultat {
   /** Bilden som ska användas (alltid satt när ingångsbilden var satt). */
@@ -530,14 +639,14 @@ export interface GrindResultat {
   utfall: StavUtfall;
   /** Antal omtag som gjordes med skärpt stavningsinstruktion. */
   omtag: number;
-  /** true = sista försöket bad uttryckligen om TOM skylt. */
+  /** true = sista försöket bad om ett TEXTLÖST MOTIV (ingen textbärande yta i bild). */
   blank: boolean;
 }
 
 /**
  * BILD-8a-grinden runt en redan genererad bild. Samma mönster som motivPassar: kontrollera
- * → omtag med förstärkt instruktion → hellre tom skylt än felstavad text. Fail-open i
- * varje riktning: går genereringen eller vision-anropet fel behålls den bild vi har.
+ * → omtag med förstärkt instruktion → hellre ett textlöst motiv än felstavad text.
+ * Fail-open i varje riktning: går genereringen eller vision-anropet fel behålls bilden.
  *
  * `generera` får skärpningen som ska läggas SIST i anroparens egen prompt — grinden
  * äger aldrig prompten, bara tillägget.
@@ -551,7 +660,7 @@ export async function stavningsgrind(opts: {
   maxOmtag?: number;
   /** Tak för hur länge omtagen får hålla på (routens maxDuration är hård). */
   tidsbudgetMs?: number;
-  /** false = sista utvägen "tom skylt" är förbjuden (texten ÄR poängen med bilden). */
+  /** false = sista utvägen (textlöst motiv) är förbjuden — texten ÄR poängen med bilden. */
   tillatBlank?: boolean;
   /** Injicerbart för test. */
   kontrollera?: (bild: string, o?: { forvantad?: string; ignorera?: string }) => Promise<StavUtfall>;
@@ -561,7 +670,7 @@ export async function stavningsgrind(opts: {
   const nu = opts.nu || Date.now;
   const maxOmtag = Math.max(0, Math.min(3, opts.maxOmtag ?? 2));
   const tidsbudget = opts.tidsbudgetMs ?? 30000;
-  // Med känd förväntad text får skylten inte tömmas — då äger B3-vägen fallbacken.
+  // Med känd förväntad text får motivet inte göras textfritt — då äger B3-vägen fallbacken.
   const tillatBlank = (opts.tillatBlank ?? true) && !opts.forvantad?.trim() && !opts.ignorera?.trim();
   const start = nu();
   const kvar = () => tidsbudget - (nu() - start);
@@ -582,7 +691,7 @@ export async function stavningsgrind(opts: {
   }
 
   if (tillatBlank && kvar() > 0) {
-    const gen = await opts.generera({ omtag: omtag + 1, skarpning: BLANK_SIGN_EN, blank: true });
+    const gen = await opts.generera({ omtag: omtag + 1, skarpning: TEXTFRITT_MOTIV_EN, blank: true });
     if (gen.image) {
       const blankUtfall = await kontrollera(gen.image, {});
       return { image: gen.image, utfall: blankUtfall, omtag, blank: true };

@@ -162,7 +162,23 @@ efterkontroll som mäter blickriktningen (motsvarande `motivPassar`).
 syns som eslint-varning). Reels-vägen saknar alltså blickriktningsregeln helt. Inte
 åtgärdat här — DoD:en gäller Bildhjälpen, och reels har en egen textpolicy.
 
-**6. Säsongsmarkören lever kvar.** `KRÄFTSKIVA 8 AUGUSTI` dök upp igen i a6 (första
+**6. Säsongsmarkören lever kvar (åtgärdad i BILD-8c, se nedan).** `KRÄFTSKIVA 8 AUGUSTI` dök upp igen i a6 (första
 körningen) och b6 — samma motiv som BILD-7b sattes in för att variera bort. Rotationen i
 `sasongsUttryck` gäller bildprompten; den styr inte vad modellen ritar på en griffeltavla
 i bakgrunden.
+
+---
+
+## BILD-8c — Håkans svar på rapporten (2026-08-02)
+
+Kvarlevorna ovan är beställda åtgärder, inte öppna frågor längre. Beslutet i sin helhet:
+`docs/studio/DECISIONS.md` D-010.
+
+| Kvarleva | Åtgärd |
+|---|---|
+| 1. Grinden garanterar inte stavning | **B3 rekommenderas i UI.** Bildhjälpen säger rakt ut att fältet "Text i bilden" är enda sättet att få texten exakt rätt. Grinden beskrivs aldrig som en garanti. |
+| 2. Priset är tomma skyltar | **Sista utvägen ber om ett textlöst motiv** (`TEXTFRITT_MOTIV_EN/SV`): scenen komponeras om så att ingen textbärande yta är i bild. En tom skylt läses som trasig, inte som ren. |
+| 3. Bakgrundsklotter döms i onödan | **Ord som bara en läsriktning såg, och som inte hör till huvudskylten, lämnas odömda.** En separat huvudskyltsavläsning avgör; jämförelsen är luddig eftersom även den autokorrigerar. Oenighet frikänner aldrig ensam (a8 hade fallit igenom då). |
+| 4. Blickriktningen har ingen efterkontroll | Kvarstår medvetet. Regeln är ett önskemål till modellen; en `motivPassar`-motsvarighet för blickriktning är inte beställd. |
+| 5. BILD-8b når inte reels | **Åtgärdad:** `PERSON_ATTENTION_EN` vävs in i reels-vägens båda bildprompter, och den döda `stavningsgrind`-importen är borta. |
+| 6. Säsongsmarkören på bakgrundsskyltar | **Åtgärdad:** negativ instruktion i `DEPICTED_MESSAGE_EN/SV` — skyltning som inte är inläggets ämne får inte annonsera högtider eller daterade evenemang. |
