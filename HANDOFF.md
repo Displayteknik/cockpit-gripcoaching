@@ -458,4 +458,8 @@ Mobilt 375 px: sidan scrollar inte i sidled, båda de nya sektionerna håller si
 All testdata raderad och frånvaron verifierad: noll testhändelser, noll test-intäktsrader, trösklarna tillbaka på 14, 5 och 150, Google Clouds fakturafält tomt igen.
 
 ⚠ **Ärligt kvar:** ingen av de manuella siffrorna är ifylld i produktion. Google Cloud, Anthropic och Resend står utan saldo och utan förra fakturans belopp, och **inget efterskottskonto kan larma förrän fakturabeloppet är ifyllt**. Samma sak med marginalen: ingen tenant har ett abonnemangspris kopplat, så hela tabellen står som "pris saknas". Det är avsiktligt, ingen siffra gissas fram, men det betyder att modulen ger halva sitt värde tills Håkan fyllt i dem. Påfyllningsstegen är också tomma överallt eftersom de inte gått att verifiera.
+| PLAN-1 (planeringsmodul, Google Kalender) | 2/8 | **Pågår i PARALLELL SESSION** | `lib/hq/kalender.ts`, `migrations/planering.sql`, `app/api/google/callback` låg ocommitterade 2/8 kväll. Rör dem inte utan att kolla med den sessionen |
+| Fyll i K3:s manuella siffror (Håkan) | 2/8 | **Ej gjort** | Google Cloud/Anthropic/Resend: saldo + förra fakturan. Utan fakturabelopp kan efterskottskonton inte larma. Abonnemangspris per tenant saknas → hela marginaltabellen står "pris saknas" |
+| Fyll i banksaldo + buffertmål (Håkan) | 2/8 | **Ej gjort** | LIKVID-1:s prognos står tom tills banksaldot finns. Buffertmål 0 → bara rött läge larmar |
+| GHL: föräldralöst värde 4242 på affären "Louise Ribbing" | 2/8 | **Kan ej åtgärdas** | GHL raderar aldrig ett skrivet fältvärde. Osynligt i gränssnittet, läses av ingenting |
 
