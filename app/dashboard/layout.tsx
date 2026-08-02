@@ -36,6 +36,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
         // Founder HQ = ägarens kommandobrygga. Den gamla länklistan bor på
         // /dashboard/genvagar och ligger med flit utanför menyn (REV-0).
         { href: "/dashboard/hq", label: "Founder HQ", icon: Command },
+        { href: "/dashboard/hq/planering", label: "Planering", icon: Calendar },
         { href: "/dashboard/mysales-kunder", label: "MySales pionjärer", icon: Users },
       ],
     },

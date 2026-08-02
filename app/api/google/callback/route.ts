@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { exchangeCode, getUserInfo } from "@/lib/google";
 import { supabaseService } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
+import { KALENDER_STATE, sparaKoppling } from "@/lib/hq/kalender";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,15 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.redirect(`${req.nextUrl.origin}/dashboard/installningar?google_error=${encodeURIComponent(error)}`);
   if (!code || !state) return NextResponse.redirect(`${req.nextUrl.origin}/dashboard/installningar?google_error=missing_code`);
+
+  // PLAN-1: ägarens kalenderkoppling återvänder hit med ett eget state i stället för ett
+  // klient-id. Grenen ligger först och rör inte klientflödet nedanför. Skälet att dela
+  // callback: adressen är redan registrerad hos Google, så ingen ny redirect-URI behövs.
+  if (state === KALENDER_STATE) {
+    const r = await sparaKoppling(code, req.nextUrl.origin);
+    const mal = `${req.nextUrl.origin}/dashboard/hq/planering`;
+    return NextResponse.redirect(r.ok ? `${mal}?kalender_ok=1` : `${mal}?kalender_fel=${encodeURIComponent(r.fel || "okänt fel")}`);
+  }
 
   try {
     const tokens = await exchangeCode(code, req.nextUrl.origin);

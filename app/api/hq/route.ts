@@ -351,6 +351,45 @@ export async function GET(req: NextRequest) {
   const { inkopLarm } = await import("@/lib/inkop");
   larm.push(...(await inkopLarm(nu)));
 
+  // PLAN-1: dagens kalenderhändelser överst i morgonlistan, ur SAMMA spegel som
+  // planeringsvyn läser. Ingen egen hämtning och ingen andra klassificering, annars
+  // kan de två vyerna säga emot varandra om samma dag.
+  const dagensHandelser = await (async () => {
+    try {
+      const { lasCache } = await import("@/lib/hq/kalender");
+      const { klassa } = await import("@/lib/hq/planering");
+      const fran = new Date(`${idag}T00:00:00Z`);
+      const till = new Date(new Date(fran).getTime() + 2 * 864e5);
+      const [rader, { data: typer }, { data: ov }] = await Promise.all([
+        lasCache(fran, till),
+        sb.from("hq_tidstyper").select("*").order("sortering"),
+        sb.from("hq_handelse_typ").select("google_event_id, tidstyp_id"),
+      ]);
+      const overrides: Record<string, string> = {};
+      for (const r of ((ov as Array<{ google_event_id: string; tidstyp_id: string }> | null) || [])) {
+        overrides[r.google_event_id] = r.tidstyp_id;
+      }
+      return klassa(rader, overrides, ((typer as Array<{ nyckelord: string[] | null }> | null) || []).map((t) => ({
+        ...(t as unknown as { id: string; namn: string; farg_ramp: string; sortering: number }),
+        nyckelord: t.nyckelord || [],
+      })))
+        .filter((h) => h.datum === idag)
+        .sort((a, b) => Number(b.heldag) - Number(a.heldag) || a.startMinut - b.startMinut)
+        .map((h) => ({
+          id: h.google_event_id,
+          titel: h.titel,
+          heldag: h.heldag,
+          start: h.heldag ? null : `${String(Math.floor(h.startMinut / 60)).padStart(2, "0")}:${String(h.startMinut % 60).padStart(2, "0")}`,
+          slut: h.heldag ? null : `${String(Math.floor(h.slutMinut / 60)).padStart(2, "0")}:${String(h.slutMinut % 60).padStart(2, "0")}`,
+          tidstyp: h.tidstyp?.namn || null,
+          farg: h.tidstyp?.farg_ramp || null,
+          lank: h.html_lank,
+        }));
+    } catch {
+      return []; // kalendern är inte kopplad än, eller spegeln är tom. Morgonlistan står kvar.
+    }
+  })();
+
   // AI-kostnad per klient den här månaden, ur samma händelselogg som /dashboard/kostnader.
   // Kopplas till MRR-raden när klientens namn matchar kundnamnet. Ingen match = inget påstående.
   const manadStartIso = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth(), 1)).toISOString();
@@ -373,7 +412,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     idag,
     vecka,
-    morgonlistan: { larm, kort: forfallnaKort, uppgifter: forfallnaTasks },
+    morgonlistan: { larm, handelser: dagensHandelser, kort: forfallnaKort, uppgifter: forfallnaTasks },
     grip,
     mrr,
     dt: { ...dt, ...summor },

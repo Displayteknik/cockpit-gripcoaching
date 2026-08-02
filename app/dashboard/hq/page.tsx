@@ -65,10 +65,20 @@ interface FastRad {
 }
 interface TaskRad { id: string; titel: string; bolag: string; datum: string | null; klar: boolean }
 
+// PLAN-1: dagens kalender, samma spegel som planeringsvyn läser.
+interface DagensHandelse {
+  id: string; titel: string | null; heldag: boolean;
+  start: string | null; slut: string | null;
+  tidstyp: string | null; farg: string | null; lank: string | null;
+}
+const KALENDERFARG: Record<string, string> = {
+  teal: "#14b8a6", coral: "#fb7185", blue: "#3b82f6", purple: "#a855f7", gray: "#94a3b8",
+};
+
 interface Data {
   idag: string;
   vecka: { start: string; slut: string };
-  morgonlistan: { larm: LarmRad[]; kort: PipelineKort[]; uppgifter: TaskRad[] };
+  morgonlistan: { larm: LarmRad[]; handelser?: DagensHandelse[]; kort: PipelineKort[]; uppgifter: TaskRad[] };
   grip: { mrr: number; pionjarer: number; pionjarMal: number; gdam: number; gdamMal: number; mal: number; procent: number };
   mrr: MrrRad[];
   dt: {
@@ -175,6 +185,7 @@ export default function HqPage() {
 
   const antalIMorgonlistan =
     (data?.morgonlistan.larm?.length || 0) +
+    (data?.morgonlistan.handelser?.length || 0) +
     (data?.morgonlistan.kort.length || 0) +
     (data?.morgonlistan.uppgifter.length || 0);
 
@@ -255,6 +266,21 @@ export default function HqPage() {
                     </span>
                     <a href={larm.lank || "#likviditet"} className="ml-auto font-medium text-indigo-600 hover:text-indigo-800">
                       {larm.lank && !larm.lank.startsWith("#") ? "Se inköpsläget" : "Se prognosen"}
+                    </a>
+                  </li>
+                ))}
+                {/* PLAN-1: dagens händelser ligger näst överst, efter larmen men före
+                    affärer och uppgifter. Dagen läses bäst i den ordning den inträffar. */}
+                {(data.morgonlistan.handelser || []).map((h) => (
+                  <li key={h.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      <span className="h-2 w-2 rounded-full" style={{ background: KALENDERFARG[h.farg || "gray"] }} />
+                      {h.tidstyp || "Kalender"}
+                    </span>
+                    <span className="font-medium text-gray-900">{h.titel || "Namnlös händelse"}</span>
+                    <span className="tabular-nums text-gray-500">{h.heldag ? "hela dagen" : `${h.start} till ${h.slut}`}</span>
+                    <a href="/dashboard/hq/planering" className="ml-auto font-medium text-indigo-600 hover:text-indigo-800">
+                      Se veckan
                     </a>
                   </li>
                 ))}
