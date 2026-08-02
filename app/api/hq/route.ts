@@ -337,7 +337,19 @@ export async function GET(req: NextRequest) {
   // förfaller. Ingen egen banner, ingen andra väg in.
   const larm = likviditet
     .filter((l) => l.trafikljus === "gul" || l.trafikljus === "rod")
-    .map((l) => ({ id: `likvid-${l.bolag}`, text: l.klartext, niva: l.trafikljus as "gul" | "rod" }));
+    .map((l) => ({
+      id: `likvid-${l.bolag}`,
+      text: l.klartext,
+      niva: l.trafikljus as "gul" | "rod",
+      etikett: "Likviditet",
+      lank: "#likviditet",
+    }));
+
+  // K3-INKÖP: leverantörssaldon som håller på att ta slut läggs i SAMMA lista, från
+  // SAMMA källa som kostnadsmodulens banner (lib/inkop). Ingen egen tröskel här, ingen
+  // andra uträkning. Faller den returnerar den tomt och morgonlistan står kvar.
+  const { inkopLarm } = await import("@/lib/inkop");
+  larm.push(...(await inkopLarm(nu)));
 
   // AI-kostnad per klient den här månaden, ur samma händelselogg som /dashboard/kostnader.
   // Kopplas till MRR-raden när klientens namn matchar kundnamnet. Ingen match = inget påstående.

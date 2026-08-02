@@ -16,6 +16,8 @@ import {
   sakerstallKonto,
   nollstallCreditPrisCache,
 } from "@/lib/credits";
+import { byggInkop, fraschaApiSaldon, harSaldoApi } from "@/lib/inkop";
+import { byggMarginal } from "@/lib/inkop/marginal";
 
 export const runtime = "nodejs";
 
@@ -56,6 +58,11 @@ export async function GET() {
 
   const sb = supabaseService();
   const start = manadensStart();
+
+  // K3-INKÖP: saldon som har ett API hämtas vid sidladdning, högst en gång i timmen
+  // (cachen är radens egen tidsstämpel). Går det fel skrivs orsaken, aldrig ett gissat
+  // saldo. Hämtningen får aldrig fälla vyn.
+  await fraschaApiSaldon();
 
   const [{ data: handelser }, { data: halsa }, { data: klienter }, { data: tenantTak }, { data: plattform }, { data: fasta }] =
     await Promise.all([
@@ -170,6 +177,10 @@ export async function GET() {
   const fastSumma = fastaRader.filter((f) => f.aktiv).reduce((s, f) => s + f.belopp_sek, 0);
   const prognos = (manad / dagarIn) * dagarKvar;
 
+  // K3-INKÖP: leverantörssaldon och marginal per kund. Larmet kommer ur samma
+  // byggare som Founder HQ:s morgonlista använder, aldrig ur en egen tröskel här.
+  const [inkop, marginal] = await Promise.all([byggInkop(nu), byggMarginal(nu)]);
+
   return NextResponse.json({
     summa: {
       idag: summa((r) => r.created_at >= dagStart),
@@ -199,6 +210,11 @@ export async function GET() {
       namn: namn.get(o.tenant_id) || "Okänd klient",
     })),
     period,
+    inkop: {
+      ...inkop,
+      rader: inkop.rader.map((r) => ({ ...r, harApi: harSaldoApi(r.provider) })),
+    },
+    marginal,
   });
 }
 
@@ -216,6 +232,18 @@ export async function PATCH(req: NextRequest) {
     insattning?: { tenantId: string; credits: number; note: string };
     kvot?: { tenantId: string; credits: number };
     creditPris?: { action: string; credits: number };
+    // K3-INKÖP
+    konto?: {
+      id: string;
+      saldo_belopp?: number | null;
+      forra_fakturan_sek?: number | null;
+      forra_fakturan_datum?: string | null;
+      betalkort_sista_fyra?: string | null;
+      pafyllningssteg?: number | null;
+      notering?: string | null;
+    };
+    trosklar?: { gulDagar?: number; rodDagar?: number; gulPrognosProcent?: number };
+    mrrKoppling?: { mrrId: string; tenantId: string | null };
   };
   try {
     b = await req.json();
@@ -314,6 +342,91 @@ export async function PATCH(req: NextRequest) {
       .eq("action", b.creditPris.action);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     nollstallCreditPrisCache(); // priset cachas 5 min — töm så ändringen gäller direkt
+    return NextResponse.json({ ok: true });
+  }
+
+  // ── K3-INKÖP ─────────────────────────────────────────────────────────────
+
+  // Ett leverantörskonto. Ett manuellt inskrivet saldo stämplas med tidpunkten, så
+  // vyn alltid kan säga hur gammal siffran är i stället för att låta den se färsk ut.
+  if (b.konto?.id) {
+    const rad: Record<string, unknown> = { uppdaterad: new Date().toISOString() };
+    const tal = (v: unknown): number | null | "fel" => {
+      if (v === null || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? n : "fel";
+    };
+
+    if (b.konto.saldo_belopp !== undefined) {
+      const n = tal(b.konto.saldo_belopp);
+      if (n === "fel") return NextResponse.json({ error: "Saldot måste vara ett tal, noll eller mer" }, { status: 400 });
+      rad.saldo_belopp = n;
+      rad.saldo_kalla = "manuellt";
+      rad.saldo_uppdaterad = new Date().toISOString();
+      rad.saldo_fel = null;
+    }
+    if (b.konto.forra_fakturan_sek !== undefined) {
+      const n = tal(b.konto.forra_fakturan_sek);
+      if (n === "fel") return NextResponse.json({ error: "Fakturabeloppet måste vara ett tal, noll eller mer" }, { status: 400 });
+      rad.forra_fakturan_sek = n;
+    }
+    if (b.konto.pafyllningssteg !== undefined) {
+      const n = tal(b.konto.pafyllningssteg);
+      if (n === "fel") return NextResponse.json({ error: "Påfyllningssteget måste vara ett tal, noll eller mer" }, { status: 400 });
+      rad.pafyllningssteg = n;
+    }
+    if (b.konto.forra_fakturan_datum !== undefined) {
+      const s = String(b.konto.forra_fakturan_datum || "").slice(0, 10);
+      rad.forra_fakturan_datum = /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+    }
+    if (b.konto.betalkort_sista_fyra !== undefined) {
+      const s = String(b.konto.betalkort_sista_fyra || "").replace(/\D/g, "").slice(0, 4);
+      rad.betalkort_sista_fyra = s || null;
+    }
+    if (b.konto.notering !== undefined) rad.notering = String(b.konto.notering || "").slice(0, 400) || null;
+
+    const { error } = await sb.from("provider_accounts").update(rad).eq("id", b.konto.id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Larmtrösklarna. De ligger i databasen så de går att skruva utan ny version, och så
+  // att larmkedjan går att prova skarpt.
+  if (b.trosklar) {
+    const rad: Record<string, unknown> = { id: 1, uppdaterad: new Date().toISOString() };
+    const grans = (v: unknown, min: number, max: number): number | null => {
+      const n = Math.round(Number(v));
+      return Number.isFinite(n) && n >= min && n <= max ? n : null;
+    };
+    if (b.trosklar.gulDagar !== undefined) {
+      const n = grans(b.trosklar.gulDagar, 1, 365);
+      if (n === null) return NextResponse.json({ error: "Gulgränsen måste vara mellan 1 och 365 dagar" }, { status: 400 });
+      rad.gul_dagar = n;
+    }
+    if (b.trosklar.rodDagar !== undefined) {
+      const n = grans(b.trosklar.rodDagar, 1, 365);
+      if (n === null) return NextResponse.json({ error: "Rödgränsen måste vara mellan 1 och 365 dagar" }, { status: 400 });
+      rad.rod_dagar = n;
+    }
+    if (b.trosklar.gulPrognosProcent !== undefined) {
+      const n = grans(b.trosklar.gulPrognosProcent, 100, 1000);
+      if (n === null) return NextResponse.json({ error: "Prognosgränsen måste vara mellan 100 och 1000 procent" }, { status: 400 });
+      rad.gul_prognos_procent = n;
+    }
+    const { error } = await sb.from("inkop_konfig").upsert(rad, { onConflict: "id" });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Kopplar en intäktsrad i HQ till en klient, så marginalen räknas på rätt kund i
+  // stället för att gissa på namnlikhet. Enda skrivningen mot hq_mrr_entries härifrån:
+  // resten av raden ägs fortfarande av Founder HQ.
+  if (b.mrrKoppling?.mrrId) {
+    const { error } = await sb
+      .from("hq_mrr_entries")
+      .update({ client_id: b.mrrKoppling.tenantId || null, uppdaterad: new Date().toISOString() })
+      .eq("id", b.mrrKoppling.mrrId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   }
 
