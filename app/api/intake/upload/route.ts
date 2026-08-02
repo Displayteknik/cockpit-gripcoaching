@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { anropaProvider } from "@/lib/ai-usage";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
@@ -29,6 +30,8 @@ const MAX_INLINE_BYTES = 18 * 1024 * 1024; // 18 MB säkerhetsmarginal mot Gemin
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta";
 
+type GeminiSvar = { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+
 async function geminiInline(buf: Buffer, mimeType: string, prompt: string, model = "gemini-2.5-flash"): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY saknas");
@@ -36,16 +39,20 @@ async function geminiInline(buf: Buffer, mimeType: string, prompt: string, model
     contents: [{ role: "user", parts: [{ inlineData: { mimeType, data: buf.toString("base64") } }, { text: prompt }] }],
     generationConfig: { temperature: 0.2, maxOutputTokens: 32000, thinkingConfig: { thinkingBudget: 0 } },
   };
-  const res = await fetch(`${GEMINI_API}/models/${model}:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  // KOSTNAD-1: går genom lib/ai-usage. Files API-stegen nedan är ren filöverföring och
+  // loggas inte — bara de betalda generateContent-anropen hamnar i ledgern.
+  const svar = await anropaProvider<GeminiSvar>({
+    provider: "gemini",
+    model,
+    flow: "intake-uppladdning",
+    url: `${GEMINI_API}/models/${model}:generateContent?key=${apiKey}`,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   });
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = await res.json();
+  if (svar.budgetstopp) throw new Error(svar.fel);
+  if (!svar.ok) throw new Error(`Gemini ${svar.status}: ${svar.raw.slice(0, 300)}`);
   // Skyddsnät: modellen ekar ibland tillbaka instruktionen när filen saknar tal/text.
   // Ett eko får aldrig bli ett "transkript" — det matar identitetsfälten i intake.
-  const out = rensaTranskription(data?.candidates?.[0]?.content?.parts?.[0]?.text, prompt);
+  const out = rensaTranskription(svar.data?.candidates?.[0]?.content?.parts?.[0]?.text, prompt);
   if (!out) throw new Error("Kunde inte uppfatta något innehåll i filen — försök med en tydligare inspelning");
   return out;
 }
@@ -109,16 +116,18 @@ async function geminiTranscribeFromUri(fileUri: string, mimeType: string, prompt
     contents: [{ role: "user", parts: [{ fileData: { fileUri, mimeType } }, { text: prompt }] }],
     generationConfig: { temperature: 0.2, maxOutputTokens: 32000, thinkingConfig: { thinkingBudget: 0 } },
   };
-  const res = await fetch(`${GEMINI_API}/models/${model}:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  const svar = await anropaProvider<GeminiSvar>({
+    provider: "gemini",
+    model,
+    flow: "intake-uppladdning",
+    url: `${GEMINI_API}/models/${model}:generateContent?key=${apiKey}`,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   });
-  if (!res.ok) throw new Error(`Gemini fileData ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = await res.json();
+  if (svar.budgetstopp) throw new Error(svar.fel);
+  if (!svar.ok) throw new Error(`Gemini fileData ${svar.status}: ${svar.raw.slice(0, 300)}`);
   // Skyddsnät: modellen ekar ibland tillbaka instruktionen när filen saknar tal/text.
   // Ett eko får aldrig bli ett "transkript" — det matar identitetsfälten i intake.
-  const out = rensaTranskription(data?.candidates?.[0]?.content?.parts?.[0]?.text, prompt);
+  const out = rensaTranskription(svar.data?.candidates?.[0]?.content?.parts?.[0]?.text, prompt);
   if (!out) throw new Error("Kunde inte uppfatta något innehåll i filen — försök med en tydligare inspelning");
   return out;
 }

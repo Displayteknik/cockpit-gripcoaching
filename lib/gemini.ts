@@ -2,6 +2,7 @@
 // Models: gemini-2.5-flash (snabb, idégenerering), gemini-2.5-pro (coach, content, djup)
 
 import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
+import { anropaProvider } from "@/lib/ai-usage";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -27,6 +28,10 @@ export interface GenerateOptions {
    * strukturerade anrop som inte producerar kundtext (extraktion, klassning, vision).
    */
   skrivregler?: boolean;
+  /** KOSTNAD-1: flödesnamn i kostnadsloggen. Utelämnad härleds den ur requestens sökväg. */
+  flow?: string;
+  /** KOSTNAD-1: tenant i kostnadsloggen. Utelämnad härleds den ur sessionen. */
+  tenantId?: string | null;
 }
 
 /**
@@ -65,21 +70,27 @@ export async function generate(opts: GenerateOptions): Promise<string> {
     body.systemInstruction = { parts: [{ text: medSkrivregler(opts) }] };
   }
 
-  const res = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  // KOSTNAD-1: all providertrafik går genom lib/ai-usage. Wrappern läser alltid
+  // svarskroppen, klassar felet och loggar raden — även när anropet misslyckas.
+  const svar = await anropaProvider<GeminiSvar>({
+    provider: "gemini",
+    model,
+    flow: opts.flow,
+    tenantId: opts.tenantId,
+    url: `${API_BASE}/${model}:generateContent?key=${apiKey}`,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   });
+  if (svar.budgetstopp) throw new Error(svar.fel);
+  if (!svar.ok) throw new Error(`Gemini ${svar.status}: ${svar.raw}`);
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Gemini ${res.status}: ${text}`);
-  }
-
-  const data = await res.json();
-  const out = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const out = svar.data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!out) throw new Error("Gemini: tomt svar");
   return out;
+}
+
+interface GeminiSvar {
+  candidates?: { content?: { parts?: { text?: string }[] }; groundingMetadata?: { groundingChunks?: { web?: { title?: string; uri?: string } }[] } }[];
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
 }
 
 export interface GenerateUsage { input: number; output: number; total: number }
@@ -106,14 +117,18 @@ export async function generateWithUsage(opts: GenerateOptions): Promise<Generate
   };
   if (opts.systemInstruction) body.systemInstruction = { parts: [{ text: medSkrivregler(opts) }] };
 
-  const res = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  const svar = await anropaProvider<GeminiSvar>({
+    provider: "gemini",
+    model,
+    flow: opts.flow,
+    tenantId: opts.tenantId,
+    url: `${API_BASE}/${model}:generateContent?key=${apiKey}`,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   });
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+  if (svar.budgetstopp) throw new Error(svar.fel);
+  if (!svar.ok) throw new Error(`Gemini ${svar.status}: ${svar.raw}`);
 
-  const data = await res.json();
+  const data = svar.data;
   const out = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!out) throw new Error("Gemini: tomt svar");
   const u = data?.usageMetadata || {};
@@ -136,7 +151,7 @@ export interface GroundedResult {
 // (kollar om en klient nämns i AI-svar idag), inte träningsminne.
 export async function groundedGenerate(
   prompt: string,
-  opts?: { model?: GeminiModel; temperature?: number; maxOutputTokens?: number }
+  opts?: { model?: GeminiModel; temperature?: number; maxOutputTokens?: number; flow?: string; tenantId?: string | null }
 ): Promise<GroundedResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY saknas i env");
@@ -150,15 +165,17 @@ export async function groundedGenerate(
       thinkingConfig: { thinkingBudget: 0 },
     },
   };
-  const res = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(45000),
+  const svar = await anropaProvider<GeminiSvar>({
+    provider: "gemini",
+    model,
+    flow: opts?.flow,
+    tenantId: opts?.tenantId,
+    url: `${API_BASE}/${model}:generateContent?key=${apiKey}`,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(45000) },
   });
-  if (!res.ok) throw new Error(`Gemini grounded ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  const cand = data?.candidates?.[0] ?? {};
+  if (svar.budgetstopp) throw new Error(svar.fel);
+  if (!svar.ok) throw new Error(`Gemini grounded ${svar.status}: ${svar.raw}`);
+  const cand = svar.data?.candidates?.[0] ?? {};
   const text = ((cand.content?.parts ?? []) as { text?: string }[]).map((p) => p.text ?? "").join("").trim();
   const chunks = (cand.groundingMetadata?.groundingChunks ?? []) as { web?: { title?: string; uri?: string } }[];
   const seen = new Set<string>();

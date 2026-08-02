@@ -20,10 +20,38 @@ import { supabaseServer } from "./supabase-admin";
 import { assertSafePublicUrl } from "./safe-url";
 import { seasonPromptLineEn } from "./content/sasong";
 import { stavningsgrind, type TextOrsak } from "./bildtext";
+import { anropaProvider } from "./ai-usage";
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const FAL_KEY = process.env.FAL_KEY || "";
 const PEXELS_KEY = process.env.PEXELS_API_KEY || "";
+
+// KOSTNAD-1: ingen providertrafik i den här filen går utanför lib/ai-usage. Helparen
+// finns för att bildmotorn gör många snarlika anrop — den äger INTE prompten, bara
+// transporten, mätningen och felklassningen.
+interface GeminiKandidater {
+  candidates?: { content?: { parts?: { text?: string; inlineData?: { data?: string; mimeType?: string } }[] } }[];
+}
+
+async function geminiAnrop(
+  model: string,
+  body: unknown,
+  meta?: { mediaUnits?: number },
+): Promise<{ ok: boolean; status: number; data: GeminiKandidater | null; raw: string; fel?: string }> {
+  const svar = await anropaProvider<GeminiKandidater>({
+    provider: "gemini",
+    model,
+    mediaUnits: meta?.mediaUnits,
+    url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+  });
+  return { ok: svar.ok, status: svar.status, data: svar.data, raw: svar.raw, fel: svar.fel };
+}
+
+/** Första textdelen ur ett Gemini-svar, trimmad. Tom sträng när svaret saknar text. */
+function geminiText(data: GeminiKandidater | null): string {
+  return (data?.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text || "").trim();
+}
 
 // BILD-6a: tankstrecksregeln gäller även SCENOGRAFI — text på avbildade skärmar,
 // skyltar, affischer och förpackningar (skarpt fall: en avbildad skärmannons visade
@@ -176,10 +204,7 @@ function rulesForNiche(niche: string): IndustryRules {
 async function extractVisualConcept(contentText: string, niche: string, rules: IndustryRules): Promise<string> {
   if (!GEMINI_KEY) return "";
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const r = await geminiAnrop("gemini-2.5-flash", {
         contents: [{ parts: [{ text: `Read this blog/social post. Identify ONE concrete visual concept for a HERO IMAGE that matches the post's TONE and CONCLUSION — not its problem-opening.
 
 POST: "${contentText.slice(0, 2000)}"
@@ -206,11 +231,9 @@ Reply with ONE sentence describing the visual concept. Example for a healthcare/
 
 ONE SENTENCE ONLY.` }] }],
         generationConfig: { maxOutputTokens: 200, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } },
-      }),
     });
-    const data = await r.json();
-    const txt = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    return txt && txt.length > 10 ? txt : "";
+    const txt = geminiText(r.data);
+    return txt.length > 10 ? txt : "";
   } catch {
     return "";
   }
@@ -246,10 +269,7 @@ async function craftImagePromptWithAI(
   const fullContext = conceptSection + brandSection;
 
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const r = await geminiAnrop("gemini-2.5-flash", {
         contents: [{ parts: [{ text: `You are an elite visual content strategist for a brand-aware content engine. Write ONE image generation prompt (in English) for this post.
 
 POST CONTENT (use as topic input, NOT a literal scene to depict): "${contentText.slice(0, 1200)}"
@@ -281,11 +301,9 @@ ${feedbackSection}
 
 Write ONLY the prompt, 3-4 sentences, hyper-specific about: subject, environment, lighting, mood, composition.` }] }],
         generationConfig: { maxOutputTokens: 500, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
-      }),
     });
-    const data = await r.json();
-    const txt = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if (txt && txt.length > 20) return txt;
+    const txt = geminiText(r.data);
+    if (txt.length > 20) return txt;
   } catch (e) {
     console.error("[images] craft prompt failed:", e);
   }
@@ -301,19 +319,12 @@ export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16"
   let lastError = "Ingen bild genererades";
   for (const model of models) {
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const r = await geminiAnrop(model, {
           contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
           generationConfig: { responseModalities: ["IMAGE"] },
-        }),
-      });
-      if (!r.ok) { lastError = (await r.text()).slice(0, 200); continue; }
-      const data = await r.json();
-      const part = data?.candidates?.[0]?.content?.parts?.find(
-        (p: { inlineData?: { data?: string; mimeType?: string } }) => p.inlineData?.data,
-      );
+      }, { mediaUnits: 1 });
+      if (!r.ok) { lastError = r.raw.slice(0, 200); continue; }
+      const part = r.data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
       if (part?.inlineData?.data) {
         return { success: true, image: `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}` };
       }
@@ -355,21 +366,16 @@ export async function visualScene(topic: string, niche: string, opts?: { textYta
       // hon är vänd mot det (skarpt fel: kvinnan framför skärmen tittade bort).
       `${PERSON_ATTENTION_SV} ` +
       `Nämn i scenbeskrivningen vad en eventuell skärm/skylt visar och, om en person syns, att hon är vänd mot den. `;
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const r = await geminiAnrop("gemini-2.5-flash", {
         contents: [{ role: "user", parts: [{ text:
           `Föreslå ETT konkret visuellt bildmotiv (ett riktigt foto) som passar detta inlägg för en ${niche}. ` +
           `Svara med EN kort mening: vad som syns, stämning, ljus. ` + branschDel + textDel +
           `Undvik vapen, knivar, blod eller något känsligt. Inlägg: "${topic.slice(0, 300)}"` }] }],
         generationConfig: { temperature: 0.6, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 } },
-      }),
     });
     if (!r.ok) return topic;
-    const data = await r.json();
-    const t = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text?.trim();
-    return t && t.length > 8 ? t : topic;
+    const t = geminiText(r.data);
+    return t.length > 8 ? t : topic;
   } catch {
     return topic;
   }
@@ -391,21 +397,15 @@ export async function motivPassar(image: string, niche: string): Promise<boolean
       const buf = Buffer.from(await r.arrayBuffer());
       inline = { mimeType: r.headers.get("content-type") || "image/jpeg", data: buf.toString("base64") };
     }
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const r = await geminiAnrop("gemini-2.5-flash", {
         contents: [{ role: "user", parts: [
           { inlineData: inline },
           { text: `Bilden ska användas i marknadsföring för en verksamhet inom: "${niche}". Hör motivet omisskännligt hemma i den verksamheten (dess miljö, produkter eller kunder)? En metafor från en annan bransch (t.ex. kläder, kaffe) räknas som NEJ. Svara ENDAST med JA eller NEJ.` },
         ] }],
         generationConfig: { temperature: 0, maxOutputTokens: 10, thinkingConfig: { thinkingBudget: 0 } },
-      }),
     });
     if (!r.ok) return true;
-    const data = await r.json();
-    const svar = (data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "").trim().toUpperCase();
-    return !svar.startsWith("NEJ");
+    return !geminiText(r.data).toUpperCase().startsWith("NEJ");
   } catch {
     return true;
   }
@@ -425,10 +425,7 @@ export async function analyzeImageRole(imageUrl: string, caption?: string): Prom
     const buf = Buffer.from(await imgRes.arrayBuffer());
     if (buf.length >= 19 * 1024 * 1024) return { description: "", role: "neutral" };
     const inline = { mimeType: imgRes.headers.get("content-type") || "image/jpeg", data: buf.toString("base64") };
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const r = await geminiAnrop("gemini-2.5-flash", {
         contents: [{ role: "user", parts: [
           { inlineData: inline },
           { text:
@@ -439,12 +436,9 @@ export async function analyzeImageRole(imageUrl: string, caption?: string): Prom
             'Svara ENDAST med strikt JSON: {"description":"...","role":"problem|losning|neutral"}' },
         ] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: "application/json" },
-      }),
     });
     if (!r.ok) return { description: "", role: "neutral" };
-    const data = await r.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "";
-    const obj = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}");
+    const obj = JSON.parse(geminiText(r.data).match(/\{[\s\S]*\}/)?.[0] || "{}");
     const role: BildRoll = obj.role === "problem" || obj.role === "losning" ? obj.role : "neutral";
     return { description: typeof obj.description === "string" ? obj.description.trim() : "", role };
   } catch {
@@ -458,10 +452,7 @@ export async function analyzeImageRole(imageUrl: string, caption?: string): Prom
 export async function classifyImageRoleFromText(description: string, caption?: string): Promise<BildRoll> {
   if (!GEMINI_KEY || !description.trim()) return "neutral";
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const r = await geminiAnrop("gemini-2.5-flash", {
         contents: [{ role: "user", parts: [{ text:
           "En bild i ett marknadsinlägg föreställer följande. Avgör bildens roll: PROBLEM/brist (\"före\", något slitet/trist/frustrerande), " +
           "LÖSNING/önskat resultat (\"efter\", proffsigt/tilltalande), eller NEUTRAL. " +
@@ -469,12 +460,9 @@ export async function classifyImageRoleFromText(description: string, caption?: s
           `Bild: "${description.slice(0, 300)}". ` +
           'Svara ENDAST med JSON: {"role":"problem|losning|neutral"}' }] }],
         generationConfig: { temperature: 0, maxOutputTokens: 60, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: "application/json" },
-      }),
     });
     if (!r.ok) return "neutral";
-    const data = await r.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "";
-    const role = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}").role;
+    const role = JSON.parse(geminiText(r.data).match(/\{[\s\S]*\}/)?.[0] || "{}").role;
     return role === "problem" || role === "losning" ? role : "neutral";
   } catch {
     return "neutral";
@@ -520,19 +508,12 @@ export async function editImagen(
   let lastError = "Ingen bild genererades";
   for (const model of models) {
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const r = await geminiAnrop(model, {
           contents: [{ role: "user", parts }],
           generationConfig: { responseModalities: ["IMAGE"] },
-        }),
-      });
-      if (!r.ok) { lastError = (await r.text()).slice(0, 200); continue; }
-      const data = await r.json();
-      const part = data?.candidates?.[0]?.content?.parts?.find(
-        (p: { inlineData?: { data?: string; mimeType?: string } }) => p.inlineData?.data,
-      );
+      }, { mediaUnits: 1 });
+      if (!r.ok) { lastError = r.raw.slice(0, 200); continue; }
+      const part = r.data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
       if (part?.inlineData?.data) {
         return { success: true, image: `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}` };
       }
@@ -547,13 +528,19 @@ export async function generateFlux(prompt: string, aspect: "square" | "portrait"
   if (!FAL_KEY) return generateImagen(prompt, aspect === "square" ? "1:1" : aspect === "portrait" ? "9:16" : "16:9");
   try {
     const size = aspect === "square" ? "square" : aspect === "portrait" ? "portrait_16_9" : "landscape_16_9";
-    const r = await fetch("https://fal.run/fal-ai/flux/schnell", {
-      method: "POST",
-      headers: { Authorization: `Key ${FAL_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, image_size: size, num_images: 1 }),
+    const svar = await anropaProvider<{ images?: { url?: string }[] }>({
+      provider: "fal",
+      model: "fal-ai/flux/schnell",
+      mediaUnits: 1,
+      url: "https://fal.run/fal-ai/flux/schnell",
+      init: {
+        method: "POST",
+        headers: { Authorization: `Key ${FAL_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, image_size: size, num_images: 1 }),
+      },
     });
-    const data = await r.json();
-    if (data.images?.[0]?.url) return { success: true, image: data.images[0].url };
+    const url = svar.data?.images?.[0]?.url;
+    if (url) return { success: true, image: url };
     return generateImagen(prompt, aspect === "square" ? "1:1" : aspect === "portrait" ? "9:16" : "16:9");
   } catch {
     return generateImagen(prompt, aspect === "square" ? "1:1" : aspect === "portrait" ? "9:16" : "16:9");
@@ -740,27 +727,27 @@ export async function searchStockPhotos(
   let q = topic;
   if (GEMINI_KEY) {
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const r = await geminiAnrop("gemini-2.5-flash", {
           contents: [{ parts: [{ text: `Generate ONE short English search query (2-4 words) for finding visual stock photos on Pexels.\n\nTopic: "${topic}"\n${niche ? `Niche: ${niche}` : ""}\n\nReply with ONLY the query.` }] }],
           generationConfig: { maxOutputTokens: 50, temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } },
-        }),
       });
       if (r.ok) {
-        const data = await r.json();
-        const out = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        if (out && out.length > 0 && out.length < 60) q = out;
+        const out = geminiText(r.data);
+        if (out.length > 0 && out.length < 60) q = out;
       }
     } catch (e) { console.error("[images] pexels query craft:", e); }
   }
 
   try {
-    const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${count}&orientation=${orientation}`, { headers: { Authorization: PEXELS_KEY } });
-    if (!r.ok) return { photos: [], query: q, error: `Pexels-fel: ${r.status}` };
-    const data = await r.json();
-    const photos: StockPhoto[] = (data.photos || []).map((p: { id: number; url: string; src: { large2x?: string; large?: string; original?: string; medium?: string }; photographer: string; alt: string }) => ({
+    const svar = await anropaProvider<{ photos?: unknown[] }>({
+      provider: "pexels",
+      model: "search",
+      url: `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${count}&orientation=${orientation}`,
+      init: { headers: { Authorization: PEXELS_KEY } },
+    });
+    if (!svar.ok) return { photos: [], query: q, error: `Pexels-fel: ${svar.status}` };
+    const data = (svar.data || {}) as { photos?: unknown[] };
+    const photos: StockPhoto[] = ((data.photos || []) as never[]).map((p: { id: number; url: string; src: { large2x?: string; large?: string; original?: string; medium?: string }; photographer: string; alt: string }) => ({
       id: p.id,
       url: p.url,
       src: p.src.large2x || p.src.large || p.src.original || "",

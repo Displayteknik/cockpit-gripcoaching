@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { loggaAnrop } from "@/lib/ai-usage";
 import { TOOLS } from "@/lib/setup-tools";
 
 export const runtime = "nodejs";
@@ -108,13 +109,20 @@ export async function POST(req: NextRequest) {
         while (iterations < MAX_ITERATIONS) {
           iterations++;
 
-          const response = await anthropic.messages.create({
-            model: MODEL,
-            max_tokens: 4096,
-            system: SYSTEM_PROMPT,
-            tools: anthropicTools,
-            messages: conversationMessages,
-          });
+          // KOSTNAD-1: varje varv i verktygsslingan är ett eget betalt anrop och loggas som en rad.
+          const response = await loggaAnrop(
+            { provider: "anthropic", model: MODEL, flow: "setup-agent" },
+            async () => {
+              const r = await anthropic.messages.create({
+                model: MODEL,
+                max_tokens: 4096,
+                system: SYSTEM_PROMPT,
+                tools: anthropicTools,
+                messages: conversationMessages,
+              });
+              return { resultat: r, tokensIn: r.usage?.input_tokens ?? 0, tokensUt: r.usage?.output_tokens ?? 0 };
+            },
+          );
 
           // Streama text-delar
           for (const block of response.content) {

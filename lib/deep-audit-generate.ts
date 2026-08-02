@@ -1,6 +1,7 @@
 import { supabaseService } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
 import { crawlSite } from "@/lib/seo-deep";
+import { anropaProvider } from "@/lib/ai-usage";
 
 const MODEL = "claude-sonnet-4-5";
 
@@ -275,31 +276,41 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
   // så hela mallen (>14000 tokens) kan skrivas ut i sin helhet. POST submittar batchen (<5s) och
   // sparar en platshållare (status processing). Finaliseringen sker via GET (poll) + daglig cron.
   try {
-    const batchRes = await fetch("https://api.anthropic.com/v1/messages/batches", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        requests: [
-          {
-            custom_id: "audit",
-            params: {
-              model: MODEL,
-              max_tokens: 20000,
-              system: SYSTEM_PROMPT,
-              messages: [{ role: "user", content: userPrompt }],
+    // KOSTNAD-1: submit-anropet loggas med noll tokens — kostnaden bokförs när batchen
+    // hämtas hem i deep-audit-finalize (det är där token-användningen finns). Poängen med
+    // att logga submitten ändå: betalnings- och nyckelfel syns HÄR, direkt.
+    const batchRes = await anropaProvider<{ id: string }>({
+      provider: "anthropic",
+      model: MODEL,
+      flow: "djupgranskning-start",
+      tenantId: clientId,
+      url: "https://api.anthropic.com/v1/messages/batches",
+      init: {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          requests: [
+            {
+              custom_id: "audit",
+              params: {
+                model: MODEL,
+                max_tokens: 20000,
+                system: SYSTEM_PROMPT,
+                messages: [{ role: "user", content: userPrompt }],
+              },
             },
-          },
-        ],
-      }),
+          ],
+        }),
+      },
     });
-    if (!batchRes.ok) {
-      return { ok: false, error: `Kunde inte starta granskningen: ${await batchRes.text()}`, duration_ms: Date.now() - t0 };
+    if (!batchRes.ok || !batchRes.data?.id) {
+      return { ok: false, error: `Kunde inte starta granskningen: ${batchRes.fel || batchRes.raw}`, duration_ms: Date.now() - t0 };
     }
-    const batch = (await batchRes.json()) as { id: string };
+    const batch = batchRes.data;
 
     const { data: saved } = await sb.from("client_assets").insert({
       client_id: clientId,

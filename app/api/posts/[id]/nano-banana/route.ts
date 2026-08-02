@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
+import { anropaProvider, type ProviderSvar } from "@/lib/ai-usage";
+
+type NanoSvar = { candidates?: { content?: { parts?: { inlineData?: { data?: string; mimeType?: string } }[] } }[] };
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -63,34 +66,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ? ["nano-banana-pro-preview", "gemini-3.1-flash-image-preview", "gemini-2.5-flash-image"]
       : ["gemini-2.5-flash-image", "gemini-3.1-flash-image-preview"];
 
-    let res: Response | null = null;
+    // KOSTNAD-1: går genom lib/ai-usage. Varje modellförsök är ett eget betalt anrop och
+    // loggas som en egen rad — även de som misslyckas, med hela svarskroppen.
+    let svar: ProviderSvar<NanoSvar> | null = null;
     let lastError = "";
     for (const model of models) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts }],
-          generationConfig: { responseModalities: ["IMAGE"] },
-        }),
+      const r = await anropaProvider<NanoSvar>({
+        provider: "gemini",
+        model,
+        flow: "nano-banana",
+        mediaUnits: 1,
+        url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts }],
+            generationConfig: { responseModalities: ["IMAGE"] },
+          }),
+        },
       });
-      if (res.ok) break;
-      lastError = await res.text();
-      res = null;
+      if (r.budgetstopp) return NextResponse.json({ error: r.fel }, { status: 429 });
+      if (r.ok) { svar = r; break; }
+      lastError = r.raw;
     }
 
-    if (!res || !res.ok) {
+    if (!svar) {
       return NextResponse.json(
         { error: `Nano Banana misslyckades: ${lastError.slice(0, 300)}` },
         { status: 500 }
       );
     }
 
-    const data = await res.json();
-    const imagePart = data?.candidates?.[0]?.content?.parts?.find(
-      (p: { inlineData?: { data?: string; mimeType?: string } }) => p.inlineData?.data
-    );
+    const data = svar.data;
+    const imagePart = data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
     if (!imagePart?.inlineData?.data) {
       return NextResponse.json(
         { error: "Nano Banana returnerade ingen bild — försök igen eller byt prompt" },

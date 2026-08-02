@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { loggaAnrop } from "@/lib/ai-usage";
 import { getSpecialist, buildUserPrompt, SPECIALIST_GUARDRAILS } from "@/lib/specialists";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
@@ -91,14 +92,21 @@ export async function POST(
       const anthropic = new Anthropic({ apiKey });
       // Streama (finalMessage) — håller anslutningen vid liv vid lång generering så
       // Vercel inte timear och returnerar icke-JSON. Samma beprövade recept som djupgranskningen.
-      const msg = await anthropic.messages.stream({
-        model: MODEL,
-        max_tokens: 4096,
-        // Samma prompt-core-bygge som iterate-vägen — även direktkörda specialister
-        // får brand-profil + röst + anatomi. Guardrails läggs sist (Anthropic-specifika).
-        system: bygg.system + SPECIALIST_GUARDRAILS,
-        messages: [{ role: "user", content: bygg.user }],
-      }).finalMessage();
+      // KOSTNAD-1: SDK-anrop loggas via loggaAnrop (samma logg och budgetgrind som fetch-vägen).
+      const msg = await loggaAnrop(
+        { provider: "anthropic", model: MODEL, flow: "specialist" },
+        async () => {
+          const m = await anthropic.messages.stream({
+            model: MODEL,
+            max_tokens: 4096,
+            // Samma prompt-core-bygge som iterate-vägen — även direktkörda specialister
+            // får brand-profil + röst + anatomi. Guardrails läggs sist (Anthropic-specifika).
+            system: bygg.system + SPECIALIST_GUARDRAILS,
+            messages: [{ role: "user", content: bygg.user }],
+          }).finalMessage();
+          return { resultat: m, tokensIn: m.usage?.input_tokens ?? 0, tokensUt: m.usage?.output_tokens ?? 0 };
+        },
+      );
       text = msg.content
         .map((c) => (c.type === "text" ? c.text : ""))
         .join("")

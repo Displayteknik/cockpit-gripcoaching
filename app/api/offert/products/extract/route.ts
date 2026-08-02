@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { anropaProvider } from "@/lib/ai-usage";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -66,10 +67,16 @@ export async function POST(req: Request) {
         contents: [{ role: "user", parts: [{ inlineData: { mimeType: "application/pdf", data: buf.toString("base64") } }, { text: PROMPT }] }],
         generationConfig: { temperature: 0.1, maxOutputTokens: 8192, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
       };
-      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!r.ok) return NextResponse.json({ error: `Gemini PDF ${r.status}` }, { status: 500 });
-      const d = await r.json();
-      const txt = d?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      // KOSTNAD-1: går genom lib/ai-usage (mätning, felklassning, budgetgrind).
+      const r = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+        provider: "gemini",
+        model: "gemini-2.5-flash",
+        flow: "offert-prislista",
+        url,
+        init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      });
+      if (!r.ok) return NextResponse.json({ error: r.fel || `Gemini PDF ${r.status}` }, { status: 500 });
+      const txt = r.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
       ex = JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1)) || {};
     } else {
       const { value } = await mammoth.extractRawText({ buffer: buf });

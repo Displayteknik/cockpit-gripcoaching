@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { anropaProvider } from "@/lib/ai-usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -56,10 +57,17 @@ export async function POST(req: NextRequest) {
     generationConfig: { temperature: 0.2, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } },
   };
 
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) return NextResponse.json({ error: `Bildanalys misslyckades: ${res.status}` }, { status: 500 });
-  const j = await res.json();
-  const text = (j?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+  // KOSTNAD-1: all providertrafik går genom lib/ai-usage (mätning, felklassning, budget).
+  const svar = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+    flow: "bildlasning",
+    url,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+  });
+  if (svar.budgetstopp) return NextResponse.json({ error: svar.fel }, { status: 429 });
+  if (!svar.ok) return NextResponse.json({ error: svar.fel || `Bildanalys misslyckades: ${svar.status}` }, { status: 500 });
+  const text = (svar.data?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
   if (!text) return NextResponse.json({ error: "Tomt svar från Gemini" }, { status: 500 });
   return NextResponse.json({ text });
 }

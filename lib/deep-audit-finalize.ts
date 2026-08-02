@@ -1,4 +1,7 @@
 import { supabaseService } from "@/lib/supabase-admin";
+import { loggaHandelse } from "@/lib/ai-usage";
+
+const MODEL = "claude-sonnet-4-5";
 
 // Finaliserar pågående djupgransknings-batchar: kollar Anthropic-batchens status och
 // sparar den färdiga rapporten (status active) eller markerar failed. Delas av:
@@ -41,9 +44,24 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
       let failed = !firstLine;
       if (firstLine) {
         const parsed = JSON.parse(firstLine) as {
-          result: { type: string; message?: { content: Array<{ type: string; text?: string }> } };
+          result: {
+            type: string;
+            message?: { content: Array<{ type: string; text?: string }>; usage?: { input_tokens?: number; output_tokens?: number } };
+          };
         };
         if (parsed.result.type === "succeeded" && parsed.result.message) {
+          // KOSTNAD-1: HÄR bokförs kostnaden för djupgranskningen. Batch-API:t tar betalt
+          // för det som faktiskt genererades, och token-siffrorna finns först i resultatet.
+          await loggaHandelse({
+            provider: "anthropic",
+            model: MODEL,
+            flow: "djupgranskning",
+            tenantId: clientId ?? null,
+            tokensIn: parsed.result.message.usage?.input_tokens ?? 0,
+            tokensUt: parsed.result.message.usage?.output_tokens ?? 0,
+            status: "ok",
+            latencyMs: 0,
+          });
           text = parsed.result.message.content
             .map((b) => (b.type === "text" ? b.text ?? "" : ""))
             .join("")

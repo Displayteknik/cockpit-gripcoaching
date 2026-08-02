@@ -107,7 +107,7 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 | ~~BESLUT: grindens pris vs BILD-7a~~ | 2/8 | **LEVERERAD** `c7e4209` | Håkans svar: sista utvägen ber om ett TEXTLÖST MOTIV (ingen textbärande yta i bild), aldrig en tom skylt. Samma commit bär B3-rekommendationen i UI och bakgrundsfiltret. Beslut: `docs/studio/DECISIONS.md` D-010 |
 | ~~BILD-8b når inte reels~~ | 2/8 | **LEVERERAD** `e18362c` | `PERSON_ATTENTION_EN` vävs in i reels-vägens båda bildprompter, död `stavningsgrind`-import borta |
 | ~~Säsongsmarkör på bakgrundsskyltar~~ | 2/8 | **LEVERERAD** `81cc8a0` | `KRÄFTSKIVA 8 AUGUSTI` på griffeltavlan i bakgrunden. Negativ instruktion i `DEPICTED_MESSAGE_EN/SV`: skyltning som inte är inläggets ämne får inte annonsera högtid eller datum |
-| **STEG 2 · KOSTNAD-1 (K1–K5)** | 2/8 | **Ej startad — SPEC MOTTAGEN** | Specen kom med masterkön 2/8 (central anropslogg `lib/ai-usage.ts`, felklassning, `/dashboard/kostnader`, budgetgrindar, migrering av alla direktanrop). Nästa etapp i kön |
+| ~~**STEG 2 · KOSTNAD-1 (K1–K5)**~~ | 2/8 | **LEVERERAD** | Se avsnitt 6 nedan: `lib/ai-usage.ts` är enda vägen, migrations körda, `/dashboard/kostnader` byggd, budgetgrind på plats. DoD 12/12 gröna |
 | **STEG 3 · ETAPP K2 Cockpit Credits** | 2/8 | **Ej startad** | Bygger ovanpå KOSTNAD-1:s ledger. K2-1 … K2-4, hårt stopp efter varje |
 | **STEG 4 · HANDBOK-1 (H-0, H-1)** | 2/8 | **Ej startad** | H-0 = plan med hårt stopp innan bygge |
 | **STEG 5 · ICP-motorn (ICP-0..7)** | 2/8 | **Ej startad** | ICP-0 = spec + datamodell + säkerhetsgenomgång, godkännande före kod |
@@ -155,3 +155,66 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 | `docs/text1/fore/SAMMANFATTNING.md` | Mätmetod och baslinje |
 | `docs/studio/bild5-exempel/`, `bild7-exempel/` | Före/efter-bilder med README |
 | `lib/prompt-core.ts` | Kärnan — läs den först vid allt promptarbete |
+
+---
+
+## 6. KOSTNAD-1 — central AI-kostnadsmätning (STEG 2, levererad 2026-08-02)
+
+**Varför:** AI-anrop loggades inte centralt. Betalningsspärren på Google Cloud 1/8 syntes bara som en statuskod utan svarskropp och kostade en timmes felsökning på en påhittad bugg.
+
+### K1 · `lib/ai-usage.ts` är enda vägen
+
+Två ingångar, samma logg, samma felklassning, samma budgetgrind:
+
+- `anropaProvider()` — rå HTTP mot ett provider-API (Gemini, fal.ai, Pexels, Anthropics batch-API). Läser **alltid** svarskroppen, även vid fel.
+- `loggaAnrop()` — SDK-anrop där vi inte äger fetchen (Anthropic-SDK i `iterate`, specialister, setup-agenten).
+- `loggaHandelse()` — direktskrivning för kostnader som bokförs i efterhand (Anthropics batch-resultat).
+
+**Flöde och tenant fylls i automatiskt.** `flow` härleds ur `x-pathname` (som middleware redan sätter på varje request), `tenant_id` ur `getActiveClientId()` — samma källa som resten av appen. Ett bibliotek djupt ner i kedjan behöver alltså inte veta vilken knapp som tryckts, och ett nytt flöde kan aldrig glömmas bort och landa omätt. Anroparen kan alltid åsidosätta båda.
+
+### Tabeller (migration `migrations/ai_usage.sql`, körd via Management API)
+
+| Tabell | Roll |
+|---|---|
+| `ai_usage_events` | En rad per anrop: tenant, provider, modell, flöde, tokens in/ut, media, kostnad i kronor, status, felklass, http-status, **hela svarskroppen**, svarstid |
+| `ai_pricing` | Prislista per provider och modell (per 1M tokens eller per bild/sekund) med valuta och växelkurs. Ägarstyrd i DB, ingen deploy behövs |
+| `ai_tenant_budget` | Tak per tenant. Saknas raden gäller kodens 200 kr |
+| `ai_platform_budget` | Globalt månadstak plus varningsprocent (default 90) |
+| `ai_provider_health` (vy) | Senaste lyckade anrop, senaste fel, felklass och svarskropp per provider |
+
+### K2 · Felklassning
+
+`billing` · `quota` · `auth` · `model` · `other`. **Statuskoden ensam räcker inte:** 403 är både "fel nyckel" och "obetald faktura", och 400 är både "trasig prompt" och Anthropics tomma plånbok. Därför läses kroppen, och betalning prövas först. RÖD status ges bara vid `billing` och `auth`, och bara när felet är nyare än senaste lyckade anrop — kvot löser sig själv, ett gammalt betalningsfel som följts av lyckade anrop är åtgärdat.
+
+### K3 · `/dashboard/kostnader` (endast huvudadmin)
+
+Larmbanner i klarspråk med länk till providerns fakturasida · kort för idag, sju dagar, månad och prognos · plattformens tak med varningsfärg · tjänsternas läge · per klient mot taket (gul vid 75 procent, röd vid 100, taket ändras direkt i vyn) · per tjänst och per flöde som tabell med stapel · de 50 senaste felen med expanderbar svarskropp.
+
+### K4 · Budgetgrindar
+
+Kontrollen ligger i wrappern, alltså på den obligatoriska vägen. Vid 100 procent av tenantens tak görs **inget anrop alls** och användaren får ett vänligt svenskt besked. Budgetstopp loggas medvetet **inte** som providerfel: ingen provider kontaktades, och en spärrad tenant får inte färga hälsan röd för alla andra. Läget cachas 60 sekunder och töms när taket ändras i adminvyn.
+
+### K5 · Migrering — grep-bevis
+
+Alla filer som når en provider går genom wrappern:
+
+```
+app/api/ai/transcribe/route.ts      app/api/offert/blueprint/route.ts
+app/api/ai/vision/route.ts          app/api/offert/products/extract/route.ts
+app/api/assets/transcribe/route.ts  app/api/posts/[id]/nano-banana/route.ts
+app/api/dm/extract-lead/route.ts    app/api/review/post/route.ts
+app/api/intake/upload/route.ts      app/api/setup/chat/route.ts
+app/api/lobby/extract/route.ts      app/api/specialist/[id]/run/route.ts
+lib/gemini.ts   lib/images.ts   lib/bildtext.ts   lib/iterate.ts
+lib/deep-audit-generate.ts   lib/deep-audit-finalize.ts
+```
+
+Kontroll: `grep -rn "generativelanguage\|api.anthropic.com\|fal.run\|api.pexels.com" app/ lib/` ger bara URL-strängar som skickas **in i** wrappern.
+
+**Två medvetna undantag, båda dokumenterade i koden:** Gemini Files API (ren filöverföring vid stora intake-uppladdningar) och Anthropics statuspoll för batchar. Ingen av dem är ett betalt generativt anrop, och statuspollen körs av cron var femte minut — den hade fyllt ledgern med brus utan att mäta en krona.
+
+### DoD — kört skarpt (`scripts/kostnad1-dod.mts`), 12 av 12 gröna
+
+Del 1 mot en lokal server som svarar 402 med betalningskropp (inget riktigt konto spärras): felklass `billing`, klartext till anroparen, raden i ledgern, **hela svarskroppen sparad** (133 tecken, ordagrant), http-status 402, provider-hälsan visar felet som senaste med rätt felklass, larmet på plats efter 1,1 sekunder. Del 2 med ett riktigt Gemini-anrop: 12 tokens in, 3 ut, 0,00011655 kr, svarstid mätt. Båda DoD-raderna raderades efteråt.
+
+**Ärlig kvarleva:** prislistan är riktvärden från augusti 2026, inte fakturerade priser. Siffran i vyn är en *uppskattning* tills priserna stäms av mot en verklig faktura. Det är precis vad `ai_pricing` finns för — raderna ändras i databasen utan deploy.

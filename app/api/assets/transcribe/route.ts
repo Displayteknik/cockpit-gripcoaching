@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
+import { anropaProvider } from "@/lib/ai-usage";
 import { rensaTranskription } from "@/lib/ai/transkription";
 
 const VOICE_SAMPLE_PROMPT =
@@ -78,21 +79,23 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+    // KOSTNAD-1: går genom lib/ai-usage — svarskroppen loggas alltid vid fel.
+    const svar = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+      provider: "gemini",
+      model: "gemini-2.5-flash",
+      flow: "rostexempel",
+      url,
+      init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
     });
-    if (!res.ok) {
-      const text = await res.text();
-      await sb.from("client_assets").update({ status: "failed", notes: text.slice(0, 500) }).eq("id", id);
-      return NextResponse.json({ error: `Transkribering misslyckades: ${res.status}` }, { status: 500 });
+    if (svar.budgetstopp) return NextResponse.json({ error: svar.fel }, { status: 429 });
+    if (!svar.ok) {
+      await sb.from("client_assets").update({ status: "failed", notes: svar.raw.slice(0, 500) }).eq("id", id);
+      return NextResponse.json({ error: svar.fel || `Transkribering misslyckades: ${svar.status}` }, { status: 500 });
     }
-    const data = await res.json();
     // Skyddsnät: modellen ekar ibland tillbaka instruktionen i stället för att transkribera.
     // Ett eko får aldrig sparas som voice-sample — då skulle prompten bli klientens "röst".
     const transcript = rensaTranskription(
-      data?.candidates?.[0]?.content?.parts?.[0]?.text,
+      svar.data?.candidates?.[0]?.content?.parts?.[0]?.text,
       VOICE_SAMPLE_PROMPT,
     );
     if (!transcript) {

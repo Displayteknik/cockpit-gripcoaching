@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { loggaAnrop } from "@/lib/ai-usage";
 import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
@@ -112,12 +113,19 @@ ${input.funnel ? `FUNNEL: ${input.funnel}` : ""}
 Returnera enbart JSON.`;
 
     const anthropic = new Anthropic({ apiKey });
-    const msg = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 3000,
-      system,
-      messages: [{ role: "user", content: userPrompt }],
-    });
+    // KOSTNAD-1: SDK-anrop loggas via loggaAnrop (samma logg och budgetgrind som fetch-vägen).
+    const msg = await loggaAnrop(
+      { provider: "anthropic", model: "claude-sonnet-4-5", flow: "granska-inlagg" },
+      async () => {
+        const m = await anthropic.messages.create({
+          model: "claude-sonnet-4-5",
+          max_tokens: 3000,
+          system,
+          messages: [{ role: "user", content: userPrompt }],
+        });
+        return { resultat: m, tokensIn: m.usage?.input_tokens ?? 0, tokensUt: m.usage?.output_tokens ?? 0 };
+      },
+    );
 
     const text = msg.content
       .map((c) => (c.type === "text" ? c.text : ""))

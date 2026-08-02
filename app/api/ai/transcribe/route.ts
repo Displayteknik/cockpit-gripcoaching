@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { anropaProvider } from "@/lib/ai-usage";
 import {
   TRANSKRIBERINGS_PROMPT,
   ROST_FELMEDDELANDE,
@@ -49,25 +50,30 @@ export async function POST(req: NextRequest) {
     generationConfig: { temperature: 0.1, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 } },
   };
 
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) {
-    // Logga HELA svarskroppen, inte bara statuskoden. 2026-08-01 var projektet
-    // betalningsspärrat (403 "Lightning dunning decision is deny") och användaren fick
-    // "Kunde inte uppfatta rösten" — felet såg ut som en trasig röstfunktion i stället
-    // för ett spärrat konto. Utan kroppen i loggen går orsaken inte att se.
-    const kropp = await res.text().catch(() => "");
-    console.error(`[transcribe] Gemini ${res.status}: ${kropp.slice(0, 500)}`);
-    // 4xx från API:t (spärr, kvot, ogiltig nyckel) är inget användaren kan tala sig ur.
-    const tjanstefel = res.status === 401 || res.status === 403 || res.status === 429;
+  // KOSTNAD-1: går genom lib/ai-usage. Wrappern läser HELA svarskroppen och skriver den
+  // till ai_usage_events — regeln från betalningsspärren 2026-08-01, då 403 "Lightning
+  // dunning decision is deny" visades för användaren som "Kunde inte uppfatta rösten".
+  const svar = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+    flow: "prata-in",
+    url,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+  });
+  if (svar.budgetstopp) return NextResponse.json({ error: svar.fel }, { status: 429 });
+  if (!svar.ok) {
+    console.error(`[transcribe] Gemini ${svar.status}: ${svar.raw.slice(0, 500)}`);
+    // Betalning, nyckel och kvot är inget användaren kan tala sig ur.
+    const tjanstefel = svar.felklass === "billing" || svar.felklass === "auth" || svar.felklass === "quota";
     return NextResponse.json(
       { error: tjanstefel ? ROST_TJANSTEFEL : ROST_FELMEDDELANDE },
       { status: 502 },
     );
   }
-  const data = await res.json();
+  const data = svar.data;
   // Alla parts sammanfogade — texten ligger inte alltid i den första.
   const raa = (data?.candidates?.[0]?.content?.parts ?? [])
-    .map((p: { text?: string }) => p?.text ?? "")
+    .map((p) => p?.text ?? "")
     .join("");
   // Skyddsnät: modellen ekar ibland tillbaka instruktionen när ljudet saknar tal.
   // Bara ett godkänt transkript får lämna routen — aldrig systeminstruktionen.

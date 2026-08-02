@@ -8,6 +8,7 @@ import { getVoiceFingerprint, type VoiceFingerprint } from "./voice-fingerprint"
 import { supabaseService } from "./supabase-admin";
 import { SPECIALIST_GUARDRAILS } from "./specialists";
 import { WRITING_RULES_BLOCK } from "./content/writing-rules";
+import { loggaAnrop } from "./ai-usage";
 
 export interface IterateOptions {
   // Gamla vägen (utan prebuilt): flödets egen systemprompt — iterate väver då själv in
@@ -34,6 +35,8 @@ export interface IterateOptions {
   // Per-variant-tillagg till userPrompt (index i = variant i). Tvingar spridning mellan
   // varianterna, t.ex. en hook-typ per forsok, istallet for att alla valjer samma vinkel.
   variantSuffixes?: string[];
+  /** KOSTNAD-1: flodesnamn i kostnadsloggen. Utelamnad harleds den ur requestens sokvag. */
+  flow?: string;
   // Om inget clientId: kor utan voice-score, returnera forsta varianten
 }
 
@@ -95,16 +98,25 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
   if (!opts.prebuilt && !fullSystem.includes("GLOBALA SKRIVREGLER")) fullSystem += "\n\n" + WRITING_RULES_BLOCK;
   fullSystem += SPECIALIST_GUARDRAILS;
 
-  // Generera N varianter parallellt
+  // Generera N varianter parallellt.
+  // KOSTNAD-1: varje variant ar ETT betalt anrop och loggas som en egen rad genom
+  // lib/ai-usage. SDK:n gor fetchen, darfor gar den via loggaAnrop och inte
+  // anropaProvider — samma logg, samma felklassning, samma budgetgrind.
   const calls = Array.from({ length: variants }, (_, i) => {
     const suffix = opts.variantSuffixes?.[i % (opts.variantSuffixes.length || 1)];
-    return anthropic.messages.create({
-      model,
-      max_tokens: maxTokens,
-      temperature: temp,
-      system: fullSystem,
-      messages: [{ role: "user", content: suffix ? `${opts.userPrompt}\n\n${suffix}` : opts.userPrompt }],
-    });
+    return loggaAnrop(
+      { provider: "anthropic", model, flow: opts.flow, tenantId: opts.clientId ?? undefined },
+      async () => {
+        const msg = await anthropic.messages.create({
+          model,
+          max_tokens: maxTokens,
+          temperature: temp,
+          system: fullSystem,
+          messages: [{ role: "user", content: suffix ? `${opts.userPrompt}\n\n${suffix}` : opts.userPrompt }],
+        });
+        return { resultat: msg, tokensIn: msg.usage?.input_tokens ?? 0, tokensUt: msg.usage?.output_tokens ?? 0 };
+      },
+    );
   });
 
   const results = await Promise.allSettled(calls);

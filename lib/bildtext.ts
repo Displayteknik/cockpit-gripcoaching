@@ -85,17 +85,23 @@ async function visionFraga(
   const key = geminiNyckel();
   if (!key) return "";
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ inlineData: inline }, { text: fraga }] }],
-        generationConfig: { temperature: 0, maxOutputTokens, thinkingConfig: { thinkingBudget: 0 } },
-      }),
+    // KOSTNAD-1: går genom lib/ai-usage som alla andra providertrafik.
+    const { anropaProvider } = await import("./ai-usage");
+    const svar = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+      provider: "gemini",
+      model: "gemini-2.5-flash",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
+      init: {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ inlineData: inline }, { text: fraga }] }],
+          generationConfig: { temperature: 0, maxOutputTokens, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      },
     });
-    if (!r.ok) return "";
-    const data = await r.json();
-    return (data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "").trim();
+    if (!svar.ok) return "";
+    return (svar.data?.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text || "").trim();
   } catch {
     return "";
   }
@@ -480,22 +486,27 @@ export async function bedomOkandaOrd(ord: string[]): Promise<string[] | null> {
   if (!ord.length) return [];
   if (!key) return null;
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text:
-          "Nedan är ord som lästs av från en skylt i en bild. Avgör för varje ord om det är KORREKT STAVAD SVENSKA. " +
-          "Sammansatta ord, böjningar, egennamn, varumärken och förkortningar räknas som korrekta. " +
-          "Ord med omkastade, dubblerade eller saknade bokstäver, eller med å/ä/ö på fel plats, räknas som FELSTAVADE.\n" +
-          `Ord: ${ord.join(", ")}\n` +
-          'Svara ENDAST med strikt JSON: {"felstavade":["..."]}' }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: "application/json" },
-      }),
+    const { anropaProvider } = await import("./ai-usage");
+    const svar = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+      provider: "gemini",
+      model: "gemini-2.5-flash",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
+      init: {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text:
+            "Nedan är ord som lästs av från en skylt i en bild. Avgör för varje ord om det är KORREKT STAVAD SVENSKA. " +
+            "Sammansatta ord, böjningar, egennamn, varumärken och förkortningar räknas som korrekta. " +
+            "Ord med omkastade, dubblerade eller saknade bokstäver, eller med å/ä/ö på fel plats, räknas som FELSTAVADE.\n" +
+            `Ord: ${ord.join(", ")}\n` +
+            'Svara ENDAST med strikt JSON: {"felstavade":["..."]}' }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: "application/json" },
+        }),
+      },
     });
-    if (!r.ok) return null;
-    const data = await r.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "";
+    if (!svar.ok) return null;
+    const raw = svar.data?.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text || "";
     const lista = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}").felstavade;
     if (!Array.isArray(lista)) return null;
     const tillatna = new Set(ord.map((o) => rensaOrd(o)));

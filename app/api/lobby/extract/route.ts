@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { anropaProvider } from "@/lib/ai-usage";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
@@ -72,9 +73,17 @@ Regler:
     generationConfig: { temperature: 0.1, maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } },
   };
 
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) return NextResponse.json({ error: `Bildanalys misslyckades: ${res.status}` }, { status: 500 });
-  const j = await res.json();
+  // KOSTNAD-1: går genom lib/ai-usage (mätning, felklassning, budgetgrind).
+  const svar = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+    flow: "lobby-bildlasning",
+    url,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+  });
+  if (svar.budgetstopp) return NextResponse.json({ error: svar.fel }, { status: 429 });
+  if (!svar.ok) return NextResponse.json({ error: svar.fel || `Bildanalys misslyckades: ${svar.status}` }, { status: 500 });
+  const j = svar.data;
   let raw = (j?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
   raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   const match = raw.match(/\{[\s\S]*\}/);

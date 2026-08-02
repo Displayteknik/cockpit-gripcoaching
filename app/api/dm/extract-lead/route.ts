@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { anropaProvider } from "@/lib/ai-usage";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { skarmdumpPrompt, tolka, type RaExtraktion } from "@/lib/dm/skarmdump";
 
@@ -42,16 +43,18 @@ export async function POST(req: NextRequest) {
     generationConfig: { temperature: 0.1, maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } },
   };
 
-  let res: Response;
-  try {
-    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  } catch {
-    return NextResponse.json({ error: "Kunde inte nå bildläsningen" }, { status: 502 });
-  }
-  if (!res.ok) return NextResponse.json({ error: `Bildläsningen misslyckades: ${res.status}` }, { status: 502 });
+  // KOSTNAD-1: går genom lib/ai-usage (mätning, felklassning, budgetgrind).
+  const svar = await anropaProvider<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>({
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+    flow: "dm-bildlasning",
+    url,
+    init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+  });
+  if (svar.budgetstopp) return NextResponse.json({ error: svar.fel }, { status: 429 });
+  if (!svar.ok) return NextResponse.json({ error: svar.fel || "Kunde inte nå bildläsningen" }, { status: 502 });
 
-  const j = await res.json();
-  let raw = (j?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+  let raw = (svar.data?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
   raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   const jsonBit = raw.match(/\{[\s\S]*\}/);
   if (!jsonBit) return NextResponse.json({ error: "Kunde inte läsa av bilden" }, { status: 502 });
