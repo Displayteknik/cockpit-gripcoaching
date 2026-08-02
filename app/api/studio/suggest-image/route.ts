@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { searchStockPhotos, generateImagen, visualScene, motivPassar, NO_DASH_IN_IMAGE_EN, DEPICTED_CONTENT_EN, DEPICTED_RELEVANCE_EN, PERSON_ATTENTION_EN } from "@/lib/images";
 import { genereraMedExaktText, type TextAspekt } from "@/lib/studio/text-in-image";
-import { stavningsgrind } from "@/lib/bildtext";
+import { stavningsgrind, kontrolleraAvbildadText, type StavUtfall } from "@/lib/bildtext";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { seasonPromptLineEn } from "@/lib/content/sasong";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -125,14 +125,27 @@ export async function POST(req: NextRequest) {
       // BILD-8a: modellen ritar skyltar även utan att bli ombedd — och stavar fel när den
       // gör det (skarpt fel: "VÅRA NYHIETES"). Grinden läser av teckenvis, begär omtag med
       // skärpt stavningsinstruktion, och ber till sist om TOM skylt. Fail-open i alla led.
+      let stavning: Record<string, unknown> | undefined;
       if (gen.image) {
+        // Ren observabilitet (BILD-8 DoD): varje avläsning sparas via den seam som redan
+        // finns för test (`kontrollera`). Grindens beteende är identiskt — wrappern
+        // returnerar exakt vad kontrolleraAvbildadText returnerar.
+        const avlasningar: StavUtfall[] = [];
+        const diagnostik = body.diagnostik === true;
         const grind = await stavningsgrind({
           bild: gen.image,
           maxOmtag: 2,
           tidsbudgetMs: MAX_MS - (Date.now() - t0),
           generera: ({ skarpning }) => generateImagen(`${promptIBruk}${skarpning}`, ar),
+          kontrollera: diagnostik
+            ? async (b, o) => { const u = await kontrolleraAvbildadText(b, o); avlasningar.push(u); return u; }
+            : undefined,
         });
         gen = { ...gen, image: grind.image };
+        // Fältet följer bara med när anroparen ber om det — vanliga svar till Studio är oförändrade.
+        if (diagnostik) {
+          stavning = { orsak: grind.utfall.orsak, text: grind.utfall.text, ord: grind.utfall.ord, ordBak: grind.utfall.ordBak, fel: grind.utfall.fel, omtag: grind.omtag, blank: grind.blank, avlasningar };
+        }
       }
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
       if (gen.error || !m) {
@@ -151,7 +164,7 @@ export async function POST(req: NextRequest) {
       const pub = sb.storage.from(BUCKET).getPublicUrl(path);
       // Returnera scenbeskrivningen: textförslagen grundas i vad bilden faktiskt föreställer
       // (så en säljande rubrik inte hamnar ovanpå en problembild).
-      return NextResponse.json({ photos: [{ url: pub.data.publicUrl, thumb: pub.data.publicUrl, credit: "AI (Imagen 4.0)" }], description: scene });
+      return NextResponse.json({ photos: [{ url: pub.data.publicUrl, thumb: pub.data.publicUrl, credit: "AI (Imagen 4.0)" }], description: scene, ...(stavning ? { stavning } : {}) });
     }
 
     // stock (Pexels) — riktiga foton, brand-medveten sökfråga

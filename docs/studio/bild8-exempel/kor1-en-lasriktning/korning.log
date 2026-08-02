@@ -1,0 +1,187 @@
+BILD-8-bevis, fall: a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10
+  a1 (displayteknik): OK → a1-displayteknik.png  [41 s]
+    scen: En kvinna i medelåldern tittar uppmärksamt på en stor, ljusstark digital skärm i ett skyltfönster som visar "VECKANS ERBJUDANDE: KÖP 2 FÅ 1" med neutralt dagsljus som reflekteras l
+    grind: orsak=felstavning omtag=2 blank=true
+    avläst: ["SUMMER","SALE","KI","RESSORA","GRUPP"]
+    fel:    ["SUMMER","KI","SALE","RESSORA"]
+      avläsning 1: felstavning · ord=["VECKANS","ERBJUUNDE:","KÖP2FÅ1"] · fel=["ERBJUUNDE:","KÖP2FÅ1"]
+         raw: "V | E | C | K | A | N | S / E | R | B | J | U | U | N | D | E | : / K | Ö | P | 2 | F | Å | 1"
+      avläsning 2: felstavning · ord=["VECKANS","ERBJEUNDE:","KÖP","2","FÅ","1"] · fel=["ERBJEUNDE:"]
+         raw: "V | E | C | K | A | N | S / E | R | B | J | E | U | N | D | E | : / K | Ö | P | | 2 | | F | Å | | 1"
+      avläsning 3: felstavning · ord=["VECKANS","ERBJEUNDE:","KÖP","2","FÅ","1"] · fel=["ERBJEUNDE:"]
+         raw: "V | E | C | K | A | N | S / E | R | B | J | E | U | N | D | E | : / K | Ö | P | | 2 | | F | Å | | 1"
+      avläsning 4: felstavning · ord=["SUMMER","SALE","KI","RESSORA","GRUPP"] · fel=["SUMMER","KI","SALE","RESSORA"]
+         raw: "S U M M E R | S A L E / K I / R E S S O R A | G R U P P"
+  a2 (displayteknik): OK → a2-displayteknik.png  [12 s]
+    scen: En kvinna i 30-årsåldern, klädd i kockrock, ler och pekar mot en stor digital menyskärm ovanför en disk i en ljus lunchrestaurang, där skärmen visar "DAGENS LUNCH 129 KR" med en ap
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["DAGENS","LUNCH","129","KR"]
+    fel:    []
+      avläsning 1: godkand · ord=["DAGENS","LUNCH","129","KR"] · fel=[]
+         raw: "D A G E N S | L U N C H / 1 2 9 | K R"
+  a3 (displayteknik): OK → a3-displayteknik.png  [14 s]
+    scen: En kvinna i butikspersonalens kläder ler och pekar mot en stor digital affischtavla som visar "NYHETER VARJE VECKA", i ett ljust butikslandskap.
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["NYHETER","VARJE","VECKA"]
+    fel:    []
+      avläsning 1: godkand · ord=["NYHETER","VARJE","VECKA"] · fel=[]
+         raw: "N | Y | H | E | T | E | R / V | A | R | J | E | | V | E | C | K | A"
+  a4 (displayteknik): OK → a4-displayteknik.png  [13 s]
+    scen: En kvinna i medelåldern, klädd i en neutral jacka, tittar uppmärksamt på en digital skylt monterad vid en modern entré; skylten visar tydligt "ÖPPET IDAG 9-18" med neutral, ljus ty
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["ÖPPET","IDAG","9-18"]
+    fel:    []
+      avläsning 1: godkand · ord=["ÖPPET","IDAG","9-18"] · fel=[]
+         raw: "Ö | P | P | E | T / I | D | A | G / 9 | - | 1 | 8"
+  a5 (displayteknik): OK → a5-displayteknik.png  [24 s]
+    scen: En kund står i en välsorterad matbutik och tittar uppmärksamt på en digital prislapp på en hylla som visar "EKOLOGISK MJÖLK 24 KR", med mjukt butiksljus.
+    grind: orsak=godkand omtag=1 blank=false
+    avläst: ["EKOLOGISK","MJÖLK","24","KR"]
+    fel:    []
+      avläsning 1: felstavning · ord=["SVALKA","DIG","MED","GLASS","EKOLOGISK","MJÖLK","24","KR","KO","KO","KO","KO","MELLANMJÖLK","MELLANMJÖLK","MELLANMJÖLK","MELLANMJÖLK","SÖTMARJAHAJA","MELLANMJÖLK"] · fel=["SÖTMARJAHAJA"]
+         raw: "S V A L K A | D I G | M E D | G L A S S / E K O L O G I S K | M J Ö L K / 2 4 | K R / K O | K O | K O | K O / M E L L A N M J Ö L K / M E L L A N M J Ö L K / M E L L A N M J Ö L K / M E L L A N M J Ö L K / S Ö T M A R J A H A J A / M E L L A N M J Ö L K"
+      avläsning 2: godkand · ord=["EKOLOGISK","MJÖLK","24","KR"] · fel=[]
+         raw: "E K O L O G I S K / M J Ö L K / 2 4 | K R"
+  a6 (annas-blommor): OK → a6-annas-blommor.png  [42 s]
+    scen: En floristskyltfönster fyllt med färgstarka, bundna buketter i olika storlekar, med en handskriven skylt som säger "HELGENS BUKETTERBJUDANDE" och en kvinna som tittar in i skyltfön
+    grind: orsak=ingen-text omtag=2 blank=true
+    avläst: []
+    fel:    []
+      avläsning 1: felstavning · ord=["HELGENS","BUKETTERBJUNADE","250","KR","399","399:-","399","399:-","399","399:-","399","399:-","250","KR","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","399:-","399","39"] · fel=["BUKETTERBJUNADE"]
+         raw: "H E L G E N S | B U K E T T E R B J U N A D E / 2 5 0 | K R / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 2 5 0 | K R / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 9 | 3 9 9 : - / 3 9 "
+      avläsning 2: felstavning · ord=["HELGENS","BUKETTERBRJUDANDE"] · fel=["BUKETTERBRJUDANDE"]
+         raw: "H E L G E N S / B U K E T T E R B R J U D A N D E"
+      avläsning 3: felstavning · ord=["HELGENS","BUKETTERBJUDNADE"] · fel=["BUKETTERBJUDNADE"]
+         raw: "H E L G E N S / B U K E T T E R B J U D N A D E"
+      avläsning 4: ingen-text · ord=[] · fel=[]
+         raw: "INGEN"
+  a7 (annas-blommor): OK → a7-annas-blommor.png  [14 s]
+    scen: En florist står leende bakom en disk och pekar mot en elegant tavla ovanför som visar "DAGENS SNITTBLOMMOR 149 KR" med en bild av färska rosor, i ett ljust och inbjudande butiksrum
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["DAGENS","SNITTBLOMMOR","149","KR"]
+    fel:    []
+      avläsning 1: godkand · ord=["DAGENS","SNITTBLOMMOR","149","KR"] · fel=[]
+         raw: "D A G E N S / S N I T T B L O M M O R / 1 4 9 | K R"
+  a8 (annas-blommor): OK → a8-annas-blommor.png  [33 s]
+    scen: En kvinna i medelåldern med förkläde hänger upp en affisch med texten "VÅRENS NYHETER" bredvid en vas med färska tulpaner i en blomsterbutik, med mjukt dagsljus som strömmar in frå
+    grind: orsak=godkand omtag=2 blank=false
+    avläst: ["HÖSTENS","NYHETER","SKÖRDEFEST","SNART"]
+    fel:    []
+      avläsning 1: felstavning · ord=["VÄRENS","NYHETER"] · fel=["VÄRENS"]
+         raw: "V Ä R E N S | N Y H E T E R"
+      avläsning 2: felstavning · ord=["ÖPPET","IDAG","TILL","19","HÖSTENS","NYHIETER"] · fel=["NYHIETER"]
+         raw: "Ö P P E T | I D A G / T I L L | 1 9 / H Ö S T E N S / N Y H I E T E R"
+      avläsning 3: godkand · ord=["HÖSTENS","NYHETER","SKÖRDEFEST","SNART"] · fel=[]
+         raw: "H Ö S T E N S | N Y H E T E R / S K Ö R D E F E S T | S N A R T"
+  a9 (annas-blommor): OK → a9-annas-blommor.png  [13 s]
+    scen: En kvinna i förkläde hänger upp en handskriven skylt med "ÖPPET IDAG 10-18" vid entrén till en blomsterbutik, med fräscha snittblommor i hinkar i bakgrunden; ljuset är mjukt och na
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["ÖPPET","IDAG","10-18"]
+    fel:    []
+      avläsning 1: godkand · ord=["ÖPPET","IDAG","10-18"] · fel=[]
+         raw: "Ö | P | P | E | T / I | D | A | G / 1 | 0 | - | 1 | 8"
+  a10 (annas-blommor): OK → a10-annas-blommor.png  [13 s]
+    scen: En kund, en kvinna i 30-årsåldern, tittar uppmärksamt på en prislapp fäst vid en stor, färgglad brudbukett i en blomsterbutik, med mjukt, naturligt ljus som faller in från ett skyl
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["ÖPPET","9-18","SKOLSTART","IDAG","BRUDBUKETT","1500","KR"]
+    fel:    []
+      avläsning 1: godkand · ord=["ÖPPET","9-18","SKOLSTART","IDAG","BRUDBUKETT","1500","KR"] · fel=[]
+         raw: "Ö P P E T / 9 - 1 8 / S K O L S T A R T / I D A G / B R U D B U K E T T / 1 5 0 0 | K R"
+  b1 (displayteknik): OK → b1-displayteknik.png  [13 s]
+    scen: En butiksanställd kvinna i färgglad tröja tittar leende mot en stor, tydlig digital skylt som visar "NYHETER VARJE DAG" med lugnt, jämnt ljus.
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["NYHETER","VARJE","DAG"]
+    fel:    []
+      avläsning 1: godkand · ord=["NYHETER","VARJE","DAG"] · fel=[]
+         raw: "N Y H E T E R / V A R J E | D A G"
+  b2 (displayteknik): OK → b2-displayteknik.png  [42 s]
+    scen: En kvinna i tjugoårsåldern står vänd mot en stor, tydlig menyskärm på en modern snabbmatsrestaurang, med ett ljust och inbjudande sken från skärmen som visar "DAGENS ERBJUDANDE 99 
+    grind: orsak=godkand omtag=2 blank=true
+    avläst: ["⮂⮋⮌⮍"]
+    fel:    []
+      avläsning 1: felstavning · ord=["DAGENS","ERBJUNNDE","99","KR","RONDORDES","VERB","ACERRAM","EXTRA","MEDY","VAL"] · fel=["ERBJUNNDE","MEDY","RONDORDES","ACERRAM"]
+         raw: "D A G E N S | E R B J U N N D E / 9 9 | K R / R O N D O R D E S / V E R B | A C E R R A M / E X T R A | M E D Y | V A L"
+      avläsning 2: felstavning · ord=["DAGENS","ERBJUNADE","99","KR"] · fel=["ERBJUNADE"]
+         raw: "D | A | G | E | N | S / E | R | B | J | U | N | A | D | E / 9 | 9 | | K | R"
+      avläsning 3: felstavning · ord=["FRI","WIFI","DAGENS","ERBJUUNADE","99","KR","ÖPPET","TILL","23:00"] · fel=["ERBJUUNADE"]
+         raw: "F R I | W I F I / D A G E N S | E R B J U U N A D E / 9 9 | K R / Ö P P E T | T I L L | 2 3 : 0 0"
+      avläsning 4: godkand · ord=["⮂⮋⮌⮍"] · fel=[]
+         raw: "⮂ | ⮋ | ⮌ | ⮍"
+  b3 (displayteknik): OK → b3-displayteknik.png  [14 s]
+    scen: En receptionist i en modern kontorsentré pekar mot en stor digital informationsskärm som visar "VÄLKOMMEN TILL OSS" med en ljus, inbjudande stämning.
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["VÄLKOMMEN","TILL","OSS","KRÄFTSKIVA","8","AUGUSTI"]
+    fel:    []
+      avläsning 1: godkand · ord=["VÄLKOMMEN","TILL","OSS","KRÄFTSKIVA","8","AUGUSTI"] · fel=[]
+         raw: "V Ä L K O M M E N / T I L L | O S S / K R Ä F T S K I V A | 8 | A U G U S T I"
+  b4 (displayteknik): OK → b4-displayteknik.png  [45 s]
+    scen: En butiksägare med ett leende, klädd i en ledig skjorta, står framför ett stort, ljust skyltfönster med en digital skärm som visar texten "NYA ERBJUDANDEN VARJE DAG", och hon hålle
+    grind: orsak=ingen-text omtag=2 blank=true
+    avläst: []
+    fel:    []
+      avläsning 1: felstavning · ord=["NYA","ERBJENDERS","VARJE","DAG","NYA","ERBJENDERS","VARJE","DAG"] · fel=["ERBJENDERS","ERBJENDERS"]
+         raw: "N Y A | E R B J E N D E R S | V A R J E | D A G / N Y A | E R B J E N D E R S | V A R J E | D A G"
+      avläsning 2: felstavning · ord=["NYA","ERBJUANDEN","VARJEDAG","ÖFFET1020","IDAG"] · fel=["ERBJUANDEN","VARJEDAG","ÖFFET1020"]
+         raw: "N | Y | A / E | R | B | J | U | A | N | D | E | N / V | A | R | J | E | D | A | G / Ö | F | F | E | T | 1 | 0 | 2 | 0 / I | D | A | G"
+      avläsning 3: felstavning · ord=["NYA","ERBJUDANDEN","VARJE","DAG","GRÄTTOR","FRÅN","MÄLAREN","389","KR","KG","DAGENS","SOPPA","SVENSKA","JORDGUBBAR","VÄLKOMNA","SVENSKA","JORDGUBBAR","KRÄFTOR","FRÅN","MÄLAREN","389","KR","KG","DAGENS","SOPPA","389","KR","KG"] · fel=["GRÄTTOR"]
+         raw: "N Y A / E R B J U D A N D E N / V A R J E | D A G / G R Ä T T O R / F R Å N | M Ä L A R E N / 3 8 9 | K R / K G / D A G E N S / S O P P A / S V E N S K A / J O R D G U B B A R / V Ä L K O M N A / S V E N S K A / J O R D G U B B A R / K R Ä F T O R / F R Å N / M Ä L A R E N / 3 8 9 | K R / K G / D A G E N S / S O P P A / 3 8 9 | K R / K G"
+      avläsning 4: ingen-text · ord=[] · fel=[]
+         raw: "INGEN"
+  b5 (displayteknik): OK → b5-displayteknik.png  [14 s]
+    scen: En kvinna i trettioårsåldern, klädd i vardagsplagg, står vänd mot en stor, vertikal digital skylt i ett ljust köpcentrum och tittar uppmärksamt på den; skärmen visar en aptitlig bi
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["NYHET!","99","KR"]
+    fel:    []
+      avläsning 1: godkand · ord=["NYHET!","99","KR"] · fel=[]
+         raw: "N Y H E T ! | 9 9 | K R"
+  b6 (annas-blommor): OK → b6-annas-blommor.png  [14 s]
+    scen: En florist binder en fyllig brudbukett med vita rosor och grönska vid en rustik trädisk, med mjukt, naturligt ljus som faller in från ett fönster.
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["SOMMARÖPPET","KL","10-18","KRÄFTSKIVA","8","AUGUST"]
+    fel:    []
+      avläsning 1: godkand · ord=["SOMMARÖPPET","KL","10-18","KRÄFTSKIVA","8","AUGUST"] · fel=[]
+         raw: "S O M M A R Ö P P E T / K L | 1 0 - 1 8 / K R Ä F T S K I V A / 8 | A U G U S T"
+  b7 (annas-blommor): OK → b7-annas-blommor.png  [33 s]
+    scen: En kvinna i medelåldern med ett leende på läpparna tittar och pekar på en bukett rosor i en stor, öppen blomkyl i en floristbutik. Ljuset är mjukt och naturligt, med fokus på blomm
+    grind: orsak=godkand omtag=2 blank=false
+    avläst: ["Välj","din","bukett"]
+    fel:    []
+      avläsning 1: felstavning · ord=["Väjj","din","bulcett"] · fel=["bulcett","Väjj"]
+         raw: "V ä j j | d i n | b u l c e t t"
+      avläsning 2: felstavning · ord=["VÄLJON","BUNGTT"] · fel=["BUNGTT","VÄLJON"]
+         raw: "V | Ä | L | J | O | N | / | B | U | N | G | T | T"
+      avläsning 3: godkand · ord=["Välj","din","bukett"] · fel=[]
+         raw: "V | ä | l | j | / | d | i | n | / | b | u | k | e | t | t"
+  b8 (annas-blommor): OK → b8-annas-blommor.png  [25 s]
+    scen: En florist ler varmt mot en kund över en disk fylld med färska snittblommor, båda tittar på en stor, färggrann bukett som floristen håller upp. Ljuset är mjukt och naturligt.
+    grind: orsak=godkand omtag=1 blank=false
+    avläst: ["NYSKÖRDADE","SOMMARBLOMMOR"]
+    fel:    []
+      avläsning 1: felstavning · ord=["SOMMARFAVORITER","KRÄFTS'IVA","8","AUGUSTI"] · fel=["KRÄFTS'IVA"]
+         raw: "S O M M A R F A V O R I T E R / K R Ä F T S ' I V A / 8 | A U G U S T I"
+      avläsning 2: godkand · ord=["NYSKÖRDADE","SOMMARBLOMMOR"] · fel=[]
+         raw: "N | Y | S | K | Ö | R | D | A | D | E / S | O | M | M | A | R | B | L | O | M | M | O | R"
+  b9 (annas-blommor): OK → b9-annas-blommor.png  [15 s]
+    scen: En kvinna i medelåldern tittar på en stilfull skylt utanför en blomsterbutik, med en stor, färgrik brudbukett av rosor och pioner avbildad, och texten "BRÖLLOPSEXPERT" i nedre kant
+    grind: orsak=godkand omtag=0 blank=false
+    avläst: ["BRÖLLOPEXPERT"]
+    fel:    []
+      avläsning 1: godkand · ord=["BRÖLLOPEXPERT"] · fel=[]
+         raw: "B R Ö L L O P E X P E R T"
+  b10 (annas-blommor): OK → b10-annas-blommor.png  [22 s]
+    scen: En medarbetare, vänd mot skyltfönstret, arrangerar en bukett med färgglada rosor och grönska, med skylten "BRÖLLOP OCH EVENT" synlig i bakgrunden. Ljuset är mjukt och naturligt.
+    grind: orsak=godkand omtag=1 blank=false
+    avläst: ["BRÖLLOP","OCH","EVENT","SOMMARBUKETTER","IDAG!"]
+    fel:    []
+      avläsning 1: felstavning · ord=["BRÖLLOP","OCH","EVENT","SOMMARFEST","ARRANGAMENG"] · fel=["ARRANGAMENG"]
+         raw: "B | R | Ö | L | L | O | P | | O | C | H | | E | V | E | N | T / S | O | M | M | A | R | F | E | S | T | | A | R | R | A | N | G | A | M | E | N | G"
+      avläsning 2: godkand · ord=["BRÖLLOP","OCH","EVENT","SOMMARBUKETTER","IDAG!"] · fel=[]
+         raw: "B | R | Ö | L | L | O | P / O | C | H / E | V | E | N | T / S | O | M | M | A | R | B | U | K | E | T | T | E | R | | I | D | A | G | !"
+
+→ C:\Users\hakan\OneDrive\Dokument\Antigravity\hmmotor-next\docs\studio\bild8-exempel\resultat.json
+Städat studio-images: 20/20 objekt raderade.
+KLART.
+s\studio\bild8-exempel\resultat.json
+Städat studio-images: 20/20 objekt raderade.
+KLART.
+EXIT=0

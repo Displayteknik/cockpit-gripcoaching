@@ -1,0 +1,1836 @@
+{
+  "kord": "2026-08-02T07:36:05.782Z",
+  "fall": [
+    {
+      "id": "a1",
+      "del": "a",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Skyltfönstret som visar veckans erbjudande på skärmen",
+      "fil": "a1-displayteknik.png",
+      "scen": "En man i kostym tittar uppmärksamt på en stor, ljusstark digital skyltfönsterskärm som visar \"VECKANS ERBJUDANDE\" i ett modernt butikslandskap, med ett mjukt kvällsljus som reflekteras i glaset.",
+      "stavning": {
+        "orsak": "felstavning",
+        "text": "SJÖSTADEN BRYGGARI",
+        "ord": [
+          "SJÖSTADEN",
+          "BRYGGARI"
+        ],
+        "ordBak": [
+          "PUR",
+          "VANUPER",
+          "DELBRAUCH",
+          "&",
+          "SLOGEUM"
+        ],
+        "fel": [
+          "BRYGGARI",
+          "VANUPER",
+          "DELBRAUCH",
+          "SLOGEUM"
+        ],
+        "omtag": 2,
+        "blank": true,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "VECKANS ERBJUDANDE 12 990 KR",
+            "ord": [
+              "VECKANS",
+              "ERBJUDANDE",
+              "12",
+              "990",
+              "KR"
+            ],
+            "ordBak": [
+              "VECKANS",
+              "ERJBUDANDE",
+              "KR",
+              "990",
+              "12"
+            ],
+            "raw": "fram: V E C K A N S / E R B J U D A N D E / 1 2 | 9 9 0 | K R || bak: S | N | A | K | C | E | V | / | E | D | N | A | D | U | B | J | R | E | / | R | K | | 0 | 9 | 9 | | 2 | 1",
+            "fel": [
+              "ERJBUDANDE"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "VECKANS ERBJUDENDE SOMMARKAMPANJÅ PÅ BADKLÄDER",
+            "ord": [
+              "VECKANS",
+              "ERBJUDENDE",
+              "SOMMARKAMPANJÅ",
+              "PÅ",
+              "BADKLÄDER"
+            ],
+            "ordBak": [
+              "ERBUENDE",
+              "VEKCANS",
+              "SOMMARKAMPANJÅ",
+              "BAKLADER",
+              "PÅ"
+            ],
+            "raw": "fram: V | E | C | K | A | N | S | | E | R | B | J | U | D | E | N | D | E / S | O | M | M | A | R | K | A | M | P | A | N | J | Å / P | Å | | B | A | D | K | L | Ä | D | E | R || bak: EDNEUBRE | SNACKEV / ÅJNAPMAKRAMMOS / REDALKAB | ÅP",
+            "fel": [
+              "VEKCANS",
+              "SOMMARKAMPANJÅ",
+              "ERBUENDE",
+              "BAKLADER"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "VECKANS ERBJEUNDE: SOMMARÄVENTYR REDO DAGAR FRI FRÅN JOBB VITRA VATTNET PECKA LERF",
+            "ord": [
+              "VECKANS",
+              "ERBJEUNDE:",
+              "SOMMARÄVENTYR",
+              "REDO",
+              "DAGAR",
+              "FRI",
+              "FRÅN",
+              "JOBB",
+              "VITRA",
+              "VATTNET",
+              "PECKA",
+              "LERF"
+            ],
+            "ordBak": [
+              "VEKCANS",
+              "ERBJEUNDE:",
+              "SOMMAR",
+              "REDO",
+              "SOMMARAVÄNTYR",
+              "JOSS",
+              "FRÅN",
+              "FRI",
+              "DAGAR",
+              "VATTINNET",
+              "MÖRA",
+              "LÄFT",
+              "PECCA"
+            ],
+            "raw": "fram: V | E | C | K | A | N | S | | E | R | B | J | E | U | N | D | E | : / S | O | M | M | A | R | Ä | V | E | N | T | Y | R | | R | E | D | O / / D | A | G | A | R | | F | R | I / F | R | Å | N | | J | O | B | B / V | I | T | R | A / V | A | T | T | N | E | T / P | E | C | K | A / L | E | R | F || bak: S N A C K E V | : E D N U E J B R E | R A M M O S / O D E R | R Y T N Ä V A R A M M O S / S S O J | N Å R F | I R F | R A G A D / T E N N I T T A V | A R Ö M / T F Ä L | A C C E P",
+            "fel": [
+              "ERBJEUNDE:",
+              "VITRA",
+              "PECKA",
+              "VEKCANS",
+              "JOSS",
+              "PECCA",
+              "LERF",
+              "SOMMARAVÄNTYR",
+              "VATTINNET",
+              "MÖRA",
+              "LÄFT"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "SJÖSTADEN BRYGGARI",
+            "ord": [
+              "SJÖSTADEN",
+              "BRYGGARI"
+            ],
+            "ordBak": [
+              "PUR",
+              "VANUPER",
+              "DELBRAUCH",
+              "&",
+              "SLOGEUM"
+            ],
+            "raw": "fram: S J Ö S T A D E N | B R Y G G A R I || bak: R U P | R E P U N A V | / | H C U A R B L E D | & | M U E G O L S",
+            "fel": [
+              "BRYGGARI",
+              "VANUPER",
+              "DELBRAUCH",
+              "SLOGEUM"
+            ],
+            "orsak": "felstavning"
+          }
+        ]
+      },
+      "sekunder": 47
+    },
+    {
+      "id": "a2",
+      "del": "a",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Den digitala menyskärmen ovanför disken i lunchrestaurangen",
+      "fil": "a2-displayteknik.png",
+      "scen": "En kvinna i medelåldern tittar på en stor digital menyskärm ovanför en disk i en ljus lunchrestaurang, skärmen visar \"DAGENS LUNCH 129 KR\" med en bild av en maträtt.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "DAGENS LUNCH 129 KR",
+        "ord": [
+          "DAGENS",
+          "LUNCH",
+          "129",
+          "KR"
+        ],
+        "ordBak": [
+          "DAGENS",
+          "LUNCH",
+          "DAGS",
+          "KR",
+          "129"
+        ],
+        "fel": [],
+        "omtag": 1,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "DAGENS LUNCH 129 KR Köttbulla med gräddsås och lingon",
+            "ord": [
+              "DAGENS",
+              "LUNCH",
+              "129",
+              "KR",
+              "Köttbulla",
+              "med",
+              "gräddsås",
+              "och",
+              "lingon"
+            ],
+            "ordBak": [
+              "DAGENS",
+              "LUNCH",
+              "KR",
+              "129",
+              "Kötthfulla",
+              "gräddlits",
+              "med",
+              "lingon",
+              "och"
+            ],
+            "raw": "fram: D A G E N S | L U N C H / 1 2 9 | K R / K ö t t b u l l a | m e d / g r ä d d s å s / o c h | l i n g o n || bak: S N E G A D | H C N U L / R K | 9 2 1 / a l l u f h t t ö K / s t i l d d ä r g | d e m / n o g n i l | h c o",
+            "fel": [
+              "Kötthfulla",
+              "gräddlits"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": true,
+            "text": "DAGENS LUNCH 129 KR",
+            "ord": [
+              "DAGENS",
+              "LUNCH",
+              "129",
+              "KR"
+            ],
+            "ordBak": [
+              "DAGENS",
+              "LUNCH",
+              "DAGS",
+              "KR",
+              "129"
+            ],
+            "raw": "fram: D A G E N S | L U N C H / 1 2 9 | K R || bak: S N E G A D | H C N U L | S G A D / R K | 9 2 1",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 23
+    },
+    {
+      "id": "a3",
+      "del": "a",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Affischen inne i butiken som byts på sekunder",
+      "fil": "a3-displayteknik.png",
+      "scen": "En butiksanställd kvinna ler och tittar på en digital affischskärm i en klädbutik som visar \"NYA ANKOMSTER\" i starkt butiksljus.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "NYA ANKOMSTER SOMMAR REA KLÄDER",
+        "ord": [
+          "NYA",
+          "ANKOMSTER",
+          "SOMMAR",
+          "REA",
+          "KLÄDER"
+        ],
+        "ordBak": [
+          "NYA",
+          "ANKOMSTER",
+          "SOMMAR",
+          "KLÄDER",
+          "REA"
+        ],
+        "fel": [],
+        "omtag": 1,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "NYA ANKOMSTERS",
+            "ord": [
+              "NYA",
+              "ANKOMSTERS"
+            ],
+            "ordBak": [
+              "NYA",
+              "TERS",
+              "ANKOMS",
+              "YA",
+              "N",
+              "TERS",
+              "ANKOMS",
+              "YA",
+              "N",
+              "TERS",
+              "ANKOMS",
+              "YA",
+              "N",
+              "TERS",
+              "ANKOMS"
+            ],
+            "raw": "fram: N | Y | A / A | N | K | O | M | S | T | E | R | S || bak: AYN | SRET SMOKNA | AY N | SRET SMOKNA | AY N | SRET SMOKNA | AY N | SRET SMOKNA",
+            "fel": [
+              "ANKOMS"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": true,
+            "text": "NYA ANKOMSTER SOMMAR REA KLÄDER",
+            "ord": [
+              "NYA",
+              "ANKOMSTER",
+              "SOMMAR",
+              "REA",
+              "KLÄDER"
+            ],
+            "ordBak": [
+              "NYA",
+              "ANKOMSTER",
+              "SOMMAR",
+              "KLÄDER",
+              "REA"
+            ],
+            "raw": "fram: N Y A | A N K O M S T E R / S O M M A R | R E A / K L Ä D E R || bak: AYN | RETSMOKNA | RAMMOS / REDÄLK | AER /",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 24
+    },
+    {
+      "id": "a4",
+      "del": "a",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Skylten vid entrén som visar öppettider",
+      "fil": "a4-displayteknik.png",
+      "scen": "En kvinna i medelåldern med en kaffekopp i handen tittar uppmärksamt på en digital entréskylt som visar \"ÖPPET IDAG 9-18\" i ljus, vardaglig belysning.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "ÖPPET IDAG 9-18",
+        "ord": [
+          "ÖPPET",
+          "IDAG",
+          "9-18"
+        ],
+        "ordBak": [
+          "ÖPPET",
+          "IDAG",
+          "9-18"
+        ],
+        "fel": [],
+        "omtag": 2,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "ÖPPET IDAG 9-18 VÄLKOMNA MED FLER",
+            "ord": [
+              "ÖPPET",
+              "IDAG",
+              "9-18",
+              "VÄLKOMNA",
+              "MED",
+              "FLER"
+            ],
+            "ordBak": [
+              "ÖPPET",
+              "IDAG",
+              "9-18",
+              "FEER",
+              "VÅGVÄLLINKER"
+            ],
+            "raw": "fram: Ö | P | P | E | T / I | D | A | G / 9 | - | 1 | 8 / V | Ä | L | K | O | M | N | A | | M | E | D | | F | L | E | R || bak: T E P P Ö | G A D I / 8 1 - 9 / R E E F | R E K N I L L Ä V G Å V",
+            "fel": [
+              "FEER",
+              "VÅGVÄLLINKER"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "ÖPPET IDAG 9-18",
+            "ord": [
+              "ÖPPET",
+              "IDAG",
+              "9-18"
+            ],
+            "ordBak": [
+              "ÖPPET",
+              "GADI",
+              "81-9",
+              "SOMMAREFIKA",
+              "9-18"
+            ],
+            "raw": "fram: Ö P P E T | I D A G / 9 - 1 8 || bak: T E P P Ö | / I D A G | / 9 - 1 8 | / A K I F E R A M M O S | / 8 1 - 9",
+            "fel": [
+              "GADI",
+              "SOMMAREFIKA"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": true,
+            "text": "ÖPPET IDAG 9-18",
+            "ord": [
+              "ÖPPET",
+              "IDAG",
+              "9-18"
+            ],
+            "ordBak": [
+              "ÖPPET",
+              "IDAG",
+              "9-18"
+            ],
+            "raw": "fram: Ö | P | P | E | T / I | D | A | G / 9 | - | 1 | 8 || bak: T E P P Ö | / | G A D I | / | 8 1 - 9",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 33
+    },
+    {
+      "id": "a5",
+      "del": "a",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Den digitala prislappen på butikshyllan",
+      "fil": "a5-displayteknik.png",
+      "scen": "En närbild på en kund som tittar uppmärksamt på en digital prislapp på en butikshylla, där priset \"REA 50%\" lyser tydligt i ett ljust och neutralt ljus.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "REA 50%",
+        "ord": [
+          "REA",
+          "50%"
+        ],
+        "ordBak": [
+          "REA",
+          "50%"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "REA 50%",
+            "ord": [
+              "REA",
+              "50%"
+            ],
+            "ordBak": [
+              "REA",
+              "50%"
+            ],
+            "raw": "fram: R E A / 5 0 % || bak: A E R | / % 0 5",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 13
+    },
+    {
+      "id": "a6",
+      "del": "a",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Skyltfönstret med helgens buketterbjudande",
+      "fil": "a6-annas-blommor.png",
+      "scen": "Ett skyltfönster med en kvinna som tittar på en vacker bukett med rosor och liljor, varmt ljus. På skyltfönstret står det \"HELGENS BUKETT 299 KR\".",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "HELGENS BUKETT 299 KR",
+        "ord": [
+          "HELGENS",
+          "BUKETT",
+          "299",
+          "KR"
+        ],
+        "ordBak": [
+          "HELGENS",
+          "BUKETT",
+          "KR",
+          "299"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "HELGENS BUKETT 299 KR",
+            "ord": [
+              "HELGENS",
+              "BUKETT",
+              "299",
+              "KR"
+            ],
+            "ordBak": [
+              "HELGENS",
+              "BUKETT",
+              "KR",
+              "299"
+            ],
+            "raw": "fram: H | E | L | G | E | N | S / B | U | K | E | T | T / 2 | 9 | 9 | | K | R || bak: S N E G L E H | / T T E K U B | / R K | 9 9 2",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 14
+    },
+    {
+      "id": "a7",
+      "del": "a",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Tavlan ovanför disken som visar dagens snittblommor och pris",
+      "fil": "a7-annas-blommor.png",
+      "scen": "En florist står leende bakom en disk och arrangerar en bukett, med blicken riktad mot en tydlig griffeltavla ovanför disken som visar \"DAGENS SNITTBLOMMOR 35 KR ST\". Ljuset är mjukt och naturligt, och skapar en välkomnande stämning.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "DAGENS SNITTBLOMMOR 35 KR. ST",
+        "ord": [
+          "DAGENS",
+          "SNITTBLOMMOR",
+          "35",
+          "KR.",
+          "ST"
+        ],
+        "ordBak": [
+          "DAGENS",
+          "SNITTBLOMMOR",
+          "ST",
+          "KR.",
+          "35"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "DAGENS SNITTBLOMMOR 35 KR. ST",
+            "ord": [
+              "DAGENS",
+              "SNITTBLOMMOR",
+              "35",
+              "KR.",
+              "ST"
+            ],
+            "ordBak": [
+              "DAGENS",
+              "SNITTBLOMMOR",
+              "ST",
+              "KR.",
+              "35"
+            ],
+            "raw": "fram: D A G E N S | S N I T T B L O M M O R / 3 5 | K R . | S T || bak: S N E G A D | /\nR O M M O L B T T I N S | /\nT S | . R K | 5 3 | /",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 14
+    },
+    {
+      "id": "a8",
+      "del": "a",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Affischen inne i butiken om vårens nyheter",
+      "fil": "a8-annas-blommor.png",
+      "scen": "En kund, en kvinna i 30-årsåldern, står vänd mot en affisch i en blomsterbutik, med en liten bukett i handen. Affischen visar en bild av färgglada blommor och texten \"Vårens Nyheter\". Ljust och inbjudande.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "INGEN",
+        "ord": [
+          "INGEN"
+        ],
+        "ordBak": [
+          "INGEN"
+        ],
+        "fel": [],
+        "omtag": 2,
+        "blank": true,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "VÅRENS NYHIETER NYSTART EFTER SEMESTERN",
+            "ord": [
+              "VÅRENS",
+              "NYHIETER",
+              "NYSTART",
+              "EFTER",
+              "SEMESTERN"
+            ],
+            "ordBak": [
+              "VÅRENS",
+              "NYHETER",
+              "SEMESTERN",
+              "EFTER",
+              "NYSTART"
+            ],
+            "raw": "fram: V Å R E N S | N Y H I E T E R / N Y S T A R T / E F T E R / S E M E S T E R N || bak: S N E R Å V | R E T E H Y N / N R E T S E M E S | R E T F E | T R A T S Y N",
+            "fel": [
+              "NYHIETER"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "VÅRENS NYHEITER",
+            "ord": [
+              "VÅRENS",
+              "NYHEITER"
+            ],
+            "ordBak": [
+              "VÅRENS",
+              "NYHEITER"
+            ],
+            "raw": "fram: V | Å | R | E | N | S | / | N | Y | H | E | I | T | E | R || bak: S N E R Å V | R E T I E H Y N",
+            "fel": [
+              "NYHEITER"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "VÄRENS NYHIETER ÖPPET IDAG TILL 20.00",
+            "ord": [
+              "VÄRENS",
+              "NYHIETER",
+              "ÖPPET",
+              "IDAG",
+              "TILL",
+              "20.00"
+            ],
+            "ordBak": [
+              "VÄRENS",
+              "NYHIETER",
+              "ÖPPET",
+              "IDAG",
+              "TILL",
+              "20.00"
+            ],
+            "raw": "fram: V | Ä | R | E | N | S | / | N | Y | H | I | E | T | E | R | / | Ö | P | P | E | T | | I | D | A | G | | T | I | L | L | | 2 | 0 | . | 0 | 0 || bak: S N E R Ä V | /\nR E T E I H Y N | /\nT E P P Ö | G A D I | L L I T | 0 0 . 0 2 | /",
+            "fel": [
+              "VÄRENS",
+              "NYHIETER"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": true,
+            "text": "INGEN",
+            "ord": [
+              "INGEN"
+            ],
+            "ordBak": [
+              "INGEN"
+            ],
+            "raw": "fram: I N G E N || bak: N E G N I",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 41
+    },
+    {
+      "id": "a9",
+      "del": "a",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Skylten vid entrén som visar öppettider",
+      "fil": "a9-annas-blommor.png",
+      "scen": "En kvinna i förkläde hänger upp en handskriven skylt med \"ÖPPET IDAG 10-18\" vid entrén till en blomsterbutik, med fräscha snittblommor i hinkar synliga i bakgrunden; ljus och inbjudande stämning.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "ÖPPET IDAG 10-18",
+        "ord": [
+          "ÖPPET",
+          "IDAG",
+          "10-18"
+        ],
+        "ordBak": [
+          "ÖPPET",
+          "IDAG",
+          "10-18"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "ÖPPET IDAG 10-18",
+            "ord": [
+              "ÖPPET",
+              "IDAG",
+              "10-18"
+            ],
+            "ordBak": [
+              "ÖPPET",
+              "IDAG",
+              "10-18"
+            ],
+            "raw": "fram: Ö | P | P | E | T / I | D | A | G / 1 | 0 | - | 1 | 8 || bak: T | E | P | P | Ö / G | A | D | I / 8 | 1 | - | 0 | 1",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 14
+    },
+    {
+      "id": "a10",
+      "del": "a",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Prislappen vid buketterna i butiken",
+      "fil": "a10-annas-blommor.png",
+      "scen": "En florist står vänd mot en grupp färgglada buketter i en butiksmiljö, håller en prislapp som visar \"BRÖLLOPSBUKETT 995 KR\", i ett ljust och inbjudande dagsljus.",
+      "stavning": {
+        "orsak": "felstavning",
+        "text": "Trevlig helg Trevlig helg",
+        "ord": [
+          "Trevlig",
+          "helg",
+          "Trevlig",
+          "helg"
+        ],
+        "ordBak": [
+          "Frosels",
+          "Gratenaten",
+          "Adio"
+        ],
+        "fel": [
+          "Frosels",
+          "Gratenaten",
+          "Adio"
+        ],
+        "omtag": 2,
+        "blank": true,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "BRÖLLOPSBUKETT 995 kr.",
+            "ord": [
+              "BRÖLLOPSBUKETT",
+              "995",
+              "kr."
+            ],
+            "ordBak": [
+              "TT",
+              "995",
+              "BRÖLLOPSBUKET"
+            ],
+            "raw": "fram: B R Ö L L O P S B U K E T T / 9 9 5 | k r . || bak: T T | 5 9 9 | T E K U B S P O L L Ö R B",
+            "fel": [
+              "BRÖLLOPSBUKET"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "BRÖLLOPSBUNKETT 995 KR SOMMARBLOMMOR TIPS FÖR AUGUSTI",
+            "ord": [
+              "BRÖLLOPSBUNKETT",
+              "995",
+              "KR",
+              "SOMMARBLOMMOR",
+              "TIPS",
+              "FÖR",
+              "AUGUSTI"
+            ],
+            "ordBak": [
+              "BRÖLLOPSBQOUNETT",
+              "KR",
+              "995",
+              "SOMMARBLOMMOM",
+              "AUGUST",
+              "FÖR",
+              "TIPS"
+            ],
+            "raw": "fram: B R Ö L L O P S B U N K E T T / 9 9 5 | K R / S O M M A R B L O M M O R / T I P S | F Ö R | A U G U S T I || bak: T T E N U O Q B S P O L L Ö R B | / R K | 5 9 9 | / M O M M O L B R A M M O S | / T S U G U A | R Ö F | S P I T",
+            "fel": [
+              "BRÖLLOPSBUNKETT",
+              "BRÖLLOPSBQOUNETT",
+              "SOMMARBLOMMOM"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "SOMMARKAMPANJ ÖPPET IGEN! BRÖLLOPSBUKETT 995 kr.",
+            "ord": [
+              "SOMMARKAMPANJ",
+              "ÖPPET",
+              "IGEN!",
+              "BRÖLLOPSBUKETT",
+              "995",
+              "kr."
+            ],
+            "ordBak": [
+              "SOMMARKAMPAGNJ",
+              "ÖPPETIGEN!",
+              "BRÖLLOPSBUKET",
+              "KR",
+              "995"
+            ],
+            "raw": "fram: S O M M A R K A M P A N J / Ö P P E T | I G E N ! / B R Ö L L O P S B U K E T T / 9 9 5 | k r . || bak: J | N | G | A | P | M | A | K | R | A | M | M | O | S | / | ! | N | E | G | I | T | E | P | P | Ö | / | T | E | K | U | B | S | P | O | L | L | Ö | R | B | / | R | K | | 5 | 9 | 9",
+            "fel": [
+              "ÖPPETIGEN!",
+              "SOMMARKAMPAGNJ",
+              "BRÖLLOPSBUKET"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "Trevlig helg Trevlig helg",
+            "ord": [
+              "Trevlig",
+              "helg",
+              "Trevlig",
+              "helg"
+            ],
+            "ordBak": [
+              "Frosels",
+              "Gratenaten",
+              "Adio"
+            ],
+            "raw": "fram: T r e v l i g | h e l g / T r e v l i g | h e l g || bak: s | l | e | s | o | r | F | / | n | e | t | a | n | e | t | a | r | G | / | o | i | d | A",
+            "fel": [
+              "Frosels",
+              "Gratenaten",
+              "Adio"
+            ],
+            "orsak": "felstavning"
+          }
+        ]
+      },
+      "sekunder": 46
+    },
+    {
+      "id": "b1",
+      "del": "b",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Butiksbiträdet framför den nya skärmen i butiken",
+      "fil": "b1-displayteknik.png",
+      "scen": "En kvinna i uniformerad butikströja står framför en stor vertikal digital skylt i en modern livsmedelsbutik, hon tittar uppmärksamt på skärmen som visar \"FÄRSKA GRÖNSAKER IDAG\". Ljuset är klart och jämnt, med fokus på skylten och kvinnans ansikte.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "FÄRSKA GRÖNSAKER IDAG",
+        "ord": [
+          "FÄRSKA",
+          "GRÖNSAKER",
+          "IDAG"
+        ],
+        "ordBak": [
+          "FÄRSKA",
+          "GRÖNSAKER",
+          "IDAG"
+        ],
+        "fel": [],
+        "omtag": 1,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "FÄRSKA GRÖNSAKER IDAG",
+            "ord": [
+              "FÄRSKA",
+              "GRÖNSAKER",
+              "IDAG"
+            ],
+            "ordBak": [
+              "FÄRSKA",
+              "GRONÖSAGER",
+              "IDAG"
+            ],
+            "raw": "fram: F Ä R S K A / G R Ö N S A K E R / I D A G || bak: AKSRÄF | / REGASÖNORG | / GADI",
+            "fel": [
+              "GRONÖSAGER"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": true,
+            "text": "FÄRSKA GRÖNSAKER IDAG",
+            "ord": [
+              "FÄRSKA",
+              "GRÖNSAKER",
+              "IDAG"
+            ],
+            "ordBak": [
+              "FÄRSKA",
+              "GRÖNSAKER",
+              "IDAG"
+            ],
+            "raw": "fram: F Ä R S K A / G R Ö N S A K E R / I D A G || bak: A K S R Ä F | /\nR E K A S N Ö R G | /\nG A D I |",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 24
+    },
+    {
+      "id": "b2",
+      "del": "b",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Gästen som läser menyskärmen innan hon beställer",
+      "fil": "b2-displayteknik.png",
+      "scen": "En kvinna i trettioårsåldern, vänd mot en stor, tydlig digital menyskärm i en modern restaurangmiljö med dämpad belysning, läser \"DAGENS RÄTT 149 KR\" som visas på skärmen.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "DAGENS RÄTT 149 KR",
+        "ord": [
+          "DAGENS",
+          "RÄTT",
+          "149",
+          "KR"
+        ],
+        "ordBak": [
+          "RÄTT",
+          "DAGENS",
+          "KR",
+          "149"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "DAGENS RÄTT 149 KR",
+            "ord": [
+              "DAGENS",
+              "RÄTT",
+              "149",
+              "KR"
+            ],
+            "ordBak": [
+              "RÄTT",
+              "DAGENS",
+              "KR",
+              "149"
+            ],
+            "raw": "fram: D A G E N S | R Ä T T / 1 4 9 | K R || bak: T T Ä R | S N E G A D / R K | 9 4 1",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 13
+    },
+    {
+      "id": "b3",
+      "del": "b",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Receptionisten visar besökaren informationsskärmen i entrén",
+      "fil": "b3-displayteknik.png",
+      "scen": "En receptionist med ett vänligt leende pekar mot en stor, tydlig informationsskärm i en modern hotellobby, där skärmen visar \"VÄLKOMMEN TILL OSS\" och en bild av hotellets restaurang, med mjukt, naturligt ljus som faller in från stora fönster.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "VÄLKOMMEN TILL OSS DAGENS SOMMARBUFFÉ 249 KR",
+        "ord": [
+          "VÄLKOMMEN",
+          "TILL",
+          "OSS",
+          "DAGENS",
+          "SOMMARBUFFÉ",
+          "249",
+          "KR"
+        ],
+        "ordBak": [
+          "VÄLKOMMEN",
+          "OSS",
+          "TILL",
+          "SOMMARBUFFÉ",
+          "DAGENS",
+          "KR",
+          "249"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "VÄLKOMMEN TILL OSS DAGENS SOMMARBUFFÉ 249 KR",
+            "ord": [
+              "VÄLKOMMEN",
+              "TILL",
+              "OSS",
+              "DAGENS",
+              "SOMMARBUFFÉ",
+              "249",
+              "KR"
+            ],
+            "ordBak": [
+              "VÄLKOMMEN",
+              "OSS",
+              "TILL",
+              "SOMMARBUFFÉ",
+              "DAGENS",
+              "KR",
+              "249"
+            ],
+            "raw": "fram: V | Ä | L | K | O | M | M | E | N / T | I | L | L | | O | S | S / D | A | G | E | N | S | | S | O | M | M | A | R | B | U | F | F | É / 2 | 4 | 9 | | K | R || bak: NEMMOKLÄV | / SSO | LLIT | / ÉFFUBRAMMOS | SNEGAD | / RK | 942",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 14
+    },
+    {
+      "id": "b4",
+      "del": "b",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Butiksägaren byter innehållet på skyltfönsterskärmen",
+      "fil": "b4-displayteknik.png",
+      "scen": "En kvinna i medelåldern, klädd i en enkel tröja, står leende vänd mot en stor, ljusstark digital skyltfönsterskärm i en butik, där texten \"NYA ERBJUDANDEN VARJE VECKA\" syns tydligt.",
+      "stavning": {
+        "orsak": "ingen-text",
+        "text": "",
+        "ord": [],
+        "ordBak": [],
+        "fel": [],
+        "omtag": 2,
+        "blank": true,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "NYA ERBJUDANDEN VARJE VECKA STARTA SKOLAN: ALLT DU BEHÖVER KRÄFTSKIVA 8 AUGUSTI- KLIPP: SKÅLAR & SERVETTER",
+            "ord": [
+              "NYA",
+              "ERBJUDANDEN",
+              "VARJE",
+              "VECKA",
+              "STARTA",
+              "SKOLAN:",
+              "ALLT",
+              "DU",
+              "BEHÖVER",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI-",
+              "KLIPP:",
+              "SKÅLAR",
+              "&",
+              "SERVETTER"
+            ],
+            "ordBak": [
+              "NYA",
+              "ERBJUDANEN",
+              "VECKA",
+              "VARJE",
+              "SKOLAN:",
+              "STARTA",
+              "BEHOVER",
+              "DU",
+              "ALLT",
+              "AUGUSTI-",
+              "8",
+              "KRÄTFSVRIVA",
+              "SERTVER-",
+              "&",
+              "SKÄLAR",
+              "KLIPP:"
+            ],
+            "raw": "fram: N Y A / E R B J U D A N D E N / V A R J E | V E C K A / S T A R T A | S K O L A N : / A L L T | D U | B E H Ö V E R / K R Ä F T S K I V A | 8 | A U G U S T I - / K L I P P : | S K Å L A R | & | S E R V E T T E R || bak: AYN | /\nNENADUJBRE | /\nAKCEV | EJRAV | /\n:NALOKS | ATRATS | /\nREVOHEB | UD | TLLA | /\n-ITSUGUA | 8 | AVIRVSFTÄRK | /\n-REVTRES | & | RALÄKS | :PPILK | /",
+            "fel": [
+              "SKÄLAR",
+              "BEHOVER",
+              "KRÄTFSVRIVA",
+              "SERTVER-"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "NYA ERBJEANDEN VARJE VECKA",
+            "ord": [
+              "NYA",
+              "ERBJEANDEN",
+              "VARJE",
+              "VECKA"
+            ],
+            "ordBak": [
+              "AYN",
+              "ERBJANDEN",
+              "VECKA",
+              "VARJE"
+            ],
+            "raw": "fram: N Y A / E R B J E A N D E N / V A R J E | V E C K A || bak: N Y A | N E D N A J B R E | A K C E V | E J R A V",
+            "fel": [
+              "ERBJEANDEN",
+              "ERBJANDEN"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "NYA ERBJAUANDEN VARJE VECKA",
+            "ord": [
+              "NYA",
+              "ERBJAUANDEN",
+              "VARJE",
+              "VECKA"
+            ],
+            "ordBak": [
+              "NYA",
+              "ERABJUANDEN",
+              "VECKA",
+              "VARJE"
+            ],
+            "raw": "fram: N Y A / E R B J A U A N D E N / V A R J E | V E C K A || bak: AYN | / | NEDNAUJBARE | / | AKCEV | EJRAV",
+            "fel": [
+              "ERBJAUANDEN",
+              "ERABJUANDEN"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": true,
+            "text": "",
+            "ord": [],
+            "ordBak": [],
+            "raw": "fram: INGEN || bak: INGEN",
+            "fel": [],
+            "orsak": "ingen-text"
+          }
+        ]
+      },
+      "sekunder": 42
+    },
+    {
+      "id": "b5",
+      "del": "b",
+      "slug": "displayteknik",
+      "client_id": "a6a33547-5ca7-475f-9a62-43ff2c74d000",
+      "topic": "Kunden stannar upp vid den digitala skylten i köpcentret",
+      "fil": "b5-displayteknik.png",
+      "scen": "En kvinna i 30-årsåldern med shoppingkasse står vänd mot en stor, vertikal digital skylt i ett ljust köpcentrum, där skärmen visar \"NYA ERBJUDANDEN IDAG\" och en bild på en rabatterad produkt.",
+      "stavning": {
+        "orsak": "felstavning",
+        "text": "Bali do",
+        "ord": [
+          "Bali",
+          "do"
+        ],
+        "ordBak": [
+          "Bali",
+          "dlo"
+        ],
+        "fel": [
+          "dlo"
+        ],
+        "omtag": 2,
+        "blank": true,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "NYA ERBJUANDEN IDAG GRILLBAKAD SMÖRGÅS",
+            "ord": [
+              "NYA",
+              "ERBJUANDEN",
+              "IDAG",
+              "GRILLBAKAD",
+              "SMÖRGÅS"
+            ],
+            "ordBak": [
+              "ERBJUANDAN",
+              "NYA",
+              "IDAG",
+              "SMÖRGAS",
+              "GRILLBAKAD"
+            ],
+            "raw": "fram: N Y A | E R B J U A N D E N / I D A G / G R I L L B A K A D / S M Ö R G Å S || bak: N A D N A U J B R E | A Y N / G A D I / S A G R Ö M S | D A K A B L L I R G",
+            "fel": [
+              "ERBJUANDEN",
+              "ERBJUANDAN",
+              "SMÖRGAS"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "NYA ERBJANDEN IDAG 699 SKÖRDENS FAVORITER",
+            "ord": [
+              "NYA",
+              "ERBJANDEN",
+              "IDAG",
+              "699",
+              "SKÖRDENS",
+              "FAVORITER"
+            ],
+            "ordBak": [
+              "AYN",
+              "NEDNAJBRE",
+              "GADI",
+              "996",
+              "kp",
+              "SNEDRÖKS",
+              "RETIROVAF"
+            ],
+            "raw": "fram: N Y A | E R B J A N D E N / I D A G / 6 9 9 / S K Ö R D E N S | F A V O R I T E R || bak: N Y A | E R B J A N D E N / I D A G / 6 9 9 | p k / S K Ö R D E N S | F A V O R I T E R",
+            "fel": [
+              "ERBJANDEN",
+              "NEDNAJBRE",
+              "GADI",
+              "SNEDRÖKS",
+              "RETIROVAF"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "NYA ERBJUANDEN IDAG HÖSTSKÖRD RABATT",
+            "ord": [
+              "NYA",
+              "ERBJUANDEN",
+              "IDAG",
+              "HÖSTSKÖRD",
+              "RABATT"
+            ],
+            "ordBak": [
+              "NYA",
+              "ERBJUANDEN",
+              "IDAG",
+              "RABATT",
+              "HÖSKÖRD"
+            ],
+            "raw": "fram: N Y A | E R B J U A N D E N / I D A G / H Ö S T S K Ö R D | R A B A T T || bak: AYN | NEDNAUJBRE | GADI / TTABAR | DRÖKSÖH",
+            "fel": [
+              "ERBJUANDEN",
+              "HÖSKÖRD"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "Bali do",
+            "ord": [
+              "Bali",
+              "do"
+            ],
+            "ordBak": [
+              "Bali",
+              "dlo"
+            ],
+            "raw": "fram: B a l i / d o || bak: i l a B | / | o l d |",
+            "fel": [
+              "dlo"
+            ],
+            "orsak": "felstavning"
+          }
+        ]
+      },
+      "sekunder": 44
+    },
+    {
+      "id": "b6",
+      "del": "b",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Floristen binder en bukett vid disken",
+      "fil": "b6-annas-blommor.png",
+      "scen": "En florist, klädd i förkläde, står bakom en disk och binder en stor, färgsprakande brudbukett medan hon tittar på ett inspirationsfoto på en surfplatta som står framför henne på disken. Varmt, naturligt ljus.",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "SOMMARÖPPET TILL 20.00 KRÄFTSKIVA 8 AUGUSTI",
+        "ord": [
+          "SOMMARÖPPET",
+          "TILL",
+          "20.00",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI"
+        ],
+        "ordBak": [
+          "SOMMARÖPPET",
+          "20.00.",
+          "TILL",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "KRÄFTSKIVA",
+          "8",
+          "AUGUSTI",
+          "A"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "SOMMARÖPPET TILL 20.00 KRÄFTSKIVA 8 AUGUSTI",
+            "ord": [
+              "SOMMARÖPPET",
+              "TILL",
+              "20.00",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI"
+            ],
+            "ordBak": [
+              "SOMMARÖPPET",
+              "20.00.",
+              "TILL",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "A"
+            ],
+            "raw": "fram: S O M M A R Ö P P E T | T I L L | 2 0 . 0 0 / K R Ä F T S K I V A | 8 | A U G U S T I || bak: T E P P Ö R A M M O S | /\n. 0 0 . 0 2 | L L I T | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA V I K S T F Ä R K | /\n8 | /\nI T S U G U A | /\nA",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 16
+    },
+    {
+      "id": "b7",
+      "del": "b",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Kunden väljer blommor ur kylen i butiken",
+      "fil": "b7-annas-blommor.png",
+      "scen": "En kvinnlig kund med en korg i handen väljer blommor ur en öppen kyl i en blomsterbutik, med mjukt, naturligt ljus som framhäver färgerna.",
+      "stavning": {
+        "orsak": "felstavning",
+        "text": "",
+        "ord": [],
+        "ordBak": [
+          "NEGN"
+        ],
+        "fel": [
+          "NEGN"
+        ],
+        "omtag": 2,
+        "blank": true,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "SVENSKA BLOMMOR IDAG EUSTOMA 99 KR BUKETT KRÄFTSKIVA 8 AUGUSTI BESTÄLL BUFFEBLOMMOR NU VI KÖPER ALLA SLAGS BLOMMOR OCH VÄXTER 39:- 39:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJUS 199:- DOFTLJU",
+            "ord": [
+              "SVENSKA",
+              "BLOMMOR",
+              "IDAG",
+              "EUSTOMA",
+              "99",
+              "KR",
+              "BUKETT",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI",
+              "BESTÄLL",
+              "BUFFEBLOMMOR",
+              "NU",
+              "VI",
+              "KÖPER",
+              "ALLA",
+              "SLAGS",
+              "BLOMMOR",
+              "OCH",
+              "VÄXTER",
+              "39:-",
+              "39:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJUS",
+              "199:-",
+              "DOFTLJU"
+            ],
+            "ordBak": [
+              "KÄR",
+              "RÄ",
+              "IV",
+              "KÖPPER",
+              "BLOR",
+              "39%",
+              "-",
+              "39",
+              "FÅR",
+              "TA",
+              "RÄ",
+              "TALA",
+              "-",
+              "99",
+              "OMSKA",
+              "BLOR",
+              "SVENSKA",
+              "DAG",
+              "USTOMA",
+              "BUKETT",
+              "KR",
+              "99",
+              "KRÄFTSKIVA",
+              "AUGUSTI",
+              "8",
+              "BASTÄLL",
+              "BLOMMOR",
+              "BUFFEF",
+              "NU"
+            ],
+            "raw": "fram: S V E N S K A | B L O M M O R | I D A G / E U S T O M A / 9 9 | K R / B U K E T T / K R Ä F T S K I V A / 8 | A U G U S T I / B E S T Ä L L | B U F F E B L O M M O R / N U / V I | K Ö P E R / A L L A / S L A G S / B L O M M O R / O C H / V Ä X T E R / 3 9 : - / 3 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U S / 1 9 9 : - / D O F T L J U || bak: RÄK | ÄR | VI | /\nREPPÖK | ROLB | /\n%93 | /\n- | 93 | /\n/\nRÅF | AT | ÄR | /\nALAT | /\n- | 99 | /\n/\nAKSMO | ROLB | AKSNEVS | /\nGAD | AMOTSU | /\nTTEKUB | /RK | 99 | /\n/\nAVIKSTFÄRK | /\nITSUGUA | 8 | /\nLLÄTSAB | /\nROMMOLB | FEFFUB | /\nUN | /",
+            "fel": [
+              "KÖPPER",
+              "OMSKA",
+              "BASTÄLL",
+              "DOFTLJU",
+              "RÄ",
+              "BLOR",
+              "USTOMA",
+              "BUFFEF"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "SOMMARBLOMMOR IDAG DAGENS BUKETT 199 KR SOLROSOR 45 KR",
+            "ord": [
+              "SOMMARBLOMMOR",
+              "IDAG",
+              "DAGENS",
+              "BUKETT",
+              "199",
+              "KR",
+              "SOLROSOR",
+              "45",
+              "KR"
+            ],
+            "ordBak": [
+              "SOMMARBWOMMUR",
+              "IDAG",
+              "BUKETT",
+              "DAGENS",
+              "KR",
+              "199",
+              "SURLOSOR",
+              "KR",
+              "45"
+            ],
+            "raw": "fram: S O M M A R B L O M M O R | I D A G / D A G E N S | B U K E T T / 1 9 9 | K R / S O L R O S O R / 4 5 | K R || bak: R U M M O W B R A M M O S | /\nG A D I | /\nT T E K U B | S N E G A D | /\nR K | 9 9 1 | /\nR O S O L R U S | /\nR K | 5 4 | /",
+            "fel": [
+              "SOMMARBWOMMUR",
+              "SURLOSOR"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "SOMMARFAVORITER! EFFEKTIVA VARDAG KRAFTFESTIVAL 8 AUGUSTI RODER",
+            "ord": [
+              "SOMMARFAVORITER!",
+              "EFFEKTIVA",
+              "VARDAG",
+              "KRAFTFESTIVAL",
+              "8",
+              "AUGUSTI",
+              "RODER"
+            ],
+            "ordBak": [
+              "SOMMARFAVORITOR!",
+              "DAG!",
+              "WAS",
+              "EFFIKAN",
+              "AUGUST",
+              "8",
+              "KRAFTISIV",
+              "RODER"
+            ],
+            "raw": "fram: S O M M A R F A V O R I T E R ! / E F F E K T I V A | V A R D A G / K R A F T F E S T I V A L / 8 | A U G U S T I / R O D E R || bak: ! R O T I R O V A F R A M M O S | /\n! G A D | S A W | N A K I F F E | /\nT S U G U A | 8 | V I S I T F A R K | /\nR E D O R | /",
+            "fel": [
+              "SOMMARFAVORITOR!",
+              "WAS",
+              "EFFIKAN",
+              "KRAFTISIV"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": false,
+            "text": "",
+            "ord": [],
+            "ordBak": [
+              "NEGN"
+            ],
+            "raw": "fram: INGEN || bak: N G E N",
+            "fel": [
+              "NEGN"
+            ],
+            "orsak": "felstavning"
+          }
+        ]
+      },
+      "sekunder": 49
+    },
+    {
+      "id": "b8",
+      "del": "b",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Floristen visar kunden veckans bukett över disken",
+      "fil": "b8-annas-blommor.png",
+      "scen": "En florist står bakom disken och håller upp en färggrann bukett mot en leende kund, med en liten skylt på disken som säger \"VECKANS BUKETT\".",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "VECKANS BUKETT",
+        "ord": [
+          "VECKANS",
+          "BUKETT"
+        ],
+        "ordBak": [
+          "BUKETT",
+          "VECKANS"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "VECKANS BUKETT",
+            "ord": [
+              "VECKANS",
+              "BUKETT"
+            ],
+            "ordBak": [
+              "BUKETT",
+              "VECKANS"
+            ],
+            "raw": "fram: V E C K A N S | B U K E T T || bak: T T E K U B | S N A K C E V",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 14
+    },
+    {
+      "id": "b9",
+      "del": "b",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Kunden läser skylten utanför butiken",
+      "fil": "b9-annas-blommor.png",
+      "scen": "En kvinna i medelåldern tittar uppmärksamt på en skylt utanför en blomsterbutik, med en stor bukett brudblommor i handen, i varmt dagsljus. Skylten visar \"BRÖLLOP & EVENT\".",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "BRÖLLOP & EVENT",
+        "ord": [
+          "BRÖLLOP",
+          "&",
+          "EVENT"
+        ],
+        "ordBak": [
+          "BRÖLLOP",
+          "EVENT",
+          "&",
+          "BRÖLLOP"
+        ],
+        "fel": [],
+        "omtag": 1,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": false,
+            "text": "BRÖLLOP & EVENT KRÄFTSKIVA 8 AUGUSTI",
+            "ord": [
+              "BRÖLLOP",
+              "&",
+              "EVENT",
+              "KRÄFTSKIVA",
+              "8",
+              "AUGUSTI"
+            ],
+            "ordBak": [
+              "BRÖLLOP",
+              "&",
+              "EVENT",
+              "AGUSTI",
+              "S",
+              "KRÄFTSVA"
+            ],
+            "raw": "fram: B R Ö L L O P | & | E V E N T / K R Ä F T S K I V A / 8 | A U G U S T I || bak: POLLÖRB | & | TNEVE / ITSUGA | S | AVSTFÄRK",
+            "fel": [
+              "AGUSTI",
+              "KRÄFTSVA"
+            ],
+            "orsak": "felstavning"
+          },
+          {
+            "ok": true,
+            "text": "BRÖLLOP & EVENT",
+            "ord": [
+              "BRÖLLOP",
+              "&",
+              "EVENT"
+            ],
+            "ordBak": [
+              "BRÖLLOP",
+              "EVENT",
+              "&",
+              "BRÖLLOP"
+            ],
+            "raw": "fram: B R Ö L L O P | & | E V E N T || bak: P | O | L | L | Ö | R | B | / | T | N | E | V | E | | & | | P | O | L | L | Ö | R | B",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 24
+    },
+    {
+      "id": "b10",
+      "del": "b",
+      "slug": "annas-blommor",
+      "client_id": "7461fa8b-3fcb-4729-9cf6-53e27687656e",
+      "topic": "Medarbetaren ordnar blommorna i skyltfönstret",
+      "fil": "b10-annas-blommor.png",
+      "scen": "En florist med förkläde ordnar noggrant en stor brudbukett i ett ljust skyltfönster, med en liten skylt som säger \"BRÖLLOP & EVENT\".",
+      "stavning": {
+        "orsak": "godkand",
+        "text": "BRÖLLOP & EVENT",
+        "ord": [
+          "BRÖLLOP",
+          "&",
+          "EVENT"
+        ],
+        "ordBak": [
+          "BRÖLLOP",
+          "EVENT",
+          "&"
+        ],
+        "fel": [],
+        "omtag": 0,
+        "blank": false,
+        "avlasningar": [
+          {
+            "ok": true,
+            "text": "BRÖLLOP & EVENT",
+            "ord": [
+              "BRÖLLOP",
+              "&",
+              "EVENT"
+            ],
+            "ordBak": [
+              "BRÖLLOP",
+              "EVENT",
+              "&"
+            ],
+            "raw": "fram: B R Ö L L O P | & | E V E N T || bak: P O L L Ö R B | / | T N E V E | &",
+            "fel": [],
+            "orsak": "godkand"
+          }
+        ]
+      },
+      "sekunder": 15
+    }
+  ]
+}

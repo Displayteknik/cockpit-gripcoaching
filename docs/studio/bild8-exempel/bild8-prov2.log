@@ -1,0 +1,33 @@
+
+## a2-displayteknik
+  framlänges 1: D A G E N S | L U N C H / 1 2 9 | K R
+  framlänges 2: D A G E N S | L U N C H / 1 2 9 | K R
+  baklänges 1: H C N U L | S N E G A D / R K | 9 2 1
+     → vänt tillbaka: LUNCH DAGENS KR 129
+  baklänges 2: H C N U L | S N E G A D / R K | 9 2 1
+     → vänt tillbaka: LUNCH DAGENS KR 129
+
+## a4-displayteknik
+  framlänges 1: Ö | P | P | E | T / I | D | A | G / 9 | - | 1 | 8
+  framlänges 2: Ö | P | P | E | T / I | D | A | G / 9 | - | 1 | 8
+  baklänges 1: T E P P Ö | / I G A D I | / 8 1 - 9
+     → vänt tillbaka: ÖPPET IDAGI 9-18
+  baklänges 2: T E P P Ö | / I G A D I | / 8 1 - 9
+     → vänt tillbaka: ÖPPET IDAGI 9-18
+
+## a7-annas-blommor
+  framlänges 1: D A G E N S / S N I T T B L O M M O R / 1 4 9 | K R
+  framlänges 2: D A G E N S / S N I T T B L O M M O R / 1 4 9 | K R
+  baklänges 1: S N E G A D | / R O M M O L B T T I N S | / R K | 9 4 1 | /
+     → vänt tillbaka: DAGENS SNITTBLOMMOR KR 149
+  baklänges 2: S N E G A D | / R O M M O L B T T I N S | / R K | 9 4 1 | /
+     → vänt tillbaka: DAGENS SNITTBLOMMOR KR 149
+
+## a8-annas-blommor
+  framlänges 1: H Ö S T E N S | N Y H E T E R / S K Ö R D E F E S T | S N A R T
+  framlänges 2: H Ö S T E N S | N Y H E T E R / S K Ö R D E F E S T | S N A R T
+  baklänges 1: S N E T S Ö H | R E T E I H Y N / T S E F E D R Ö K S | T R A N S
+     → vänt tillbaka: HÖSTENS NYHIETER SKÖRDEFEST SNART
+  baklänges 2: S N E T S Ö H | R E T E I H Y N / T S E F E D R Ö K S | T R A N S
+     → vänt tillbaka: HÖSTENS NYHIETER SKÖRDEFEST SNART
+EXIT=0

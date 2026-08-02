@@ -1,0 +1,20 @@
+Bild: docs/studio/bild8-exempel/a8-annas-blommor.png
+
+── nuvarande temp 0 ──
+  1: H Ö S T E N S | N Y H E T E R / S K Ö R D E F E S T | S N A R T
+  2: H Ö S T E N S | N Y H E T E R / S K Ö R D E F E S T | S N A R T
+  3: H Ö S T E N S / N Y H E T E R / S K Ö R D E F E S T | S N A R T
+  4: H Ö S T E N S / N Y H E T E R / S K Ö R D E F E S T | S N A R T
+
+── nuvarande temp 0.7 ──
+  1: H Ö S T E N S | N Y H E T E R / S K Ö R D E F E S T | S N A R T
+  2: H Ö S T E N S / N Y H E T E R / S K Ö R D E F E S T | S N A R T
+  3: H | Ö | S | T | E | N | S | / | N | Y | H | E | T | E | R | / | S | K | Ö | R | D | E | F | E | S | T | / | S | N | A | R | T
+  4: H Ö S T E N S / N Y H E T E R / S K Ö R D E F E S T / S N A R T
+
+── baklänges temp 0 ──
+  1: S N E T S Ö H | R E T E I H Y N / T S E F E D R Ö K S | T R A N S
+  2: S N E T S Ö H | R E T E I H Y N / T S E F E D R Ö K S | T R A N S
+  3: S N E T S Ö H | R E T E I H Y N / T S E F E D R Ö K S | T R A N S
+  4: S N E T S Ö H | R E T E I H Y N / T S E F E D R Ö K S | T R A N S
+EXIT=0

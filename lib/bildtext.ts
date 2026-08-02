@@ -11,8 +11,14 @@
 //   1. modellen transkriberar TECKEN FÖR TECKEN (ordgränser markerade med |),
 //   2. domen faller programmatiskt mot ordlista + morfologi + närmiss-avstånd,
 //   3. modellens egen "är detta rättstavat?"-bedömning används ALDRIG som enda grund —
-//      den får bara yttra sig om ord programmatiken klassat som OKÄNDA, och kan aldrig
+//      den får bara yttra sig om ord programmatiken INTE känner igen, och kan aldrig
 //      underkänna ett ord som ordlistan känner igen.
+//
+// ⚠ FÄLLA 2 (BILD-8 DoD, skarpt fall a1): ordlistan är liten med flit, och korta svenska
+// ord ligger tätt i redigeringsavstånd — "FÅ" i "KÖP 2 FÅ 1" är rättstavat men ligger ett
+// tecken från "får". Närmiss är därför en MISSTANKE som textmodellen får bekräfta, inte en
+// dom. Bara STRUKTURfel (glyfer utanför svenskan, bokstavsgröt) fälls utan att någon
+// tillfrågas. Svarar modellen inte alls står misstanken kvar — fail-closed på misstanken.
 //
 // Fail-open: tekniskt fel (ingen nyckel, nätverk, tomt svar) släpper alltid igenom
 // bilden. Grinden får aldrig blockera användarens flöde.
@@ -31,9 +37,13 @@ export type TextOrsak =
 export interface StavUtfall {
   /** true = bilden får släppas igenom (godkänd text, ingen text, eller fail-open). */
   ok: boolean;
-  /** Avläst text, ord separerade med mellanslag. */
+  /** Avläst text (framlängesläsningen), ord separerade med mellanslag. */
   text: string;
   ord: string[];
+  /** Baklängesläsningens ord, återvända. Döms tillsammans med `ord` — se FÄLLA 4. */
+  ordBak?: string[];
+  /** Modellens obearbetade transkriptioner — bevis/felsökning, aldrig grund för domen. */
+  raw?: string;
   /** Orden som fälldes (tomt när ok). */
   fel: string[];
   orsak: TextOrsak;
@@ -119,44 +129,101 @@ export async function lasTeckenForTecken(image: string): Promise<string> {
   return visionFraga(inline, "Transkribera texten i bilden TECKEN FÖR TECKEN, separera varje tecken med mellanslag och varje radbrytning med / . Autokorrigera INTE — återge exakt de glyfer som syns även om ordet blir felstavat. Svara ENDAST med teckensekvensen, eller INGEN om ingen text syns.");
 }
 
+const FRAGA_FRAMLANGES =
+  "Transkribera ALL text som syns i bilden (skyltar, skärmar, tavlor, affischer, etiketter) TECKEN FÖR TECKEN. " +
+  "Separera varje tecken med mellanslag, varje ORD med | och varje radbrytning med /. " +
+  "Autokorrigera INTE och gissa INTE — återge exakt de glyfer som syns, även om ordet blir felstavat eller obegripligt. " +
+  "Svara ENDAST med sekvensen, eller INGEN om ingen text alls syns.";
+
+// ⚠ FÄLLA 4 (BILD-8 DoD, skarpt fall a8): teckenseparationen räcker INTE. Affischen sa
+// "HÖSTENS NYHIETER" och den framlängesläsningen svarade "N Y H E T E R" — 4 av 4 gånger,
+// temperatur 0. Språkpriorn städar felet innan vi ser det, och att läsa om hjälper inte.
+// BAKLÄNGES bryter priorn: modellen kan inte "rätta" ett ord den läser sista bokstaven
+// först. Samma prov gav "R E T E I H Y N" (= NYHIETER) 4 av 4.
+// Baklängesläsningen kastar om ordföljden och hittar ibland på en extra bokstav — därför
+// ersätter den inte framlängesläsningen, den LÄGGS TILL. Ordföljd spelar ingen roll för
+// en stavningsdom, och en falsk misstanke kostar ett omtag medan ett missat fel når kunden.
+const FRAGA_BAKLANGES =
+  "Läs av all text i bilden (skyltar, skärmar, tavlor, affischer, etiketter). " +
+  "Skriv ut varje ord BAKLÄNGES, sista bokstaven först, ett tecken i taget separerat med mellanslag. " +
+  "Separera varje ORD med | och varje radbrytning med /. " +
+  "Läs av de glyfer som FAKTISKT står där, en i taget — rätta inte stavningen och fyll inte i vad du tror att det borde stå. " +
+  "Svara ENDAST med sekvensen, eller INGEN om ingen text alls syns.";
+
+const vandOrd = (s: string) => Array.from(s.normalize("NFC")).reverse().join("");
+
 /**
- * Teckenvis transkription MED ordgränser. Ordgränserna behövs för att kunna slå upp
- * varje ord i ordlistan; teckenseparationen behövs för att bryta autokorrigeringen.
+ * Teckenvis transkription MED ordgränser, läst BÅDE framlänges och baklänges.
+ * Ordgränserna behövs för att kunna slå upp varje ord i ordlistan; teckenseparationen och
+ * baklängesläsningen behövs för att bryta autokorrigeringen (se FÄLLA 4 ovan).
  */
-export async function lasOrdTeckenvis(image: string): Promise<string[]> {
+export async function lasOrdTeckenvis(image: string): Promise<{ raw: string; ord: string[]; ordBak: string[] }> {
   const inline = await bildTillInline(image);
-  if (!inline) return [];
-  const raw = await visionFraga(
-    inline,
-    "Transkribera ALL text som syns i bilden (skyltar, skärmar, tavlor, affischer, etiketter) TECKEN FÖR TECKEN. " +
-      "Separera varje tecken med mellanslag, varje ORD med | och varje radbrytning med /. " +
-      "Autokorrigera INTE och gissa INTE — återge exakt de glyfer som syns, även om ordet blir felstavat eller obegripligt. " +
-      "Svara ENDAST med sekvensen, eller INGEN om ingen text alls syns.",
-    600,
-  );
-  if (!raw || raw.trim().toUpperCase() === "INGEN") return [];
-  return parsaTeckenTranskription(raw);
+  if (!inline) return { raw: "", ord: [], ordBak: [] };
+  const [fram, bak] = await Promise.all([
+    visionFraga(inline, FRAGA_FRAMLANGES, 600),
+    visionFraga(inline, FRAGA_BAKLANGES, 600),
+  ]);
+  // "INGEN" = sentinel för ingen text. Modellen skriver den ibland teckenseparerat
+  // ("I N G E N") och den föll då igenom som ett vanligt ord — därför prövas sentinelen
+  // både på råsvaret och på det tolkade resultatet.
+  const tolka = (r: string) => {
+    if (!r || r.trim().toUpperCase() === "INGEN") return [];
+    const o = parsaTeckenTranskription(r);
+    return o.length === 1 && o[0].toUpperCase() === "INGEN" ? [] : o;
+  };
+  return {
+    raw: `fram: ${fram} || bak: ${bak}`,
+    ord: tolka(fram),
+    ordBak: tolka(bak).map(vandOrd),
+  };
 }
 
 /**
  * Tolka svaret från den teckenvisa transkriptionen till en ordlista.
- * Tolerant: modellen följer inte alltid formatet. Ett segment där de flesta tokens är
- * ETT tecken långa limmas ihop till ett ord; ett segment med vanliga ord splittas på
- * mellanslag i stället.
+ * Tolerant: modellen följer inte alltid formatet.
+ *
+ * ⚠ FÄLLA 3 (BILD-8 DoD, skarpt fall a1/a3): modellen använder ibland | mellan VARJE
+ * TECKEN i stället för mellan orden — `N | Y | H | E | T | ! / E | N | D | A | S | T | | 8 …`.
+ * Tolkas | då som ordgräns blir varje BOKSTAV ett "ord", och enstaka bokstäver ligger
+ * ett redigeringssteg från riktiga ord → grinden fällde en helt korrekt skylt och brände
+ * ett omtag. Vilken roll | har avgörs därför per rad: är de flesta |-segmenten ETT tecken
+ * långa är | en teckenavgränsare, och ordgränsen är i stället den tomma luckan (| |).
  */
 export function parsaTeckenTranskription(raw: string): string[] {
   const rensad = raw.normalize("NFC").replace(/^["'`]+|["'`]+$/g, "").trim();
   if (!rensad || rensad.toUpperCase() === "INGEN") return [];
   const ord: string[] = [];
-  for (const segment of rensad.split(/[|/\n]+/)) {
-    const tokens = segment.trim().split(/\s+/).filter(Boolean);
-    if (!tokens.length) continue;
-    const enteckens = tokens.filter((t) => t.length === 1).length;
-    if (tokens.length > 1 && enteckens / tokens.length >= 0.6) {
-      // Teckenseparerat segment → limma ihop till ett ord.
-      ord.push(tokens.join(""));
-    } else {
-      ord.push(...tokens);
+  for (const rad of rensad.split(/[/\n]+/)) {
+    if (!rad.trim()) continue;
+    const segment = rad.split("|"); // tomma segment BEHÅLLS — de bär ordgränsen
+    const ickeTomma = segment.map((s) => s.trim()).filter(Boolean);
+    if (!ickeTomma.length) continue;
+    const enteckensSegment = ickeTomma.filter((s) => s.length === 1).length;
+
+    if (ickeTomma.length > 1 && enteckensSegment / ickeTomma.length >= 0.6) {
+      // | är TECKENavgränsare → orden skiljs av tomma luckor.
+      let bygge = "";
+      for (const s of segment) {
+        const t = s.trim();
+        if (!t) {
+          if (bygge) ord.push(bygge);
+          bygge = "";
+          continue;
+        }
+        bygge += t.split(/\s+/).join("");
+      }
+      if (bygge) ord.push(bygge);
+      continue;
+    }
+
+    // | är ORDavgränsare → varje segment är ett ord (teckenseparerat inuti).
+    for (const s of segment) {
+      const tokens = s.trim().split(/\s+/).filter(Boolean);
+      if (!tokens.length) continue;
+      const enteckens = tokens.filter((t) => t.length === 1).length;
+      if (tokens.length > 1 && enteckens / tokens.length >= 0.6) ord.push(tokens.join(""));
+      else ord.push(...tokens);
     }
   }
   return ord.map((o) => o.trim()).filter(Boolean);
@@ -268,8 +335,9 @@ function arSammansatt(ord: string, djup = 2): boolean {
 export type OrdStatus = "tal" | "kant" | "sammansatt" | "otillaten" | "dubblering" | "narmiss" | "okant";
 
 /**
- * Klassa ETT ord. Endast "otillaten", "dubblering" och "narmiss" är felstavning —
- * "okant" är ett ord vi inte känner igen och som därför aldrig fälls av programmatiken.
+ * Klassa ETT ord. Bara "otillaten" och "dubblering" är felstavning i sig — "narmiss" är
+ * en MISSTANKE (bekräftas av textmodellen) och "okant" är ett ord vi inte känner igen,
+ * som aldrig fälls av programmatiken.
  */
 export function ordStatus(rattOrd: string): OrdStatus {
   const ord = rensaOrd(rattOrd);
@@ -290,12 +358,28 @@ export function ordStatus(rattOrd: string): OrdStatus {
   return "okant";
 }
 
-/** Ord som programmatiken fäller direkt. */
-export function stavfel(ord: string[]): string[] {
+/**
+ * Ord med en STRUKTUR som inget svenskt ord har — otillåtna glyfer eller
+ * bokstavsgröt. Fälls utan att någon tillfrågas.
+ */
+export function strukturfel(ord: string[]): string[] {
   return ord.filter((o) => {
     const s = ordStatus(o);
-    return s === "otillaten" || s === "dubblering" || s === "narmiss";
+    return s === "otillaten" || s === "dubblering";
   });
+}
+
+/**
+ * MISSTÄNKTA ord: ligger nära ett känt ord utan att vara det.
+ *
+ * ⚠ Skarpt fall (BILD-8 DoD, fall a1): "FÅ" i "KÖP 2 FÅ 1" är rättstavat men ligger ett
+ * teckens avstånd från "får" → grinden fällde en korrekt skylt och tvingade fram tomma
+ * skyltar. Korta svenska ord ligger tätt i redigeringsavstånd — närmiss är därför en
+ * MISSTANKE som ska bekräftas, inte en dom. Ordlistan är avsiktligt liten och kan aldrig
+ * ensam veta att ett ord utanför den är felstavat.
+ */
+export function misstanktaOrd(ord: string[]): string[] {
+  return ord.filter((o) => ordStatus(o) === "narmiss");
 }
 
 /** Ord programmatiken inte känner igen — endast dessa får modellen yttra sig om. */
@@ -304,14 +388,19 @@ export function okandaOrd(ord: string[]): string[] {
 }
 
 /**
- * Andra åsikt om ord programmatiken INTE känner igen. Ren TEXT-fråga (ingen bild) —
- * autokorrigeringsfällan gäller bildavläsning, inte textbedömning. Modellen kan bara
- * LÄGGA TILL fel bland okända ord, aldrig frikänna eller fälla ett ord ordlistan
- * redan dömt. Fail-open: tomt svar = inga fel.
+ * Andra åsikt om ord programmatiken INTE känner igen (okända + närmissar). Ren TEXT-fråga
+ * (ingen bild) — autokorrigeringsfällan gäller bildavläsning, inte textbedömning. Modellen
+ * får bara yttra sig om de ord som skickas in, aldrig om ord ordlistan redan känner igen
+ * eller som fällts på struktur.
+ *
+ * Returnerar `null` vid TEKNISKT fel (ingen nyckel, nätverk, ogiltigt svar) så anroparen
+ * kan skilja "modellen hittade inga fel" från "modellen svarade inte" — misstänkta ord
+ * ska fällas i det senare fallet, inte frikännas.
  */
-export async function bedomOkandaOrd(ord: string[]): Promise<string[]> {
+export async function bedomOkandaOrd(ord: string[]): Promise<string[] | null> {
   const key = geminiNyckel();
-  if (!key || !ord.length) return [];
+  if (!ord.length) return [];
+  if (!key) return null;
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
       method: "POST",
@@ -326,16 +415,16 @@ export async function bedomOkandaOrd(ord: string[]): Promise<string[]> {
         generationConfig: { temperature: 0, maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: "application/json" },
       }),
     });
-    if (!r.ok) return [];
+    if (!r.ok) return null;
     const data = await r.json();
     const raw = data?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text || "";
     const lista = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}").felstavade;
-    if (!Array.isArray(lista)) return [];
+    if (!Array.isArray(lista)) return null;
     const tillatna = new Set(ord.map((o) => rensaOrd(o)));
     // Modellen får bara fälla ord som faktiskt skickades in som okända.
     return lista.map(String).filter((o) => tillatna.has(rensaOrd(o)));
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -354,39 +443,62 @@ export async function kontrolleraAvbildadText(
 ): Promise<StavUtfall> {
   if (!geminiNyckel()) return { ok: true, text: "", ord: [], fel: [], orsak: "ingen-nyckel" };
   let ord: string[];
+  let ordBak: string[];
+  let raw = "";
   try {
-    ord = await lasOrdTeckenvis(bild);
+    const avlast = await lasOrdTeckenvis(bild);
+    ord = avlast.ord;
+    ordBak = avlast.ordBak;
+    raw = avlast.raw;
   } catch {
     return { ok: true, text: "", ord: [], fel: [], orsak: "tekniskt-fel" };
   }
   const text = ord.join(" ");
-  if (!ord.length) return { ok: true, text: "", ord: [], fel: [], orsak: "ingen-text" };
+  if (!ord.length && !ordBak.length) return { ok: true, text: "", ord: [], ordBak, raw, fel: [], orsak: "ingen-text" };
 
   // Känd förväntad sträng → exakt jämförelse går före ordlistan (B3:s logik).
   if (opts?.forvantad?.trim()) {
     const stammer = normaliseraTecken(text) === normaliseraTecken(opts.forvantad);
     return stammer
-      ? { ok: true, text, ord, fel: [], orsak: "godkand" }
-      : { ok: false, text, ord, fel: ord, orsak: "avviker" };
+      ? { ok: true, text, ord, raw, fel: [], orsak: "godkand" }
+      : { ok: false, text, ord, raw, fel: ord, orsak: "avviker" };
   }
 
-  // B3-vägen har redan verifierat sin egen text bokstav för bokstav — bara ÖVRIG text
-  // i bilden ska dömas här (annars underkänner vi det andra lagret redan godkänt).
-  const bedomda = opts?.ignorera?.trim()
-    ? ord.filter((o) => !normaliseraTecken(opts.ignorera!).includes(normaliseraTecken(o)))
-    : ord;
+  // Båda läsriktningarna döms. Dubbletter (samma ord i båda) faller bort; skiljer de sig
+  // åt bedöms BÅDA formerna — den felstavade fälls då även om den andra läsningen städat
+  // felet (skarpt fall a8: fram "NYHETER", bak "NYHIETER", affischen sa NYHIETER).
+  const sedda = new Set<string>();
+  const bedomda = [...ord, ...ordBak].filter((o) => {
+    const n = normaliseraTecken(o);
+    if (!n || sedda.has(n)) return false;
+    sedda.add(n);
+    // B3-vägen har redan verifierat sin egen text bokstav för bokstav — bara ÖVRIG text
+    // i bilden ska dömas här (annars underkänner vi det andra lagret redan godkänt).
+    return !opts?.ignorera?.trim() || !normaliseraTecken(opts.ignorera).includes(n);
+  });
 
-  const fel = stavfel(bedomda);
-  if (fel.length) return { ok: false, text, ord, fel, orsak: "felstavning" };
+  // 1. Strukturfel fälls direkt — otillåtna glyfer och bokstavsgröt finns inte i svenska.
+  const struktur = strukturfel(bedomda);
+  if (struktur.length) return { ok: false, text, ord, ordBak, raw, fel: struktur, orsak: "felstavning" };
 
-  if (opts?.fragaModellenOmOkanda !== false) {
-    const okanda = okandaOrd(bedomda);
-    if (okanda.length) {
-      const extra = await bedomOkandaOrd(okanda);
-      if (extra.length) return { ok: false, text, ord, fel: extra, orsak: "felstavning" };
-    }
+  // 2. Misstänkta (närmiss) + okända ord avgörs av textmodellen. Ordlistan är för liten
+  //    för att ensam fälla ett ord den inte har ("FÅ" i "KÖP 2 FÅ 1" — skarpt fall).
+  const misstankta = misstanktaOrd(bedomda);
+  const okanda = okandaOrd(bedomda);
+  if (opts?.fragaModellenOmOkanda === false) {
+    // Programmatiskt läge (test/offline): misstanken står kvar som dom.
+    return misstankta.length
+      ? { ok: false, text, ord, ordBak, raw, fel: misstankta, orsak: "felstavning" }
+      : { ok: true, text, ord, ordBak, raw, fel: [], orsak: "godkand" };
   }
-  return { ok: true, text, ord, fel: [], orsak: "godkand" };
+  if (misstankta.length || okanda.length) {
+    const dom = await bedomOkandaOrd([...misstankta, ...okanda]);
+    // Svarade modellen inte alls: närmissarna fälls (fail-closed på misstanken),
+    // helt okända ord släpps (fail-open — de har aldrig haft någon grund).
+    const fel = dom === null ? misstankta : dom;
+    if (fel.length) return { ok: false, text, ord, ordBak, raw, fel, orsak: "felstavning" };
+  }
+  return { ok: true, text, ord, ordBak, raw, fel: [], orsak: "godkand" };
 }
 
 // ── Promptskärpningar (centrala, samma text i alla flöden) ─────────────────
