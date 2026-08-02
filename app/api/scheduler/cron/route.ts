@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
 import { finalizePendingAudits } from "@/lib/deep-audit-finalize";
+import { manadsresetAlla } from "@/lib/credits";
 import { publishContent } from "@/lib/publish";
 import { logActivity } from "@/lib/client-context";
 
@@ -21,6 +22,11 @@ export async function GET(req: NextRequest) {
   // Finalisera klara djupgransknings-batchar (får aldrig fälla cronet).
   const auditsFinalized = await finalizePendingAudits().catch(() => 0);
 
+  // ETAPP K2: månadsreset av creditkvoter. Idempotent — nollställer bara konton vars
+  // period runnit ut, så det är ofarligt att köra vid varje cron-slag. Läsvägen gör
+  // samma sak lat, så en missad cron kan aldrig ge en kund fel saldo.
+  const creditsReset = await manadsresetAlla().catch(() => 0);
+
   const sb = supabaseService();
   const now = new Date().toISOString();
   const { data: due } = await sb
@@ -31,7 +37,7 @@ export async function GET(req: NextRequest) {
     .order("scheduled_at", { ascending: true })
     .limit(25);
 
-  if (!due?.length) return NextResponse.json({ ok: true, processed: 0, auditsFinalized });
+  if (!due?.length) return NextResponse.json({ ok: true, processed: 0, auditsFinalized, creditsReset });
 
   const results: { id: string; ok: boolean; error?: string }[] = [];
   for (const job of due) {
@@ -78,5 +84,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, processed: results.length, results, auditsFinalized });
+  return NextResponse.json({ ok: true, processed: results.length, results, auditsFinalized, creditsReset });
 }

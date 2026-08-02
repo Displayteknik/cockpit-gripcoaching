@@ -69,21 +69,37 @@ export async function sendSms(
   if (dryrun) body.set("dryrun", "yes");
 
   try {
-    const r = await fetch(ELKS_URL, {
-      method: "POST",
-      headers: {
-        Authorization: "Basic " + Buffer.from(`${user}:${pass}`).toString("base64"),
-        "Content-Type": "application/x-www-form-urlencoded",
+    // KOSTNAD-1b: SMS är en betald tjänst och ska synas i samma överblick som AI:n.
+    // 46elks svarar med det VERKLIGA priset (tiotusendels kronor) — det skickas in som
+    // kostnadSek och går före prislistan. Ett dryrun kostar inget och loggas som noll.
+    const { anropaProvider } = await import("../ai-usage");
+    const forsta = await anropaProvider<Record<string, unknown>>({
+      provider: "elks",
+      model: "sms",
+      flow: dryrun ? "sms-testlage" : "sms",
+      mediaUnits: dryrun ? 0 : 1,
+      url: ELKS_URL,
+      init: {
+        method: "POST",
+        headers: {
+          Authorization: "Basic " + Buffer.from(`${user}:${pass}`).toString("base64"),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: body.toString(),
       },
-      body: body.toString(),
     });
-    const text = await r.text();
-    if (!r.ok) {
-      return { to, ok: false, dryrun, error: `46elks ${r.status}: ${text.slice(0, 200)}` };
+    const text = forsta.raw;
+    if (!forsta.ok) {
+      return { to, ok: false, dryrun, error: `46elks ${forsta.status}: ${text.slice(0, 200)}` };
     }
     let d: Record<string, unknown> = {};
     try { d = JSON.parse(text); } catch { /* tomt/ej-JSON svar */ }
     const costRaw = (d.cost ?? d.estimated_cost) as number | undefined;
+    // Priset kommer först i svaret, så raden korrigeras direkt efter att den skrivits.
+    if (!dryrun && typeof costRaw === "number" && forsta.handelseId) {
+      const { skrivKostnad } = await import("../ai-usage");
+      await skrivKostnad(forsta.handelseId, costRaw / 10000);
+    }
     return {
       to,
       ok: true,

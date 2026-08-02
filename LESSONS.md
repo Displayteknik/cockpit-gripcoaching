@@ -5,6 +5,24 @@ Nyast överst. Regler här är plattformsregler — de gäller varje tenant och 
 
 ---
 
+## 2026-08-02 — Fail-open döljer att skrivningen aldrig hände
+
+**Vad som hände.** K2-1:s DoD-skript körde mot ett påhittat tenant-id,
+`00000000-0000-0000-0000-0000000dod01`. Det ser ut som ett uuid men `o` är inte ett
+hex-tecken, så Postgres avvisade varje skrivning. Sju kontroller föll — och de såg ut som
+logikfel i creditledgern. Två kontroller blev dessutom **falskt gröna**: testerna av
+främmande nyckeln och statuscheken "passerade" eftersom insert:en fällde på fel skäl.
+
+**Varför det inte syntes direkt.** `sakerstallKonto` är fail-open med flit: går skrivningen
+fel returneras kontoobjektet ändå, så att en trasig databas aldrig spärrar en kund. Rätt
+beteende — men det gör att ett returnerat objekt inte bevisar att raden finns.
+
+**Regel.** Ett DoD-skript ska **läsa tillbaka** det som skrevs, aldrig lita på returvärdet
+från en funktion som är fail-open. Och ett negativt test måste bevisa att felet kom av
+rätt skäl: läs felmeddelandet, nöj dig aldrig med att anropet misslyckades.
+
+---
+
 ## 2026-08-02 — En grind som inte kan garantera något ska säga det till användaren
 
 **Vad som hände.** Stavningsgrinden för avbildad text (BILD-8a) byggdes i två lager:

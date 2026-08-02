@@ -14,23 +14,32 @@ export async function sendEmail(opts: SendOptions): Promise<{ sent: boolean; id?
   const key = process.env.RESEND_API_KEY;
   if (!key) return { sent: false, reason: "no_key" };
   const from = opts.from || process.env.RESEND_FROM || "Cockpit <onboarding@resend.dev>";
+  const mottagare = Array.isArray(opts.to) ? opts.to : [opts.to];
   try {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from,
-        to: Array.isArray(opts.to) ? opts.to : [opts.to],
-        subject: opts.subject,
-        html: opts.html,
-        // Plain-text-del (multipart) sänker spam-poäng hos strikta filter (t.ex. Oderland).
-        ...(opts.text ? { text: opts.text } : {}),
-        reply_to: opts.reply_to,
-      }),
+    // KOSTNAD-1b: mejlen är en betald tjänst och ska synas i samma överblick som AI:n.
+    // mediaUnits = antal mottagare, för det är så Resend räknar.
+    const { anropaProvider } = await import("./ai-usage");
+    const svar = await anropaProvider<{ id?: string }>({
+      provider: "resend",
+      model: "send",
+      mediaUnits: mottagare.length,
+      url: "https://api.resend.com/emails",
+      init: {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from,
+          to: mottagare,
+          subject: opts.subject,
+          html: opts.html,
+          // Plain-text-del (multipart) sänker spam-poäng hos strikta filter (t.ex. Oderland).
+          ...(opts.text ? { text: opts.text } : {}),
+          reply_to: opts.reply_to,
+        }),
+      },
     });
-    if (!r.ok) return { sent: false, reason: await r.text() };
-    const d = await r.json();
-    return { sent: true, id: d.id };
+    if (!svar.ok) return { sent: false, reason: svar.raw || svar.fel };
+    return { sent: true, id: svar.data?.id };
   } catch (e) {
     return { sent: false, reason: (e as Error).message };
   }

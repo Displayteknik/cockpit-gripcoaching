@@ -49,7 +49,7 @@ export async function GET() {
   const sb = supabaseService();
   const start = manadensStart();
 
-  const [{ data: handelser }, { data: halsa }, { data: klienter }, { data: tenantTak }, { data: plattform }] =
+  const [{ data: handelser }, { data: halsa }, { data: klienter }, { data: tenantTak }, { data: plattform }, { data: fasta }] =
     await Promise.all([
       sb.from("ai_usage_events")
         .select("created_at, tenant_id, provider, model, flow, estimated_cost_sek, status, error_class, http_status, error_body, latency_ms")
@@ -60,6 +60,7 @@ export async function GET() {
       sb.from("clients").select("id, name"),
       sb.from("ai_tenant_budget").select("tenant_id, tak_sek"),
       sb.from("ai_platform_budget").select("tak_sek, varning_procent").eq("id", 1).maybeSingle(),
+      sb.from("fasta_kostnader").select("id, namn, kategori, belopp_sek, note, aktiv, sort_order").order("sort_order"),
     ]);
 
   const rader = (handelser || []) as Rad[];
@@ -124,13 +125,25 @@ export async function GET() {
     };
   });
 
+  // Fasta abonnemang går inte att mäta per anrop men är verkliga pengar varje månad.
+  // Utan dem visar vyn bara halva sanningen (Håkans krav 2/8: ALLA kostnader, överblickbart).
+  const fastaRader = ((fasta || []) as Array<{ id: string; namn: string; kategori: string; belopp_sek: number; note: string | null; aktiv: boolean }>)
+    .map((f) => ({ ...f, belopp_sek: Number(f.belopp_sek) || 0 }));
+  const fastSumma = fastaRader.filter((f) => f.aktiv).reduce((s, f) => s + f.belopp_sek, 0);
+  const prognos = (manad / dagarIn) * dagarKvar;
+
   return NextResponse.json({
     summa: {
       idag: summa((r) => r.created_at >= dagStart),
       vecka: summa((r) => r.created_at >= veckoStart),
       manad,
-      prognos: (manad / dagarIn) * dagarKvar,
+      prognos,
+      fast: fastSumma,
+      // Det Håkan faktiskt betalar den här månaden: uppmätt förbrukning plus abonnemang.
+      totaltNu: manad + fastSumma,
+      totaltPrognos: prognos + fastSumma,
     },
+    fasta: fastaRader,
     health,
     perProvider: gruppera((r) => r.provider),
     perFlow: gruppera((r) => r.flow),
@@ -150,7 +163,11 @@ export async function PATCH(req: NextRequest) {
   const denied = await ownerGrind();
   if (denied) return denied;
 
-  let b: { tenantId?: string; tak?: number; plattformTak?: number | null; varningProcent?: number };
+  let b: {
+    tenantId?: string; tak?: number; plattformTak?: number | null; varningProcent?: number;
+    fastId?: string; belopp?: number; aktiv?: boolean;
+    nyFast?: { namn: string; kategori?: string; belopp?: number };
+  };
   try {
     b = await req.json();
   } catch {
@@ -175,6 +192,30 @@ export async function PATCH(req: NextRequest) {
     if (b.plattformTak !== undefined) rad.tak_sek = b.plattformTak === null ? null : Number(b.plattformTak);
     if (b.varningProcent !== undefined) rad.varning_procent = Number(b.varningProcent);
     const { error } = await sb.from("ai_platform_budget").upsert(rad, { onConflict: "id" });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (b.fastId) {
+    const rad: Record<string, unknown> = { uppdaterad: new Date().toISOString() };
+    if (b.belopp !== undefined) {
+      const belopp = Number(b.belopp);
+      if (!Number.isFinite(belopp) || belopp < 0) return NextResponse.json({ error: "Beloppet måste vara ett tal, noll eller mer" }, { status: 400 });
+      rad.belopp_sek = belopp;
+    }
+    if (b.aktiv !== undefined) rad.aktiv = !!b.aktiv;
+    const { error } = await sb.from("fasta_kostnader").update(rad).eq("id", b.fastId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (b.nyFast?.namn?.trim()) {
+    const { error } = await sb.from("fasta_kostnader").insert({
+      namn: b.nyFast.namn.trim().slice(0, 80),
+      kategori: b.nyFast.kategori || "ovrigt",
+      belopp_sek: Number(b.nyFast.belopp) || 0,
+      sort_order: 200,
+    });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   }

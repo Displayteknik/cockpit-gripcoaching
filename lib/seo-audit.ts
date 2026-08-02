@@ -1,5 +1,5 @@
 // SEO + AEO audit-engine. Hämtar HTML, analyserar, returnerar score + issues.
-import { extractPageSignals, scoreSignals } from "./seo-deep";
+import { extractPageSignals, scoreSignals, type LighthouseSvar } from "./seo-deep";
 
 export interface AuditResult {
   url: string;
@@ -154,9 +154,16 @@ export async function pageSpeed(url: string): Promise<{ mobile: number | null; d
   async function get(strategy: "mobile" | "desktop") {
     try {
       const u = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance`;
-      const r = await fetch(u, { signal: AbortSignal.timeout(45000) });
-      if (!r.ok) return null;
-      const d = await r.json();
+      // KOSTNAD-1b: går genom lib/ai-usage (mätning och felklassning i samma vy).
+      const { anropaProvider } = await import("./ai-usage");
+      const svar = await anropaProvider<LighthouseSvar>({
+        provider: "google",
+        model: "pagespeed",
+        url: u,
+        init: { signal: AbortSignal.timeout(45000) },
+      });
+      if (!svar.ok) return null;
+      const d = svar.data;
       const score = d?.lighthouseResult?.categories?.performance?.score;
       return typeof score === "number" ? Math.round(score * 100) : null;
     } catch { return null; }

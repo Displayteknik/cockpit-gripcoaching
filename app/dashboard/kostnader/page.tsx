@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Coins, TrendingUp, CalendarDays, Wallet, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { AlertTriangle, Coins, TrendingUp, CalendarDays, Wallet, Server, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
 
 // KOSTNAD-1 K3 — vad AI:n kostar, var pengarna går och vilken provider som är nere.
@@ -18,8 +18,10 @@ interface FelRad {
   created_at: string; provider: string; flow: string; model: string;
   error_class: string | null; http_status: number | null; error_body: string | null;
 }
+interface FastRad { id: string; namn: string; kategori: string; belopp_sek: number; note: string | null; aktiv: boolean }
 interface Data {
-  summa: { idag: number; vecka: number; manad: number; prognos: number };
+  summa: { idag: number; vecka: number; manad: number; prognos: number; fast: number; totaltNu: number; totaltPrognos: number };
+  fasta: FastRad[];
   health: HealthRad[];
   perProvider: Grupp[];
   perFlow: Grupp[];
@@ -81,6 +83,8 @@ export default function KostnaderPage() {
   const [redigerar, setRedigerar] = useState<string | null>(null);
   const [nyttTak, setNyttTak] = useState("");
   const [sparar, setSparar] = useState(false);
+  const [fastUtkast, setFastUtkast] = useState<Record<string, string>>({});
+  const [nyttNamn, setNyttNamn] = useState("");
 
   const hamta = useCallback(async () => {
     setLaddar(true);
@@ -118,6 +122,24 @@ export default function KostnaderPage() {
     }
   }
 
+  async function patcha(kropp: Record<string, unknown>) {
+    setSparar(true);
+    try {
+      const r = await fetch("/api/kostnader", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(kropp),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Kunde inte spara");
+      await hamta();
+    } catch (e) {
+      setFel((e as Error).message);
+    } finally {
+      setSparar(false);
+    }
+  }
+
   const roda = data?.health.filter((h) => h.rod) || [];
   const maxProvider = Math.max(0, ...(data?.perProvider.map((g) => g.kostnad) || [0]));
   const maxFlow = Math.max(0, ...(data?.perFlow.map((g) => g.kostnad) || [0]));
@@ -127,15 +149,15 @@ export default function KostnaderPage() {
   return (
     <div className="space-y-6">
       <DashHero
-        title="Vad AI:n kostar"
-        subtitle="Varje anrop till en AI-tjänst loggas här: vad det kostade, vilket flöde det tillhörde och om det gick fel."
+        title="Vad tjänsterna kostar"
+        subtitle="Allt du betalar för på ett ställe: varje anrop till en betaltjänst loggas med pris, flöde och eventuellt fel, och de fasta abonnemangen räknas in i totalen."
         icon={Coins}
         eyebrow={<LivePill label="denna månad" />}
         chips={
           data ? (
             <>
-              <HeroChip icon={Wallet} label={`${kr(data.summa.manad)} hittills`} />
-              <HeroChip icon={TrendingUp} label={`${kr(data.summa.prognos)} vid månadsslut`} />
+              <HeroChip icon={Wallet} label={`${kr(data.summa.totaltNu)} totalt hittills`} />
+              <HeroChip icon={TrendingUp} label={`${kr(data.summa.totaltPrognos)} vid månadsslut`} />
               <HeroChip icon={CalendarDays} label={`${data.antalHandelser} anrop`} />
             </>
           ) : undefined
@@ -176,10 +198,10 @@ export default function KostnaderPage() {
       {data && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile label="Idag" value={Math.round(data.summa.idag)} sub={kr(data.summa.idag)} icon={Coins} tone="blue" i={0} />
-            <StatTile label="Senaste sju dagarna" value={Math.round(data.summa.vecka)} sub={kr(data.summa.vecka)} icon={CalendarDays} tone="violet" i={1} />
-            <StatTile label="Denna månad" value={Math.round(data.summa.manad)} sub={kr(data.summa.manad)} icon={Wallet} tone="emerald" i={2} />
-            <StatTile label="Prognos månadsslut" value={Math.round(data.summa.prognos)} sub={kr(data.summa.prognos)} icon={TrendingUp} tone="amber" i={3} />
+            <StatTile label="Förbrukning idag" value={Math.round(data.summa.idag)} sub={kr(data.summa.idag)} icon={Coins} tone="blue" i={0} />
+            <StatTile label="Förbrukning denna månad" value={Math.round(data.summa.manad)} sub={`${kr(data.summa.manad)} · sju dagar: ${kr(data.summa.vecka)}`} icon={CalendarDays} tone="violet" i={1} />
+            <StatTile label="Fasta abonnemang" value={Math.round(data.summa.fast)} sub={`${kr(data.summa.fast)} per månad`} icon={Server} tone="slate" i={2} />
+            <StatTile label="Totalt vid månadsslut" value={Math.round(data.summa.totaltPrognos)} sub={`${kr(data.summa.totaltPrognos)} · nu ${kr(data.summa.totaltNu)}`} icon={TrendingUp} tone="amber" i={3} />
           </div>
 
           {/* Globalt tak: varning vid inställd procent (default 90). */}
@@ -264,8 +286,50 @@ export default function KostnaderPage() {
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-            <h2 className="border-b border-gray-100 px-5 py-3.5 font-display text-lg font-semibold text-gray-900">Per tjänst</h2>
+            <h2 className="border-b border-gray-100 px-5 py-3.5 font-display text-lg font-semibold text-gray-900">Per tjänst (betalas per anrop)</h2>
             <Stapel rader={data.perProvider} max={maxProvider} etikett="Tjänst" />
+          </section>
+
+          {/* Fasta abonnemang. De går inte att mäta per anrop men är verkliga pengar varje
+              månad — utan dem visar vyn bara halva sanningen. */}
+          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 px-5 py-3.5">
+              <h2 className="font-display text-lg font-semibold text-gray-900">Fasta abonnemang</h2>
+              <span className="text-sm text-gray-500">Betalas per månad oavsett användning. Fyll i beloppet från fakturan.</span>
+            </div>
+            <ul className="divide-y divide-gray-50">
+              {data.fasta.map((f) => (
+                <li key={f.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+                  <span className={`font-medium ${f.aktiv ? "text-gray-900" : "text-gray-400 line-through"}`}>{f.namn}</span>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{f.kategori}</span>
+                  {f.belopp_sek === 0 && f.aktiv && (
+                    <span className="text-xs font-medium text-amber-600">belopp saknas, totalen är för låg tills du fyllt i det</span>
+                  )}
+                  <span className="ml-auto flex items-center gap-2">
+                    <input
+                      type="number" min={0} step="1"
+                      value={fastUtkast[f.id] ?? String(f.belopp_sek)}
+                      onChange={(e) => setFastUtkast({ ...fastUtkast, [f.id]: e.target.value })}
+                      className="w-28 rounded-lg border border-gray-200 px-2 py-1 text-right tabular-nums"
+                    />
+                    <span className="text-gray-500">kr per månad</span>
+                    {(fastUtkast[f.id] ?? String(f.belopp_sek)) !== String(f.belopp_sek) && (
+                      <button onClick={() => patcha({ fastId: f.id, belopp: Number(fastUtkast[f.id]) })} disabled={sparar}
+                        className="rounded-lg bg-gray-900 px-2.5 py-1 font-medium text-white disabled:opacity-50">Spara</button>
+                    )}
+                    <button onClick={() => patcha({ fastId: f.id, aktiv: !f.aktiv })} disabled={sparar}
+                      className="text-xs text-gray-500 underline">{f.aktiv ? "Räkna inte med" : "Räkna med"}</button>
+                  </span>
+                </li>
+              ))}
+              <li className="flex flex-wrap items-center gap-3 bg-gray-50 px-5 py-3 text-sm">
+                <input value={nyttNamn} onChange={(e) => setNyttNamn(e.target.value)} placeholder="Lägg till en tjänst du betalar för"
+                  className="flex-1 min-w-56 rounded-lg border border-gray-200 px-3 py-1.5" />
+                <button onClick={() => { patcha({ nyFast: { namn: nyttNamn } }); setNyttNamn(""); }}
+                  disabled={sparar || !nyttNamn.trim()}
+                  className="rounded-lg bg-gray-900 px-3 py-1.5 font-medium text-white disabled:opacity-40">Lägg till</button>
+              </li>
+            </ul>
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white">

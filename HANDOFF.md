@@ -218,3 +218,38 @@ Kontroll: `grep -rn "generativelanguage\|api.anthropic.com\|fal.run\|api.pexels.
 Del 1 mot en lokal server som svarar 402 med betalningskropp (inget riktigt konto spärras): felklass `billing`, klartext till anroparen, raden i ledgern, **hela svarskroppen sparad** (133 tecken, ordagrant), http-status 402, provider-hälsan visar felet som senaste med rätt felklass, larmet på plats efter 1,1 sekunder. Del 2 med ett riktigt Gemini-anrop: 12 tokens in, 3 ut, 0,00011655 kr, svarstid mätt. Båda DoD-raderna raderades efteråt.
 
 **Ärlig kvarleva:** prislistan är riktvärden från augusti 2026, inte fakturerade priser. Siffran i vyn är en *uppskattning* tills priserna stäms av mot en verklig faktura. Det är precis vad `ai_pricing` finns för — raderna ändras i databasen utan deploy.
+
+---
+
+## 7. KOSTNAD-1b — ALLA betalda tjänster i samma vy (Håkans krav 2026-08-02)
+
+Kravet: *"jag vill se ALLA apier jag har kostnader för med på ett överblickbart sätt."*
+
+Kostnader finns i två former, och en vy som bara visar den ena ljuger om totalen:
+
+**Mäts per anrop** (går genom `lib/ai-usage`, syns per tjänst, flöde och klient):
+Gemini · Anthropic · fal.ai · Pexels · Pixabay · **Resend** (mejl) · **46elks** (SMS) · **Google PageSpeed**.
+
+46elks svarar med det **verkliga** priset per SMS. Wrappern tar därför emot en rapporterad kostnad (`kostnadSek`) som går före prislistan: ett fakturerat pris slår alltid en uppskattning. Ett testutskick (dryrun) kostar inget och loggas som noll. Gratistjänster med kvot (Pexels, Pixabay, PageSpeed) loggas också — en gratis tjänst med kvot är en kostnad som väntar på att bli en, och en kvotsmäll ska synas i samma vy som allt annat.
+
+**Fasta abonnemang** (`fasta_kostnader`, ägarstyrd tabell): Vercel, Supabase, GoHighLevel, domäner. De går inte att mäta per anrop men är verkliga pengar varje månad. Beloppen redigeras direkt i vyn. **Startvärdena är 0 kr med flit** — en påhittad månadskostnad är värre än en tom, och raden visar "belopp saknas, totalen är för låg tills du fyllt i det" tills den fylls i.
+
+Vyn heter nu **Vad tjänsterna kostar** och toppen visar: förbrukning idag · förbrukning denna månad · fasta abonnemang · **totalt vid månadsslut** (förbrukning plus abonnemang).
+
+---
+
+## 8. ETAPP K2-1 — creditledger och spärr (STEG 3, fas 1 av 4)
+
+**Grundregeln:** credits är en vy ovanpå KOSTNAD-1:s ledger, aldrig en egen mätning. Varje `usage`-transaktion pekar på raden i `ai_usage_events` som orsakade den. Vid konflikt är ledgern sanningen.
+
+**Tabeller** (`migrations/credits.sql`, körd): `credit_accounts` · `credit_transactions` (med främmande nyckel till `ai_usage_events`) · `credit_pricing` (social bild 3, herobild 8, video 15 per påbörjat femsekundersklipp) · `topup_orders`. Modulen `credits` är inlagd i registret med **default AV** (K2-4).
+
+**Spärren ligger i `anropaProvider`** — samma obligatoriska väg som kostnadsloggen. `lib/ai-media` fanns inte i repot; den vägen är i praktiken wrappern, och en väg förbi den är en väg förbi hela systemet. Ordningen: kronorsgränsen först (gäller alltid), sedan credits (bara för tenants som har modulen på). Räcker inte saldot görs **inget anrop alls** och kunden får ett vänligt svenskt besked **utan kronor**. Credits dras först efter ett lyckat anrop — ett misslyckat anrop kostar kunden ingenting.
+
+**Månadsreset** körs på två vägar: cronen (`/api/scheduler/cron`, idempotent, returnerar `creditsReset`) och lat vid läsning. En missad cron kan därför aldrig ge en kund fel saldo. Resetten är race-säker: uppdateringen villkoras på den gamla perioden, så bara en anropare vinner och skriver `monthly_reset`-raden.
+
+⚠ **Perioden räknas i svensk tid.** Servern kör UTC, och 31 juli 23:30 UTC är redan 1 augusti i Sverige. Utan tidszonen hade den genereringen räknats mot fel månad.
+
+**Bevis:** 22 enhetstester (`tests/k2-credits.test.ts`, reset, saldo, dragning, spärr, påfyllning, videoklipp) plus 15 kontroller mot den **riktiga** databasen (`scripts/k2-1-dod.mts`): exakt en ledgerrad ger exakt en usage-transaktion som pekar på den, främmande nyckeln avvisar ett okänt händelse-id, statuschecken avvisar en okänd transaktionstyp, resetten nollställer och loggar, påfyllningsflödet är spårbart hela vägen till insatt saldo. Kast-tenanten städades bort.
+
+**Kvar i etappen:** K2-2 kundvyn i `/k` · K2-3 owner-admin (credits och kronor sida vid sida, godkänna påfyllningar) · K2-4 utrullning med Displayteknik som pilot. Inget av det är byggt — hårt stopp efter K2-1 enligt kön.

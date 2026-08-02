@@ -13,8 +13,16 @@ export async function GET(req: NextRequest) {
   const url = `https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(q)}&image_type=photo&per_page=20&page=${page}&safesearch=true`;
 
   try {
-    const res = await fetch(url);
-    const data = await res.json();
+    // KOSTNAD-1b: går genom lib/ai-usage så tjänsten syns i kostnadsöverblicken, även när
+    // den är gratis i dag. En gratis tjänst med kvot är en kostnad som väntar på att bli en.
+    const { anropaProvider } = await import("@/lib/ai-usage");
+    const svar = await anropaProvider<{ hits?: Record<string, unknown>[]; totalHits?: number }>({
+      provider: "pixabay",
+      model: "search",
+      url,
+      init: {},
+    });
+    const data = svar.data || {};
     return NextResponse.json({
       hits: (data.hits || []).map((h: Record<string, unknown>) => ({
         id: h.id,

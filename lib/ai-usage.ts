@@ -19,8 +19,16 @@
 // Server-only (service-role) — importera aldrig från en klientkomponent.
 
 import { supabaseService } from "./supabase-admin";
+import type { CreditAtgard } from "./credits";
 
-export type Provider = "gemini" | "anthropic" | "fal" | "fireworks" | "pexels";
+// Alla tjänster vi betalar per anrop för. Fasta abonnemang (Vercel, Supabase, GHL,
+// domäner) mäts inte här — de ligger i tabellen `fasta_kostnader` och visas i samma vy,
+// annars är överblicken inte sann.
+export type Provider =
+  | "gemini" | "anthropic" | "fal" | "fireworks"   // AI
+  | "pexels" | "pixabay"                            // bildsök
+  | "resend" | "elks"                               // mejl och SMS
+  | "google";                                       // PageSpeed och övriga Google-API:er
 export type Felklass = "billing" | "quota" | "auth" | "model" | "other";
 
 /** Standardtak per tenant och månad, i kronor. Kan höjas per tenant i adminvyn. */
@@ -40,6 +48,19 @@ export interface AnropsMeta {
   tenantId?: string | null;
   /** Bilder (st) eller video (sekunder) när kostnaden inte mäts i tokens. */
   mediaUnits?: number;
+  /**
+   * VERKLIG kostnad i kronor när tjänsten själv rapporterar den (46elks skickar med
+   * priset per SMS). Går före prislistan: ett fakturerat pris slår alltid en uppskattning.
+   */
+  kostnadSek?: number;
+  /**
+   * ETAPP K2: vad kunden får ut, i creditsystemets termer. Sätts på MEDIAanrop (bild,
+   * video) — text drar inga credits. Utelämnad på ett anrop med `mediaUnits` tolkas det
+   * som en bild till ett inlägg, den vanligaste och billigaste åtgärden.
+   */
+  mediaAtgard?: CreditAtgard;
+  /** Antal enheter av åtgärden (video: påbörjade femsekundersklipp). */
+  mediaAntal?: number;
 }
 
 /**
@@ -87,8 +108,12 @@ export interface ProviderSvar<T = unknown> {
   /** Klartext till anroparen. Sätts bara när ok === false. */
   fel?: string;
   latencyMs: number;
-  /** true = budgetgrinden stoppade anropet innan det gjordes (ingen provider kontaktades). */
+  /** true = en grind stoppade anropet innan det gjordes (ingen provider kontaktades). */
   budgetstopp?: boolean;
+  /** true = stoppet berodde på slut creditsaldo, inte på kronorsgränsen. */
+  creditstopp?: boolean;
+  /** Id på raden i ai_usage_events. Credits-ledgern (STEG 3) pekar på den. */
+  handelseId?: string | null;
 }
 
 // ── Felklassning ───────────────────────────────────────────────────────────
@@ -188,15 +213,19 @@ export interface Handelse extends AnropsMeta {
 
 const KROPP_MAX = 8000;
 
-/** Skriver en rad i ai_usage_events. Kastar aldrig — mätningen får inte fälla flödet. */
-export async function loggaHandelse(h: Handelse): Promise<void> {
+/**
+ * Skriver en rad i ai_usage_events och returnerar radens id (credits-ledgern i STEG 3
+ * pekar på det). Kastar aldrig — mätningen får inte fälla flödet.
+ */
+export async function loggaHandelse(h: Handelse): Promise<string | null> {
   try {
     const rader = await prislista();
     const rad = rader.find((r) => r.provider === h.provider && r.model === h.model);
     const media = h.mediaUnits || 0;
-    const kostnad = beraknaKostnad(rad, h.tokensIn, h.tokensUt, media);
+    // Rapporterat pris går före prislistan: fakturerat slår uppskattat.
+    const kostnad = h.kostnadSek !== undefined ? h.kostnadSek : beraknaKostnad(rad, h.tokensIn, h.tokensUt, media);
     const sb = supabaseService();
-    await sb.from("ai_usage_events").insert({
+    const { data } = await sb.from("ai_usage_events").insert({
       tenant_id: h.tenantId || null,
       provider: h.provider,
       model: h.model,
@@ -210,9 +239,24 @@ export async function loggaHandelse(h: Handelse): Promise<void> {
       http_status: h.httpStatus ?? null,
       error_body: h.svarskropp ? h.svarskropp.slice(0, KROPP_MAX) : null,
       latency_ms: h.latencyMs,
-    });
+    }).select("id").maybeSingle();
+    return (data as { id: string } | null)?.id ?? null;
   } catch (e) {
     console.error("[ai-usage] kunde inte logga anrop:", (e as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Rättar kostnaden på en redan skriven rad. Behövs när tjänsten rapporterar priset i
+ * svaret (46elks) — då är det fakturerade priset känt först efter att raden skrivits.
+ * Kastar aldrig.
+ */
+export async function skrivKostnad(handelseId: string, kostnadSek: number): Promise<void> {
+  try {
+    await supabaseService().from("ai_usage_events").update({ estimated_cost_sek: kostnadSek }).eq("id", handelseId);
+  } catch (e) {
+    console.error("[ai-usage] kunde inte skriva verklig kostnad:", (e as Error).message);
   }
 }
 
@@ -321,6 +365,21 @@ export async function anropaProvider<T = unknown>(
     return { ok: false, status: 0, data: null, raw: "", fel: budget.besked, latencyMs: 0, budgetstopp: true };
   }
 
+  // ETAPP K2: creditspärr för MEDIAanrop. Ligger här, på den obligatoriska vägen, av
+  // samma skäl som kostnadsloggen: en väg förbi spärren är en väg förbi hela systemet.
+  // Kronorsgränsen ovan gäller alltid; credits bara för tenants som har modulen på.
+  const arMedia = !!raw_opts.mediaAtgard || (raw_opts.mediaUnits || 0) > 0;
+  const atgard: CreditAtgard = raw_opts.mediaAtgard || "social-bild";
+  const antal = raw_opts.mediaAntal ?? 1;
+  let creditlage: Awaited<ReturnType<typeof import("./credits").kontrolleraCredits>> | null = null;
+  if (arMedia && opts.tenantId) {
+    const { kontrolleraCredits } = await import("./credits");
+    creditlage = await kontrolleraCredits(opts.tenantId, atgard, antal);
+    if (!creditlage.tillaten) {
+      return { ok: false, status: 0, data: null, raw: "", fel: creditlage.besked, latencyMs: 0, budgetstopp: true, creditstopp: true };
+    }
+  }
+
   const t0 = Date.now();
   let status = 0;
   let raw = "";
@@ -355,12 +414,13 @@ export async function anropaProvider<T = unknown>(
   const ok = status >= 200 && status < 300;
   const tokens = ok ? plockaTokens(opts.provider, data) : { in: 0, ut: 0 };
 
-  await loggaHandelse({
+  const handelseId = await loggaHandelse({
     provider: opts.provider,
     model: opts.model,
     flow: opts.flow,
     tenantId: opts.tenantId,
     mediaUnits: ok ? opts.mediaUnits : 0,
+    kostnadSek: ok ? opts.kostnadSek : 0,
     tokensIn: tokens.in,
     tokensUt: tokens.ut,
     status: ok ? "ok" : "error",
@@ -370,7 +430,14 @@ export async function anropaProvider<T = unknown>(
     latencyMs,
   });
 
-  return { ok, status, data, raw, felklass, fel, latencyMs };
+  // Credits dras FÖRST efter ett lyckat anrop, och transaktionen pekar på ledgerraden.
+  // Ett misslyckat anrop kostar kunden ingenting — det är inte kundens fel.
+  if (ok && creditlage?.aktiv && opts.tenantId) {
+    const { dragCredits } = await import("./credits");
+    await dragCredits({ tenantId: opts.tenantId, atgard, antal, usageEventId: handelseId });
+  }
+
+  return { ok, status, data, raw, felklass, fel, latencyMs, handelseId };
 }
 
 // ── Ingång 2: SDK-anrop vi inte äger fetchen för ───────────────────────────

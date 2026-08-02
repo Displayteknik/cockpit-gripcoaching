@@ -149,15 +149,32 @@ const LH_SEO_AUDITS = [
   "hreflang", "canonical", "structured-data",
 ];
 type LhAudit = { id: string; title: string; score: number | null; displayValue?: string };
+
+/** Den del av PageSpeed-svaret vi faktiskt läser. */
+export interface LighthouseSvar {
+  lighthouseResult?: {
+    categories?: { seo?: { score?: number }; performance?: { score?: number } };
+    audits?: Record<string, { title?: string; score?: number | null; displayValue?: string }>;
+  };
+  loadingExperience?: { metrics?: Record<string, { percentile?: number }> };
+}
 async function fetchLighthouse(url: string): Promise<{ seo: number | null; cwv: PageSignals["cwv"]; audits: LhAudit[] | null }> {
   try {
     const key = process.env.PAGESPEED_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
     const u =
       `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}` +
       `&strategy=mobile&category=seo${key ? `&key=${key}` : ""}`;
-    const r = await fetch(u, { signal: AbortSignal.timeout(45000) });
-    if (!r.ok) return { seo: null, cwv: null, audits: null };
-    const d = await r.json();
+    // KOSTNAD-1b: PageSpeed går genom lib/ai-usage — samma nyckel som Gemini, och en
+    // kvotsmäll där ska synas i samma vy som allt annat.
+    const { anropaProvider } = await import("./ai-usage");
+    const svar = await anropaProvider<LighthouseSvar>({
+      provider: "google",
+      model: "pagespeed",
+      url: u,
+      init: { signal: AbortSignal.timeout(45000) },
+    });
+    if (!svar.ok) return { seo: null, cwv: null, audits: null };
+    const d = svar.data;
     const seoScore = d?.lighthouseResult?.categories?.seo?.score;
     const seo = typeof seoScore === "number" ? Math.round(seoScore * 100) : null;
     const auditsRaw = d?.lighthouseResult?.audits || {};
