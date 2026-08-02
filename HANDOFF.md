@@ -109,6 +109,8 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 | ~~Säsongsmarkör på bakgrundsskyltar~~ | 2/8 | **LEVERERAD** `81cc8a0` | `KRÄFTSKIVA 8 AUGUSTI` på griffeltavlan i bakgrunden. Negativ instruktion i `DEPICTED_MESSAGE_EN/SV`: skyltning som inte är inläggets ämne får inte annonsera högtid eller datum |
 | ~~**STEG 2 · KOSTNAD-1 (K1–K5)**~~ | 2/8 | **LEVERERAD** | Se avsnitt 6 nedan: `lib/ai-usage.ts` är enda vägen, migrations körda, `/dashboard/kostnader` byggd, budgetgrind på plats. DoD 12/12 gröna |
 | **STEG 3 · ETAPP K2 Cockpit Credits** | 2/8 | **Ej startad** | Bygger ovanpå KOSTNAD-1:s ledger. K2-1 … K2-4, hårt stopp efter varje |
+| ~~**STEG 3a · LIKVID-1** (betalstatus + likviditetsprognos i HQ)~~ | 2/8 | **LEVERERAD** | Se avsnitt 12. Betalstatusen ligger i `hq_deal_finance`, inte i GHL:s anpassade fält. Tre pipelinekort, 12-veckorsprognos per bolag, trafikljus, larm i morgonlistan. 36 DoD-kontroller gröna |
+| **STEG 3b · K3-INKÖP** (providersaldon, prognos, marginal) | 2/8 | **Ej startad** | Beställd 2/8, placerad efter LIKVID-1 och före HANDBOK-1. Bygger på `lib/ai-usage` + `ai_pricing` + creditsystemet, inget byggs om. Motiv: Gemini-betalningsspärren fick aldrig upprepas utan förvarning |
 | **STEG 4 · HANDBOK-1 (H-0, H-1)** | 2/8 | **Ej startad** | H-0 = plan med hårt stopp innan bygge |
 | **STEG 5 · ICP-motorn (ICP-0..7)** | 2/8 | **Ej startad** | ICP-0 = spec + datamodell + säkerhetsgenomgång, godkännande före kod |
 | **STEG 6a · REVISION-1: REV-1 → REV-4** | 30/7 | **Ej startad** | Rapport godkänd, tre frågor besvarade (`284f4c6`) |
@@ -330,6 +332,68 @@ Tid räknas alltid i svensk tidszon. Valutor summeras **per valuta** och räknas
 1. **Bara den pipeline han jobbar i räknas.** Urvalet styrs av `coach_users.personal_os.__ghl_pipeline_id` (DT: `2UpfDncGleH6fe9cLSpq`, "Kund pipeline DT"), inte av en hårdkodad lista. Spegeln lagrar fortfarande **allt**, filtret sitter i `/api/hq`, och antalet bortsorterade kort skrivs ut i vyn så inget döljs tyst. Effekt: 21 affärer i spel i stället för 29, summan oförändrad 799 000 kr (de åtta gamla korten i GHL:s "Sales Pipeline" stod på 0 kr). ⚠ Saknas inställningen visas allt, hellre för mycket än en tyst tom vy.
 2. **Länken går till kontakten i MySales**, inte till affärskortet. En deep link rakt till affären gick inte att verifiera och gissades därför inte.
 
-⚠ **Följd av beslut 1:** morgonlistans pipelinehalva är just nu **tom**. Båda uppgifterna med förfallodatum satt på kort i "Sales Pipeline". Ingen affär i Kund pipeline DT har någon uppgift i MySales än, så listan fylls först när uppgifter läggs på de korten.| STEG 3a · LIKVID-1 (betalstatus + likviditetsprognos i HQ) | 2/8 | **Pågår** | Beställd 2/8, placerad EFTER K2-4 och FÖRE K3-INKÖP. Bygger på HQ-1 (hq_pipeline_cache, hq_fasta_kostnader, morgonlistan). Tre pipelinekort (ofakturerat/fakturerat-obetalt/betalt), 12-veckorsprognos per bolag, trafikljus, larm i morgonlistan. ⚠ vinst härleds ur STEGET, aldrig GHL:s status |
+⚠ **Följd av beslut 1:** morgonlistans pipelinehalva är just nu **tom**. Båda uppgifterna med förfallodatum satt på kort i "Sales Pipeline". Ingen affär i Kund pipeline DT har någon uppgift i MySales än, så listan fylls först när uppgifter läggs på de korten.
+
+*(De två raderna om LIKVID-1 och K3-INKÖP låg tidigare hopklistrade här i stället för i tabellen i avsnitt 2b. De är flyttade dit, innehållet är oförändrat.)*
+
+---
+
+## 12. LIKVID-1 — betalstatus och likviditetsprognos (STEG 3a, levererad 2026-08-02)
+
+**Varför:** pipelinesumman blandade in delbetalda affärer, och det fanns ingen vy som svarade på frågan "räcker pengarna". En affär på 800 000 kr där 600 000 redan fakturerats och 400 000 betalats stod kvar med hela beloppet i "i spel".
+
+### Spårvalet: `hq_deal_finance`, inte GHL:s anpassade fält
+
+Behörigheten fanns. PIT:en skapade fält på opportunity-modellen (**201**) och skrev värden på en riktig affär (**200**). Fältet syntes i `GET /locations/<loc>/customFields?model=opportunity`. Ändå valdes den vägen bort, av tre skäl som mättes live 2/8:
+
+1. **Ett skrivet värde går inte att radera.** `customFields: []`, `field_value: null`, tom sträng och `0` svarar alla 200 och lämnar värdet orört. Ett felskrivet fakturabelopp hade bara gått att skriva över, aldrig ta bort.
+2. **Värdet överlever att fältet raderas.** Fältdefinitionen togs bort (200), men värdet ligger kvar som föräldralöst i API-svaret och pekar på ett fält som inte finns.
+3. **Bulkläsningen släpar.** `/opportunities/search` svarade `customFields: []` direkt efter skrivningen och bar värdet först senare, dessutom i ett annat format (`fieldValueNumber` + `type`) än `GET /opportunities/<id>` (`fieldValue`).
+
+Till det kommer HQ:s grundregel: **modulen skriver aldrig till MySales.** Med fälten i GHL hade betalstatusen behövt underhållas i GHL:s eget gränssnitt, och redigering direkt i HQ:s DT-tabell hade krävt just de skrivningar som är uteslutna. Valet är reversibelt: vill du ändå ha fälten i MySales kan `hq_deal_finance` fyllas ur dem utan att prognosen ändras.
+
+⚠ **Kvarleva från provkörningen:** affären "Louise Ribbing" i MySales bär värdet `4242` mot fält-id `0VjWKVgG2XXBZLyM8icy`, som inte längre finns. Det syns inte i GHL:s gränssnitt (ingen fältdefinition att rendera det med), påverkar ingen automation och läses inte av Cockpit. Affärens namn, belopp (57 000 kr), steg och status är oförändrade. Det gick inte att radera, se punkt 1 ovan.
+
+### Tabeller (`migrations/likvid.sql`, körd via Management API)
+
+| Tabell | Roll |
+|---|---|
+| `hq_deal_finance` | Fakturerat, betalt, förväntat betaldatum och förfallodatum per affär. Nyckeln är GHL:s opportunity-id. **"Kvar att fakturera" lagras aldrig**, den räknas som affärens belopp minus fakturerat |
+| `hq_bank_saldo` | Manuell avläsning per bolag. Senaste raden gäller, historiken sparas |
+| `hq_cash_items` | Kända in- och utbetalningar. Positivt = in, negativt = ut. Moms och skatt läggs in här |
+| `hq_likvid_konfig` | Buffertmål, larmgräns i veckor (default 4) och **USD-kursen** (default 11,0) per bolag |
+| `hq_steg_sannolikhet` | Sannolikhet per steg. **En tabell utöver de tre beställda**, se motivet nedan |
+
+Alla fem: RLS på, **noll policies**, åtkomst bara via service-role i `/api/hq` bakom huvudadmin. Verifierat med anon-nyckeln.
+
+**Varför en femte tabell:** viktningen "på sannolikhet per steg" måste bygga på en siffra, och den siffran fick inte vara påhittad i en formel ingen ser. Raderna seedas vid synk ur stegets plats bland stegen i spel (`(plats + 1) / (antal + 1)`, alltså 13, 25, 38, 50, 63, 75 och 88 procent för Kund pipeline DT:s sju steg), vinststeget 100 och förluststeget 0. Ägaren ändrar siffran direkt i "Så ligger affärerna", och en rad han rört skrivs **aldrig** över av synken.
+
+### De tre korten
+
+- **I spel, ofakturerat** — bara affärer i spel, beloppet minus fakturerat, viktat på steget.
+- **Fakturerat, obetalt** — fakturerat minus betalt för **alla** affärer, **oviktat**, med äldsta förfallodatum och antal passerade. En skickad faktura är inte en sannolikhet, den är en fordran.
+- **Betalt i år** — allt som markerats som betalt.
+
+DT-tabellen har fått Fakturerat, Betalt och Kvar som redigerbara kolumner plus båda datumen, och raden färgas när förfallodatumet passerats.
+
+### Prognosen
+
+Tolv veckor per bolag, med start i senaste banksaldot. **Utan banksaldo räknas ingen prognos alls** och inget larm går, i stället står det varför. In: kundinbetalningar på förväntat betaldatum (viktade i spel, 100 procent i vinststeget, förlorat räknas inte), månadsintäkt och positiva poster. Ut: fasta kostnader omräknade till kronor och negativa poster. **Ingen automatisk moms eller skatt.** USD räknas om med kursen ur konfigen och **kursen står i vyn**.
+
+**Regeln mot dubbelräkning:** ett datum före fönstret räknas ändå med i första veckan om det ligger **efter** banksaldots datum. Pengarna rörde sig efter avläsningen. Ligger det före är beloppet redan i saldot.
+
+**Trafikljus:** rött om saldot går under noll någon vecka, gult om det går under buffertmålet inom larmgränsen, annars grönt. Ett buffertbrott senare än larmgränsen visas som notering, inte som gult. Larmet läggs **överst i morgonlistan**, i samma lista och samma rendering som affärerna och uppgifterna.
+
+**Affärer utan förväntat betaldatum** står separat som "Ej daterade", oviktat, och räknas aldrig in.
+
+### Bevis
+
+26 enhetstester (`tests/likvid1-prognos.test.ts`), **438 totalt**, `tsc` och `next build` rena. Plus 36 kontroller mot riktig databas, riktig route och riktigt MySales (`scripts/likvid1-dod.mts`), alla gröna.
+
+**Handräknat fyraveckorsexempel** (finns som test): start 100 000 kr avläst 31 juli, idag 5 augusti. v32 månadsintäkt 20 000 in och fasta 30 000 ut ger 90 000. v33 affär på 100 000 kr i spel med 50 procent ger 140 000. v34 vunnen affär med 150 000 kvar ger 290 000. v35 moms 120 000 ut ger 170 000. Lägsta 90 000 kr vecka 32, buffertmål 100 000 alltså gult läge. En affär på 80 000 utan datum står som ej daterad, en förlorad på 60 000 räknas inte alls.
+
+**Skarpt mot riktig data:** en riktig DT-affär gjordes delbetald (60 000 fakturerat varav 25 000 betalt, i ett steg med 63 procent). I spel sjönk från 547 770 till 509 970, alltså exakt 60 000 × 0,63. Fakturerat obetalt steg med 35 000, betalt med 25 000. Buffertmålet höjdes över lägsta punkten och larmraden dök upp i morgonlistan; en utbetalning på 900 000 tog saldot till minus och gav rött. All testdata raderad och frånvaron verifierad.
+
+⚠ **Ärligt kvar:** ingen har ännu lagt in ett riktigt banksaldo, så prognosen står tom i produktion tills det görs. Det är avsiktligt, ingen siffra gissas fram.
 | STEG 3b · K3-INKÖP (providersaldon, prognos, marginal) | 2/8 | **Ej startad** | Beställd 2/8, placerad efter K2-4 och före HANDBOK-1. Bygger på lib/ai-usage + ai_pricing + creditsystemet, inget byggs om. Motiv: Gemini-betalningsspärren fick aldrig upprepas utan förvarning |
 
