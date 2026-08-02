@@ -3,7 +3,6 @@ import { requireAdmin, getAdminScope } from "@/lib/api-auth";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { generateFlux, searchStockPhotos, NO_DASH_IN_IMAGE_EN, DEPICTED_RELEVANCE_EN, PERSON_ATTENTION_EN } from "@/lib/images";
 import { genereraMedExaktText } from "@/lib/studio/text-in-image";
-import { stavningsgrind } from "@/lib/bildtext";
 import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { adoptReelMedia, listReelMedia } from "@/lib/studio/reel-media";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -93,7 +92,9 @@ export async function POST(req: NextRequest) {
       const exactText = String((body as { exactText?: string }).exactText || "").slice(0, 120).trim();
       if (exactText) {
         const res = await genereraMedExaktText({
-          scen: `${prompt} Vertical 9:16 composition. Photographic and real. ${NO_DASH_IN_IMAGE_EN}`,
+          // BILD-8b: blickriktningsregeln gäller även här — syns en person tillsammans med
+          // skylten texten hamnar på ska hen vara vänd mot den.
+          scen: `${prompt} Vertical 9:16 composition. Photographic and real. ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN}`,
           text: exactText,
           aspekt: "9:16",
           stil: "lapp",
@@ -134,7 +135,9 @@ export async function POST(req: NextRequest) {
         // BILD-7a: relevanshalvan av den centrala regeln (samma krav som Bildhjälpen).
         // Budskapshalvan gäller INTE här — reels lägger sin text programmatiskt över
         // bilden, därför står textförbudet kvar i Avoid-form.
-        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real, documentary style, believable everyday setting. ${DEPICTED_RELEVANCE_EN} ${NO_DASH_IN_IMAGE_EN}${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
+        // BILD-8b: blickriktningsregeln nådde aldrig hit (död import sedan `77b8564`) —
+        // den är en plattformsregel och gäller oavsett om bilden får bära text.
+        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real, documentary style, believable everyday setting. ${DEPICTED_RELEVANCE_EN} ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN}${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
         "portrait",
       );
       if (gen.error || !gen.image) {
