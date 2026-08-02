@@ -351,6 +351,15 @@ export async function GET(req: NextRequest) {
   const { inkopLarm } = await import("@/lib/inkop");
   larm.push(...(await inkopLarm(nu)));
 
+  // KONTAKT-1: tystnadsreglerna i SAMMA lista, ur samma byggare som tystnadslistan.
+  // Ingen andra tröskel och ingen egen uträkning här, annars kan vyn och morgonlistan
+  // säga emot varandra om samma affär. Faller den står morgonlistan kvar.
+  try {
+    const { byggLista, regelrader } = await import("@/lib/hq/kontakt");
+    const { rader: kontaktRader, regler } = await byggLista();
+    larm.push(...regelrader(kontaktRader, regler));
+  } catch { /* tystnadsmätningen är aldrig värd att fälla morgonlistan för */ }
+
   // START-1: uppstartsraden ligger ÖVERST i samma lista. Så länge grunden inte är på
   // plats är den viktigare än dagens enskilda uppgifter, för allt annat vilar på den.
   // Uppstartsstegen dubbleras aldrig som vanliga uppgifter i hq_tasks.

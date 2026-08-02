@@ -6,6 +6,7 @@ import {
   Server, Sunrise, Target, TrendingUp, Trash2, Users, Wallet,
 } from "lucide-react";
 import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
+import Tystnadslistan, { useTystnad } from "./kontakt/Tystnadslistan";
 import LikviditetsVy, { type CashRad, type Likviditet } from "./Likviditet";
 
 // HQ-1 — Founder HQ, ägarens kommandobrygga.
@@ -121,6 +122,8 @@ const mysalesLank = (k: PipelineKort) =>
 export default function HqPage() {
   const [data, setData] = useState<Data | null>(null);
   const [fel, setFel] = useState("");
+  // KONTAKT-1: samma hook som den egna vyn, sa HQ och /kontakt aldrig visar olika sanning.
+  const { data: kontakt, laddar: laddarKontakt, hamta: hamtaKontakt } = useTystnad();
   const [laddar, setLaddar] = useState(true);
   const [sparar, setSparar] = useState(false);
   const [raderar, setRaderar] = useState<string | null>(null);
@@ -266,6 +269,7 @@ export default function HqPage() {
                     </span>
                     <a href={larm.lank || "#likviditet"} className="ml-auto font-medium text-indigo-600 hover:text-indigo-800">
                       {larm.etikett === "Uppstart" ? "Öppna uppstarten"
+                        : larm.etikett === "Bollen hos dig" || larm.etikett === "Tystnad" || larm.etikett === "Offert" ? "Öppna kontakten"
                         : larm.lank && !larm.lank.startsWith("#") ? "Se inköpsläget" : "Se prognosen"}
                     </a>
                   </li>
@@ -674,6 +678,13 @@ export default function HqPage() {
               </div>
             </div>
           </section>
+
+          {/* ── KONTAKT-1: tystnadslistan, direkt under Displayteknik-tabellen ── */}
+          <div id="kontakt" className="scroll-mt-6 space-y-4">
+            {kontakt && (
+              <Tystnadslistan data={kontakt} laddar={laddarKontakt} onUppdatera={() => hamtaKontakt(true)} onFel={setFel} />
+            )}
+          </div>
 
           {/* ── Likviditet ───────────────────────────────────────────────── */}
           <div id="likviditet" className="scroll-mt-6">

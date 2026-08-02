@@ -30,12 +30,24 @@ import { exchangeCode, refreshAccessToken } from "@/lib/google";
 const API = "https://www.googleapis.com/calendar/v3";
 const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
 
-// Smalast möjliga: bara händelser, inte kalenderadministration.
+// Smalast möjliga per funktion, samlat i EN koppling så ägaren godkänner en gång.
+//
+// ⚠ KONTAKT-1 använder `gmail.readonly`, inte `gmail.metadata`, trots att modulen bara
+// vill ha metadata. Skälet är en dokumenterad begränsning hos Google: `gmail.metadata`
+// tillåter INTE frågeparametern q på messages.list, och utan sökning går det inte att
+// hitta korrespondensen med en viss adress utan att räkna igenom hela brevlådan.
+// Koden ber därför aldrig om brödtexten: varje hämtning sker med format=metadata och
+// en uttrycklig lista över rubriker. Brödtext lämnar aldrig Google, och lagras aldrig.
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/userinfo.email",
   "openid",
 ];
+
+/** Scope-strängar som måste finnas i kopplingen för att en funktion ska fungera. */
+export const KRAVER_GMAIL = "gmail.readonly";
+export const KRAVER_KALENDER = "calendar.events";
 
 /** `state`-värdet som skiljer ägarens kalenderflöde från klienternas (som skickar sitt klient-id). */
 export const KALENDER_STATE = "hq-kalender";
@@ -125,6 +137,24 @@ export async function hamtaKoppling(): Promise<Koppling | null> {
   const rad = data as { email: string | null; kalender_id: string; ansluten: string | null; refresh_token: string | null } | null;
   if (!rad?.refresh_token) return null;
   return { email: rad.email, kalenderId: rad.kalender_id || "primary", ansluten: rad.ansluten };
+}
+
+/**
+ * Kopplingen plus vilka scope den faktiskt fick. En koppling som gjordes innan Gmail
+ * lades till bär bara kalender-scopet, och då måste ägaren koppla om. Att upptäcka det
+ * här är bättre än ett 403 mitt i en synk.
+ */
+export async function kopplingsScope(): Promise<{ harGmail: boolean; harKalender: boolean; scopes: string } | null> {
+  const { data } = await supabaseService().from("hq_google_koppling").select("scopes, refresh_token").eq("id", 1).maybeSingle();
+  const rad = data as { scopes: string | null; refresh_token: string | null } | null;
+  if (!rad?.refresh_token) return null;
+  const s = rad.scopes || "";
+  return { harGmail: s.includes(KRAVER_GMAIL), harKalender: s.includes(KRAVER_KALENDER), scopes: s };
+}
+
+/** Giltig access-token för ägarens Google-konto. Delas av kalendern och Gmail. */
+export async function agarToken(): Promise<string> {
+  return (await accessToken()).token;
 }
 
 /** Giltig access-token, förnyad vid behov. Kastar när kopplingen saknas eller nekas. */

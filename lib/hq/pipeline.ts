@@ -39,6 +39,7 @@ export interface PipelineRad {
   namn: string | null;
   kontakt: string | null;
   foretag: string | null;
+  epost: string | null;
   ghl_contact_id: string | null;
   pipeline_id: string | null;
   pipeline_namn: string | null;
@@ -114,7 +115,7 @@ interface RaOpp {
   lastStageChangeAt?: string;
   updatedAt?: string;
   contactId?: string;
-  contact?: { name?: string; companyName?: string };
+  contact?: { name?: string; companyName?: string; email?: string };
 }
 
 // Sidbrytning: search returnerar meta.startAfter/startAfterId. Utan loopen tappas allt
@@ -349,6 +350,9 @@ export async function synkaPipeline(tvinga = false): Promise<SynkResultat> {
         namn: o.name || null,
         kontakt: o.contact?.name || null,
         foretag: o.contact?.companyName || null,
+        // KONTAKT-1: adressen matchar affären mot Gmail. Utan den kan tystnaden inte
+        // mätas, och kortet ska da visas som omatbart, aldrig som tyst.
+        epost: o.contact?.email?.trim().toLowerCase() || null,
         ghl_contact_id: o.contactId || null,
         pipeline_id: o.pipelineId || null,
         pipeline_namn: s?.pipelineNamn || null,

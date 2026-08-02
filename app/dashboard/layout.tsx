@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -37,6 +37,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
         // /dashboard/genvagar och ligger med flit utanför menyn (REV-0).
         { href: "/dashboard/hq", label: "Founder HQ", icon: Command },
         { href: "/dashboard/hq/uppstart", label: "Uppstart", icon: Rocket },
+        { href: "/dashboard/hq/kontakt", label: "Vem har bollen", icon: Radio },
         { href: "/dashboard/hq/planering", label: "Planering", icon: Calendar },
         { href: "/dashboard/mysales-kunder", label: "MySales pionjärer", icon: Users },
       ],
