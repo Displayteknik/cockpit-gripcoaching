@@ -462,4 +462,5 @@ All testdata raderad och frånvaron verifierad: noll testhändelser, noll test-i
 | Fyll i K3:s manuella siffror (Håkan) | 2/8 | **Ej gjort** | Google Cloud/Anthropic/Resend: saldo + förra fakturan. Utan fakturabelopp kan efterskottskonton inte larma. Abonnemangspris per tenant saknas → hela marginaltabellen står "pris saknas" |
 | Fyll i banksaldo + buffertmål (Håkan) | 2/8 | **Ej gjort** | LIKVID-1:s prognos står tom tills banksaldot finns. Buffertmål 0 → bara rött läge larmar |
 | GHL: föräldralöst värde 4242 på affären "Louise Ribbing" | 2/8 | **Kan ej åtgärdas** | GHL raderar aldrig ett skrivet fältvärde. Osynligt i gränssnittet, läses av ingenting |
+| SEO-1 (S-0..S-5): SEO-verktyget rapporterar nollor som mätvärden | 2/8 | **S-0 pågår** | KUNDVÄNT FEL SOM REDAN GÅTT UT. forbalance.se svarar 403 på bot-UA (46 blockerade tokens, bl.a. ordet "Spider"); verktyget läste tomt dokument, tolkade nollor som mätvärden och genererade en självsäker rapport: "0 ord, 2 sidor" mot verkliga 678 ord och 13 sidor. Placerad före HANDBOK-1. S-0 = read-only kartläggning med hårt stopp |
 
