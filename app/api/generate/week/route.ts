@@ -315,6 +315,24 @@ async function generateCompassWeek(clientId: string, theme: string) {
     }));
   }
 
+  // Siffergrinden — Håkans order 2/8: INGEN textväg får ligga utanför plattformsreglerna.
+  // Den klassiska veckoplanen fick grinden i ea53435 medan Compass-vägen stod utanför,
+  // trots att den skriver rakt in i kalendern och blir publicerade inlägg. Samma grind,
+  // samma fail-open. Rättade texter saneras på nytt så de går genom samma led som allt annat.
+  const sifC = await fixaObackadeSiffror(
+    bygg.system,
+    falt.map((f) => ({ hook: f.hook, body: f.bodyTxt })),
+    new Set<string>([...talTokens(bygg.profilText), ...talTokens(String(theme ?? ""))]),
+    "compass-vecka",
+  );
+  if (sifC.omgenererad) {
+    await Promise.all(falt.map(async (f, i) => {
+      const ny = sifC.texter[i];
+      if (ny.hook !== f.hook) f.hook = await saneraText(ny.hook, clientId);
+      if (ny.body !== f.bodyTxt) f.bodyTxt = await saneraText(ny.body, clientId);
+    }));
+  }
+
   const rows = posts.map((p, i) => {
     const { hook, bodyTxt, cta, hashtags } = falt[i];
     const caption = [hook, bodyTxt, cta, hashtags.slice(0, 5).map((h) => `#${h}`).join(" ")].filter(Boolean).join("\n\n");

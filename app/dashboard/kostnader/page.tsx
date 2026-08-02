@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Coins, TrendingUp, CalendarDays, Wallet, Server, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { AlertTriangle, Info, Coins, TrendingUp, CalendarDays, Wallet, Server, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
 
 // KOSTNAD-1 K3 — vad AI:n kostar, var pengarna går och vilken provider som är nere.
@@ -233,6 +233,19 @@ export default function KostnaderPage() {
             <StatTile label="Förbrukning denna månad" value={Math.round(data.summa.manad)} sub={`${kr(data.summa.manad)} · sju dagar: ${kr(data.summa.vecka)}`} icon={CalendarDays} tone="violet" i={1} />
             <StatTile label="Fasta abonnemang" value={Math.round(data.summa.fast)} sub={`${kr(data.summa.fast)} per månad`} icon={Server} tone="slate" i={2} />
             <StatTile label="Totalt vid månadsslut" value={Math.round(data.summa.totaltPrognos)} sub={`${kr(data.summa.totaltPrognos)} · nu ${kr(data.summa.totaltNu)}`} icon={TrendingUp} tone="amber" i={3} />
+          </div>
+
+          {/* Håkans order 2/8: siffrorna är riktvärden tills prislistan stämts av mot
+              verklig faktura. Flaggan står högst upp så ingen läser summan som fakturerad
+              kostnad — 46elks rapporterar verkligt pris, övriga räknas ur prislistan. */}
+          <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3.5 text-sm text-amber-900">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              <span className="font-semibold">Siffrorna är riktvärden.</span> Priserna kommer från prislistan nedan och är
+              inte avstämda mot verklig faktura ännu. Stäm av mot nästa faktura och rätta värdena under
+              &quot;Per tjänst&quot; — ändringen gäller direkt, ingen ny version behövs. Abonnemangsposterna står på noll
+              tills du fyllt i dem.
+            </p>
           </div>
 
           {/* Globalt tak: varning vid inställd procent (default 90). */}
