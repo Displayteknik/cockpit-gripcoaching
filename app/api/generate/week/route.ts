@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate, generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText, VARIANTREGEL } from "@/lib/prompt-core";
+import { obackadeSiffror, SIFFER_SKARPNING, talTokens, utanHashtags } from "@/lib/content/writing-rules";
 import {
   WEEK_ROLES,
   DISC_GUIDE,
@@ -18,7 +19,7 @@ import { byggCompassVeckaPrompt } from "@/lib/content-compass/vecka-prompt";
 import { dagensStudioPayload } from "@/lib/studio/pa-bild";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { hasModule } from "@/lib/entitlements";
-import { skrivreglerPa } from "@/lib/content/writing-rules";
+import { CTA_SKARPNING, harCtaISlutet, skrivreglerPa } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -193,6 +194,30 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
       for (const d of days) d.hashtags = d.hashtags.slice(0, 5);
     }
 
+    // KVALITET-3/11: CTA-golvet på den färdiga, sanerade texten. Rättade CTA:er
+    // saneras på nytt så de går genom samma grind som allt annat.
+    const golv = await fixaSaknadeCta(bygg.system, days.map((d) => d.cta), "veckoplan");
+    if (golv.omgenererad) {
+      await Promise.all(days.map(async (d, i) => {
+        if (golv.ctas[i] !== d.cta) d.cta = await saneraText(golv.ctas[i], clientId);
+      }));
+    }
+
+    // Siffergrinden på brödtexten (samma princip som CTA-golvet, en omgenerering).
+    const tillatnaTal = new Set<string>([...talTokens(bygg.profilText), ...talTokens(String(theme ?? ""))]);
+    const sif = await fixaObackadeSiffror(
+      bygg.system,
+      days.map((d) => ({ hook: d.hook, body: d.body })),
+      tillatnaTal,
+      "veckoplan",
+    );
+    if (sif.omgenererad) {
+      await Promise.all(days.map(async (d, i) => {
+        if (sif.texter[i].hook !== d.hook) d.hook = await saneraText(sif.texter[i].hook, clientId);
+        if (sif.texter[i].body !== d.body) d.body = await saneraText(sif.texter[i].body, clientId);
+      }));
+    }
+
     // Auto voice-score varje dag — användaren ser score per inlägg.
     let scoredDays = days;
     try {
@@ -271,14 +296,27 @@ async function generateCompassWeek(clientId: string, theme: string) {
   // T-5 (2): fälten saneras VAR FÖR SIG innan de landar i payload — förr sanerades bara
   // den hopslagna captionen medan payload.headline1/body/caption bar rå text.
   const nowIso = new Date().toISOString();
-  const rows = await Promise.all(posts.map(async (p, i) => {
+  const falt = await Promise.all(posts.map(async (_p, i) => {
     const ai = parsed.days![i] || {};
     const [hook, bodyTxt, cta] = await Promise.all([
       saneraText(toStr(ai.hook), clientId),
       saneraText(toStr(ai.body), clientId),
       saneraText(toStr(ai.cta), clientId),
     ]);
-    const hashtags = Array.isArray(ai.hashtags) ? ai.hashtags.map((h) => String(h).replace(/^#/, "")) : [];
+    return { hook, bodyTxt, cta, hashtags: Array.isArray(ai.hashtags) ? ai.hashtags.map((h) => String(h).replace(/^#/, "")) : [] };
+  }));
+
+  // KVALITET-3/11: CTA-golvet innan captionen sätts ihop — en dag som slutar i ett
+  // konstaterande skulle annars sparas i kalendern som "konstaterande + hashtags".
+  const golv = await fixaSaknadeCta(bygg.system, falt.map((f) => f.cta), "compass-vecka");
+  if (golv.omgenererad) {
+    await Promise.all(falt.map(async (f, i) => {
+      if (golv.ctas[i] !== f.cta) f.cta = await saneraText(golv.ctas[i], clientId);
+    }));
+  }
+
+  const rows = posts.map((p, i) => {
+    const { hook, bodyTxt, cta, hashtags } = falt[i];
     const caption = [hook, bodyTxt, cta, hashtags.slice(0, 5).map((h) => `#${h}`).join(" ")].filter(Boolean).join("\n\n");
     return {
       client_id: clientId,
@@ -302,7 +340,7 @@ async function generateCompassWeek(clientId: string, theme: string) {
       created_at: nowIso,
       updated_at: nowIso,
     };
-  }));
+  });
 
   const { data: inserted, error } = await sb.from("studio_posts").insert(rows).select("id, title, scheduled_at, funnel_level, four_a, disc");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -331,6 +369,110 @@ async function generateCompassWeek(clientId: string, theme: string) {
 // Modellen skriver ibland hashtags som bara tecken i en array: ["#jul", #blommor]
 // vilket inte är giltig JSON. Vi citerar sådana element och tar bort släpande komman.
 // Rör bara array-positioner, aldrig text inuti strängar.
+// ── KVALITET-3/punkt 11: CTA-golvets efterhandskontroll för veckoflödena ─────
+// Veckans dagar blir en CAPTION i kalendern: hook + body + cta + hashtags (se
+// veckoplan-sidan och generateCompassWeek nedan). Slutar `cta` i ett konstaterande blir
+// captionen exakt det fel Håkan såg i skarp drift: "…konstaterande + hashtags".
+//
+// Kontrollen är deterministisk (harCtaISlutet, ingen AI). Saknas uppmaningen i en
+// eller flera dagar görs EXAKT EN omgenerering — ett enda anrop som rättar alla fällda
+// dagar samtidigt. Dagar som redan klarar golvet rörs aldrig. Fail-open i varje led:
+// misslyckas omgenereringen behålls första försöket, användaren blir aldrig utan text.
+async function fixaSaknadeCta(system: string, ctas: string[], etikett: string): Promise<{ ctas: string[]; omgenererad: boolean; kvar: number[] }> {
+  const saknas = ctas.map((_, i) => i).filter((i) => !harCtaISlutet(ctas[i] || ""));
+  if (!saknas.length) return { ctas, omgenererad: false, kvar: [] };
+  console.warn(`[cta-golv] ${etikett}: inlägg ${saknas.map((i) => i + 1).join(", ")} saknar imperativ CTA — en omgenerering`);
+  const ut = [...ctas];
+  try {
+    const raw = await generate({
+      model: "gemini-2.5-flash",
+      systemInstruction: `${system}\n\n${CTA_SKARPNING}`,
+      prompt: [
+        "Avsluten nedan saknar en uppmaning i imperativ. Skriv om VART OCH ETT till exakt EN uppmaning som börjar med ett verb i imperativform och säger hur eller var handlingen görs. Behåll budskapet, rösten och funnel-nivåns ton. Inga hashtags, en mening eller två per uppmaning.",
+        "",
+        ...saknas.map((i) => `${i}: ${ctas[i] || "(tomt)"}`),
+        "",
+        `Returnera ENDAST giltig JSON: {"ctas":{${saknas.map((i) => `"${i}":"..."`).join(",")}}}`,
+      ].join("\n"),
+      temperature: 0.7,
+      maxOutputTokens: 900,
+      jsonMode: true,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+    });
+    const obj = tolkaJson<{ ctas?: Record<string, unknown> }>(raw);
+    for (const i of saknas) {
+      const v = String(obj?.ctas?.[String(i)] ?? "").trim();
+      if (v) ut[i] = v;
+    }
+  } catch (e) {
+    console.warn(`[cta-golv] ${etikett}: omgenereringen kastade (${(e as Error).message}) — behåller första försöket`);
+  }
+  const kvar = ut.map((_, i) => i).filter((i) => !harCtaISlutet(ut[i] || ""));
+  if (kvar.length) console.warn(`[cta-golv] ${etikett}: inlägg ${kvar.map((i) => i + 1).join(", ")} saknar CTA även efter omgenerering — levererar bästa försöket`);
+  return { ctas: ut, omgenererad: true, kvar };
+}
+
+// KVALITET-3/p11, Håkans beslut 1/8: siffergrinden gäller VARJE siffra, även
+// jämförelser med omvärlden. Skarptestet gav "en standardskärm har cirka 400 nits" —
+// ett tal om ANDRAS produkter, lika obackat som ett om klienten. Promptregeln ensam
+// räckte inte (samma lärdom som CTA-golvet), så här är den deterministiska grinden:
+// dagar med obackade tal skrivs om EN gång, generellt i stället för med siffra.
+// Fail-open, och användarens egna tal räknas som täckta.
+async function fixaObackadeSiffror(
+  system: string,
+  delar: { hook: string; body: string }[],
+  tillatnaTal: Set<string>,
+  etikett: string,
+): Promise<{ texter: { hook: string; body: string }[]; omgenererad: boolean; kvar: number[] }> {
+  // HELA inlägget grindas, inte bara brödtexten: DoD-körning 4 hade "en standardskärm
+  // har cirka 400 nits" i HOOKEN, och en grind som bara läste body såg rakt förbi den.
+  const helText = (d: { hook: string; body: string }) => `${d.hook || ""}
+
+${d.body || ""}`;
+  const fallda = delar
+    .map((_, i) => i)
+    .filter((i) => obackadeSiffror(utanHashtags(helText(delar[i])), tillatnaTal).length > 0);
+  if (!fallda.length) return { texter: delar, omgenererad: false, kvar: [] };
+  console.warn(`[siffergrind] ${etikett}: inlägg ${fallda.map((i) => i + 1).join(", ")} har obackade tal — en omgenerering`);
+  const ut = delar.map((d) => ({ ...d }));
+  try {
+    const raw = await generate({
+      model: "gemini-2.5-flash",
+      systemInstruction: `${system}
+
+${SIFFER_SKARPNING}`,
+      prompt: [
+        "Inläggen nedan innehåller tal som inte finns i varumärkesprofilen. Skriv om VART OCH ETT utan de talen — beskriv skillnaden generellt i stället. Behåll budskap, röst, längd och krokens funktion.",
+        "",
+        ...fallda.map((i) => `${i}: HOOK: ${delar[i].hook || "(tomt)"}\n   BRÖDTEXT: ${delar[i].body || "(tomt)"}`),
+        "",
+        `Returnera ENDAST giltig JSON: {"texter":{${fallda.map((i) => `"${i}":{"hook":"...","body":"..."}`).join(",")}}}`,
+      ].join("\n"),
+      temperature: 0.6,
+      // Hook + brödtext för flera dagar i ETT JSON-svar: 1400 kapade svaret mitt i en
+      // sträng ("Unterminated string at position 4461") och omgenereringen föll bort.
+      maxOutputTokens: 4000,
+      jsonMode: true,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+    });
+    const obj = tolkaJson<{ texter?: Record<string, { hook?: unknown; body?: unknown }> }>(raw);
+    for (const i of fallda) {
+      const v = obj?.texter?.[String(i)];
+      const hook = String(v?.hook ?? "").trim();
+      const body = String(v?.body ?? "").trim();
+      if (hook) ut[i].hook = hook;
+      if (body) ut[i].body = body;
+    }
+  } catch (e) {
+    console.warn(`[siffergrind] ${etikett}: omgenereringen kastade (${(e as Error).message}) — behåller första försöket`);
+  }
+  const kvar = ut
+    .map((_, i) => i)
+    .filter((i) => obackadeSiffror(utanHashtags(helText(ut[i])), tillatnaTal).length > 0);
+  if (kvar.length) console.warn(`[siffergrind] ${etikett}: inlägg ${kvar.map((i) => i + 1).join(", ")} har obackade tal även efter omgenerering — levererar bästa försöket`);
+  return { texter: ut, omgenererad: true, kvar };
+}
+
 function tolkaJson<T>(raw: string): T {
   const rensad = String(raw || "").replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
   const kandidat = rensad.startsWith("{") ? rensad : (rensad.match(/\{[\s\S]*\}/)?.[0] ?? rensad);

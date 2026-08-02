@@ -1,0 +1,210 @@
+{
+  "kord": "2026-08-02T07:08:21.539Z",
+  "sammanfattning": {
+    "antal": 10,
+    "godkanda": 10,
+    "omgenererade": 3
+  },
+  "captions": [
+    {
+      "nr": 1,
+      "vag": "suggest-caption (direktgenerering)",
+      "tenant": "displayteknik",
+      "caption": "En butik som säljer även när dörren är stängd? Det är inte en dröm, det är verklighet med rätt skyltfönsterskärm. När de lediga dagarna blir fler och kvällarna längre, vill du att ditt skyltfönster ska locka med erbjudanden och inspiration dygnet runt.\n\nVi hjälper butiker att få ut mer av sina skyltfönster, oavsett tid på dygnet eller årstid. Du får en skärm som syns i både starkt solljus och mörker, och en partner som tar hand om allt från installation till innehåll.\n\nSkicka en bild på ditt skyltfönster, så får du en offert inom 24 timmar.\n\n#digitalskyltning #skyltfönster #butikskommunikation #retail #digitalsignage",
+      "sista_mening": "Skicka en bild på ditt skyltfönster, så får du en offert inom 24 timmar.",
+      "cta_traffar": [
+        "Skicka en bild på ditt skyltfönster"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": false
+    },
+    {
+      "nr": 2,
+      "vag": "suggest-caption (direktgenerering)",
+      "tenant": "engens-trad",
+      "caption": "\"Måste hela trädet bort?\" Det är en vanlig fråga, men ibland räcker det att beskära trädet. Särskilt nu på sensommaren kan en genomgång göra underverk för ett träd som börjat skymma solen eller kännas lite risigt.\n\nEn beskärning kan handla om att ta bort döda grenar, glesa ur kronan eller forma trädet så det mår bättre och blir säkrare. Då slipper du oroa dig för att det ska bli ett riskträd längre fram.\n\nÄr du osäker på om ditt träd behöver beskäras? Skicka en bild på trädet och var det står, så tittar jag på det.\n\n#trädfällning #trädvård #beskärning #roslagen #åkersberga",
+      "sista_mening": "Skicka en bild på trädet och var det står, så tittar jag på det.",
+      "cta_traffar": [
+        "Skicka en bild på trädet och var det står"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": false
+    },
+    {
+      "nr": 3,
+      "vag": "suggest-caption variant (Fråga)",
+      "tenant": "displayteknik",
+      "caption": "Vad visar ditt skyltfönster idag?\n\nEn digital skyltning fångar blicken direkt, även när solen ligger på. Med en high-brightness skärm ser du till att dina erbjudanden syns tydligt dygnet runt, oavsett väder. Det är en partner som säljer på plats när du själv inte kan vara där.\n\nVi hjälper dig med allt, från att välja rätt skärm för nordiskt klimat till installation och hur du bäst uppdaterar ditt innehåll. Skicka oss en bild på din butik idag.\n\n#digitalskyltning #butikskommunikation #skyltfönster #retail #ledskärm",
+      "sista_mening": "Skicka oss en bild på din butik idag.",
+      "cta_traffar": [
+        "Skicka oss en bild på din butik idag"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": false
+    },
+    {
+      "nr": 4,
+      "vag": "suggest-caption variant (Påstående)",
+      "tenant": "displayteknik",
+      "caption": "Många tror att en vanlig TV-skärm räcker i skyltfönstret, men den blir snabbt en svart spegel i solljuset.\n\nVi ser till att ditt budskap syns tydligt, även när solen ligger på. Med våra high-brightness skyltfönsterskärmar, byggda för 24/7-drift och nordiskt klimat, får du en skärm som fungerar år efter år. En kontakt för val, installation och innehåll, så du kan fokusera på att fånga fler kunder.\n\nSkicka en bild på ditt skyltfönster för en offert inom 24 timmar.\n\n#digitalskyltning #skyltfönster #butikskommunikation #retail #digitalsignage",
+      "sista_mening": "Skicka en bild på ditt skyltfönster för en offert inom 24 timmar.",
+      "cta_traffar": [
+        "Skicka en bild på ditt skyltfönster för en offert inom 24 timmar"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": false
+    },
+    {
+      "nr": 5,
+      "vag": "suggest-caption variant (Berättelse)",
+      "tenant": "displayteknik",
+      "caption": "Du vet den där tejpade A4:an i skyltfönstret? \"Öppet i sommar.\" Solblekt, lite sne, tejpen gulnad i hörnen. Den berättar en historia, men kanske inte den du vill att dina kunder ska höra.\n\nMånga butiker vill visa upp sitt bästa, men kämpar med skyltningen som inte syns i solljuset. Vi hjälper dig att få en skärm som syns, säljer och fungerar år efter år. En partner för high-brightness skyltfönsterskärmar som tål vårt nordiska klimat och fångar blicken även när solen ligger på.\n\nSkicka en bild på platsen så får du en offert inom 24 timmar.\n\n#digitalskyltning #skyltfönster #butikskommunikation #retail #digitalsignage",
+      "sista_mening": "Skicka en bild på platsen så får du en offert inom 24 timmar.",
+      "cta_traffar": [
+        "Skicka en bild på platsen så får du en offert inom 24 timmar"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": false
+    },
+    {
+      "nr": 6,
+      "vag": "adapt-channel (ig)",
+      "tenant": "engens-trad",
+      "caption": "Är ditt träd en tickande bomb?\n\nHöststormarna är brutala. Vad som ser ut som en frisk gren kan vara ihåligt inuti, och det är ofta för sent att agera när den ligger på taket eller blockerar uppfarten.\n\nLåt oss ta en titt. En bedömning kostar inget, och du får ett rakt svar på vad som är säkert och vad som behöver åtgärdas. Vi är din lokala expert i Roslagen och norra Stockholm.\n\nSkicka en bild på trädet så tittar vi.\n#trädfällning #riskträd #åkersberga #roslagen #trädgård",
+      "sista_mening": "Skicka en bild på trädet så tittar vi.",
+      "cta_traffar": [
+        "Låt oss ta en titt",
+        "Skicka en bild på trädet så tittar vi"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": true
+    },
+    {
+      "nr": 7,
+      "vag": "adapt-channel (fb)",
+      "tenant": "engens-trad",
+      "caption": "Höststormarna kommer snart, och de avslöjar vilka träd som döljer problem.\n\nEn gren som ser helt okej ut kan vara ihålig inuti. Det är en risk många skjuter upp, men när stormen väl slår till är det ofta för sent. Innan det blir akut, låt oss göra en bedömning.\n\nVi kommer ut och kollar på ditt träd, helt utan kostnad. Då får du veta vad som är säkert och om något behöver göras. En enkel åtgärd idag kan spara dig mycket oro och kostnader imorgon. Vi finns i Roslagen och norra Stockholm.\n\nVill du ha en trygg bedömning? Skicka en bild på ditt träd i ett meddelande så hör vi av oss.",
+      "sista_mening": "Skicka en bild på ditt träd i ett meddelande så hör vi av oss.",
+      "cta_traffar": [
+        "låt oss göra en bedömning",
+        "Skicka en bild på ditt träd i ett meddelande så hör vi av oss"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": true
+    },
+    {
+      "nr": 8,
+      "vag": "adapt-channel (li)",
+      "tenant": "engens-trad",
+      "caption": "Förebyggande trädsäkerhet: Varför augusti är rätt tid att agera.\n\nMed höststormarna runt hörnet är det nu läge att bedöma riskträd. Ett träd som ser stabilt ut kan dölja inre skador, en ihålig gren upptäcks sällan förrän den har fallit. För fastighetsägare och förvaltare kan detta innebära betydande skador och kostnader.\n\nEn professionell bedömning identifierar potentiella risker i tid. Vi hjälper till med säker fällning eller beskärning, särskilt vid trånga utrymmen där sektionsfällning krävs. Målet är att eliminera risker innan de blir akuta.\n\nKontakta oss för en kostnadsfri bedömning av era träd. #fastighetsförvaltning #trädsäkerhet #roslagen",
+      "sista_mening": "#fastighetsförvaltning #trädsäkerhet #roslagen",
+      "cta_traffar": [
+        "Kontakta oss för en kostnadsfri bedömning av era träd"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": true
+    },
+    {
+      "nr": 9,
+      "vag": "improve-post (Förbättra)",
+      "tenant": "displayteknik",
+      "caption": "Känner du att din butiksskyltning inte når ut, särskilt i det starka sommarsoljuset?\n\nVi vet att många butiksägare kämpar med att synas och locka in nya kunder. Med digitala skyltar får du en lösning som syns, säljer och fungerar år efter år. Vi ser till att dina erbjudanden fångar blickar och ökar försäljningen.\n\nSkicka en bild på din butik idag så får du en offert inom 24 timmar.",
+      "sista_mening": "Skicka en bild på din butik idag så får du en offert inom 24 timmar.",
+      "cta_traffar": [
+        "Skicka en bild på din butik idag så får du en offert inom 24 timmar"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": false
+    },
+    {
+      "nr": 10,
+      "vag": "generate/regenerate (gör om)",
+      "tenant": "engens-trad",
+      "caption": "Skymmer det där stora trädet det sista kvällsljuset?\n\nUnder de lediga dagarna i augusti hinner man ofta se sin tomt med nya ögon. Trädet som ger skön skugga mitt på dagen kan vara det som stjäl de där sista, varma soltimmarna på kvällen.\n\nIbland är det inte hela trädet som är problemet, utan bara en eller ett par grenar som behöver tas ner. Det kan göra stor skillnad för både ljuset och känslan.\n\nSkicka en bild på trädet så säger jag vad som är rimligt att göra.",
+      "sista_mening": "Skicka en bild på trädet så säger jag vad som är rimligt att göra.",
+      "cta_traffar": [
+        "Skicka en bild på trädet så säger jag vad som är rimligt att göra"
+      ],
+      "cta_finns": true,
+      "cta_ok": true,
+      "omgenererad": false
+    }
+  ],
+  "veckoplan": {
+    "antal": 7,
+    "godkanda": 7,
+    "dagar": [
+      {
+        "dag": "Måndag",
+        "caption": "Ditt skyltfönster är osynligt i dagsljus.\n\nEn vanlig TV-skärm blir en svart spegel när sommarsolen ligger på. Den är byggd för ett vardagsrum, inte för ett skyltfönster.\n\nFör att synas krävs en skärm med hög ljusstyrka. Då går budskapet fram, även när solen är som starkast. Det är skillnaden mellan en skärm som bara finns där och en som faktiskt säljer.\n\nVi väljer, levererar och installerar skärmar som är byggda för nordiska förhållanden. För att de ska fungera. År efter år.\n\nBoka en digital fika med oss så tittar vi på era förutsättningar, helt utan säljpitch.\n\n#digitalskyltning #skyltfönster #retail",
+        "sista_mening": "Boka en digital fika med oss så tittar vi på era förutsättningar, helt utan säljpitch.",
+        "cta_ok": true
+      },
+      {
+        "dag": "Tisdag",
+        "caption": "Få ditt skyltfönster att sälja mer. 3 steg.\n\nSlide 1: Få ditt skyltfönster att sälja mer. 3 steg du kan ta idag.\n\nSlide 2: 1. MÄT LJUSSTYRKAN. \nEn vanlig skärm syns inte i solljus. En skärm för skyltfönster behöver minst 2500 nits (ljusstyrka). Allt under det blir en svart spegel för förbipasserande.\n\nSlide 3: 2. VISA RÖRLIGT MATERIAL. \nÖgat dras till rörelse. En enkel animation eller ett videoklipp fångar uppmärksamhet på ett sätt en tryckt affisch aldrig kan. Innehållet kan uppdateras och schemaläggas direkt från datorn.\n\nSlide 4: 3. EN KONTAKT FÖR ALLT. \nVälj en partner som tar ansvar för hela kedjan: val av rätt skärm, installation, innehåll och support. Då slipper du bli din egen AV-tekniker när något inte fungerar.\n\nSlide 5: REDO ATT SYNAS? Vi hjälper butiker, bilhallar och fastighetsägare att välja rätt lösning. Från första idé till driftsatt skärm. En kontakt. Ett ansvar.\n\nSkicka en bild på ditt skyltfönster så återkommer vi med en offert inom 24 timmar.\n\n#digitalaskyltar #butikskommunikation #ledskärm",
+        "sista_mening": "Skicka en bild på ditt skyltfönster så återkommer vi med en offert inom 24 timmar.",
+        "cta_ok": true
+      },
+      {
+        "dag": "Onsdag",
+        "caption": "Från trött fasad till stadens blickfång.\n\nFÖRE: Anonyma fönster. Ett starkt varumärke som inte syntes ut mot gatan. Potentiella kunder gick förbi utan att se vad som erbjöds innanför.\n\nEFTER: En ljusstark skärm i fönstret som visar aktuella erbjudanden. Rörligt innehåll som fångar blicken. Butiken säljer nu aktivt, även när dörren är stängd. Fler spontana besök och ett modernare intryck.\n\nDigital skyltning gäller inte teknik. Det gäller att fånga uppmärksamheten från de kunder du annars hade förlorat.\n\nLåt oss visa hur ditt skyltfönster kan bli en säljare, boka en digital fika med oss.\n\n#skyltfönster #föreochefter #digitalsignage",
+        "sista_mening": "Låt oss visa hur ditt skyltfönster kan bli en säljare, boka en digital fika med oss.",
+        "cta_ok": true
+      },
+      {
+        "dag": "Torsdag",
+        "caption": "Deras realtidsskärmar har fungerat. År efter år.\n\nNär X-Trafik behövde driftsäkra realtidsskärmar för sin trafikinformation var kravet enkelt: det måste fungera. I alla väder, varje dag.\n\nVi levererade en helhetslösning byggd för nordiskt klimat. Skärmar som tål värme, kyla och kondens. Och som syns tydligt oavsett om solen skiner eller snön faller.\n\nDet är samma tänk vi tar med oss till varje butik och bilhall. Du får inte bara en skärm. Du får en lösning som är vald för att fungera, installerad för att hålla och med support om något skulle hända. En kontakt för allt.\n\nSkicka en bild på platsen där du vill synas, så får du en offert inom 24 timmar.\n\n#ledskärm #digitalskyltning #kundcase",
+        "sista_mening": "Skicka en bild på platsen där du vill synas, så får du en offert inom 24 timmar.",
+        "cta_ok": true
+      },
+      {
+        "dag": "Fredag",
+        "caption": "Checklista: Välj rätt skärm till ditt fönster.\n\nSlide 1: Checklista: Välj rätt skärm till ditt skyltfönster. Spara för framtida behov.\n\nSlide 2: LJUSSTYRKA. Krävs en skärm med hög ljusstyrka för att synas i dagsljus. En vanlig TV blir lätt en svart spegel i solljus.\n\nSlide 3: DRIFTTID. Välj en skärm byggd för kommersiellt bruk, ofta klassad för kontinuerlig drift. En konsument-TV är gjord för några timmar om dagen.\n\nSlide 4: KYLNING. Ett soligt fönster blir varmt. Skärmen måste ha inbyggd kylning för att klara sommarvärmen utan att ta skada.\n\nSlide 5: INNEHÅLL. Hur ska du styra innehållet? Se till att det finns en enkel mjukvara, som vår DT Player, för att ladda upp och schemalägga kampanjer.\n\nSlide 6: INSTALLATION & SUPPORT. Vem installerar och vem ringer du när det inte fungerar? Välj en partner som erbjuder en helhetslösning.\n\nBoka en kostnadsfri digital fika så går vi igenom checklistan för just dina behov.\n\n#digitalskyltning #checklista #skyltfönster",
+        "sista_mening": "Boka en kostnadsfri digital fika så går vi igenom checklistan för just dina behov.",
+        "cta_ok": true
+      },
+      {
+        "dag": "Lördag",
+        "caption": "Så går det till: Från idé till installerad skärm.\n\nSlide 1: Så går det till: Från en bild på din lokal till en fungerande skärm. Vår process i 4 steg.\n\nSlide 2: 1. BEHOVSANALYS. Du skickar en bild på platsen. Vi tar en digital fika på 30 minuter där vi pratar om mål och förutsättningar. Ingen säljpitch.\n\nSlide 3: 2. OFFERT INOM 24H. Du får ett konkret förslag med rätt hårdvara och en transparent kostnad för en helhetslösning: skärm, installation och mjukvara.\n\nSlide 4: 3. INSTALLATION. Vi kommer ut och monterar allt på plats. Vi ser till att kablar dras snyggt och att allt fungerar som det ska från start.\n\nSlide 5: 4. DRIFT & SUPPORT. Vi visar hur du enkelt styr innehållet med vår mjukvara DT Player. Du har alltid en kontakt att vända dig till för löpande support. Vi tar ansvar för att det fungerar.\n\nStarta processen idag, skicka en bild på ditt skyltfönster till oss.\n\n#ledvägg #installation #digitalsignage",
+        "sista_mening": "Starta processen idag, skicka en bild på ditt skyltfönster till oss.",
+        "cta_ok": true
+      },
+      {
+        "dag": "Söndag",
+        "caption": "Det började med en fascination för teknik.\n\nJag har varit fascinerad av skärmar och teknik sedan jag var liten. Den fascinationen blev ett yrke och ett hantverk.\n\nFör mig handlar det inte om att sälja flest skärmar. Det gäller att hitta rätt lösning som fungerar för ett annat företag. Att se en butik få fler besökare eller en bilhall visa upp sina bilar på ett bättre sätt.\n\nDisplayteknik är inget stort säljbolag. Det är jag, Håkan, och min övertygelse om att bra teknik, rätt installerad, kan göra verklig skillnad. Du pratar direkt med mig, från första idén till att allt är på plats.\n\nBoka en digital fika med mig så pratar vi om hur ditt företag kan synas bättre.\n\n#entreprenörskap #söderhamn #företagande",
+        "sista_mening": "Boka en digital fika med mig så pratar vi om hur ditt företag kan synas bättre.",
+        "cta_ok": true
+      }
+    ]
+  },
+  "db_bieffekter": {
+    "fore": {
+      "agent_experiments": 94,
+      "studio_posts": 60,
+      "linkedin_posts": 19,
+      "hm_social_posts": 14
+    },
+    "efter": {
+      "agent_experiments": 94,
+      "studio_posts": 60,
+      "linkedin_posts": 19,
+      "hm_social_posts": 14
+    },
+    "diff": {
+      "agent_experiments": 0,
+      "studio_posts": 0,
+      "linkedin_posts": 0,
+      "hm_social_posts": 0
+    }
+  }
+}

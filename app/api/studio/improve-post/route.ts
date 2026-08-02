@@ -3,6 +3,7 @@ import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { sakerstallCta } from "@/lib/content/writing-rules";
 import { DISC_TONE, DISC_HOOK } from "@/lib/content-compass/prompt";
 import { DISC_LABEL_SV } from "@/lib/content-compass/labels";
 import type { DiscLetter } from "@/lib/content-compass/data";
@@ -151,8 +152,16 @@ export async function POST(req: NextRequest) {
             `Ton: ${DISC_TONE[letter]}.`,
             `Krok: ${krok}.`,
           ].join("\n");
-          const t = await genGuarded(system, `Originalinlägg:\n${text}\n\nSkriv om det för ${COLOR[letter]} nu.`, 0.75, 800, text);
-          return { letter, label: DISC_LABEL_SV[letter], color: COLOR[letter], text: t };
+          const anvisning = `Originalinlägg:\n${text}\n\nSkriv om det för ${COLOR[letter]} nu.`;
+          const forsta = await genGuarded(system, anvisning, 0.75, 800, text);
+          // KVALITET-3/11: CTA-golvet gäller även DISC-varianterna. Varje variant får sin
+          // EGNA enda omgenerering; en variant som redan uppmanar rörs aldrig.
+          const r = await sakerstallCta(
+            forsta,
+            (skarpning) => genGuarded(`${system}\n\n${skarpning}`, anvisning, 0.7, 800, text),
+            `improve-post DISC ${letter}`,
+          );
+          return { letter, label: DISC_LABEL_SV[letter], color: COLOR[letter], text: r.text };
         }),
       );
       return NextResponse.json({ variants: variants.filter((v) => v.text) });
@@ -212,25 +221,52 @@ export async function POST(req: NextRequest) {
       ].join("\n"),
     });
 
-    const raw = await genGuarded(bygg.system, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text, false);
-    const jsonStr = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-    let parsed: { analysis?: unknown; improved?: unknown; profileMatch?: unknown } = {};
-    try {
-      parsed = JSON.parse(jsonStr);
-    } catch {
-      const m = jsonStr.match(/\{[\s\S]*\}/);
-      if (m) { try { parsed = JSON.parse(m[0]); } catch { /* faller igenom */ } }
-    }
+    // Ett körningssteg: generera + tolka JSON + städa. skarpning läggs sist i
+    // systemprompten och används bara av CTA-omgenereringen nedan.
+    const koraForbattring = async (skarpning: string): Promise<{ analysis: string[]; improved: string; profileMatch: unknown }> => {
+      const sys = skarpning ? `${bygg.system}\n\n${skarpning}` : bygg.system;
+      const raw = await genGuarded(sys, `Inlägget som ska förbättras:\n${text}`, 0.7, 1400, text, false);
+      const jsonStr = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+      let parsed: { analysis?: unknown; improved?: unknown; profileMatch?: unknown } = {};
+      try {
+        parsed = JSON.parse(jsonStr);
+      } catch {
+        const m = jsonStr.match(/\{[\s\S]*\}/);
+        if (m) { try { parsed = JSON.parse(m[0]); } catch { /* faller igenom */ } }
+      }
+      return {
+        analysis: Array.isArray(parsed.analysis) ? parsed.analysis.map((x) => sanitize(String(x))).filter(Boolean).slice(0, 4) : [],
+        improved: typeof parsed.improved === "string" ? stripInventedStats(sanitize(parsed.improved), text).trim() : "",
+        profileMatch: parsed.profileMatch,
+      };
+    };
 
-    const analysis = Array.isArray(parsed.analysis)
-      ? parsed.analysis.map((x) => sanitize(String(x))).filter(Boolean).slice(0, 4)
-      : [];
-    const improved = typeof parsed.improved === "string" ? stripInventedStats(sanitize(parsed.improved), text).trim() : "";
+    const forsta = await koraForbattring("");
+    let { analysis, improved } = forsta;
+    let profileMatchRaw = forsta.profileMatch;
+
+    // KVALITET-3/punkt 11 — CTA-golvet. En "förbättrad" version som slutar i ett
+    // konstaterande är inte förbättrad. EXAKT en omgenerering, fail-open.
+    if (improved) {
+      const r = await sakerstallCta(
+        improved,
+        async (skarpning) => {
+          const nytt = await koraForbattring(skarpning);
+          if (nytt.improved) {
+            analysis = nytt.analysis.length ? nytt.analysis : analysis;
+            profileMatchRaw = nytt.profileMatch;
+          }
+          return nytt.improved;
+        },
+        "improve-post",
+      );
+      improved = r.text;
+    }
     if (!improved) return NextResponse.json({ error: "Kunde inte förbättra inlägget just nu. Prova igen." }, { status: 502 });
 
     // Utan profil finns inget att matcha mot → visa ingen infotext alls.
     // (b.meta.lager.brandProfil = fanns en profil i prompten, från prompt-core.)
-    const profileMatch = bygg.meta.lager.brandProfil ? parsed.profileMatch === true : null;
+    const profileMatch = bygg.meta.lager.brandProfil ? profileMatchRaw === true : null;
     // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
     return NextResponse.json({
       analysis: await Promise.all(analysis.map((a) => saneraText(a, clientId))),

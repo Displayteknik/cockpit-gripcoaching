@@ -1,0 +1,43 @@
+Radantal före: {
+  agent_experiments: 94,
+  studio_posts: 60,
+  linkedin_posts: 19,
+  hm_social_posts: 14
+}
+[prompt-core] profil klippt (caption, a6a33547-5ca7-475f-9a62-43ff2c74d000): Kundresa → Konkurrenter (13086 → 10842 tecken)
+[textgolv] caption: siffror:24 kvarstår efter omgenerering — levererar bästa försöket
+1. suggest-caption (direktgenerering) (displayteknik) → CTA OK (sist) [omgenererad]
+2. suggest-caption (direktgenerering) (engens-trad) → CTA OK (sist)
+[prompt-core] profil klippt (caption, a6a33547-5ca7-475f-9a62-43ff2c74d000): Kundresa → Konkurrenter (13086 → 10842 tecken)
+[textgolv] variant Påstående: siffror:24 kvarstår efter omgenerering — levererar bästa försöket
+[textgolv] variant Fråga: siffror:24 kvarstår efter omgenerering — levererar bästa försöket
+[textgolv] variant Berättelse: siffror:24 kvarstår efter omgenerering — levererar bästa försöket
+3. suggest-caption variant (Fråga) (displayteknik) → CTA OK (sist) [omgenererad]
+4. suggest-caption variant (Påstående) (displayteknik) → CTA OK (sist) [omgenererad]
+5. suggest-caption variant (Berättelse) (displayteknik) → CTA OK (sist) [omgenererad]
+[cta-golv] adapt-channel: ingen imperativ CTA i ig, fb — en omgenerering
+[cta-golv] adapt-channel: fb saknar CTA även efter omgenerering — levererar bästa försöket
+6. adapt-channel (ig) (engens-trad) → CTA OK (sist) [omgenererad]
+7. adapt-channel (fb) (engens-trad) → CTA FINNS MEN INTE SIST [omgenererad]
+8. adapt-channel (li) (engens-trad) → CTA OK (sist) [omgenererad]
+[prompt-core] profil klippt (kanal-anpassning, a6a33547-5ca7-475f-9a62-43ff2c74d000): Kundresa → Konkurrenter (13086 → 10842 tecken)
+[saneraText] klientens förbjudna ord kvar i färdig text (a6a33547-5ca7-475f-9a62-43ff2c74d000): problem
+9. improve-post (Förbättra) (displayteknik) → CTA OK (sist)
+10. generate/regenerate (gör om) (engens-trad) → CTA OK (sist)
+
+=== 10 captions klara ===
+[prompt-core] profil klippt (veckoplan, a6a33547-5ca7-475f-9a62-43ff2c74d000): Kundresa → Konkurrenter (13086 → 10842 tecken)
+Radantal efter: {
+  agent_experiments: 94,
+  studio_posts: 60,
+  linkedin_posts: 19,
+  hm_social_posts: 14
+}
+Differens (ska vara 0 överallt): {
+  agent_experiments: 0,
+  studio_posts: 0,
+  linkedin_posts: 0,
+  hm_social_posts: 0
+}
+KLART → C:\Users\hakan\OneDrive\Dokument\Antigravity\hmmotor-next\docs\kvalitet3\p11\dod-bevis.json
+EXIT=0

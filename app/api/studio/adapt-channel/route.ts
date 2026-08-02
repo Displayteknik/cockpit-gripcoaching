@@ -3,6 +3,7 @@ import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { CTA_SKARPNING, harCtaISlutet } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -88,32 +89,63 @@ export async function POST(req: NextRequest) {
       jsonSchema: `Returnera ENDAST giltig JSON med exakt dessa nycklar: ${wanted.map((c) => `"${c}"`).join(", ")}. Varje värde = den färdiga captionen för kanalen (med radbrytningar som \\n). Ingen text utanför JSON-objektet.`,
     });
 
-    let parsed: Partial<Record<ChannelKey, string>> = {};
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const sys = attempt === 0 ? bygg.system : `${bygg.system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående svar var ogiltigt eller innehöll ett förbjudet uttryck. Returnera ENBART giltig JSON och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar".`;
-      const raw = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt: bygg.user, temperature: attempt === 0 ? 0.8 : 0.65, maxOutputTokens: 1400, skrivregler: false /* prompt-core äger skrivregler-flaggan (TEXT-1) */ })).trim();
-      parsed = extractJson(raw);
-      const values = wanted.map((c) => parsed[c] || "");
-      if (values.some((v) => v) && !values.some((v) => hasBanned(v))) break;
-    }
+    // Ett anrop = alla begärda kanaler. skarpning läggs sist i systemprompten och
+    // används bara av CTA-omgenereringen längre ned.
+    const koraGenerering = async (skarpning: string): Promise<Partial<Record<ChannelKey, string>>> => {
+      const bas = skarpning ? `${bygg.system}\n\n${skarpning}` : bygg.system;
+      let ut: Partial<Record<ChannelKey, string>> = {};
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const sys = attempt === 0 ? bas : `${bas}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående svar var ogiltigt eller innehöll ett förbjudet uttryck. Returnera ENBART giltig JSON och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar".`;
+        const raw = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt: bygg.user, temperature: attempt === 0 ? 0.8 : 0.65, maxOutputTokens: 1400, skrivregler: false /* prompt-core äger skrivregler-flaggan (TEXT-1) */ })).trim();
+        ut = extractJson(raw);
+        const values = wanted.map((c) => ut[c] || "");
+        if (values.some((v) => v) && !values.some((v) => hasBanned(v))) break;
+      }
+      return ut;
+    };
 
+    // Sanering + kanalens hashtag-tak. Kontrollen nedan körs på exakt den text
+    // användaren ser, inte på råsvaret.
+    const kanalFor = (k: ChannelKey): "linkedin" | "facebook" | "instagram" =>
+      k === "li" ? "linkedin" : k === "fb" ? "facebook" : "instagram";
+    const stada = async (k: ChannelKey, raa: string): Promise<string> => {
+      const v = raa.trim();
+      if (!v) return "";
+      return saneraText(hasBanned(v) ? sanitize(v) : v, clientId, kanalFor(k));
+    };
+
+    const parsed = await koraGenerering("");
     const captions: Partial<Record<ChannelKey, string>> = {};
     for (const c of wanted) {
-      let v = (parsed[c] || "").trim();
-      if (!v) continue;
-      if (hasBanned(v)) v = sanitize(v);
-      captions[c] = v;
+      const v = await stada(c, parsed[c] || "");
+      if (v) captions[c] = v;
     }
     if (!Object.keys(captions).length) {
       return NextResponse.json({ error: "Kunde inte anpassa per kanal — försök igen." }, { status: 502 });
     }
-    // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
-    for (const k of Object.keys(captions) as (keyof typeof captions)[]) {
-      const kanal = k === "li" ? "linkedin" : k === "fb" ? "facebook" : "instagram";
-      const t = captions[k];
-      if (t) captions[k] = await saneraText(t, clientId, kanal);
+
+    // KVALITET-3/punkt 11 — CTA-golvets efterhandskontroll, per kanal.
+    // Saknar någon kanalcaption en uppmaning i imperativ görs EXAKT EN omgenerering.
+    // Bara de fällda kanalerna byts ut: en kanal som redan klarar golvet rörs aldrig.
+    // Fail-open — misslyckas omgenereringen levereras bästa försöket ändå.
+    const utanCta = (Object.keys(captions) as ChannelKey[]).filter((k) => !harCtaISlutet(captions[k] || ""));
+    let ctaOmgenererad = false;
+    if (utanCta.length) {
+      ctaOmgenererad = true;
+      console.warn(`[cta-golv] adapt-channel: ingen imperativ CTA i ${utanCta.join(", ")} — en omgenerering`);
+      try {
+        const nytt = await koraGenerering(CTA_SKARPNING);
+        for (const k of utanCta) {
+          const v = await stada(k, nytt[k] || "");
+          if (v) captions[k] = v;
+        }
+      } catch (e) {
+        console.warn(`[cta-golv] adapt-channel: omgenereringen kastade (${(e as Error).message}) — behåller första försöket`);
+      }
+      const kvar = (Object.keys(captions) as ChannelKey[]).filter((k) => !harCtaISlutet(captions[k] || ""));
+      if (kvar.length) console.warn(`[cta-golv] adapt-channel: ${kvar.join(", ")} saknar CTA även efter omgenerering — levererar bästa försöket`);
     }
-    return NextResponse.json({ captions });
+    return NextResponse.json({ captions, ctaOmgenererad });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

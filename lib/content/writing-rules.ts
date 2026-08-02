@@ -234,6 +234,204 @@ export function raknaCta(text: string): number {
   return m ? m.length : 0;
 }
 
+// ── CTA-golvets efterhandskontroll (KVALITET-3/punkt 11) ─────────────────────
+// Bakgrund: CTA-golvet i lib/prompt-core skärptes i T-6a till "imperativ med väg", men
+// skarp drift visade att golvet är INTERMITTENT: en caption fick "Boka en digital fika,
+// ingen säljpitch", nästa slutade i ett konstaterande följt av hashtags. En promptregel
+// är ett förstahandsförsvar, inte en garanti. Därför en deterministisk kontroll på
+// UTDATAN som kan utlösa exakt EN omgenerering.
+//
+// Skillnaden mot raknaCta(): raknaCta räknar FÖREKOMSTER av CTA-ord var som helst i
+// texten ("du kan boka tid hos oss" räknas). CTA-golvet kräver något strängare — en
+// UPPMANING I IMPERATIV: verbet ska stå först i sin sats. Det är exakt den skillnaden
+// som skiljer "vi ser till att du får en offert" (konstaterande) från "Skicka en bild,
+// få en offert inom 24 timmar" (uppmaning).
+//
+// Metoden: dela texten i satser, normalisera bort emoji/pilar/inledande bindeord, och
+// kolla om satsen BÖRJAR med ett imperativverb. Sentence-initial-kravet gör hela
+// grovjobbet gratis: "Vi hjälper dig att boka tid" har "boka" mitt i satsen efter "att"
+// och faller, medan "Boka tid via länken" träffar. Ingen AI inblandad.
+
+/** Enordsimperativ som i kundtext i praktiken alltid inleder en uppmaning. */
+const CTA_VERB_ENKLA = [
+  "boka", "beställ", "ring", "mejla", "maila", "messa", "skicka", "svara", "skriv",
+  "kommentera", "dela", "tagga", "följ", "prenumerera", "anmäl", "registrera", "ansök",
+  "besök", "kika", "testa", "prova", "hämta", "klicka", "tryck", "swipa", "spara",
+  "läs", "lyssna", "kontakta", "hojta", "berätta", "välj", "dma",
+];
+
+// Verb vars stam är för tvetydig för att räknas ensam ("ta med dig det här" är en
+// slutkläm, "ta kontakt" är en uppmaning). De kräver sin väg utskriven.
+// ⚠ Ordslut skrivs som (?![\p{L}\p{N}]) med u-flaggan, ALDRIG \b. JS:s \b är
+// ASCII-baserat: efter ett å/ä/ö finns ingen ordgräns, så /passa\s+på\b/ matchar aldrig
+// "Passa på nu i augusti". Fällan kostade en röd testrad innan den syntes.
+const SLUT = "(?![\\p{L}\\p{N}])";
+const flerord = (kropp: string) => new RegExp(`^${kropp}${SLUT}`, "iu");
+
+const CTA_MONSTER_FLERORD: RegExp[] = [
+  flerord("dm:a"),
+  flerord("hör\\s+(gärna\\s+)?av\\s+(dig|er)"),
+  flerord("ta\\s+(kontakt|en\\s+titt|steget|första\\s+steget|chansen)"),
+  flerord("kom\\s+(förbi|in|igång|hit|och)"),
+  flerord("titta\\s+(in|förbi|här|på)"),
+  flerord("kolla\\s+(in|här|gärna)"),
+  flerord("spana\\s+in"),
+  flerord("sväng\\s+förbi"),
+  flerord("häng\\s+med"),
+  flerord("hoppa\\s+in"),
+  flerord("slå\\s+(oss\\s+)?en\\s+signal"),
+  flerord("låt\\s+oss"),
+  flerord("fyll\\s+i"),
+  flerord("ladda\\s+(ner|hem)"),
+  flerord("passa\\s+på"),
+  flerord("(missa|glöm)\\s+inte"),
+  flerord("tveka\\s+inte"),
+  flerord("fråga\\s+(oss|gärna|på|vad)"),
+  flerord("säg\\s+till"),
+  flerord("se\\s+(mer|hur|hela|filmen|resultatet|själv)"),
+  flerord("gå\\s+in\\s+på"),
+  flerord("prata\\s+med\\s+oss"),
+  flerord("använd\\s+(koden|rabattkoden|länken)"),
+];
+
+// Satser som BÖRJAR med ett imperativverb men aldrig är en CTA. "Kom ihåg att vattna"
+// är en påminnelse, "Fråga dig själv" ett retoriskt grepp mitt i texten.
+const CTA_UNDANTAG: RegExp[] = [flerord("kom\\s+ihåg"), flerord("fråga\\s+dig\\s+själv")];
+
+/**
+ * Tar bort hashtags så de aldrig stör satsanalysen. Rader som BARA är hashtags plockas
+ * bort helt (det är hashtag-blocket sist i captionen), och lösa taggar mitt i texten
+ * ersätts med blanksteg. Poängen: en korrekt CTA följd av "#skyltar #jämtland" ska
+ * fortfarande läsas som en CTA.
+ */
+export function utanHashtags(text: string): string {
+  return String(text || "")
+    .split("\n")
+    .filter((rad) => !/^\s*(?:#[\p{L}\p{N}_]+\s*)+$/u.test(rad))
+    .join("\n")
+    .replace(/#[\p{L}\p{N}_]+/gu, " ");
+}
+
+/** Skalar bort emoji, pilar, citattecken och inledande bindeord ur en sats. */
+function normaliseraKlausul(klausul: string): string {
+  return String(klausul || "")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/^(?:så|och|men|eller|sen|sedan|därför|alltså|ps|p\.s\.|nu|idag|i\s+dag|här)\s+/iu, "")
+    .trim();
+}
+
+/**
+ * Alla satser i texten som är en uppmaning i imperativ. Returnerar satserna i den
+ * ordning de står, så anroparen kan se BÅDE om golvet är uppfyllt och var CTA:n hamnade.
+ */
+export function hittaImperativCta(text: string): string[] {
+  const ren = utanHashtags(text);
+  if (!ren.trim()) return [];
+  const traffar: string[] = [];
+  // Satsgräns: skiljetecken, radbrytning eller komma följt av blanksteg. Kommat behövs
+  // för mönstret "Boka en digital fika, ingen säljpitch" — och för det omvända,
+  // "Är du nyfiken, hör av dig".
+  for (const raa of ren.split(/[.!?:;\n]+|,\s+/)) {
+    const k = normaliseraKlausul(raa);
+    if (!k) continue;
+    if (CTA_UNDANTAG.some((re) => re.test(k))) continue;
+    const forstaOrd = (k.match(/^[\p{L}]+/u)?.[0] || "").toLowerCase();
+    const enkelTraff = forstaOrd.length > 1 && CTA_VERB_ENKLA.includes(forstaOrd);
+    if (enkelTraff || CTA_MONSTER_FLERORD.some((re) => re.test(k))) traffar.push(k);
+  }
+  return traffar;
+}
+
+/** Finns minst EN uppmaning i imperativ någonstans i texten? */
+export function harImperativCta(text: string): boolean {
+  return hittaImperativCta(text).length > 0;
+}
+
+/** Sista stycket (block skilt med tomrad), utan hashtag-rader. */
+function slutstycke(text: string): string {
+  const ren = utanHashtags(text).replace(/\n{3,}/g, "\n\n").trim();
+  if (!ren) return "";
+  const stycken = ren.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+  return stycken[stycken.length - 1] || "";
+}
+
+/** Sista MENINGEN i texten (hashtag-rader borträknade). */
+function sistaMening(text: string): string {
+  const styckeText = slutstycke(text);
+  if (!styckeText) return "";
+  const meningar = styckeText
+    .split(/(?<=[.!?…])\s+/)
+    .map((m) => m.trim())
+    .filter(Boolean);
+  return meningar[meningar.length - 1] || styckeText;
+}
+
+/**
+ * CTA-golvet fullt ut: uppmaningen står i textens SISTA MENING.
+ *
+ * HÅKANS BESLUT 2026-08-01 (skärpning): golvet gäller BOKSTAVLIGT — CTA:n kommer sist,
+ * platsrader, löften och annat läggs FÖRE den. Kontrollen mätte tidigare sista STYCKET,
+ * vilket släppte igenom DoD-beviset caption 7: "Skicka en bild på trädet och var det
+ * står, så återkommer vi. Vi finns i Roslagen och norra Stockholm." — uppmaningen fanns,
+ * men läsaren lämnades i ett konstaterande.
+ *
+ * En klarläggare i SAMMA mening är fortfarande tillåten, eftersom meningen då slutar i
+ * uppmaningen: "Boka en digital fika, ingen säljpitch." Däremot underkänns en ny mening
+ * efter CTA:n, oavsett hur kort och vänlig den är.
+ */
+export function harCtaISlutet(text: string): boolean {
+  return harImperativCta(sistaMening(text));
+}
+
+/** Skärpningen som skickas med vid omgenereringen. Exporterad för test och granskning. */
+export const CTA_SKARPNING = [
+  "=== RÄTTELSE: CTA-GOLVET BRÖTS (väger tyngst i den här körningen) ===",
+  "Föregående version saknade en uppmaning. Skriv om texten så att den AVSLUTAS med exakt EN uppmaning i imperativ.",
+  "Uppmaningen ska BÖRJA med ett verb i imperativform (Boka, Skicka, Ring, Mejla, Svara, Skriv, Kommentera, Dela, Läs, Kika, Testa, Kontakta, Besök, Anmäl dig, Hör av dig, Ta kontakt) och säga HUR eller VAR handlingen görs.",
+  "Ett konstaterande är INTE en uppmaning. Dessa är alla FEL: \"vi hjälper dig gärna\", \"vi ser till att du får en offert\", \"du är välkommen att höra av dig\", \"det är bara att kontakta oss\", \"länk i bion\".",
+  "Behåll budskapet, rösten och längden. Byt bara ut avslutet mot en riktig uppmaning.",
+  "Uppmaningen ska vara textens SISTA MENING. Platsrader (\"Vi finns i Roslagen\"), löften (\"Vi hör av oss samma dag\") och annat placeras FÖRE den — aldrig efter.",
+  "Finns hashtags ligger de kvar EFTER uppmaningen, på egen rad sist.",
+].join("\n");
+
+export interface CtaGolvUtfall {
+  text: string;
+  /** Kördes omgenereringen? (Sker högst EN gång, aldrig i loop.) */
+  omgenererad: boolean;
+  /** Uppfyller den returnerade texten golvet? false = fail-open, texten levereras ändå. */
+  godkand: boolean;
+}
+
+/**
+ * Efterhandskontrollen. Saknar texten en imperativ CTA görs EXAKT EN omgenerering med
+ * CTA_SKARPNING som extra systeminstruktion.
+ *
+ * FAIL-OPEN är en hård regel: användaren ska aldrig bli utan text. Kastar omgenereringen,
+ * svarar tomt eller misslyckas den också, returneras det bästa försöket och brottet loggas.
+ * Ingen andra omgenerering sker någonsin — en loop mot en modell som inte lyder kostar
+ * bara tid och pengar.
+ */
+export async function sakerstallCta(
+  text: string,
+  omgenerera: (skarpning: string) => Promise<string>,
+  etikett = "caption",
+): Promise<CtaGolvUtfall> {
+  if (harCtaISlutet(text)) return { text, omgenererad: false, godkand: true };
+  let ny = "";
+  try {
+    ny = String((await omgenerera(CTA_SKARPNING)) || "").trim();
+  } catch (e) {
+    console.warn(`[cta-golv] omgenerering kastade (${etikett}): ${(e as Error).message}`);
+  }
+  if (!ny) {
+    console.warn(`[cta-golv] ${etikett}: ingen imperativ CTA och omgenereringen gav inget svar — levererar första försöket`);
+    return { text, omgenererad: true, godkand: false };
+  }
+  if (harCtaISlutet(ny)) return { text: ny, omgenererad: true, godkand: true };
+  console.warn(`[cta-golv] ${etikett}: ingen imperativ CTA ens efter omgenerering — levererar bästa försöket`);
+  return { text: ny, omgenererad: true, godkand: false };
+}
+
 // ── Prisgrind (KVALITET-3/punkt 5) ───────────────────────────────────────────
 // Plattformsregel: genererade inlägg, captions och bildtexter skriver inte ut priser
 // på klientens egna produkter och tjänster. Värdet beskrivs i texten, priset tas i
@@ -271,4 +469,97 @@ export function hittaPrisuppgifter(text: string): string[] {
 /** Innehåller texten en prisuppgift? Används både för grind och för undantaget. */
 export function harPrisuppgift(text: string): boolean {
   return hittaPrisuppgifter(text).length > 0;
+}
+
+// ── Siffergrind för färdig text (KVALITET-3/p11, Håkans beslut 2026-08-01) ────
+// Den fail-closed siffergrinden i lib/studio/copy.ts skyddar bara studio-texten: där
+// finns sju varianter att filtrera bland. En caption har bara en text, så samma krav
+// måste bäras av en efterhandskontroll med EN omgenerering — samma mönster som CTA-golvet.
+//
+// BESLUTET: kravet gäller VARJE siffra, även jämförelser med omvärlden. DoD-beviset för
+// p11 innehöll "en vanlig TV klarar sällan mer än 400 nits" — ett tal om andras produkter,
+// lika obackat som ett tal om klienten. Finns siffran inte i profilen (eller i det
+// användaren själv skrev) ska påståendet skrivas generellt i stället.
+
+/** Alla tal i en text som jämförbara tokens ("3 500" och "3500" blir samma). */
+export function talTokens(text: string): Set<string> {
+  const ut = new Set<string>();
+  for (const m of String(text || "").matchAll(/\d[\d\s.,]*\d|\d/g)) ut.add(m[0].replace(/[\s.,]/g, ""));
+  return ut;
+}
+
+/**
+ * Tal i texten som saknar täckning. Årtal och klockslag räknas inte som påståenden om
+ * storlek — de är tidsangivelser och backas av säsongslagret/användarens egen text.
+ */
+export function obackadeSiffror(text: string, tillatna: Set<string>): string[] {
+  const ut: string[] = [];
+  for (const m of String(text || "").matchAll(/\d[\d\s.,]*\d|\d/g)) {
+    const token = m[0].replace(/[\s.,]/g, "");
+    if (tillatna.has(token)) continue;
+    if (/^(?:19|20)\d{2}$/.test(token)) continue; // årtal
+    if (/^\d{1,2}$/.test(token) && /(?:kl|klockan)\s*$/i.test(String(text).slice(0, m.index ?? 0))) continue; // klockslag
+    ut.push(m[0]);
+  }
+  return ut;
+}
+
+export const SIFFER_SKARPNING = [
+  "=== RÄTTELSE: OBACKAD SIFFRA (väger tyngst i den här körningen) ===",
+  "Föregående version innehöll ett tal som inte finns i varumärkesprofilen. Skriv om texten UTAN det talet.",
+  "Kravet gäller varje siffra, även jämförelser med omvärlden: konkurrenters produkter, branschsnitt och 'vad de flesta gör'.",
+  "Skriv påståendet GENERELLT i stället — 'en vanlig skärm blir en svart spegel i solljus' i stället för ett påhittat antal enheter.",
+  "Behåll budskapet, rösten, längden och avslutets uppmaning. Byt bara ut sifferpåståendet.",
+].join("\n");
+
+export interface TextGolvUtfall {
+  text: string;
+  omgenererad: boolean;
+  godkand: boolean;
+  /** Vad som fällde första försöket — för loggning och bevis. */
+  brott: string[];
+}
+
+/**
+ * Efterhandskontroll för färdig caption-text: CTA-golvet OCH siffergrinden i ETT svep.
+ * Bryter någon av dem görs EXAKT EN omgenerering med de skärpningar som behövs.
+ * FAIL-OPEN: användaren blir aldrig utan text.
+ */
+export async function sakerstallCaption(
+  text: string,
+  tillatnaTal: Set<string>,
+  omgenerera: (skarpning: string) => Promise<string>,
+  etikett = "caption",
+): Promise<TextGolvUtfall> {
+  const brottFor = (t: string): string[] => {
+    const b: string[] = [];
+    if (!harCtaISlutet(t)) b.push("cta");
+    const siffror = obackadeSiffror(utanHashtags(t), tillatnaTal);
+    if (siffror.length) b.push(`siffror:${siffror.join("|")}`);
+    return b;
+  };
+  const brott = brottFor(text);
+  if (!brott.length) return { text, omgenererad: false, godkand: true, brott: [] };
+
+  const skarpning = [
+    brott.some((b) => b === "cta") ? CTA_SKARPNING : "",
+    brott.some((b) => b.startsWith("siffror")) ? SIFFER_SKARPNING : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  let ny = "";
+  try {
+    ny = String((await omgenerera(skarpning)) || "").trim();
+  } catch (e) {
+    console.warn(`[textgolv] omgenerering kastade (${etikett}): ${(e as Error).message}`);
+  }
+  if (!ny) {
+    console.warn(`[textgolv] ${etikett}: ${brott.join(", ")} — omgenereringen gav inget svar, levererar första försöket`);
+    return { text, omgenererad: true, godkand: false, brott };
+  }
+  const kvar = brottFor(ny);
+  if (!kvar.length) return { text: ny, omgenererad: true, godkand: true, brott };
+  console.warn(`[textgolv] ${etikett}: ${kvar.join(", ")} kvarstår efter omgenerering — levererar bästa försöket`);
+  return { text: ny, omgenererad: true, godkand: false, brott };
 }

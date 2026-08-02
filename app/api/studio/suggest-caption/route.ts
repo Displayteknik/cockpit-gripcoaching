@@ -3,6 +3,7 @@ import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { sakerstallCaption, talTokens } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -110,15 +111,52 @@ export async function POST(req: NextRequest) {
 
     // Generera EN caption med given krok-vinkel + grinda mot AI-språk (regenerera 2 ggr).
     // Krok-vinkeln läggs som variant-suffix på underlaget (TEXT-1).
-    const genOne = async (vinkelInstruktion: string): Promise<string> => {
+    const genOne = async (vinkelInstruktion: string, skarpning = ""): Promise<string> => {
       const prompt = vinkelInstruktion ? `${bygg.user}\n\n=== KROK-VINKEL ===\n${vinkelInstruktion}` : bygg.user;
+      // KVALITET-3/11: CTA-skärpningen läggs SIST i systemprompten (väger tyngst) och
+      // bara i omgenereringen — första försöket ska aldrig veta att den finns.
+      const bas = skarpning ? `${bygg.system}\n\n${skarpning}` : bygg.system;
       let out = "";
       for (let attempt = 0; attempt < 3; attempt++) {
-        const sys = attempt === 0 ? bygg.system : `${bygg.system}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
+        const sys = attempt === 0 ? bas : `${bas}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
         out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? 0.9 : 0.7, maxOutputTokens: longer ? 700 : 500, skrivregler: false /* prompt-core äger skrivregler-flaggan (TEXT-1) */ })).trim();
         if (!hasBanned(out)) break;
       }
       return hasBanned(out) ? sanitizeCaption(out) : out;
+    };
+
+    // Tal som får förekomma: profilens verifierade siffror + det användaren själv skrev.
+    // Håkans beslut 1/8: kravet gäller VARJE siffra, även jämförelser med omvärlden
+    // ("en vanlig TV klarar 400 nits"). Saknas talet skrivs påståendet generellt.
+    // OBS: profiltexten heter `bygg.profilText`. `b` är request-bodyn (any) — läser man
+    // `b.profilText` blir det undefined utan att TypeScript klagar, och DÅ flaggas varje
+    // siffra som obackad. Det hände i DoD-körning 3: DT:s äkta "offert inom 24 timmar"
+    // fälldes. En tom grindkälla är ett tyst fel som ser ut som en sträng regel.
+    const tillatnaTal = new Set<string>([
+      ...talTokens(bygg.profilText),
+      ...talTokens(topic),
+      ...talTokens(headline),
+      ...talTokens(headline2),
+      ...talTokens(body),
+    ]);
+
+    // KVALITET-3/punkt 11 — CTA-golvets efterhandskontroll.
+    // Promptregeln räcker inte: skarp drift gav en caption med korrekt imperativ-CTA och
+    // nästa med ett konstaterande plus hashtags. Kontrollen körs på den FÄRDIGA texten
+    // (efter saneraText, alltså exakt det användaren ser) och utlöser EXAKT en
+    // omgenerering. Fail-open: går det ändå inte levereras bästa försöket, aldrig tomt.
+    const genMedCtaGolv = async (
+      vinkelInstruktion: string,
+      etikett: string,
+    ): Promise<{ caption: string; ctaOmgenererad: boolean; ctaGodkand: boolean }> => {
+      const forsta = await saneraText(await genOne(vinkelInstruktion), clientId);
+      const r = await sakerstallCaption(
+        forsta,
+        tillatnaTal,
+        async (skarpning) => saneraText(await genOne(vinkelInstruktion, skarpning), clientId),
+        etikett,
+      );
+      return { caption: r.text, ctaOmgenererad: r.omgenererad, ctaGodkand: r.godkand };
     };
 
     // A/B-läge: distinkta krok-vinklar så varianterna faktiskt skiljer sig (spec Fas D).
@@ -134,18 +172,16 @@ export async function POST(req: NextRequest) {
     const n = Math.min(4, Math.max(0, Number((b as { variants?: number }).variants) || 0));
     if (n >= 2) {
       const valda = ANGLAR.slice(0, n);
+      // Sanering + CTA-golv sker inuti genMedCtaGolv, per variant. Varje variant får
+      // sin EGNA enda omgenerering — en variant som klarar golvet rörs aldrig.
       const variants = await Promise.all(
-        valda.map(async (v) => ({ angle: v.angle, caption: await genOne(v.instruktion) })),
+        valda.map(async (v) => ({ angle: v.angle, ...(await genMedCtaGolv(v.instruktion, `variant ${v.angle}`)) })),
       );
-      // TEXT-1: enhetlig sanering via saneraText (flaggan avgörs i prompt-core).
-      const sanerade = await Promise.all(
-        variants.filter((v) => v.caption).map(async (v) => ({ ...v, caption: await saneraText(v.caption, clientId) })),
-      );
-      return NextResponse.json({ variants: sanerade });
+      return NextResponse.json({ variants: variants.filter((v) => v.caption) });
     }
 
-    const caption = await genOne("");
-    return NextResponse.json({ caption: await saneraText(caption, clientId) });
+    const enda = await genMedCtaGolv("", "caption");
+    return NextResponse.json(enda);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

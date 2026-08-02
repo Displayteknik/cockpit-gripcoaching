@@ -140,6 +140,7 @@ const BILDNARA: TextSyfte[] = ["caption", "studio-text", "karusell", "reel", "ka
 // kräver nu imperativ + väg, och föredrar tenantens egna CTA-formuleringar.
 const CTA_GOLV = [
   "HÅRD REGEL (CTA-golv): texten avslutas med exakt EN uppmaning (CTA), alltid sist — aldrig noll, aldrig två.",
+  "SIST betyder bokstavligt: uppmaningen är textens SISTA MENING. Platsrader ('Vi finns i Roslagen'), löften ('Vi hör av oss samma dag') och andra konstateranden placeras FÖRE uppmaningen, aldrig efter. Hashtags ligger på egen rad efter.",
   "CTA:n är en UPPMANING I IMPERATIV MED VÄG: den börjar med ett verb (boka, skicka, svara, kommentera, ring, läs) och säger hur eller var handlingen görs. Ett konstaterande ('vi hjälper dig gärna', 'vi ser till att du får...') är INTE en CTA.",
   "Funnel-nivån styr uppmaningens TON och tyngd — aldrig om den finns eller att den är imperativ. Mjuk och imperativ går ihop: 'Boka en digital fika, ingen säljpitch.'",
   "Innehåller varumärkesprofilen färdiga CTA-formuleringar (Erbjudande/CTA-sektion, kundens egna ord): FÖREDRA dem framför nyskrivna.",
@@ -177,6 +178,7 @@ export const SANNINGSKRAV = [
   "SIFFERPÅSTÅENDEN GÄLLER ÄVEN I ORDFORM. 'Dubbelt så många gäster', 'tre gånger fler förfrågningar', 'halva tiden', 'betalar sig själv på tre månader', 'lönsam redan efter en vecka' är exakt lika mycket sifferpåståenden som '200 %' — de lovar en mätbar storlek eller en mätbar tid. De kräver samma täckning i profilen som ett tal med siffror.",
   "Saknas täckningen: skriv utfallet UTAN storlek. Tillåtet: 'fler gäster ser menyn', 'sparar tryckkostnader', 'du slipper skriva om tavlan varje morgon'. FÖRBJUDET: 'dubbelt så många gäster', 'betalar sig på tre månader', 'sparar tusenlappar i månaden'.",
   "Det gäller ALLA led i leveransen, även idéer, rubrikförslag och korta pitchar. En idé med en påhittad siffra är ett löfte som följer med: väljs idén följer siffran med in i den färdiga texten, eller så tappar inlägget sin poäng när grinden skalar bort den. Håll löftet sant redan i idén.",
+  "KRAVET GÄLLER VARJE SIFFRA, ÄVEN OM OMVÄRLDEN. Tal om konkurrenter, branschsnitt, vad andra produkter klarar eller vad 'de flesta' gör är lika obackade som tal om klienten själv — 'en vanlig TV klarar sällan mer än 400 nits' är ett sifferpåstående som kräver täckning i profilen ovan. Saknas talet där: skriv jämförelsen GENERELLT i stället ('en vanlig TV blir en svart spegel i solljus', 'långt ljusstarkare än en vanlig skärm'). Poängen bär utan siffran; en uppfunnen siffra sänker hela texten den dag någon kollar.",
 ].join("\n");
 
 // ── PRISREGELN (KVALITET-3/punkt 5) — Håkans beslut, plattformsregel ─────────
