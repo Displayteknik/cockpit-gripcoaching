@@ -110,7 +110,7 @@ Processregel efter 1/8: IDÉ-1 och UTKAST-1 beställdes 31/7 och försvann tyst 
 | ~~**STEG 2 · KOSTNAD-1 (K1–K5)**~~ | 2/8 | **LEVERERAD** | Se avsnitt 6 nedan: `lib/ai-usage.ts` är enda vägen, migrations körda, `/dashboard/kostnader` byggd, budgetgrind på plats. DoD 12/12 gröna |
 | **STEG 3 · ETAPP K2 Cockpit Credits** | 2/8 | **Ej startad** | Bygger ovanpå KOSTNAD-1:s ledger. K2-1 … K2-4, hårt stopp efter varje |
 | ~~**STEG 3a · LIKVID-1** (betalstatus + likviditetsprognos i HQ)~~ | 2/8 | **LEVERERAD** | Se avsnitt 12. Betalstatusen ligger i `hq_deal_finance`, inte i GHL:s anpassade fält. Tre pipelinekort, 12-veckorsprognos per bolag, trafikljus, larm i morgonlistan. 36 DoD-kontroller gröna |
-| **STEG 3b · K3-INKÖP** (providersaldon, prognos, marginal) | 2/8 | **Ej startad** | Beställd 2/8, placerad efter LIKVID-1 och före HANDBOK-1. Bygger på `lib/ai-usage` + `ai_pricing` + creditsystemet, inget byggs om. Motiv: Gemini-betalningsspärren fick aldrig upprepas utan förvarning |
+| ~~**STEG 3b · K3-INKÖP** (providersaldon, prognos, marginal)~~ | 2/8 | **LEVERERAD** | Se avsnitt 13. Fal.ai och 46elks läser saldot själva, Google Cloud är efterskott. Larmet går till BÅDA vyerna ur samma `lib/inkop`. 52 DoD-kontroller gröna |
 | **STEG 4 · HANDBOK-1 (H-0, H-1)** | 2/8 | **Ej startad** | H-0 = plan med hårt stopp innan bygge |
 | **STEG 5 · ICP-motorn (ICP-0..7)** | 2/8 | **Ej startad** | ICP-0 = spec + datamodell + säkerhetsgenomgång, godkännande före kod |
 | **STEG 6a · REVISION-1: REV-1 → REV-4** | 30/7 | **Ej startad** | Rapport godkänd, tre frågor besvarade (`284f4c6`) |
@@ -395,5 +395,67 @@ Tolv veckor per bolag, med start i senaste banksaldot. **Utan banksaldo räknas 
 **Skarpt mot riktig data:** en riktig DT-affär gjordes delbetald (60 000 fakturerat varav 25 000 betalt, i ett steg med 63 procent). I spel sjönk från 547 770 till 509 970, alltså exakt 60 000 × 0,63. Fakturerat obetalt steg med 35 000, betalt med 25 000. Buffertmålet höjdes över lägsta punkten och larmraden dök upp i morgonlistan; en utbetalning på 900 000 tog saldot till minus och gav rött. All testdata raderad och frånvaron verifierad.
 
 ⚠ **Ärligt kvar:** ingen har ännu lagt in ett riktigt banksaldo, så prognosen står tom i produktion tills det görs. Det är avsiktligt, ingen siffra gissas fram.
-| STEG 3b · K3-INKÖP (providersaldon, prognos, marginal) | 2/8 | **Ej startad** | Beställd 2/8, placerad efter K2-4 och före HANDBOK-1. Bygger på lib/ai-usage + ai_pricing + creditsystemet, inget byggs om. Motiv: Gemini-betalningsspärren fick aldrig upprepas utan förvarning |
+
+---
+
+## 13. K3-INKÖP — leverantörssaldon, prognos, larm och marginal (STEG 3b, levererad 2026-08-02)
+
+**Varför:** betalningsspärren på Google Cloud 1 augusti syntes bara som en statuskod och stoppade allt som gick genom Gemini. Ingen visste att den var på väg. Modulen svarar på frågan i förväg: hur mycket finns kvar hos varje leverantör, hur fort går det åt, och när tar det slut.
+
+### Saldona: två läses automatiskt, tre skrivs in
+
+| Konto | Typ | Saldo | Verifierat |
+|---|---|---|---|
+| Fal.ai | Förbetalt | `GET https://rest.fal.ai/billing/user_balance` med befintlig `FAL_KEY`, svarar ett rått tal i USD | 9,568 USD live |
+| 46elks | Förbetalt | `GET https://api.46elks.com/a1/me` med befintliga nycklar, `balance` i **tiotusendelar** av valutan (samma enhet som priset per SMS i `lib/sms/elks`) | 48,68 SEK live |
+| Google Cloud | Efterskott | Inget saldo att läsa. Billing-API:t kräver OAuth eller tjänstekonto, inte en API-nyckel | manuellt |
+| Anthropic | Förbetalt | Saldot exponeras inte för en vanlig API-nyckel (Admin-API kräver en `sk-ant-admin`-nyckel som inte finns) | manuellt |
+| Resend | Efterskott | Inget saldo-API | manuellt |
+
+Hämtning sker vid sidladdning, **högst en gång i timmen** (cachen är radens egen tidsstämpel). Går den fel skrivs **orsaken** i `saldo_fel` och det gamla saldot lämnas orört, så vyn kan säga "manuellt, 3 dagar gammalt" i stället för att visa en siffra som ser färsk ut. **Saldot gissas aldrig.**
+
+⚠ Saldoläsningen ligger **utanför** `lib/ai-usage`-wrappern, som ett tredje dokumenterat undantag vid sidan av Gemini Files API och Anthropics statuspoll: en gratis läsning av vårt eget konto en gång i timmen hade fyllt ledgern med rader som aldrig kostat en krona och fått provider-hälsan att blinka på något som inte är ett produktionsfel.
+
+### Takt och prognos ur ai_usage_events
+
+`lib/inkop/berakning.ts` är rena funktioner med injicerat datum. Snittkostnad per dag över 7 respektive 30 dagar. **Nämnaren kortas till den faktiska mätperioden:** har mätningen bara pågått i två dagar delas summan på två, inte på trettio. Annars hade takten sett fyra gånger för låg ut och prognosen blivit farligt optimistisk. Perioder under tre dagar flaggas som tunt underlag i vyn.
+
+- Förbetalt: dagar kvar = saldot delat på sjudagarssnittet. Utan uppmätt förbrukning svaras **null**, inte en lugn siffra.
+- Efterskott: prognostiserad månadskostnad = trettiodagarssnittet gånger 30, jämförd mot fältet för förra fakturan.
+
+### Larmen, en enda källa
+
+`lib/inkop.byggInkop()` anropas av **både** `/api/kostnader` (banner) och `/api/hq` (raden överst i morgonlistan). Ingen av dem har egen tröskellogik. Gult under 14 dagar kvar eller prognos över 150 procent av förra fakturan, rött under 5 dagar **eller** när provider-hälsan flaggat `billing`-fel det senaste dygnet. Det sista larmet är det enda som inte kräver att någon hunnit fylla i en siffra, och det är precis fallet från 1 augusti.
+
+Trösklarna ligger i tabellen `inkop_konfig` och ändras i vyn utan deploy. Det gör också att larmkedjan går att prova skarpt.
+
+### Köprekommendation
+
+45 dagars förbrukning enligt trettiodagarssnittet, omräknat till kontots valuta med **prislistans egen kurs** (att hitta på en kurs här hade mätt saldo och kostnad med olika måttstock), avrundat uppåt till providerns påfyllningssteg om det är känt, annars till ett jämnt belopp. Datumet är den dag saldot är nere på rödgränsen, inte den dag det är slut, så det finns marginal kvar. **Inga automatiska köp, aldrig.**
+
+### Marginal per kund: valet blev kostnadsmodulen
+
+Tabellen ligger i `/dashboard/kostnader`, inte i HQ. Skälet: den står direkt intill "Per klient", som redan visar AI-kostnad och credits per tenant, och marginalen är den tredje kolumnen i samma bild. HQ är larmytan, inte analysytan. Ingenting i HQ-1 eller LIKVID-1 byggdes om.
+
+Intäkten kommer ur `hq_mrr_entries` (HQ:s egna intäktsrader) plus godkända påfyllningar innevarande månad ur `topup_orders`. Kopplingen till tenanten görs med den nya nullbara kolumnen `hq_mrr_entries.client_id`, som sätts i vyn; saknas den faller uträkningen tillbaka på exakt namnmatchning. **En kund utan ifyllt pris får aldrig marginalen noll** utan flaggas "pris saknas", och räknas inte in i totalen.
+
+### Tabeller (`migrations/inkop.sql`, körd via Management API)
+
+`provider_accounts` · `inkop_konfig` · kolumnen `hq_mrr_entries.client_id` · kolumnen `credit_pricing.note`. Båda tabellerna har RLS på och **noll policies**: anon ser noll rader, en insert svarar 401, och en update lämnar värdet orört (⚠ statuskoden 204 duger inte som bevis där, värdet måste läsas tillbaka).
+
+### Lead-credits förberedda, inte prissatta
+
+`lead_niva_a` och `lead_niva_b` ligger i `credit_pricing` med **0 credits och `active = false`**, med noteringen att priset sätts när ICP-motorns kostnadskarta finns ur verklig drift. Etiketterna lades in i `lib/credits` **samtidigt**: utan dem hade kunden fått läsa "3 lead_niva_a" den dag de slås på. Nu blir det "3 leads nivå A, 1 lead nivå B".
+
+### Bevis
+
+40 enhetstester (`tests/k3-inkop.test.ts`), **478 totalt**, `tsc` och `next build` rena. Plus **52 kontroller** mot riktig databas, riktiga routes och leverantörernas riktiga saldo-API:er (`scripts/k3-inkop-dod.mts`), alla gröna.
+
+Larmkedjan bevisad skarpt i båda riktningarna: förra fakturan sänktes tillfälligt så Google Cloud gick gult, och gulgränsen höjdes tillfälligt så Fal.ai gick gult mot en riktig uppmätt förbrukning. **Larmtexten var ordagrant identisk i kostnadsmodulens banner och i HQ:s morgonlista**, vilket är hela poängen med en källa. Ett inlagt `billing`-fel gav rött oavsett saldo. Marginalen handräknades mot Displayteknik: 2 000 kr abonnemang minus 20,9258 kr AI-kostnad blev 1 979,0742 kr och 98,95 procent, på öret.
+
+Mobilt 375 px: sidan scrollar inte i sidled, båda de nya sektionerna håller sig innanför, och marginaltabellen scrollar i sin egen behållare (678 px innehåll i 341 px behållare).
+
+All testdata raderad och frånvaron verifierad: noll testhändelser, noll test-intäktsrader, trösklarna tillbaka på 14, 5 och 150, Google Clouds fakturafält tomt igen.
+
+⚠ **Ärligt kvar:** ingen av de manuella siffrorna är ifylld i produktion. Google Cloud, Anthropic och Resend står utan saldo och utan förra fakturans belopp, och **inget efterskottskonto kan larma förrän fakturabeloppet är ifyllt**. Samma sak med marginalen: ingen tenant har ett abonnemangspris kopplat, så hela tabellen står som "pris saknas". Det är avsiktligt, ingen siffra gissas fram, men det betyder att modulen ger halva sitt värde tills Håkan fyllt i dem. Påfyllningsstegen är också tomma överallt eftersom de inte gått att verifiera.
 
