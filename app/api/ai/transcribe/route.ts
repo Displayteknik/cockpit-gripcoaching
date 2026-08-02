@@ -3,6 +3,7 @@ import { requireAdminOrCustomer } from "@/lib/api-auth";
 import {
   TRANSKRIBERINGS_PROMPT,
   ROST_FELMEDDELANDE,
+  ROST_TJANSTEFEL,
   rensaTranskription,
 } from "@/lib/ai/transkription";
 
@@ -50,13 +51,30 @@ export async function POST(req: NextRequest) {
 
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!res.ok) {
-    console.error(`[transcribe] Gemini svarade ${res.status}`);
-    return NextResponse.json({ error: ROST_FELMEDDELANDE }, { status: 502 });
+    // Logga HELA svarskroppen, inte bara statuskoden. 2026-08-01 var projektet
+    // betalningsspärrat (403 "Lightning dunning decision is deny") och användaren fick
+    // "Kunde inte uppfatta rösten" — felet såg ut som en trasig röstfunktion i stället
+    // för ett spärrat konto. Utan kroppen i loggen går orsaken inte att se.
+    const kropp = await res.text().catch(() => "");
+    console.error(`[transcribe] Gemini ${res.status}: ${kropp.slice(0, 500)}`);
+    // 4xx från API:t (spärr, kvot, ogiltig nyckel) är inget användaren kan tala sig ur.
+    const tjanstefel = res.status === 401 || res.status === 403 || res.status === 429;
+    return NextResponse.json(
+      { error: tjanstefel ? ROST_TJANSTEFEL : ROST_FELMEDDELANDE },
+      { status: 502 },
+    );
   }
   const data = await res.json();
+  // Alla parts sammanfogade — texten ligger inte alltid i den första.
+  const raa = (data?.candidates?.[0]?.content?.parts ?? [])
+    .map((p: { text?: string }) => p?.text ?? "")
+    .join("");
   // Skyddsnät: modellen ekar ibland tillbaka instruktionen när ljudet saknar tal.
   // Bara ett godkänt transkript får lämna routen — aldrig systeminstruktionen.
-  const text = rensaTranskription(data?.candidates?.[0]?.content?.parts?.[0]?.text);
-  if (!text) return NextResponse.json({ error: ROST_FELMEDDELANDE }, { status: 422 });
+  const text = rensaTranskription(raa);
+  if (!text) {
+    console.error(`[transcribe] inget godkänt transkript (mime=${mime}, bytes=${buf.length})`);
+    return NextResponse.json({ error: ROST_FELMEDDELANDE }, { status: 422 });
+  }
   return NextResponse.json({ text });
 }

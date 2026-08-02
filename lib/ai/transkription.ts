@@ -15,8 +15,22 @@ export const TRANSKRIBERINGS_PROMPT =
   "Transkribera detta tal på svenska, ordagrant men med korrekt interpunktion. " +
   "Returnera ENBART den transkriberade texten — inga rubriker, inga kommentarer.";
 
-/** Det ENDA felmeddelande användaren ska se när röstinmatningen inte gick igenom. */
+/** Inget tal uppfattades — användaren kan göra om försöket. */
 export const ROST_FELMEDDELANDE = "Kunde inte uppfatta rösten, försök igen";
+
+/** Inspelningen blev för kort för att innehålla tal. */
+export const ROST_FOR_KORT = "Inspelningen blev för kort, håll knappen intryckt medan du pratar";
+
+/**
+ * Tjänsten svarade inte — fel som användaren INTE kan göra något åt (spärrat konto,
+ * nertid, kvot). Egen text så ingen letar efter ett röstfel som inte finns.
+ *
+ * BAKGRUND (2026-08-01): Googles projekt var betalningsspärrat och svarade 403
+ * "Lightning dunning decision is deny". Routen loggade bara statuskoden och visade
+ * "Kunde inte uppfatta rösten" — så felet såg ut som en trasig röstfunktion i stället
+ * för ett spärrat konto. Ett fel som döljer sin egen orsak kostar mer än felet självt.
+ */
+export const ROST_TJANSTEFEL = "Tjänsten svarar inte just nu. Försök igen om en stund.";
 
 function normalisera(s: string): string {
   return (s || "")

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Image as ImageIcon, Loader2 } from "lucide-react";
-import { arPromptEko, ROST_FELMEDDELANDE } from "@/lib/ai/transkription";
+import { arPromptEko, ROST_FELMEDDELANDE, ROST_FOR_KORT } from "@/lib/ai/transkription";
 
 // Drop-in-ersättning för <textarea> med röstinmatning + bildanalys.
 // Byt bara ut taggen: <textarea .../> → <SmartTextarea .../>. Samma props (value/onChange/
@@ -92,7 +92,8 @@ export default function SmartTextarea({
         const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
         stadaMic();
         setRecording(false);
-        if (blob.size < 1200) return;
+        // Tyst retur gav "ingenting händer". Säg vad som gick fel i stället.
+        if (blob.size < 1200) { setFel(ROST_FOR_KORT); return; }
         setJobbar("röst");
         try {
           const fd = new FormData();
@@ -102,7 +103,7 @@ export default function SmartTextarea({
           const d = await r.json();
           // Andra skyddsnätet: systeminstruktionen får aldrig hamna i fältet.
           if (d.text && !arPromptEko(d.text)) append(d.text);
-          else setFel(ROST_FELMEDDELANDE);
+          else setFel(typeof d.error === "string" && d.error ? d.error : ROST_FELMEDDELANDE);
         } catch {
           setFel(ROST_FELMEDDELANDE);
         } finally {
