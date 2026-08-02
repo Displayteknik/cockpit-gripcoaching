@@ -149,6 +149,9 @@ export async function POST(req: NextRequest) {
         }
       }
       const m = gen.image?.match(/^data:image\/(\w+);base64,(.+)$/);
+      // ETAPP K2-2: en grind (slut kvot eller kostnadstak) har ett besked skrivet FÖR
+      // användaren. Det får aldrig ersättas av "prova Sök foto" — då förstår hon inte varför.
+      if (gen.stopp) return NextResponse.json({ error: gen.error }, { status: 429 });
       if (gen.error || !m) {
         // Snäll, handlingsbar text (t.ex. vid känsligt motiv som nekas) — peka mot Sök foto.
         // 500 → klientens felruta visar meddelandet.

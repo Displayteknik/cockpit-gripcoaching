@@ -37,7 +37,7 @@ async function geminiAnrop(
   model: string,
   body: unknown,
   meta?: { mediaUnits?: number },
-): Promise<{ ok: boolean; status: number; data: GeminiKandidater | null; raw: string; fel?: string }> {
+): Promise<{ ok: boolean; status: number; data: GeminiKandidater | null; raw: string; fel?: string; stopp?: boolean }> {
   const svar = await anropaProvider<GeminiKandidater>({
     provider: "gemini",
     model,
@@ -45,7 +45,9 @@ async function geminiAnrop(
     url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
     init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   });
-  return { ok: svar.ok, status: svar.status, data: svar.data, raw: svar.raw, fel: svar.fel };
+  // En grind (kostnadstak eller slut kvot) är inget modellfel: den gäller ALLA modeller,
+  // och beskedet är skrivet för användaren. Det får aldrig ersättas av ett generiskt fel.
+  return { ok: svar.ok, status: svar.status, data: svar.data, raw: svar.raw, fel: svar.fel, stopp: svar.budgetstopp };
 }
 
 /** Första textdelen ur ett Gemini-svar, trimmad. Tom sträng när svaret saknar text. */
@@ -310,7 +312,7 @@ Write ONLY the prompt, 3-4 sentences, hyper-specific about: subject, environment
   return `Professional commercial photograph for a ${niche || "business"} brand related to: ${contentText.slice(0, 100)}. ${rules.styleHint} ${rules.doConcrete}. Photorealistic, high detail, no text in image.`;
 }
 
-export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16" | "16:9" | "4:3" | "3:4" = "1:1"): Promise<{ success?: boolean; image?: string; error?: string }> {
+export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16" | "16:9" | "4:3" | "3:4" = "1:1"): Promise<{ success?: boolean; image?: string; error?: string; stopp?: boolean }> {
   if (!GEMINI_KEY) return { error: "GEMINI_API_KEY saknas" };
   // Imagen-modellerna (imagen-4.0-*) är stängda för nya nyckelanvändare → använd Gemini
   // native image ("Nano Banana"), samma motor som app/api/posts/[id]/nano-banana.
@@ -323,6 +325,8 @@ export async function generateImagen(prompt: string, aspectRatio: "1:1" | "9:16"
           contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
           generationConfig: { responseModalities: ["IMAGE"] },
       }, { mediaUnits: 1 });
+      // Grindstopp gäller alla modeller: returnera användarens besked direkt.
+      if (r.stopp) return { error: r.fel, stopp: true };
       if (!r.ok) { lastError = r.raw.slice(0, 200); continue; }
       const part = r.data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
       if (part?.inlineData?.data) {
@@ -475,7 +479,7 @@ export async function classifyImageRoleFromText(description: string, caption?: s
 export async function editImagen(
   instruction: string,
   baseImageUrl: string,
-): Promise<{ success?: boolean; image?: string; error?: string }> {
+): Promise<{ success?: boolean; image?: string; error?: string; stopp?: boolean }> {
   if (!GEMINI_KEY) return { error: "GEMINI_API_KEY saknas" };
   if (!baseImageUrl) return { error: "Basbild saknas" };
 
@@ -512,6 +516,8 @@ export async function editImagen(
           contents: [{ role: "user", parts }],
           generationConfig: { responseModalities: ["IMAGE"] },
       }, { mediaUnits: 1 });
+      // Grindstopp gäller alla modeller: returnera användarens besked direkt.
+      if (r.stopp) return { error: r.fel, stopp: true };
       if (!r.ok) { lastError = r.raw.slice(0, 200); continue; }
       const part = r.data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
       if (part?.inlineData?.data) {
@@ -524,7 +530,7 @@ export async function editImagen(
   return { error: lastError };
 }
 
-export async function generateFlux(prompt: string, aspect: "square" | "portrait" | "landscape" = "square"): Promise<{ success?: boolean; image?: string; error?: string }> {
+export async function generateFlux(prompt: string, aspect: "square" | "portrait" | "landscape" = "square"): Promise<{ success?: boolean; image?: string; error?: string; stopp?: boolean }> {
   if (!FAL_KEY) return generateImagen(prompt, aspect === "square" ? "1:1" : aspect === "portrait" ? "9:16" : "16:9");
   try {
     const size = aspect === "square" ? "square" : aspect === "portrait" ? "portrait_16_9" : "landscape_16_9";

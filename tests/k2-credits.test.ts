@@ -5,7 +5,7 @@
 // testas mot en fejkad Supabase-klient så hela kedjan körs utan databas.
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { aktuellPeriod, raknaSaldo, videoKlipp, STANDARDKVOT, type Konto } from "@/lib/credits";
+import { aktuellPeriod, raknaSaldo, videoKlipp, forbrukningKlartext, STANDARDKVOT, type Konto } from "@/lib/credits";
 
 const konto = (o: Partial<Konto> = {}): Konto => ({
   tenant_id: "t1",
@@ -65,6 +65,26 @@ describe("K2 · video prissätts per PÅBÖRJAT femsekundersklipp", () => {
   it("noll eller okänd längd räknas som ett klipp, aldrig noll", () => {
     expect(videoKlipp(0)).toBe(1);
     expect(videoKlipp(NaN)).toBe(1);
+  });
+});
+
+describe("K2-2 · förbrukningen i klartext", () => {
+  it("skriver saker kunden känner igen, störst först", () => {
+    expect(forbrukningKlartext({ "social-bild": 14, video: 1 })).toBe("14 bilder, 1 video");
+  });
+
+  it("böjer singular rätt", () => {
+    expect(forbrukningKlartext({ "social-bild": 1 })).toBe("1 bild");
+    expect(forbrukningKlartext({ "hero-bild": 1, video: 2 })).toBe("2 videor, 1 stor bild");
+  });
+
+  it("nollor räknas inte upp", () => {
+    expect(forbrukningKlartext({ "social-bild": 3, "hero-bild": 0, video: 0 })).toBe("3 bilder");
+  });
+
+  it("tom månad får en mening, inte en nolla", () => {
+    // "0" som svar på "vad har du skapat?" är ingen information.
+    expect(forbrukningKlartext({})).toBe("inget än den här månaden");
   });
 });
 

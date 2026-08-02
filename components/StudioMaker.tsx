@@ -140,6 +140,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // om användaren byter bild). Textförslagen grundas i vad bilden faktiskt föreställer.
   const [aiImageDesc, setAiImageDesc] = useState<{ url: string; desc: string } | null>(null);
   // B3: exakt text som ska synas I bilden (eget fält, inte friprompten) + slingans resultat.
+  // ETAPP K2-2: saldot ska synas DÄR media skapas, inte bara på en egen sida. Hämtas
+  // bara i kundvyn; 403 (modulen av) ger null och då visas ingenting alls.
+  const [creditSaldo, setCreditSaldo] = useState<{ saldo: number; procentKvar: number; bildpris: number } | null>(null);
   const [imgText, setImgText] = useState("");
   const [imgTextInfo, setImgTextInfo] = useState<{ metod: string; forsok: number; verifierad: boolean; avlastText: string } | null>(null);
   const [imageFocusY, setImageFocusY] = useState(40);
@@ -447,6 +450,20 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }
   }, []);
 
+  // ETAPP K2-2: hämta saldot i kundvyn. Tyst vid 403/fel — en kund utan modulen ska
+  // varken se en siffra eller ett felmeddelande om något hon inte har.
+  const hamtaCredits = useCallback(async () => {
+    if (!customerMode) return;
+    try {
+      const r = await fetch("/api/k/credits");
+      if (!r.ok) { setCreditSaldo(null); return; }
+      const d = await r.json();
+      setCreditSaldo({ saldo: d.saldo, procentKvar: d.procentKvar, bildpris: d.priser?.["social-bild"] ?? 3 });
+    } catch { setCreditSaldo(null); }
+  }, [customerMode]);
+
+  useEffect(() => { hamtaCredits(); }, [hamtaCredits]);
+
   // ── Bildförslag (Pexels-stock eller AI-genererad) ──
   const suggestImage = useCallback(async (mode: "stock" | "ai") => {
     setError(""); setSearchingImg(mode); setImgTextInfo(null);
@@ -461,6 +478,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       if (!r.ok) throw new Error(d.error || "Bildförslag misslyckades");
       setImgResults(d.photos || []);
       if (d.textInfo) setImgTextInfo(d.textInfo);
+      // Saldot ändrades av just den här genereringen — läs om så siffran är sann.
+      if (mode === "ai") hamtaCredits();
       // AI-läge ger en scenbeskrivning för den genererade bilden → koppla till dess URL.
       if (mode === "ai" && d.description && d.photos?.[0]?.url) setAiImageDesc({ url: String(d.photos[0].url), desc: String(d.description) });
     } catch (e) {
@@ -468,7 +487,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSearchingImg("");
     }
-  }, [topic, headline1, caption, format, imgText]);
+  }, [topic, headline1, caption, format, imgText, hamtaCredits]);
 
   // ── Mediabibliotek: klientens sparade bilder (studio-images/<clientId>/) ──
   const loadMedia = useCallback(async () => {
@@ -1636,7 +1655,23 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               )}
               {/* Bildhjälpen — skapa eller sök en passande bild ur din text (ingen egen bild krävs) */}
               <div className="pt-3 border-t border-gray-100 space-y-2">
-                <div className="text-sm font-medium text-gray-600">Ingen egen bild? Låt Bildhjälpen föreslå en som passar din text.</div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm font-medium text-gray-600">Ingen egen bild? Låt Bildhjälpen föreslå en som passar din text.</div>
+                  {/* K2-2: saldot syns där bilden faktiskt skapas, inte bara på egen sida. */}
+                  {creditSaldo && (
+                    <a href="/k/credits"
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                        creditSaldo.saldo <= 0 ? "bg-red-50 text-red-700"
+                          : creditSaldo.procentKvar < 15 ? "bg-amber-50 text-amber-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                      title="Så mycket har du kvar av månadens bilder och video">
+                      {creditSaldo.saldo <= 0
+                        ? "Månadens bilder är slut"
+                        : `${creditSaldo.saldo} credits kvar · en bild kostar ${creditSaldo.bildpris}`}
+                    </a>
+                  )}
+                </div>
                 {/* B3: exakt text i bilden — eget fält, stavas exakt via verifieringsslingan */}
                 <input
                   value={imgText} onChange={(e) => setImgText(e.target.value)} maxLength={120}

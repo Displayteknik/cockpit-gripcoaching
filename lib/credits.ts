@@ -224,6 +224,28 @@ export interface Creditlage {
   besked?: string;
 }
 
+const ETIKETT: Record<string, { ental: string; flertal: string }> = {
+  "social-bild": { ental: "bild", flertal: "bilder" },
+  "hero-bild": { ental: "stor bild", flertal: "stora bilder" },
+  video: { ental: "video", flertal: "videor" },
+};
+
+/**
+ * Förbrukningen i klartext: "14 bilder, 1 video".
+ * Ett creditbelopp säger inget om vad kunden faktiskt fått — siffran måste översättas
+ * till saker hon känner igen, annars är kvoten obegriplig.
+ */
+export function forbrukningKlartext(antalPerAtgard: Record<string, number>): string {
+  const delar = Object.entries(antalPerAtgard)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([atgard, n]) => {
+      const e = ETIKETT[atgard] || { ental: atgard, flertal: atgard };
+      return `${n} ${n === 1 ? e.ental : e.flertal}`;
+    });
+  return delar.length ? delar.join(", ") : "inget än den här månaden";
+}
+
 /** Video prissätts per PÅBÖRJAT femsekundersklipp. 6 sekunder = 2 klipp. */
 export function videoKlipp(sekunder: number): number {
   return Math.max(1, Math.ceil((Number(sekunder) || 0) / 5));

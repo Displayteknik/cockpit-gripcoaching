@@ -253,3 +253,28 @@ Vyn heter nu **Vad tjänsterna kostar** och toppen visar: förbrukning idag · f
 **Bevis:** 22 enhetstester (`tests/k2-credits.test.ts`, reset, saldo, dragning, spärr, påfyllning, videoklipp) plus 15 kontroller mot den **riktiga** databasen (`scripts/k2-1-dod.mts`): exakt en ledgerrad ger exakt en usage-transaktion som pekar på den, främmande nyckeln avvisar ett okänt händelse-id, statuschecken avvisar en okänd transaktionstyp, resetten nollställer och loggar, påfyllningsflödet är spårbart hela vägen till insatt saldo. Kast-tenanten städades bort.
 
 **Kvar i etappen:** K2-2 kundvyn i `/k` · K2-3 owner-admin (credits och kronor sida vid sida, godkänna påfyllningar) · K2-4 utrullning med Displayteknik som pilot. Inget av det är byggt — hårt stopp efter K2-1 enligt kön.
+
+---
+
+## 9. ETAPP K2-2 — kundvyn (STEG 3, fas 2 av 4)
+
+**Sidan `/k/credits`** ("Bilder och video" i menyn, entitlement-styrd via samma modul-id `credits`, default av):
+saldo stort och först · förbrukningen i klartext ("14 bilder, 1 video") · vad varje sak kostar i credits · påfyllnadsknapp · historik för månaden.
+
+**Saldot syns också där bilden faktiskt skapas** — en liten rad i Bildhjälpen inne i Skapa inlägg, med länk till sidan. Den hämtas bara i kundvyn, och en kund utan modulen ser varken siffra eller felmeddelande. Efter varje bildgenerering läses saldot om, så siffran är sann direkt.
+
+**Förvarning under 15 procent** ("Det börjar ta slut: 42 credits kvar, det räcker till ungefär 14 bilder till") och **tydligt besked vid noll**, som säger vad som fortfarande går att göra (texter är fria), när kvoten förnyas och hur man fyller på.
+
+**Klarspråk, tre hårda regler i vyn:** inga kronor någonstans, inga interna ord, och "din rådgivare" i stället för byråns namn. Påfyllningsbeskedet är ordagrant det beställda: *"Din påfyllning är beställd och aktiveras inom kort, faktureras separat."*
+
+### Ett hål som stängdes på vägen
+
+Utan fix hade en spärrad kund fått **"Kunde inte skapa en bild för det här ämnet. Prova Sök foto"** i stället för creditbeskedet: routen ersatte grindens meddelande med sitt generiska. Nu bär `generateImagen`/`generateFlux` en `stopp`-flagga hela vägen upp, och routen svarar 429 med grindens egen text. En grind som inte förklarar sig är värre än ingen grind — kunden hade letat efter ett tekniskt fel som inte fanns.
+
+### Handbokskapitel
+
+`content/handbok/credits.md` följer kapitelmallen ur beställningen (Vad du får ut av det · Kom igång · Så gör Displayteknik · Vanliga frågor · Om något strular) med Displaytekniks menyskärmskampanj som scenario. ⚠ **HANDBOK-strukturen finns inte än** (STEG 4), så kapitlet ligger som fil och kopplas in när HANDBOK-1 byggs. Frontmatter bär `modul: credits` så entitlement-styrningen kan läsa den direkt.
+
+**Bevis:** 26 enhetstester i `tests/k2-credits.test.ts` (fyra nya på klartexten), 399 totalt, `tsc` och build rena, båda nya routerna med i bygget.
+
+⚠ **Ärlig kvarleva:** kundvyn är inte sedd med en riktig inloggad kund, för modulen är av för alla tenants. Det är avsiktligt — utrullningen är K2-4. När Displayteknik slås på som pilot ska vyn granskas med kundens egna ögon innan fler får den.

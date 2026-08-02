@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail, BookOpen } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail, BookOpen, Coins } from "lucide-react";
 import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
@@ -58,6 +58,15 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     icon: LinkedinIcon,
     description: "Skriv och planera LinkedIn-innehåll i din röst.",
     hideFromNav: true, // inbakad i "Skapa inlägg" (per-kanal) — göms i menyn, routen kvar
+  },
+  {
+    // ETAPP K2-2. Nyckeln matchar modul-id:t `credits` i platform_modules (default AV).
+    // Kunden möter aldrig ordet "kvot i kronor" — rubriken säger vad det faktiskt är.
+    key: "credits",
+    label: "Bilder och video",
+    href: "/k/credits",
+    icon: Coins,
+    description: "Din månadskvot för bilder och video: hur mycket du använt, vad som är kvar och hur du fyller på.",
   },
   {
     key: "offert",
