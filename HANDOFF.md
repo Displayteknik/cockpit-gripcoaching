@@ -464,3 +464,6 @@ All testdata raderad och frånvaron verifierad: noll testhändelser, noll test-i
 | GHL: föräldralöst värde 4242 på affären "Louise Ribbing" | 2/8 | **Kan ej åtgärdas** | GHL raderar aldrig ett skrivet fältvärde. Osynligt i gränssnittet, läses av ingenting |
 | SEO-1 (S-0..S-5): SEO-verktyget rapporterar nollor som mätvärden | 2/8 | **S-0 pågår** | KUNDVÄNT FEL SOM REDAN GÅTT UT. forbalance.se svarar 403 på bot-UA (46 blockerade tokens, bl.a. ordet "Spider"); verktyget läste tomt dokument, tolkade nollor som mätvärden och genererade en självsäker rapport: "0 ord, 2 sidor" mot verkliga 678 ord och 13 sidor. Placerad före HANDBOK-1. S-0 = read-only kartläggning med hårt stopp |
 
+
+| Nya leads döljer nedlagda affärer | 3/8 | **Ej gjort** | `/api/lobby/contacts` filtrerar på GHL:s `status`, som alltid svarar "open". Ett lead vars affär lagts ner blir permanent osynligt. Samma grundfel som pipelinen: status är aldrig facit, härled ur STEGET |
+| Färskhetsrad i offertens kundväljare | 3/8 | **Ej gjort** | API:t returnerar `synk`, UI-raden saknas — `components/Offert*` ägdes av OFFERT-2-sessionen |
