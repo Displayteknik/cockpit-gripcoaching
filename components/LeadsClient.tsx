@@ -37,6 +37,7 @@ interface Contact {
   ghl_contact_id: string | null;
   pipeline_stage?: string | null;     // SÄKER match (ghl_contact_id) → kontakten är i MySales, döljs
   name_match_stage?: string | null;   // OSÄKER match (bara namn) → behåll leadet men flagga
+  nedlagd_stage?: string | null;      // affären nedlagd i MySales → leadet är fritt igen, syns
 }
 
 const STATUS: Record<Status, { label: string; chip: string }> = {
@@ -425,7 +426,16 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
   // ── Vyer ──────────────────────────────────────────────────────────────────────
   // Lead-pipelinen FÖRE MySales. En kontakt som redan är i MySales (status "passed"
   // ELLER matchad affär i pipelinen) lämnar vyn helt — den hör hemma i Fokus idag.
-  const iMysales = useMemo(() => contacts.filter((c) => c.status === "passed" || c.pipeline_stage), [contacts]);
+  //
+  // UNDANTAG: är affären nedlagd i MySales är leadet fritt igen. Då slår `nedlagd_stage`
+  // BÅDA spärrarna — även lead-status "passed", som sattes när kontakten en gång
+  // skickades vidare och aldrig nollställs. Utan undantaget kunde ett nedlagt case
+  // aldrig bearbetas igen. [buggfix 2026-08-03]
+  const tillbaka = useMemo(() => contacts.filter((c) => c.nedlagd_stage && c.status === "passed"), [contacts]);
+  const iMysales = useMemo(
+    () => contacts.filter((c) => (c.status === "passed" || c.pipeline_stage) && !c.nedlagd_stage),
+    [contacts],
+  );
   const leads = useMemo(() => contacts.filter((c) => c.status !== "passed" && !c.pipeline_stage), [contacts]);
   const synliga = useMemo(
     () => (filter === "alla" ? leads : leads.filter((c) => c.status === filter)),
@@ -528,7 +538,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
       ) : !linked ? (
         <TomRuta ikon={Building2} titel="Ingen koppling än"
           text="Nya leads visas när klienten är kopplad till MySales Coach via sin GHL-location." />
-      ) : leads.length === 0 && iMysales.length === 0 ? (
+      ) : leads.length === 0 && iMysales.length === 0 && tillbaka.length === 0 ? (
         <TomRuta ikon={Users} titel="Inga leads än" text="Klistra in en skärmbild, prata in eller klicka Nytt lead." />
       ) : (
         <>
@@ -538,6 +548,26 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
             filter={filter}
             onFilter={(s) => setFilter(s)}
           />
+
+          {/* Nedlagda i MySales — leadet är fritt igen. Ligger först: det är den enda
+              gruppen som annars vore helt osynlig, och det är där det finns jobb kvar. */}
+          {filter === "alla" && tillbaka.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#8b5cf6" }} />
+                <h2 className="font-display font-bold text-gray-900 text-lg">Tillbaka från MySales</h2>
+                <span className="text-xs text-gray-400">({tillbaka.length})</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+                  Fri igen
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 -mt-1">
+                Affären är nedlagd eller pausad i MySales, så kontakten går att jobba med igen. Ångra flyttar
+                tillbaka leadet till Redo.
+              </p>
+              <div className="space-y-2">{tillbaka.map((c) => <Rad key={c.id} {...kortProps(c)} />)}</div>
+            </section>
+          )}
 
           {/* Steg-sektioner (eller det filtrerade steget) */}
           {(filter === "alla" ? LEAD_STEG : LEAD_STEG.filter((s) => s.status === filter)).map((steg) => {
@@ -815,6 +845,12 @@ function Rad(props: {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-gray-900 truncate">{c.name}</span>
             {c.company && <span className="text-sm text-gray-500 truncate">· {c.company}</span>}
+            {c.nedlagd_stage && (
+              <span title={`Affären ligger i steget "${c.nedlagd_stage}" i MySales — nedlagd eller pausad. Leadet är fritt att jobba med igen.`}
+                className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+                nedlagd i MySales
+              </span>
+            )}
             {c.name_match_stage && (
               <span title={`En affär med samma namn finns i pipelinen (${c.name_match_stage}). Kolla att det inte är samma person.`}
                 className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">

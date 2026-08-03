@@ -5,6 +5,8 @@ import { resolveCoachUserIds, resolveCoachContext } from "@/lib/coach-bridge";
 import { supabaseService } from "@/lib/supabase-admin";
 import { notifyNewLead } from "@/lib/lead-notify";
 import { synkaOchStatus } from "@/lib/fokus/synk";
+import { hamtaStegFacit } from "@/lib/hq/pipeline";
+import { byggPipelineIndex, normNamn, type PipelineOpp } from "@/lib/lobby/pipeline";
 
 export const runtime = "nodejs";
 
@@ -49,38 +51,44 @@ export async function GET() {
   if (!ctx.ids.length) return NextResponse.json({ linked: false, contacts: [], synk });
 
   const sb = supabaseService();
-  const [lobbyRes, oppRes] = await Promise.all([
+  const [lobbyRes, oppRes, facit] = await Promise.all([
     sb.from("lobby_contacts").select(FIELDS).in("user_id", ctx.ids).order("updated_at", { ascending: false }),
     // Pipelinen (fokus_opportunities-spegeln) → en kontakt som redan är en affär
     // hör hemma i Fokus idag, INTE i Nya leads. Matcha på ghl_contact_id (säkrast)
     // + normaliserat namn (fokus_opportunities har varken email eller telefon).
-    sb.from("fokus_opportunities").select("kontakt, ghl_contact_id, steg_namn, status").in("tenant_id", ctx.ids),
+    // steg_id + steg_namn, INTE status: GHL:s status ljuger (se lib/lobby/pipeline).
+    sb.from("fokus_opportunities").select("kontakt, ghl_contact_id, steg_id, steg_namn").in("tenant_id", ctx.ids),
+    // Håkans inställda vinst-/förluststeg för locationen — samma facit som Fokus och HQ.
+    hamtaStegFacit(ctx.locationId),
   ]);
   if (lobbyRes.error) return NextResponse.json({ error: lobbyRes.error.message }, { status: 500 });
 
-  // Nya leads = lead-pipelinen FÖRE MySales. En kontakt som redan är en aktiv affär i
-  // pipelinen (matchad på ghl_contact_id el. namn) lämnar Nya leads helt → hör hemma i
-  // Fokus idag. Vi behöver bara veta OM den är i pipelinen (steg-namn för en diskret rad).
-  const norm = (s: string | null | undefined) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
-  const oppById = new Map<string, string>();   // ghl_contact_id → steg_namn
-  const oppByName = new Map<string, string>();  // normaliserat namn → steg_namn
-  for (const o of (oppRes.data as { kontakt: string | null; ghl_contact_id: string | null; steg_namn: string | null; status: string | null }[] | null) || []) {
-    if (o.status && o.status !== "open") continue; // bara aktiva affärer räknas som "i pipelinen"
-    if (o.ghl_contact_id && !oppById.has(o.ghl_contact_id)) oppById.set(o.ghl_contact_id, o.steg_namn || "");
-    if (o.kontakt && !oppByName.has(norm(o.kontakt))) oppByName.set(norm(o.kontakt), o.steg_namn || "");
-  }
+  // Nya leads = lead-pipelinen FÖRE MySales. En kontakt vars affär lever (i spel eller
+  // vunnen) lämnar Nya leads helt. En NEDLAGD affär gör den däremot inte: då är leadet
+  // fritt igen och ska tillbaka i listan. Vunnet/förlorat härleds ur steget — GHL:s
+  // status-fält säger "open" om allt, även om det som är vunnet och förlorat.
+  const index = byggPipelineIndex(
+    (oppRes.data as PipelineOpp[] | null) || [],
+    facit.vinnare,
+    facit.forlorare,
+  );
 
   // Skilj SÄKER match (ghl_contact_id — sätts vid synk) från OSÄKER (bara namn).
   // Säker match → kontakten döljs ur Nya leads (den ÄR i pipelinen). Namn-match →
   // behåll leadet men flagga "kan redan vara i pipelinen" (två olika personer kan
   // heta samma → tappa aldrig ett nytt lead tyst). [buggfix 2026-07-21]
   const contacts = ((lobbyRes.data as unknown as Record<string, unknown>[] | null) || []).map((c) => {
-    const idStage = c.ghl_contact_id ? oppById.get(c.ghl_contact_id as string) : undefined;
-    const nameStage = oppByName.get(norm(c.name as string));
+    const idStage = c.ghl_contact_id ? index.perId.get(c.ghl_contact_id as string) : undefined;
+    const nameStage = index.perNamn.get(normNamn(c.name as string));
+    // Nedlagd affär → leadet är fritt igen. Flaggan slår även lead-status "passed" i
+    // vyn: den sattes när kontakten skickades till MySales och nollställs aldrig, så
+    // utan den här raden vore leadet fortfarande osynligt. [buggfix 2026-08-03]
+    const nedlagd = !idStage && c.ghl_contact_id ? index.nedlagdaPerId.get(c.ghl_contact_id as string) : undefined;
     return {
       ...c,
       pipeline_stage: idStage ?? null,                                   // säker → döljs
       name_match_stage: !idStage && nameStage ? nameStage : null,        // osäker → badge
+      nedlagd_stage: nedlagd ?? null,                                    // nedlagd → tillbaka i listan
     };
   });
 
