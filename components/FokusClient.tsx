@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import PipelineStegRad from "./PipelineStegRad";
+import DataFarskhet from "./DataFarskhet";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import { arPromptEko, ROST_FELMEDDELANDE } from "@/lib/ai/transkription";
 import {
@@ -68,6 +69,8 @@ interface Board {
   linked: boolean;
   antal?: number;
   syncedAt?: string | null;
+  /** Spegelns ålder + eventuellt fel från senaste hämtningen ur MySales. */
+  synk?: { senastSynkad: string | null; fel: string | null };
   locationId?: string;
   prioritering?: {
     dagensDrag: ScoredCard[];
@@ -135,6 +138,22 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
     ladda();
   }, [ladda]);
 
+  // "Synka nu" hämtar affärerna ur MySales på riktigt. Knappen i hjälten läser bara om
+  // spegeln — skillnaden måste synas, annars tror man att man hämtat färska siffror.
+  const synkaNu = useCallback(async () => {
+    try {
+      await fetch("/api/fokus/synk", { method: "POST" });
+    } catch {
+      /* felet syns i färskhetsraden efter omläsningen */
+    }
+    try {
+      const r = await fetch("/api/fokus/board");
+      setB(await r.json());
+    } catch {
+      /* behåll det som redan visas — färskhetsraden avslöjar åldern */
+    }
+  }, []);
+
   const p = b.prioritering;
   const drag = p?.dagensDrag || [];
   const avgor = p?.avgor || [];
@@ -185,7 +204,9 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
             onClick={ladda}
             className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 bg-white/15 hover:bg-white/25 rounded-lg px-3 py-2 transition-colors"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Uppdatera
+            {/* Läser om vyn ur spegeln. Att hämta nya affärer ur MySales gör "Synka nu"
+                i färskhetsraden nedanför — de två får inte heta samma sak. */}
+            <RefreshCw className="w-3.5 h-3.5" /> Läs om vyn
           </button>
         </div>
         {b.linked && pl && (
@@ -196,6 +217,12 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
           </div>
         )}
       </div>
+
+      {/* Åldern på affärerna — alltid synlig, aldrig bara när något är fel. Ligger utanför
+          laddningsvillkoret så att den syns även medan vyn hämtas. */}
+      {!loading && (
+        <DataFarskhet senastSynkad={b.synk?.senastSynkad ?? b.syncedAt} fel={b.synk?.fel} onSynka={synkaNu} />
+      )}
 
       {loading ? (
         <div className="flex items-center gap-2 text-gray-500 py-10">

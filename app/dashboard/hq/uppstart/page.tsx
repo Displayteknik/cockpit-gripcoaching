@@ -7,6 +7,7 @@ import {
   Loader2, PauseCircle, Play, RefreshCw, Rocket, Trash2, X,
 } from "lucide-react";
 import { DashHero, HeroChip, LivePill } from "@/components/ui/dash";
+import { sedanText } from "@/lib/farskhet";
 
 // START-1 — uppstartsmodulen. En plats där allt som måste göras för att systemet ska
 // rulla ligger samlat, i ordning, med skälet skrivet bredvid.
@@ -354,13 +355,21 @@ export default function UppstartPage() {
   );
 }
 
-/** Kontrollens resultat, alltid med sin egen siffra. Grönt bara när mätningen säger ja. */
+/**
+ * Kontrollens resultat, alltid med sin egen siffra OCH när den mättes. En grön bock utan
+ * tidpunkt säger inget om den mättes nyss eller i förrgår — och ett mätvärde vars ålder
+ * är osynlig är lika opålitligt som inget mätvärde alls.
+ */
 function KontrollRad({ k }: { k: Kontroll }) {
+  const matt = sedanText(k.senast_kord);
   return (
     <div className={`mt-3 flex items-start gap-2 rounded-xl px-4 py-2.5 text-sm ${
       k.uppfyllt ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
       {k.uppfyllt ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <Circle className="mt-0.5 h-4 w-4 shrink-0" />}
-      <span>{k.resultat_text || "Kontrollen har inte körts än."}</span>
+      <span>
+        {k.resultat_text || "Kontrollen har inte körts än."}
+        <span className="opacity-70"> · {matt ? `Mätt ${matt}` : "Aldrig mätt"}</span>
+      </span>
     </div>
   );
 }

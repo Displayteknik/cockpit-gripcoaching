@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { LinkedinIcon, FacebookIcon, InstagramIcon } from "@/lib/module-icons";
 import { FunctionGuide } from "@/components/FunctionGuide";
+import DataFarskhet from "@/components/DataFarskhet";
 
 // "Nya leads" (fd Lobbyn) — inflödet av nya kontakter från LinkedIn/IG/FB/mail/webb
 // INNAN de blir affärer i pipelinen. Bygg på varje case med bild/röst/text, få
@@ -135,6 +136,9 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
   const [linked, setLinked] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [mysalesBase, setMysalesBase] = useState<string | null>(null);
+  // Vilka leads som göms bakom "redan i MySales" avgörs av pipeline-spegeln — därför ska
+  // dess ålder synas här också, inte bara i Fokus.
+  const [synk, setSynk] = useState<{ senastSynkad: string | null; fel: string | null } | null>(null);
   const [sparar, setSparar] = useState<string | null>(null);
   const [filter, setFilter] = useState<Status | "alla">("alla");
   const [toast, setToast] = useState<{ text: string; typ: "ok" | "fel" } | null>(null);
@@ -170,6 +174,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
         setLinked(d.linked !== false);
         setContacts(d.contacts || []);
         setMysalesBase(d.mysalesBase || null);
+        setSynk(d.synk || null);
         // Djuplänk från leadaviseringens mejl: /dashboard/leads?id=<uuid> öppnar kortet
         // direkt. Görs efter laddningen, annars finns kortet inte att öppna än.
         try {
@@ -186,6 +191,17 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
 
   useEffect(() => { ladda(); }, [ladda]);
   useEffect(() => { oppenIdRef.current = oppenId; }, [oppenId]);
+
+  // Hämtar pipelinen ur MySales på riktigt och läser sedan om listan, så att "redan i
+  // MySales" bygger på dagens läge och inte på förra veckans.
+  const synkaNu = useCallback(async () => {
+    try {
+      await fetch("/api/fokus/synk", { method: "POST" });
+    } catch {
+      /* felet syns i färskhetsraden efter omläsningen */
+    }
+    ladda();
+  }, [ladda]);
 
   // ── CRUD ────────────────────────────────────────────────────────────────────
   const spara = useCallback(async (id: string, changes: Partial<Contact>) => {
@@ -479,6 +495,11 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
           </div>
         )}
       </div>
+
+      {/* Åldern på pipeline-spegeln som avgör vad som göms som "redan i MySales". */}
+      {linked && !loading && (
+        <DataFarskhet senastSynkad={synk?.senastSynkad} fel={synk?.fel} onSynka={synkaNu} />
+      )}
 
       {/* Röst-overlay */}
       {(lyssnar || rostAnalys) && (
