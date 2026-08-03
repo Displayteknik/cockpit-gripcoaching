@@ -207,6 +207,7 @@ export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryCol
                     {p.lead_time_days != null && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {p.lead_time_days} dgr</span>}
                     {p.markup_pct != null && <span>+{p.markup_pct}%</span>}
                   </div>
+                  {p.notes && <div className="text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-1.5">{p.notes}</div>}
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="text-right">

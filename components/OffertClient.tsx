@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Upload, CheckCircle2, Sparkles, RefreshCw, ListChecks, Plus } from "lucide-react";
 import OffertKatalog from "@/components/OffertKatalog";
+import OffertInkop from "@/components/OffertInkop";
 import OffertSkapa from "@/components/OffertSkapa";
 import OffertDokument from "@/components/OffertDokument";
 
@@ -184,6 +185,9 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
 
       {/* Produktkatalog (Fas 2) */}
       <OffertKatalog primaryColor={primaryColor} />
+
+      {/* Inköpsdatabas (OFFERT-2) — leverantörsprislistor med kvantitetstrappor och fraktsätt */}
+      <OffertInkop primaryColor={primaryColor} />
 
       {/* Offertlista + Skapa offert */}
       <section className="space-y-3">

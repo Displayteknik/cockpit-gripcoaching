@@ -16,6 +16,11 @@ interface ItemIn {
   unit_price?: number | null;
   cost?: number | null;
   lead_time_days?: number | null;
+  // OFFERT-2: raden kan komma ur inköpsdatabasen. Trappan och fraktsättet sparas så att kostnaden
+  // går att härleda tillbaka till en rad i leverantörens prislista även efter en prisuppdatering.
+  inkop_trappa_id?: string | null;
+  fraktsatt?: string | null;
+  priskedja?: unknown;
 }
 
 export async function GET() {
@@ -86,6 +91,9 @@ export async function POST(req: Request) {
     unit_price: i.unit_price ?? null,
     cost: i.cost ?? null,
     lead_time_days: i.lead_time_days ?? null,
+    inkop_trappa_id: i.inkop_trappa_id ?? null,
+    fraktsatt: i.fraktsatt ?? null,
+    priskedja: i.priskedja ?? null,
     sort: idx,
   }));
   const { error: iErr } = await sb.from("offert_quote_items").insert(rader);
