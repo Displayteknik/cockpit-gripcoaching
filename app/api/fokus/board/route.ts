@@ -5,6 +5,7 @@ import { resolveCoachContext, resolveCoachGhl } from "@/lib/coach-bridge";
 import { supabaseService } from "@/lib/supabase-admin";
 import { buildConfigFromStages } from "@/lib/fokus/config";
 import { prioritize } from "@/lib/fokus/priority";
+import { synkaOchStatus } from "@/lib/fokus/synk";
 import type { RawOpportunity, ScoredCard } from "@/lib/fokus/types";
 
 export const runtime = "nodejs";
@@ -98,14 +99,22 @@ async function bokadeDmKort(
 }
 
 // GET /api/fokus/board — den prioriterade IDAG-vyn (spec §6), read-mostly.
-// Läser fokus_opportunities (GHL-spegeln, fylld av standalone Coach) via identitetsbryggan,
-// kör prioriteringsmotorn server-side och returnerar Dagens drag + Avgör + Pengalinjen.
+// Läser fokus_opportunities (GHL-spegeln) via identitetsbryggan, kör prioriteringsmotorn
+// server-side och returnerar Dagens drag + Avgör + Pengalinjen.
 // DT delar location över 2 coach_users → speglade opps → dedupe på ghl_opportunity_id.
+//
+// Spegeln fylls numera av Cockpit själv (lib/fokus/synk) — tidigare låg den uppgiften
+// enbart hos den fristående Coach-appen, och när den slutade köra visade Fokus tre dygn
+// gammal pipeline utan att säga det. Varje svar bär därför `synk` med spegelns ålder, så
+// ingen vy kan rita upp lånad data utan att också visa hur färsk den är.
 export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
 
   const clientId = await getActiveClientId();
+  // Synkar bara om spegeln hunnit bli gammal (tio minuter). Faller anropet lämnas
+  // spegeln orörd och felet följer med ut i svaret — aldrig tyst.
+  const synk = await synkaOchStatus(clientId);
   const ctx = await resolveCoachContext(clientId);
   const sb = supabaseService();
 
@@ -113,9 +122,10 @@ export async function GET() {
   // bokats i ett DM är lika mycket en bokning som en affär ur pipelinen.
   const dmKort = await bokadeDmKort(sb, clientId);
   if (!ctx.ids.length) {
-    if (!dmKort.kort.length) return NextResponse.json({ linked: false });
+    if (!dmKort.kort.length) return NextResponse.json({ linked: false, synk });
     return NextResponse.json({
       linked: true,
+      synk,
       prioritering: {
         dagensDrag: dmKort.kort,
         avgor: [],
@@ -297,6 +307,7 @@ export async function GET() {
 
   return NextResponse.json({
     linked: true,
+    synk,
     prioritering,
     syncedAt,
     antal: opps.length,

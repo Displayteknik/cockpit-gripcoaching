@@ -4,6 +4,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { resolveCoachUserIds, resolveCoachContext } from "@/lib/coach-bridge";
 import { supabaseService } from "@/lib/supabase-admin";
 import { notifyNewLead } from "@/lib/lead-notify";
+import { synkaOchStatus } from "@/lib/fokus/synk";
 
 export const runtime = "nodejs";
 
@@ -40,8 +41,12 @@ export async function GET() {
   if (denied) return denied;
 
   const clientId = await getActiveClientId();
+  // Vilka leads som DÖLJS här avgörs av pipeline-spegeln nedan. Är spegeln gammal kan ett
+  // lead ligga kvar långt efter att det blivit en affär — eller försvinna på en affär som
+  // sedan lades ner. Samma synk och samma åldersstämpel som Fokus, av det skälet.
+  const synk = await synkaOchStatus(clientId);
   const ctx = await resolveCoachContext(clientId);
-  if (!ctx.ids.length) return NextResponse.json({ linked: false, contacts: [] });
+  if (!ctx.ids.length) return NextResponse.json({ linked: false, contacts: [], synk });
 
   const sb = supabaseService();
   const [lobbyRes, oppRes] = await Promise.all([
@@ -81,7 +86,7 @@ export async function GET() {
 
   // White-label GHL-bas för "Öppna i MySales"-deeplänk (customers/detail per kontakt).
   const mysalesBase = ctx.locationId ? `https://app.mysales.se/location/${ctx.locationId}` : null;
-  return NextResponse.json({ linked: true, contacts, mysalesBase });
+  return NextResponse.json({ linked: true, contacts, mysalesBase, synk });
 }
 
 // POST — skapa en ny kontakt. Skrivs till den kanoniska coach_user:n (första),
