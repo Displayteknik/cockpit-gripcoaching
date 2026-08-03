@@ -32,15 +32,16 @@ export async function GET(req: NextRequest) {
     const signals = await extractPageSignals(url, { skipLighthouse: true, skipRobotsSitemap: true });
     return NextResponse.json({
       url: signals.url,
+      hamtning: signals.hamtning, // statuskod, byte, slutlig URL, tid (S-1)
       title: signals.title,
       word_count: signals.wordCount,
       text: signals.mainText,
       matched: url !== rawUrl, // true = vi bytte till en bättre matchande sida
       platform: signals.platform, // → instruktioner anpassas per plattform (GHL/WordPress/...), inte hårdkodat
       schema_types: signals.schemaTypes,
-      has_faq_schema: signals.schemaTypes.includes("FAQPage"), // → optimeraren slipper kasta ut dubbelt schema
-      existing_faqs: signals.faqs.map((f) => f.question).slice(0, 20), // → föreslå inte FAQ som redan finns
-      existing_headings: signals.headings.map((h) => h.text).filter(Boolean).slice(0, 30), // → bygg på befintliga sektioner
+      has_faq_schema: signals.schemaTypes?.includes("FAQPage") ?? null, // → optimeraren slipper kasta ut dubbelt schema
+      existing_faqs: signals.faqs?.map((f) => f.question).slice(0, 20) ?? null, // → föreslå inte FAQ som redan finns
+      existing_headings: signals.headings?.map((h) => h.text).filter(Boolean).slice(0, 30) ?? null, // → bygg på befintliga sektioner
       has_price: /\d[\d\s]{1,}\s*kr\b|\bpris(er|et|lista)?\b|\bkostar\b/i.test(signals.mainText || ""), // → AEO: AI-motorer favoriserar synligt pris
     });
   } catch (e) {

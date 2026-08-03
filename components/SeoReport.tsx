@@ -10,10 +10,11 @@ export interface SeoReport {
   betyg: string;
   sammanfattning: string;
   scorecard: {
-    seo: { poang: number; kommentar: string };
-    aeo: { poang: number; kommentar: string };
-    innehall: { poang: number; kommentar: string };
-    eeat: { poang: number; kommentar: string };
+    // null = kunde inte mätas → "Ej mätt". Aldrig 0, aldrig ett grönt tal.
+    seo: { poang: number | null; kommentar: string };
+    aeo: { poang: number | null; kommentar: string };
+    innehall: { poang: number | null; kommentar: string };
+    eeat: { poang: number | null; kommentar: string };
   };
   styrkor: { rubrik: string; varfor: string }[];
   forbattringar: {
@@ -27,19 +28,29 @@ export interface SeoReport {
   citerbarhet?: { omdome: string; motivering: string; forslag: string };
   eeat?: { omdome: string; saknas: string[] };
   teknik?: {
-    plattform: string;
-    indexerbar: boolean;
+    plattform: string | null;
+    /** null = kunde inte mätas → "Ej mätt". Aldrig "Ja", aldrig "NEJ". */
+    indexerbar: boolean | null;
     canonical: string | null;
     canonical_kalla: string;
     lighthouse_seo: number | null;
     sitemap_urls: number | null;
     cwv: { lcp: CwvCell | null; inp: CwvCell | null; cls: CwvCell | null } | null;
-    checkar: { label: string; pass: boolean; detail: string }[];
+    checkar: { label: string; status?: CheckStatus; pass?: boolean; detail: string }[];
+    hamtning?: { ok: boolean; status: number | null; bytes: number | null; slutUrl: string | null; ms: number };
   };
   sokord?: { query: string; clicks: number; impressions: number; ctr: number | null; position: number | null }[];
 }
 
 type CwvCell = { value: number; category: string };
+
+/** Tre lägen, aldrig två. "ej-matt" får aldrig se ut som OK och aldrig som ett kryss. */
+type CheckStatus = "ok" | "fel" | "ej-matt";
+/** Äldre rapporter bar bara `pass: boolean` — de tolkas som ok/fel, aldrig som ej mätt. */
+const checkStatus = (c: { status?: CheckStatus; pass?: boolean }): CheckStatus =>
+  c.status ?? (c.pass ? "ok" : "fel");
+const CHECK_IKON: Record<CheckStatus, string> = { ok: "✓", fel: "✕", "ej-matt": "?" };
+const CHECK_TEXT: Record<CheckStatus, string> = { ok: "", fel: "", "ej-matt": " — EJ MÄTT" };
 const cwvColor = (c?: string) => (c === "good" ? "text-emerald-600" : c === "needs-improvement" ? "text-amber-600" : c === "poor" ? "text-red-600" : "text-gray-400");
 const cwvLcp = (v: number) => `${(v / 1000).toFixed(1)} s`;
 const cwvInp = (v: number) => `${Math.round(v)} ms`;
@@ -158,14 +169,20 @@ function ReportView({
         {report.teknik && (
           <div>
             <div className="text-sm font-semibold text-gray-900 mb-2">Teknik &amp; prestanda <span className="text-xs font-normal text-gray-400">(uppmätt)</span></div>
+            {report.teknik.hamtning && !report.teknik.hamtning.ok && (
+              <div className="text-xs mb-2 px-2.5 py-2 rounded-lg border bg-amber-50 border-amber-200 text-amber-800">
+                Sidan kunde inte läsas (HTTP {report.teknik.hamtning.status ?? "—"}, {report.teknik.hamtning.bytes ?? "—"} byte).
+                Siffrorna nedan är därför inte mätta.
+              </div>
+            )}
             <div className="flex flex-wrap gap-2 mb-2">
-              <span className={`text-xs px-2 py-1 rounded-lg border ${report.teknik.indexerbar ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"}`}>
-                {report.teknik.indexerbar ? "Indexerbar" : "EJ indexerbar"}
+              <span className={`text-xs px-2 py-1 rounded-lg border ${report.teknik.indexerbar == null ? "bg-gray-50 border-gray-200 text-gray-500" : report.teknik.indexerbar ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"}`}>
+                {report.teknik.indexerbar == null ? "Indexerbar: Ej mätt" : report.teknik.indexerbar ? "Indexerbar" : "EJ indexerbar"}
               </span>
-              <span className="text-xs px-2 py-1 rounded-lg border bg-gray-50 border-gray-100 text-gray-600">Plattform: {report.teknik.plattform}</span>
+              <span className="text-xs px-2 py-1 rounded-lg border bg-gray-50 border-gray-100 text-gray-600">Plattform: {report.teknik.plattform ?? "Ej mätt"}</span>
               {report.teknik.lighthouse_seo != null && <span className="text-xs px-2 py-1 rounded-lg border bg-gray-50 border-gray-100 text-gray-600">Lighthouse SEO: {report.teknik.lighthouse_seo}</span>}
-              <span className={`text-xs px-2 py-1 rounded-lg border ${report.teknik.canonical_kalla === "none" ? "bg-red-50 border-red-100 text-red-700" : "bg-gray-50 border-gray-100 text-gray-600"}`}>
-                Canonical: {report.teknik.canonical_kalla === "none" ? "saknas" : report.teknik.canonical_kalla === "payload" ? "renderad" : "ok"}
+              <span className={`text-xs px-2 py-1 rounded-lg border ${report.teknik.canonical_kalla === "okand" ? "bg-gray-50 border-gray-200 text-gray-500" : report.teknik.canonical_kalla === "none" ? "bg-red-50 border-red-100 text-red-700" : "bg-gray-50 border-gray-100 text-gray-600"}`}>
+                Canonical: {report.teknik.canonical_kalla === "okand" ? "Ej mätt" : report.teknik.canonical_kalla === "none" ? "saknas" : report.teknik.canonical_kalla === "payload" ? "renderad" : "ok"}
               </span>
               {report.teknik.sitemap_urls != null && <span className="text-xs px-2 py-1 rounded-lg border bg-gray-50 border-gray-100 text-gray-600">Sitemap: {report.teknik.sitemap_urls} URL:er</span>}
             </div>
@@ -181,11 +198,15 @@ function ReportView({
             )}
             {report.teknik.checkar?.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {report.teknik.checkar.map((c, i) => (
-                  <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${c.pass ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`} title={c.detail}>
-                    {c.pass ? "✓" : "✕"} {c.label}
-                  </span>
-                ))}
+                {report.teknik.checkar.map((c, i) => {
+                  const st = checkStatus(c);
+                  const farg = st === "ok" ? "bg-emerald-50 text-emerald-700" : st === "fel" ? "bg-red-50 text-red-700" : "bg-gray-100 text-gray-500";
+                  return (
+                    <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${farg}`} title={c.detail}>
+                      {CHECK_IKON[st]} {c.label}{CHECK_TEXT[st]}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -286,13 +307,13 @@ function ReportView({
   );
 }
 
-function ScoreCell({ label, v, comment }: { label: string; v?: number; comment?: string }) {
+function ScoreCell({ label, v, comment }: { label: string; v?: number | null; comment?: string }) {
   const val = typeof v === "number" ? v : null;
   const color = val == null ? "text-gray-400" : val >= 80 ? "text-emerald-600" : val >= 60 ? "text-amber-600" : "text-red-600";
   return (
     <div className="p-3 border-r border-b border-gray-100 last:border-r-0">
       <div className="text-xs text-gray-500 uppercase tracking-wide leading-tight">{label}</div>
-      <div className={`text-2xl font-bold tabular-nums ${color}`}>{val ?? "—"}</div>
+      <div className={`font-bold tabular-nums ${color} ${val == null ? "text-base" : "text-2xl"}`}>{val ?? "Ej mätt"}</div>
       {comment && <div className="text-xs text-gray-500 leading-snug mt-0.5">{comment}</div>}
     </div>
   );
@@ -313,11 +334,11 @@ function printReport(report: SeoReport, ctx: { clientName: string; url: string; 
   const forb = [...(report.forbattringar || [])].sort((a, b) => (order[a.prioritet] ?? 9) - (order[b.prioritet] ?? 9));
   const datum = (() => { try { return new Date(auditedAt).toLocaleDateString("sv-SE"); } catch { return ""; } })();
 
-  const scoreColor = (v?: number) => (v == null ? "#9ca3af" : v >= 80 ? "#059669" : v >= 60 ? "#d97706" : "#dc2626");
-  const cell = (label: string, o?: { poang: number; kommentar: string }) => `
+  const scoreColor = (v?: number | null) => (v == null ? "#9ca3af" : v >= 80 ? "#059669" : v >= 60 ? "#d97706" : "#dc2626");
+  const cell = (label: string, o?: { poang: number | null; kommentar: string }) => `
     <div class="cell">
       <div class="cell-label">${esc(label)}</div>
-      <div class="cell-score" style="color:${scoreColor(o?.poang)}">${o?.poang ?? "—"}</div>
+      <div class="cell-score" style="color:${scoreColor(o?.poang)};${o?.poang == null ? "font-size:14px;" : ""}">${o?.poang ?? "Ej mätt"}</div>
       <div class="cell-comment">${esc(o?.kommentar)}</div>
     </div>`;
 
@@ -369,9 +390,18 @@ function printReport(report: SeoReport, ctx: { clientName: string; url: string; 
       <div class="cell"><div class="cell-label">INP</div><div class="cell-score" style="color:${cc(t.cwv.inp?.category)}">${t.cwv.inp ? Math.round(t.cwv.inp.value) + " ms" : "—"}</div></div>
       <div class="cell"><div class="cell-label">CLS</div><div class="cell-score" style="color:${cc(t.cwv.cls?.category)}">${t.cwv.cls ? t.cwv.cls.value.toFixed(2) : "—"}</div></div>
     </div>` : "";
-    const checks = t.checkar?.length ? `<div style="margin-top:6px;">${t.checkar.map(c => `<span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin:2px;background:${c.pass ? "#ecfdf5" : "#fee2e2"};color:${c.pass ? "#047857" : "#b91c1c"};">${c.pass ? "✓" : "✕"} ${esc(c.label)}</span>`).join("")}</div>` : "";
+    const checkFarg: Record<CheckStatus, [string, string]> = { ok: ["#ecfdf5", "#047857"], fel: ["#fee2e2", "#b91c1c"], "ej-matt": ["#f3f4f6", "#6b7280"] };
+    const checks = t.checkar?.length ? `<div style="margin-top:6px;">${t.checkar.map(c => {
+      const st = checkStatus(c);
+      const [bg, fg] = checkFarg[st];
+      return `<span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin:2px;background:${bg};color:${fg};">${CHECK_IKON[st]} ${esc(c.label)}${st === "ej-matt" ? ` — ej mätt (${esc(c.detail)})` : ""}</span>`;
+    }).join("")}</div>` : "";
+    const hamtRad = t.hamtning && !t.hamtning.ok
+      ? `<div class="row" style="color:#b45309;"><b>Obs:</b> sidan kunde inte läsas (HTTP ${t.hamtning.status ?? "—"}, ${t.hamtning.bytes ?? "—"} byte). Siffrorna nedan är inte mätta.</div>`
+      : "";
     return `<h2>Teknik &amp; prestanda (uppmätt)</h2>
-      <div class="row"><b>Indexerbar:</b> ${t.indexerbar ? "Ja" : "NEJ"} &nbsp;·&nbsp; <b>Plattform:</b> ${esc(t.plattform)} &nbsp;·&nbsp; <b>Canonical:</b> ${t.canonical_kalla === "none" ? "saknas" : t.canonical_kalla === "payload" ? "renderad" : "ok"}${t.lighthouse_seo != null ? ` &nbsp;·&nbsp; <b>Lighthouse SEO:</b> ${t.lighthouse_seo}` : ""}${t.sitemap_urls != null ? ` &nbsp;·&nbsp; <b>Sitemap:</b> ${t.sitemap_urls} URL:er` : ""}</div>
+      ${hamtRad}
+      <div class="row"><b>Indexerbar:</b> ${t.indexerbar == null ? "Ej mätt" : t.indexerbar ? "Ja" : "NEJ"} &nbsp;·&nbsp; <b>Plattform:</b> ${esc(t.plattform ?? "Ej mätt")} &nbsp;·&nbsp; <b>Canonical:</b> ${t.canonical_kalla === "okand" ? "Ej mätt" : t.canonical_kalla === "none" ? "saknas" : t.canonical_kalla === "payload" ? "renderad" : "ok"}${t.lighthouse_seo != null ? ` &nbsp;·&nbsp; <b>Lighthouse SEO:</b> ${t.lighthouse_seo}` : ""}${t.sitemap_urls != null ? ` &nbsp;·&nbsp; <b>Sitemap:</b> ${t.sitemap_urls} URL:er` : ""}</div>
       ${cwvHtml}${checks}`;
   })() : ""}
   ${report.sokord?.length ? `<h2>Sökord i Google (Search Console)</h2>

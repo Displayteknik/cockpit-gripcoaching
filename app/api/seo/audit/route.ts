@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { assertSafePublicUrl } from "@/lib/safe-url";
+import { arSidaEjLast } from "@/lib/seo-hamta";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -24,7 +25,21 @@ export async function POST(req: NextRequest) {
   }
 
   const clientId = await resolveClientId();
-  const result = await auditUrlRendered(targetUrl);
+
+  // S-1: gick sidan inte att läsa sparas INGENTING. En rad med nollor i hm_seo_audits
+  // är omöjlig att skilja från en riktig mätning i efterhand — det var så
+  // "0 ord, 0 bilder, ingen title" kunde bli en kundrapport.
+  let result;
+  try {
+    result = await auditUrlRendered(targetUrl);
+  } catch (e) {
+    const logg = arSidaEjLast(e) ? e.logg : null;
+    return NextResponse.json(
+      { error: (e as Error).message || "Sidan kunde inte läsas", hamtning: logg },
+      { status: 502 },
+    );
+  }
+
   if (!skipPageSpeed) {
     const ps = await pageSpeed(targetUrl);
     result.pagespeed_mobile = ps.mobile ?? undefined;

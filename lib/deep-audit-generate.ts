@@ -259,7 +259,7 @@ ${JSON.stringify(site)}
 
 # Startsidans synliga text (för innehålls- och E-E-A-T-bedömning)
 """
-${site.homepageText}
+${site.homepageText ?? "(startsidan kunde INTE läsas — se misslyckade[] i JSON ovan)"}
 """
 
 Generera komplett rapport enligt mallen, för HELA sajten. Regler:

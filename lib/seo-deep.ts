@@ -6,41 +6,65 @@
 // canonical + schema HTML-kodat i hydrerings-payloaden (<link ...). Vi söker
 // därför både i rå HTML och i en avkodad kopia, så vi inte ger falska "saknas".
 // Källa kodifierad i lesson_ghl_client_side_verify.
+//
+// SEO-1 / S-1 + S-2 — TVÅ REGLER SOM INTE FÅR BRYTAS:
+//  * All hämtning går genom lib/seo-hamta (EN user-agent, bara 200, minst 500 byte,
+//    logg per URL). En sida som inte kunde läsas kastar `SidaEjLast`.
+//  * `null` betyder "inte mätt", `0` betyder "mätt till noll". Ingen kodväg får
+//    konvertera ett misslyckat anrop till 0, tom sträng eller tom lista — det var
+//    exakt så for-balance-rapporten fick "0 ord, 0 bilder, ingen title" om en sajt
+//    med 678 ord och 75 bilder, och grönt ljus på "inga bilder utan alt-text".
+
+import { hamtaSida, hamtaRatt, arSidaEjLast, type HamtLogg, type HamtOrsak } from "./seo-hamta";
+
+export { SEO_USER_AGENT, SidaEjLast, arSidaEjLast, MIN_SIDSTORLEK_BYTE } from "./seo-hamta";
+export type { HamtLogg } from "./seo-hamta";
 
 export interface CwvMetric {
   value: number;
   category: "good" | "needs-improvement" | "poor";
 }
+
+/**
+ * Alla mätvärden är nullbara med flit.
+ * `null` = INTE MÄTT. `0` / `[]` / `""` = mätt, och resultatet blev tomt.
+ */
 export interface PageSignals {
   url: string;
+  /** Bevis på vad hämtningen gav: statuskod, byte, slutlig URL, tid. */
+  hamtning: HamtLogg;
+  /** null = sidan lästes. Sträng = varför sidan INTE lästes; då är alla mätvärden null. */
+  ejMattOrsak: string | null;
+  /** Sajtnivåhämtningar som försöktes men föll. null = lyckades eller hoppades över. */
+  sajtHamtFel: { robots: string | null; sitemap: string | null };
   title: string | null;
-  titleLength: number;
+  titleLength: number | null;
   metaDescription: string | null;
-  metaLength: number;
+  metaLength: number | null;
   canonical: string | null;
-  canonicalSource: "static" | "payload" | "none";
+  canonicalSource: "static" | "payload" | "none" | "okand";
   lang: string | null;
   robots: string | null;
-  ogTags: Record<string, string>;
-  schemaTypes: string[];
-  faqs: { question: string; answer: string }[];
-  headings: { level: number; text: string }[];
-  emptyHeadings: number;
-  wordCount: number;
-  paragraphCount: number;
-  listCount: number;
-  images: { total: number; withoutAlt: number };
-  links: { internal: number; external: number };
-  hasUpdatedDate: boolean;
-  // Nytt: plattform + teknisk hygien hämtad live
-  platform: string;
+  ogTags: Record<string, string> | null;
+  schemaTypes: string[] | null;
+  faqs: { question: string; answer: string }[] | null;
+  headings: { level: number; text: string }[] | null;
+  emptyHeadings: number | null;
+  wordCount: number | null;
+  paragraphCount: number | null;
+  listCount: number | null;
+  images: { total: number; withoutAlt: number } | null;
+  links: { internal: number; external: number } | null;
+  hasUpdatedDate: boolean | null;
+  // Plattform + teknisk hygien hämtad live
+  platform: string | null;
   robotsTxt: { found: boolean; blocksEverything: boolean; sitemapDeclared: string | null } | null;
-  sitemap: { found: boolean; urlCount: number } | null;
+  sitemap: { found: boolean; urlCount: number | null } | null;
   cwv: { lcp: CwvMetric | null; inp: CwvMetric | null; cls: CwvMetric | null; source: "field" | "none" } | null;
   lighthouseSeo: number | null; // 0-100, renderad (Lighthouse via PSI)
   lighthouseAudits: { id: string; title: string; score: number | null; displayValue?: string }[] | null;
   renderNote: string;
-  mainText: string; // rensad, trunkerad till ~12000 tecken
+  mainText: string | null; // rensad, trunkerad till ~12000 tecken. null = ej mätt
 }
 
 const stripText = (html: string) =>
@@ -105,35 +129,50 @@ function detectPlatform(html: string, headers: Headers): string {
   return "okänd";
 }
 
-async function fetchRobotsAndSitemap(url: string) {
+interface RobotsSitemapResultat {
+  robotsTxt: PageSignals["robotsTxt"];
+  sitemap: PageSignals["sitemap"];
+  fel: { robots: string | null; sitemap: string | null };
+}
+
+/** 404/410 = filen finns verkligen inte. Allt annat icke-200 = vi VET inte. */
+const arEjHittad = (status: number | null) => status === 404 || status === 410;
+
+async function fetchRobotsAndSitemap(url: string): Promise<RobotsSitemapResultat> {
   let robotsTxt: PageSignals["robotsTxt"] = null;
   let sitemap: PageSignals["sitemap"] = null;
+  const fel: { robots: string | null; sitemap: string | null } = { robots: null, sitemap: null };
+  let origin: string;
   try {
-    const origin = new URL(url).origin;
-    try {
-      const r = await fetch(`${origin}/robots.txt`, { signal: AbortSignal.timeout(8000) });
-      if (r.ok) {
-        const t = await r.text();
-        const sm = first(t, /sitemap:\s*(\S+)/i) || null;
-        const blocksEverything = /user-agent:\s*\*[\s\S]*?disallow:\s*\/\s*$/im.test(t);
-        robotsTxt = { found: true, blocksEverything, sitemapDeclared: sm };
-      } else {
-        robotsTxt = { found: false, blocksEverything: false, sitemapDeclared: null };
-      }
-    } catch { /* ignore */ }
-    try {
-      const smUrl = robotsTxt?.sitemapDeclared || `${origin}/sitemap.xml`;
-      const s = await fetch(smUrl, { signal: AbortSignal.timeout(8000) });
-      if (s.ok) {
-        const x = await s.text();
-        const urlCount = (x.match(/<loc>/gi) || []).length;
-        sitemap = { found: true, urlCount };
-      } else {
-        sitemap = { found: false, urlCount: 0 };
-      }
-    } catch { /* ignore */ }
-  } catch { /* ignore */ }
-  return { robotsTxt, sitemap };
+    origin = new URL(url).origin;
+  } catch {
+    return { robotsTxt, sitemap, fel: { robots: `Ogiltig URL: ${url}`, sitemap: `Ogiltig URL: ${url}` } };
+  }
+
+  const r = await hamtaRatt(`${origin}/robots.txt`, { timeoutMs: 8000, accepteraIckeOk: true });
+  if (r.logg.status === 200 && r.text != null) {
+    const t = r.text;
+    const sm = first(t, /sitemap:\s*(\S+)/i) || null;
+    const blocksEverything = /user-agent:\s*\*[\s\S]*?disallow:\s*\/\s*$/im.test(t);
+    robotsTxt = { found: true, blocksEverything, sitemapDeclared: sm };
+  } else if (arEjHittad(r.logg.status)) {
+    robotsTxt = { found: false, blocksEverything: false, sitemapDeclared: null };
+  } else {
+    // Ej 200 och ej 404 → okänt. Får ALDRIG bli "ingen robots.txt".
+    fel.robots = r.logg.fel || `robots.txt gav HTTP ${r.logg.status ?? "-"}`;
+  }
+
+  const smUrl = robotsTxt?.sitemapDeclared || `${origin}/sitemap.xml`;
+  const s = await hamtaRatt(smUrl, { timeoutMs: 8000, accepteraIckeOk: true });
+  if (s.logg.status === 200 && s.text != null) {
+    sitemap = { found: true, urlCount: (s.text.match(/<loc>/gi) || []).length };
+  } else if (arEjHittad(s.logg.status)) {
+    sitemap = { found: false, urlCount: null };
+  } else {
+    fel.sitemap = s.logg.fel || `sitemap gav HTTP ${s.logg.status ?? "-"}`;
+  }
+
+  return { robotsTxt, sitemap, fel };
 }
 
 // PSI Lighthouse: renderad (headless Chrome) → SEO-score + CWV-fältdata (CrUX)
@@ -210,71 +249,196 @@ const RICH_ELIGIBLE = new Set([
   "Product", "Review", "AggregateRating", "BreadcrumbList", "Article", "NewsArticle",
   "BlogPosting", "Event", "Recipe", "VideoObject", "Organization", "LocalBusiness", "JobPosting",
 ]);
-export function schemaRichEligibility(types: string[]): { eligible: string[]; valid_no_rich: string[] } {
+export function schemaRichEligibility(types: string[] | null): { eligible: string[]; valid_no_rich: string[] } | null {
+  if (types == null) return null; // ej mätt — får aldrig se ut som "inga rich results"
   const eligible = types.filter((t) => RICH_ELIGIBLE.has(t));
   const valid_no_rich = types.filter((t) => !RICH_ELIGIBLE.has(t)); // t.ex. FAQPage/HowTo: giltigt men ej rich result för vanliga sajter
   return { eligible, valid_no_rich };
 }
 
-// Render-medveten, deterministisk poängsättning (0-100) — ankrad i Lighthouse där det finns.
-export function scoreSignals(s: PageSignals): {
-  seo: number; aeo: number; indexerbar: boolean; checks: { id: string; label: string; pass: boolean; detail: string }[];
-} {
-  const checks: { id: string; label: string; pass: boolean; detail: string }[] = [];
-  const add = (id: string, label: string, pass: boolean, detail: string) => checks.push({ id, label, pass, detail });
+// ───────────────────────── POÄNGSÄTTNING ─────────────────────────
 
-  // Indexerbarhet-grind
-  const noindex = /noindex/i.test(s.robots || "");
-  const blocked = s.robotsTxt?.blocksEverything === true;
-  const indexerbar = !noindex && !blocked;
-  add("indexerbar", "Indexerbar", indexerbar, noindex ? "meta robots: noindex" : blocked ? "robots.txt blockerar allt" : "ok");
-
-  // On-page SEO (vår del)
-  let seo = 100;
-  if (!s.title) { seo -= 15; add("title", "Title finns", false, "saknas"); }
-  else { add("title", "Title finns", true, `${s.titleLength} tecken`); if (s.titleLength > 65) seo -= 4; }
-  if (!s.metaDescription) { seo -= 12; add("meta", "Meta description", false, "saknas"); }
-  else { add("meta", "Meta description", true, `${s.metaLength} tecken`); if (s.metaLength > 170) seo -= 4; }
-  if (s.headings.filter((h) => h.level === 1).length === 0) { seo -= 10; add("h1", "H1 finns", false, "saknas"); }
-  else add("h1", "H1 finns", true, "ok");
-  if (s.emptyHeadings > 0) { seo -= 4; add("tomma_rubriker", "Inga tomma rubriker", false, `${s.emptyHeadings} tomma`); }
-  if (s.canonicalSource === "none") { seo -= 8; add("canonical", "Canonical finns", false, "ingen hittad"); }
-  else add("canonical", "Canonical finns", true, s.canonicalSource === "payload" ? "renderad (client-side)" : "statisk");
-  if (s.wordCount < 300) { seo -= 10; add("innehall", "Tillräckligt innehåll", false, `${s.wordCount} ord`); }
-  if (s.images.withoutAlt > 0) seo -= Math.min(8, s.images.withoutAlt);
-  if (s.links.internal < 3) seo -= 4;
-  if (s.sitemap && !s.sitemap.found) { seo -= 4; add("sitemap", "Sitemap finns", false, "hittades ej"); }
-  // Ankra mot Lighthouse SEO (renderad) FÖRE grinden
-  if (s.lighthouseSeo != null) seo = Math.round(0.5 * s.lighthouseSeo + 0.5 * seo);
-  // Indexerbarhet-grind SIST: en icke-indexerbar sida kan aldrig få hög teknik-poäng
-  seo = Math.max(0, indexerbar ? seo : Math.min(seo, 25));
-
-  // AEO (citerbarhet)
-  let aeo = 100;
-  if (s.schemaTypes.length === 0) aeo -= 20;
-  if (!s.schemaTypes.includes("FAQPage") && s.faqs.length === 0) aeo -= 12;
-  if (s.wordCount < 600) aeo -= 8;
-  const qHeadings = s.headings.filter((h) => /\?$/.test(h.text) || /^(varför|hur|vad|när|vilken|vilka|kan)/i.test(h.text));
-  if (qHeadings.length === 0) aeo -= 8;
-  if (s.listCount < 2) aeo -= 5;
-  if (!s.hasUpdatedDate) aeo -= 5;
-  aeo = Math.max(0, aeo);
-
-  return { seo, aeo, indexerbar, checks };
+/** "ej-matt" är ett eget läge. Det får ALDRIG renderas som OK eller som ett kryss. */
+export type CheckStatus = "ok" | "fel" | "ej-matt";
+export interface SeoCheck {
+  id: string;
+  label: string;
+  status: CheckStatus;
+  detail: string;
 }
 
+/** Checkar som alltid ska synas när en sida inte kunde läsas — ingen får saknas tyst. */
+const ALLA_CHECKAR: [string, string][] = [
+  ["indexerbar", "Indexerbar"],
+  ["title", "Title finns"],
+  ["meta", "Meta description"],
+  ["h1", "H1 finns"],
+  ["canonical", "Canonical finns"],
+  ["innehall", "Tillräckligt innehåll"],
+  ["bilder_alt", "Bilder har alt-text"],
+  ["internlankar", "Interna länkar"],
+  ["schema", "Strukturerad data"],
+  ["sitemap", "Sitemap finns"],
+];
+
+// Render-medveten, deterministisk poängsättning — ankrad i Lighthouse där det finns.
+// Returnerar null för poäng när sidan inte gick att mäta. En sida som aldrig lästes
+// ska INTE få ett lågt men trovärdigt tal — den ska inte få något tal alls.
+export function scoreSignals(s: PageSignals): {
+  seo: number | null; aeo: number | null; indexerbar: boolean | null; checks: SeoCheck[];
+} {
+  const checks: SeoCheck[] = [];
+  const add = (id: string, label: string, status: CheckStatus, detail: string) => checks.push({ id, label, status, detail });
+
+  // Sidan lästes aldrig → ingenting får bedömas, allt blir "ej mätt" med orsak.
+  if (s.ejMattOrsak) {
+    for (const [id, label] of ALLA_CHECKAR) add(id, label, "ej-matt", s.ejMattOrsak);
+    return { seo: null, aeo: null, indexerbar: null, checks };
+  }
+
+  // Ett enda omätt sidfält gör poängen osann → returnera null i stället för ett tal.
+  let osakert = false;
+  const ejMatt = (id: string, label: string, orsak: string) => { osakert = true; add(id, label, "ej-matt", orsak); };
+
+  // ── Indexerbarhet ────────────────────────────────────────────
+  const noindex = /noindex/i.test(s.robots || "");
+  const robotsOkant = s.sajtHamtFel.robots;
+  let indexerbar: boolean | null;
+  if (noindex) { indexerbar = false; add("indexerbar", "Indexerbar", "fel", "meta robots: noindex"); }
+  else if (s.robotsTxt?.blocksEverything === true) { indexerbar = false; add("indexerbar", "Indexerbar", "fel", "robots.txt blockerar allt"); }
+  else if (robotsOkant) { indexerbar = null; add("indexerbar", "Indexerbar", "ej-matt", `robots.txt kunde inte läsas: ${robotsOkant}`); }
+  else { indexerbar = true; add("indexerbar", "Indexerbar", "ok", "ok"); }
+
+  // ── On-page SEO ──────────────────────────────────────────────
+  let seo = 100;
+
+  if (s.titleLength == null) ejMatt("title", "Title finns", "titeln kunde inte mätas");
+  else if (!s.title) { seo -= 15; add("title", "Title finns", "fel", "saknas"); }
+  else { add("title", "Title finns", "ok", `${s.titleLength} tecken`); if (s.titleLength > 65) seo -= 4; }
+
+  if (s.metaLength == null) ejMatt("meta", "Meta description", "meta description kunde inte mätas");
+  else if (!s.metaDescription) { seo -= 12; add("meta", "Meta description", "fel", "saknas"); }
+  else { add("meta", "Meta description", "ok", `${s.metaLength} tecken`); if (s.metaLength > 170) seo -= 4; }
+
+  if (s.headings == null) ejMatt("h1", "H1 finns", "rubrikerna kunde inte mätas");
+  else if (s.headings.filter((h) => h.level === 1).length === 0) { seo -= 10; add("h1", "H1 finns", "fel", "saknas"); }
+  else add("h1", "H1 finns", "ok", "ok");
+
+  if (s.emptyHeadings == null) { /* täcks av h1-raden ovan */ }
+  else if (s.emptyHeadings > 0) { seo -= 4; add("tomma_rubriker", "Inga tomma rubriker", "fel", `${s.emptyHeadings} tomma`); }
+
+  if (s.canonicalSource === "okand") ejMatt("canonical", "Canonical finns", "canonical kunde inte mätas");
+  else if (s.canonicalSource === "none") { seo -= 8; add("canonical", "Canonical finns", "fel", "ingen hittad"); }
+  else add("canonical", "Canonical finns", "ok", s.canonicalSource === "payload" ? "renderad (client-side)" : "statisk");
+
+  if (s.wordCount == null) ejMatt("innehall", "Tillräckligt innehåll", "textmängden kunde inte mätas");
+  else if (s.wordCount < 300) { seo -= 10; add("innehall", "Tillräckligt innehåll", "fel", `${s.wordCount} ord`); }
+  else add("innehall", "Tillräckligt innehåll", "ok", `${s.wordCount} ord`);
+
+  // ⚠ Kärnan i S-2: "inga bilder utan alt-text" får ALDRIG sättas när bildantalet är null.
+  // Det var precis den raden som gav grönt ljus på sajtens enda riktiga brist.
+  if (s.images == null) ejMatt("bilder_alt", "Bilder har alt-text", "bilderna kunde inte räknas");
+  else if (s.images.withoutAlt > 0) { seo -= Math.min(8, s.images.withoutAlt); add("bilder_alt", "Bilder har alt-text", "fel", `${s.images.withoutAlt} av ${s.images.total} saknar alt-text`); }
+  else add("bilder_alt", "Bilder har alt-text", "ok", s.images.total === 0 ? "0 bilder totalt" : `${s.images.total} bilder, alla har alt-text`);
+
+  if (s.links == null) ejMatt("internlankar", "Interna länkar", "länkarna kunde inte räknas");
+  else if (s.links.internal < 3) { seo -= 4; add("internlankar", "Interna länkar", "fel", `${s.links.internal} interna länkar`); }
+  else add("internlankar", "Interna länkar", "ok", `${s.links.internal} interna länkar`);
+
+  // Sitemap är en SAJT-signal — att den inte gick att läsa gör inte sidans poäng osann.
+  if (s.sajtHamtFel.sitemap) add("sitemap", "Sitemap finns", "ej-matt", `sitemap kunde inte läsas: ${s.sajtHamtFel.sitemap}`);
+  else if (s.sitemap && !s.sitemap.found) { seo -= 4; add("sitemap", "Sitemap finns", "fel", "hittades ej"); }
+  else if (s.sitemap) add("sitemap", "Sitemap finns", "ok", s.sitemap.urlCount != null ? `${s.sitemap.urlCount} URL:er` : "hittad");
+
+  // Ankra mot Lighthouse SEO (renderad) FÖRE grinden
+  if (s.lighthouseSeo != null) seo = Math.round(0.5 * s.lighthouseSeo + 0.5 * seo);
+  // Indexerbarhet-grind SIST: en icke-indexerbar sida kan aldrig få hög teknik-poäng.
+  // Är indexerbarheten OKÄND appliceras inget tak — vi låtsas inte veta.
+  if (indexerbar === false) seo = Math.min(seo, 25);
+  seo = Math.max(0, seo);
+
+  // ── AEO (citerbarhet) ────────────────────────────────────────
+  let aeo = 100;
+  if (s.schemaTypes == null) ejMatt("schema", "Strukturerad data", "schema kunde inte läsas");
+  else {
+    if (s.schemaTypes.length === 0) { aeo -= 20; add("schema", "Strukturerad data", "fel", "ingen JSON-LD hittad"); }
+    else add("schema", "Strukturerad data", "ok", s.schemaTypes.join(", "));
+    if (!s.schemaTypes.includes("FAQPage") && (s.faqs?.length ?? 0) === 0) aeo -= 12;
+  }
+  if (s.wordCount != null && s.wordCount < 600) aeo -= 8;
+  if (s.headings != null) {
+    const qHeadings = s.headings.filter((h) => /\?$/.test(h.text) || /^(varför|hur|vad|när|vilken|vilka|kan)/i.test(h.text));
+    if (qHeadings.length === 0) aeo -= 8;
+  }
+  if (s.listCount != null && s.listCount < 2) aeo -= 5;
+  if (s.hasUpdatedDate === false) aeo -= 5;
+  aeo = Math.max(0, aeo);
+
+  return {
+    seo: osakert ? null : seo,
+    aeo: osakert ? null : aeo,
+    indexerbar,
+    checks,
+  };
+}
+
+// ───────────────────────── SIDHÄMTNING ─────────────────────────
+
+/**
+ * En sida som INTE kunde läsas. Varje mätvärde är null med en orsak.
+ * Alternativet — att tappa sidan tyst eller fylla den med nollor — är precis
+ * det som fällde for-balance-rapporten.
+ */
+export function omattaSignaler(url: string, logg: HamtLogg): PageSignals {
+  const orsak = logg.fel || `Sidan kunde inte läsas (status ${logg.status ?? "okänd"})`;
+  return {
+    url,
+    hamtning: logg,
+    ejMattOrsak: orsak,
+    sajtHamtFel: { robots: null, sitemap: null },
+    title: null,
+    titleLength: null,
+    metaDescription: null,
+    metaLength: null,
+    canonical: null,
+    canonicalSource: "okand",
+    lang: null,
+    robots: null,
+    ogTags: null,
+    schemaTypes: null,
+    faqs: null,
+    headings: null,
+    emptyHeadings: null,
+    wordCount: null,
+    paragraphCount: null,
+    listCount: null,
+    images: null,
+    links: null,
+    hasUpdatedDate: null,
+    platform: null,
+    robotsTxt: null,
+    sitemap: null,
+    cwv: null,
+    lighthouseSeo: null,
+    lighthouseAudits: null,
+    renderNote: `Sidan kunde inte läsas: ${orsak}`,
+    mainText: null,
+  };
+}
+
+/**
+ * Läser en sida. Kastar `SidaEjLast` om hämtningen misslyckades — en tom eller
+ * blockerad sida får aldrig komma tillbaka som nollor.
+ */
 export async function extractPageSignals(url: string, opts?: { skipLighthouse?: boolean; skipRobotsSitemap?: boolean }): Promise<PageSignals> {
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Cockpit-SEO-DeepAudit/2.0" },
-    signal: AbortSignal.timeout(20000),
-  });
-  const raw = await res.text();
+  const { text: raw, headers, logg } = await hamtaSida(url, { timeoutMs: 20000 });
+
   const decoded = decodePayload(raw);
   // Sök i både rå HTML och avkodad payload (client-side-renderat)
   const hay = raw + "\n<!--decoded-->\n" + decoded;
 
   const baseHost = (() => { try { return new URL(url).host; } catch { return ""; } })();
-  const platform = detectPlatform(raw, res.headers);
+  const platform = detectPlatform(raw, headers);
 
   const title = first(hay, /<title[^>]*>([\s\S]*?)<\/title>/i) || null;
   const metaDescription =
@@ -336,20 +500,22 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
 
   const hasUpdatedDate = /datemodified|datepublished|uppdaterad|senast ändrad|published|updated/i.test(hay);
 
-  const [{ robotsTxt, sitemap }, lh] = await Promise.all([
-    opts?.skipRobotsSitemap
-      ? Promise.resolve({ robotsTxt: null as PageSignals["robotsTxt"], sitemap: null as PageSignals["sitemap"] })
-      : fetchRobotsAndSitemap(url),
+  const tomRobots: RobotsSitemapResultat = { robotsTxt: null, sitemap: null, fel: { robots: null, sitemap: null } };
+  const [rs, lh] = await Promise.all([
+    opts?.skipRobotsSitemap ? Promise.resolve(tomRobots) : fetchRobotsAndSitemap(url),
     opts?.skipLighthouse ? Promise.resolve({ seo: null, cwv: null, audits: null }) : fetchLighthouse(url),
   ]);
 
   const renderNote =
     canonicalSource === "payload"
       ? "Canonical/schema hittades i JS-payload (client-side-renderad sajt) — bedömd från avkodad DOM."
-      : "Signaler lästa från levererad HTML.";
+      : `Signaler lästa från levererad HTML (HTTP ${logg.status}, ${logg.bytes} byte).`;
 
   return {
     url,
+    hamtning: logg,
+    ejMattOrsak: null,
+    sajtHamtFel: rs.fel,
     title,
     titleLength: title?.length ?? 0,
     metaDescription,
@@ -370,8 +536,8 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
     links: { internal, external },
     hasUpdatedDate,
     platform,
-    robotsTxt,
-    sitemap,
+    robotsTxt: rs.robotsTxt,
+    sitemap: rs.sitemap,
     cwv: lh.cwv,
     lighthouseSeo: lh.seo,
     lighthouseAudits: lh.audits,
@@ -380,37 +546,66 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
   };
 }
 
+/** Läser en sida och ger tillbaka omätta signaler i stället för att kasta. Tappar aldrig sidan. */
+export async function signalerEllerOmatt(
+  url: string,
+  opts?: { skipLighthouse?: boolean; skipRobotsSitemap?: boolean },
+): Promise<PageSignals> {
+  try {
+    return await extractPageSignals(url, opts);
+  } catch (e) {
+    if (arSidaEjLast(e)) return omattaSignaler(url, e.logg);
+    // Oväntat kodfel — bevaras som okänt, aldrig som nollor.
+    return omattaSignaler(url, {
+      url, status: null, bytes: null, slutUrl: null, ms: 0, ok: false,
+      orsak: "natverk", fel: (e as Error).message || "Okänt fel vid hämtning",
+    });
+  }
+}
+
 // ───────────────────────── HEL-SAJT-CRAWL ─────────────────────────
 export interface SitePageSummary {
   url: string;
+  /** Hämtningens facit. `ok: false` → alla mätvärden nedan är null. */
+  hamtning: { ok: boolean; status: number | null; bytes: number | null; slutUrl: string | null; ms: number; orsak: HamtOrsak | null };
+  ejMattOrsak: string | null;
   title: string | null;
-  titleLength: number;
-  metaLength: number;
+  titleLength: number | null;
+  metaLength: number | null;
   canonical: string | null;
-  canonicalSource: string;
+  canonicalSource: string | null;
   h1: string | null;
-  h1Count: number;
-  emptyHeadings: number;
-  schemaTypes: string[];
-  wordCount: number;
-  imagesTotal: number;
-  imagesNoAlt: number;
-  internalLinks: number;
-  seo: number;
-  aeo: number;
-  indexerbar: boolean;
+  h1Count: number | null;
+  emptyHeadings: number | null;
+  schemaTypes: string[] | null;
+  wordCount: number | null;
+  imagesTotal: number | null;
+  imagesNoAlt: number | null;
+  internalLinks: number | null;
+  seo: number | null;
+  aeo: number | null;
+  indexerbar: boolean | null;
 }
 export interface SiteAudit {
   root: string;
   origin: string;
+  /** Sidor som VERKLIGEN lästes. Aldrig antalet försök. */
   pageCount: number;
-  sitemapUrlCount: number;
-  platform: string;
+  /** Antal URL:er som hämtningen försöktes på. */
+  pageCountForsokt: number;
+  /** Varje sida som inte gick att läsa, med statuskod och orsak. Tom lista = inget föll. */
+  misslyckade: { url: string; status: number | null; bytes: number | null; orsak: HamtOrsak | null; fel: string | null }[];
+  /** null = sitemap kunde inte läsas. 0 = sitemap lästes och var tom. */
+  sitemapUrlCount: number | null;
+  sitemapFel: string | null;
+  platform: string | null;
   robotsTxt: PageSignals["robotsTxt"];
+  robotsTxtFel: string | null;
   homepageLighthouseSeo: number | null;
   homepageCwv: PageSignals["cwv"];
-  homepageText: string;
-  domainRedirect: { primaryHost: string; redirectWorks: boolean; note: string };
+  /** null = startsidan kunde inte läsas. "" = lästes och var tom. */
+  homepageText: string | null;
+  domainRedirect: { primaryHost: string; redirectWorks: boolean | null; note: string };
   pages: SitePageSummary[];
   crossPage: {
     canonicalDomains: string[];
@@ -420,43 +615,49 @@ export interface SiteAudit {
     thinPages: string[];
     pagesMissingH1: string[];
     pagesWithEmptyH1: string[];
-    totalImagesNoAlt: number;
-    avgInternalLinks: number;
+    /** null = ingen sida kunde mätas. */
+    totalImagesNoAlt: number | null;
+    avgInternalLinks: number | null;
+    /** URL:er vars mätvärden saknas helt. Aggregaten ovan bygger INTE på dem. */
+    ejMattaSidor: string[];
   };
 }
 
-async function fetchSitemapUrls(origin: string): Promise<string[]> {
-  const urls = new Set<string>();
-  try {
-    const r = await fetch(`${origin}/sitemap.xml`, { signal: AbortSignal.timeout(10000) });
-    if (r.ok) {
-      const xml = await r.text();
-      for (const m of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) urls.add(m[1].trim());
-    }
-  } catch { /* ignore */ }
-  return Array.from(urls);
+/** null = sitemapen kunde inte läsas. [] = den lästes och innehöll inga URL:er. */
+async function fetchSitemapUrls(origin: string): Promise<{ urls: string[] | null; fel: string | null }> {
+  const r = await hamtaRatt(`${origin}/sitemap.xml`, { timeoutMs: 10000, accepteraIckeOk: true });
+  if (r.logg.status === 200 && r.text != null) {
+    const urls = new Set<string>();
+    for (const m of r.text.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) urls.add(m[1].trim());
+    return { urls: Array.from(urls), fel: null };
+  }
+  if (arEjHittad(r.logg.status)) return { urls: [], fel: null }; // finns verkligen inte
+  return { urls: null, fel: r.logg.fel || `sitemap.xml gav HTTP ${r.logg.status ?? "-"}` };
 }
 
 // Detektera vilken domänvariant som är primär: redirectar www → icke-www (eller tvärtom)?
 // Förhindrar falsklarm "duplicerad sajt" när en 301 redan finns.
-async function detectDomainRedirect(rootUrl: string): Promise<{ primaryHost: string; redirectWorks: boolean; note: string }> {
+// ⚠ Samma user-agent som sidhämtaren (S-1). Tidigare satte proben ingen alls, vilket
+// gjorde att två delar av samma rapport kunde tala om två olika sajter.
+async function detectDomainRedirect(rootUrl: string): Promise<{ primaryHost: string; redirectWorks: boolean | null; note: string }> {
   const u = new URL(rootUrl);
   const bare = u.host.replace(/^www\./, "");
   const wwwHost = "www." + bare;
   const probe = async (host: string) => {
-    try {
-      const r = await fetch(`${u.protocol}//${host}/`, { redirect: "manual", signal: AbortSignal.timeout(8000) });
-      let locHost = "";
-      const loc = r.headers.get("location");
-      if (loc) { try { locHost = new URL(loc, `${u.protocol}//${host}`).host; } catch { /* ignore */ } }
-      return { status: r.status, locHost };
-    } catch { return { status: 0, locHost: "" }; }
+    const r = await hamtaRatt(`${u.protocol}//${host}/`, { redirect: "manual", timeoutMs: 8000, accepteraIckeOk: true });
+    let locHost = "";
+    const loc = r.headers?.get("location");
+    if (loc) { try { locHost = new URL(loc, `${u.protocol}//${host}`).host; } catch { /* ignore */ } }
+    return { status: r.logg.status, locHost };
   };
   const [w, nw] = await Promise.all([probe(wwwHost), probe(bare)]);
-  if (w.status >= 300 && w.status < 400 && w.locHost === bare)
+  if (w.status != null && w.status >= 300 && w.status < 400 && w.locHost === bare)
     return { primaryHost: bare, redirectWorks: true, note: "www → icke-www (301) finns redan — ingen riktig dubblett" };
-  if (nw.status >= 300 && nw.status < 400 && nw.locHost === wwwHost)
+  if (nw.status != null && nw.status >= 300 && nw.status < 400 && nw.locHost === wwwHost)
     return { primaryHost: wwwHost, redirectWorks: true, note: "icke-www → www (301) finns redan — ingen riktig dubblett" };
+  // Nådde ingen av proberna fram vet vi INGENTING om redirecten.
+  if (w.status == null && nw.status == null)
+    return { primaryHost: bare, redirectWorks: null, note: "Domän-redirecten kunde inte mätas — ingen av proberna nådde fram" };
   return { primaryHost: bare, redirectWorks: false, note: "INGEN domän-redirect detekterad — www och icke-www kan serva separat (riktig dubblett-risk)" };
 }
 
@@ -483,16 +684,16 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number; ski
   const rootNorm = norm(primaryRoot)!;
 
   // Sajtnivå (en gång): robots/sitemap + Lighthouse på startsidan (primär variant)
-  const [{ robotsTxt }, sitemapUrls, home] = await Promise.all([
+  const [rs, sitemapRes, home] = await Promise.all([
     fetchRobotsAndSitemap(primaryRoot),
     fetchSitemapUrls(origin),
-    extractPageSignals(primaryRoot, { skipRobotsSitemap: true, skipLighthouse }).catch(() => null),
+    signalerEllerOmatt(primaryRoot, { skipRobotsSitemap: true, skipLighthouse }),
   ]);
 
   // Sid-lista: normaliserad + dedupad (ingen www/icke-www-dubblett), startsidan först
   const seen = new Set<string>();
   const list: string[] = [];
-  for (const raw of [primaryRoot, ...sitemapUrls]) {
+  for (const raw of [primaryRoot, ...(sitemapRes.urls ?? [])]) {
     const n = norm(raw); if (!n || seen.has(n)) continue; seen.add(n); list.push(n);
   }
   const urls = list.slice(0, maxPages);
@@ -500,61 +701,76 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number; ski
   const pages: SitePageSummary[] = [];
   const toSummary = (s: PageSignals): SitePageSummary => {
     const sc = scoreSignals(s);
-    const h1s = s.headings.filter((h) => h.level === 1);
+    const h1s = s.headings?.filter((h) => h.level === 1) ?? null;
     return {
-      url: s.url, title: s.title, titleLength: s.titleLength, metaLength: s.metaLength,
-      canonical: s.canonical, canonicalSource: s.canonicalSource,
-      h1: h1s[0]?.text ?? null, h1Count: h1s.length, emptyHeadings: s.emptyHeadings,
+      url: s.url,
+      hamtning: { ok: s.hamtning.ok, status: s.hamtning.status, bytes: s.hamtning.bytes, slutUrl: s.hamtning.slutUrl, ms: s.hamtning.ms, orsak: s.hamtning.orsak },
+      ejMattOrsak: s.ejMattOrsak,
+      title: s.title, titleLength: s.titleLength, metaLength: s.metaLength,
+      canonical: s.canonical, canonicalSource: s.ejMattOrsak ? null : s.canonicalSource,
+      h1: h1s ? (h1s[0]?.text ?? null) : null, h1Count: h1s ? h1s.length : null, emptyHeadings: s.emptyHeadings,
       schemaTypes: s.schemaTypes, wordCount: s.wordCount,
-      imagesTotal: s.images.total, imagesNoAlt: s.images.withoutAlt,
-      internalLinks: s.links.internal, seo: sc.seo, aeo: sc.aeo, indexerbar: sc.indexerbar,
+      imagesTotal: s.images ? s.images.total : null, imagesNoAlt: s.images ? s.images.withoutAlt : null,
+      internalLinks: s.links ? s.links.internal : null,
+      seo: sc.seo, aeo: sc.aeo, indexerbar: sc.indexerbar,
     };
   };
 
-  // Återanvänd startsidans signaler om de redan hämtats
-  if (home) pages.push(toSummary(home));
+  // Startsidan är redan hämtad — mätt eller omätt, den räknas alltid med.
+  pages.push(toSummary({ ...home, sajtHamtFel: home.ejMattOrsak ? home.sajtHamtFel : rs.fel, robotsTxt: home.ejMattOrsak ? null : rs.robotsTxt }));
 
   const rest = urls.filter((u) => u !== rootNorm);
   const CONCURRENCY = 4;
   for (let i = 0; i < rest.length; i += CONCURRENCY) {
     const batch = rest.slice(i, i + CONCURRENCY);
     const results = await Promise.all(
-      batch.map((u) => extractPageSignals(u, { skipLighthouse: true, skipRobotsSitemap: true }).then(toSummary).catch(() => null))
+      batch.map((u) => signalerEllerOmatt(u, { skipLighthouse: true, skipRobotsSitemap: true })),
     );
-    for (const r of results) if (r) pages.push(r);
+    for (const r of results) pages.push(toSummary(r));
   }
 
-  // Tvärsides-aggregat
+  // Tvärsides-aggregat — BARA på sidor som faktiskt mättes.
+  const matta = pages.filter((p) => p.ejMattOrsak == null);
   const canonicalDomains = Array.from(new Set(
-    pages.map((p) => { try { return p.canonical ? new URL(p.canonical).host : null; } catch { return null; } }).filter(Boolean) as string[]
+    matta.map((p) => { try { return p.canonical ? new URL(p.canonical).host : null; } catch { return null; } }).filter(Boolean) as string[]
   ));
   const titleMap = new Map<string, string[]>();
-  for (const p of pages) { if (p.title) { const k = p.title.trim().toLowerCase(); titleMap.set(k, [...(titleMap.get(k) || []), p.url]); } }
+  for (const p of matta) { if (p.title) { const k = p.title.trim().toLowerCase(); titleMap.set(k, [...(titleMap.get(k) || []), p.url]); } }
   const duplicateTitles = Array.from(titleMap.entries()).filter(([, u]) => u.length > 1).map(([title, urls]) => ({ title, urls }));
+
+  const medBilder = matta.filter((p) => p.imagesNoAlt != null);
+  const medLankar = matta.filter((p) => p.internalLinks != null);
 
   return {
     root: rootUrl,
     origin,
-    pageCount: pages.length,
-    sitemapUrlCount: sitemapUrls.length,
-    platform: home?.platform ?? "okänd",
-    robotsTxt,
-    homepageLighthouseSeo: home?.lighthouseSeo ?? null,
-    homepageCwv: home?.cwv ?? null,
-    homepageText: home?.mainText.slice(0, 8000) ?? "",
+    pageCount: matta.length,
+    pageCountForsokt: pages.length,
+    misslyckade: pages
+      .filter((p) => p.ejMattOrsak != null)
+      .map((p) => ({ url: p.url, status: p.hamtning.status, bytes: p.hamtning.bytes, orsak: p.hamtning.orsak, fel: p.ejMattOrsak })),
+    sitemapUrlCount: sitemapRes.urls == null ? null : sitemapRes.urls.length,
+    sitemapFel: sitemapRes.fel,
+    platform: home.platform,
+    robotsTxt: rs.robotsTxt,
+    robotsTxtFel: rs.fel.robots,
+    homepageLighthouseSeo: home.lighthouseSeo,
+    homepageCwv: home.cwv,
+    homepageText: home.mainText == null ? null : home.mainText.slice(0, 8000),
     domainRedirect,
     pages,
     crossPage: {
       canonicalDomains,
       canonicalTagInconsistent: canonicalDomains.length > 1,
       // ÄKTA duplicerings-problem = taggarna pekar olika OCH ingen domän-redirect finns
-      canonicalInconsistent: canonicalDomains.length > 1 && !domainRedirect.redirectWorks,
+      canonicalInconsistent: canonicalDomains.length > 1 && domainRedirect.redirectWorks === false,
       duplicateTitles,
-      thinPages: pages.filter((p) => p.wordCount < 300).map((p) => p.url),
-      pagesMissingH1: pages.filter((p) => p.h1Count === 0).map((p) => p.url),
-      pagesWithEmptyH1: pages.filter((p) => p.emptyHeadings > 0).map((p) => p.url),
-      totalImagesNoAlt: pages.reduce((a, p) => a + p.imagesNoAlt, 0),
-      avgInternalLinks: pages.length ? Math.round(pages.reduce((a, p) => a + p.internalLinks, 0) / pages.length) : 0,
+      thinPages: matta.filter((p) => p.wordCount != null && p.wordCount < 300).map((p) => p.url),
+      pagesMissingH1: matta.filter((p) => p.h1Count === 0).map((p) => p.url),
+      pagesWithEmptyH1: matta.filter((p) => (p.emptyHeadings ?? 0) > 0).map((p) => p.url),
+      totalImagesNoAlt: medBilder.length ? medBilder.reduce((a, p) => a + (p.imagesNoAlt ?? 0), 0) : null,
+      avgInternalLinks: medLankar.length ? Math.round(medLankar.reduce((a, p) => a + (p.internalLinks ?? 0), 0) / medLankar.length) : null,
+      ejMattaSidor: pages.filter((p) => p.ejMattOrsak != null).map((p) => p.url),
     },
   };
 }

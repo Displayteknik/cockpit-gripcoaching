@@ -4,6 +4,7 @@ import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { extractPageSignals, scoreSignals, schemaRichEligibility } from "@/lib/seo-deep";
+import { arSidaEjLast } from "@/lib/seo-hamta";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -12,10 +13,11 @@ interface DeepReport {
   betyg: string;
   sammanfattning: string;
   scorecard: {
-    seo: { poang: number; kommentar: string };
-    aeo: { poang: number; kommentar: string };
-    innehall: { poang: number; kommentar: string };
-    eeat: { poang: number; kommentar: string };
+    // null = kunde inte mätas. Renderas som "Ej mätt", aldrig som 0.
+    seo: { poang: number | null; kommentar: string };
+    aeo: { poang: number | null; kommentar: string };
+    innehall: { poang: number | null; kommentar: string };
+    eeat: { poang: number | null; kommentar: string };
   };
   styrkor: { rubrik: string; varfor: string }[];
   forbattringar: {
@@ -30,14 +32,17 @@ interface DeepReport {
   eeat: { omdome: string; saknas: string[] };
   // Deterministisk hård data (sätts av servern, ej av AI:n)
   teknik?: {
-    plattform: string;
-    indexerbar: boolean;
+    plattform: string | null;
+    /** null = kunde inte mätas. Renderas som "Ej mätt", aldrig som Ja eller NEJ. */
+    indexerbar: boolean | null;
     canonical: string | null;
     canonical_kalla: string;
     lighthouse_seo: number | null;
     sitemap_urls: number | null;
     cwv: { lcp: { value: number; category: string } | null; inp: { value: number; category: string } | null; cls: { value: number; category: string } | null } | null;
-    checkar: { label: string; pass: boolean; detail: string }[];
+    /** status "ej-matt" måste bära en orsak i `detail` — aldrig OK, aldrig kryss. */
+    checkar: { label: string; status: "ok" | "fel" | "ej-matt"; detail: string }[];
+    hamtning: { ok: boolean; status: number | null; bytes: number | null; slutUrl: string | null; ms: number };
   };
   sokord?: { query: string; clicks: number; impressions: number; ctr: number | null; position: number | null }[];
 }
@@ -75,12 +80,17 @@ export async function POST(req: NextRequest) {
 
   if (!url) return NextResponse.json({ error: "url eller auditId krävs" }, { status: 400 });
 
-  // Djup-extraktion av den FAKTISKA sidan (render-medveten)
+  // Djup-extraktion av den FAKTISKA sidan (render-medveten).
+  // S-1: kastar nu även vid 403, tom kropp och kropp under 500 byte — inte bara vid nätverksfel.
   let signals;
   try {
     signals = await extractPageSignals(url);
   } catch (e) {
-    return NextResponse.json({ error: "Kunde inte läsa sidan: " + (e as Error).message }, { status: 502 });
+    const logg = arSidaEjLast(e) ? e.logg : null;
+    return NextResponse.json(
+      { error: "Kunde inte läsa sidan: " + (e as Error).message, hamtning: logg },
+      { status: 502 },
+    );
   }
 
   // Render-medveten deterministisk poängsättning — ersätter ev. gamla rå-HTML-poäng
@@ -111,6 +121,10 @@ export async function POST(req: NextRequest) {
 
   const facts = {
     url,
+    // S-1: hämtningens facit går med i fakta. null i ett mätfält betyder "inte mätt",
+    // 0 betyder "mätt till noll" — utan detta går de två inte att skilja åt.
+    hamtning: signals.hamtning,
+    ej_matt_orsak: signals.ejMattOrsak,
     plattform: signals.platform,
     seo_poang_uppmatt: seoScore,
     aeo_poang_uppmatt: aeoScore,
@@ -202,7 +216,7 @@ ${JSON.stringify(facts, null, 2)}
 
 SIDANS TEXT (för innehålls- och E-E-A-T-bedömning):
 """
-${signals.mainText}
+${signals.mainText ?? ""}
 """`;
 
   try {
@@ -227,6 +241,10 @@ ${signals.mainText}
       canonical_kalla: signals.canonicalSource,
       lighthouse_seo: signals.lighthouseSeo,
       sitemap_urls: signals.sitemap?.found ? signals.sitemap.urlCount : null,
+      hamtning: {
+        ok: signals.hamtning.ok, status: signals.hamtning.status, bytes: signals.hamtning.bytes,
+        slutUrl: signals.hamtning.slutUrl, ms: signals.hamtning.ms,
+      },
       cwv: signals.cwv
         ? {
             lcp: signals.cwv.lcp ? { value: signals.cwv.lcp.value, category: signals.cwv.lcp.category } : null,
@@ -234,11 +252,16 @@ ${signals.mainText}
             cls: signals.cwv.cls ? { value: signals.cwv.cls.value, category: signals.cwv.cls.category } : null,
           }
         : null,
-      checkar: (signals.lighthouseAudits || []).map((a) => ({
-        label: a.title,
-        pass: a.score === 1,
-        detail: a.displayValue || (a.score === 1 ? "ok" : a.score === 0 ? "åtgärda" : "—"),
-      })),
+      // Nulägestabellen: våra egna checkar FÖRST (de bär "ej-matt" med orsak), sedan
+      // Lighthouse. score null = Google körde inte checken → "ej-matt", aldrig ett kryss.
+      checkar: [
+        ...scored.checks.map((c) => ({ label: c.label, status: c.status, detail: c.detail })),
+        ...(signals.lighthouseAudits || []).map((a) => ({
+          label: a.title,
+          status: (a.score === 1 ? "ok" : a.score === 0 ? "fel" : "ej-matt") as "ok" | "fel" | "ej-matt",
+          detail: a.displayValue || (a.score === 1 ? "ok" : a.score === 0 ? "åtgärda" : "Google körde inte checken"),
+        })),
+      ],
     };
     report.sokord = gscRows;
     return NextResponse.json(report);

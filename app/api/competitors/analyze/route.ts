@@ -5,6 +5,7 @@ import { auditUrl, pageSpeed } from "@/lib/seo-audit";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClientId } from "@/lib/client-context";
 import { assertSafePublicUrl } from "@/lib/safe-url";
+import { hamtaSida, arSidaEjLast } from "@/lib/seo-hamta";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -35,12 +36,18 @@ export async function POST(req: NextRequest) {
   const sb = supabaseService();
 
   // 1. Hämta konkurrentens HTML-innehåll
+  // S-1: samma user-agent som resten av SEO-produkten, och bara ett riktigt 200-svar
+  // med innehåll duger. En 403-sida får aldrig analyseras som "konkurrentens copy".
   let html = "";
   try {
-    const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 HM-Cockpit-Intel/1.0" }, signal: AbortSignal.timeout(20000) });
-    html = await r.text();
+    const svar = await hamtaSida(url, { timeoutMs: 20000 });
+    html = svar.text;
   } catch (e) {
-    return NextResponse.json({ error: "Kunde inte hämta sidan: " + (e as Error).message }, { status: 500 });
+    const l = arSidaEjLast(e) ? e.logg : null;
+    return NextResponse.json(
+      { error: "Kunde inte hämta sidan: " + (e as Error).message, hamtning: l },
+      { status: 502 },
+    );
   }
 
   const text = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 12000);

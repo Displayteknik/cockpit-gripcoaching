@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     try {
       // Render-medveten textextraktion (avkodar JS-payload) — inte rå HTML
       const signals = await extractPageSignals(url, { skipLighthouse: true });
-      text = signals.mainText.slice(0, 8000);
+      text = signals.mainText?.slice(0, 8000) ?? "";
     } catch (e) {
       return NextResponse.json({ error: "Kunde inte hämta URL: " + (e as Error).message }, { status: 500 });
     }

@@ -15,19 +15,18 @@ export const samePagePath = (a: string, b: string) => {
 };
 
 // Hämtar sidlistan från klientens sitemap (med timeout, tål fel → tom lista).
+// S-1: samma user-agent som resten av SEO-produkten. Tidigare "Mozilla/5.0" här och
+// fyra andra identiteter i samma verktyg — delar av samma rapport kunde beskriva olika sajter.
+// Tom lista är OK här: funktionen väljer BÄSTA sida och har alltid en fallback,
+// den producerar aldrig ett mätvärde.
 export async function fetchSitemapPages(clientHost: string): Promise<string[]> {
   if (!clientHost) return [];
-  try {
-    const res = await fetch(`https://${clientHost}/sitemap.xml`, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!res.ok) return [];
-    const xml = await res.text();
-    return Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/gi))
-      .map((m) => m[1].trim())
-      .filter((l) => urlHost(l) === clientHost);
-  } catch { return []; }
+  const { hamtaRatt } = await import("./seo-hamta");
+  const r = await hamtaRatt(`https://${clientHost}/sitemap.xml`, { timeoutMs: 6000 });
+  if (!r.logg.ok || r.text == null) return [];
+  return Array.from(r.text.matchAll(/<loc>([^<]+)<\/loc>/gi))
+    .map((m) => m[1].trim())
+    .filter((l) => urlHost(l) === clientHost);
 }
 
 // Väljer den sida vars adress bäst matchar sökordet (flest delade tokens). Annars fallback.

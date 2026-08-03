@@ -1,23 +1,32 @@
 // SEO + AEO audit-engine. Hämtar HTML, analyserar, returnerar score + issues.
+//
+// SEO-1 / S-1 + S-2: hämtningen går genom lib/seo-hamta (en user-agent, bara 200,
+// minst 500 byte, logg per URL) och varje mätvärde är nullbart. `null` = inte mätt,
+// `0` = mätt till noll. En misslyckad hämtning får ALDRIG bli nollor.
 import { extractPageSignals, scoreSignals, type LighthouseSvar } from "./seo-deep";
+import { hamtaSida, arSidaEjLast, type HamtLogg, type HamtOrsak } from "./seo-hamta";
 
 export interface AuditResult {
   url: string;
+  /** Hämtningens facit — utan den går nästa fel inte att felsöka. */
+  hamtning: { ok: boolean; status: number | null; bytes: number | null; slutUrl: string | null; ms: number; orsak: HamtOrsak | null };
+  /** null = sidan lästes. Sträng = varför den inte kunde läsas; då är allt nedan null. */
+  ej_matt_orsak: string | null;
   title: string | null;
   meta_description: string | null;
   h1: string | null;
-  word_count: number;
-  has_schema: boolean;
-  has_faq: boolean;
-  has_og: boolean;
-  internal_links: number;
-  external_links: number;
-  images_total: number;
-  images_no_alt: number;
+  word_count: number | null;
+  has_schema: boolean | null;
+  has_faq: boolean | null;
+  has_og: boolean | null;
+  internal_links: number | null;
+  external_links: number | null;
+  images_total: number | null;
+  images_no_alt: number | null;
   pagespeed_mobile?: number;
   pagespeed_desktop?: number;
-  seo_score: number;
-  aeo_score: number;
+  seo_score: number | null;
+  aeo_score: number | null;
   issues: { level: "error" | "warn" | "info"; field: string; message: string }[];
 }
 
@@ -27,16 +36,19 @@ const all = (html: string, re: RegExp) => Array.from(html.matchAll(re));
 
 export async function auditUrl(url: string, baseUrl: string): Promise<AuditResult> {
   const issues: AuditResult["issues"] = [];
-  let html = "";
+  let html: string;
+  let logg: HamtLogg;
   try {
-    const res = await fetch(url, { headers: { "User-Agent": "HM-Motor-SEO-Auditor/1.0" } });
-    if (!res.ok) {
-      issues.push({ level: "error", field: "fetch", message: `HTTP ${res.status}` });
-    }
-    html = await res.text();
+    const svar = await hamtaSida(url, { timeoutMs: 20000 });
+    html = svar.text;
+    logg = svar.logg;
   } catch (e) {
-    issues.push({ level: "error", field: "fetch", message: (e as Error).message });
-    return emptyResult(url, issues);
+    // Statuskod, byte-storlek och orsak bevaras — och INGET mätvärde hittas på.
+    const l = arSidaEjLast(e)
+      ? e.logg
+      : ({ url, status: null, bytes: null, slutUrl: null, ms: 0, ok: false, orsak: "natverk", fel: (e as Error).message } as HamtLogg);
+    issues.push({ level: "error", field: "fetch", message: l.fel || "Sidan kunde inte läsas" });
+    return emptyResult(url, l, issues);
   }
 
   const title = m(html, /<title[^>]*>([\s\S]*?)<\/title>/i) || null;
@@ -92,6 +104,8 @@ export async function auditUrl(url: string, baseUrl: string): Promise<AuditResul
 
   return {
     url,
+    hamtning: { ok: true, status: logg.status, bytes: logg.bytes, slutUrl: logg.slutUrl, ms: logg.ms, orsak: null },
+    ej_matt_orsak: null,
     title,
     meta_description: description,
     h1,
@@ -111,41 +125,48 @@ export async function auditUrl(url: string, baseUrl: string): Promise<AuditResul
 
 // Render-medveten audit (samma motor som rapporten) — fixar falska "saknas" på
 // client-side-renderade sajter (GHL). Använd denna istället för auditUrl().
+// ⚠ Kastar `SidaEjLast` när sidan inte gick att läsa. Anroparen ska visa felet,
+// aldrig spara nollor.
 export async function auditUrlRendered(url: string): Promise<AuditResult> {
   const s = await extractPageSignals(url);
   const sc = scoreSignals(s);
   const issues: AuditResult["issues"] = [];
   for (const c of sc.checks) {
-    if (!c.pass) issues.push({ level: c.id === "indexerbar" ? "error" : "warn", field: c.id, message: `${c.label}: ${c.detail}` });
+    if (c.status === "fel") issues.push({ level: c.id === "indexerbar" ? "error" : "warn", field: c.id, message: `${c.label}: ${c.detail}` });
+    else if (c.status === "ej-matt") issues.push({ level: "info", field: c.id, message: `${c.label}: EJ MÄTT — ${c.detail}` });
   }
-  if (s.schemaTypes.length === 0) issues.push({ level: "warn", field: "schema", message: "Saknar strukturerad data (JSON-LD)" });
-  if (s.images.withoutAlt > 0) issues.push({ level: "warn", field: "images", message: `${s.images.withoutAlt} bild(er) utan alt-text` });
-  if (s.links.internal < 3) issues.push({ level: "info", field: "internal_links", message: `Bara ${s.links.internal} interna länkar` });
+  if (s.schemaTypes != null && s.schemaTypes.length === 0) issues.push({ level: "warn", field: "schema", message: "Saknar strukturerad data (JSON-LD)" });
   return {
     url: s.url,
+    hamtning: { ok: s.hamtning.ok, status: s.hamtning.status, bytes: s.hamtning.bytes, slutUrl: s.hamtning.slutUrl, ms: s.hamtning.ms, orsak: s.hamtning.orsak },
+    ej_matt_orsak: s.ejMattOrsak,
     title: s.title,
     meta_description: s.metaDescription,
-    h1: s.headings.find((h) => h.level === 1)?.text ?? null,
+    h1: s.headings?.find((h) => h.level === 1)?.text ?? null,
     word_count: s.wordCount,
-    has_schema: s.schemaTypes.length > 0,
-    has_faq: s.schemaTypes.includes("FAQPage") || s.faqs.length > 0,
-    has_og: Object.keys(s.ogTags).length > 0,
-    internal_links: s.links.internal,
-    external_links: s.links.external,
-    images_total: s.images.total,
-    images_no_alt: s.images.withoutAlt,
+    has_schema: s.schemaTypes == null ? null : s.schemaTypes.length > 0,
+    has_faq: s.schemaTypes == null ? null : s.schemaTypes.includes("FAQPage") || (s.faqs?.length ?? 0) > 0,
+    has_og: s.ogTags == null ? null : Object.keys(s.ogTags).length > 0,
+    internal_links: s.links ? s.links.internal : null,
+    external_links: s.links ? s.links.external : null,
+    images_total: s.images ? s.images.total : null,
+    images_no_alt: s.images ? s.images.withoutAlt : null,
     seo_score: sc.seo,
     aeo_score: sc.aeo,
     issues,
   };
 }
 
-function emptyResult(url: string, issues: AuditResult["issues"]): AuditResult {
+/** Sidan kunde inte läsas. Varje mätvärde är null — aldrig 0, aldrig false. */
+function emptyResult(url: string, logg: HamtLogg, issues: AuditResult["issues"]): AuditResult {
   return {
-    url, title: null, meta_description: null, h1: null,
-    word_count: 0, has_schema: false, has_faq: false, has_og: false,
-    internal_links: 0, external_links: 0, images_total: 0, images_no_alt: 0,
-    seo_score: 0, aeo_score: 0, issues,
+    url,
+    hamtning: { ok: false, status: logg.status, bytes: logg.bytes, slutUrl: logg.slutUrl, ms: logg.ms, orsak: logg.orsak },
+    ej_matt_orsak: logg.fel || "Sidan kunde inte läsas",
+    title: null, meta_description: null, h1: null,
+    word_count: null, has_schema: null, has_faq: null, has_og: null,
+    internal_links: null, external_links: null, images_total: null, images_no_alt: null,
+    seo_score: null, aeo_score: null, issues,
   };
 }
 

@@ -8,21 +8,23 @@ import { SeoReportBlock } from "@/components/SeoReport";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import MarkdownView from "@/components/MarkdownView";
 
+// SEO-1 / S-2: mätkolumnerna kan vara NULL i hm_seo_audits = "inte mätt".
+// Kunden ska se "Ej mätt", aldrig en nolla som ser ut som ett resultat.
 interface Audit {
   id: string;
   url: string;
   title: string | null;
   meta_description: string | null;
-  word_count: number;
-  has_schema: boolean;
-  has_faq: boolean;
-  has_og: boolean;
-  internal_links: number;
-  images_no_alt: number;
+  word_count: number | null;
+  has_schema: boolean | null;
+  has_faq: boolean | null;
+  has_og: boolean | null;
+  internal_links: number | null;
+  images_no_alt: number | null;
   pagespeed_mobile: number | null;
   pagespeed_desktop: number | null;
-  seo_score: number;
-  aeo_score: number;
+  seo_score: number | null;
+  aeo_score: number | null;
   issues: { level: string; field: string; message: string }[];
   audited_at: string;
 }
@@ -435,11 +437,11 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <Mini label="Title" value={a.title ? `${a.title.length} tecken` : "saknas"} ok={!!a.title && a.title.length >= 30 && a.title.length <= 60} />
                     <Mini label="Meta-desc" value={a.meta_description ? `${a.meta_description.length} tecken` : "saknas"} ok={!!a.meta_description && a.meta_description.length >= 120 && a.meta_description.length <= 160} />
-                    <Mini label="Ord" value={a.word_count} ok={a.word_count >= 600} />
-                    <Mini label="Schema" value={a.has_schema ? "ja" : "nej"} ok={a.has_schema} />
-                    <Mini label="FAQ" value={a.has_faq ? "ja" : "nej"} ok={a.has_faq} />
-                    <Mini label="OG-taggar" value={a.has_og ? "ja" : "nej"} ok={a.has_og} />
-                    <Mini label="Interna länkar" value={a.internal_links} ok={a.internal_links >= 3} />
+                    <Mini label="Ord" value={a.word_count} ok={(a.word_count ?? 0) >= 600} />
+                    <Mini label="Schema" value={a.has_schema == null ? null : a.has_schema ? "ja" : "nej"} ok={!!a.has_schema} />
+                    <Mini label="FAQ" value={a.has_faq == null ? null : a.has_faq ? "ja" : "nej"} ok={!!a.has_faq} />
+                    <Mini label="OG-taggar" value={a.has_og == null ? null : a.has_og ? "ja" : "nej"} ok={!!a.has_og} />
+                    <Mini label="Interna länkar" value={a.internal_links} ok={(a.internal_links ?? 0) >= 3} />
                     <Mini label="Bilder utan alt" value={a.images_no_alt} ok={a.images_no_alt === 0} />
                   </div>
                   {a.issues && a.issues.length > 0 && (
@@ -832,17 +834,26 @@ function WhoBadge({ who, primaryColor }: { who: "du" | "vi" | "duvi"; primaryCol
   return <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Du &amp; vi</span>;
 }
 
-function ScoreBadge({ label, value }: { label: string; value: number }) {
-  const color = value >= 80 ? "#059669" : value >= 60 ? "#d97706" : "#dc2626";
+function ScoreBadge({ label, value }: { label: string; value: number | null }) {
+  const color = value == null ? "#6b7280" : value >= 80 ? "#059669" : value >= 60 ? "#d97706" : "#dc2626";
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tabular-nums" style={{ background: `${color}14`, color }}>
       <span className="opacity-70 font-semibold">{label}</span>
-      <span>{value}</span>
+      <span>{value ?? "Ej mätt"}</span>
     </span>
   );
 }
 
-function Mini({ label, value, ok }: { label: string; value: string | number; ok: boolean }) {
+// value == null → mätvärdet saknas. Då visas "Ej mätt" i grått, aldrig en färgad bedömning.
+function Mini({ label, value, ok }: { label: string; value: string | number | null; ok: boolean }) {
+  if (value == null) {
+    return (
+      <div className="px-3 py-2 rounded-lg border bg-gray-50 border-gray-200">
+        <div className="text-xs text-gray-500 uppercase tracking-wide">{label}</div>
+        <div className="text-sm font-medium text-gray-500">Ej mätt</div>
+      </div>
+    );
+  }
   return (
     <div className={`px-3 py-2 rounded-lg border ${ok ? "bg-emerald-50 border-emerald-100" : "bg-amber-50 border-amber-100"}`}>
       <div className="text-xs text-gray-500 uppercase tracking-wide">{label}</div>
