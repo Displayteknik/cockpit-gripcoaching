@@ -30,7 +30,14 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 function kr(n?: number) { return typeof n === "number" ? n.toLocaleString("sv-SE") + " kr" : "—"; }
 function datum(s?: string) { return s ? new Date(s).toLocaleDateString("sv-SE", { day: "numeric", month: "short", year: "numeric" }) : ""; }
 
-export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColor?: string }) {
+// En offertförfrågan från kundens webbformulär (tabellen offert_leads).
+interface WebbLead {
+  id: string; namn?: string; foretag?: string; epost?: string; telefon?: string;
+  miljo?: string; mal?: string; yta?: string; ort?: string; beskrivning?: string;
+  tidsplan?: string; budget?: string; bild_url?: string | null; created_at?: string;
+}
+
+export default function OffertClient({ primaryColor = "#1A6B3C", leadId, onKlientBytt }: { primaryColor?: string; leadId?: string; onKlientBytt?: () => void }) {
   const [loading, setLoading] = useState(true);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [bp, setBp] = useState<Blueprint | null>(null);
@@ -38,8 +45,13 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
   const [laser, setLaser] = useState(false);
   const [fel, setFel] = useState<string | null>(null);
   const [visaSkapa, setVisaSkapa] = useState(false);
+  const [lead, setLead] = useState<WebbLead | null>(null);
+  const [leadFel, setLeadFel] = useState<string | null>(null);
   const [docQuote, setDocQuote] = useState<Quote | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  // Via ref så att en inline-callback från föräldern inte gör om lead-hämtningen.
+  const onKlientByttRef = useRef(onKlientBytt);
+  onKlientByttRef.current = onKlientBytt;
 
   const laddaQuotes = useCallback(() => {
     setLoading(true);
@@ -48,11 +60,43 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
   }, []);
 
   useEffect(() => {
-    laddaQuotes();
-    fetch("/api/offert/blueprint").then((r) => r.json()).then((d) => {
-      if (d.hasBlueprint) setBp(d.blueprint);
-    }).catch(() => {}).finally(() => setBpLoading(false));
-  }, [laddaQuotes]);
+    let avbruten = false;
+    (async () => {
+      // Kommer man hit via "Skapa offertförslag" i aviseringsmejlet hämtas förfrågan FÖRST.
+      // Det anropet växlar också aktiv klient till leadets tenant — görs det efter att
+      // offerter och offertmall redan laddats visar vyn föregående kunds data.
+      if (leadId) {
+        try {
+          const r = await fetch(`/api/offert/lead?id=${encodeURIComponent(leadId)}`);
+          const d = await r.json();
+          if (avbruten) return;
+          if (r.ok && d.lead) {
+            // Bytte tenant → ladda om HELA sidan en gång. Sidomenyn, klientväljaren och
+            // färgerna renderas i layouten och hade annars stått kvar på föregående kund
+            // ovanför rätt kunds förfrågan. Engångsspärren gör att ett byte som inte
+            // fastnar aldrig kan bli en omladdningsloop.
+            const spärr = `offert-lead-omladdad:${leadId}`;
+            if (d.bytteKlient && !sessionStorage.getItem(spärr)) {
+              sessionStorage.setItem(spärr, "1");
+              window.location.reload();
+              return;
+            }
+            setLead(d.lead as WebbLead);
+            setVisaSkapa(true);
+            onKlientByttRef.current?.();
+          } else setLeadFel(d.error || "Kunde inte hämta förfrågan");
+        } catch {
+          if (!avbruten) setLeadFel("Kunde inte hämta förfrågan");
+        }
+      }
+      if (avbruten) return;
+      laddaQuotes();
+      fetch("/api/offert/blueprint").then((r) => r.json()).then((d) => {
+        if (d.hasBlueprint) setBp(d.blueprint);
+      }).catch(() => {}).finally(() => setBpLoading(false));
+    })();
+    return () => { avbruten = true; };
+  }, [laddaQuotes, leadId]);
 
   const laddaUpp = async (file: File) => {
     setFel(null); setLaser(true);
@@ -86,6 +130,52 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
           </p>
         </div>
       </div>
+
+      {/* Förfrågan från webben — visas bara när man kommit hit via länken i aviseringsmejlet */}
+      {leadFel && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          Kunde inte öppna förfrågan: {leadFel}
+        </div>
+      )}
+      {lead && (
+        <section className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs uppercase tracking-wider font-semibold text-gray-500">Förfrågan från webben</span>
+            {lead.created_at && <span className="text-xs text-gray-400">{datum(lead.created_at)}</span>}
+          </div>
+          <div className="font-display font-bold text-gray-900">
+            {lead.namn || "—"}{lead.foretag ? <span className="font-normal text-gray-500"> · {lead.foretag}</span> : null}
+          </div>
+          <div className="mt-1 text-sm text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+            {lead.epost && <a href={`mailto:${lead.epost}`} className="text-blue-600 hover:underline">{lead.epost}</a>}
+            {lead.telefon && <a href={`tel:${lead.telefon}`} className="text-blue-600 hover:underline">{lead.telefon}</a>}
+          </div>
+          <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+            {([["Miljö", lead.miljo], ["Mål", lead.mal], ["Yta/storlek", lead.yta], ["Ort", lead.ort],
+               ["Tidsplan", lead.tidsplan], ["Budget", lead.budget]] as [string, string | undefined][])
+              .filter(([, v]) => v)
+              .map(([k, v]) => (
+                <div key={k} className="flex gap-2">
+                  <dt className="text-gray-500 shrink-0">{k}</dt>
+                  <dd className="text-gray-900 font-medium">{v}</dd>
+                </div>
+              ))}
+          </dl>
+          {lead.beskrivning && (
+            <p className="mt-3 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap">{lead.beskrivning}</p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-3 text-sm">
+            {lead.bild_url && (
+              <a href={lead.bild_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Öppna bilden på platsen</a>
+            )}
+            {!visaSkapa && (
+              <button onClick={() => setVisaSkapa(true)} className="font-semibold text-blue-600 hover:underline">
+                Skapa offertförslag
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Din offertmall (Fas 1) */}
       <section className="space-y-3">
@@ -242,7 +332,15 @@ export default function OffertClient({ primaryColor = "#1A6B3C" }: { primaryColo
         )}
       </section>
 
-      {visaSkapa && <OffertSkapa primaryColor={primaryColor} onClose={() => setVisaSkapa(false)} onSaved={laddaQuotes} />}
+      {visaSkapa && (
+        <OffertSkapa
+          primaryColor={primaryColor}
+          onClose={() => setVisaSkapa(false)}
+          onSaved={laddaQuotes}
+          forifyllNamn={lead?.namn}
+          forifyllForetag={lead?.foretag}
+        />
+      )}
       {docQuote && <OffertDokument quote={docQuote} primaryColor={primaryColor} onClose={() => setDocQuote(null)} />}
     </div>
   );

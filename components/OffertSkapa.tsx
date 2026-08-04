@@ -36,11 +36,13 @@ type UppslagSvar = Uppslag | TrappaSaknas | ProduktSaknas;
 function kr(n?: number | null) { return typeof n === "number" ? n.toLocaleString("sv-SE") + " kr" : "—"; }
 function nOrNull(v: string): number | null { const s = v.replace(",", ".").replace(/[^\d.]/g, ""); return s === "" ? null : Number(s); }
 
-export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved }: { primaryColor?: string; onClose: () => void; onSaved: () => void }) {
+export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved, forifyllNamn, forifyllForetag }: { primaryColor?: string; onClose: () => void; onSaved: () => void; forifyllNamn?: string; forifyllForetag?: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [namn, setNamn] = useState("");
-  const [foretag, setForetag] = useState("");
+  // Kommer offerten ur en webbförfrågan är kunden redan känd. Fälten är fortsatt
+  // redigerbara — och att välja en kund ur pipelinen skriver över dem som vanligt.
+  const [namn, setNamn] = useState(forifyllNamn || "");
+  const [foretag, setForetag] = useState(forifyllForetag || "");
   const [ghlContactId, setGhlContactId] = useState("");
   const [ghlOppId, setGhlOppId] = useState("");
   const [offertnr, setOffertnr] = useState("");

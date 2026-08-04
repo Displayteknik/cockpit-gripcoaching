@@ -3,11 +3,13 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LayoutDashboard, Loader2, Lock } from "lucide-react";
+import { sakertRedirectMal } from "@/lib/redirect-mal";
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const from = params.get("from") || "/dashboard";
+  // `from` kommer utifrån — se sakertRedirectMal för varför "börjar med /" inte räcker.
+  const from = sakertRedirectMal(params.get("from"));
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ function LoginForm() {
     }
     // Hård navigering så proxy/portal ser den nya cookien direkt.
     // Kund-login returnerar redirect (/k); admin använder ?from eller dashboard.
-    window.location.href = data.redirect || (from.startsWith("/") ? from : "/dashboard");
+    window.location.href = data.redirect || from;
   }
 
   return (

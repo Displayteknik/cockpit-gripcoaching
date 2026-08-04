@@ -142,7 +142,10 @@ export async function proxy(req: NextRequest) {
     const ok = secret ? await verifyAdminSession(token, secret) : false;
     if (!ok) {
       const url = new URL("/logga-in", req.url);
-      url.searchParams.set("from", path);
+      // Hela målet, INTE bara sökvägen. Djuplänkar från aviseringsmejl bär sin nyckel i
+      // query-strängen (/dashboard/leads?id=…, /dashboard/offert?lead=…); sparar vi bara
+      // `path` loggar man in och landar på listan utan att veta vilket lead som avsågs.
+      url.searchParams.set("from", path + req.nextUrl.search);
       return NextResponse.redirect(url);
     }
     // Klient-scopad session (t.ex. HM Motor): bara fordons-sidorna. Allt annat

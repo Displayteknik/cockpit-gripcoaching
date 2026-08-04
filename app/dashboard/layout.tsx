@@ -79,6 +79,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       items: [
         { href: "/dashboard/fokus", label: "Fokus idag", icon: Target },
         { href: "/dashboard/leads", label: "Nya leads", icon: Users },
+        { href: "/dashboard/offert", label: "Offerter", icon: FileText },
         { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
         { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
         { href: "/dashboard/paket", label: "Paket & moduler", icon: Package },
