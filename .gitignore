@@ -51,3 +51,6 @@ next-env.d.ts
 # Fas 6 QA-skärmbilder (lokala, ej i repo)
 qa-screens/
 HM-Motor-Fordonsguide.pdf
+
+# Körningsutdata från mätbatchar (kvalitet3, text1 m.fl.) — artefakter, inte kod
+scripts/**/*.log
