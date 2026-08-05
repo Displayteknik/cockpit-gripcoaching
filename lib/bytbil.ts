@@ -26,12 +26,14 @@ export interface BytbilCar {
     color?: string; freetextColor?: string;
     regNo?: string; regNoHidden?: boolean;
     milage?: number | null;
-    equipment?: string[];
+    equipment?: unknown[];
     description?: string;
     isNew?: boolean;
     images?: BytbilImage[];
     price?: { value?: number; isLeasing?: boolean; isAuction?: boolean };
     currentPrice?: number;
+    // Registerdata som Bytbil skickar med för personbilar. Saknas för ATV/moped/släp.
+    additionalVehicleData?: { engineEffectKw?: number | null; engineEffectHp?: number | null };
   };
 }
 
@@ -91,6 +93,45 @@ function mainImageUrl(img: BytbilImage): string | null {
   return fmt?.url || null;
 }
 
+// De spec-nycklar synken äger. Bytbil är facit för dessa — de skrivs om vid varje synk.
+// Allt annat i specs (egna rader Håkan lagt till) lämnas orört.
+export const SYNKADE_SPEC_NYCKLAR = [
+  "Årsmodell", "Miltal", "Bränsle", "Växellåda", "Effekt", "Färg", "Kaross", "Reg.nr", "Utrustning",
+] as const;
+
+// Slår ihop befintliga specs med färska Bytbil-värden: synk-ägda nycklar skrivs om,
+// egna nycklar behålls. Rör aldrig andra kolumner.
+export function mergeSpecs(
+  befintliga: Record<string, string> | null | undefined,
+  farska: Record<string, string>
+): Record<string, string> {
+  const ut: Record<string, string> = { ...(befintliga || {}) };
+  for (const nyckel of SYNKADE_SPEC_NYCKLAR) {
+    if (nyckel in farska) ut[nyckel] = farska[nyckel];
+  }
+  return ut;
+}
+
+// Bytbils `enginePower` är KILOWATT, inte hästkrafter. För personbilar skickar Bytbil
+// med det exakta registervärdet i hk — använd det. För ATV/moped/släp saknas det, då
+// räknas kW om (1 kW = 1,35962 hk).
+export function effektIHk(d: BytbilCar["data"]): number | null {
+  const hk = d.additionalVehicleData?.engineEffectHp;
+  if (typeof hk === "number" && hk > 0) return hk;
+  const kw = d.enginePower;
+  if (typeof kw === "number" && kw > 0) return Math.round(kw * 1.35962);
+  return null;
+}
+
+// Bytbils equipment-array innehåller ibland rena tal (t.ex. 24 på Respo-släpen) som
+// annars renderas som skräp-chips på fordonssidan. Behåll bara riktig text.
+export function rensaUtrustning(equipment: unknown[] | undefined): string[] {
+  return (equipment || [])
+    .filter((x): x is string => typeof x === "string")
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0 && !/^\d+$/.test(x));
+}
+
 export function mapCarToVehicle(car: BytbilCar, clientId: string, syncedAt: string): MappedVehicle {
   const d = car.data || {};
   const brand = d.make || "";
@@ -109,11 +150,13 @@ export function mapCarToVehicle(car: BytbilCar, clientId: string, syncedAt: stri
   if (typeof d.milage === "number") specs["Miltal"] = `${d.milage.toLocaleString("sv-SE")} mil`;
   if (d.fuel) specs["Bränsle"] = d.fuel;
   if (d.gearBox) specs["Växellåda"] = d.gearBox;
-  if (d.enginePower) specs["Effekt"] = `${d.enginePower} hk`;
+  const hk = effektIHk(d);
+  if (hk) specs["Effekt"] = `${hk} hk`;
   if (d.color || d.freetextColor) specs["Färg"] = d.freetextColor || d.color || "";
   if (d.bodyType) specs["Kaross"] = d.bodyType;
   if (d.regNo && !d.regNoHidden) specs["Reg.nr"] = d.regNo;
-  if (d.equipment?.length) specs["Utrustning"] = d.equipment.join(", ");
+  const utrustning = rensaUtrustning(d.equipment);
+  if (utrustning.length) specs["Utrustning"] = utrustning.join(", ");
 
   const price = d.price?.value ?? d.currentPrice ?? 0;
 
@@ -184,10 +227,11 @@ export async function syncBytbilForClient(
 
   const { data: existing } = await sb
     .from("hm_vehicles")
-    .select("id, slug, is_sold, title, price")
+    .select("id, slug, is_sold, title, price, specs")
     .eq("client_id", clientId);
 
-  const existingById = new Map<string, { id: string; slug: string; is_sold: boolean; title: string; price: number }>();
+  type ExistingRow = { id: string; slug: string; is_sold: boolean; title: string; price: number; specs: Record<string, string> | null };
+  const existingById = new Map<string, ExistingRow>();
   let legacyManualCount = 0;
   for (const v of existing || []) {
     const bid = bytbilIdOf(v.slug);
@@ -202,7 +246,12 @@ export async function syncBytbilForClient(
     const ex = existingById.get(m.bytbil_id);
     if (dryRun) { ex ? updated++ : created++; continue; }
     if (ex) {
-      const { error } = await sb.from("hm_vehicles").update({ price: m.price }).eq("id", ex.id);
+      // Hårda fakta från Bytbil skrivs om vid varje synk (pris + synk-ägda spec-nycklar).
+      // Rubrik, beskrivning, bilder, badge, utvald och sortering är Håkans — rörs aldrig.
+      const { error } = await sb
+        .from("hm_vehicles")
+        .update({ price: m.price, specs: mergeSpecs(ex.specs, m.specs) })
+        .eq("id", ex.id);
       error ? errors.push(`${m.slug}: ${error.message}`) : updated++;
     } else {
       const row = {
