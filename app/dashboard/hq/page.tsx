@@ -8,6 +8,7 @@ import {
 import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
 import Tystnadslistan, { useTystnad } from "./kontakt/Tystnadslistan";
 import LikviditetsVy, { type CashRad, type Likviditet } from "./Likviditet";
+import { mysalesKontaktUrl } from "@/lib/mysales";
 
 // HQ-1 — Founder HQ, ägarens kommandobrygga.
 // Grip driver återkommande intäkt, Displayteknik driver pipeline. Båda ligger på samma
@@ -116,8 +117,7 @@ const datum = (s: string | null) => (s ? new Date(s).toLocaleDateString("sv-SE")
 const tid = (s: string | null) => (s ? new Date(s).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : "aldrig");
 
 /** Länk till kortets kontakt i MySales. GHL öppnar affären från kontaktvyn. */
-const mysalesLank = (k: PipelineKort) =>
-  k.ghl_contact_id ? `https://app.mysales.se/v2/location/${k.location_id}/contacts/detail/${k.ghl_contact_id}` : null;
+const mysalesLank = (k: PipelineKort) => mysalesKontaktUrl(k.location_id, k.ghl_contact_id);
 
 export default function HqPage() {
   const [data, setData] = useState<Data | null>(null);

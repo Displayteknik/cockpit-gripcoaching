@@ -10,6 +10,7 @@ import {
 import { LinkedinIcon, FacebookIcon, InstagramIcon } from "@/lib/module-icons";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import DataFarskhet from "@/components/DataFarskhet";
+import { mysalesKontaktUrl } from "@/lib/mysales";
 
 // "Nya leads" (fd Lobbyn) — inflödet av nya kontakter från LinkedIn/IG/FB/mail/webb
 // INNAN de blir affärer i pipelinen. Bygg på varje case med bild/röst/text, få
@@ -136,7 +137,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
   const [loading, setLoading] = useState(true);
   const [linked, setLinked] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [mysalesBase, setMysalesBase] = useState<string | null>(null);
+  const [locationId, setLocationId] = useState<string | null>(null);
   // Vilka leads som göms bakom "redan i MySales" avgörs av pipeline-spegeln — därför ska
   // dess ålder synas här också, inte bara i Fokus.
   const [synk, setSynk] = useState<{ senastSynkad: string | null; fel: string | null } | null>(null);
@@ -174,7 +175,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
       .then((d) => {
         setLinked(d.linked !== false);
         setContacts(d.contacts || []);
-        setMysalesBase(d.mysalesBase || null);
+        setLocationId(d.locationId || null);
         setSynk(d.synk || null);
         // Djuplänk från leadaviseringens mejl: /dashboard/leads?id=<uuid> öppnar kortet
         // direkt. Görs efter laddningen, annars finns kortet inte att öppna än.
@@ -265,8 +266,9 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
   }, [visaToast]);
 
   const oppnaIMysales = useCallback((c: Contact) => {
-    if (c.ghl_contact_id && mysalesBase) window.open(`${mysalesBase}/customers/detail/${c.ghl_contact_id}`, "_blank");
-  }, [mysalesBase]);
+    const url = mysalesKontaktUrl(locationId, c.ghl_contact_id);
+    if (url) window.open(url, "_blank");
+  }, [locationId]);
 
   // ── Bild → NY kontakt (i formuläret) ─────────────────────────────────────────
   const extrahera = useCallback(async (dataUrl: string) => {
@@ -447,7 +449,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
 
   const kortProps = (c: Contact): React.ComponentProps<typeof Rad> => ({
     c, spara, sparar: sparar === c.id, radera, synka, oppnaIMysales,
-    kanOppna: !!(c.ghl_contact_id && mysalesBase),
+    kanOppna: !!mysalesKontaktUrl(locationId, c.ghl_contact_id),
     oppen: oppenId === c.id, setOppen: (v: boolean) => setOppenId(v ? c.id : null),
     startaRost, byggPaBild, bygger: byggerId === c.id,
     foreslaSvar, forslag: forslag[c.id], forslagLoad: forslagLoad === c.id,
@@ -539,7 +541,7 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
         <TomRuta ikon={Building2} titel="Ingen koppling än"
           text="Nya leads visas när klienten är kopplad till MySales Coach via sin GHL-location." />
       ) : leads.length === 0 && iMysales.length === 0 && tillbaka.length === 0 ? (
-        <TomRuta ikon={Users} titel="Inga leads än" text="Klistra in en skärmbild, prata in eller klicka Nytt lead." />
+        <TomRuta ikon={Users} titel="Inga leads än" text="Klistra in ett mejl eller en skärmbild, prata in, eller klicka Nytt lead." />
       ) : (
         <>
           {/* Lead-pipelinen som en tratt — kall → het. Klicka ett steg för att filtrera. */}
@@ -688,6 +690,13 @@ function NyttLeadForm({
   onAvbryt: () => void;
 }) {
   const [rawText, setRawText] = useState("");
+  // Namnet härleddes förr ur "första tre orden på rad ett". För ett inklistrat mejl blev
+  // det "Hej Håkan," eller "Från: robin@…". Därav ett eget fält som AI-läsningen fyller.
+  const [namn, setNamn] = useState("");
+  const [epost, setEpost] = useState("");
+  const [telefon, setTelefon] = useState("");
+  const [laserMejl, setLaserMejl] = useState(false);
+  const [lasFel, setLasFel] = useState<string | null>(null);
   const [company, setCompany] = useState("");
   const [platform, setPlatform] = useState<Platform>("linkedin");
   const [nextStep, setNextStep] = useState("");
@@ -717,10 +726,44 @@ function NyttLeadForm({
       setRawText((p) => p + text); taRef.current?.focus();
     } catch { taRef.current?.focus(); }
   };
+  // Samma endpoint som skärmbilden, men med text. Fyller formuläret i stället för att
+  // spara direkt — ett mejl innehåller ofta både kunden och inblandade kollegor, och du
+  // ska se vem AI:n valde innan leadet läggs upp.
+  const lasMejl = async () => {
+    if (!rawText.trim() || laserMejl) return;
+    setLaserMejl(true); setLasFel(null);
+    try {
+      const r = await fetch("/api/lobby/extract", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: rawText }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Kunde inte läsa mejlet");
+      if (d.name) setNamn(d.name);
+      if (d.company) setCompany(d.company);
+      if (d.next_step) setNextStep(d.next_step);
+      if (d.next_contact_date) setNextDate(d.next_contact_date);
+      if (d.notes) setNotes(d.notes);
+      const kanal = PLATFORMS.find((x) => x.value === d.platform);
+      setPlatform(kanal ? (kanal.value as Platform) : "email");
+      setEpost(d.email || "");
+      setTelefon(d.phone || "");
+    } catch (e) {
+      setLasFel((e as Error).message);
+    } finally {
+      setLaserMejl(false);
+    }
+  };
+
   const spara = () => {
-    if (!rawText.trim()) return;
-    const namn = rawText.split("\n")[0].trim().split(" ").slice(0, 3).join(" ") || "Okänd kontakt";
-    onManuell({ name: namn, company, platform, last_message: rawText.slice(0, 300), next_step: nextStep, next_contact_date: nextDate, notes });
+    if (!rawText.trim() && !namn.trim()) return;
+    // Fallback när AI-läsningen inte använts: första raden, som förut.
+    const harlett = rawText.split("\n")[0].trim().split(" ").slice(0, 3).join(" ");
+    const slutligtNamn = namn.trim() || harlett || "Okänd kontakt";
+    onManuell({
+      name: slutligtNamn, company, platform, email: epost, phone: telefon,
+      last_message: rawText.slice(0, 300), next_step: nextStep, next_contact_date: nextDate, notes,
+    });
   };
 
   return (
@@ -757,14 +800,32 @@ function NyttLeadForm({
       )}
 
       <div className="flex items-center gap-2 text-xs text-gray-400">
-        <span className="flex-1 border-t border-gray-200" /> eller fyll i manuellt <span className="flex-1 border-t border-gray-200" />
+        <span className="flex-1 border-t border-gray-200" /> eller klistra in mejlet <span className="flex-1 border-t border-gray-200" />
       </div>
 
       <textarea ref={taRef} value={rawText} onChange={(e) => setRawText(e.target.value)} onPaste={paste} rows={3}
-        placeholder="Klistra in mejl, konversation eller skriv vad du vet. Första raden = namn."
+        placeholder="Klistra in hela mejlet från kunden — tryck sedan Läs mejlet med AI så fylls fälten i."
         className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-gray-400 resize-none" />
 
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={lasMejl}
+          disabled={!rawText.trim() || laserMejl}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold rounded-lg px-3 py-1.5 border border-gray-200 text-gray-800 hover:bg-gray-50 disabled:opacity-40"
+        >
+          {laserMejl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" style={{ color: "#7c3aed" }} />}
+          Läs mejlet med AI
+        </button>
+        <span className="text-xs text-gray-400">Fyller namn, företag, e-post och telefon åt dig.</span>
+      </div>
+      {lasFel && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{lasFel}</div>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2"><Falt etikett="Namn" varde={namn} onChange={setNamn} placeholder="Kontaktens namn…" /></div>
+        <Falt etikett="E-post" varde={epost} onChange={setEpost} placeholder="namn@foretag.se" />
+        <Falt etikett="Telefon" varde={telefon} onChange={setTelefon} placeholder="07…" />
         <Falt etikett="Företag" varde={company} onChange={setCompany} placeholder="Företagsnamn…" />
         <label className="block">
           <span className="text-xs uppercase tracking-wider font-semibold text-gray-400">Kanal</span>

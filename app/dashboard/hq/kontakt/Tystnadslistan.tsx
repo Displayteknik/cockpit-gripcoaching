@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, ExternalLink, HelpCircle, MessageSquarePlus, Phone, RefreshCw } from "lucide-react";
 import SmartTextarea from "@/components/SmartTextarea";
+import { mysalesKontaktUrl } from "@/lib/mysales";
 
 // KONTAKT-1 — tystnadslistan. Delas av den egna vyn och sektionen i Founder HQ, så de
 // två aldrig kan visa olika sanning om samma affär.
@@ -44,8 +45,7 @@ function niva(dagar: number | null): "neutral" | "gul" | "rod" {
   return "neutral";
 }
 
-const mysalesLank = (r: Rad) =>
-  r.ghl_contact_id ? `https://app.mysales.se/v2/location/${r.location_id}/contacts/detail/${r.ghl_contact_id}` : null;
+const mysalesLank = (r: Rad) => mysalesKontaktUrl(r.location_id, r.ghl_contact_id);
 
 export function useTystnad() {
   const [data, setData] = useState<Data | null>(null);

@@ -12,6 +12,7 @@
 import { supabaseService } from "@/lib/supabase-admin";
 import { agarToken, kopplingsScope } from "@/lib/hq/kalender";
 import { tolkaGoogleFel, type GoogleFel } from "@/lib/hq/google-fel";
+import { mysalesKontaktUrl } from "@/lib/mysales";
 
 const GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -105,8 +106,7 @@ export interface MorgonRad { id: string; text: string; niva: "gul" | "rod"; etik
  */
 export function regelrader(rader: Rad[], regler: Regel[]): MorgonRad[] {
   const ut: MorgonRad[] = [];
-  const lank = (r: Rad) =>
-    r.ghl_contact_id ? `https://app.mysales.se/v2/location/${r.location_id}/contacts/detail/${r.ghl_contact_id}` : "/dashboard/hq/kontakt";
+  const lank = (r: Rad) => mysalesKontaktUrl(r.location_id, r.ghl_contact_id) || "/dashboard/hq/kontakt";
 
   for (const regel of [...regler].filter((r) => r.aktiv).sort((a, b) => a.sortering - b.sortering)) {
     if (regel.villkor === "bollen_hos_oss") {

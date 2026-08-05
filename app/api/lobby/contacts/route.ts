@@ -7,6 +7,7 @@ import { notifyNewLead } from "@/lib/lead-notify";
 import { synkaOchStatus } from "@/lib/fokus/synk";
 import { hamtaStegFacit } from "@/lib/hq/pipeline";
 import { byggPipelineIndex, normNamn, type PipelineOpp } from "@/lib/lobby/pipeline";
+import { skapaAffarIMysales } from "@/lib/lead-intake";
 
 export const runtime = "nodejs";
 
@@ -92,9 +93,10 @@ export async function GET() {
     };
   });
 
-  // White-label GHL-bas för "Öppna i MySales"-deeplänk (customers/detail per kontakt).
-  const mysalesBase = ctx.locationId ? `https://app.mysales.se/location/${ctx.locationId}` : null;
-  return NextResponse.json({ linked: true, contacts, mysalesBase, synk });
+  // Bara location-id ut. Adressformen byggs med mysalesKontaktUrl i klienten — skickar vi
+  // en halv URL härifrån bor formen på två ställen igen, vilket är precis hur de två
+  // konkurrerande varianterna uppstod.
+  return NextResponse.json({ linked: true, contacts, locationId: ctx.locationId || null, synk });
 }
 
 // POST — skapa en ny kontakt. Skrivs till den kanoniska coach_user:n (första),
@@ -132,9 +134,34 @@ export async function POST(req: NextRequest) {
   const { data, error } = await sb.from("lobby_contacts").insert(row).select(FIELDS).maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  const rad = data as Record<string, unknown> | null;
+
+  // Affär i MySales direkt — samma steg som Displaytekniks webbformulär alltid gjort, så
+  // ett inklistrat mejl hamnar lika långt in i systemet som en formulärförfrågan.
+  // Avstängt som standard: för klienter som använder Nya leads som lead-pipeline FÖRE
+  // MySales vore automatiska affärer en beteendeändring. Slås på per klient i Inställningar.
+  const affar = await skapaAffarIMysales({
+    clientId,
+    namn: String(row.name || ""),
+    foretag: (rad?.company as string) || null,
+    epost: (rad?.email as string) || null,
+    telefon: (rad?.phone as string) || null,
+    arende: (rad?.last_message as string) || (rad?.notes as string) || null,
+  });
+  // Spegla kopplingen på kortet → "Öppna i MySales" blir en direktlänk, och leadet
+  // döljs korrekt ur Nya leads när affären lever.
+  if (affar.ghlContactId && rad?.id) {
+    try {
+      await sb.from("lobby_contacts")
+        .update({ ghl_contact_id: affar.ghlContactId, updated_at: new Date().toISOString() })
+        .eq("id", rad.id as string)
+        .in("user_id", ids);
+      (rad as Record<string, unknown>).ghl_contact_id = affar.ghlContactId;
+    } catch { /* kortet finns, kopplingen är en bonus */ }
+  }
+
   // Etapp L1 — avisera. Alla fyra källor (bild, röst, manuellt, formulär) går genom den
   // här routen, så en enda hook täcker Nya leads. Best-effort: får aldrig fälla svaret.
-  const rad = data as Record<string, unknown> | null;
   void notifyNewLead({
     clientId,
     namn: String(row.name || "Okänt namn"),
@@ -145,7 +172,9 @@ export async function POST(req: NextRequest) {
     lank: rad?.id ? `/dashboard/leads?id=${rad.id}` : "/dashboard/leads",
   });
 
-  return NextResponse.json({ ok: true, contact: data });
+  // Säg alltid vad som hände i MySales. Motsvarande steg gjorde tidigare tyst ingenting
+  // när en inställning saknades, och då ser "sparat" ut som att allt gick vägen.
+  return NextResponse.json({ ok: true, contact: rad ?? data, mysales: affar.notis, mysalesStatus: affar.status });
 }
 
 // PATCH — uppdatera en kontakt. Tenant-låst: raden måste tillhöra klientens coach_users.

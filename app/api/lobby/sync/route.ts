@@ -3,6 +3,7 @@ import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { getActiveClientId } from "@/lib/client-context";
 import { resolveCoachGhl, resolveCoachUserIds } from "@/lib/coach-bridge";
 import { supabaseService } from "@/lib/supabase-admin";
+import { mysalesKontaktUrl } from "@/lib/mysales";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -136,10 +137,7 @@ export async function POST(req: NextRequest) {
     .eq("id", contact.id)
     .in("user_id", ids);
 
-  // MySales är white-label GHL: customers/detail (INTE contacts/detail), /location/ utan /v2.
-  const mysalesUrl = locationId
-    ? `https://app.mysales.se/location/${locationId}/customers/detail/${ghlContactId}`
-    : null;
+  const mysalesUrl = mysalesKontaktUrl(locationId, ghlContactId);
 
   return NextResponse.json({ success: true, ghlContactId, opportunityId, contactExisted, mysalesUrl });
 }

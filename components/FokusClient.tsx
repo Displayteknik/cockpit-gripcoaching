@@ -30,6 +30,7 @@ import {
   MessageCircle,
   Send,
 } from "lucide-react";
+import { mysalesKontaktUrl } from "@/lib/mysales";
 
 // Kanal på en planerad uppgift → ikon + verb. Kanalen ska spegla kontaktens VERKLIGA kanal
 // (en DM-kontakt ska aldrig säga "Ring nu"). Okänd kanal faller till ring.
@@ -289,7 +290,7 @@ export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor
                       <span className="text-sm text-gray-700">{info?.bokad}</span>
                       {info?.bokadNot && <span className="text-sm text-gray-500 truncate">{info.bokadNot}</span>}
                       <a
-                        href={b.locationId ? `https://app.mysales.se/v2/location/${b.locationId}/contacts/detail/${c.ghlContactId || ""}` : "#"}
+                        href={mysalesKontaktUrl(b.locationId, c.ghlContactId) || "#"}
                         target="_blank" rel="noopener noreferrer"
                         className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 flex-shrink-0"
                       >
@@ -639,10 +640,7 @@ function DragKort({
   const [egen, setEgen] = useState("");
   const [sparar, setSparar] = useState(false);
   const [klarar, setKlarar] = useState(false);
-  const deeplink =
-    locationId && c.ghlContactId
-      ? `https://app.mysales.se/location/${locationId}/customers/detail/${c.ghlContactId}`
-      : null;
+  const deeplink = mysalesKontaktUrl(locationId, c.ghlContactId);
 
   const markKlar = async () => {
     if (!planering || klarar) return;

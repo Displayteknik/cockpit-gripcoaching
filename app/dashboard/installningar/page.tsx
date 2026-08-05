@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Save, Loader2, Check, Globe, Search, Zap, BarChart3, Lock, Copy, Info, ExternalLink, Mail, Plug, Image as ImageIcon } from "lucide-react";
 import GoogleConnect from "@/components/GoogleConnect";
 import TenantIgConnect from "@/components/TenantIgConnect";
+import LeadIntakeSettings from "@/components/LeadIntakeSettings";
 
 type Settings = Record<string, string>;
 
@@ -24,7 +25,7 @@ interface SectionDef {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   fields?: FieldDef[];
-  customComponent?: "google" | "instagram" | "meta";
+  customComponent?: "google" | "instagram" | "meta" | "leads";
 }
 
 const SECTIONS: SectionDef[] = [
@@ -44,6 +45,14 @@ const SECTIONS: SectionDef[] = [
     icon: Plug,
     description: "Direct publish, schemaläggning, analytics. Kräver IG Business + Facebook Page.",
     customComponent: "instagram",
+  },
+  {
+    id: "leads",
+    category: "integrations",
+    title: "Inkommande leads",
+    icon: Plug,
+    description: "Vad som händer när ett lead kommer in — från webbformulär, inklistrat mejl eller inlagt för hand.",
+    customComponent: "leads",
   },
   {
     id: "google",
@@ -282,6 +291,7 @@ export default function InstallningarPage() {
                 )}
                 {section.customComponent === "instagram" && <TenantIgConnect />}
                 {section.customComponent === "google" && <GoogleConnect />}
+                {section.customComponent === "leads" && <LeadIntakeSettings />}
                 {section.fields && (
                   <div className="space-y-4">
                     {section.fields.map((f) => (
