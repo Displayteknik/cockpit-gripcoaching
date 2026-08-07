@@ -124,9 +124,12 @@ export const STEG: StegDef[] = [
     titel: "Brand-profilen",
     agare: "system",
     beskrivning:
-      "Analysens profilfält skrivs till Cockpit. Ifyllda fält rörs aldrig — ett ifyllt fält är någons beslut.",
+      "Två vägar in. Den manuella är huvudvägen i dag — klistra in ett färdigt profildokument i Brand-profil → Fyll i från ett samtal. Den automatiska skriver analysens fält, men analysen är inte tillräckligt bra än.",
     instruktion:
       "**Det enskilt viktigaste steget för kvaliteten.** Utan profil skriver Cockpit generisk text.\n\n" +
+      "**Väg 1 — manuell, och den som gäller tills vidare.** Bearbeta transkript och källor till ett färdigt profildokument först, klistra sedan in det under Brand-profil → *Fyll i från ett samtal*. Du får en diff mot befintlig profil och godkänner fält för fält. For Balance nådde nivå 5 den vägen.\n\n" +
+      "**Väg 2 — automatisk.** Knappen nedan skriver analysens profilfält. Den rör aldrig ifyllda fält, ett ifyllt fält är någons beslut. Men analysen fick 6 av 11 rätt på Gittes sajt, så räkna med att komplettera manuellt ändå.\n\n" +
+      "Vägarna krockar inte: den automatiska fyller bara tomma fält, den manuella diffar och frågar.\n\n" +
       "Prioritera i den här ordningen om tiden tryter:\n\n" +
       "1. Tonregler och GÖR INTE — det som hindrar pinsamma texter\n" +
       "2. Målgrupp och smärtpunkter\n" +
@@ -148,7 +151,8 @@ export const STEG: StegDef[] = [
       "**Före-orden.** Fråga: när någon ringer dig första gången, vad säger de, ordagrant?\n\n" +
       "Recensioner beskriver hur det känns efteråt. Det som saknas är orden folk använder om sitt problem *innan* de köper.",
     kraver: ["brand_profil"],
-    atgard: "Skapa frågelistan",
+    // Ingen åtgärdsknapp än: frågelistan är ONBOARD-6 och byggs i etapp 4. En knapp som
+    // inte gör något är värre än ingen knapp — den lär användaren att knappar ljuger.
   },
   {
     nr: 9,

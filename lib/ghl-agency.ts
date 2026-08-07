@@ -377,19 +377,38 @@ export async function sattCustomValues(
   k: GhlKonfig,
   locationId: string,
   varden: Record<string, string>,
-): Promise<{ satta: number; hoppade: number; via: "location-token" | "byratoken"; fel: string[] }> {
+  /**
+   * ★ KUNDENS EGEN NYCKEL — den ENDA som faktiskt fungerar (inventeringen 2026-08-07).
+   *
+   *   Utan den här parametern provade funktionen location-token (kräver `oauth.write`,
+   *   som inte finns bland Private Integrations 24 scopes) och föll sedan till byråtoken
+   *   (som nekas med 401 på underkontots custom values, verifierat). Båda vägarna är alltså
+   *   stängda, och det är därför Gittes värden fick fyllas med ett separat skript som bar
+   *   hennes kundnyckel.
+   *
+   *   Provisioneringen slår upp nyckeln på `coach_users.ghl_api_token` och skickar den hit.
+   *   Saknas den kan steget inte göras — och då ska det SÄGAS, inte tyst hoppas över.
+   */
+  kundToken?: string | null,
+): Promise<{ satta: number; hoppade: number; via: "kundnyckel" | "location-token" | "byratoken"; fel: string[] }> {
   const poster = Object.entries(varden).filter(([, v]) => v != null && String(v).trim() !== "");
   if (!poster.length) return { satta: 0, hoppade: 0, via: "byratoken", fel: [] };
 
-  // Prova location-token först — det är den dokumenterade vägen.
   let token = k.pit;
-  let via: "location-token" | "byratoken" = "byratoken";
-  try {
-    token = await locationToken(k, locationId);
-    via = "location-token";
-  } catch {
-    // Byråns integration saknar oauth.write eller GHL kräver Marketplace-app.
-    // Prova byråtoken direkt; misslyckas även den rapporteras felet per värde nedan.
+  let via: "kundnyckel" | "location-token" | "byratoken" = "byratoken";
+
+  if (kundToken && kundToken.trim()) {
+    token = kundToken.trim();
+    via = "kundnyckel";
+  } else {
+    // Prova location-token — den dokumenterade vägen, stängd på den här byrån.
+    try {
+      token = await locationToken(k, locationId);
+      via = "location-token";
+    } catch {
+      // Byråns integration saknar oauth.write eller GHL kräver Marketplace-app.
+      // Prova byråtoken direkt; misslyckas även den rapporteras felet per värde nedan.
+    }
   }
 
   let befintliga: CustomValue[] = [];

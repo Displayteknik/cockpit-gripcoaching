@@ -22,13 +22,21 @@ import { supabaseService } from "@/lib/supabase-admin";
 import { sendEmail, welcomeEmailHtml, welcomeEmailText, emailConfigured } from "@/lib/email";
 import { getEffectiveModules } from "@/lib/entitlements";
 import {
-  ghlAgencyKonfig, GHL_SAKNAS_TEXT, hittaSnapshot, hittaLocationForSajt,
+  ghlAgencyKonfig, GHL_SAKNAS_TEXT, hittaLocationForSajt,
   skapaLocation, vantaPaSnapshot, sattCustomValues,
 } from "@/lib/ghl-agency";
 import { harVarde, type Falt, type Forslag, type Tjanst, type Oppettid } from "./typer";
 
 /** Snapshotet varje ny MySales Pro-kund byggs från. Namnet, inte id:t — se hittaSnapshot. */
 export const SNAPSHOT_NAMN = process.env.GHL_SNAPSHOT_NAMN || "MySales Pro v1.0";
+
+/**
+ * Id:t för "MySales Pro v1.0", taget ur MALL MySales Pro (C7hspI68eIy5elGHfFVj).
+ *
+ * Ligger i koden för att byrå-nyckeln inte får LISTA snapshots — se kommentaren vid
+ * uppslaget nedan. `GHL_SNAPSHOT_ID` i env vinner alltid över den här konstanten.
+ */
+export const SNAPSHOT_ID_STANDARD = "GCqvltlAAz7l0028oo0w";
 
 export type StegStatus = "klar" | "hoppade" | "fel" | "torr";
 
@@ -203,17 +211,28 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
     steg.push({ namn: "GHL sub-account", status: "fel", detalj: GHL_SAKNAS_TEXT });
   } else {
     try {
-      const snapshot = await hittaSnapshot(konfig, SNAPSHOT_NAMN);
-      snapshotId = snapshot?.id ?? null;
-      if (!snapshot) {
-        steg.push({
-          namn: "Snapshot",
-          status: "fel",
-          detalj: `Hittade inget snapshot som heter "${SNAPSHOT_NAMN}" på byråkontot. Kontrollera namnet (skiftläge spelar roll vid exakt matchning).`,
-        });
-      } else {
-        steg.push({ namn: "Snapshot", status: "klar", detalj: `"${snapshot.name}" hittad.` });
-      }
+      // ★ SNAPSHOTET SLÅS UPP PÅ ID, INTE PÅ NAMN.
+      //
+      //   Uppslaget på namn krävde `GET /snapshots/`, som byrå-nyckeln inte får läsa —
+      //   401 på alla sökvägar och båda API-versionerna, verifierat 2026-08-07.
+      //   `snapshots.readonly` går inte att få genomslag för på en Private Integration.
+      //   Gittes konto fick därför skapas för hand med id:t i ett curl-anrop.
+      //
+      //   Att ANGE ett id man redan har är en annan sak än att få bläddra bland dem:
+      //   POST /locations/ med snapshotId fungerar med samma nyckel. Därför id:t direkt.
+      //
+      //   Källan skrivs ut i stegrapporten. Tas ett nytt snapshot (v2) och env-variabeln
+      //   inte uppdateras klonas fortfarande v1 — och då ska det synas att id:t kom från
+      //   koden och inte från konfigurationen.
+      const franEnv = (process.env.GHL_SNAPSHOT_ID || "").trim();
+      snapshotId = franEnv || SNAPSHOT_ID_STANDARD;
+      steg.push({
+        namn: "Snapshot",
+        status: "klar",
+        detalj: franEnv
+          ? `Använder snapshot-id ur GHL_SNAPSHOT_ID (${snapshotId}).`
+          : `GHL_SNAPSHOT_ID saknas i env — använder det dokumenterade id:t för "${SNAPSHOT_NAMN}" (${snapshotId}). Sätt variabeln när du tar ett nytt snapshot.`,
+      });
 
       if (!locationId) {
         const befintlig = await hittaLocationForSajt(konfig, hemsida, epost);
@@ -228,7 +247,7 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
           steg.push({
             namn: "GHL sub-account",
             status: "torr",
-            detalj: `Skulle skapa nytt sub-account "${foretag}" (land SE, tidszon Europe/Stockholm${snapshot ? `, snapshot "${snapshot.name}"` : ""}).`,
+            detalj: `Skulle skapa nytt sub-account "${foretag}" (land SE, tidszon Europe/Stockholm${snapshotId ? `, snapshot ${snapshotId}` : ""}).`,
           });
         } else {
           const namnDelar = delaNamn(v(f.kontaktperson));
@@ -275,12 +294,32 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
   const varden = byggCustomValues(f);
   if (konfig && locationId && !torr) {
     try {
-      const r = await sattCustomValues(konfig, locationId, varden);
-      steg.push({
-        namn: "Custom values",
-        status: r.fel.length ? "fel" : "klar",
-        detalj: `${r.satta} av ${Object.keys(varden).length} värden satta via ${r.via}.` + (r.fel.length ? ` Fel: ${r.fel.slice(0, 3).join("; ")}` : ""),
-      });
+      // Kundnyckeln är den enda som får skriva i underkontot — se sattCustomValues.
+      // Den skapas för hand i steg 4 och bor på coach_users, samma rad som Fokus läser.
+      const { data: cu } = await sb
+        .from("coach_users")
+        .select("ghl_api_token")
+        .eq("ghl_location_id", locationId)
+        .maybeSingle();
+      const kundToken = (cu as { ghl_api_token?: string } | null)?.ghl_api_token ?? null;
+
+      if (!kundToken) {
+        // Hellre ett tydligt stopp än 13 tysta 401:or. Steget kan köras om när nyckeln finns.
+        steg.push({
+          namn: "Custom values",
+          status: "hoppade",
+          detalj:
+            `Kundnyckeln saknas — värdena kan inte skrivas än. Skapa Private Integration i kundens konto (steg 4), ` +
+            `klistra in den i stegvyn, och kör provisioneringen igen. ${Object.keys(varden).length} värden ligger redo.`,
+        });
+      } else {
+        const r = await sattCustomValues(konfig, locationId, varden, kundToken);
+        steg.push({
+          namn: "Custom values",
+          status: r.fel.length ? "fel" : "klar",
+          detalj: `${r.satta} av ${Object.keys(varden).length} värden satta via ${r.via}.` + (r.fel.length ? ` Fel: ${r.fel.slice(0, 3).join("; ")}` : ""),
+        });
+      }
     } catch (e) {
       steg.push({ namn: "Custom values", status: "fel", detalj: e instanceof Error ? e.message : String(e) });
     }
@@ -340,6 +379,16 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
             resource_module: "general",
             plan: "pro",
             ghl_location_id: locationId,
+            // ★ KUNDÅTKOMSTEN MÅSTE SÄTTAS HÄR (inventeringen 2026-08-07).
+            //
+            //   Ingenting i koden slog på den. För Gitte gjordes det med ett curl-anrop
+            //   mot databasen, alltså "i chatten". Utan flaggan svarar /k/<token> med en
+            //   redirect till inloggningen — kunden klickar på länken hon fått och kastas ut.
+            //
+            //   Att den står på från början är ofarligt: token är oåtkomlig tills Håkan
+            //   skickar länken i steg 11, och länken ÄR inloggningen. Det finns ingen väg
+            //   in utan den.
+            customer_access_enabled: true,
           })
           .select("id")
           .single();

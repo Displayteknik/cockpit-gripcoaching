@@ -222,6 +222,41 @@ export async function verifieraKundnyckel(
   }
   if (saknade.length) return { ok: false, fel: "Nyckeln fungerar men saknar behörighet.", saknadeScopes: saknade };
 
+  // ★ TOMHETSKONTROLL — laddades snapshotet verkligen?
+  //
+  //   Ett konto som skapas UTAN FEL men UTAN INNEHÅLL är värre än ett fel: det upptäcks
+  //   först när kunden loggar in och möts av en tom pipeline. POST /locations/ svarar 201
+  //   även om snapshot-laddningen sedan misslyckas — den sker asynkront efteråt.
+  //
+  //   Kontrollen kan inte göras vid skapandet: byrå-nyckeln får inte läsa underkontots
+  //   resurser (401, verifierat 2026-08-07). Det här är alltså den TIDIGASTE punkt där
+  //   någon nyckel över huvud taget kan se in i kontot — och den ligger före allt kunden
+  //   ser, vilket är det som räknas.
+  const pl = await fetch(`${GHL}/opportunities/pipelines?locationId=${locationId}`, {
+    headers: { Authorization: `Bearer ${nyckel}`, Version: "2021-07-28", Accept: "application/json" },
+  });
+  const data = (await pl.json().catch(() => null)) as { pipelines?: { name: string; stages?: unknown[] }[] } | null;
+  const pipelines = data?.pipelines ?? [];
+  const kund = pipelines.find((p) => /kund pipeline/i.test(p.name)) ?? pipelines[0];
+  const antalSteg = kund?.stages?.length ?? 0;
+
+  if (!pipelines.length) {
+    return {
+      ok: false,
+      fel:
+        "Nyckeln fungerar, men kontot är TOMT — ingen pipeline alls. Snapshotet laddades inte. " +
+        "Ladda det för hand (byrånivå → Sub-Accounts → kontot → Load Snapshot) innan du går vidare, annars möts kunden av ett tomt konto.",
+    };
+  }
+  if (antalSteg !== 7) {
+    return {
+      ok: false,
+      fel:
+        `Nyckeln fungerar, men pipelinen "${kund?.name ?? "okänd"}" har ${antalSteg} steg i stället för 7. ` +
+        "Snapshotet laddades ofullständigt. Kontrollera kontot innan du går vidare.",
+    };
+  }
+
   const sb = supabaseService();
   const { data: rad } = await sb.from("coach_users").select("id").eq("ghl_location_id", locationId).maybeSingle();
   if (!rad) return { ok: false, fel: "MySales-kopplingen saknas — kör steg 6 först." };

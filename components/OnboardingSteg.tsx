@@ -126,6 +126,7 @@ function Detalj({ onboarding, onTillbaka, onUppdaterad }: {
   const [nyckel, setNyckel] = useState("");
   const [nyckelFel, setNyckelFel] = useState<{ text: string; scopes?: string[] } | null>(null);
   const [punkter, setPunkter] = useState<Punkt[] | null>(null);
+  const [provSteg, setProvSteg] = useState<{ namn: string; status: string; detalj?: string | null }[] | null>(null);
 
   async function bocka(s: Steg, status: Status) {
     setArbetar(s.nyckel);
@@ -148,6 +149,23 @@ function Detalj({ onboarding, onTillbaka, onUppdaterad }: {
       if (r.error) { setNyckelFel({ text: r.error, scopes: r.saknadeScopes }); return; }
       setNyckel("");
       if (r.onboarding) onUppdaterad(r.onboarding);
+    } finally { setArbetar(null); }
+  }
+
+  // Provisioneringen kör steg 3, 5, 6 och 7 i en följd och är idempotent — den kan därför
+  // köras om efter att kundnyckeln lagts in i steg 4, vilket är precis vad som krävs:
+  // custom values kan inte skrivas förrän nyckeln finns.
+  async function provisionera(torrkorning: boolean) {
+    setArbetar("provisionera"); setProvSteg(null);
+    try {
+      const r = await fetch(`/api/onboarding/${onboarding.id}/provisionera`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ torrkorning }),
+      }).then((x) => x.json());
+      if (r.error) { setProvSteg([{ namn: "Provisioneringen kunde inte köras", status: "fel", detalj: r.error }]); return; }
+      setProvSteg(r.steg ?? r.steps ?? []);
+      const uppdaterad = await fetch(`/api/onboarding/${onboarding.id}/steg`).then((x) => x.json());
+      if (uppdaterad.onboarding) onUppdaterad(uppdaterad.onboarding);
     } finally { setArbetar(null); }
   }
 
@@ -251,6 +269,46 @@ function Detalj({ onboarding, onTillbaka, onUppdaterad }: {
                             <p className="mt-1">Saknade behörigheter: {nyckelFel.scopes.join(", ")}. Skapa en ny integration — scopes som läggs till i efterhand får inget genomslag.</p>
                           ) : null}
                         </div>
+                      )}
+                    </div>
+                  )}
+
+                  {["ghl_konto", "custom_values", "tenant", "brand_profil"].includes(s.nyckel) && (
+                    <div className="mb-4 space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => provisionera(true)}
+                          disabled={arbetar === "provisionera"}
+                          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                        >
+                          {arbetar === "provisionera" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Torrkör — visa vad som skulle göras
+                        </button>
+                        <button
+                          onClick={() => provisionera(false)}
+                          disabled={arbetar === "provisionera"}
+                          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                        >
+                          Kör skarpt
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Kör steg 3, 5, 6 och 7 i en följd. Kan köras om — custom values skrivs först när kundnyckeln i steg 4 finns.
+                      </p>
+                      {provSteg && (
+                        <ul className="space-y-1.5 pt-1">
+                          {provSteg.map((p, i) => (
+                            <li key={`${p.namn}-${i}`} className="flex items-start gap-2 text-sm">
+                              {p.status === "klar" ? <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+                                : p.status === "fel" ? <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-rose-500" />
+                                : <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />}
+                              <span>
+                                <span className="font-medium text-gray-900">{p.namn}</span>
+                                {p.detalj ? <span className="text-gray-500"> — {p.detalj}</span> : null}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
                   )}
