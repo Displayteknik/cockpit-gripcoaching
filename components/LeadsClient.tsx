@@ -85,7 +85,10 @@ interface ISpeechRecognition extends EventTarget {
   onstart: (() => void) | null; onend: (() => void) | null;
   onerror: ((e: Event) => void) | null; onresult: ((e: ISpeechEvent) => void) | null;
 }
-interface ISpeechResult { isFinal: boolean; [i: number]: { transcript: string } }
+// `confidence` finns i Web Speech API men saknades i vår typ, så den lästes aldrig.
+// Se tillförlitlighetsgrinden i startaRost: utan den skrivs Chromes gissningar rakt in
+// i en kundpost som om de vore hörda.
+interface ISpeechResult { isFinal: boolean; [i: number]: { transcript: string; confidence?: number } }
 interface ISpeechEvent extends Event { resultIndex: number; results: { length: number } & { [i: number]: ISpeechResult } }
 declare global {
   interface Window {
@@ -382,12 +385,29 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
     const rec = new SR();
     rec.lang = "sv-SE"; rec.continuous = true; rec.interimResults = true;
     let slutText = "";
+    // ★ TILLFÖRLITLIGHETSGRIND (FIX-1/A1).
+    //
+    //   Den här ytan transkriberar INTE via vår server — den använder webbläsarens egna
+    //   SpeechRecognition. Vid tystnad eller svagt ljud returnerar den ändå en flytande
+    //   svensk mening, med låg confidence men utan felkod. Reproducerat 2026-08-07:
+    //   "Anna Andersson vill boka ett möte" blev "Det är ju så att vi har ju en väldigt
+    //   stor del av vår befolkning som är födda i andra länder."
+    //
+    //   Texten gick rakt in i en kundpost. Där blir den kvar.
+    //
+    //   Vi kan inte hindra webbläsaren från att gissa, men vi kan vägra AGERA på gissningen:
+    //   under tröskeln fylls fältet för hand-redigering i stället för att tolkas till
+    //   namn, pipeline-läge och nästa steg.
+    const sakerheter: number[] = [];
     rec.onstart = () => setLyssnar(true);
     rec.onresult = (e: ISpeechEvent) => {
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) slutText += e.results[i][0].transcript + " ";
-        else interim += e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          slutText += e.results[i][0].transcript + " ";
+          const c = e.results[i][0].confidence;
+          if (typeof c === "number" && c > 0) sakerheter.push(c);
+        } else interim += e.results[i][0].transcript;
       }
       setTranskript(slutText + interim);
     };
@@ -395,8 +415,17 @@ export default function LeadsClient({ primaryColor = "#6366f1" }: { primaryColor
       setLyssnar(false);
       const t = slutText.trim();
       const mål = oppenIdRef.current;
-      if (t) { if (mål) rostUppdatera(t, mål); else parseNyRost(t); }
-      else setTranskript("");
+      if (!t) { setTranskript(""); return; }
+
+      // Saknas confidence helt (vissa webbläsare rapporterar den inte) släpper vi igenom
+      // som förut — en grind som inte kan mäta ska inte gissa den heller.
+      const snitt = sakerheter.length ? sakerheter.reduce((a, b) => a + b, 0) / sakerheter.length : null;
+      if (snitt !== null && snitt < 0.6) {
+        setTranskript(t);
+        visaToast("Osäker uppfattning — läs igenom texten innan du sparar, eller spela in igen", "fel");
+        return;
+      }
+      if (mål) rostUppdatera(t, mål); else parseNyRost(t);
     };
     rec.onerror = (e: Event) => {
       setLyssnar(false); setTranskript("");

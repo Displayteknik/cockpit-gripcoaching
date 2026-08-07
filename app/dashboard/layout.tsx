@@ -77,6 +77,9 @@ function buildNavSections(resourceModule: string): NavSection[] {
     {
       label: "Kunder",
       items: [
+        // Automatisk provisionering från enbart en webbadress (ONBOARD-1). Skild från
+        // "Onboarding" under System, som är checklistan för en kund som redan finns.
+        { href: "/dashboard/onboarding", label: "Ny kund från webbadress", icon: Sparkles },
         { href: "/dashboard/fokus", label: "Fokus idag", icon: Target },
         { href: "/dashboard/leads", label: "Nya leads", icon: Users },
         { href: "/dashboard/offert", label: "Offerter", icon: FileText },

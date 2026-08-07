@@ -77,7 +77,19 @@ const STAGE_STYLES: Record<Stage, { tile: string; icon: string }> = {
   lost: { tile: "bg-rose-50", icon: "text-rose-600" },
 };
 
-export default function DMPage() {
+/**
+ * ★ AUTO-SVAREN ÄR BORTA UR KUNDVYN (FIX-1/B1, Håkans beslut 2026-08-07).
+ *
+ * Fliken erbjöd att SYSTEMET skickar svar åt kunden: "När någon DM:ar eller kommenterar
+ * med nyckelordet skickas auto-svaret." Det motsäger hela ramen produkten säljs på —
+ * kunden skriver, systemet kommer ihåg. Metas 24-timmarsfönster pekar åt samma håll:
+ * uppföljning dag 3 och dag 7 kan ändå inte skickas automatiskt.
+ *
+ * Funktionen är inte riven, den är flyttad. Admin behåller den som tillval; kunden ser
+ * den inte alls. `/k/dm` renderar samma komponent som admin, så utan den här flaggan
+ * hade den fortsatt synas för varje kund.
+ */
+export default function DMPage({ customerMode = false }: { customerMode?: boolean }) {
   const [tab, setTab] = useState<"pipeline" | "automation">("pipeline");
   // Alltid kundens färg: aktiv klient (kundens egen i /k, vald i admin) → överrida purple-accenten.
   const [accent, setAccent] = useState("#7c3aed");
@@ -107,17 +119,20 @@ export default function DMPage() {
         >
           Pipeline
         </button>
-        <button
-          onClick={() => setTab("automation")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-            tab === "automation" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Automation
-        </button>
+        {!customerMode && (
+          <button
+            onClick={() => setTab("automation")}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+              tab === "automation" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Auto-svar (tillval)
+          </button>
+        )}
       </div>
 
-      {tab === "pipeline" ? <PipelineView /> : <AutomationView />}
+      {/* Fail-closed: även om `tab` skulle stå på "automation" visas pipelinen i kundläge. */}
+      {tab === "pipeline" || customerMode ? <PipelineView /> : <AutomationView />}
     </div>
   );
 }

@@ -10,10 +10,40 @@
 // och underkänner ekon. Ett äkta transkript ("transkribera det här mötet åt mig") ska INTE
 // fastna: kravet är att svaret ligger nära HELA instruktionen, inte att ett ord matchar.
 
+/**
+ * ★ TYSTNADSMARKÖREN (FIX-1/A1).
+ *
+ * Det gamla skyddsnätet fångade bara ett felläge: att modellen ekar tillbaka instruktionen.
+ * Det finns ett andra, farligare läge — modellen HITTAR PÅ ett flytande transkript när
+ * ljudet är tyst eller för svagt.
+ *
+ * Reproducerat 2026-08-07 i Lägg till kontakt: Håkan sa "Anna Andersson vill boka ett
+ * möte" och fick tillbaka "Det är ju så att vi har ju en väldigt stor del av vår befolkning
+ * som är födda i andra länder." Ingen felhörning — en fabricering. Den passerade eko-grinden
+ * utan problem, eftersom den inte liknar instruktionen. Den ser ut som ett giltigt svar.
+ *
+ * Därför måste modellen få ett SÄTT ATT SÄGA "inget tal". Utan ett sådant utfall tvingas
+ * den producera text, och en språkmodell som måste producera text producerar text.
+ *
+ * Markören är avsiktligt kantig och osvensk: den ska aldrig kunna vara ett äkta transkript.
+ */
+export const TYSTNADS_MARKOR = "[INGET_TAL]";
+
 /** Prompten som /api/ai/transcribe skickar. Delas med klienten så samma grind kan köras där. */
 export const TRANSKRIBERINGS_PROMPT =
   "Transkribera detta tal på svenska, ordagrant men med korrekt interpunktion. " +
-  "Returnera ENBART den transkriberade texten — inga rubriker, inga kommentarer.";
+  "Returnera ENBART den transkriberade texten — inga rubriker, inga kommentarer. " +
+  `Innehåller ljudet inget tydligt tal — tystnad, brus, bakgrundsljud eller för svag röst — svara EXAKT ${TYSTNADS_MARKOR} och ingenting annat. ` +
+  "Gissa ALDRIG vad som kan ha sagts, och fyll aldrig ut med en trolig mening.";
+
+/**
+ * Minsta rimliga ljudmängd. Fångar avbrutna uppladdningar och nollängdsklipp innan de
+ * kostar ett modellanrop. Medvetet LÅGT satt: en sekund tal i opus är ~3 kB, och hellre
+ * släppa igenom ett kort klipp till modellen (som nu kan svara [INGET_TAL]) än att avvisa
+ * någon som pratade fort. Okomprimerad wav är stor även vid tystnad — därför är golvet
+ * ett komplement till markören, aldrig ersättningen för den.
+ */
+export const MIN_LJUD_BYTES = 1200;
 
 /** Inget tal uppfattades — användaren kan göra om försöket. */
 export const ROST_FELMEDDELANDE = "Kunde inte uppfatta rösten, försök igen";
@@ -91,5 +121,24 @@ export function rensaTranskription(
   const text = typeof ravar === "string" ? ravar.trim() : "";
   if (!text) return null;
   if (arPromptEko(text, prompt)) return null;
+  if (arTystnad(text)) return null;
   return text;
+}
+
+/**
+ * Sant när modellen signalerat att ljudet saknar tal.
+ *
+ * Matchar markören tolerant: modeller lägger till punkt, citattecken eller radbrytning
+ * runt en sentinel även när instruktionen säger "svara EXAKT". Ett svar som BARA består
+ * av markören plus skiljetecken räknas som tystnad. Ett svar där markören står mitt i en
+ * mening gör det INTE — då har modellen transkriberat något och råkat nämna den.
+ */
+export function arTystnad(text: string): boolean {
+  const t = (text || "").trim();
+  if (!t) return true;
+  const utanSkiljetecken = t.replace(/^[\s"'`*_.:—–-]+|[\s"'`*_.:—–-]+$/g, "");
+  if (utanSkiljetecken.toUpperCase() === TYSTNADS_MARKOR) return true;
+  // Modellen skriver ibland markören utan klamrar eller med mellanslag i stället för _.
+  const kompakt = utanSkiljetecken.toUpperCase().replace(/[[\]\s_]/g, "");
+  return kompakt === "INGETTAL";
 }

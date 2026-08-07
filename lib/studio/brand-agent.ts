@@ -13,13 +13,21 @@ export interface SiteAnalysis {
   found: { colorCandidates: string[]; fontsRaw: string[]; logoSource: string };
 }
 
-export async function analyzeSite(publicUrl: string, fallbackPrimary?: string): Promise<SiteAnalysis> {
+/**
+ * `forhandHtml` = redan hämtad HTML för samma sida. Onboarding-flödet (lib/onboard) har
+ * hämtat startsidan genom produktens kanoniska väg (lib/seo-hamta: en user-agent,
+ * statuskontroll, storleksgolv, bevislogg) och skickar in den i stället för att låta
+ * den rå-fetchen nedan gå en andra, osäkrad runda mot kundens server.
+ */
+export async function analyzeSite(publicUrl: string, fallbackPrimary?: string, forhandHtml?: string | null): Promise<SiteAnalysis> {
   const origin = publicUrl.replace(/\/+$/, "");
-  let html = "";
-  try {
-    const r = await fetch(origin, { redirect: "follow" });
-    if (r.ok) html = await r.text();
-  } catch { /* tom analys */ }
+  let html = forhandHtml || "";
+  if (!html) {
+    try {
+      const r = await fetch(origin, { redirect: "follow" });
+      if (r.ok) html = await r.text();
+    } catch { /* tom analys */ }
+  }
 
   const colorCandidates = topColors(html, fallbackPrimary);
   const fontsRaw = extractFonts(html);

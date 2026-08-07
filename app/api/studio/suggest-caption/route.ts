@@ -165,7 +165,17 @@ export async function POST(req: NextRequest) {
       { angle: "Påstående", instruktion: "Öppna med ett djärvt, konkret PÅSTÅENDE (en sanning eller en vanlig myt du motbevisar)." },
       // T-6b: berättelse-vinkeln var kända syndaren för fabricerade minnen ("Jag minns en
       // fastighetsägare...") — suffixet får aldrig UPPMANA till påhitt, bara till grundat material.
-      { angle: "Berättelse", instruktion: "Öppna med en kort BERÄTTELSE/scen — men ENDAST hämtad ur varumärkesprofilens story-bank eller kundröster. Finns inget sådant material: öppna med en generell igenkänningsscen ('Vi möter ofta...') i stället. Hitta ALDRIG på ett specifikt minne, en kund eller ett citat." },
+      // ★ KUNDRÖSTER ÄR INTE EN BERÄTTELSEKÄLLA. Den tidigare lydelsen sa "ENDAST hämtad ur
+      //   story-bank ELLER KUNDRÖSTER" och därefter "hitta aldrig på ett specifikt minne".
+      //   Det är två motstridiga meningar, och modellen följde tillståndet: den tog
+      //   "Jag har gett upp. Det finns ingen som lyssnar" ur For Balances customer voice och
+      //   byggde ett specifikt minne runt orden — "Jag minns en kvinna som kom hit och sa…".
+      //
+      //   Skillnaden som instruktionen missade: story-banken innehåller HÄNDELSER som
+      //   faktiskt inträffat. Kundröster är SPRÅK — en sammanfattning av hur många kunder
+      //   uttrycker sig, utan person, tillfälle eller plats. Att göra en scen av dem är att
+      //   uppfinna en händelse, oavsett att orden är äkta.
+      { angle: "Berättelse", instruktion: "Öppna med en kort BERÄTTELSE/scen hämtad ENBART ur varumärkesprofilens story-bank, alltså händelser som faktiskt inträffat. Kundröster och customer voice får ALDRIG bli en scen: de är språk, inte händelser, och har varken person, tidpunkt eller plats. Saknas story-bank: öppna med en generell igenkänningsscen utan huvudperson ('Vi möter ofta...', 'Många som hör av sig...'). Skriv ALDRIG 'jag minns en kund', 'en kvinna som kom hit', ett datum, en plats eller ett ordagrant citat från en enskild person." },
       { angle: "Siffra", instruktion: "Öppna med en konkret SIFFRA eller ett resultat som skapar nyfikenhet (hitta inte på — bara om innehållet ger det, annars en tydlig observation)." },
     ];
 

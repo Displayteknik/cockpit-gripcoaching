@@ -120,15 +120,27 @@ export function getDayRole(dayIndex: number): DayRole {
   return WEEK_ROLES[((dayIndex % 7) + 7) % 7];
 }
 
-// Brendan Kane-format som hooks bör följa
+// Brendan Kane-format som hooks bör följa.
+//
+// ★ EXEMPLEN HÄR ÄR INSTRUKTIONER, INTE ILLUSTRATIONER. Modellen härmar dem ordagrant.
+//
+//   Tidigare lydelser beställde fabricering rakt av:
+//     statistic: "en siffra som chockerar eller förvånar"  → gav "75 min för att äntligen
+//                bli hörd" med etiketten Statistik, medan profilen säger 45 minuter.
+//     story:     "'Igår satt en kund framför mig och...'"  → samma påhittade minne som
+//                BERÄTTELSE-varianten skrev för For Balance.
+//     contrast:  "'95% gör X...'"                          → en påhittad procentsats.
+//
+//   Etiketten gör skadan värre: "Statistik" får läsaren att tro att siffran är verifierad.
+//   Därför bär varje format som rör tal eller händelser nu sitt eget villkor.
 export const HOOK_FORMATS = {
   question: "Fråge-hook — börja med en specifik fråga målgruppen känner i magen",
-  contrast: "Kontrast — '95% gör X, men det funkar inte. Här är vad som funkar:'",
-  statistic: "Statistik-hook — en siffra som chockerar eller förvånar",
-  story: "Story-opening — 'Igår satt en kund framför mig och...'",
-  bold_claim: "Djärvt påstående — kontroversiellt men sant",
+  contrast: "Kontrast — ställ det vanliga mot det som fungerar. Använd BARA siffror som står i varumärkesprofilen; saknas de, formulera kontrasten utan tal ('De flesta gör X. Det som faktiskt fungerar är Y.')",
+  statistic: "Statistik-hook — lyft en siffra som FINNS I VARUMÄRKESPROFILEN och som förvånar. Finns ingen sådan siffra: välj ett annat hook-format. Hitta ALDRIG på ett tal, och räkna aldrig om ett befintligt.",
+  story: "Story-opening — en scen ur varumärkesprofilens story-bank, alltså något som faktiskt hänt. Saknas story-bank: använd en generell igenkänningsscen utan huvudperson ('Många som hör av sig...'). Skriv aldrig ett påhittat minne, en enskild kund eller ett ordagrant citat.",
+  bold_claim: "Djärvt påstående — kontroversiellt men sant, och underbyggt av profilen",
   curiosity: "Nyfikenhetsglapp — hint om något läsaren vill veta",
-  before_after: "Före/efter — 'Innan ____. Nu ____.'",
+  before_after: "Före/efter — 'Innan ____. Nu ____.' Utan påhittade siffror eller tidsangivelser.",
 } as const;
 
 export const KANE_HOOK_RULES = `

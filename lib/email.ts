@@ -65,6 +65,54 @@ export function approvalEmailHtml({ recipient_name, client_name, share_url, reso
 </div></body></html>`;
 }
 
+/**
+ * ONBOARD-1 — välkomstmejlet till en nyprovisionerad MySales Pro-kund.
+ *
+ * `login_url` är en personlig engångslänk (platform_users.login_token) som loggar in
+ * kunden i kundportalen utan lösenord. Den ska aldrig vidarebefordras — därför står det
+ * i mejlet, och därför skickas den bara till adressen vi läst av kundens egen webbplats.
+ */
+export function welcomeEmailHtml({
+  recipient_name,
+  client_name,
+  login_url,
+  moduler,
+}: {
+  recipient_name?: string;
+  client_name: string;
+  login_url: string;
+  moduler: string[];
+}): string {
+  const lista = moduler.length
+    ? `<ul style="color:#374151;line-height:1.8;font-size:14px;margin:0 0 20px;padding-left:20px">${moduler
+        .map((m) => `<li>${m}</li>`)
+        .join("")}</ul>`
+    : "";
+  return `<!doctype html><html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f3f4f6;padding:24px;margin:0">
+<div style="max-width:560px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb">
+  <div style="background:linear-gradient(135deg,#2563eb,#10b981);height:6px"></div>
+  <div style="padding:28px">
+    <h1 style="margin:0 0 8px;font-size:22px;color:#111827">Välkommen till MySales, ${client_name}!</h1>
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;font-size:15px">Hej${recipient_name ? " " + recipient_name : ""}, ditt konto är klart. Vi har fyllt i det med uppgifterna från er webbplats, så du kan börja direkt.</p>
+    ${lista ? `<p style="color:#111827;font-weight:600;margin:0 0 8px;font-size:15px">Det här ingår från start:</p>${lista}` : ""}
+    <a href="${login_url}" style="display:inline-block;background:#2563eb;color:white;text-decoration:none;padding:13px 26px;border-radius:8px;font-weight:600;font-size:15px">Logga in →</a>
+    <p style="color:#6b7280;font-size:13px;line-height:1.6;margin-top:22px">Länken loggar in dig direkt utan lösenord. Den är personlig — vidarebefordra den inte.</p>
+    <p style="color:#6b7280;font-size:13px;line-height:1.6;margin-top:14px">Något som ser fel ut? Svara på det här mejlet så rättar vi det.</p>
+  </div>
+</div></body></html>`;
+}
+
+export function welcomeEmailText({ client_name, login_url }: { client_name: string; login_url: string }): string {
+  return `Välkommen till MySales, ${client_name}!
+
+Ditt konto är klart och ifyllt med uppgifterna från er webbplats.
+
+Logga in här: ${login_url}
+
+Länken loggar in dig direkt utan lösenord. Den är personlig - vidarebefordra den inte.
+Något som ser fel ut? Svara på det här mejlet så rättar vi det.`;
+}
+
 export function weeklyReportEmailHtml({ recipient_name, client_name, summary, report_url }: { recipient_name?: string; client_name: string; summary: string; report_url?: string }): string {
   return `<!doctype html><html><body style="font-family:-apple-system,sans-serif;background:#f3f4f6;padding:24px;margin:0">
 <div style="max-width:640px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb">

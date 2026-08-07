@@ -5,6 +5,8 @@ import {
   TRANSKRIBERINGS_PROMPT,
   ROST_FELMEDDELANDE,
   ROST_TJANSTEFEL,
+  ROST_FOR_KORT,
+  MIN_LJUD_BYTES,
   rensaTranskription,
 } from "@/lib/ai/transkription";
 
@@ -33,6 +35,11 @@ export async function POST(req: NextRequest) {
   const buf = Buffer.from(await file.arrayBuffer());
   if (buf.length > 19 * 1024 * 1024)
     return NextResponse.json({ error: "Ljudfil för stor (>19 MB)" }, { status: 400 });
+  // FIX-1/A1: ett avbrutet eller tomt klipp ska inte kosta ett modellanrop — och framför
+  // allt inte få modellen att gissa. Tystnad UNDER golvet fångas här, tystnad ÖVER golvet
+  // fångas av [INGET_TAL]-markören i svaret.
+  if (buf.length < MIN_LJUD_BYTES)
+    return NextResponse.json({ error: ROST_FOR_KORT }, { status: 422 });
   const base64 = buf.toString("base64");
   const mime = file.type || "audio/webm";
 

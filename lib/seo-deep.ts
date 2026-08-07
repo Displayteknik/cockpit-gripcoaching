@@ -79,8 +79,10 @@ const stripText = (html: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-// Avkoda JS-strängars escaping så client-side-renderade taggar blir sökbara
-const decodePayload = (html: string) =>
+// Avkoda JS-strängars escaping så client-side-renderade taggar blir sökbara.
+// Exporterad för att onboarding-skrapan (lib/onboard) ska läsa GHL- och Next-sajter
+// likadant som SEO-motorn gör — en kopia här hade garanterat glidit isär över tid.
+export const decodePayload = (html: string) =>
   html
     .replace(/\\u003C/gi, "<")
     .replace(/\\u003E/gi, ">")

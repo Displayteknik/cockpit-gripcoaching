@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText, VARIANTREGEL } from "@/lib/prompt-core";
+import { fixaObackadeSiffror, tillatnaTalFran } from "@/lib/content/siffergrind";
 import { getWinningPatterns, patternsToPromptBlock } from "@/lib/insights";
 import type { FunnelLevel } from "@/lib/content-compass/data";
 import {
@@ -211,6 +212,26 @@ Producera EXAKT 3 varianter i JSON-formatet specificerat. Inget annat.`,
       hook_format: toStr(v.hook_format),
       notes: toStr(v.notes),
     }));
+
+    // ★ SIFFERGRINDEN (FIX-1/A3). Den här vägen hade bara `saneraText`, som fångar priser
+    //   och förbjudna ord men inte obackade tal. Veckoplanen hade grinden, den här inte —
+    //   ett skydd som bara finns på en av tre vägar är ingen regel, det är en slump.
+    //   Användarens eget ämne räknas som täckning: skriver Håkan "45 min" är 45 belagt.
+    {
+      const tillatnaTal = tillatnaTalFran(bygg.profilText, input.topic, input.angle);
+      const sif = await fixaObackadeSiffror(
+        bygg.system,
+        variants.map((v) => ({ hook: v.hook, body: v.body })),
+        tillatnaTal,
+        "inlägg",
+      );
+      if (sif.omgenererad) {
+        await Promise.all(variants.map(async (v, i) => {
+          if (sif.texter[i].hook !== v.hook) v.hook = await saneraText(sif.texter[i].hook, clientId);
+          if (sif.texter[i].body !== v.body) v.body = await saneraText(sif.texter[i].body, clientId);
+        }));
+      }
+    }
 
     // Auto voice-score varje variant (server-side). Användaren ska aldrig
     // behöva trycka "Granska språk" — se feedback_brand_voice_always_pull.md.
