@@ -202,18 +202,32 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
   }
   if (!korning) return svar(false, null, null, null, "Onboarding-körningen finns inte.");
 
-  if (korning.status === "klar") {
-    steg.push({ namn: "Idempotens", status: "hoppade", detalj: `${doman} är redan provisionerad. Inget skapades om.` });
-    return svar(true, korning.client_id, korning.ghl_location_id, null, null);
-  }
+  // ★ EN 'KLAR' KÖRNING FÅR INTE STOPPA OMKÖRNINGEN — DÅ BLIR STEG 5 OMÖJLIGT.
+  //
+  //   Här låg tidigare ett return som svarade "redan provisionerad, inget skapades om".
+  //   Men kedjan är byggd för att köras om: custom values KAN inte skrivas i första
+  //   körningen, eftersom kundnyckeln skapas för hand efter att kontot finns. Första
+  //   körningen märkte alltså körningen som 'klar', och andra körningen — den som äntligen
+  //   hade nyckeln — vände i dörren. Kunden blev stående med snapshotets platshållare,
+  //   och knappen svarade med ett lugnt besked om att allt var gjort.
+  //
+  //   Skyddet mot dubbletter ligger inte här utan i varje steg för sig: alla frågar
+  //   "finns det redan?" innan de skapar något. Se filens inledning.
   if (korning.status === "kor" && !torr) {
     return svar(false, null, null, null, "En provisionering för den här sajten pågår redan.");
   }
 
+  const omkorning = korning.status === "klar";
   if (!torr) {
     await sb.from("onboarding_korningar").update({ status: "kor", updated_at: new Date().toISOString() }).eq("id", opts.korningId);
   }
-  steg.push({ namn: "Idempotens", status: torr ? "torr" : "klar", detalj: `Domänen ${doman} låst för den här körningen.` });
+  steg.push({
+    namn: "Idempotens",
+    status: torr ? "torr" : "klar",
+    detalj: omkorning
+      ? `${doman} är redan provisionerad — körs om. Befintligt konto och klient återanvänds, bara det som saknas fylls i.`
+      : `Domänen ${doman} låst för den här körningen.`,
+  });
 
   const konfig = ghlAgencyKonfig();
   let locationId: string | null = korning.ghl_location_id ?? null;
@@ -476,13 +490,26 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
     // Nyckeln kan inte hämtas automatiskt: byråtoken får inte växlas till underkonto-token
     // (oauth.write saknas i Private Integrations). Utan den kopplar Fokus men hämtar inget,
     // och det ska stå i klartext i stegrapporten i stället för att upptäckas av kunden.
+    //
+    // ★ MEN INSTRUKTIONEN SKA BARA VISAS NÄR DEN GÄLLER. Raden skrevs ovillkorligt och bad
+    //   om en nyckel som redan låg i coach_users — i samma rapport som just skrivit tolv
+    //   custom values med den. En uppmaning att göra om ett gjort arbete läses som att
+    //   något gått fel.
+    const { data: nyckelRad } = await sb
+      .from("coach_users")
+      .select("ghl_api_token")
+      .eq("ghl_location_id", locationId)
+      .maybeSingle();
+    const harNyckel = !!(nyckelRad as { ghl_api_token?: string } | null)?.ghl_api_token;
+
     steg.push({
       namn: "MySales-nyckel",
-      status: "hoppade",
-      detalj:
-        `Skapa en Private Integration inne i det nya kontot (${locationId}) med de nio kundscopen ` +
-        `och spara den på coach_users.ghl_api_token för klient ${clientId}. Tills dess visar Fokus idag ` +
-        `"Ingen MySales-nyckel finns sparad" i stället för att spegla pipelinen.`,
+      status: harNyckel ? "klar" : "hoppade",
+      detalj: harNyckel
+        ? "Kundnyckeln finns sparad — Fokus idag kan spegla pipelinen."
+        : `Skapa en Private Integration inne i det nya kontot (${locationId}) med de nio kundscopen ` +
+          `och klistra in den i steg 4. Tills dess visar Fokus idag "Ingen MySales-nyckel finns sparad" ` +
+          `i stället för att spegla pipelinen.`,
     });
   } else {
     steg.push({
