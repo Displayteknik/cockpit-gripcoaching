@@ -37,19 +37,28 @@ export interface GhlKonfig {
   companyId: string;
 }
 
-/** Läser byråkonfigurationen. Null när den inte är satt — anroparen ska säga det tydligt. */
+/**
+ * Läser byråkonfigurationen. Null när den inte är satt — anroparen ska säga det tydligt.
+ *
+ * ★ TVÅ NAMN PÅ SAMMA NYCKEL. Byråtokenet döptes till `GHL_BYRA_TOKEN` när Gittes konto
+ *   skapades för hand, medan den här filen skrevs mot `GHL_AGENCY_PIT`. Båda läses därför,
+ *   annars ser en fullt fungerande nyckel ut som en saknad: torrkörningen svarade
+ *   "GHL_AGENCY_PIT saknas i env" med rätt token på plats under ett annat namn.
+ *   Nytt namn ska INTE hittas på — sätt något av de två.
+ */
 export function ghlAgencyKonfig(): GhlKonfig | null {
-  const pit = process.env.GHL_AGENCY_PIT || "";
-  const companyId = process.env.GHL_COMPANY_ID || "";
+  const pit = (process.env.GHL_AGENCY_PIT || process.env.GHL_BYRA_TOKEN || "").trim();
+  const companyId = (process.env.GHL_COMPANY_ID || "").trim();
   if (!pit || !companyId) return null;
   return { pit, companyId };
 }
 
 export const GHL_SAKNAS_TEXT =
-  "GHL_AGENCY_PIT och/eller GHL_COMPANY_ID saknas i env. Skapa en Private Integration på BYRÅNIVÅ i GoHighLevel " +
-  "(Agency Settings → Private Integrations) med scopes locations.write, locations.readonly, snapshots.readonly, " +
-  "oauth.write och locations/customValues.write. Den befintliga HQ_GHL_PIT är låst till en enskild location och " +
-  "kan inte skapa sub-accounts.";
+  "Byråtoken saknas i env (GHL_AGENCY_PIT eller GHL_BYRA_TOKEN), eller GHL_COMPANY_ID. Skapa en Private " +
+  "Integration på BYRÅNIVÅ i GoHighLevel (Agency Settings → Private Integrations) med scopes locations.write " +
+  "och locations.readonly. Den befintliga HQ_GHL_PIT är låst till en enskild location och kan inte skapa " +
+  "sub-accounts. Observera att byråtokenet aldrig kan SKRIVA i ett underkonto — det kräver kundens egen " +
+  "nyckel i steg 4.";
 
 export class GhlFel extends Error {
   readonly status: number | null;
@@ -301,7 +310,24 @@ export async function snapshotStatus(k: GhlKonfig, snapshotId: string, locationI
   };
 }
 
-/** Väntar tills snapshotet laddat klart. Returnerar sista kända status vid tidsgräns. */
+/** Status när nyckeln inte får läsa snapshot-status alls. Skilj från "laddningen gick fel". */
+export const SNAPSHOT_EJ_LASBAR = "ej_lasbar";
+
+/**
+ * Väntar tills snapshotet laddat klart. Returnerar sista kända status vid tidsgräns.
+ *
+ * ★ 401 ÄR INTE ETT MISSLYCKANDE — DET ÄR ATT VI INTE FÅR TITTA.
+ *
+ *   Verifierat mot API:t 2026-08-08: en byrå-Private-Integration svarar
+ *   `401 "The token is not authorized for this scope"` på snapshot-status, precis som på
+ *   `GET /snapshots/`, och `snapshots.readonly` går inte att få genomslag för. Väntan kunde
+ *   alltså aldrig lyckas: den pollade 45 sekunder, svarade "okand", och provisioneringen
+ *   satte hela körningen till status 'fel' — på en kund där kontot skapats helt korrekt.
+ *
+ *   Vid 401 avbryts därför pollningen direkt, och anroparen ska rapportera det som
+ *   OKONTROLLERAT, inte trasigt. Den riktiga kontrollen finns redan och görs med kundens
+ *   egen nyckel i steg 4: pipelinen ska ha sju steg, annars laddades snapshotet inte.
+ */
 export async function vantaPaSnapshot(
   k: GhlKonfig,
   snapshotId: string,
@@ -319,7 +345,9 @@ export async function vantaPaSnapshot(
       if (/complete|completed|success|finished/i.test(s.status) || (s.vantar.length === 0 && s.klara.length > 0)) {
         return { klar: true, status: s.status };
       }
-    } catch {
+    } catch (e) {
+      // 401 = nyckeln får inte läsa resursen. Att fortsätta polla ger samma svar i 45 sekunder.
+      if (e instanceof GhlFel && e.status === 401) return { klar: false, status: SNAPSHOT_EJ_LASBAR };
       // Status-endpointen svarar ibland 404 innan laddningen registrerats. Fortsätt.
     }
     await new Promise((r) => setTimeout(r, intervall));

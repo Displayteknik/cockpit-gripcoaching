@@ -26,6 +26,16 @@ export interface OnboardingVy {
   foretag: string | null;
   clientId: string | null;
   locationId: string | null;
+  /**
+   * Kundens inloggningslänk — hela vägen, inte bara token.
+   *
+   * ★ DEN BYGGS ALDRIG AV KLIENT-ID. `/k/<token>` slås upp mot `clients.customer_token`
+   *   eller `platform_users.login_token` (se lib/customer-context.ts). Ett klient-id
+   *   matchar ingen av dem: länken blir 36 tecken lång, ser fullt rimlig ut, och kastar
+   *   ut kunden till inloggningen. Null här betyder "ingen länk finns än" och ska visas
+   *   som just det — hellre tomt än en länk som inte bär.
+   */
+  kundlank: string | null;
   skapad: string;
   steg: StegVy[];
   klaraAntal: number;
@@ -121,6 +131,34 @@ export async function listaOnboardingar(): Promise<OnboardingVy[]> {
   return ut;
 }
 
+/**
+ * Kundens riktiga inloggningslänk, eller null.
+ *
+ * Två vägar in i /k/, i den ordning provisioneringen skapar dem: den per-användar-token
+ * som steg 7 lägger på `platform_users`, annars klientens delade `customer_token`.
+ * Bas-URL:en är produktionen med flit — länken skickas till kunden, inte till oss.
+ */
+async function kundlankFor(clientId: string | null): Promise<string | null> {
+  if (!clientId) return null;
+  const sb = supabaseService();
+  const bas = (process.env.NEXT_PUBLIC_SITE_URL || "https://cockpit.gripcoaching.se").replace(/\/+$/, "");
+
+  const { data: u } = await sb
+    .from("platform_users")
+    .select("login_token")
+    .eq("client_id", clientId)
+    .not("login_token", "is", null)
+    .order("invited_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const token = (u as { login_token?: string } | null)?.login_token;
+  if (token) return `${bas}/k/${token}`;
+
+  const { data: c } = await sb.from("clients").select("customer_token").eq("id", clientId).maybeSingle();
+  const delad = (c as { customer_token?: string } | null)?.customer_token;
+  return delad ? `${bas}/k/${delad}` : null;
+}
+
 async function byggVy(k: Korning, texter: Map<string, Partial<StegDef>>): Promise<OnboardingVy> {
   const harledda = await harleddaKlara(k);
   const sparade = k.steg_status ?? {};
@@ -146,6 +184,7 @@ async function byggVy(k: Korning, texter: Map<string, Partial<StegDef>>): Promis
     foretag,
     clientId: k.client_id,
     locationId: k.ghl_location_id,
+    kundlank: await kundlankFor(k.client_id),
     skapad: k.created_at,
     steg,
     klaraAntal: steg.filter((s) => s.status === "klart").length,

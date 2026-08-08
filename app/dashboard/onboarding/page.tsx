@@ -20,6 +20,14 @@ export default function OnboardingPage() {
   const [primary, setPrimary] = useState<string | undefined>(undefined);
   const [vy, setVy] = useState<"process" | "analys">("process");
 
+  // ★ ?id=… ÖPPNAR GRANSKNINGEN. OnboardingGranska läser parametern själv och hämtar
+  //   körningen, men den koden nåddes aldrig: sidan startade alltid i processvyn, så
+  //   länken visade listan och det såg ut som att granskningen försvunnit. Läses i en
+  //   effekt och inte med useSearchParams — den kräver Suspense och har hängt här förut.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("id")) setVy("analys");
+  }, []);
+
   useEffect(() => {
     fetch("/api/clients/active")
       .then((r) => r.json())

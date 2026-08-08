@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle, ArrowLeft, Check, ChevronDown, ChevronRight, Circle,
-  Clock, Copy, Loader2, Lock, User, Zap,
+  Clock, Copy, Loader2, Lock, Search, User, Zap,
 } from "lucide-react";
 
 type Agare = "system" | "hakan" | "kund";
@@ -27,7 +27,7 @@ interface Steg {
 }
 interface Onboarding {
   id: string; doman: string; url: string; foretag: string | null;
-  clientId: string | null; locationId: string | null; skapad: string;
+  clientId: string | null; locationId: string | null; kundlank: string | null; skapad: string;
   steg: Steg[]; klaraAntal: number;
   nastaHandling: { nr: number; titel: string; agare: Agare } | null;
 }
@@ -178,7 +178,10 @@ function Detalj({ onboarding, onTillbaka, onUppdaterad }: {
     } finally { setArbetar(null); }
   }
 
-  const kundlank = onboarding.clientId ? `https://cockpit.gripcoaching.se/k/${onboarding.clientId}` : null;
+  // ★ Länken kommer FÄRDIG från servern och byggs aldrig här av klient-id — ett klient-id
+  //   matchar varken customer_token eller login_token, så den länken kastar ut kunden.
+  //   Se kundlankFor() i lib/onboard/steg-status.ts.
+  const kundlank = onboarding.kundlank;
 
   return (
     <div className="space-y-4">
@@ -243,6 +246,28 @@ function Detalj({ onboarding, onTillbaka, onUppdaterad }: {
                   {s.instruktion && (
                     <div className="prose-sm mb-4 whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm leading-relaxed text-gray-700">
                       {s.instruktion}
+                    </div>
+                  )}
+
+                  {/*
+                    ★ UTAN DEN HÄR KNAPPEN GÅR STEG 2 INTE ATT GÖRA.
+                      Granskningsformuläret finns och kan öppnas på ?id=<körning>, men
+                      processvyn hade ingen väg dit — och "Ny analys"-fliken är ett tomt
+                      formulär. Enda sättet att komma åt ett sparat förslag var att köra om
+                      hela analysen, vilket skriver över det man just rättat. Hittat när
+                      Carina och Madeleine skulle gå igenom verktyget 2026-08-07.
+                  */}
+                  {s.nyckel === "granskning" && (
+                    <div className="mb-4">
+                      <a
+                        href={`/dashboard/onboarding?id=${onboarding.id}`}
+                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                      >
+                        <Search className="h-4 w-4" /> Öppna granskningen
+                      </a>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Förslaget fält för fält, med källa och citat. Godkänner du där bockas steget av självt.
+                      </p>
                     </div>
                   )}
 
@@ -341,16 +366,24 @@ function Detalj({ onboarding, onTillbaka, onUppdaterad }: {
                     </div>
                   )}
 
-                  {s.nyckel === "kundlank" && kundlank && (
-                    <div className="mb-4 flex items-center gap-2">
-                      <code className="min-w-0 flex-1 truncate rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700">{kundlank}</code>
-                      <button
-                        onClick={() => navigator.clipboard?.writeText(kundlank)}
-                        className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        <Copy className="h-3.5 w-3.5" /> Kopiera
-                      </button>
-                    </div>
+                  {s.nyckel === "kundlank" && (
+                    kundlank ? (
+                      <div className="mb-4 flex items-center gap-2">
+                        <code className="min-w-0 flex-1 truncate rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700">{kundlank}</code>
+                        <button
+                          onClick={() => navigator.clipboard?.writeText(kundlank)}
+                          className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          <Copy className="h-3.5 w-3.5" /> Kopiera
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-900">
+                        Ingen inloggningslänk finns än. Den skapas i provisioneringens sista steg, och det
+                        kräver en e-postadress på kunden. Saknas adressen: fyll i den i granskningen och kör
+                        provisioneringen igen.
+                      </div>
+                    )
                   )}
 
                   {!blockerat && (

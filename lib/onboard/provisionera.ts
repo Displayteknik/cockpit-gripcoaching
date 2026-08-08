@@ -23,7 +23,7 @@ import { sendEmail, welcomeEmailHtml, welcomeEmailText, emailConfigured } from "
 import { getEffectiveModules } from "@/lib/entitlements";
 import {
   ghlAgencyKonfig, GHL_SAKNAS_TEXT, hittaLocationForSajt,
-  skapaLocation, vantaPaSnapshot, sattCustomValues,
+  skapaLocation, vantaPaSnapshot, sattCustomValues, SNAPSHOT_EJ_LASBAR,
 } from "@/lib/ghl-agency";
 import { harVarde, type Falt, type Forslag, type Tjanst, type Oppettid } from "./typer";
 
@@ -279,12 +279,22 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
   // ── Steg 3: vänta in snapshotet ────────────────────────────────────────────
   if (konfig && locationId && snapshotId && !torr) {
     const s = await vantaPaSnapshot(konfig, snapshotId, locationId);
+    // ★ TRE UTFALL, INTE TVÅ. "Vi får inte läsa statusen" är inte samma sak som "laddningen
+    //   gick fel", och skillnaden avgör om hela körningen märks som trasig. Byrå-nyckeln
+    //   nekas snapshot-status (401), så det tredje utfallet är det normala i dag — och det
+    //   satte varje kund till status 'fel' trots att kontot skapats korrekt.
+    const ejLasbar = s.status === SNAPSHOT_EJ_LASBAR;
     steg.push({
       namn: "Snapshot-laddning",
-      status: s.klar ? "klar" : "fel",
+      status: s.klar ? "klar" : ejLasbar ? "hoppade" : "fel",
       detalj: s.klar
         ? "Snapshotet färdigladdat — custom values kan skrivas utan att skrivas över."
-        : `Snapshotet var fortfarande "${s.status}" efter väntetiden. Custom values sätts ändå, men kontrollera dem i GHL efteråt.`,
+        : ejLasbar
+          ? "Går inte att kontrollera härifrån: byrå-nyckeln får inte läsa snapshot-status (401), " +
+            "och scopet går inte att lägga till på en Private Integration. Kontot är skapat med " +
+            "snapshotet angivet. Att det verkligen laddades bevisas i steg 4, där kundnyckeln " +
+            "kontrollerar att pipelinen har sju steg."
+          : `Snapshotet var fortfarande "${s.status}" efter väntetiden. Custom values sätts ändå, men kontrollera dem i GHL efteråt.`,
     });
   } else if (locationId && snapshotId) {
     steg.push({ namn: "Snapshot-laddning", status: "torr", detalj: "Skulle vänta in snapshotet innan custom values sätts." });
