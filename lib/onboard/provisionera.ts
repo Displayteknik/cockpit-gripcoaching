@@ -25,6 +25,7 @@ import {
   ghlAgencyKonfig, GHL_SAKNAS_TEXT, hittaLocationForSajt,
   skapaLocation, vantaPaSnapshot, sattCustomValues, SNAPSHOT_EJ_LASBAR,
 } from "@/lib/ghl-agency";
+import { sattStegStatus } from "./steg-status";
 import { harVarde, type Falt, type Forslag, type Tjanst, type Oppettid } from "./typer";
 
 /** Snapshotet varje ny MySales Pro-kund byggs från. Namnet, inte id:t — se hittaSnapshot. */
@@ -356,6 +357,17 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
           status: r.fel.length ? "fel" : "klar",
           detalj: `${r.satta} av ${Object.keys(varden).length} värden satta via ${r.via}.` + (r.fel.length ? ` Fel: ${r.fel.slice(0, 3).join("; ")}` : ""),
         });
+
+        // ★ KVITTOT MÅSTE SPARAS, ANNARS BLIR STEG 5 ALDRIG GRÖNT.
+        //
+        //   Stegvyn härleder status ur verkligheten — men det finns ingen billig härledning
+        //   för custom values: de bor i GHL och kräver ett nätanrop med kundnyckeln per kund,
+        //   vilket listvyn inte får kosta. Utan kvitto stod steget kvar som ogjort trots att
+        //   värdena bevisligen skrivits, och enda vägen vidare var att bocka av för hand —
+        //   alltså exakt den lögn bockarna finns för att undvika.
+        //
+        //   Detta är inte en gissning: raden skrivs bara när anropet svarat utan fel.
+        if (!r.fel.length) await sattStegStatus(opts.korningId, "custom_values", "klart");
       }
     } catch (e) {
       steg.push({ namn: "Custom values", status: "fel", detalj: e instanceof Error ? e.message : String(e) });
