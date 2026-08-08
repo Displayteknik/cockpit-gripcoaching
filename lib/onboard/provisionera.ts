@@ -38,6 +38,19 @@ export const SNAPSHOT_NAMN = process.env.GHL_SNAPSHOT_NAMN || "MySales Pro v1.0"
  */
 export const SNAPSHOT_ID_STANDARD = "GCqvltlAAz7l0028oo0w";
 
+/**
+ * ★ VÄLKOMSTMEJLET ÄR AVSTÄNGT SOM STANDARD, OCH DET ÄR ETT BESLUT — INTE ETT FEL.
+ *
+ *   Håkan lämnar alltid kundlänken personligen. Att provisioneringen mejlade av sig själv
+ *   var ofarligt lokalt, där `RESEND_API_KEY` saknas — men nyckeln ÄR satt i produktionen,
+ *   så en omkörning därifrån hade skickat ett välkomstmejl till kundens info-adress utan
+ *   att någon bett om det. En kund som får oväntad post från ett system hon aldrig hört
+ *   talas om är svårare att laga än ett uteblivet mejl.
+ *
+ *   Länken skrivs alltid ut i stegrapporten, så inget går förlorat av att mejlet uteblir.
+ */
+const SKICKA_VALKOMSTMEJL = (process.env.ONBOARDING_SKICKA_VALKOMSTMEJL || "").toLowerCase() === "ja";
+
 export type StegStatus = "klar" | "hoppade" | "fel" | "torr";
 
 export interface Steg {
@@ -515,7 +528,15 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
       // Kundportalen kräver att kund-access är påslagen, annars går länken till en vägg.
       await sb.from("clients").update({ customer_access_enabled: true }).eq("id", clientId);
 
-      if (!emailConfigured()) {
+      if (!SKICKA_VALKOMSTMEJL) {
+        steg.push({
+          namn: "Välkomstmejl",
+          status: "hoppade",
+          detalj:
+            `Avstängt med flit — Håkan skickar kundlänken personligen. Länk: ${inloggningsUrl} ` +
+            `(sätt ONBOARDING_SKICKA_VALKOMSTMEJL=ja i env om mejlet ska gå automatiskt).`,
+        });
+      } else if (!emailConfigured()) {
         steg.push({ namn: "Välkomstmejl", status: "hoppade", detalj: `RESEND_API_KEY saknas. Inloggningslänk: ${inloggningsUrl}` });
       } else {
         const moduler = await modulNamn(clientId);
