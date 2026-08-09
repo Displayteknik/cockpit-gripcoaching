@@ -26,12 +26,17 @@
 // ── Nivåer (uppsättning A — beskriver konsekvensen, inte kunden) ─────────────
 export type Niva = 1 | 2 | 3 | 4 | 5;
 
+// FIX-1-REST C2 (språkgenomgång, 9/8): namnen talade fackspråk medan konsekvenstexterna
+// bredvid dem var klarspråk. Måttstock: en 55-årig terapeut ska förstå ordet UTAN
+// förklaringen. "Belagd" föll direkt — det betyder "styrkt av bevis" för den som redan
+// vet, och ingenting för alla andra. "Grund" var tvetydigt: grundsten eller grunt vatten?
+// Namnen härleds nu ur konsekvenstexten som redan stod där och var bra.
 export const NIVAER: { niva: Niva; namn: string; konsekvens: string }[] = [
   { niva: 1, namn: "Tom", konsekvens: "texterna blir gissningar" },
   { niva: 2, namn: "Skiss", konsekvens: "texterna blir korrekta men utbytbara" },
-  { niva: 3, namn: "Grund", konsekvens: "texterna låter som branschen, inte som du" },
+  { niva: 3, namn: "Som branschen", konsekvens: "texterna låter som branschen, inte som du" },
   { niva: 4, namn: "Egen röst", konsekvens: "texterna går att känna igen" },
-  { niva: 5, namn: "Belagd", konsekvens: "texterna kan använda dina siffror och dina kunders ord" },
+  { niva: 5, namn: "Med bevis", konsekvens: "texterna kan använda dina siffror och dina kunders ord" },
 ];
 
 // ── Indata ───────────────────────────────────────────────────────────────────
@@ -402,7 +407,7 @@ export function beraknaKvalitet(indata: KvalitetsIndata): KvalitetsRapport {
   const kriterier: Kriterium[] = [
     {
       key: "berattelser",
-      label: "Berättelser",
+      label: "Kundberättelser",
       vikt: 25,
       andel: Math.min(1, b / 3),
       antal: b,
@@ -412,7 +417,7 @@ export function beraknaKvalitet(indata: KvalitetsIndata): KvalitetsRapport {
     },
     {
       key: "kundrost",
-      label: "Kundens röst",
+      label: "Kundernas egna ord",
       vikt: 20,
       andel: kundandel,
       antal: k.antal,
@@ -422,18 +427,18 @@ export function beraknaKvalitet(indata: KvalitetsIndata): KvalitetsRapport {
     },
     {
       key: "donts",
-      label: "GÖR INTE",
+      label: "Ord du undviker",
       vikt: 15,
       andel: dontandel,
       antal: d.specifika,
       krav: 5,
       atgard:
-        d.rader >= 5 && d.specifika >= 3 ? "" : `Skriv ${Math.max(1, 5 - d.rader)} egna GÖR INTE-regler: ord och vändningar just du undviker`,
-      varfor: "Dina GÖR INTE-regler väger tyngst av allt du skriver här. De styr varje färdig text.",
+        d.rader >= 5 && d.specifika >= 3 ? "" : `Skriv ${Math.max(1, 5 - d.rader)} ord och vändningar just du undviker`,
+      varfor: "Orden du undviker väger tyngst av allt du skriver här. De styr varje färdig text.",
     },
     {
       key: "siffror",
-      label: "Verifierade siffror",
+      label: "Siffror vi får använda",
       vikt: 15,
       andel: Math.min(1, s / 5),
       antal: s,
@@ -443,17 +448,17 @@ export function beraknaKvalitet(indata: KvalitetsIndata): KvalitetsRapport {
     },
     {
       key: "vinnande",
-      label: "Vinnande exempel",
+      label: "Texter du är nöjd med",
       vikt: 10,
       andel: Math.min(1, w / 3),
       antal: w,
       krav: 3,
-      atgard: w >= 3 ? "" : `Markera ${3 - w} inlägg du är nöjd med som vinnande exempel`,
+      atgard: w >= 3 ? "" : `Markera ${3 - w} inlägg du är nöjd med, så vet Skrivhjälpen vad du siktar på`,
       varfor: "Ett inlägg du själv är nöjd med är den tydligaste målbilden Skrivhjälpen kan få.",
     },
     {
       key: "egenrost",
-      label: "Egen röst",
+      label: "Dina egna texter",
       vikt: 10,
       andel: r.andel,
       antal: r.poster,
@@ -468,7 +473,7 @@ export function beraknaKvalitet(indata: KvalitetsIndata): KvalitetsRapport {
     },
     {
       key: "grundfakta",
-      label: "Grundfakta",
+      label: "Kontaktuppgifter och fakta",
       vikt: 5,
       andel: g.antal / 4,
       antal: g.antal,
