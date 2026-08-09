@@ -14,7 +14,7 @@ export default function ArkLista({ payload, brand }: { payload: StudioPayload; b
   const items = payload.body.split(/\n|·|;|•/).map((s) => s.trim()).filter(Boolean).slice(0, 4);
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.paper }}>
+    <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.paper }}>
       <div style={{ padding: "56px 64px 20px" }}>
         <div data-drag="h1" style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor(c.primary, payload), fontSize: fs(68, payload, "h1"), lineHeight: lh(1.08, payload), textTransform: "uppercase", letterSpacing: -0.5, ...dragPos(payload, "h1") }}><span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span></div>
         {payload.headline2 ? <div data-drag="h2" style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 600, color: c.ink, fontSize: fs(34, payload, "h2"), lineHeight: lh(1.25, payload), marginTop: 18, ...dragPos(payload, "h2") }}><span data-edit="headline2" style={textPlate(payload)}>{payload.headline2}</span></div> : null}

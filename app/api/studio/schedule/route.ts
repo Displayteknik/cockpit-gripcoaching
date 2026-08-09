@@ -31,7 +31,7 @@ export async function GET() {
 }
 
 // POST /api/studio/schedule — skapa ett schema-jobb.
-// { channel, caption?, mediaUrl?, videoUrl?, postType?, format?, title?, scheduledAt, studioPostId?, blogId? }
+// { channel, caption?, mediaUrl?, slideUrls?, videoUrl?, postType?, format?, title?, scheduledAt, studioPostId?, blogId? }
 export async function POST(req: NextRequest) {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
@@ -63,6 +63,11 @@ export async function POST(req: NextRequest) {
       channel,
       caption: (b.caption || "").toString() || null,
       media_url: (b.mediaUrl || "").toString() || null,
+      // AKUT-KARUSELL: kön bar bara EN bild, så ett schemalagt karusellinlägg hade
+      // publicerat omslaget och tappat resten tyst. Under två bilder = inget karusellfält.
+      slide_urls: Array.isArray(b.slideUrls) && b.slideUrls.length >= 2
+        ? b.slideUrls.map((s: unknown) => String(s || "")).filter(Boolean).slice(0, 10)
+        : null,
       video_url: (b.videoUrl || "").toString() || null,
       post_type: (b.postType || "post").toString(),
       format: (b.format || "").toString() || null,

@@ -14,7 +14,7 @@ export default function ArkCitat({ payload, brand }: { payload: StudioPayload; b
   const bg = `${c.support}33`;
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: bg }}>
+    <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: bg }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 84px", position: "relative" }}>
         {/* Stort citattecken */}
         <div style={{ fontFamily: "Georgia, serif", fontSize: fs(260, payload), lineHeight: 0.7, color: c.accent, height: 130, overflow: "hidden" }}>&ldquo;</div>

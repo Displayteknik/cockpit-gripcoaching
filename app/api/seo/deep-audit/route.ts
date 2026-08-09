@@ -32,12 +32,44 @@ const AVSTANGD_TEXT =
   "Djupgranskningen är tillfälligt ur funktion. Den kunde skriva rapporter även när sajten inte gick att läsa, " +
   "vilket gav åtgärdsförslag byggda på ingenting. Den är avstängd tills hämtningen är lagad. Sid-analysen fungerar som vanligt.";
 
+/**
+ * ★ REDAN SKRIVNA RAPPORTER DÖLJS I KUNDVYN — Håkans beslut 2026-08-09.
+ *
+ * Kill switchen ovan stoppade NYA rapporter 7/8, men de gamla låg kvar synliga. Sju
+ * rapporter hos displayteknik, hmmotor och ledarskapskultur är byggda på misslyckade
+ * hämtningar och säger bland annat åt kunden att kontakta sitt webbhotell om ett
+ * serverfel som var VÅRT. De är alltså aktivt vilseledande varje dag de ligger kvar.
+ *
+ * Dölja, inte radera: de är enda referensen när hämtvägen ska lagas (Håkans villkor 7/8),
+ * och de ligger orörda i `client_assets`. Den interna vyn (/dashboard/seo via
+ * /api/analytics/deep-audit) ser dem oförändrat — bara kundvyn /k/seo döljs.
+ *
+ * Spärren ligger SERVER-sidan av samma skäl som kill switchen: en gammal flik eller ett
+ * direktanrop ska inte kunna hämta dem.
+ *
+ * Öppnas igen när hämtvägen är lagad OCH generatorn vägrar dra slutsatser ur en
+ * misslyckad hämtning. Då ska de gamla rapporterna dessutom granskas en och en innan de
+ * visas igen — en rapport som skrevs ur ingenting blir inte sann av att vägen lagas.
+ */
+const DOLJ_RAPPORTER_I_KUNDVYN = true;
+const DOLJ_TEXT =
+  "Dina tidigare djupgranskningar är tillfälligt dolda. Vi upptäckte att de kunde innehålla " +
+  "slutsatser byggda på en misslyckad läsning av sajten, och vi vill hellre visa ingenting än " +
+  "något som kan leda dig fel. Sid-analysen fungerar som vanligt.";
+
 // Kund-vy av djupgranskningar (/k/seo). Kunden får både LÄSA sina färdiga rapporter
 // OCH SJÄLV starta en ny (POST) — tenant-låst via resolveClientId (kund-session → egen klient).
 // Spärr: en klient kan inte ha två granskningar igång samtidigt (kostnads-/förvirringsskydd).
 export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
+
+  // Döljningen ligger FÖRE läsningen: inga rapporter hämtas, inget kan läcka genom ett
+  // filter som någon råkar ändra senare. Kunden får ett ärligt besked i stället för en
+  // tom lista som ser ut som "du har inga rapporter".
+  if (DOLJ_RAPPORTER_I_KUNDVYN) {
+    return NextResponse.json({ reports: [], generating: [], dolt: true, doltText: DOLJ_TEXT });
+  }
 
   const sb = supabaseService(); // client_assets har strikt RLS → kräver service-role
   const clientId = await resolveClientId();

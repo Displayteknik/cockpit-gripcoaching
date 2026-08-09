@@ -141,8 +141,15 @@ async function publishGhlSocial(req: PublishRequest): Promise<PublishResult> {
   const userId = await ghlFirstUserId(cfg);
   if (!userId) return fail("ghl-social", "Kunde inte hämta GHL-användare för location.");
 
+  // AKUT-KARUSELL: alla slides skickas med, i ordning. GHL:s `media` är en array —
+  // ⚠ multi-media är INTE verifierat mot skarpt GHL-konto (2026-08-09). Därför skapas
+  // posten som UTKAST och gränssnittet ber uttryckligen om en kontroll i GHL innan
+  // publicering. Instagram-direktvägen (ig-graph) är den bevisade karusellvägen.
+  const mediaUrls = (req.slideUrls && req.slideUrls.length >= 2)
+    ? req.slideUrls
+    : (req.mediaUrl ? [req.mediaUrl] : []);
   const { postId, error, scheduled } = await ghlCreateDraft(cfg, {
-    accountIds, summary: req.caption || "", mediaUrl: req.mediaUrl, userId,
+    accountIds, summary: req.caption || "", mediaUrls, userId,
     postType: req.postType, scheduleDate: req.scheduleDate,
   });
   if (error || !postId) return fail("ghl-social", error || "GHL skapade inget inlägg.");

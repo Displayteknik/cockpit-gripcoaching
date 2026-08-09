@@ -80,7 +80,9 @@ export async function ghlFirstUserId(cfg: GhlConfig): Promise<string | null> {
 // Skapa ett UTKAST i Social Planner. Returnerar GHL-postens id.
 export async function ghlCreateDraft(
   cfg: GhlConfig,
-  opts: { accountIds: string[]; summary: string; mediaUrl?: string; userId: string; postType?: "post" | "story" | "reel"; scheduleDate?: string },
+  // mediaUrls = en eller flera bilder i ordning (karusell). mediaUrl behålls som
+  // enkelform så äldre anropare fungerar oförändrat (aldrig ta bort en fungerande väg).
+  opts: { accountIds: string[]; summary: string; mediaUrl?: string; mediaUrls?: string[]; userId: string; postType?: "post" | "story" | "reel"; scheduleDate?: string },
 ): Promise<{ postId?: string; error?: string; scheduled?: boolean }> {
   try {
     // scheduleDate satt → schemalägg (publiceras vid tidpunkten). Annars utkast.
@@ -92,7 +94,7 @@ export async function ghlCreateDraft(
       userId: opts.userId,
       status: scheduled ? "scheduled" : "draft",
       ...(scheduled ? { scheduleDate: opts.scheduleDate } : {}),
-      media: opts.mediaUrl ? [{ url: opts.mediaUrl }] : [],
+      media: (opts.mediaUrls?.length ? opts.mediaUrls : opts.mediaUrl ? [opts.mediaUrl] : []).map((url) => ({ url })),
     };
     const r = await fetch(`${BASE}/social-media-posting/${cfg.locationId}/posts`, {
       method: "POST",

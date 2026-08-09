@@ -116,6 +116,7 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
   const [deepGenerating, setDeepGenerating] = useState<string[]>([]);
   const [startingAudit, setStartingAudit] = useState(false);
   const [auditNote, setAuditNote] = useState<string | null>(null);
+  const [doltText, setDoltText] = useState<string | null>(null);
 
   async function reload() {
     const [ad, kw, deep] = await Promise.all([
@@ -127,6 +128,9 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
     setKeywords(Array.isArray(kw) ? kw : []);
     setDeepReports(Array.isArray(deep?.reports) ? deep.reports : []);
     setDeepGenerating(Array.isArray(deep?.generating) ? deep.generating : []);
+    // Servern döljer tidigare rapporter (se /api/seo/deep-audit). Kunden ska få VETA det,
+    // inte möta en tom lista som ser ut som "du har aldrig kört någon granskning".
+    setDoltText(typeof deep?.doltText === "string" ? deep.doltText : null);
   }
 
   useEffect(() => { reload(); }, []);
@@ -342,6 +346,15 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
 
         {auditNote && (
           <div className="mt-3 text-xs rounded-lg px-3 py-2 bg-white border border-gray-200 text-gray-600">{auditNote}</div>
+        )}
+
+        {/* Tidigare rapporter är dolda (Håkans beslut 9/8). Säg det rakt ut — en tom yta
+            läses som "du har inga rapporter", och det vore en andra osanning ovanpå den
+            första. Texten kommer från servern så beskedet aldrig kan glida isär. */}
+        {doltText && (
+          <div className="mt-3 text-sm rounded-xl px-4 py-3 bg-white border border-amber-200 text-gray-700">
+            {doltText}
+          </div>
         )}
 
         {(deepReports.length > 0 || deepGenerating.length > 0) && (

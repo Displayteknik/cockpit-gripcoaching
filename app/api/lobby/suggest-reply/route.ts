@@ -4,15 +4,24 @@ import { getActiveClientId } from "@/lib/client-context";
 import { resolveCoachUserIds } from "@/lib/coach-bridge";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generateJSON } from "@/lib/gemini";
-import { getVoiceFingerprint, fingerprintToPromptBlock } from "@/lib/voice-fingerprint";
+import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 // POST /api/lobby/suggest-reply { id } → { suggestions: [{ ton, text }] }
-// Genererar 2–3 svarsförslag på det senaste meddelandet, i klientens röst
-// (voice-fingerprint) och anpassat efter kanalen (kort för DM, längre för mejl).
-// Detta är "förslag på svar"-verktyget porterat + samlat på leadet.
+// Genererar 3 svarsförslag på det senaste meddelandet, i klientens röst och anpassat
+// efter kanalen (kort för DM, längre för mejl).
+//
+// ★ AKUT-DM (2026-08-09, efter G-0 avsnitt 0.1): rutten byggde tidigare sin EGEN prompt
+// med bara ett röstblock. Den saknade alltså sanningskravet, prisregeln, perspektivregeln
+// och klientens förbjudna ord — och det här är den text i hela plattformen som går
+// RAKAST till en riktig människa: en betalande kunds lead, i en inkorg, ofta utan att
+// någon läser den lika noga som ett inlägg. Ett påhittat pris eller ett uppfunnet
+// kundminne kostar mer här än i ett inlägg.
+//
+// Håkans beslut: full lagertäckning, men INGEN CTA-tvingning. Syftet "dm-svar" i
+// prompt-core får därför dialoganatomin i stället för CTA-golvet.
 const KANAL_STIL: Record<string, string> = {
   linkedin: "LinkedIn-DM: kort, personligt, 2–4 meningar. Ingen hälsningsfras-formalia.",
   fb: "Facebook/Messenger: vardagligt och kort, 2–4 meningar.",
@@ -21,6 +30,16 @@ const KANAL_STIL: Record<string, string> = {
   phone: "Manus inför ett samtal: 3–4 punkter att ta upp, inte en färdig text.",
   web: "Svar på en webbförfrågan: professionellt men varmt mejl, 2–3 stycken.",
   other: "Kort, personligt svar, 2–4 meningar.",
+};
+
+// Lobbyns kanalnamn → prompt-core:s. phone och other saknar motsvarighet och lämnas
+// osatta i stället för att tvingas in i fel fack.
+const KANAL_MAP: Record<string, "instagram" | "facebook" | "linkedin" | "webb" | "mejl" | undefined> = {
+  linkedin: "linkedin",
+  fb: "facebook",
+  ig: "instagram",
+  email: "mejl",
+  web: "webb",
 };
 
 export async function POST(req: NextRequest) {
@@ -48,45 +67,58 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (!c) return NextResponse.json({ error: "Kontakten finns inte" }, { status: 404 });
 
-  // Klientens röst (tyst fallback om ingen fingerprint hunnit byggas).
-  let voiceBlock = "";
-  try {
-    voiceBlock = fingerprintToPromptBlock(await getVoiceFingerprint(clientId));
-  } catch { /* utan röst → neutral men mänsklig ton */ }
-
   const kanal = (c.platform as string) || "other";
   const stil = KANAL_STIL[kanal] || KANAL_STIL.other;
 
-  const prompt = `Du hjälper en säljare att svara en potentiell kund i deras EGEN röst.
+  const uppdrag = [
+    "Du skriver svarsförslag åt klienten i varumärkesprofilen nedan, till en potentiell kund som redan hört av sig.",
+    "Skriv 3 förslag med olika vinkel: varmt/relationsbyggande, rakt/affärsdrivet, nyfiket/frågande.",
+    `KANALSTIL: ${stil}`,
+    "Svaret ska kunna klistras in som det är. Inga platshållare i hakparenteser, ingen instruktion till läsaren.",
+    // Kontaktens uppgifter är det ENDA faktaunderlaget om personen. Sanningskravet
+    // (lager 8c) förbjuder påhitt generellt; den här raden pekar ut var gränsen går här.
+    "Uppgifterna om kontakten nedan är allt du vet om personen. Påstå aldrig något om vad de gjort, sagt, köpt eller behöver utöver det som står där.",
+  ].join("\n");
 
-${voiceBlock ? `SÄLJARENS RÖST (efterlikna denna):\n${voiceBlock}\n` : ""}
-KONTAKT:
-- Namn: ${c.name}
-- Företag/roll: ${[c.title, c.company].filter(Boolean).join(", ") || "okänt"}
-- Kanal: ${kanal}
-- Status i pipelinen: ${c.status}
-- Senaste meddelande från kontakten: ${c.last_message || "(inget meddelande sparat — skriv en öppnare som för dialogen framåt)"}
-- Säljarens planerade nästa steg: ${c.next_step || "(ej satt)"}
-- Anteckningar: ${c.notes || "(inga)"}
+  const underlag = [
+    "KONTAKT:",
+    `- Namn: ${c.name}`,
+    `- Företag/roll: ${[c.title, c.company].filter(Boolean).join(", ") || "okänt"}`,
+    `- Kanal: ${kanal}`,
+    `- Status i pipelinen: ${c.status}`,
+    `- Senaste meddelande från kontakten: ${c.last_message || "(inget meddelande sparat — skriv en öppnare som för dialogen framåt)"}`,
+    `- Klientens planerade nästa steg: ${c.next_step || "(ej satt)"}`,
+    `- Anteckningar: ${c.notes || "(inga)"}`,
+  ].join("\n");
 
-KANALSTIL: ${stil}
-
-Skriv 3 olika svarsförslag med olika vinkel (t.ex. varmt/relationsbyggande, rakt/affärsdrivet, nyfiket/frågande).
-Skriv på svenska. Låt som en människa — INGA AI-ord (kraftfull, banbrytande, game-changer, "handlar om", nästa nivå, holistisk, skalbar).
-Använd riktiga svenska tecken å ä ö. Gissa inga fakta, priser eller namn som inte finns ovan.
-
-Returnera ENBART JSON:
-{ "suggestions": [ { "ton": "kort etikett, t.ex. Varmt", "text": "svaret" } ] }`;
+  const bygg = await byggTextPrompt({
+    clientId,
+    syfte: "dm-svar",
+    kanal: KANAL_MAP[kanal],
+    uppdrag,
+    underlag,
+    // Prisundantaget öppnas ENDAST om kontakten själv skrev ett pris i sitt meddelande.
+    // Profilens egna priser räknas aldrig som medgivande — det är hela prisregeln.
+    anvandarText: c.last_message || "",
+    jsonSchema: `{ "suggestions": [ { "ton": "kort etikett, t.ex. Varmt", "text": "svaret" } ] }`,
+  });
 
   try {
     const data = await generateJSON<{ suggestions?: { ton: string; text: string }[] }>({
       model: "gemini-2.5-pro",
-      prompt,
+      systemInstruction: bygg.system,
+      prompt: bygg.user,
       maxOutputTokens: 2000,
       temperature: 0.7,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
     });
-    const suggestions = (data.suggestions || []).filter((s) => s?.text).slice(0, 3);
-    if (!suggestions.length) return NextResponse.json({ error: "Inga förslag kunde skapas" }, { status: 500 });
+    const raa = (data.suggestions || []).filter((s) => s?.text).slice(0, 3);
+    if (!raa.length) return NextResponse.json({ error: "Inga förslag kunde skapas" }, { status: 500 });
+    // Saneringen är samma sista station som alla andra textflöden har. Kanalen styr
+    // hashtag-taket; ett DM ska ändå aldrig innehålla hashtags (dialoganatomin förbjuder).
+    const suggestions = await Promise.all(
+      raa.map(async (s) => ({ ton: s.ton, text: await saneraText(s.text, clientId) })),
+    );
     return NextResponse.json({ suggestions });
   } catch (e) {
     return NextResponse.json({ error: "Gemini misslyckades", details: String(e).slice(0, 200) }, { status: 500 });

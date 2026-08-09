@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide, LogoVariantVal } from "@/lib/studio/payload";
-import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, STUDIO_FONTS, LOGO_VARIANT_LABELS } from "@/lib/studio/payload";
+import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, punktNummer, STUDIO_FONTS, LOGO_VARIANT_LABELS } from "@/lib/studio/payload";
+import { fangaAllaSlides, slideFilnamn } from "@/lib/studio/export-slides";
 import { laddaBitmap, renderImageEdit, normalizeImageEdit, type ImageEdit } from "@/lib/studio/image-edit";
 import BildRedigerare from "@/components/studio/BildRedigerare";
 import { profileForDate, type CompassSchedule, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
@@ -42,6 +43,9 @@ const HOOK_LABEL: Record<string, string> = {
 };
 
 const SLIDE_KIND_LABEL: Record<string, string> = { hook: "Krok", point: "Punkt", cta: "Avslut" };
+
+// Punktnumret (01, 02 …) räknas i lib/studio/payload — samma källa som mallen ritar ur.
+const punktNr = punktNummer;
 
 // Fas B — de tre kanalerna. platform = matchning mot GHL:s platform-sträng.
 // Grafisk identitet (label/färg/gradient/ikon) hämtas ur CHANNEL_BRAND (EN källa).
@@ -157,6 +161,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [slideIdx, setSlideIdx] = useState(0);
   const [genCarousel, setGenCarousel] = useState(false);
   const [genSlideImgs, setGenSlideImgs] = useState(""); // "" = idle, annars "2/5"-progress
+  // Vilka slides som ska få en genererad bild. Standard = de som saknar bild; `rorda`
+  // håller reda på vilka användaren själv klickat i eller ur, så standardvalet fortsätter
+  // gälla för alla andra även när slides läggs till.
+  const [bildvalRorda, setBildvalRorda] = useState<Set<number>>(new Set());
+  const [bildvalExplicit, setBildvalExplicit] = useState<Set<number>>(new Set());
   const [videoUrl, setVideoUrl] = useState("");
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [brand, setBrand] = useState<StudioBrand | null>(null);
@@ -318,7 +327,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   }, [isCarousel, slideIdx, updateSlide]);
   // Aktuell bild att visa/redigera (slidens bild i karusell, annars inläggets).
   const curImg = isCarousel ? (slides[slideIdx]?.imageUrl || "") : imageUrl;
+  // Bildvalet pekar på INDEX. Läggs en slide till, tas bort eller flyttas, syftar ett
+  // sparat val på fel slide — då är standardvalet ("de som saknar bild") alltid rätt.
+  const nollstallBildval = useCallback(() => {
+    setBildvalRorda(new Set());
+    setBildvalExplicit(new Set());
+  }, []);
   const addSlide = useCallback(() => {
+    nollstallBildval();
     setSlides((prev) => {
       if (prev.length >= MAX_SLIDES) return prev;
       // Ny punkt före ev. cta-sliden så avslutet stannar sist.
@@ -329,11 +345,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       setSlideIdx(at);
       return next;
     });
-  }, []);
+  }, [nollstallBildval]);
   const removeSlide = useCallback((i: number) => {
+    nollstallBildval();
     setSlides((prev) => (prev.length <= 1 ? prev : prev.filter((_, n) => n !== i)));
-  }, []);
+  }, [nollstallBildval]);
   const moveSlide = useCallback((i: number, dir: -1 | 1) => {
+    nollstallBildval();
     setSlides((prev) => {
       const j = i + dir;
       if (j < 0 || j >= prev.length) return prev;
@@ -342,7 +360,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       return next;
     });
     setSlideIdx((cur) => Math.min(Math.max(0, cur + dir), MAX_SLIDES - 1));
-  }, []);
+  }, [nollstallBildval]);
 
   // Debouncad preview-URL så iframen inte laddar om vid varje tangenttryck.
   // _v = cache-brytare; "Uppdatera"-knappen sätter nytt värde → tvingar färsk render.
@@ -362,23 +380,31 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // med html-to-image. Utan hint föll den tillbaka på vit-variant oavsett bakgrund.
   // Bara det som påverkar beslutet i beroendelistan — inte hela payloaden (varje
   // tangenttryck hade blivit ett anrop).
-  const [logoHint, setLogoHint] = useState<{ url: string; plate: "dark" | "light" | null } | null>(null);
-  const logoBild = isCarousel ? (slides[slideIdx]?.imageUrl || "") : imageUrl;
+  // AKUT-KARUSELL: EN hint per slide, inte en hint för den slide man råkar titta på.
+  // Karusellen exporteras som N bilder med N olika bakgrunder; delade vi hint hade en
+  // mörk slide fått den ljusa slidens tunna vita logga — buggen BILD-6b stängde.
+  // Hämtas i ETT anrop (slideIndexes) så debouncen inte blir N requests per tangenttryck.
+  type LogoHint = { url: string; plate: "dark" | "light" | null } | null;
+  const [logoHints, setLogoHints] = useState<LogoHint[]>([]);
+  const logoHint: LogoHint = logoHints[isCarousel ? slideIdx : 0] ?? null;
+  // Alla slidebilder i beroendelistan — byter EN slide bild ska hintarna räknas om.
+  const logoBild = isCarousel ? slides.map((s) => s.imageUrl || "").join("|") : imageUrl;
   useEffect(() => {
     let avbruten = false;
     const t = setTimeout(() => {
+      const antal = isCarousel ? Math.max(1, slideCount) : 1;
       fetch("/api/studio/logo-hint", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload, slideIndex: isCarousel ? slideIdx : 0 }),
+        body: JSON.stringify({ payload, slideIndexes: Array.from({ length: antal }, (_, i) => i) }),
       })
         .then((r) => r.json())
-        .then((d) => { if (!avbruten) setLogoHint(d?.hint ?? null); })
-        .catch(() => { if (!avbruten) setLogoHint(null); });
+        .then((d) => { if (!avbruten) setLogoHints(Array.isArray(d?.hints) ? d.hints : [d?.hint ?? null]); })
+        .catch(() => { if (!avbruten) setLogoHints([]); });
     }, 500);
     return () => { avbruten = true; clearTimeout(t); };
     // payload läses inne i effekten men får inte styra den — se kommentaren ovan.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [templateId, format, logoBild, slideIdx, isCarousel, overrides.logoVariant, brand?.content.overlayStyle, slug]);
+  }, [templateId, format, logoBild, slideCount, isCarousel, overrides.logoVariant, brand?.content.overlayStyle, slug]);
 
   // Håll slide-index inom gränserna när slides ändras.
   useEffect(() => {
@@ -386,7 +412,34 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   }, [slideCount, slideIdx]);
 
   const { w, h } = FORMAT_DIMENSIONS[format];
-  const previewScale = 300 / w; // preview-bredd ~300px
+  // Förhandsvisningen skalas efter den bredd den FAKTISKT får, inte efter en gissad siffra.
+  // Buggen: skalan var hårdkodad 300/w medan karusellens pilar lägger px-11 (44 px per sida)
+  // på behållaren. Kortet ritades 300 px brett i en ~265 px bred ruta med overflow-hidden →
+  // högerkanten kapades, och rubriken såg ut att skrivas utanför ytan. Den gjorde den inte:
+  // mätt i den riktiga renderingen slutar rubriken 217 px innanför kanten (2026-08-09).
+  // En mätt bredd fixar samma fel på smala skärmar, i kundportalen och i framtida paneler.
+  // CALLBACK-REF, inte useRef + useEffect([]): effekten kördes EN gång vid mount, och var
+  // rutan inte i DOM:en just då fäste observern aldrig. Då stod skalan kvar på 300 och
+  // rutan klippte — utan att något syntes i loggen. En callback-ref kallas av React exakt
+  // när noden monteras och avmonteras, så mätningen kan inte missa.
+  const [previewBoxW, setPreviewBoxW] = useState(300);
+  const previewRo = useRef<ResizeObserver | null>(null);
+  const mätBredd = useCallback((el: HTMLDivElement) => {
+    const bredd = el.getBoundingClientRect().width;
+    // Klamp: en orimlig mätning (0 när panelen är dold) får aldrig ge skala 0.
+    if (bredd > 40) setPreviewBoxW(Math.min(bredd, 480));
+  }, []);
+  const previewBoxRef = useCallback((el: HTMLDivElement | null) => {
+    previewRo.current?.disconnect();
+    previewRo.current = null;
+    if (!el) return;
+    mätBredd(el); // direkt vid mount — innan första målningen hinner klippa något
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => mätBredd(el));
+    ro.observe(el);
+    previewRo.current = ro;
+  }, [mätBredd]);
+  const previewScale = previewBoxW / w;
 
   // ── Foto-uppladdning (signerad URL → Supabase Storage) ──
   const onFile = useCallback(async (file: File) => {
@@ -741,13 +794,51 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   // Skapa en on-brand AI-bild per slide (ämne = slidens egen text). Sekventiellt så
   // Gemini/Fal-kvoten inte spränger, med synlig progress. Sätter bilden direkt på varje slide.
+  // Bildgenerering per slide gjorde förut om ALLA slides varje gång. Lade man till två
+  // slides kastades de fem färdiga bilderna — och varje bild kostar credits. Nu väljer
+  // man vilka. Standardvalet är "de som saknar bild", så den vanliga vägen (lägg till en
+  // slide, skapa bild till just den) blir ett klick utan att röra det som redan är klart.
+  const bildvalEffektivt = useCallback(
+    (i: number) => (bildvalRorda.has(i) ? bildvalExplicit.has(i) : !slides[i]?.imageUrl),
+    [bildvalRorda, bildvalExplicit, slides],
+  );
+  const valdaBildIndex = useMemo(
+    () => slides.map((_, i) => i).filter((i) => bildvalEffektivt(i)),
+    [slides, bildvalEffektivt],
+  );
+  // Valda slides som ännu saknar text. Fotot beskrivs ur slidens egen text, så en tom
+  // slide ger ett generiskt motiv till samma kostnad som ett träffsäkert.
+  const valdaUtanText = useMemo(
+    () => valdaBildIndex.filter((i) => !(slides[i]?.headline || "").trim() && !(slides[i]?.body || "").trim()),
+    [valdaBildIndex, slides],
+  );
+  const toggleBildval = useCallback((i: number) => {
+    const pa = bildvalRorda.has(i) ? bildvalExplicit.has(i) : !slides[i]?.imageUrl;
+    setBildvalRorda((prev) => new Set(prev).add(i));
+    setBildvalExplicit((prev) => {
+      const n = new Set(prev);
+      if (pa) n.delete(i); else n.add(i);
+      return n;
+    });
+  }, [bildvalRorda, bildvalExplicit, slides]);
+  // "Alla" = markera allt explicit. "Bara de utan bild" = tillbaka till standardvalet.
+  const markeraAllaBilder = useCallback(() => {
+    setBildvalRorda(new Set(slides.map((_, i) => i)));
+    setBildvalExplicit(new Set(slides.map((_, i) => i)));
+  }, [slides]);
+
   const generateSlideImages = useCallback(async () => {
     setError("");
     const aspect = isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square";
     const list = slides;
+    const valda = list.map((_, i) => i).filter((i) => bildvalEffektivt(i));
+    if (!valda.length) return;
     try {
-      for (let n = 0; n < list.length; n++) {
-        setGenSlideImgs(`${n + 1}/${list.length}`);
+      for (let k = 0; k < valda.length; k++) {
+        const n = valda[k];
+        // Progressen räknar de VALDA, men namnger sliden — "3/4" utan att säga vilken
+        // slide säger inget när man valt slide 2, 5, 6 och 7.
+        setGenSlideImgs(`${k + 1}/${valda.length} (slide ${n + 1})`);
         const s = list[n];
         const t = [s.headline, s.body].filter(Boolean).join(". ").slice(0, 220) || topic || headline1 || "on-brand bild";
         const r = await fetch("/api/studio/suggest-image", {
@@ -758,18 +849,22 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         const url = d.photos?.[0]?.url;
         if (url) updateSlide(n, { imageUrl: url });
       }
+      // Efter körningen har de valda fått bild → standardvalet blir tomt av sig självt.
+      nollstallBildval();
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setGenSlideImgs("");
     }
-  }, [slides, format, topic, headline1, updateSlide]);
+  }, [slides, format, topic, headline1, updateSlide, bildvalEffektivt, nollstallBildval]);
 
   // Fånga den dolda full-skala-designen (#hidden canvas) till en PNG-blob i webbläsaren.
   // Delas av export + spara-i-bibliotek + publicera. Fungerar i molnet (Playwright gör inte det).
   const captureRef = useRef<HTMLDivElement>(null);
-  const captureDesignBlob = useCallback(async (): Promise<Blob | null> => {
-    const node = captureRef.current;
+  const slideCaptureRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // En nod → en blob. Delad av både enkelbild och karusell så måtten sätts på ETT ställe.
+  const nodeTillBlob = useCallback(async (node: HTMLDivElement | null): Promise<Blob | null> => {
     if (!node || !brand) return null;
     try {
       const { w: cw, h: ch } = FORMAT_DIMENSIONS[format];
@@ -781,23 +876,44 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     }
   }, [brand, format]);
 
+  const captureDesignBlob = useCallback(async (): Promise<Blob | null> => {
+    // Karusell: den bild som representerar inlägget är omslaget (slide 1), aldrig den
+    // slide användaren råkade stå på när han tryckte.
+    if (isCarousel) return nodeTillBlob(slideCaptureRefs.current[0] ?? null);
+    return nodeTillBlob(captureRef.current);
+  }, [isCarousel, nodeTillBlob]);
+
+  // AKUT-KARUSELL: ALLA slides som blobbar, i slide-ordning. Icke-karusell ger exakt en.
+  // Ordning, fullständighet och felmeddelande ligger i lib/studio/export-slides så de går
+  // att bevisa med test — en loop inne i en komponent går bara att verifiera med ögat.
+  const captureAllBlobs = useCallback(async (): Promise<Blob[]> => {
+    if (!isCarousel) {
+      const b = await nodeTillBlob(captureRef.current);
+      return b ? [b] : [];
+    }
+    return fangaAllaSlides(slideCount, (i) => slideCaptureRefs.current[i] ?? null, nodeTillBlob);
+  }, [isCarousel, slideCount, nodeTillBlob]);
+
   // ── Export PNG — klient-render (fungerar i molnet, laddar ner den färdiga designen) ──
+  // Karusell = N filer, namngivna 1av7, 2av7 … så ordningen syns i nedladdningsmappen.
   const exportPng = useCallback(async () => {
     setError(""); setExporting(true);
     try {
-      const blob = await captureDesignBlob();
-      if (!blob) throw new Error("Kunde inte skapa bilden, prova igen om en stund.");
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `${slug}-${templateId}-${format}.png`;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const blobs = await captureAllBlobs();
+      if (!blobs.length) throw new Error("Kunde inte skapa bilden, prova igen om en stund.");
+      blobs.forEach((blob, i) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = slideFilnamn(`${slug}-${templateId}-${format}`, i, blobs.length);
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setExporting(false);
     }
-  }, [captureDesignBlob, slug, templateId, format]);
+  }, [captureAllBlobs, slug, templateId, format]);
 
   const downloadPayload = useCallback(() => {
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1204,11 +1320,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // ladda upp den — så det är DESIGNEN som publiceras, inte råfotot. Playwright-export körs
   // bara lokalt (501 i moln); detta fångar samma live-render i webbläsaren. null = misslyckades.
   // Rendera + ladda upp designen till studio-images → durabel publik URL. null = misslyckades.
-  const renderDesignPng = useCallback(async (): Promise<string | null> => {
-    const blob = await captureDesignBlob();
-    if (!blob) return null;
+  // En blob → durabel publik URL i studio-images. null = misslyckades.
+  const laddaUppBlob = useCallback(async (blob: Blob, namn: string): Promise<string | null> => {
     try {
-      const file = new File([blob], `design-${templateId}-${Date.now()}.png`, { type: "image/png" });
+      const file = new File([blob], namn, { type: "image/png" });
       const r = await fetch("/api/studio/upload-url", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
@@ -1222,18 +1337,42 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } catch {
       return null;
     }
-  }, [captureDesignBlob, templateId]);
+  }, []);
+
+  const renderDesignPng = useCallback(async (): Promise<string | null> => {
+    const blob = await captureDesignBlob();
+    if (!blob) return null;
+    return laddaUppBlob(blob, `design-${templateId}-${Date.now()}.png`);
+  }, [captureDesignBlob, laddaUppBlob, templateId]);
+
+  // AKUT-KARUSELL: alla slides renderade och uppladdade, i ordning. Tom lista = misslyckades.
+  // Laddas upp sekventiellt: ordningen ÄR karusellens ordning, och en parallell upload som
+  // svarar i annan takt hade gett slide 3 före slide 2 i Instagram-inlägget.
+  const renderAllPngs = useCallback(async (): Promise<string[]> => {
+    const blobs = await captureAllBlobs();
+    if (!blobs.length) return [];
+    const stamp = Date.now();
+    const urls: string[] = [];
+    for (let i = 0; i < blobs.length; i++) {
+      const url = await laddaUppBlob(blobs[i], `design-${templateId}-${stamp}-${i + 1}.png`);
+      if (!url) return [];
+      urls.push(url);
+    }
+    return urls;
+  }, [captureAllBlobs, laddaUppBlob, templateId]);
+
   // Spara den färdiga designen som en bild i mediabiblioteket (syns direkt + kan återanvändas).
+  // Karusell sparar ALLA slides — annars ligger sex sjundedelar av arbetet kvar bara i webbläsaren.
   const [savingDesign, setSavingDesign] = useState(false);
   const saveDesignToLibrary = useCallback(async () => {
     setError(""); setSavingDesign(true);
     try {
-      const url = await renderDesignPng();
-      if (!url) throw new Error("Kunde inte skapa den färdiga bilden, prova igen om en stund.");
+      const urls = await renderAllPngs();
+      if (!urls.length) throw new Error("Kunde inte skapa den färdiga bilden, prova igen om en stund.");
       setShowMedia(true);
       await loadMedia();
     } catch (e) { setError((e as Error).message); } finally { setSavingDesign(false); }
-  }, [renderDesignPng, loadMedia]);
+  }, [renderAllPngs, loadMedia]);
 
   // Publicera EN kanal: IG direkt (ig-graph), FB/LI via GHL (ghl-social) med den plattformens konton.
   const publishTo = useCallback(async (k: ChannelKey) => {
@@ -1243,7 +1382,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       // FÄRDIGA mall-designen (fallback: råfotot).
       // BILD-1: i Skriv eget publiceras den REDIGERADE bilden (samma pixlar som previewn),
       // inte råfotot. Utan redigering (t.ex. gammal draft) → råfotot som förut.
-      const designUrl = mode === "simple" ? ((await uploadEditedImage()) || imageUrl) : postType === "reel" ? imageUrl : (await renderDesignPng()) || imageUrl;
+      // AKUT-KARUSELL: en karusell renderas till N bilder. slideUrls[0] är omslaget och
+      // används som designUrl, så schemaläggning och GHL-vägen alltid har en bild att visa
+      // även där karusell inte stöds. Under två slides är det inte en karusell.
+      let slideUrls: string[] = [];
+      if (mode !== "simple" && postType !== "reel" && isCarousel && slideCount >= 2) {
+        slideUrls = await renderAllPngs();
+        if (slideUrls.length !== slideCount) throw new Error("Kunde inte skapa alla karusellbilder. Prova igen om en stund.");
+      }
+      const designUrl = slideUrls.length
+        ? slideUrls[0]
+        : mode === "simple" ? ((await uploadEditedImage()) || imageUrl) : postType === "reel" ? imageUrl : (await renderDesignPng()) || imageUrl;
       // Schemalagt → säkerställ en biblioteks-rad så scheduled_at skrivs och inlägget syns i Kalendern.
       let postId = loadedPostId;
       if (scheduleDate && !postId) postId = await savePost(false);
@@ -1254,7 +1403,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         const r = await fetch("/api/studio/schedule", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            channel: "ig-graph", caption: capFor("ig"), mediaUrl: designUrl, videoUrl, postType, format,
+            channel: "ig-graph", caption: capFor("ig"), mediaUrl: designUrl, slideUrls, videoUrl, postType, format,
             title: headline1 || body.slice(0, 40) || "Inlägg",
             scheduledAt: new Date(scheduleDate).toISOString(), studioPostId: postId,
           }),
@@ -1269,12 +1418,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       let reqBody: Record<string, unknown>;
       if (k === "ig" && igConn?.connected) {
         // Direkt till klientens Instagram — publiceras nu (inget utkast/schema).
-        reqBody = { postId, channel: "ig-graph", caption: capFor("ig"), imageUrl: designUrl, videoUrl, format };
+        reqBody = { postId, channel: "ig-graph", caption: capFor("ig"), imageUrl: designUrl, slideUrls, videoUrl, format };
       } else {
         const platform = k === "fb" ? "facebook" : k === "li" ? "linkedin" : "instagram";
         const accs = ghlFor(platform).map((a) => a.id).filter((id) => selectedAccounts.includes(id));
         if (!accs.length) throw new Error(`Inga valda ${CHANNEL_BRAND[k].label}-konton i GHL.`);
-        reqBody = { postId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl: designUrl, videoUrl, format, scheduleDate: scheduleDate || undefined };
+        reqBody = { postId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl: designUrl, slideUrls, videoUrl, format, scheduleDate: scheduleDate || undefined };
       }
       const r = await fetch("/api/studio/publish", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -1295,7 +1444,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setPubBusy("");
     }
-  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, mode, renderDesignPng, uploadEditedImage, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost, headline1, body]);
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, mode, isCarousel, slideCount, renderAllPngs, renderDesignPng, uploadEditedImage, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost, headline1, body]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const simpleFileRef = useRef<HTMLInputElement>(null);
@@ -1880,7 +2029,19 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
               {/* BILD-1: fokuspunkt-reglaget ersatt — bilden justeras direkt i förhandsvisningen */}
               {curImg && (
-                <p className="text-xs text-gray-400">Justera bilden direkt i förhandsvisningen: dra för att flytta, scrolla för att zooma.</p>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-xs text-gray-400">Justera bilden direkt i förhandsvisningen: dra för att flytta, scrolla för att zooma.</p>
+                  {/* En karusell-slide är komplett UTAN bild — då ritas den i varumärkets
+                      färg (krok = primär, avslut = mörk, punkt = papper). Vägen tillbaka
+                      saknades: en genererad bild gick att byta och att ändra, men inte att
+                      ta bort. Ångrade man sig fanns ingen väg till textslidens utseende. */}
+                  {isCarousel && (
+                    <button onClick={() => updateSlide(slideIdx, { imageUrl: "" })}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900">
+                      <Trash2 className="w-3.5 h-3.5" /> Ta bort bilden på slide {slideIdx + 1}
+                    </button>
+                  )}
+                </div>
               )}
 
               {/* Ändra bilden via kommentar (AI redigerar den befintliga bilden) */}
@@ -2019,13 +2180,71 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               </div>
 
               {isCarousel && slideCount > 0 && (
-                <div>
-                  <button onClick={generateSlideImages} disabled={!!genSlideImgs}
+                <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+                  {/* ORDVALET ÄR VIKTIGT: "bild" betydde två saker i samma ruta — den
+                      exporterade PNG:n (som VARJE slide blir) och fotot bakom texten (som
+                      bara vissa slides har). Håkan läste rutan som "skapa slidesen" och
+                      undrade om en textslide räknades. Därför heter allt här FOTO.
+                      Bildvalet: förut gjordes alla slides om varje gång, så två nya slides
+                      kastade fem färdiga foton — och varje foto kostar credits. */}
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="text-xs font-semibold text-gray-600">Foto bakom texten</div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <button onClick={markeraAllaBilder} disabled={!!genSlideImgs}
+                        className="text-gray-500 hover:text-gray-800 underline underline-offset-2 disabled:opacity-40">Alla</button>
+                      <span className="text-gray-300">·</span>
+                      <button onClick={nollstallBildval} disabled={!!genSlideImgs}
+                        className="text-gray-500 hover:text-gray-800 underline underline-offset-2 disabled:opacity-40">Bara de utan foto</button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Alla slides blir bilder när karusellen exporteras. Det här väljer bara vilka som ska ha ett <strong>foto</strong> bakom texten. Slides du lämnar tomma får varumärkets färg.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mb-2.5">
+                    {slides.map((s, i) => {
+                      const vald = bildvalEffektivt(i);
+                      const harBild = !!s.imageUrl;
+                      return (
+                        <button key={i} onClick={() => toggleBildval(i)} disabled={!!genSlideImgs}
+                          title={harBild ? `Slide ${i + 1} har redan ett foto` : `Slide ${i + 1} har bara text`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors disabled:opacity-50 ${
+                            vald ? "bg-white shadow-sm" : "bg-transparent border-gray-200 text-gray-500 hover:bg-white"
+                          }`}
+                          style={vald ? { borderColor: primary, color: primary } : undefined}>
+                          <span className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center ${vald ? "text-white" : "border-gray-300"}`}
+                            style={vald ? { background: primary, borderColor: primary } : undefined}>
+                            {vald && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
+                          </span>
+                          {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                          {punktNr(slides, i) !== null && (
+                            <span className="text-[10px] font-bold text-gray-400 tabular-nums">{String(punktNr(slides, i)).padStart(2, "0")}</span>
+                          )}
+                          {harBild && <span className="text-[10px] text-gray-400">har foto</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Fotot beskrivs UR SLIDENS EGEN TEXT (se generateSlideImages). En tom
+                      slide faller tillbaka på ämnet och ger ett generiskt motiv — och det
+                      kostar lika mycket som ett träffsäkert. Säg det INNAN pengarna går. */}
+                  {valdaUtanText.length > 0 && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 mb-2">
+                      {valdaUtanText.length === 1
+                        ? `Slide ${valdaUtanText[0] + 1} har ingen text än.`
+                        : `Slide ${valdaUtanText.map((i) => i + 1).join(", ")} har ingen text än.`}{" "}
+                      Fotot beskrivs utifrån slidens text, så det blir generiskt. Skriv texten först, eller tryck <strong>Generera karusell</strong>.
+                    </p>
+                  )}
+                  <button onClick={generateSlideImages} disabled={!!genSlideImgs || valdaBildIndex.length === 0}
                     className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg bg-white border-2 hover:bg-gray-50 disabled:opacity-50"
                     style={{ borderColor: `${primary}55`, color: primary }}>
-                    {genSlideImgs ? <><Loader2 className="w-4 h-4 animate-spin" /> Genererar bild {genSlideImgs}…</> : <><ImageIcon className="w-4 h-4" /> Skapa bilder till alla slides</>}
+                    {genSlideImgs
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Skapar foto {genSlideImgs}…</>
+                      : <><ImageIcon className="w-4 h-4" /> {valdaBildIndex.length === 0 ? "Ingen slide vald — inga foton skapas" : `Skapa foto till ${valdaBildIndex.length} ${valdaBildIndex.length === 1 ? "slide" : "slides"}`}</>}
                   </button>
-                  <p className="text-xs text-gray-400 mt-1">On-brand genererad bild per slide (utifrån varje slides text). Vill du en egen bild på en slide: bläddra dit med pilarna och ladda upp under <strong>Bild</strong>.</p>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Foton som redan finns rörs inte om du inte kryssar i dem. Eget foto på en slide: bläddra dit med pilarna och ladda upp under <strong>Bild</strong>. Ångrar du ett foto tar du bort det på sliden.
+                  </p>
                 </div>
               )}
 
@@ -2081,6 +2300,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         className="rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors"
                         style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
                         {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                        {punktNr(slides, i) !== null && (
+                          <span className="ml-1 text-[10px] font-bold text-gray-400 tabular-nums">{String(punktNr(slides, i)).padStart(2, "0")}</span>
+                        )}
                       </button>
                     ))}
                     {slides.length < MAX_SLIDES && (
@@ -2117,7 +2339,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </div>
                     </div>
                   )}
-                  <div className="text-xs text-gray-400">{slides.length} slides · exporteras som {slides.length} bilder. Krok först, avslut sist.</div>
+                  <div className="text-xs text-gray-400">{slides.length} slides · exporteras som {slides.length} bilder, i den här ordningen. Krok först, avslut sist.</div>
                 </div>
               ) : (
               <div className="space-y-3">
@@ -2316,8 +2538,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   </a>
                 </div>
               </div>
-              <div className={`relative mx-auto ${isCarousel && slideCount > 1 ? "px-11" : ""}`}>
-                <div className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
+              {/* Ingen px-padding här längre. Karusellpilarna låg i 44 px breda gutters,
+                  vilket krympte rutan under den skala kortet ritades i — kortet blev
+                  bredare än rutan och overflow:hidden kapade högerkanten. Pilarna ligger
+                  nu som överlägg på kortets kanter (vanlig karusell-UX), så rutan får hela
+                  bredden och orsaken är borta, inte bara kompenserad. */}
+              <div className="relative mx-auto">
+                {/* Mätpunkten för previewScale: den här rutan ÄR den tillgängliga bredden. */}
+                <div ref={previewBoxRef} className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
                   <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={previewScale} onImagePatch={onImagePatch} onTextPatch={setOv} editColor={primary} slideIndex={isCarousel ? slideIdx : undefined} logoHint={logoHint} />
                   {!imageUrl && !videoUrl && !headline1.trim() && !body.trim() && (!isCarousel || slides.every((s) => !s.headline?.trim() && !s.body?.trim())) && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 p-6 bg-white/85 backdrop-blur-sm">
@@ -2331,8 +2559,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </div>
                 {isCarousel && slideCount > 1 && (
                   <>
-                    <button onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0} className="absolute left-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-gray-50 disabled:opacity-30 z-10" title="Föregående slide">‹</button>
-                    <button onClick={() => setSlideIdx((i) => Math.min(slideCount - 1, i + 1))} disabled={slideIdx >= slideCount - 1} className="absolute right-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-gray-50 disabled:opacity-30 z-10" title="Nästa slide">›</button>
+                    <button onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0} className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/95 shadow-md border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-white disabled:opacity-30 z-10" title="Föregående slide">‹</button>
+                    <button onClick={() => setSlideIdx((i) => Math.min(slideCount - 1, i + 1))} disabled={slideIdx >= slideCount - 1} className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/95 shadow-md border border-gray-200 flex items-center justify-center text-lg text-gray-700 hover:bg-white disabled:opacity-30 z-10" title="Nästa slide">›</button>
                   </>
                 )}
               </div>
@@ -2531,6 +2759,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         {res === "ok" ? (scheduleDate ? "Schemalagt på Instagram ✓" : "Publicerat på Instagram ✓") : (scheduleDate ? "Schemalägg på Instagram" : "Publicera nu på Instagram")}
                       </button>
                       {missingMedia && <p className="text-xs text-amber-600">{postType === "reel" ? "Lägg till en video för att publicera en reel." : "Lägg till en bild för att publicera på Instagram."}</p>}
+                      {isCarousel && slideCount >= 2 && !missingMedia && (
+                        <p className="text-xs text-gray-500">Publiceras som karusell med alla {slideCount} bilderna.</p>
+                      )}
                       </>
                     ) : canPublish ? (
                       <>
@@ -2541,6 +2772,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         {res === "ok" ? (scheduleDate ? `Schemalagt på ${label} ✓` : `Utkast skapat på ${label} ✓`) : (scheduleDate ? `Schemalägg på ${label}` : `Skapa utkast på ${label}`)}
                       </button>
                       {missingMedia && <p className="text-xs text-amber-600">{postType === "reel" ? "Lägg till en video för att kunna publicera." : "Lägg till en bild för att kunna publicera."}</p>}
+                      {isCarousel && slideCount >= 2 && !missingMedia && (
+                        // Ärligt läge: alla {n} bilder skickas med, men att GHL behåller dem
+                        // som karusell är INTE verifierat mot skarpt konto. Säg det rakt ut
+                        // i stället för att lova något vi inte mätt.
+                        <p className="text-xs text-amber-600">Alla {slideCount} bilderna skickas med som utkast. Kontrollera i {label} att hela karusellen följde med innan du publicerar — Instagram direkt är den väg vi vet håller ihop karusellen.</p>
+                      )}
                       </>
                     ) : (
                       // Fallback: ingen direktväg (t.ex. LinkedIn utan GHL, eller kundläge) → kopiera + öppna.
@@ -2757,9 +2994,22 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         {/* Dold full-skala render (scale=1) — fångas klient-sida av html-to-image vid publicering
             så DESIGNEN publiceras, inte råfotot. Off-screen, påverkar inte layouten. */}
         <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, width: w, height: h, pointerEvents: "none", opacity: 0, zIndex: -1 }}>
-          <div ref={captureRef}>
-            <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={1} onImagePatch={() => {}} slideIndex={isCarousel ? slideIdx : undefined} logoHint={logoHint} />
-          </div>
+          {isCarousel ? (
+            // AKUT-KARUSELL: ALLA slides renderas här, en nod var. Tidigare fanns EN nod som
+            // ritade den slide man råkade titta på — därför blev en 7-slides-karusell en enda
+            // bild i export och publicering, trots att gränssnittet lovade sju. Att rendera
+            // alla samtidigt (i stället för att stega slideIdx och vänta på omritning) gör
+            // fångsten deterministisk: ingen väntan på React-commit mitt i en exportloop.
+            slides.map((_, i) => (
+              <div key={i} ref={(el) => { slideCaptureRefs.current[i] = el; }}>
+                <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={1} onImagePatch={() => {}} slideIndex={i} logoHint={logoHints[i] ?? null} />
+              </div>
+            ))
+          ) : (
+            <div ref={captureRef}>
+              <StudioEditor templateId={templateId} payload={payload} brand={brand} scale={1} onImagePatch={() => {}} slideIndex={undefined} logoHint={logoHint} />
+            </div>
+          )}
         </div>
       </div>
 

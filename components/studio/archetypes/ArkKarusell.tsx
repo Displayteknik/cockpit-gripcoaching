@@ -1,5 +1,5 @@
 import type { StudioPayload, StudioSlide } from "@/lib/studio/payload";
-import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { FORMAT_DIMENSIONS, punktNummer } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import { fs } from "@/lib/studio/overrides";
 import { isLightColor } from "@/components/studio/StudioBits";
@@ -18,8 +18,9 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
   const i = Math.min(Math.max(0, slideIndex), total - 1);
   const slide = slides[i];
 
-  // Numret bland point-slides (för den numrerade punktrundeln).
-  const pointNo = slides.slice(0, i + 1).filter((s) => s.kind === "point").length;
+  // Numret bland point-slides (för den numrerade punktrundeln). Räknas i lib/studio/payload
+  // så editorns etiketter och den ritade siffran aldrig kan glida isär.
+  const pointNo = punktNummer(slides, i) ?? 0;
 
   const onPrimary = isLightColor(c.primary) ? c.ink : c.paper;
   const onDeep = isLightColor(c.primaryDeep) ? c.ink : c.paper;
@@ -34,7 +35,7 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
   const dim = isHook || isCta ? 0.9 : 0.82;
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, background: bg }}>
+    <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, background: bg }}>
       {/* Valfri bild som fullbleed-bakgrund med scrim. Point = mörkt scrim nedtill (text där);
           hook/cta = jämnare scrim i bakgrundsfärgen. */}
       {hasImg ? (
@@ -63,6 +64,10 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
 
       {/* Textblock — centrerat (hook/cta) eller nedre tredjedel (point) */}
       <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", flexDirection: "column", justifyContent: slide.kind === "point" ? "flex-end" : "center", padding: slide.kind === "point" ? "0 80px 150px" : "0 80px" }}>
+        {/* Skyddet mot text utanför ytan sitter som overflowWrap på #studio-canvas ovan
+            och ärvs hit. Inline med flit: en regel i globals.css nådde inte render-ytan
+            (mätt 2026-08-09, computed värde blev "normal"), och html-to-image tar med
+            inline-stilen med säkerhet. */}
         {slide.headline ? (
           <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: ink, fontSize: fs(isHook ? 84 : 58, payload), lineHeight: 1.04, letterSpacing: -1 }}>
             <span data-edit="slide-headline">{slide.headline}</span>

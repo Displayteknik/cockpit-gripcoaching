@@ -31,6 +31,7 @@ import {
 import type { FunnelLevel } from "@/lib/content-compass/data";
 import {
   WRITING_RULES_BLOCK,
+  WRITING_RULES_DIALOG,
   harPrisuppgift,
   hittaForbjudnaOrd,
   hittaPrisuppgifter,
@@ -53,7 +54,10 @@ export type TextSyfte =
   | "enskilt"
   | "social"
   | "specialist"
-  | "reel";
+  | "reel"
+  // AKUT-DM: svar till en riktig person i DM, mejl eller kommentarsfält. Ett SVAR är
+  // inte ett inlägg — därför egen anatomi utan CTA-golv (se anatomiBlock "dialog").
+  | "dm-svar";
 
 export interface ByggParams {
   clientId: string | null;
@@ -262,7 +266,23 @@ export const VARIANTREGEL = [
 export const ROTATIONSREGEL =
   "ROTATION: bygg inte varje text på samma profilfakta. Rotera mellan klientens sanningar — olika USP:ar, vertikaler/tjänster, verifierade siffror, berättelser och CTA-varianter — så att flödet inte upprepar samma vinkel i inlägg efter inlägg.";
 
-export function anatomiBlock(variant: "full" | "pa-bild", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
+// ── DIALOGANATOMIN (AKUT-DM) — ett svar är inte ett inlägg ───────────────────
+// Håkans beslut 2026-08-09: svarsförslagen ska ha FULL lagertäckning (sanningskrav,
+// prisregel, perspektiv, röst) men INGEN CTA-tvingning. Skälet är kontexten: CTA-golvet
+// är byggt för ett inlägg som ska flytta en främling ett steg. Ett svar i en inkorg som
+// avslutas med en imperativ säljuppmaning läser som en annons, och personen har redan
+// tagit kontakt — steget är taget. Golvet får därför aldrig läggas på det här syftet.
+const DIALOG_ANATOMI = [
+  "=== SVARETS ANATOMI (det här är ett SVAR i en dialog, inte ett inlägg) ===",
+  "1. Möt det personen faktiskt skrev. Använd deras egna ord, inte en omskrivning som visar att du sammanfattat dem.",
+  "2. Ge EN konkret sak: ett svar, en upplysning eller ett förtydligande som för samtalet framåt.",
+  "3. Avsluta med en naturlig fortsättning — en fråga eller ett förslag på nästa steg, formulerat som man skriver till en människa man vill fortsätta prata med.",
+  "INGEN CTA-REGEL GÄLLER HÄR. Avsluta ALDRIG med en säljuppmaning i imperativ ('Boka en tid via länken', 'Skicka en bild på platsen'). Personen har redan hört av sig — det steget är taget, och en uppmaning i en inkorg låter som en annons.",
+  "Skriv aldrig hashtags, emoji-ramsor eller rubriksättning. Det här är ett meddelande.",
+].join("\n");
+
+export function anatomiBlock(variant: "full" | "pa-bild" | "dialog", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
+  if (variant === "dialog") return DIALOG_ANATOMI;
   if (variant === "pa-bild") {
     return [
       "=== INLÄGGSANATOMI FÖR TEXT PÅ BILD (följ i ordning) ===",
@@ -418,18 +438,24 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     }
 
     // 5. Vinnande exempel.
-    try {
-      const { fetchWinningExamples } = await import("@/lib/voice-score");
-      winning = await fetchWinningExamples(p.clientId, p.kategori ?? KATEGORI[p.syfte]);
-      if (winning.length) {
-        delar.push(
-          "=== VINNANDE EXEMPEL (matcha denna kvalitet) ===\n" +
-            winning.map((w, i) => `Exempel ${i + 1}:\n${w}`).join("\n\n"),
-        );
-        lager.vinnande = true;
+    // AKUT-DM: hoppas över för dm-svar. Lagret säger "matcha denna kvalitet", och de
+    // sparade exemplen är INLÄGG. Ett vinnande inlägg som förebild för ett svar i en
+    // inkorg drar texten mot rubriker, hook och avslutande uppmaning — precis det
+    // dialoganatomin förbjuder. Rösten bärs redan av lager 4.
+    if (p.syfte !== "dm-svar") {
+      try {
+        const { fetchWinningExamples } = await import("@/lib/voice-score");
+        winning = await fetchWinningExamples(p.clientId, p.kategori ?? KATEGORI[p.syfte]);
+        if (winning.length) {
+          delar.push(
+            "=== VINNANDE EXEMPEL (matcha denna kvalitet) ===\n" +
+              winning.map((w, i) => `Exempel ${i + 1}:\n${w}`).join("\n\n"),
+          );
+          lager.vinnande = true;
+        }
+      } catch (e) {
+        console.error("[prompt-core] winning examples kunde inte hämtas:", e);
       }
-    } catch (e) {
-      console.error("[prompt-core] winning examples kunde inte hämtas:", e);
     }
   }
 
@@ -465,7 +491,7 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
   }
 
   // 6. Anatomi + Compass — ALLTID (variant per syfte).
-  const variant = p.syfte === "studio-text" ? "pa-bild" : "full";
+  const variant = p.syfte === "studio-text" ? "pa-bild" : p.syfte === "dm-svar" ? "dialog" : "full";
   delar.push(anatomiBlock(variant, p.compass, DEFAULT_FUNNEL[p.syfte]));
   lager.anatomi = true;
   // Kanalmappning så anatomin inte krockar med blogg/nyhetsbrevs egna strukturblock.
@@ -489,7 +515,10 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
 
   // 8. Globala skrivregler — per-tenant-flaggan styr BÅDA lagren (prompt + sanering).
   if (await skrivreglerPa(p.clientId)) {
-    delar.push(WRITING_RULES_BLOCK);
+    // AKUT-DM: dialogvarianten utan inläggsreglerna (hook/hashtags/CTA). Annars säger
+    // regel 4 "exakt EN uppmaning, alltid sist" samtidigt som dialoganatomin förbjuder
+    // uppmaningen — och en självmotsägande instruktion ger slumpmässigt utfall.
+    delar.push(p.syfte === "dm-svar" ? WRITING_RULES_DIALOG : WRITING_RULES_BLOCK);
     lager.skrivregler = true;
   }
 

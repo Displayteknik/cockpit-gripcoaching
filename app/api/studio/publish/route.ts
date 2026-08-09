@@ -24,6 +24,12 @@ export async function POST(req: NextRequest) {
     const caption = (body.caption || "").toString();
     const imageUrl = (body.imageUrl || "").toString();
     const videoUrl = (body.videoUrl || "").toString();
+    // AKUT-KARUSELL: N slides = N bilder hela vägen. Under två bilder är det ingen
+    // karusell och behandlas som ett vanligt inlägg (Metas eget krav är 2–10).
+    const slideUrls: string[] = Array.isArray(body.slideUrls)
+      ? body.slideUrls.map((s: unknown) => String(s || "")).filter(Boolean).slice(0, 10)
+      : [];
+    const arKarusell = slideUrls.length >= 2;
     const format = (body.format || "1080x1350") as StudioFormat;
     // 9:16 + video = reel, 9:16 utan video = story, annars vanligt inlägg.
     const postType = derivePostType(format, videoUrl);
@@ -34,8 +40,9 @@ export async function POST(req: NextRequest) {
 
     const result = channel === "ig-graph"
       // Direkt IG: bilden i mediaUrl (konverteras till JPEG i lib/publish), reel via videoUrl. Ingen schemaläggning.
-      ? await publishContent({ clientId, channel: "ig-graph", postType, caption, mediaUrl: imageUrl, videoUrl: videoUrl || undefined })
-      : await publishContent({ clientId, channel: "ghl-social", accountIds, postType, caption, mediaUrl, scheduleDate });
+      // Karusell: slideUrls går som children-containers (publishCarousel).
+      ? await publishContent({ clientId, channel: "ig-graph", postType, caption, mediaUrl: imageUrl, slideUrls: arKarusell ? slideUrls : undefined, videoUrl: videoUrl || undefined })
+      : await publishContent({ clientId, channel: "ghl-social", accountIds, postType, caption, mediaUrl, slideUrls: arKarusell ? slideUrls : undefined, scheduleDate });
     if (result.status === "failed" || !result.id) {
       return NextResponse.json({ error: result.error || "Publicering misslyckades" }, { status: 400 });
     }

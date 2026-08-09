@@ -127,16 +127,26 @@ describe("byggCustomValues — bara belagda värden går till GHL", () => {
       gbpAntalRecensioner: tomt("saknas"),
     }) as unknown as Forslag;
 
+  // ★ Nycklarna är ASCII med FLIT: GHL härleder merge-taggen ur namnet vid skapandet och
+  // slänger å/ä/ö ("Öppettider" → `custom_values.ppettider`), och taggen går inte att laga
+  // i efterhand. Testet skrevs mot de svenska namnen och stod rött efter MALL-1 utan att
+  // något var fel i koden — se lesson_nyskrivet_test_kan_ha_fel. Rättat 2026-08-09.
   it("tar med det som finns och utelämnar det som saknas", () => {
     const cv = byggCustomValues(bas());
-    expect(cv["Företagsnamn"]).toBe("Testbolaget AB");
+    expect(cv["Foretagsnamn"]).toBe("Testbolaget AB");
     expect(cv["Ort"]).toBe("Söderhamn");
     expect(cv["Telefon"]).toBeUndefined();
     expect(cv["Adress"]).toBeUndefined();
   });
 
-  it("skriver priset ordagrant, aldrig omräknat", () => {
-    expect(byggCustomValues(bas())["Tjänster"]).toBe("Takbyte (från 45 000 kr)");
+  // Nycklarna är ett kontrakt mot mallkontot: bara det som ska kunna klistras in i en DM,
+  // ett mejl eller ett SMS bor i GHL. Tjänster och priser bor i hm_brand_profile — två
+  // sanningar om samma sak glider isär, och den som glider är den ingen tittar på.
+  it("skickar INTE tjänster och priser till GHL — de bor i varumärkesprofilen", () => {
+    const cv = byggCustomValues(bas());
+    expect(cv["Tjanster"]).toBeUndefined();
+    expect(cv["Tjänster"]).toBeUndefined();
+    expect(Object.keys(cv).every((k) => /^[\x20-\x7E]+$/.test(k))).toBe(true);
   });
 });
 

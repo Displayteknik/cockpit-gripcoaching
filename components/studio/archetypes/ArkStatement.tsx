@@ -13,7 +13,7 @@ export default function ArkStatement({ payload, brand }: { payload: StudioPayloa
   const onPrimary = isLightColor(c.primary) ? c.ink : c.paper;
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.primary }}>
+    <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.primary }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 90px" }}>
         <div data-drag="h1" style={{ fontFamily: font(brand.fonts.headline, payload), fontWeight: 800, color: hlColor(onPrimary, payload), fontSize: fs(96, payload, "h1"), lineHeight: lh(1.06, payload), letterSpacing: -1.5, textTransform: "uppercase", ...dragPos(payload, "h1") }}>
           <span data-edit="headline1" style={textPlate(payload)}>{payload.headline1}</span>

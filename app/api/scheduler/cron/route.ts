@@ -67,6 +67,9 @@ export async function GET(req: NextRequest) {
           channel: job.channel === "ghl-social" ? "ghl-social" : "ig-graph",
           caption: job.caption || "",
           mediaUrl: job.media_url || undefined,
+          // AKUT-KARUSELL: köade karuseller publiceras med alla sina bilder. Äldre jobb
+          // (skapade före kolumnen fanns) saknar fältet och publiceras som förut.
+          slideUrls: Array.isArray(job.slide_urls) && job.slide_urls.length >= 2 ? job.slide_urls : undefined,
           videoUrl: job.video_url || undefined,
           postType: (job.post_type as "post" | "story" | "reel") || "post",
         });

@@ -60,7 +60,6 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
   const isOpticur = clientSlug === "opticur";
   const isCarousel = format === "carousel";
   const [tab, setTab] = useState<Tab>(isCarousel ? "carousel" : isOpticur ? "opticurmall" : "nanobanana");
-  const [carouselSlides, setCarouselSlides] = useState<{ image_url: string; headline: string; body: string }[]>([]);
   const [busy, setBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Asset[]>([]);
@@ -225,27 +224,6 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
     setPreviewUrl(url);
   }
 
-  async function generateCarousel() {
-    setBusy(true);
-    setCarouselSlides([]);
-    try {
-      const r = await fetch(`/api/posts/${postId}/render-carousel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 6 }),
-      });
-      const d = await r.json();
-      if (d.slides) {
-        setCarouselSlides(d.slides);
-        if (d.slides[0]?.image_url) setPreviewUrl(d.slides[0].image_url);
-      } else {
-        alert("Carousel: " + (d.error || "okänt"));
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function searchPexels() {
     setBusy(true);
     try {
@@ -303,8 +281,8 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
               >
                 <Library className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0">
-                  <div className="font-semibold text-sm">Carousel-slides 📚</div>
-                  <div className="text-xs text-blue-700 truncate">5–8 slides på en gång</div>
+                  <div className="font-semibold text-sm">Karusell 📚</div>
+                  <div className="text-xs text-blue-700 truncate">Byggs i Studio</div>
                 </div>
               </button>
             )}
@@ -351,49 +329,25 @@ export default function ImageStudio({ postId, hook, cta, clientSlug, format, onC
           </div>
 
           <div className={`flex-1 ${isFullBleed ? "p-0" : "p-5 overflow-y-auto"} bg-gray-50 flex flex-col min-h-0`}>
+            {/* AKUT-KARUSELL b: den gamla karusellmotorn är pensionerad. Den satt utanför
+                prompt-core och renderade kvadratiskt (1080x1080) medan Studio renderar i
+                inläggets eget format. En karusellmotor, inte två. */}
             {tab === "carousel" && (
               <div className="space-y-3">
-                <div className="text-sm text-gray-600">
-                  Genererar 5–8 slides på en gång — Slide 1 är hooken, mitten har poäng/insikter,
-                  sista är CTA. Alla slides får samma visuella språk med kundens brand-färg.
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+                  <div className="font-semibold text-blue-900 text-sm">Karuseller byggs i Studio</div>
+                  <p className="text-sm text-blue-800 leading-relaxed">
+                    Där får varje slide inläggets eget format, samma grafiska profil rakt igenom, och
+                    hela karusellen exporteras som en bild per slide. Den här vyns gamla karusell
+                    gjorde kvadratiska bilder efter andra regler och är avstängd.
+                  </p>
+                  <a
+                    href="/dashboard/studio"
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-blue-700"
+                  >
+                    <Library className="w-4 h-4" /> Öppna Studio
+                  </a>
                 </div>
-                <button
-                  onClick={generateCarousel}
-                  disabled={busy}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50"
-                >
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Library className="w-4 h-4" />}
-                  Generera 6 slides
-                </button>
-                {carouselSlides.length > 0 && (
-                  <div>
-                    <div className="text-xs uppercase font-semibold text-gray-500 mb-2">
-                      {carouselSlides.length} slides klara
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {carouselSlides.map((s, i) => (
-                        <button
-                          key={i}
-                          onClick={() => s.image_url && setPreviewUrl(s.image_url)}
-                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                            previewUrl === s.image_url
-                              ? "border-blue-600 ring-2 ring-blue-300"
-                              : "border-gray-200 hover:border-gray-400"
-                          }`}
-                        >
-                          {s.image_url && <img src={s.image_url} alt={s.headline} className="w-full h-full object-cover" />}
-                          <div className="absolute top-1 left-1 bg-black/70 text-white text-xs rounded px-1.5 py-0.5">
-                            {i + 1}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2 italic">
-                      Slides sparas på inlägget. Klick på "Använd den här bilden" sätter slide 1 som
-                      cover.
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

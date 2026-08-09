@@ -110,6 +110,28 @@ function delaNamn(helt: string | null): { fornamn: string | null; efternamn: str
  * snapshotet "MySales Pro v1.0" — ändras de i snapshotet ska de ändras här.
  * Tomma värden filtreras bort i sattCustomValues; en platshållare är bättre än en tom sträng.
  */
+/**
+ * Snapshot-steget när kontot ÅTERANVÄNDES i stället för att skapas (AKUT-PROV 2026-08-09).
+ *
+ * Skarpt fall (Makzy): kontot fanns redan, `POST /locations/` kördes aldrig — och det är
+ * det enda stället `snapshotId` skickas. Steget skrev ändå "Kontot är skapat med snapshotet
+ * angivet". Kunden stod med GHL:s standardpipeline i två dagar.
+ *
+ * Slutsatsen kräver inget API-anrop: återanvände vi kontot SAKNAS snapshotet. Hårt fel direkt.
+ * Egen funktion för att beteendet ska gå att bevisa med test, inte bara läsas i en gren.
+ */
+export function snapshotStegAterAnvant(locationId: string): Steg {
+  return {
+    namn: "Snapshot-laddning",
+    status: "fel",
+    detalj:
+      `Kontot återanvändes och har därför INTE fått snapshotet "${SNAPSHOT_NAMN}". ` +
+      `Det går inte att applicera via API på ett befintligt konto (probat 2026-08-09: ingen push-endpoint finns, ` +
+      `snapshotId accepteras bara av POST /locations/). Ladda det en gång i GHL: byråvy → underkontot (${locationId}) → ladda snapshot. ` +
+      `⚠ Gör det FÖRE custom values skrivs, annars skriver snapshotet över dem med mallens platshållare.`,
+  };
+}
+
 export function byggCustomValues(f: Forslag): Record<string, string> {
   const ut: Record<string, string> = {};
   const satt = (nyckel: string, varde: string | null) => {
@@ -233,6 +255,9 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
   const konfig = ghlAgencyKonfig();
   let locationId: string | null = korning.ghl_location_id ?? null;
   let snapshotId: string | null = null;
+  // Sant när steg 2 hittade ett befintligt konto i stället för att skapa ett. Avgör
+  // snapshot-steget: ett återanvänt konto har per definition inte fått snapshotet.
+  let aterAnvantKonto = false;
 
   // ── Steg 2: GHL sub-account ────────────────────────────────────────────────
   if (!konfig) {
@@ -266,10 +291,13 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
         const befintlig = await hittaLocationForSajt(konfig, hemsida, epost);
         if (befintlig) {
           locationId = befintlig.id;
+          aterAnvantKonto = true; // ★ avgör snapshot-steget nedan — se kommentaren där
           steg.push({
             namn: "GHL sub-account",
             status: "hoppade",
-            detalj: `Det finns redan ett konto för ${doman} (${befintlig.name ?? befintlig.id}). Återanvänds — inget nytt skapades.`,
+            detalj:
+              `Det finns redan ett konto för ${doman} (${befintlig.name ?? befintlig.id}). Återanvänds — inget nytt skapades. ` +
+              `⚠ Snapshotet appliceras BARA när kontot skapas, så det här kontot har inte fått det. Se nästa steg.`,
           });
         } else if (torr) {
           steg.push({
@@ -305,7 +333,26 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
   }
 
   // ── Steg 3: vänta in snapshotet ────────────────────────────────────────────
-  if (konfig && locationId && snapshotId && !torr) {
+  //
+  // ★ ÅTERANVÄNT KONTO FÅR ALDRIG SNAPSHOT — AKUT-PROV 2026-08-09.
+  //
+  // Skarpt fall (Madeleine/Makzy, körning 7/8): kontot fanns redan i GHL, steg 2 återanvände
+  // det, och `POST /locations/` — det ENDA stället `snapshotId` skickas — kördes aldrig.
+  // Ändå skrev det här steget ut "Kontot är skapat med snapshotet angivet". Texten var
+  // hårdkodad och visste inte att skapandet hoppats över. Kunden stod med GHL:s standard
+  // (Marketing Pipeline, 11 steg) i två dagar innan steg 4 avslöjade det.
+  //
+  // Slutsatsen kräver inget API-anrop: återanvände vi kontot VET vi att snapshotet saknas.
+  // Det är ett hårt fel direkt, inte en gissning som ska upptäckas senare.
+  //
+  // ⚠ Och det går inte att laga härifrån: GHL:s API v2 har ingen endpoint som applicerar
+  // ett snapshot på ett BEFINTLIGT konto (probat 9/8: `snapshots/push`, `snapshots/{id}/push`,
+  // `snapshots/load`, `locations/{id}/snapshot` → 404/401; `snapshotId` accepteras bara av
+  // `POST /locations/`). Laddningen måste ske en gång i GHL:s gränssnitt. Att låtsas om
+  // annat vore att bygga en knapp som ljuger.
+  if (aterAnvantKonto && locationId && snapshotId && !torr) {
+    steg.push(snapshotStegAterAnvant(locationId));
+  } else if (konfig && locationId && snapshotId && !torr) {
     const s = await vantaPaSnapshot(konfig, snapshotId, locationId);
     // ★ TRE UTFALL, INTE TVÅ. "Vi får inte läsa statusen" är inte samma sak som "laddningen
     //   gick fel", och skillnaden avgör om hela körningen märks som trasig. Byrå-nyckeln
@@ -329,8 +376,19 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
   }
 
   // ── Steg 4: custom values ──────────────────────────────────────────────────
+  //
+  // ★ GATAS PÅ KUNDNYCKELN, INTE PÅ BYRÅTOKEN — AKUT-PROV 2026-08-09.
+  //
+  //   Skarpt fall (Makzy): byråtoken saknades i produktionsmiljön, och HELA steget hoppades
+  //   över — trots att skrivningen görs med KUNDENS nyckel. Byråtoken används här bara som
+  //   fallback i sattCustomValues, och den fallbacken är dokumenterat stängd (401 på
+  //   underkontots custom values). Villkoret krävde alltså något som ändå aldrig fungerar,
+  //   och en betalande kund stod still på ett fel som inte var ett fel.
+  //
+  //   Nu räcker locationId. Saknas kundnyckeln säger steget det (grenen nedan), vilket är
+  //   den enda förutsättning som faktiskt spelar roll.
   const varden = byggCustomValues(f);
-  if (konfig && locationId && !torr) {
+  if (locationId && !torr) {
     try {
       // Kundnyckeln är den enda som får skriva i underkontot — se sattCustomValues.
       // Den skapas för hand i steg 4 och bor på coach_users, samma rad som Fokus läser.
@@ -351,7 +409,10 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
             `klistra in den i stegvyn, och kör provisioneringen igen. ${Object.keys(varden).length} värden ligger redo.`,
         });
       } else {
-        const r = await sattCustomValues(konfig, locationId, varden, kundToken);
+        // konfig kan vara null här (byråtoken saknas) — och det gör inget: kundnyckeln
+        // finns, och den är den enda som får skriva. k.pit används bara som fallback.
+        const k = konfig ?? { pit: kundToken, companyId: "", locationId };
+        const r = await sattCustomValues(k, locationId, varden, kundToken);
         steg.push({
           namn: "Custom values",
           status: r.fel.length ? "fel" : "klar",

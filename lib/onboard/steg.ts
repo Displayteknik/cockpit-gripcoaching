@@ -48,9 +48,14 @@ export const STEG: StegDef[] = [
     agare: "hakan",
     beskrivning:
       "Rätta det som blivit fel och fyll i det som saknas. Fälten är sorterade på klass: det som kräver ditt val ligger överst, belagda tolkningar därefter.",
+    // ★ Texten var skriven runt EN kund (Gitte/Bokadirekt) och läste som en instruktion
+    //   att leta efter en bokningssida — även för kunder som inte har någon. Makzy 9/8:
+    //   ingen bokningsplattform alls, och då är tomma bokningsfält RÄTT, inte en lucka.
+    //   Rådet gäller fortfarande, men som ett VILLKORAT tips, inte som ett antagande.
     instruktion:
-      "Onboardingmotorn är inte tillräckligt bra än. På Gittes sajt fick den 6 av 11 rätt och satte hennes salongs-id som postnummer.\n\n" +
-      "**Bokningsplattformen är oftast rikare än hemsidan** för tjänsteföretag. Gittes Bokadirekt-sida gav 23 tjänster med priser, öppettider, betyg och kursdatum. Hennes hemsida gav nästan ingenting. Titta där innan du fyller i för hand.",
+      "Onboardingmotorn är inte tillräckligt bra än. I ett skarpt fall fick den 6 av 11 fält rätt och satte kundens salongs-id som postnummer. Läs igenom varje fält.\n\n" +
+      "**Finns en bokningsplattform är den oftast rikare än hemsidan** (Bokadirekt, Boka.se, Timma och liknande): tjänster med priser, öppettider, betyg och kursdatum, där hemsidan ofta ger nästan ingenting. Titta där först om kunden har en.\n\n" +
+      "**Har kunden ingen bokningssida är det inget fel.** Lämna bokningslänk och de fält som inte gäller tomma — tomt är bättre än påhittat, och ett tomt fält stoppar ingenting senare i kedjan.",
     kraver: ["analys"],
   },
   {

@@ -100,7 +100,10 @@ function isCustomerServedApi(path: string): boolean {
     path.startsWith("/api/seo/keywords") ||
     path === "/api/seo/keyword-ideas" ||
     path === "/api/seo/report" ||
-    path === "/api/seo/deep-audit"   // kunden läser OCH kan själv starta djupgranskningar (GET+POST, grindas i routen)
+    // ⚠ Kommentaren stämde till 2026-08-07. Nu: POST är avstängd (kill switch) och GET
+    // döljer tidigare rapporter för kund — båda server-sidan i routen. Rutten släpps
+    // fortfarande igenom hit, annars fick kunden ett 401 i stället för det ärliga beskedet.
+    path === "/api/seo/deep-audit"
   );
 }
 

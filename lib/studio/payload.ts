@@ -93,6 +93,21 @@ export interface StudioPayload {
 
 export const MAX_SLIDES = 10;
 
+/**
+ * Punkt-slidens stora nummer. Räknar BARA punkter — krok och avslut hoppas över, så
+ * läsaren av det färdiga inlägget ser 01, 02, 03 som en lista och inte "02, 04, 05".
+ * Returnerar null för slides som inte är punkter.
+ *
+ * ⚠ Numret är alltså INTE slidens plats i ordningen. Slide 6 kan visa "04". I editorn
+ * stod de två siffrorna bredvid varandra utan förklaring och lästes som en enda — därför
+ * visas punktnumret vid etiketten där också. Uträkningen bor här så mallen och editorn
+ * aldrig kan räkna olika.
+ */
+export function punktNummer(slides: StudioSlide[], i: number): number | null {
+  if (slides[i]?.kind !== "point") return null;
+  return slides.slice(0, i + 1).filter((s) => s.kind === "point").length;
+}
+
 export function emptySlide(kind: StudioSlide["kind"] = "point"): StudioSlide {
   return { kind, headline: "", body: "", imageUrl: "" };
 }

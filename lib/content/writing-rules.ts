@@ -19,6 +19,24 @@
 export const MAX_HASHTAGS = { instagram: 5, facebook: 5, linkedin: 3, default: 5 } as const;
 export type HashtagKanal = keyof typeof MAX_HASHTAGS;
 
+// ── Regel 5: frågeform (2026-08-09) ─────────────────────────────────────────
+// Skarpt fall: karusellhooken "Sommaren dödar skärmar?" — ett PÅSTÅENDE med ett
+// frågetecken påklistrat. Svenska frågor vänder ordföljden ("Dödar sommaren skärmar?")
+// eller inleds med ett frågeord. Påstående-plus-frågetecken är en kvällstidningsteaser
+// och en modell-tick, inte ett språkval, och den känns påklistrad i en fackmässig röst.
+// Elliptiska frågor utan verb är helt korrekta och rörs inte ("Redo för sommaren?").
+export const FRAGEFORM_REGEL =
+  "5. FRÅGEFORM: en mening som slutar med frågetecken ska VARA en fråga. Antingen omvänd ordföljd med verbet först (\"Syns din skylt i solljus?\") eller ett frågeord först (vad, hur, när, varför, vilken). Sätt ALDRIG ett frågetecken på ett påstående: \"Sommaren dödar skärmar?\" är fel, \"Dödar sommaren skärmar?\" är rätt. Korta frågor utan verb är korrekta som de är (\"Redo för sommaren?\").";
+
+// ── Regel 6: hooken måste infrias (2026-08-09) ──────────────────────────────
+// Samma skarpa fall: hooken lovade "dödar" (dramatik) medan brödtexten landade i
+// "ställer högst krav" (mycket mildare). Nyfikenhetsglappet öppnades och punkterades
+// direkt. Hook-playbookens gyllene-zon-kedja säger att kroken lovar, brödtexten
+// levererar — men playbooken laddas bara av fyra flöden. Regeln hör hemma här, där
+// ALLA flöden ser den.
+export const HOOKLOFTE_REGEL =
+  "6. HOOKEN MÅSTE INFRIAS: det första raden lovar ska texten leverera. Lovar kroken ett dramatiskt utfall (\"dödar\", \"förstör\", \"kostar dig\") måste brödtexten faktiskt handla om det utfallet, inte om något mildare. Kan du inte infria löftet: skriv en krok som stämmer med det du faktiskt har att säga. En krok som punkteras i nästa mening läser som clickbait och kostar mer förtroende än den vinner uppmärksamhet.";
+
 /** Promptblocket. Läggs sist i hierarkin så det vinner över stilinstruktioner ovanför. */
 export const WRITING_RULES_BLOCK = [
   "=== GLOBALA SKRIVREGLER (gäller alltid, väger tyngst) ===",
@@ -31,6 +49,26 @@ export const WRITING_RULES_BLOCK = [
   "3. HASHTAGS: max 3 till 5 relevanta taggar som faktiskt används och söks på.",
   "   På LinkedIn max 3. Hitta aldrig på slogan-taggar utan sökvolym (t.ex. #vireddarvarlden).",
   "4. CTA: exakt EN uppmaning per inlägg, alltid sist. Aldrig två olika saker att göra.",
+  FRAGEFORM_REGEL,
+  HOOKLOFTE_REGEL,
+].join("\n");
+
+// ── Dialogvarianten (AKUT-DM, 2026-08-09) ────────────────────────────────────
+// Regel 2 (hook), 3 (hashtags) och 4 (CTA) är INLÄGGSREGLER. Läggs de på ett svar i en
+// inkorg motsäger de dialoganatomin i prompt-core, som förbjuder just en avslutande
+// uppmaning. Två regler om samma sak i samma instruktion är precis felet FIX-1 grupp A
+// stängde: modellen följer tillståndet, inte förbudet, och utfallet blir slumpmässigt.
+// Regel 1 (tankstreck) är språk, inte format, och gäller överallt.
+export const WRITING_RULES_DIALOG = [
+  "=== GLOBALA SKRIVREGLER (gäller alltid, väger tyngst) ===",
+  "1. TANKSTRECK: använd ALDRIG tankstreck (– eller —) som paus eller inskott i löptext.",
+  "   Skriv punkt, komma eller kolon, eller formulera om meningen.",
+  "   Bindestreck i sammansatta ord är korrekt och ska användas som vanligt: LED-vägg, före/efter-bilder, e-post.",
+  "2. INGA HASHTAGS. Det här är ett meddelande till en person, inte ett inlägg.",
+  "3. Öppna inte med en generalisering (\"många företag...\", \"i dagens samhälle...\"). Möt det personen skrev.",
+  // Frågeformen är SPRÅK, inte inläggsformat — den gäller lika mycket i en inkorg.
+  // Hooklöftet gör det inte: ett svar har ingen krok att infria.
+  FRAGEFORM_REGEL.replace(/^5\. /, "4. "),
 ].join("\n");
 
 // ── Saneringslagret ───────────────────────────────────────────────────────────
@@ -525,6 +563,103 @@ export interface TextGolvUtfall {
  * Bryter någon av dem görs EXAKT EN omgenerering med de skärpningar som behövs.
  * FAIL-OPEN: användaren blir aldrig utan text.
  */
+// ── Skenfrågor: påstående med frågetecken ────────────────────────────────────
+// Deterministisk motsvarighet till FRAGEFORM_REGEL. Samma mönster som CTA-golvet och
+// siffergrinden: prompten är första försvaret, den här är spärren.
+//
+// Metod, medvetet konservativ:
+//   1. Slutar meningen med "?" och börjar med ett FRÅGEORD eller ett verb → korrekt fråga.
+//   2. Saknar meningen finit verb helt → elliptisk fråga, helt korrekt ("Redo för sommaren?").
+//   3. Finns ett troligt finit verb tidigt EFTER subjektet → rak ordföljd → skenfråga.
+//
+// Verbgissningen bygger på att svenska presensverb nästan alltid slutar på -r eller -s
+// (dödar, ställer, kostar, syns, känns). Det är en heuristik, inte en parser: den missar
+// verb som "vet" och "kan" mitt i satsen, och kan fälla en elliptisk fras med ett
+// r-slutande substantiv. Fällan är billig — utfallet är EN omgenerering, aldrig ett
+// stopp — medan missarna bara betyder att prompten får sköta jobbet ensam.
+const FRAGEORD = new Set([
+  "vad", "vem", "vems", "vilken", "vilket", "vilka", "var", "vart", "varifrån", "varför",
+  "hur", "när", "huruvida",
+]);
+
+// Verb som naturligt inleder en svensk ja/nej-fråga (omvänd ordföljd = korrekt fråga).
+const FRAGEVERB = new Set([
+  "är", "var", "har", "hade", "kan", "kunde", "ska", "skall", "skulle", "vill", "ville",
+  "gör", "gjorde", "blir", "blev", "finns", "fanns", "vet", "visste", "tror", "trodde",
+  "behöver", "behövde", "känner", "kändes", "känns", "syns", "syntes", "kostar", "kostade",
+  "hinner", "hann", "orkar", "orkade", "måste", "får", "fick", "går", "gick", "ligger",
+  "sitter", "kommer", "kom", "låter", "lät", "fungerar", "funkar", "passar", "räcker",
+  "stämmer", "händer", "hände", "betyder", "verkar", "ser", "såg", "hör", "hörde",
+  "tar", "tog", "ger", "gav", "står", "stod", "vågar", "klarar", "klarade", "hänger",
+  "undrar", "saknar", "saknas", "tänker", "önskar", "orkade", "vågade",
+]);
+
+function ordAv(mening: string): string[] {
+  return mening
+    .replace(/[«»"'"'()[\]{}]/g, " ")
+    .split(/\s+/)
+    .map((o) => o.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").toLowerCase())
+    .filter(Boolean);
+}
+
+// Vanliga funktionsord som slutar på -r eller -s men ALDRIG är verb. Utan dem läste
+// heuristiken "för" i "Redo för sommaren?" som ett verb och fällde en korrekt elliptisk
+// fråga. Listan är kort med flit: bara ord som är frekventa OCH omöjliga som predikat.
+const ICKE_VERB = new Set([
+  "för", "eller", "efter", "under", "över", "mellan", "genom", "utanför", "innanför",
+  "framför", "hos", "ur", "vars", "dess", "oss", "hans", "hennes", "deras", "eras",
+  "mer", "mindre", "flers", "alltför", "därför", "eftersom", "annars", "utom", "trots",
+]);
+
+/** Ser ordet ut som ett finit presensverb? (svenska presens slutar nästan alltid på -r/-s) */
+function troligtVerb(ord: string): boolean {
+  if (ord.length < 3) return false;
+  if (FRAGEVERB.has(ord)) return true;
+  // Frågeord är aldrig predikat. "hur" slutar på -r och fällde "Eller hur?" utan detta.
+  if (ICKE_VERB.has(ord) || FRAGEORD.has(ord)) return false;
+  return /(r|s)$/.test(ord);
+}
+
+/**
+ * Meningar som slutar med "?" men är formulerade som påståenden.
+ * Returnerar de fällda meningarna (ordagrant) — tom lista = inget brott.
+ */
+export function skenfragor(text: string): string[] {
+  const rensad = utanHashtags(String(text || ""));
+  // Dela på meningsslut men behåll skiljetecknet, så vi vet vilka som är frågor.
+  const meningar = rensad.match(/[^.!?\n]+[.!?]/g) || [];
+  const fallda: string[] = [];
+  for (const rå of meningar) {
+    const mening = rå.trim();
+    if (!mening.endsWith("?")) continue;
+    const ord = ordAv(mening);
+    if (ord.length < 2) continue; // "Va?" och liknande
+    // Äkta fråga: frågeord först, ELLER verb först (omvänd ordföljd). Verbet prövas med
+    // samma heuristik som nedan — en handskriven verblista kan aldrig bli komplett, och
+    // "Dödar sommaren skärmar?" föll på just det innan regeln blev symmetrisk.
+    if (FRAGEORD.has(ord[0]) || troligtVerb(ord[0])) continue;
+    // Rak ordföljd: subjekt först, verbet strax efter. Utan verb är frasen elliptisk.
+    //
+    // ⚠ Kandidaten får ALDRIG vara sista ordet. Svenska substantiv slutar ofta på -r
+    // (skyltfönster, skärmar) och heuristiken kan inte skilja dem från verb — men ett
+    // finit verb följs alltid av något. Utan den avgränsningen fälldes den fullt korrekta
+    // elliptiska frasen "Ett bättre skyltfönster?".
+    const sista = ord.length - 1;
+    const harVerbEfterSubjekt = ord
+      .slice(1, 4)
+      .some((o, n) => n + 1 < sista && troligtVerb(o));
+    if (harVerbEfterSubjekt) fallda.push(mening);
+  }
+  return fallda;
+}
+
+export const FRAGEFORM_SKARPNING = [
+  "SKÄRPNING (frågeform): en eller flera meningar slutar med frågetecken men är skrivna som påståenden.",
+  "Gör om VARJE sådan mening till en riktig fråga med omvänd ordföljd — verbet först: \"Sommaren dödar skärmar?\" blir \"Dödar sommaren skärmar?\".",
+  "Eller skriv om den till ett rakt påstående med punkt, om budskapet är starkare så.",
+  "Behåll innebörd, röst och längd. Rör inte de meningar som redan är korrekta frågor.",
+].join("\n");
+
 export async function sakerstallCaption(
   text: string,
   tillatnaTal: Set<string>,
@@ -536,6 +671,8 @@ export async function sakerstallCaption(
     if (!harCtaISlutet(t)) b.push("cta");
     const siffror = obackadeSiffror(utanHashtags(t), tillatnaTal);
     if (siffror.length) b.push(`siffror:${siffror.join("|")}`);
+    const sken = skenfragor(t);
+    if (sken.length) b.push(`frageform:${sken.join("|")}`);
     return b;
   };
   const brott = brottFor(text);
@@ -544,6 +681,7 @@ export async function sakerstallCaption(
   const skarpning = [
     brott.some((b) => b === "cta") ? CTA_SKARPNING : "",
     brott.some((b) => b.startsWith("siffror")) ? SIFFER_SKARPNING : "",
+    brott.some((b) => b.startsWith("frageform")) ? FRAGEFORM_SKARPNING : "",
   ]
     .filter(Boolean)
     .join("\n\n");

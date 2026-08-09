@@ -25,6 +25,8 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
     <div
       id="studio-canvas"
       style={{
+        // Text får aldrig skrivas utanför ytan — se ArkKarusell för mätningen.
+        overflowWrap: "break-word",
         width: w,
         height: h,
         position: "relative",

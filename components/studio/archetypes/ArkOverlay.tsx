@@ -23,7 +23,7 @@ export default function ArkOverlay({ payload, brand, logoHint }: { payload: Stud
   const centered = style === "scrim-full";
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.primaryDeep }}>
+    <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.primaryDeep }}>
       {/* Foto */}
       {payload.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element

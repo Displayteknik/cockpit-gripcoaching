@@ -13,7 +13,7 @@ export default function ArkTextkort({ payload, brand }: { payload: StudioPayload
   const c = brand.colors;
 
   return (
-    <div id="studio-canvas" style={{ width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.paper }}>
+    <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: `${brand.fonts.body}, sans-serif`, fontVariantNumeric: "lining-nums", background: c.paper }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 80px" }}>
         {/* Accent-detalj */}
         <div style={{ width: 70, height: 8, background: c.accent, borderRadius: 6, marginBottom: 34 }} />

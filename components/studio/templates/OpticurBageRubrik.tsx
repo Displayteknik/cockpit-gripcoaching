@@ -19,6 +19,8 @@ export default function OpticurBageRubrik({ payload, brand }: { payload: StudioP
     <div
       id="studio-canvas"
       style={{
+        // Text får aldrig skrivas utanför ytan — se ArkKarusell för mätningen.
+        overflowWrap: "break-word",
         width: w,
         height: h,
         position: "relative",
