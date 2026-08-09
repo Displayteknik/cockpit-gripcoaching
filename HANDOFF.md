@@ -10,9 +10,27 @@ En fil att klistra in eller ladda upp när arbetet ska delas med en fristående 
 
 ## 0. NÄSTA SESSION BÖRJAR HÄR — läget 2026-08-09
 
-**Senaste commit: `f9d2f23`, pushad till master.** 708 tester gröna, `tsc` rent, `next build`
+**Senaste commit: `88e306e`, pushad till master.** 715 tester gröna, `tsc` rent, `next build`
 kompilerat. Läs `docs/STATUS.md` först — den är totalinventeringen och uppdateras varje
 session. En beställning utan rad där existerar inte.
+
+### ⚠ ÖPPEN FRÅGA FRÅN 9/8 — börja här
+
+Håkan såg **`Unexpected token 'A', "An error o"... is not valid JSON`** i Studio på live
+(Displayteknik, karusell med 5 slides laddad) strax efter deployen av `f9d2f23`.
+
+Det är `JSON.parse` som fått Vercels textfelsida — ett anrop timeoutade eller kraschade.
+**Vilket anrop är inte fastställt.** Orsaken gick inte att spåra i efterhand eftersom
+mönstret `await r.json()` fanns på 27 ställen i StudioMaker utan kontroll av svaret.
+
+`88e306e` gör felet självidentifierande (`lib/las-json.ts`): timeout, för stort innehåll,
+utloggad och serverfel får var sin klartext med statuskod. **Nästa steg: be Håkan göra om
+samma sak och läsa den nya raden.** Statuskoden avgör om det är en regression från 9/8.
+
+Obelagd misstanke: `logo-hint` gör nu upp till tio `sharp`-mätningar i ett anrop
+(`maxDuration = 30`). Men den effekten fångar sina egna fel och borde inte kunna nå
+felrutan — så antingen är misstanken fel, eller finns en väg som inte kartlagts.
+**Gissa inte, mät med den nya texten.**
 
 ### Beslutad ordning (Håkans, tvingande)
 
