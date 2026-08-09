@@ -18,6 +18,8 @@ import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsIm
 import type { StudioFormat, StudioOverrides, StudioSlide, LogoVariantVal } from "@/lib/studio/payload";
 import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, punktNummer, STUDIO_FONTS, LOGO_VARIANT_LABELS } from "@/lib/studio/payload";
 import { fangaAllaSlides, slideFilnamn } from "@/lib/studio/export-slides";
+// Ett svar som inte är JSON ska säga VAD som hände, inte visa parserns text. Se lib/las-json.
+import { lasJson } from "@/lib/las-json";
 import { laddaBitmap, renderImageEdit, normalizeImageEdit, type ImageEdit } from "@/lib/studio/image-edit";
 import BildRedigerare from "@/components/studio/BildRedigerare";
 import { profileForDate, type CompassSchedule, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
@@ -449,7 +451,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Uppladdning misslyckades");
       const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
@@ -490,7 +492,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Video-uppladdning misslyckades");
       const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
@@ -510,7 +512,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       const r = await fetch("/api/k/credits");
       if (!r.ok) { setCreditSaldo(null); return; }
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       setCreditSaldo({ saldo: d.saldo, procentKvar: d.procentKvar, bildpris: d.priser?.["social-bild"] ?? 3 });
     } catch { setCreditSaldo(null); }
   }, [customerMode]);
@@ -527,7 +529,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         // B3: exactText = texten som ska synas I bilden → verifieringsslinga server-side.
         body: JSON.stringify({ mode, topic: topic || headline1 || caption.slice(0, 200), aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square", exactText: mode === "ai" ? imgText.trim() : "" }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Bildförslag misslyckades");
       setImgResults(d.photos || []);
       if (d.textInfo) setImgTextInfo(d.textInfo);
@@ -547,7 +549,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setLoadingMedia(true);
     try {
       const r = await fetch("/api/studio/media");
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (r.ok) setMediaItems(Array.isArray(d.items) ? d.items : []);
     } catch { /* ignore */ } finally { setLoadingMedia(false); }
   }, []);
@@ -576,7 +578,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "ai", topic: t, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Bildgenerering misslyckades");
       const url = d.photos?.[0]?.url;
       if (url) { setImage(url); if (d.description) setAiImageDesc({ url, desc: String(d.description) }); } else throw new Error("Ingen bild genererades");
@@ -596,7 +598,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageUrl: curImg, instruction: imgComment }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Bildändring misslyckades");
       setPrevImageUrl(curImg);
       setImage(d.url);
@@ -652,7 +654,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: pasteText, templateId }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte tolka texten");
       if (typeof d.headline1 === "string") setHeadline1(d.headline1);
       if (typeof d.headline2 === "string") setHeadline2(d.headline2);
@@ -670,7 +672,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: impText }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte förbättra inlägget");
       setImpAnalysis(Array.isArray(d.analysis) ? d.analysis : []);
       setImpImproved(d.improved || "");
@@ -687,7 +689,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: impImproved, mode: "disc" }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa varianter");
       setImpDisc(Array.isArray(d.variants) ? d.variants : []);
     } catch (e) { setError((e as Error).message); } finally { setImpDiscBusy(false); }
@@ -709,7 +711,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ templateId, format, topic, caption, imageUrl: curImg, imageDescription: imgDesc }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Förslag misslyckades");
       setSuggestions(Array.isArray(d.suggestions) ? d.suggestions : []);
     } catch (e) {
@@ -746,7 +748,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: topic || headline1, points: 3, compass }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Karusell-generering misslyckades");
       if (!Array.isArray(d.slides) || !d.slides.length) return;
       const nya: StudioSlide[] = d.slides;
@@ -845,7 +847,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ mode: "ai", topic: t, aspect }),
         });
-        const d = await r.json();
+        const d = await lasJson<any>(r);
         const url = d.photos?.[0]?.url;
         if (url) updateSlide(n, { imageUrl: url });
       }
@@ -1017,7 +1019,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const refreshPosts = useCallback(async () => {
     try {
       const r = await fetch("/api/studio/posts");
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (r.ok) setPosts(Array.isArray(d.posts) ? d.posts : []);
     } catch { /* ignore */ }
   }, []);
@@ -1033,7 +1035,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption, channelCaptions }, compass }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte spara i biblioteket");
       const id = d.post?.id ?? null;
       setLoadedPostId(id);
@@ -1105,7 +1107,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const refreshGhlAccounts = useCallback(async () => {
     try {
       const r = await fetch("/api/studio/ghl-accounts");
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       setGhlConnected(!!d.connected);
       const accs: GhlAccount[] = Array.isArray(d.accounts) ? d.accounts : [];
       setGhlAccounts(accs);
@@ -1132,7 +1134,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locationId: ghlLocInput.trim(), pit: ghlPitInput.trim() }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte koppla");
       setGhlPitInput("");
       await refreshGhlAccounts();
@@ -1155,7 +1157,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, compass }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte föreslå bildtext");
       setCaption(d.caption || "");
     } catch (e) {
@@ -1172,7 +1174,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setError(""); setCompassBusy("classify");
     try {
       const r = await fetch("/api/content/classify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte klassa texten");
       setCompass({ funnel: (d.funnel || null) as FunnelLevel | null, four_a: (d.four_a || null) as FourA | null, disc: Array.isArray(d.disc) ? (d.disc as DiscLetter[]) : [] });
     } catch (e) { setError((e as Error).message); } finally { setCompassBusy(""); }
@@ -1185,7 +1187,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setError(""); setCompassBusy("review"); setReviewResult(null);
     try {
       const r = await fetch("/api/content/review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, funnel: compass.funnel || undefined }) });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte granska texten");
       setReviewResult({ passed: !!d.passed, brister: Array.isArray(d.brister) ? d.brister : [], sammanfattning: d.sammanfattning || "" });
     } catch (e) { setError((e as Error).message); } finally { setCompassBusy(""); }
@@ -1199,7 +1201,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, variants: 3, compass }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa varianter");
       setCaptionVariants(Array.isArray(d.variants) ? d.variants : []);
     } catch (e) {
@@ -1261,7 +1263,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ caption, headline: headline1, headline2, body, topic, slides, postType, channels: targets, compass }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte anpassa per kanal");
       if (d.captions) setChannelCaptions((prev) => ({ ...prev, ...d.captions }));
     } catch (e) {
@@ -1305,7 +1307,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) return null;
       const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
@@ -1328,7 +1330,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) return null;
       const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const up = await sb.storage.from(d.bucket).uploadToSignedUrl(d.path, d.token, file);
@@ -1408,7 +1410,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             scheduledAt: new Date(scheduleDate).toISOString(), studioPostId: postId,
           }),
         });
-        const d = await r.json();
+        const d = await lasJson<any>(r);
         if (!r.ok) throw new Error(d.error || "Schemaläggning misslyckades");
         setPubResult((p) => ({ ...p, [k]: "ok" }));
         await refreshPosts(); loadMedia(); setScheduleRefresh((n) => n + 1);
@@ -1429,7 +1431,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(reqBody),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Publicering misslyckades");
       setPubResult((p) => ({ ...p, [k]: "ok" }));
       // BILD-3: publiceringskvitto med direktlänk till inlägget.
@@ -1481,7 +1483,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ templateId, format, topic: "" }),
       });
-      const d = await r.json();
+      const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa förslag — försök igen.");
       setSuggestions(Array.isArray(d.suggestions) ? d.suggestions : []);
       quickAutoImage.current = true; // efter användarens val: generera bild ur vald text
