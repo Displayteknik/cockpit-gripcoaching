@@ -323,6 +323,8 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
         variants,
         // En hook-typ per försök, men BARA hooks som passar bildens roll (problembild → problem/fråga,
         // lösningsbild → påstående/resultat) och med statistik bortgrindad utan verifierade siffror.
+        // G-3: varje variant loggas med den hooktyp den ombads anvanda.
+        hookTyper: rundansHooks,
         variantSuffixes: rundansHooks.map(
           (h) => `DITT FÖRSÖK: använd hook-typen "${h}" och en egen vinkel som de andra försöken inte kan råka landa på. Sätt hookType till exakt "${h}".`,
         ),

@@ -30,6 +30,7 @@ import {
   MessageCircle,
   Send,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { mysalesKontaktUrl } from "@/lib/mysales";
 
 // Kanal på en planerad uppgift → ikon + verb. Kanalen ska spegla kontaktens VERKLIGA kanal
@@ -641,6 +642,14 @@ function DragKort({
   const [sparar, setSparar] = useState(false);
   const [klarar, setKlarar] = useState(false);
   const deeplink = mysalesKontaktUrl(locationId, c.ghlContactId);
+  const pathname = usePathname();
+
+  // Offertmotorn ligger i samma app — /dashboard/offert i adminvyn, /k/offert i kundvyn.
+  // Kunden och affären följer med i query-strängen så att offertförslaget öppnas ifyllt
+  // och sparas mot rätt affär i MySales.
+  const offertParams = new URLSearchParams({ kund: c.namn || "", foretag: c.foretag || "", opp: c.id });
+  if (c.ghlContactId) offertParams.set("kontakt", c.ghlContactId);
+  const offertHref = `${pathname.startsWith("/k") ? "/k/offert" : "/dashboard/offert"}?${offertParams}`;
 
   const markKlar = async () => {
     if (!planering || klarar) return;

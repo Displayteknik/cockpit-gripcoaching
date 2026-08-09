@@ -44,6 +44,15 @@ export interface IterateOptions {
    * ide ar att varianter ar olika, och en sammanslagen rad hade dolt spridningen.
    */
   generering?: GenereringsMeta;
+  /**
+   * G-3: hook-typ per variant, i samma ordning som variantSuffixes. Varje variant ar
+   * ett eget betalt anrop och far darfor en EGEN rad i generation_log — da ska raden
+   * bara den hooktyp varianten faktiskt ombads anvanda, inte en sammanslagning.
+   *
+   * Kolumnen `hook_typ` har funnits sedan G-1 utan att nagon skrev den. En kolumn som
+   * alltid ar tom ar samma sorts tyst losa lofte som resten av dagen handlat om.
+   */
+  hookTyper?: string[];
   // Om inget clientId: kor utan voice-score, returnera forsta varianten
 }
 
@@ -111,8 +120,11 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
   // anropaProvider — samma logg, samma felklassning, samma budgetgrind.
   const calls = Array.from({ length: variants }, (_, i) => {
     const suffix = opts.variantSuffixes?.[i % (opts.variantSuffixes.length || 1)];
+    // Samma indexering som suffixen: variant i bad om hooktyp i.
+    const hookTyp = opts.hookTyper?.[i % (opts.hookTyper.length || 1)];
+    const generering = opts.generering ? { ...opts.generering, hookTyp: hookTyp ?? opts.generering.hookTyp ?? null } : undefined;
     return loggaAnrop(
-      { provider: "anthropic", model, flow: opts.flow, tenantId: opts.clientId ?? undefined, generering: opts.generering },
+      { provider: "anthropic", model, flow: opts.flow, tenantId: opts.clientId ?? undefined, generering },
       async () => {
         const msg = await anthropic.messages.create({
           model,
