@@ -4,7 +4,59 @@ En fil att klistra in eller ladda upp när arbetet ska delas med en fristående 
 
 **Projekt:** Cockpit / MySales Pro — `C:\Users\hakan\OneDrive\Dokument\Antigravity\hmmotor-next`, Next.js 16 + Supabase + Gemini (text/bild) + Anthropic (iterationsloopen). Multi-tenant: byråvy `/dashboard`, kundportal `/k`. Live: cockpit.gripcoaching.se (Vercel, deploy sker vid `git push` till master).
 
-**Senaste commit:** `d1abe8d`. Allt nedan är pushat och i produktion om inget annat sägs. 137 enhetstester gröna, `tsc --noEmit` och `next build` rena.
+**Senaste commit:** `f9d2f23` (2026-08-09). Allt nedan är pushat och i produktion om inget annat sägs. 708 enhetstester gröna, `tsc --noEmit` och `next build` rena. ⚠ Avsnitt 1 och framåt beskriver 2026-08-01 — läs avsnitt 0 för aktuellt läge.
+
+---
+
+## 0. NÄSTA SESSION BÖRJAR HÄR — läget 2026-08-09
+
+**Senaste commit: `f9d2f23`, pushad till master.** 708 tester gröna, `tsc` rent, `next build`
+kompilerat. Läs `docs/STATUS.md` först — den är totalinventeringen och uppdateras varje
+session. En beställning utan rad där existerar inte.
+
+### Beslutad ordning (Håkans, tvingande)
+
+AKUT-KARUSELL → AKUT-DM → **G-1** → G-2 → FIX-1-REST (B2+C) → G-3 → G-4 → G-5 → G-6 → G-7
+→ G-8 → G-9. Hårt stopp per etapp.
+★ **Kundleverans går alltid före granskningsarbete** — det inträffade två gånger 9/8.
+
+### Klart och bevisat
+
+| Etapp | Bevis |
+|---|---|
+| **G-0** read-only-rapport | `docs/gransk/G0-RAPPORT.md` — flödeskarta (21 anropsställen i 19 filer genom prompt-core, fyra flöden utanför), formatinventering, anatomi-gap, generationslogg, mätbarhet |
+| **AKUT-KARUSELL** | N slides → N bilder i export, bibliotek, publicering och kö. `publishCarousel` + `slideUrls` fanns redan färdiga — bara anroparen saknades. Migration `studio_scheduled.slide_urls` körd. Gamla vägen 410. **15 tester** |
+| **AKUT-DM** | `suggest-reply` genom prompt-core, syfte `dm-svar`, fullt skydd utan CTA-tvingning. **12 tester** |
+| **Språkregler lager 8** | Regel 5 skenfrågor (+ deterministisk grind i captionvägen), regel 6 hooken måste infrias. **13 tester** |
+| **Text utanför grafikytan** | Mätt: 34-teckens ord gick 454 px utanför en 1080-kanvas → nu 124 px innanför. `overflowWrap` på alla tio grafikrötter + källtest |
+| **Djupgranskningsrapporterna** | Dolda i kundvyn server-sidan före DB-läsningen, behållna internt |
+| **AKUT-PROV (snapshot)** | Rotorsak bevisad i körningsloggen. GHL:s API kan **inte** applicera snapshot på befintligt konto (probat). Spärr byggd; custom values gatas inte längre på byråtoken |
+| **Madeleine/Makzy** | Konto mot mallens facit, kundnyckel sparad, steg 4 grönt, logotyp verifierad i renderingen |
+
+### Klart men OBEVISAT — verifiera först
+
+1. **Karusellexportens DoD** — 7 slides ska ge 7 filer. Publiceringskedjan är testad, men
+   **ingen har kört nedladdningen**. Detta är nästa sak att göra, på live.
+2. **Förhandsvisningens klippning** — orsaken borttagen, aldrig sedd i inloggad Studio.
+3. **GHL med flera bilder** — `media[]` skickas, ej provat mot skarpt konto.
+4. **FIX-1 grupp A + B1** — inget test, ingen ommätning sedan fixen.
+
+### Återstår
+
+- **G-1 … G-9** — inget påbörjat. G-1 (generationsloggen) är nästa etapp.
+- **FIX-1-REST** (B2 Vilande, grupp C) — mellan G-2 och G-3.
+- **BILD-9-spec** — beställd med hårt stopp, ingen spec finns i repot.
+- **PROFIL-2** — uppflyttad till direkt efter FIX-1-REST (UI-löfte utan täckning).
+- **Skenfrågegrinden utanför captionvägen** — hör till G-2.
+- **Makzy: varumärkesfärg + tonregler** — Håkans val, inte gissningsbart.
+- **`GHL_BYRA_TOKEN` + `GHL_COMPANY_ID` i Vercel** — annars kan Cockpit inte skapa nya konton på live.
+
+### Stående regler
+
+Allt textflöde genom `lib/prompt-core`, allt betalt genom `lib/ai-usage`, inga fabricerade
+siffror, generalitet mot två tenants (Displayteknik + For Balance), hårt stopp per etapp,
+`docs/STATUS.md` uppdateras varje session, och **mät själv — be aldrig Håkan verifiera åt dig**
+(render-ytan `/studio/render/<id>?p=<base64>` är oinloggad och går att mäta i DOM:en).
 
 ---
 
