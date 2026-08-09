@@ -16,7 +16,10 @@ session. En beställning utan rad där existerar inte.
 
 ### Håkans egen kö när sessionen bröts
 
-1. **Karusell-DoD:n** — 7 slides → 7 filer (`-1av7` … `-7av7`). Ligger på live sedan `f9d2f23`, aldrig körd.
+1. ~~**Karusell-DoD:n**~~ — **KÖRD 9/8, GRÖN LOKALT.** `scripts/karusell-dod.mjs` bygger 7
+   slides i Studio, exporterar och räknar: 7 filer, `hmmotor-ark-karusell-1080x1350-1av7.png`
+   … `-7av7.png`, alla giltiga och alla olika. Kvar: samma körning mot live (kräver
+   Vercels `ADMIN_SESSION_SECRET`, den lokala duger inte).
 2. **Läs den nya feltexten** om `Unexpected token 'A'` dyker upp igen — se nedan.
 3. **Hans nuvarande karusell har två Avslut** kvar i datan. Fixen (`5cade5d`) läker den vid
    nästa "Generera karusell", eller så byter han rollen på slide 5 till Punkt för hand.
@@ -62,8 +65,10 @@ AKUT-KARUSELL → AKUT-DM → **G-1** → G-2 → FIX-1-REST (B2+C) → G-3 → 
 
 ### Klart men OBEVISAT — verifiera först
 
-1. **Karusellexportens DoD** — 7 slides ska ge 7 filer. Publiceringskedjan är testad, men
-   **ingen har kört nedladdningen**. Detta är nästa sak att göra, på live.
+1. ~~**Karusellexportens DoD**~~ — **bevisad lokalt 9/8** (se ovan). Enda resten är samma
+   körning på live. Två saker som localhost inte kan svara på: Chromes fråga "Tillåt flera
+   nedladdningar?" i en vanlig webbläsarprofil (headless kringgår den), och att Vercel kör
+   den kod som mättes.
 2. **Förhandsvisningens klippning** — orsaken borttagen, aldrig sedd i inloggad Studio.
 3. **GHL med flera bilder** — `media[]` skickas, ej provat mot skarpt konto.
 4. **FIX-1 grupp A + B1** — inget test, ingen ommätning sedan fixen.

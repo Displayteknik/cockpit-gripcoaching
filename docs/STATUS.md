@@ -42,8 +42,10 @@ facit. Statusnivåer: `KLART OCH VERIFIERAT` · `KLART, EJ VERIFIERAT` · `PÅB�
 
 ### Topp 3 KLART, EJ VERIFIERAT — billigast att verifiera
 
-1. **Karusellexporten** (~10 min): bygg 7 slides i Studio, exportera, räkna filerna.
-   Hela AKUT-KARUSELL vilar på den. *Håkan kör 9/8.*
+1. ~~**Karusellexporten**~~ — **KÖRD 9/8 lokalt, grön.** `node scripts/karusell-dod.mjs`
+   bygger 7 slides, exporterar och räknar filerna automatiskt (21 kontroller). Kvar: en
+   körning mot live, som kräver produktionens `ADMIN_SESSION_SECRET`:
+   `ADMIN_SESSION_SECRET=<prod> node scripts/karusell-dod.mjs`
 2. **FIX-1 grupp A + B1** (~20 min): tre promptfel som ingen mätt efter fixen. Kör två
    genereringar per tenant på ämnen som lockar fram kundberättelser och läs efter minnen
    som inte finns i profilen.
@@ -185,7 +187,7 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
 |---|---|---|---|---|
 | Publiceringskedjan N slides → N bilder | KLART OCH VERIFIERAT | `tests/akut-karusell.test.ts` 15 tester: karusell-children, ordning, JPEG-säkring, GHL media-array | Ja | **Var ja — nu nej** |
-| Exporten (nedladdning av N filer) | KLART, EJ VERIFIERAT | Fångstloopen testad i `lib/studio/export-slides.ts`, men **ingen har kört nedladdningen**. Håkan kör 9/8 | Ja | Nej |
+| Exporten (nedladdning av N filer) | KLART OCH VERIFIERAT (lokalt) | **Körd 9/8 med `scripts/karusell-dod.mjs`** mot `localhost:3480` på commit `b8f1e18`: 7 slides → 7 startade nedladdningar → **7 PNG-filer på disk**, `hmmotor-ark-karusell-1080x1350-1av7.png` … `-7av7.png`, alla giltiga PNG (51–70 kB) och alla sju **olika** (unika sha256). Slide 1 bär rubriken "DOD SLIDE 1 AV 7" och 7-stegs-indikatorn står på position 1; slide 7 står på position 7 — ordningen stämmer. 21 kontroller gröna. **Kvar: samma körning mot live.** Exportkedjan är ren klient-render (html-to-image + blob-nedladdning, ingen server), så localhost kör identisk kod — men två saker är oprövade på live: (1) Chromes fråga "Tillåt flera nedladdningar?" i en vanlig webbläsarprofil, som headless kringgår, (2) att Vercel-bundlen är den kod som mättes | Ja | Nej |
 | GHL med flera bilder | KLART, EJ VERIFIERAT | `media[]` skickas. **Ej provat mot skarpt GHL-konto.** UI:t säger det rakt ut och ber om kontroll | Ja | Nej |
 | Schemalagd karusell | KLART, EJ VERIFIERAT | Kolumnen `studio_scheduled.slide_urls` körd och verifierad (ARRAY). Kedjan cron→publish ej körd skarpt | Ja | Nej |
 | Gamla karusellvägen pensionerad | KLART OCH VERIFIERAT | `render-carousel/route.ts` svarar 410, UI pekar till Studio | Nej | Nej |
