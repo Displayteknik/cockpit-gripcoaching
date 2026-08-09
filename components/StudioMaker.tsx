@@ -20,6 +20,7 @@ import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emp
 import { fangaAllaSlides, slideFilnamn } from "@/lib/studio/export-slides";
 // Ett svar som inte är JSON ska säga VAD som hände, inte visa parserns text. Se lib/las-json.
 import { lasJson } from "@/lib/las-json";
+import { slaIhopSlides } from "@/lib/studio/slide-merge";
 import { laddaBitmap, renderImageEdit, normalizeImageEdit, type ImageEdit } from "@/lib/studio/image-edit";
 import BildRedigerare from "@/components/studio/BildRedigerare";
 import { profileForDate, type CompassSchedule, type FunnelLevel, type DiscLetter } from "@/lib/content-compass/data";
@@ -755,26 +756,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const gamla = slides;
       const harInnehall = gamla.some((s) => s.imageUrl || s.headline?.trim() || s.body?.trim());
       if (!harInnehall) { setSlides(nya); setSlideIdx(0); return; }
-      // Inventera + slå ihop: bild per slide behålls exakt, text-lucka fylls, text-konflikt → diff.
-      const antal = Math.max(gamla.length, nya.length);
-      const merged: StudioSlide[] = [];
-      const diffs: NonNullable<typeof carouselDiffs> = [];
-      for (let i = 0; i < antal; i++) {
-        const g = gamla[i];
-        const n = nya[i];
-        if (g && n) {
-          const egenText = Boolean(g.headline?.trim() || g.body?.trim());
-          if (egenText) {
-            merged.push({ ...g, imageUrl: g.imageUrl || n.imageUrl });
-            if ((n.headline && n.headline !== g.headline) || (n.body && n.body !== g.body)) {
-              diffs.push({ index: i, nuvarande: { headline: g.headline, body: g.body }, forslag: { headline: n.headline, body: n.body }, anvand: false });
-            }
-          } else {
-            merged.push({ ...n, imageUrl: g.imageUrl || n.imageUrl });
-          }
-        } else if (g) merged.push(g);
-        else if (n) merged.push(n);
-      }
+      // Slås ihop på ROLL, inte position — se lib/studio/slide-merge. Den gamla
+      // positionsparningen gav två avslut så fort deckarna hade olika längd.
+      const { merged, diffs } = slaIhopSlides(gamla, nya);
       setSlides(merged); setSlideIdx(0);
       if (diffs.length) setCarouselDiffs(diffs);
     } catch (e) {
