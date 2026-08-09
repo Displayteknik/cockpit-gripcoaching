@@ -31,7 +31,12 @@ export interface KarusellResultat {
 
 export async function generateCarousel(opts: {
   clientId: string; topic: string; points?: number; brandName?: string; industry?: string; compass?: CompassParams;
-  /** G-2: valbara roller. Av som standard — grundstrukturen ändras inte utan ett aktivt val. */
+  /**
+   * FIX-1-REST (Håkans beslut 9/8): INSATS är PÅ som standard — den behöver ingen data
+   * och fullbordar formeln (krok lovar, insatsen säger varför det spelar roll).
+   * BEVIS är AV tills G-4 finns: en bevis-slide utan bevis-motor är en inbjudan att
+   * fabricera, och det är det enda vi aldrig gör.
+   */
   medInsats?: boolean; medBevis?: boolean;
 }): Promise<KarusellResultat> {
   const points = Math.min(Math.max(2, opts.points ?? 3), MAX_SLIDES - 2);
@@ -42,8 +47,8 @@ export async function generateCarousel(opts: {
   // tidigare kunde de tre glida isär utan att någon märkte det.
   const uppsattning: KarusellUppsattning = {
     punkter: points,
-    medInsats: opts.medInsats === true,
-    medBevis: opts.medBevis === true,
+    medInsats: opts.medInsats !== false,
+    medBevis: opts.medBevis === true, // G-4 öppnar den, inte tidigare
   };
   const roller = karusellRoller(uppsattning);
 

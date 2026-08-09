@@ -34,10 +34,10 @@ describe("G-2 · karusellens roller är data, inte fritext", () => {
       .toEqual(["hook", "insats", "point", "point", "bevis", "cta"]);
   });
 
-  it("de nya rollerna är AV som standard", () => {
-    const r = karusellRoller({ punkter: 3 });
-    expect(r).not.toContain("insats");
-    expect(r).not.toContain("bevis");
+  it("bevis-rollen är AV tills G-4 finns", () => {
+    // Håkans beslut 9/8: en bevis-slide utan bevis-motor är en inbjudan att fabricera.
+    // Insats-rollen är påslagen i generateCarousel (den behöver ingen data); bevis inte.
+    expect(karusellRoller({ punkter: 3, medInsats: true })).not.toContain("bevis");
   });
 
   it("anatomitexten och slide-räkningen kommer ur SAMMA rollista", () => {
