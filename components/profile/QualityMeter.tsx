@@ -112,7 +112,15 @@ export default function QualityMeter({ refreshKey, onNavigate }: { refreshKey?: 
       {report.atgarder.length > 0 && (
         <div className="rounded-lg border border-gray-200 p-4">
           <div className="text-sm font-display font-semibold text-gray-900">Gör det här härnäst</div>
-          <p className="text-xs text-gray-500 mt-0.5">De tre sakerna som höjer textkvaliteten mest just nu.</p>
+          {/* FIX-1-REST C3a: rubriken sa "De tre sakerna" men listan innehåller de
+              åtgärder som FINNS — har profilen bara två luckor kvar visades två. Samma
+              familj som karusellen: gränssnittet lovade ett antal, koden gav ett annat.
+              Nu räknar texten samma lista som renderas. */}
+          <p className="text-xs text-gray-500 mt-0.5">
+            {report.atgarder.length === 1
+              ? "Det här höjer textkvaliteten mest just nu."
+              : `De ${report.atgarder.length === 2 ? "två" : report.atgarder.length} sakerna som höjer textkvaliteten mest just nu.`}
+          </p>
           <ol className="mt-3 space-y-2">
             {report.atgarder.map((a, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-gray-800">

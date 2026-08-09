@@ -232,11 +232,15 @@ export default function VeckoplanPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Veckotema: vad ska veckans inlägg kretsa kring?
           </label>
+          {/* FIX-1-REST C3b: platshållaren var skriven för EN kund (vintersäsong, kallt
+              väder) och läste som en instruktion för alla andra. En terapeut eller en
+              frisör känner inte igen sig, och exemplet styr då fel. Neutral formulering
+              som lär ut FORMATET i stället för branschen. */}
           <input
             type="text"
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
-            placeholder="t.ex. Vintersäsongen, säkerhet och förberedelser inför kallt väder"
+            placeholder="t.ex. en säsong, en tjänst eller en fråga era kunder ofta ställer"
             className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-colors"
           />
         </div>

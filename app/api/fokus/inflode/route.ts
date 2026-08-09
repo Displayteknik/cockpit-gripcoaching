@@ -12,13 +12,39 @@ export const runtime = "nodejs";
 // tenant (ids[0]) för att undvika dubbletter. Opp-spegeln är dubblerad över DT:s 2 coach-
 // users → räkna affärer på EN tenant (full deduppad siffra), lobby/quotes på alla ids.
 
-const KANALER: Array<{ kanal: string; mal: number }> = [
+// FIX-1-REST C3c: plattformens DEFAULT, inte facit. Listan gällde förut alla tenants —
+// LinkedIn 20 inlägg/vecka är inget mål för en terapeut, det är en dom. En tenant med
+// egna rader i fokus_kanalmal får sina kanaler i sin ordning; utan rader gäller det här.
+const KANALER_DEFAULT: Array<{ kanal: string; mal: number }> = [
   { kanal: "LinkedIn", mal: 20 },
   { kanal: "Instagram", mal: 10 },
   { kanal: "Facebook", mal: 5 },
   { kanal: "Hemsida", mal: 5 },
   { kanal: "ICP", mal: 10 },
 ];
+
+/**
+ * Kanalerna och veckomålen för en tenant. Egna rader vinner helt — de ERSÄTTER
+ * standardlistan, de kompletterar den inte. En kund som tagit bort Facebook ska inte
+ * få tillbaka den för att plattformen tycker den hör hemma där.
+ * Fail-open: går läsningen fel gäller standarden, Inflödet får aldrig bli tomt.
+ */
+async function kanalerFor(
+  sb: ReturnType<typeof supabaseService>,
+  clientId: string,
+): Promise<Array<{ kanal: string; mal: number }>> {
+  try {
+    const { data } = await sb
+      .from("fokus_kanalmal")
+      .select("kanal, mal, sort")
+      .eq("client_id", clientId)
+      .order("sort", { ascending: true })
+      .order("kanal", { ascending: true });
+    const rader = (data as Array<{ kanal: string; mal: number }> | null) || [];
+    if (rader.length) return rader.map((r) => ({ kanal: r.kanal, mal: Number(r.mal) || 0 }));
+  } catch { /* fail-open till standarden */ }
+  return KANALER_DEFAULT;
+}
 
 function veckoNyckel(d: Date): string {
   const day = d.getUTCDay() || 7;
@@ -67,7 +93,7 @@ export async function POST(req: Request) {
       .eq("kanal", kanal)
       .eq("iso_vecka", iso)
       .maybeSingle();
-    const std = KANALER.find((k) => k.kanal === kanal)?.mal ?? 0;
+    const std = (await kanalerFor(sb, clientId)).find((k) => k.kanal === kanal)?.mal ?? 0;
     const nyMal = action === "setMal" ? Math.max(0, Number(mal) || 0) : rad?.mal ?? std;
     const nyUtfall = action === "log" ? (rad?.utfall ?? 0) + 1 : rad?.utfall ?? 0;
     await sb
@@ -86,7 +112,8 @@ export async function POST(req: Request) {
   ]);
   const denna = new Map(((dennaRader as { kanal: string; mal: number; utfall: number }[] | null) || []).map((r) => [r.kanal, r]));
   const forraMal = new Map(((forraRader as { kanal: string; mal: number }[] | null) || []).map((r) => [r.kanal, r.mal]));
-  const kanaler = KANALER.map((k) => {
+  const kanalLista = await kanalerFor(sb, clientId);
+  const kanaler = kanalLista.map((k) => {
     const r = denna.get(k.kanal);
     const malV = r?.mal ?? forraMal.get(k.kanal) ?? k.mal;
     const utfallV = r?.utfall ?? 0;
