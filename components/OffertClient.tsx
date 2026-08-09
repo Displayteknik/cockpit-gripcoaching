@@ -48,6 +48,8 @@ export default function OffertClient({ primaryColor = "#1A6B3C", leadId, onKlien
   const [lead, setLead] = useState<WebbLead | null>(null);
   const [leadFel, setLeadFel] = useState<string | null>(null);
   const [docQuote, setDocQuote] = useState<Quote | null>(null);
+  // Kunden som följde med hit från Fokus-kortet ("Skapa offert" på en affär).
+  const [franAffar, setFranAffar] = useState<{ namn?: string; foretag?: string; oppId?: string; contactId?: string } | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   // Via ref så att en inline-callback från föräldern inte gör om lead-hämtningen.
   const onKlientByttRef = useRef(onKlientBytt);
@@ -57,6 +59,19 @@ export default function OffertClient({ primaryColor = "#1A6B3C", leadId, onKlien
     setLoading(true);
     fetch("/api/offert/quote").then((r) => r.json()).then((d) => setQuotes(Array.isArray(d.quotes) ? d.quotes : []))
       .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  // Kommer man hit via "Skapa offert" på ett Fokus-kort ligger kunden i query-strängen.
+  // Då öppnas offertförslaget direkt, ifyllt med kontakt, företag och affärens id i MySales
+  // — så att den sparade offerten hamnar på rätt affär och inte på en lös dublett.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const namn = q.get("kund") || undefined;
+    const foretag = q.get("foretag") || undefined;
+    const oppId = q.get("opp") || undefined;
+    if (!namn && !foretag && !oppId) return;
+    setFranAffar({ namn, foretag, oppId, contactId: q.get("kontakt") || undefined });
+    setVisaSkapa(true);
   }, []);
 
   useEffect(() => {
@@ -335,10 +350,14 @@ export default function OffertClient({ primaryColor = "#1A6B3C", leadId, onKlien
       {visaSkapa && (
         <OffertSkapa
           primaryColor={primaryColor}
-          onClose={() => setVisaSkapa(false)}
+          // Stängs dialogen släpps kunden från Fokus-kortet, annars skulle nästa
+          // "Skapa offert" öppna förifylld med föregående affär.
+          onClose={() => { setVisaSkapa(false); setFranAffar(null); }}
           onSaved={laddaQuotes}
-          forifyllNamn={lead?.namn}
-          forifyllForetag={lead?.foretag}
+          forifyllNamn={lead?.namn ?? franAffar?.namn}
+          forifyllForetag={lead?.foretag ?? franAffar?.foretag}
+          forifyllContactId={franAffar?.contactId}
+          forifyllOppId={franAffar?.oppId}
         />
       )}
       {docQuote && <OffertDokument quote={docQuote} primaryColor={primaryColor} onClose={() => setDocQuote(null)} />}

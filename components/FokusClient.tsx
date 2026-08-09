@@ -873,15 +873,12 @@ function DragKort({
         <PlaneraKnapp kort={c} primaryColor={primaryColor} onDone={onSaved} redanPlanerad={!!planering} />
         {c.typ === "mote" && (
           <a
-            href={`https://mysales-coach.netlify.app/offertmotorn?webblead=${encodeURIComponent(c.namn || c.foretag || "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Öppnar offertverktyget i en ny flik"
+            href={offertHref}
+            title="Öppnar offertmotorn med kunden ifylld"
             className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-white border shadow-sm hover:bg-gray-50"
             style={{ borderColor: `${primaryColor}55`, color: primaryColor }}
           >
             <FileText className="w-4 h-4" /> Skapa offert
-            <ExternalLink className="w-3.5 h-3.5 opacity-60" />
           </a>
         )}
         {deeplink && (

@@ -36,15 +36,17 @@ type UppslagSvar = Uppslag | TrappaSaknas | ProduktSaknas;
 function kr(n?: number | null) { return typeof n === "number" ? n.toLocaleString("sv-SE") + " kr" : "—"; }
 function nOrNull(v: string): number | null { const s = v.replace(",", ".").replace(/[^\d.]/g, ""); return s === "" ? null : Number(s); }
 
-export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved, forifyllNamn, forifyllForetag }: { primaryColor?: string; onClose: () => void; onSaved: () => void; forifyllNamn?: string; forifyllForetag?: string }) {
+export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved, forifyllNamn, forifyllForetag, forifyllContactId, forifyllOppId }: { primaryColor?: string; onClose: () => void; onSaved: () => void; forifyllNamn?: string; forifyllForetag?: string; forifyllContactId?: string; forifyllOppId?: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  // Kommer offerten ur en webbförfrågan är kunden redan känd. Fälten är fortsatt
-  // redigerbara — och att välja en kund ur pipelinen skriver över dem som vanligt.
+  // Kommer offerten ur en webbförfrågan eller ett Fokus-kort är kunden redan känd. Fälten är
+  // fortsatt redigerbara — och att välja en kund ur pipelinen skriver över dem som vanligt.
+  // Kommer den från ett Fokus-kort följer även affärens id med, så att offerten binds till
+  // rätt affär i MySales i stället för att bli en lös rad.
   const [namn, setNamn] = useState(forifyllNamn || "");
   const [foretag, setForetag] = useState(forifyllForetag || "");
-  const [ghlContactId, setGhlContactId] = useState("");
-  const [ghlOppId, setGhlOppId] = useState("");
+  const [ghlContactId, setGhlContactId] = useState(forifyllContactId || "");
+  const [ghlOppId, setGhlOppId] = useState(forifyllOppId || "");
   const [offertnr, setOffertnr] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
   const [visaKunder, setVisaKunder] = useState(false);
