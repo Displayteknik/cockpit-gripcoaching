@@ -37,8 +37,9 @@ facit. Statusnivåer: `KLART OCH VERIFIERAT` · `KLART, EJ VERIFIERAT` · `PÅB�
    ingenting för henne, all grafik ritar företagsnamnet som vit text. Väntar på filen.
 4. **SEO-verktyget rapporterade nollor som mätvärden** och gick ut till kund. S-1+S-2 är
    lagade; S-3..S-5 återstår, och rapporterna som redan gått ut är inte återkallade.
-5. **Profilmätaren ber om kundberättelser utan att erbjuda en yta att skriva dem på.**
-   UI-löfte utan täckning. *Beslut 9/8: PROFIL-2 flyttad upp till direkt efter FIX-1-REST.*
+> ~~5. Profilmätaren ber om kundberättelser utan att erbjuda en yta att skriva dem på~~ —
+> **ÅTGÄRDAD 9/8 (PROFIL-2).** Ytan finns, och mätaren räknar manuellt material (den
+> gjorde inte det heller — den läste bara intake-flödet).
 
 ### Topp 3 KLART, EJ VERIFIERAT — billigast att verifiera
 
@@ -275,7 +276,7 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
 |---|---|---|---|---|
 | HM Motors profilinnehåll i DB | BESTÄLLT, EJ PÅBÖRJAT | Koden hindrar nästa olycka (diff-bekräftelse), städar inte den gamla. Beställd 1/8 | **Ja** | Nej |
-| PROFIL-2: yta för berättelser/kundord | BESTÄLLT, EJ PÅBÖRJAT | Mätaren uppmanar till material som inte går att fylla i. **Håkans beslut 9/8: flyttad upp i kön till direkt efter FIX-1-REST** — UI-löften utan täckning har bevisat sig vara farligaste kategorin | **Ja** | **Ja** — kvalitetsmätaren säger "Lägg till 3 kundberättelser" utan att erbjuda en yta |
+| PROFIL-2: yta för berättelser/kundord | KLART OCH VERIFIERAT | **9/8, `scripts/profil2-dod.mjs` (10 kontroller) + `tests/profil2-kundmaterial.test.ts` (10 tester), `next build` ren.** `/api/profile/material` + `components/profile/KundMaterial.tsx`, monterad FÖRE kunskapsbanken (det är dit åtgärderna pekar). **Rotorsaken var värre än ytan som saknades:** `lib/profil/las.ts` räknade bara berättelser med `source_module='intake'` — en kund hade kunnat skriva in tre berättelser för hand och sett mätaren stå stilla. Nu räknas `["intake","profil"]`, och ursprunget hålls ändå isär. **Bevis:** kriteriet Kundberättelser gick 0 → 3 av manuellt inskrivet material i skarp körning. Ingen parallell datamodell: samma tabeller och fält som intake/commit skriver. Kundord ARKIVERAS (kan vara källa till publicerad text), bara eget material går att radera | **Ja** | **Var ja — nu nej.** Mätaren bad om material som inte gick att fylla i; ytan finns nu |
 | Mediabibliotek: kunskapsbankens filer i ImagePicker | PARKERAT | Håkans idé 2026-07-02, aldrig beställd skarpt | Ja | Nej |
 | Stale kommentar `lib/publish/index.ts:9` | BESTÄLLT, EJ PÅBÖRJAT | Säger att ig-graph "migreras hit" — redan gjort. Vilseleder | Nej | Nej |
 | GHL: föräldralöst värde `4242` på "Louise Ribbing" | PARKERAT | Kan ej åtgärdas — GHL raderar aldrig ett skrivet fältvärde | Nej | Nej |

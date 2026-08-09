@@ -17,7 +17,11 @@ export async function lasKvalitetsIndata(clientId: string): Promise<KvalitetsInd
       .from("linkedin_posts")
       .select("hook, idea_seed, notes")
       .eq("client_id", clientId)
-      .eq("source_module", "intake")
+      // PROFIL-2: mätaren räknade BARA berättelser som kom ur intake-flödet. Hade den
+      // fått stå kvar så hade en kund kunnat skriva in tre kundberättelser för hand och
+      // se mätaren stå stilla — åtgärden hade bett om något den inte belönade. "profil"
+      // är den manuella vägen; ursprunget hålls isär, båda räknas.
+      .in("source_module", ["intake", "profil"])
       .in("status", ["idea", "draft", "approved", "posted"])
       .limit(100),
     sb.from("client_voice_profile").select("signature_phrases, source_asset_count").eq("client_id", clientId).maybeSingle(),

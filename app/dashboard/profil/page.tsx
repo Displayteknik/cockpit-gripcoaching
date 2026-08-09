@@ -6,6 +6,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { Save, Sparkles, Wand2, Loader2, Check, Building2, User, Target, MessageSquare, AlertCircle, Quote, Users, Award, ShoppingBag } from "lucide-react";
 import QualityMeter from "@/components/profile/QualityMeter";
 import KnowledgeBank from "@/components/profile/KnowledgeBank";
+import KundMaterial from "@/components/profile/KundMaterial";
 import IntakeAgent from "@/components/IntakeAgent";
 import { DashHero, LivePill } from "@/components/ui/dash";
 
@@ -223,6 +224,13 @@ export default function ProfilPage() {
           });
         }}
       />
+
+      {/* PROFIL-2: ytan mätaren har bett om sedan PROFIL-1. Ligger FÖRE kunskapsbanken
+          därför att det är hit åtgärderna pekar — "Lägg till 3 kundberättelser" och
+          "Klistra in 5 riktiga kundcitat" är de två tyngsta kriterierna av åtta. */}
+      <div id="sec-kundmaterial" className="scroll-mt-20">
+        <KundMaterial onChange={() => setQualityRefresh((n) => n + 1)} />
+      </div>
 
       <div id="sec-kunskapsbank" className="scroll-mt-20">
         <KnowledgeBank onChange={() => setQualityRefresh((n) => n + 1)} />
