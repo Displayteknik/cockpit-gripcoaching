@@ -54,6 +54,12 @@ export async function generateNewsletter(opts: NewsletterGenOpts): Promise<Newsl
     temperature: 0.8,
     maxOutputTokens: 2500,
     skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+    generering: {
+      syfte: "nyhetsbrev",
+      promptVersion: b.meta.promptVersion,
+      funnel: b.meta.funnel,
+      lager: b.meta.lager,
+    },
   });
 
   const s = (v: unknown) => (typeof v === "string" ? v.trim() : "");

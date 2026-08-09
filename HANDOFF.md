@@ -73,24 +73,37 @@ AKUT-KARUSELL → AKUT-DM → **G-1** → G-2 → FIX-1-REST (B2+C) → G-3 → 
 3. **GHL med flera bilder** — `media[]` skickas, ej provat mot skarpt konto.
 4. **FIX-1 grupp A + B1** — inget test, ingen ommätning sedan fixen.
 
-### G-1 — påbörjad 9/8 (G-1a klar, G-1b återstår)
+### G-1 — generationsloggen (G-1a + G-1b KLARA och bevisade 9/8)
 
-**G-1a levererat:** promptversionering fanns inte i repot, nu gör den det.
-`promptVersion()` i `lib/prompt-core.ts` räknar en hash **ur regeltexten själv** (CTA-golv,
-sanningskrav, perspektiv, pris, variant, rotation, skrivregler, de tre anatomierna) i
-stället för ett nummer någon ska komma ihåg att höja — ett handhållet nummer blir fel
-exakt den gång det spelar roll. Nuvarande: `v1-712d3248`, låst i test.
-`migrations/generationslogg.sql` ger tabellen `generation_log` (pekar på
-`ai_usage_events`, samma mönster som credits) och vyn `generation_per_promptversion`.
-`lib/generationslogg.ts` är enda vägen in. 19 tester.
+**Problemet G-0 beskrev:** `ai_usage_events` vet att ett anrop kostade fyra öre, men inte
+vilken text det blev, i vilket format eller ur vilken promptversion. Alla kvalitetsändringar
+i prompt-core var därför omätbara — det är samma lucka som gör blindbedömningen omöjlig
+att tolka.
 
-⚠ **Migrationen är inte körd i Supabase.** Tabellen finns bara som fil — Håkans setup
-matar in den. Innan dess skriver loggen ingenting (tyst, med flit: mätningen får aldrig
-fälla en kunds text).
+**Promptversionen räknas ur regeltexten själv** (`promptVersion()` i `lib/prompt-core.ts`):
+CTA-golv, sanningskrav, perspektiv, pris, variant, rotation, skrivregler och de tre
+anatomierna hashas. Ett handhållet versionsnummer blir fel exakt den gång det spelar roll
+— någon skärper en regel, glömmer numret, och loggen påstår att före och efter kom ur
+samma prompt. Nuvarande: `v1-712d3248`, **låst i test** så en regeländring inte kan
+passera obemärkt.
 
-**G-1b, nästa steg:** koppla in `loggaGenerering` på de 21 anropsställena och
-`kopplaTillInlagg` där inlägget sparas. Görs efter att tabellen finns — annars mäter man
-ingenting och tror att man mäter.
+**Inkopplad på den obligatoriska vägen, inte på 21 ställen.** `AnropsMeta.generering` i
+`lib/ai-usage` — båda ingångarna (`anropaProvider` för fetch, `loggaAnrop` för
+Anthropic-SDK:n) skriver raden och binder den till kostnadsraden. Ett flöde som inte
+skickar metadata loggas inte, och luckan syns i vyn i stället för att gissas fram.
+Inkopplade flöden: karusell, studio-text, caption, LinkedIn, nyhetsbrev, reels, DM-svar.
+
+**Bevis (`scripts/g1-dod.mjs`, skarp körning):** ett riktigt karusellanrop gav rad
+`71c8ea14` med `syfte=karusell`, **`format=karusell`** (inte bildstorleken — G0 0.4
+punkt 2 stängd), `prompt_version=v1-712d3248`, `funnel=tofu` (syftets mjuka default, inte
+null), `varianter=5`, promptlagren, och `ai_usage_event_id` kopplat till
+gemini/gemini-2.5-flash. 12 kontroller gröna. Migrationen körd via Management API med
+`scripts/kor-migration.mjs`.
+
+⚠ **G-1c återstår:** `kopplaTillInlagg` är byggd och testad men har **ingen anropare**.
+Genererings-id:t når inte fram till där inlägget sparas — `generate()` returnerar bara
+texten. Därför är `publicerade` i vyn alltid 0. Det är den sista biten som gör att man kan
+fråga "blev de här texterna faktiskt publicerade?".
 
 ### Återstår
 

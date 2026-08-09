@@ -3,6 +3,7 @@
 
 import { WRITING_RULES_BLOCK } from "@/lib/content/writing-rules";
 import { anropaProvider } from "@/lib/ai-usage";
+import type { GenereringsMeta } from "@/lib/generationslogg";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -32,6 +33,12 @@ export interface GenerateOptions {
   flow?: string;
   /** KOSTNAD-1: tenant i kostnadsloggen. Utelämnad härleds den ur sessionen. */
   tenantId?: string | null;
+  /**
+   * G-1: metadata om genereringen (syfte, format, promptversion). Skickas vidare till
+   * lib/ai-usage, som skriver raden i generation_log och binder den till kostnaden.
+   * Utelämnad loggas ingen generering — luckan syns i vyn i stället för att gissas.
+   */
+  generering?: GenereringsMeta;
 }
 
 /**
@@ -77,6 +84,7 @@ export async function generate(opts: GenerateOptions): Promise<string> {
     model,
     flow: opts.flow,
     tenantId: opts.tenantId,
+    generering: opts.generering,
     url: `${API_BASE}/${model}:generateContent?key=${apiKey}`,
     init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   });
@@ -94,7 +102,13 @@ interface GeminiSvar {
 }
 
 export interface GenerateUsage { input: number; output: number; total: number }
-export interface GenerateWithUsageResult { text: string; usage: GenerateUsage }
+export interface GenerateWithUsageResult {
+  text: string;
+  usage: GenerateUsage;
+  /** G-1: raden i generation_log, när `generering` skickades med. Behövs för att binda
+   *  genereringen till inlägget den blev (`kopplaTillInlagg`). */
+  generationId?: string | null;
+}
 
 // Som generate(), men returnerar även faktisk token-användning (usageMetadata) för
 // kostnadsloggning. Delad kropp med generate() vore snyggare, men detta håller
@@ -122,6 +136,7 @@ export async function generateWithUsage(opts: GenerateOptions): Promise<Generate
     model,
     flow: opts.flow,
     tenantId: opts.tenantId,
+    generering: opts.generering,
     url: `${API_BASE}/${model}:generateContent?key=${apiKey}`,
     init: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   });
@@ -139,6 +154,7 @@ export async function generateWithUsage(opts: GenerateOptions): Promise<Generate
       output: Number(u.candidatesTokenCount) || 0,
       total: Number(u.totalTokenCount) || 0,
     },
+    generationId: svar.generationId ?? null,
   };
 }
 

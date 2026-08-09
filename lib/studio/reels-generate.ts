@@ -13,7 +13,7 @@
 // (imageNegative) — donts-raden ägs av kärnans lager 7.
 
 import { generate } from "@/lib/gemini";
-import { byggTextPrompt } from "@/lib/prompt-core";
+import { byggTextPrompt, type ByggdPrompt } from "@/lib/prompt-core";
 import { getKitDirectives, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 import {
@@ -35,7 +35,7 @@ interface RawScene { line1: string; line2: string; imagePrompt: string }
 // Bygger reel-systemprompten via prompt-core. Exporterad separat så paritetstestet
 // (tests/reels-prompt-paritet.test.ts) kan verifiera att alla innehållsblock finns kvar
 // utan att köra genereringsloopen.
-export async function byggReelPrompt(opts: ReelGenOpts): Promise<{ system: string; mall: ReelTemplate }> {
+export async function byggReelPrompt(opts: ReelGenOpts): Promise<{ system: string; mall: ReelTemplate; meta: ByggdPrompt["meta"] }> {
   const mall = REEL_TEMPLATES[opts.templateKey];
   if (!mall) throw new Error(`Okänd mall: ${opts.templateKey}`);
 
@@ -98,14 +98,16 @@ export async function byggReelPrompt(opts: ReelGenOpts): Promise<{ system: strin
     jsonSchema: `{"title":"kort intern titel","caption":"...","scenes":[${mall.scenes.map(() => '{"line1":"...","line2":"...","imagePrompt":"..."}').join(",")}]}`,
   });
 
-  return { system: b.system, mall };
+  // G-1: meta följer med ut så manusmotorn kan logga sin generering. Utan det hade
+  // reels varit det enda kundtextflödet som byggde en prompt utan att kunna säga vilken.
+  return { system: b.system, mall, meta: b.meta };
 }
 
 export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelStoryboard> {
   const ide = String(opts.ide || "").trim();
   if (!ide) throw new Error("Skriv en idé först");
 
-  const { system, mall } = await byggReelPrompt(opts);
+  const { system, mall, meta } = await byggReelPrompt(opts);
 
   let feedback = "";
   let raw: RawScene[] = [];
@@ -132,6 +134,17 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
       maxOutputTokens: 3000,
       jsonMode: true,
       skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+      // G-1: VARJE försök loggas, inte bara det som till slut godkändes. En
+      // promptversion som ofta behöver tre försök är sämre än en som klarar sig på
+      // ett — och det syns bara om omtagen finns i datan.
+      generering: {
+        syfte: "reel",
+        format: "1080x1920",
+        promptVersion: meta.promptVersion,
+        funnel: meta.funnel,
+        lager: meta.lager,
+        varianter: mall.scenes.length,
+      },
     });
 
     const obj = tolkaJson<{ title?: unknown; caption?: unknown; scenes?: unknown }>(svar);

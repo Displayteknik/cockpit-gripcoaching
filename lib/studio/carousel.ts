@@ -53,6 +53,17 @@ export async function generateCarousel(opts: {
     maxOutputTokens: 2200,
     jsonMode: true,
     skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+    // G-1: karusell är ett EGET format i loggen, inte bildstorleken den råkar ha.
+    // G0 0.4 punkt 2: karusell och statisk bild blev samma rad eftersom formatet
+    // härleddes ur URL:en — då gick de inte att jämföra.
+    generering: {
+      syfte: "karusell",
+      format: "karusell",
+      promptVersion: b.meta.promptVersion,
+      funnel: b.meta.funnel,
+      lager: b.meta.lager,
+      varianter: points + 2, // hook + punkter + cta = antal slides anropet ska ge
+    },
   });
   let arr: unknown;
   try { arr = JSON.parse(raw); } catch { const m = raw.match(/\[[\s\S]*\]/); arr = m ? JSON.parse(m[0]) : []; }

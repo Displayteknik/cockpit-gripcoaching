@@ -111,6 +111,15 @@ export async function POST(req: NextRequest) {
       maxOutputTokens: 2000,
       temperature: 0.7,
       skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+      // G-1: DM-svar är den text som går direkt till en betalande kunds lead. Att den
+      // syns i mätningen är viktigare här än någon annanstans (G0, tyngsta fynd 4).
+      generering: {
+        syfte: "dm-svar",
+        promptVersion: bygg.meta.promptVersion,
+        funnel: bygg.meta.funnel,
+        lager: bygg.meta.lager,
+        varianter: 3,
+      },
     });
     const raa = (data.suggestions || []).filter((s) => s?.text).slice(0, 3);
     if (!raa.length) return NextResponse.json({ error: "Inga förslag kunde skapas" }, { status: 500 });

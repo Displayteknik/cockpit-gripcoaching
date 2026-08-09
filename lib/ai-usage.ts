@@ -20,6 +20,9 @@
 
 import { supabaseService } from "./supabase-admin";
 import type { CreditAtgard } from "./credits";
+// G-1: typ-import (raderas vid kompilering) — själva loggaren laddas dynamiskt nedan,
+// samma mönster som credits, så ingen importcykel kan uppstå.
+import type { GenereringsMeta } from "./generationslogg";
 
 // Alla tjänster vi betalar per anrop för. Fasta abonnemang (Vercel, Supabase, GHL,
 // domäner) mäts inte här — de ligger i tabellen `fasta_kostnader` och visas i samma vy,
@@ -61,6 +64,16 @@ export interface AnropsMeta {
   mediaAtgard?: CreditAtgard;
   /** Antal enheter av åtgärden (video: påbörjade femsekundersklipp). */
   mediaAntal?: number;
+  /**
+   * G-1: metadata om GENERERINGEN, när anropet producerar kundtext eller kundbild.
+   * Sätts av flödet — bara det vet syfte, format och vilken promptversion som byggde
+   * prompten. Utelämnad loggas ingen generering, och det syns som en lucka i vyn
+   * i stället för att gissas fram.
+   *
+   * Ligger HÄR och inte i ett eget anrop av samma skäl som kostnadsloggen: en väg förbi
+   * den obligatoriska vägen är en väg förbi hela mätningen.
+   */
+  generering?: GenereringsMeta;
 }
 
 /**
@@ -114,6 +127,12 @@ export interface ProviderSvar<T = unknown> {
   creditstopp?: boolean;
   /** Id på raden i ai_usage_events. Credits-ledgern (STEG 3) pekar på den. */
   handelseId?: string | null;
+  /**
+   * G-1: id på raden i generation_log, när `generering` skickades med. Anroparen behöver
+   * det för att binda genereringen till inlägget den blev (`kopplaTillInlagg`) eller för
+   * att markera den kasserad vid omgenerering.
+   */
+  generationId?: string | null;
 }
 
 // ── Felklassning ───────────────────────────────────────────────────────────
@@ -437,7 +456,33 @@ export async function anropaProvider<T = unknown>(
     await dragCredits({ tenantId: opts.tenantId, atgard, antal, usageEventId: handelseId });
   }
 
-  return { ok, status, data, raw, felklass, fel, latencyMs, handelseId };
+  // G-1: generationsloggen. Skrivs ÄVEN vid fel — ett flöde som misslyckas ofta på en
+  // viss promptversion är exakt det mätningen ska kunna se.
+  const generationId = await loggaGenereringOmBegard(opts, handelseId, ok);
+
+  return { ok, status, data, raw, felklass, fel, latencyMs, handelseId, generationId };
+}
+
+/**
+ * G-1: skriver generationsraden när flödet bett om det, och binder den till kostnadsraden.
+ * Dynamisk import — samma mönster som credits, så typ-cykeln aldrig blir en runtime-cykel.
+ * Kastar aldrig: loggaGenerering är själv fail-open, och den här nivån lägger inte till
+ * någon egen väg att fälla anropet.
+ */
+async function loggaGenereringOmBegard(
+  opts: AnropsMeta,
+  handelseId: string | null,
+  ok: boolean,
+): Promise<string | null> {
+  if (!opts.generering) return null;
+  const { loggaGenerering } = await import("./generationslogg");
+  return loggaGenerering({
+    ...opts.generering,
+    tenantId: opts.tenantId,
+    aiUsageEventId: handelseId,
+    // Flödet får sätta 'kasserad' i efterhand; här avgör anropets utfall.
+    status: ok ? "ok" : "error",
+  });
 }
 
 // ── Ingång 2: SDK-anrop vi inte äger fetchen för ───────────────────────────
@@ -458,7 +503,7 @@ export async function loggaAnrop<T>(
   const t0 = Date.now();
   try {
     const r = await kor();
-    await loggaHandelse({
+    const handelseId = await loggaHandelse({
       ...meta,
       mediaUnits: r.mediaUnits ?? meta.mediaUnits,
       tokensIn: r.tokensIn || 0,
@@ -466,11 +511,15 @@ export async function loggaAnrop<T>(
       status: "ok",
       latencyMs: Date.now() - t0,
     });
+    // G-1: Anthropic-vägen loggar sina genereringar precis som fetch-vägen. Skulle den
+    // saknas hade iterationsloopens texter varit osynliga i mätningen — och det är just
+    // dem hela röstarbetet handlar om.
+    await loggaGenereringOmBegard(meta, handelseId, true);
     return r.resultat;
   } catch (e) {
     const err = e as { status?: number; message?: string; error?: unknown };
     const kropp = [err.message, err.error ? JSON.stringify(err.error) : ""].filter(Boolean).join(" ");
-    await loggaHandelse({
+    const handelseId = await loggaHandelse({
       ...meta,
       mediaUnits: 0,
       tokensIn: 0,
@@ -481,6 +530,7 @@ export async function loggaAnrop<T>(
       svarskropp: kropp,
       latencyMs: Date.now() - t0,
     });
+    await loggaGenereringOmBegard(meta, handelseId, false);
     throw e;
   }
 }

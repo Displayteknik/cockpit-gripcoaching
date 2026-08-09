@@ -9,6 +9,7 @@ import { supabaseService } from "./supabase-admin";
 import { SPECIALIST_GUARDRAILS } from "./specialists";
 import { WRITING_RULES_BLOCK } from "./content/writing-rules";
 import { loggaAnrop } from "./ai-usage";
+import type { GenereringsMeta } from "./generationslogg";
 
 export interface IterateOptions {
   // Gamla vägen (utan prebuilt): flödets egen systemprompt — iterate väver då själv in
@@ -37,6 +38,12 @@ export interface IterateOptions {
   variantSuffixes?: string[];
   /** KOSTNAD-1: flodesnamn i kostnadsloggen. Utelamnad harleds den ur requestens sokvag. */
   flow?: string;
+  /**
+   * G-1: metadata om genereringen. Varje VARIANT ar ett eget betalt anrop och blir
+   * darfor en egen rad i generation_log — det ar avsiktligt: iterationsloopens hela
+   * ide ar att varianter ar olika, och en sammanslagen rad hade dolt spridningen.
+   */
+  generering?: GenereringsMeta;
   // Om inget clientId: kor utan voice-score, returnera forsta varianten
 }
 
@@ -105,7 +112,7 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
   const calls = Array.from({ length: variants }, (_, i) => {
     const suffix = opts.variantSuffixes?.[i % (opts.variantSuffixes.length || 1)];
     return loggaAnrop(
-      { provider: "anthropic", model, flow: opts.flow, tenantId: opts.clientId ?? undefined },
+      { provider: "anthropic", model, flow: opts.flow, tenantId: opts.clientId ?? undefined, generering: opts.generering },
       async () => {
         const msg = await anthropic.messages.create({
           model,

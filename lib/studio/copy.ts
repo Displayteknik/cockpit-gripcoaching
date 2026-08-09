@@ -322,6 +322,15 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
         // tillbaka samma förslag, och dedupen slänger det direkt.
         temperature: runda === 1 ? 0.9 : 1,
         maxTokens: 400,
+        // G-1: studio-texten är den som trycks PÅ bilden (pa-bild-anatomin). Formatet
+        // sätts inte här — texten skrivs innan användaren låst bildstorleken.
+        generering: {
+          syfte: "studio-text",
+          promptVersion: b.meta.promptVersion,
+          funnel: b.meta.funnel,
+          lager: b.meta.lager,
+          varianter: variants,
+        },
       });
     } catch (e) {
       // Fail-open: ett tappat omtag får aldrig radera det som redan lyckats.

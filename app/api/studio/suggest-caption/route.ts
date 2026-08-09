@@ -119,7 +119,20 @@ export async function POST(req: NextRequest) {
       let out = "";
       for (let attempt = 0; attempt < 3; attempt++) {
         const sys = attempt === 0 ? bas : `${bas}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
-        out = (await generate({ model: "gemini-2.5-flash", systemInstruction: sys, prompt, temperature: attempt === 0 ? 0.9 : 0.7, maxOutputTokens: longer ? 700 : 500, skrivregler: false /* prompt-core äger skrivregler-flaggan (TEXT-1) */ })).trim();
+        out = (await generate({
+          model: "gemini-2.5-flash", systemInstruction: sys, prompt,
+          temperature: attempt === 0 ? 0.9 : 0.7,
+          maxOutputTokens: longer ? 700 : 500,
+          skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+          // G-1: även omtagen loggas. En promptversion som ofta fastnar i
+          // floskelgrinden är sämre än en som inte gör det — det syns bara i datan.
+          generering: {
+            syfte: "caption",
+            promptVersion: bygg.meta.promptVersion,
+            funnel: bygg.meta.funnel,
+            lager: bygg.meta.lager,
+          },
+        })).trim();
         if (!hasBanned(out)) break;
       }
       return hasBanned(out) ? sanitizeCaption(out) : out;

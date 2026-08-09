@@ -101,6 +101,8 @@ export interface ByggdPrompt {
     profilKlippt: string[];
     /** G-1: vilken regeluppsättning som byggde prompten. Skrivs i generationsloggen. */
     promptVersion: string;
+    /** G-1: funnel-nivån som faktiskt gällde — flödets egen, annars syftets mjuka default. */
+    funnel: FunnelLevel | null;
   };
 }
 
@@ -547,6 +549,10 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
 
   // 6. Anatomi + Compass — ALLTID (variant per syfte).
   const variant = p.syfte === "studio-text" ? "pa-bild" : p.syfte === "dm-svar" ? "dialog" : "full";
+  // G-1: den funnel-nivå som FAKTISKT gällde. Flödets egen `compass.funnel` räcker inte
+  // som loggvärde — är den osatt styrs texten av syftets mjuka default, och en logg som
+  // skriver null där hade dolt precis den skillnaden mätningen ska kunna se.
+  const effektivFunnel: FunnelLevel | null = p.compass?.funnel ?? DEFAULT_FUNNEL[p.syfte] ?? null;
   delar.push(anatomiBlock(variant, p.compass, DEFAULT_FUNNEL[p.syfte]));
   lager.anatomi = true;
   // Kanalmappning så anatomin inte krockar med blogg/nyhetsbrevs egna strukturblock.
@@ -625,7 +631,7 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     fingerprint,
     winning,
     profilText,
-    meta: { lager, profilKlippt, promptVersion: promptVersion() },
+    meta: { lager, profilKlippt, promptVersion: promptVersion(), funnel: effektivFunnel },
   };
 }
 

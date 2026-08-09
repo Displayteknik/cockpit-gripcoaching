@@ -147,6 +147,15 @@ Skriv inlägget nu. Returnera bara JSON.`;
       temperature: 0.92,
       maxOutputTokens: isCarousel ? 4000 : 2500,
       skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+      // G-1: LinkedIn är flödet där röstträffen föll 34 → 11 % utan fastställd orsak.
+      // Utan promptversion per generering går det före/efter aldrig att avgöra.
+      generering: {
+        syfte: "linkedin",
+        format: isCarousel ? "karusell" : null,
+        promptVersion: b.meta.promptVersion,
+        funnel: b.meta.funnel,
+        lager: b.meta.lager,
+      },
     });
 
     // TEXT-1: enhetlig sanering — flödet saknade sanering helt före migreringen.

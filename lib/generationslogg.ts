@@ -18,6 +18,24 @@ import type { TextSyfte } from "@/lib/prompt-core";
 export type GenerationStatus = "ok" | "error" | "kasserad";
 export type Funnel = "tofu" | "mofu" | "bofu";
 
+/**
+ * Det FLÖDET vet om sin generering. Skickas med i `AnropsMeta.generering` — tenant,
+ * kostnadskoppling och status fylls i av lib/ai-usage, som är enda stället som känner dem.
+ */
+export interface GenereringsMeta {
+  syfte: TextSyfte | string;
+  /** 1080x1350 | 1080x1080 | 1080x1920 | karusell. Utelämnas för ren text. */
+  format?: string | null;
+  /** `ByggdPrompt.meta.promptVersion`. Utan den skrivs ingen rad — den är hela nyckeln. */
+  promptVersion: string;
+  hookTyp?: string | null;
+  motivKategori?: string | null;
+  funnel?: Funnel | null;
+  lager?: Record<string, boolean> | null;
+  /** Antal varianter anropet gav. */
+  varianter?: number;
+}
+
 export interface Generering {
   tenantId?: string | null;
   /** Raden i ai_usage_events som betalade för det här. null = anropet gick utanför ledgern. */
