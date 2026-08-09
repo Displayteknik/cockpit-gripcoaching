@@ -7,6 +7,7 @@ import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import type { CompassParams } from "@/lib/content-compass/prompt";
 import type { StudioSlide } from "@/lib/studio/payload";
 import { MAX_SLIDES } from "@/lib/studio/payload";
+import { karusellAnatomiText, karusellRoller, type KarusellUppsattning } from "@/lib/format-anatomi";
 
 const FORBIDDEN = ["kraftfull", "banbrytande", "game-changer", "handlar om", "nästa nivå", "holistisk", "skalbar"];
 
@@ -30,17 +31,26 @@ export interface KarusellResultat {
 
 export async function generateCarousel(opts: {
   clientId: string; topic: string; points?: number; brandName?: string; industry?: string; compass?: CompassParams;
+  /** G-2: valbara roller. Av som standard — grundstrukturen ändras inte utan ett aktivt val. */
+  medInsats?: boolean; medBevis?: boolean;
 }): Promise<KarusellResultat> {
   const points = Math.min(Math.max(2, opts.points ?? 3), MAX_SLIDES - 2);
   const brand = opts.brandName || "kunden";
 
+  // G-2: anatomin ligger som DATA i lib/format-anatomi, inte som fritext här. Ändras en
+  // roll slår det igenom i prompten, i slide-räkningen och i JSON-schemat samtidigt —
+  // tidigare kunde de tre glida isär utan att någon märkte det.
+  const uppsattning: KarusellUppsattning = {
+    punkter: points,
+    medInsats: opts.medInsats === true,
+    medBevis: opts.medBevis === true,
+  };
+  const roller = karusellRoller(uppsattning);
+
   const uppdrag = [
-    `Du skriver en Instagram-karusell för ${brand}${opts.industry ? ` (${opts.industry})` : ""}. En sammanhållen serie: en KROK som stoppar scrollen, ${points} innehållspunkter som ger konkret värde, och ett AVSLUT med uppmaning.`,
+    `Du skriver en Instagram-karusell för ${brand}${opts.industry ? ` (${opts.industry})` : ""}. En sammanhållen serie som hänger ihop från första till sista sliden.`,
+    "\n" + karusellAnatomiText(uppsattning),
     "\n=== REGLER ===",
-    "- hook.headline: krok, MAX ~34 tecken, hel fras (aldrig fragment). hook.body: kort löfte, MAX ~70 tecken.",
-    "- point.headline: punktens kärna, MAX ~34 tecken. point.body: 1–2 meningar, MAX ~120 tecken, konkret och användbart.",
-    "- cta.headline: mjuk uppmaning/fråga, MAX ~40 tecken. cta.body: nästa steg, MAX ~90 tecken.",
-    "- Bygg en logisk båge: kroken lovar, punkterna levererar, avslutet leder vidare.",
     "- FÖRBJUDET: emoji, symboler, hashtags, URL, telefonnummer, punktlistor inuti ett fält.",
     `- FÖRBJUDNA ord: ${FORBIDDEN.join(", ")}. Svenska tecken å/ä/ö korrekt. Skriv som människa.`,
   ].join("\n");
@@ -50,10 +60,12 @@ export async function generateCarousel(opts: {
     syfte: "karusell",
     kanal: "instagram",
     uppdrag,
-    underlag: `Ämne/vinkel: ${opts.topic}\n\nSkriv karusellen nu (${points + 2} slides: 1 hook, ${points} point, 1 cta).`,
+    underlag: `Ämne/vinkel: ${opts.topic}\n\nSkriv karusellen nu (${roller.length} slides i ordningen ${roller.join(" → ")}).`,
     compass: opts.compass,
     knowledge: ["hook-playbook"],
-    jsonSchema: `[{"kind":"hook","headline":"...","body":"..."},${Array.from({ length: points }).map(() => '{"kind":"point","headline":"...","body":"..."}').join(",")},{"kind":"cta","headline":"...","body":"..."}]`,
+    // Schemat byggs ur SAMMA rollista som anatomin. Förut räknades slides på tre ställen
+    // med tre uttryck — nu kan de inte säga olika saker.
+    jsonSchema: `[${roller.map((r) => `{"kind":"${r}","headline":"...","body":"..."}`).join(",")}]`,
   });
 
   // generateWithUsage i stället för generate: det är den enda vägen som lämnar tillbaka
@@ -75,7 +87,7 @@ export async function generateCarousel(opts: {
       promptVersion: b.meta.promptVersion,
       funnel: b.meta.funnel,
       lager: b.meta.lager,
-      varianter: points + 2, // hook + punkter + cta = antal slides anropet ska ge
+      varianter: roller.length, // samma räkning som anatomin och schemat använder
     },
   });
   const raw = svar.text;
@@ -89,6 +101,10 @@ export async function generateCarousel(opts: {
     arr
       .map((v: Record<string, unknown>): StudioSlide => {
         const k = str(v.kind);
+        // ⚠ G-2, medveten gräns: payloadens slide-typ har tre roller (hook/point/cta) och
+        // mallarna ritar tre. Insats och bevis styr alltså DRAMATURGIN i prompten men
+        // landar som "point" i datan. Att införa dem som egna slide-typer kräver att
+        // ArkKarusell, slide-merge och punktNummer ritar och räknar dem — eget steg.
         const kind: StudioSlide["kind"] = k === "hook" || k === "cta" ? k : "point";
         return { kind, headline: str(v.headline), body: str(v.body), imageUrl: "" };
       })

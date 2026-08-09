@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClientId } from "@/lib/client-context";
-import { supabaseService } from "@/lib/supabase-admin";
-import { generate } from "@/lib/gemini";
+import { generateWithUsage } from "@/lib/gemini";
+import { byggTextPrompt } from "@/lib/prompt-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -16,20 +16,11 @@ export async function POST(req: NextRequest) {
     const topic = String(body.topic || "").trim();
     if (!topic) return NextResponse.json({ error: "topic krävs" }, { status: 400 });
 
-    const sb = supabaseService();
-    const { data: profile } = await sb
-      .from("hm_brand_profile")
-      .select("company_name, location, hashtags_base, icp_primary, services")
-      .eq("client_id", clientId)
-      .maybeSingle();
-
-    const system = `Du är en hashtag-specialist för svenska Instagram-konton. Du skapar STRATEGISKA hashtag-kluster, inte slumpvisa listor.
-
-KUND: ${profile?.company_name || "(saknas)"}
-PLATS: ${profile?.location || "(saknas)"}
-TJÄNSTER: ${profile?.services || "(saknas)"}
-MÅLGRUPP: ${profile?.icp_primary || "(saknas)"}
-BEFINTLIGA HASHTAGS: ${profile?.hashtags_base || "(inga)"}
+    // G-2: flödet byggde sin EGEN prompt och hämtade profilen själv (G0/STATUS:
+    // "generate/hashtags/route.ts:59 bygger egen prompt"). Det gjorde att röstprofil,
+    // klientens förbjudna ord och sanningskravet aldrig nådde hashtaggarna — och en
+    // hashtag är kundsynlig text som vilken annan. Nu går den genom kärnan som resten.
+    const uppdrag = `Du är hashtag-specialist för svenska Instagram-konton. Du skapar STRATEGISKA hashtag-kluster, inte slumpvisa listor.
 
 REGLER:
 - Branded (1-2): kundens egna märkesnamn
@@ -40,30 +31,44 @@ REGLER:
 - Inga "dussinhashtags" som #love #instagood
 - Inga hashtags längre än 25 tecken
 - Inga mellanslag
+- Bygg på varumärkesprofilens plats, tjänster och befintliga hashtags ovan. Hitta aldrig på en ort eller en tjänst som inte står där.`;
 
-OUTPUT JSON:
-{
+    const bygg = await byggTextPrompt({
+      clientId,
+      syfte: "social",
+      kanal: "instagram",
+      uppdrag,
+      underlag: `Ämne för inlägget: ${topic}
+${body.hook ? `Hook: ${body.hook}` : ""}
+
+Skapa hashtag-strategi. Returnera enbart JSON.`,
+      anvandarText: topic,
+      jsonSchema: `{
   "branded": ["..."],
   "local": ["..."],
   "niche": ["..."],
   "broad": ["..."],
   "all_combined": ["..."],
   "strategy_note": "1-2 meningar om varför dessa kluster passar"
-}`;
+}`,
+    });
 
-    const prompt = `Ämne för inlägget: ${topic}
-${body.hook ? `Hook: ${body.hook}` : ""}
-
-Skapa hashtag-strategi. Returnera enbart JSON.`;
-
-    const raw = await generate({
+    const svar = await generateWithUsage({
       model: "gemini-2.5-flash",
-      systemInstruction: system,
-      prompt,
+      systemInstruction: bygg.system,
+      prompt: bygg.user,
       temperature: 0.7,
       maxOutputTokens: 1500,
       jsonMode: true,
+      skrivregler: false, // prompt-core äger skrivregler-flaggan (TEXT-1)
+      generering: {
+        syfte: "social",
+        promptVersion: bygg.meta.promptVersion,
+        funnel: bygg.meta.funnel,
+        lager: bygg.meta.lager,
+      },
     });
+    const raw = svar.text;
 
     let parsed: {
       branded?: string[];

@@ -128,9 +128,45 @@ för **samtliga** klienter (kontrollerat i DB), så flödet gick inte att köra.
 den åt en kund för ett test vore att ändra hennes paket. Kör DoD:n igen när någon kund
 får modulen.
 
+### G-2 — formatanatomier som data (KLAR och bevisad 9/8)
+
+`lib/format-anatomi.ts` samlar det som låg utspritt som hårdkod i flödesfilerna. Fem hål
+ur G-0 stängda, alla körda skarpt med `scripts/g2-dod.mjs` (11 kontroller):
+
+1. **Story finns nu som syfte.** Var inte ens ett syfte förut — en story var "1080×1920
+   utan video" och fick ett vanligt inläggs text i en yta som inte tål den. Egen anatomi:
+   en tanke, 3–12 ord, avslut som görs med tummen ("svara på den här storyn"), inga
+   hashtags. Kopplad i `lib/studio/copy.ts` på 9:16 utan video. Bevis: gav
+   *"Öppet till 18 idag"* / *"Fixar din bil på väg hem"* — 4 ord, och raden i
+   generationsloggen bär `syfte=story`.
+2. **Karusellanatomin ur data.** Rollista, anatomitext, JSON-schema och slide-räkning
+   kommer nu ur SAMMA källa. Förut räknades slides med tre olika uttryck på tre ställen —
+   exakt den glidningen som gjorde att UI:t lovade N bilder och koden gav en. Bevis: 4
+   punkter gav exakt 6 slides, och loggen sa `varianter=6`.
+3. **Insats och bevis** finns som valbara roller, **av som standard**. Att ändra
+   grundstrukturen mitt i en kundleverans är ditt beslut, inte en teknisk uppstädning.
+   ⚠ De styr dramaturgin i prompten men landar som `point` i payloaden — mallarna ritar
+   tre roller. Att göra dem till egna slide-typer kräver ArkKarusell, slide-merge och
+   punktNummer, och är ett eget steg.
+4. **Alla fyra reelmallar börjar med krok.** *Före och efter* saknade hook-scen helt och
+   inledde med tre sekunder problem — tittaren har bestämt sig långt innan dess.
+5. **Säkerhetszon för statiska format.** Fanns bara för reels. Kanvasen är 4:5 men
+   AI-bilden begärs som 3:4 (Imagen saknar 4:5), så ~6 % av höjden beskärs bort — precis
+   där hooken eller ett ansikte hamnar. `SAKER_ZON` + en bildrad som säger var motivet
+   måste ha luft, utan att beskriva ljus eller stil (det ägs av grafiska profilen).
+
+Dessutom, båda beslutade in i G-2: **skenfrågegrinden når nu alla flöden** (`rattaSkenfragor`
+i `saneraText` — deterministisk, frågetecknet blir punkt, orden rörs inte, äkta frågor rörs
+aldrig), och **hashtags-flödet går genom prompt-core** i stället för att bygga egen prompt
+förbi kärnan.
+
+★ Promptversionen gick `v1-712d3248` → `v1-5082a4b7` när storyns anatomi lades till.
+Det låsta testet fällde ändringen innan den kunde passera tyst — det är precis vad låset
+finns för, och mätningen vet nu var gränsen går.
+
 ### Återstår
 
-- **G-2 … G-9** — inget påbörjat.
+- **G-3 … G-9** — inget påbörjat.
 - **FIX-1-REST** (B2 Vilande, grupp C) — mellan G-2 och G-3.
 - **BILD-9-spec** — beställd med hårt stopp, ingen spec finns i repot.
 - **PROFIL-2** — uppflyttad till direkt efter FIX-1-REST (UI-löfte utan täckning).

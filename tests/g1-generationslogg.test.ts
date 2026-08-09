@@ -42,7 +42,10 @@ import { loggaGenerering, kopplaTillInlagg, markeraKasserad, loggFormat, loggFun
 // Låst värde. Faller det här testet har en regel i prompt-core ändrats — kontrollera att
 // det var avsiktligt och skriv in den nya versionen. Det är hela poängen: en regeländring
 // ska aldrig kunna passera obemärkt och göra före/efter-mätningen omöjlig att tolka.
-const LAST_VERSION = "v1-712d3248";
+// 2026-08-09, G-2: storyns anatomi lades till i regeluppsättningen → v1-712d3248 blev
+// v1-5082a4b7. Testet fällde ändringen, den bekräftades, versionen skrevs om. Det är
+// exakt det förloppet låset finns för — före/efter-mätningen vet nu var gränsen går.
+const LAST_VERSION = "v1-5082a4b7";
 
 beforeEach(() => {
   svar.data = null;

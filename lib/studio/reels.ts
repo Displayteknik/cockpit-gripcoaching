@@ -94,7 +94,11 @@ export const REEL_TEMPLATES: Record<ReelTemplateKey, ReelTemplate> = {
     fourA: "aspirational",
     kraverAktBekraftelse: true,
     scenes: [
-      { kind: "problem", durationMs: 3000, transition: "overton", roll: "Visa läget FÖRE. Namnge problemet som tittaren känner igen sig i. Ingen lösning här." },
+      // G-2 (G0 0.3a): mallen saknade hook-scen helt och började med tre sekunder problem.
+      // Det motsäger 1,7-sekundersregeln — tittaren har bestämt sig långt innan problemet
+      // är formulerat. Tre av fyra mallar hade krok, den här inte. Nu har alla fyra.
+      { kind: "hook", durationMs: 1700, transition: "svep", roll: "Krok på under två sekunder. En rad som får tittaren att stanna innan problemet ens är beskrivet. Fråga eller konkret påstående, aldrig en generalisering." },
+      { kind: "problem", durationMs: 2500, transition: "overton", roll: "Visa läget FÖRE. Namnge problemet som tittaren känner igen sig i. Ingen lösning här." },
       { kind: "losning", durationMs: 5000, transition: "overton", roll: "Visa läget EFTER. Kundens konkreta resultat, inte er metod eller era tjänster." },
       { kind: "cta", durationMs: 2000, transition: "ingen", roll: "Exakt en uppmaning. Lågt motstånd, lätt att svara på." },
     ],

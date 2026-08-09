@@ -52,6 +52,8 @@ export interface StudioCopyOpts {
   caption?: string; // inläggets grundtext (om satt i sessionen) — texten grundas i den
   imageDescription?: string; // vad bilden föreställer (Bildhjälpen-scen eller bildanalys)
   imageRole?: "problem" | "losning" | "neutral"; // bildens roll → styr vilka texter som föreslås
+  /** G-2: 9:16 UTAN video är en story; med video är det en reel. Skiljer anatomin åt. */
+  videoUrl?: string;
 }
 
 // Vilka hook-typer passar en bild i respektive roll?
@@ -146,9 +148,15 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
     "- Målgruppens EGNA ord ur profilen. Svenska tecken å/ä/ö korrekt. Uppfinn inget utanför kundens värld.",
   ].filter(Boolean).join("\n");
 
+  // G-2: en STORY är inte ett inlägg i annan storlek. Den ses i helskärm, i några
+  // sekunder, och försvinner efter ett dygn — ett inläggs textmängd blir oläsbar där.
+  // Före G-2 fanns story inte ens som syfte (G0 0.3a) och fick pa-bild-anatomin rakt av.
+  const arStory = opts.format === "1080x1920" && !opts.videoUrl;
+
   const b = await byggTextPrompt({
     clientId: opts.clientId,
-    syfte: "studio-text", // pa-bild-anatomin — harmonierar med CTA-förbudet i uppdraget
+    // pa-bild-anatomin harmonierar med CTA-förbudet i uppdraget; storyn har sin egen.
+    syfte: arStory ? "story" : "studio-text",
     uppdrag,
     knowledge: ["hook-playbook"],
     // KVALITET-3/punkt 5: ämnet och inläggets grundtext är det ANVÄNDAREN skrev.
@@ -325,7 +333,7 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
         // G-1: studio-texten är den som trycks PÅ bilden (pa-bild-anatomin). Formatet
         // sätts inte här — texten skrivs innan användaren låst bildstorleken.
         generering: {
-          syfte: "studio-text",
+          syfte: arStory ? "story" : "studio-text",
           promptVersion: b.meta.promptVersion,
           funnel: b.meta.funnel,
           lager: b.meta.lager,

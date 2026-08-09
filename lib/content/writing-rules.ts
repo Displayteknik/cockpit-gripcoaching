@@ -653,6 +653,28 @@ export function skenfragor(text: string): string[] {
   return fallda;
 }
 
+/**
+ * G-2: gör om skenfrågor till påståenden, deterministiskt.
+ *
+ * Bakgrund: grinden fanns bara i `sakerstallCaption` — veckoplan, karusell, reels, blogg,
+ * nyhetsbrev och LinkedIn hade bara promptregeln, och en promptregel som inte kontrolleras
+ * är ett önskemål. Den här funktionen är efterhandskontrollen för alla andra flöden.
+ *
+ * Åtgärden är medvetet den minsta möjliga: en skenfråga ÄR ett påstående som råkat få
+ * frågetecken, så punkt i stället för frågetecken gör meningen korrekt utan att röra ett
+ * enda ord. Att skriva om till en äkta fråga kräver omvänd ordföljd och därmed en modell —
+ * det görs i captionvägen, som har en omgenerering att ta till.
+ */
+export function rattaSkenfragor(text: string): { text: string; rattade: string[] } {
+  const fallda = skenfragor(text);
+  if (!fallda.length) return { text, rattade: [] };
+  let ut = text;
+  for (const mening of fallda) {
+    ut = ut.replace(mening, mening.replace(/\?\s*$/, "."));
+  }
+  return { text: ut, rattade: fallda };
+}
+
 export const FRAGEFORM_SKARPNING = [
   "SKÄRPNING (frågeform): en eller flera meningar slutar med frågetecken men är skrivna som påståenden.",
   "Gör om VARJE sådan mening till en riktig fråga med omvänd ordföljd — verbet först: \"Sommaren dödar skärmar?\" blir \"Dödar sommaren skärmar?\".",

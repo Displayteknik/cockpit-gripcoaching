@@ -35,12 +35,14 @@ import {
   harPrisuppgift,
   hittaForbjudnaOrd,
   hittaPrisuppgifter,
+  rattaSkenfragor,
   sanitizeGenerated,
   skrivreglerPa,
   taBortFloskler,
   type HashtagKanal,
 } from "@/lib/content/writing-rules";
 import { sasongsPromptRad } from "@/lib/content/sasong";
+import { STORY_ANATOMI } from "@/lib/format-anatomi";
 
 export type TextSyfte =
   | "caption"
@@ -55,6 +57,9 @@ export type TextSyfte =
   | "social"
   | "specialist"
   | "reel"
+  // G-2: story var inget syfte alls — bara "format 1080x1920 utan video" (G0 0.3a), och
+  // fick därför ett vanligt inläggs text i en yta som inte tål den. Egen anatomi.
+  | "story"
   // AKUT-DM: svar till en riktig person i DM, mejl eller kommentarsfält. Ett SVAR är
   // inte ett inlägg — därför egen anatomi utan CTA-golv (se anatomiBlock "dialog").
   | "dm-svar";
@@ -119,6 +124,7 @@ const DEFAULT_FUNNEL: Partial<Record<TextSyfte, FunnelLevel>> = {
   karusell: "tofu",
   social: "tofu",
   reel: "tofu",
+  story: "tofu",
   enskilt: "tofu",
 };
 
@@ -134,10 +140,11 @@ const KATEGORI: Partial<Record<TextSyfte, string>> = {
   enskilt: "post",
   veckoplan: "post",
   reel: "reel",
+  story: "story",
 };
 
 // Syften där texten sitter på/vid en bild → kit-donts vävs in (lager 7).
-const BILDNARA: TextSyfte[] = ["caption", "studio-text", "karusell", "reel", "kanal-anpassning"];
+const BILDNARA: TextSyfte[] = ["caption", "studio-text", "karusell", "reel", "story", "kanal-anpassning"];
 
 // ── Anatomilagret — frikopplat från Compass ──────────────────────────────────
 // "full": hela anatomin inkl. exakt en CTA. "pa-bild": text som trycks PÅ bilden —
@@ -288,7 +295,11 @@ const DIALOG_ANATOMI = [
   "Skriv aldrig hashtags, emoji-ramsor eller rubriksättning. Det här är ett meddelande.",
 ].join("\n");
 
-export function anatomiBlock(variant: "full" | "pa-bild" | "dialog", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
+export function anatomiBlock(variant: "full" | "pa-bild" | "dialog" | "story", compass?: CompassParams, mjukDefault?: FunnelLevel): string {
+  // G-2: storyns anatomi är sin egen. Den ligger som data i lib/format-anatomi och
+  // väver INTE in CTA-golvet: storyns avslut är en tumhandling ("svara på den här
+  // storyn"), inte en uppmaning i captionens mening. Golvet hade tvingat in fel form.
+  if (variant === "story") return STORY_ANATOMI;
   if (variant === "dialog") return DIALOG_ANATOMI;
   if (variant === "pa-bild") {
     return [
@@ -415,6 +426,7 @@ const VERSIONERADE_REGLER = (): string[] => [
   anatomiBlock("full"),
   anatomiBlock("pa-bild"),
   anatomiBlock("dialog"),
+  anatomiBlock("story"),
 ];
 
 /**
@@ -548,7 +560,11 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
   }
 
   // 6. Anatomi + Compass — ALLTID (variant per syfte).
-  const variant = p.syfte === "studio-text" ? "pa-bild" : p.syfte === "dm-svar" ? "dialog" : "full";
+  const variant =
+    p.syfte === "studio-text" ? "pa-bild"
+    : p.syfte === "dm-svar" ? "dialog"
+    : p.syfte === "story" ? "story"
+    : "full";
   // G-1: den funnel-nivå som FAKTISKT gällde. Flödets egen `compass.funnel` räcker inte
   // som loggvärde — är den osatt styrs texten av syftets mjuka default, och en logg som
   // skriver null där hade dolt precis den skillnaden mätningen ska kunna se.
@@ -645,7 +661,17 @@ export async function saneraText(
   opts?: { prisTillatet?: boolean },
 ): Promise<string> {
   if (!text) return text;
-  const ut = (await skrivreglerPa(clientId)) ? sanitizeGenerated(text, { kanal }) : taBortFloskler(text);
+  let ut = (await skrivreglerPa(clientId)) ? sanitizeGenerated(text, { kanal }) : taBortFloskler(text);
+  // G-2: skenfrågegrinden nådde bara captionvägen (sakerstallCaption). Alla andra flöden
+  // hade promptregeln utan kontroll — och en regel utan kontroll är ett önskemål.
+  // Åtgärden är deterministisk och minimal: frågetecknet blir punkt, orden rörs inte.
+  // Captionvägen kommer hit EFTER sin egen omgenerering, så den här raden är sista nätet,
+  // aldrig ersättningen för en riktig omskrivning.
+  const sken = rattaSkenfragor(ut);
+  if (sken.rattade.length) {
+    ut = sken.text;
+    console.warn(`[saneraText] skenfråga rättad till påstående (${clientId ?? "utan klient"}): ${sken.rattade.join(" | ")}`);
+  }
   // KVALITET-3/punkt 5: DETEKTERING av prisuppgifter — logg, INGEN borttagning.
   // FAIL-SAFE är hela poängen: en siffra som användaren själv skrivit in får aldrig
   // skalas bort, och saneringen kan inte veta vems siffra det är. Att klippa ett tal

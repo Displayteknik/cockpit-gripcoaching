@@ -722,7 +722,8 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const imgDesc = aiImageDesc && aiImageDesc.url === curImg ? aiImageDesc.desc : "";
       const r = await fetch("/api/studio/suggest-text", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, format, topic, caption, imageUrl: curImg, imageDescription: imgDesc }),
+        // G-2: videoUrl skiljer story (9:16 utan video) från reel — olika anatomi.
+        body: JSON.stringify({ templateId, format, topic, caption, imageUrl: curImg, imageDescription: imgDesc, videoUrl }),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Förslag misslyckades");
@@ -1485,7 +1486,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     try {
       const r = await fetch("/api/studio/suggest-text", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, format, topic: "" }),
+        body: JSON.stringify({ templateId, format, topic: "", videoUrl }),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa förslag — försök igen.");

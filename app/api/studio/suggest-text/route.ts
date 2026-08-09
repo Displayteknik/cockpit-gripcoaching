@@ -48,6 +48,8 @@ export async function POST(req: NextRequest) {
       caption,
       imageDescription: bildbeskrivning,
       imageRole: bildroll,
+      // G-2: 9:16 utan video är en STORY och får storyns anatomi, inte ett inläggs.
+      videoUrl: String(body.videoUrl || ""),
     });
 
     const suggestions = resultat.suggestions;
