@@ -43,6 +43,7 @@ import {
 } from "@/lib/content/writing-rules";
 import { sasongsPromptRad } from "@/lib/content/sasong";
 import { STORY_ANATOMI } from "@/lib/format-anatomi";
+import { variantregelText } from "@/lib/hook-typer";
 
 export type TextSyfte =
   | "caption"
@@ -267,11 +268,9 @@ export const PERSPEKTIVREGEL = [
 // INGÅNG, inte bara format. Flödena (enskilt/A-B, veckoplan, linkedin-idéer m.fl.)
 // refererar konstanten i sina uppdrag; parallella en-variant-per-anrop-flöden
 // (studio-copy, caption-A/B) sprider i stället via variantSuffixes/vinklar.
-export const VARIANTREGEL = [
-  "=== VARIANTREGEL (när flera idéer/varianter genereras) ===",
-  "Varje variant ska ha en EGEN RETORISK INGÅNG — inte bara olika format. Välj olika ingångar ur listan: mytkrossning, kundscenario, konkret siffra (endast verifierad ur profilen), målgruppsvinkel, personlig hantverksstolthet, före/efter, rak fråga, konträrt påstående.",
-  "Två varianter får ALDRIG dela tankefigur eller öppningsfras. Läser man bara första raden av varje ska de kännas som olika ingångar till samma budskap.",
-].join("\n");
+// G-3: texten byggs ur hooktypslistan (lib/hook-typer) i stallet for att rakna upp
+// atta ingangar for hand. Forut fanns tre olika indelningar av samma sak.
+export const VARIANTREGEL = variantregelText();
 
 // ── ROTATIONSREGELN (T-6c) — sprid profilfakta över tid ──────────────────────
 // Prompten instruerar att inte bygga varje text på samma profilfakta. Där flödet
