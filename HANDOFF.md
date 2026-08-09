@@ -10,9 +10,16 @@ En fil att klistra in eller ladda upp när arbetet ska delas med en fristående 
 
 ## 0. NÄSTA SESSION BÖRJAR HÄR — läget 2026-08-09
 
-**Senaste commit: `88e306e`, pushad till master.** 715 tester gröna, `tsc` rent, `next build`
+**Senaste commit: `5cade5d`, pushad till master.** 723 tester gröna, `tsc` rent, `next build`
 kompilerat. Läs `docs/STATUS.md` först — den är totalinventeringen och uppdateras varje
 session. En beställning utan rad där existerar inte.
+
+### Håkans egen kö när sessionen bröts
+
+1. **Karusell-DoD:n** — 7 slides → 7 filer (`-1av7` … `-7av7`). Ligger på live sedan `f9d2f23`, aldrig körd.
+2. **Läs den nya feltexten** om `Unexpected token 'A'` dyker upp igen — se nedan.
+3. **Hans nuvarande karusell har två Avslut** kvar i datan. Fixen (`5cade5d`) läker den vid
+   nästa "Generera karusell", eller så byter han rollen på slide 5 till Punkt för hand.
 
 ### ⚠ ÖPPEN FRÅGA FRÅN 9/8 — börja här
 
@@ -50,6 +57,8 @@ AKUT-KARUSELL → AKUT-DM → **G-1** → G-2 → FIX-1-REST (B2+C) → G-3 → 
 | **Djupgranskningsrapporterna** | Dolda i kundvyn server-sidan före DB-läsningen, behållna internt |
 | **AKUT-PROV (snapshot)** | Rotorsak bevisad i körningsloggen. GHL:s API kan **inte** applicera snapshot på befintligt konto (probat). Spärr byggd; custom values gatas inte längre på byråtoken |
 | **Madeleine/Makzy** | Konto mot mallens facit, kundnyckel sparad, steg 4 grönt, logotyp verifierad i renderingen |
+| **Fel som förklarar sig** (`88e306e`) | `lib/las-json.ts` — icke-JSON-svar ger klartext med statuskod i stället för parserns text. Alla 27 `await r.json()` i StudioMaker går genom den. **7 tester** |
+| **Karusellen kan inte få två avslut** (`5cade5d`) | `lib/studio/slide-merge.ts` — sammanslagning på ROLL i stället för position. Den gamla parade plats mot plats, så en tillagd slide gjorde att användarens tomma punkt övertog avslutets roll medan det riktiga avslutet följde med. **8 tester**, inkl. repron och att en redan trasig karusell läks |
 
 ### Klart men OBEVISAT — verifiera först
 
