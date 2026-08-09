@@ -80,6 +80,9 @@ export async function POST(req: NextRequest) {
       "- FÖRBJUDNA ord: kraftfull, banbrytande, game-changer, handlar om, nästa nivå, holistisk, skalbar.",
     ].filter(Boolean).join("\n");
 
+    // ⚠ G-3d: INGEN rotation här, med flit. Flödet ska bevara SAMMA kärnbudskap över
+    // flera kanaler. Att undvika de senaste öppningarna hade dragit isär kanalerna från
+    // varandra — motsatsen till uppdraget en rad ovanför.
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "kanal-anpassning",

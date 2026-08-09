@@ -8,6 +8,7 @@
 // därför ligger de i uppdraget och ingen compass-param sätts på toppnivå.
 
 import { byggTextPrompt, VARIANTREGEL, type ByggdPrompt } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { contentCompassBlock } from "@/lib/content-compass/prompt";
 import { KANE_HOOK_RULES } from "@/lib/content-framework";
 import type { PlannedPost } from "@/lib/content-compass/rules";
@@ -50,10 +51,17 @@ ${VARIANTREGEL}
 }
 Exakt ${posts.length} inlägg i "days", i samma ordning som INLÄGG 1..${posts.length} ovan.`;
 
+  // G-3d (rotation): VARIANTREGELN sprider veckans SJU inlägg mot varandra, inom anropet.
+  // Den säger ingenting om förra veckan — utan den här raden kunde vecka efter vecka
+  // öppna likadant och regeln ändå vara uppfylld. Sju hookar hämtas, alltså en hel
+  // föregående vecka.
+  const nyligen = await hamtaNyligen(clientId, "veckoplan", { antal: 7 });
+
   return byggTextPrompt({
     clientId,
     syfte: "veckoplan", // ingen compass-default — per-dag-blocken ovan bär Compass
     uppdrag,
+    nyligen,
     underlag: `Veckotema: ${theme}\n\nSkriv ${posts.length} inlägg som tillsammans tar målgruppen från medvetenhet till handling. Returnera enbart JSON.`,
     jsonSchema,
   });

@@ -14,6 +14,7 @@
 
 import { generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, type ByggdPrompt } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { getKitDirectives, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
 import {
@@ -80,6 +81,11 @@ export async function byggReelPrompt(opts: ReelGenOpts): Promise<{ system: strin
     .filter(Boolean)
     .join("\n");
 
+  // G-3d (rotation): reelns ingång är scen 1:s overlay-text — de sekunder som avgör om
+  // någon stannar. Två reels i rad som öppnar med samma rad är samma reel för tittaren,
+  // oavsett hur olika resten är.
+  const nyligen = await hamtaNyligen(opts.clientId, "reel");
+
   const b = await byggTextPrompt({
     // Explicit klient: manusmotorn VET vilken kund den skriver för. Utan argument
     // hade ett anrop utan sessionskontext tyst fått standardklientens röst.
@@ -87,6 +93,7 @@ export async function byggReelPrompt(opts: ReelGenOpts): Promise<{ system: strin
     syfte: "reel",
     uppdrag,
     knowledge: ["hook-playbook"],
+    nyligen,
     // Mallens funnel/4A är flödesdata; DISC kommer från anroparen.
     compass: { funnel: mall.funnel, four_a: mall.fourA, disc: opts.disc || [] },
     // KVALITET-3/punkt 5: prisregeln gäller även reels. Två vägar till undantaget:

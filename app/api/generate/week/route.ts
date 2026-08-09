@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate, generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText, VARIANTREGEL } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { obackadeSiffror, SIFFER_SKARPNING, talTokens, utanHashtags } from "@/lib/content/writing-rules";
 import {
   WEEK_ROLES,
@@ -124,10 +125,15 @@ ${VARIANTREGEL}
   ]
 }`;
 
+    // G-3d (rotation): samma skäl som i lib/content-compass/vecka-prompt — VARIANTREGELN
+    // sprider veckans sju inlägg mot varandra, aldrig mot förra veckans.
+    const nyligen = await hamtaNyligen(clientId, "veckoplan", { antal: 7 });
+
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "veckoplan",
       uppdrag,
+      nyligen,
       underlag: `Veckotema: ${theme}
 
 Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handling över veckan. Varje inlägg står på egna ben men de ska kännas som en serie. Returnera enbart JSON.`,

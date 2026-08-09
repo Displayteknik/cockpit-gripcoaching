@@ -123,6 +123,8 @@ export async function POST(req: NextRequest) {
       // om D- och C-krokarna ("rak siffra"/"överraskande fakta" lockar modellen att uppfinna
       // statistik) — compass-lagrets DISC-hookar skulle återinföra den risken. Egna
       // DISC-rader behålls; kärnan ger bar anatomi (kanal-anpassning har ingen default).
+      // ⚠ G-3d: INGEN rotation. Fyra DISC-varianter av SAMMA inlägg ska dela budskap
+      // och svarsord — en undvik-lista hade drivit isär just det som ska vara lika.
       const bygg = await byggTextPrompt({
         clientId,
         syfte: "kanal-anpassning",
@@ -210,6 +212,9 @@ export async function POST(req: NextRequest) {
       REGLER,
     ].filter(Boolean).join("\n");
 
+    // ⚠ G-3d: INGEN rotation. Användaren klistrar in ETT inlägg och vill ha just det
+    // förbättrat. Historikens öppningar hör inte hit — inlägget kan dessutom komma från
+    // en helt annan avsändare (se profilReglerna ovan).
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "kanal-anpassning",

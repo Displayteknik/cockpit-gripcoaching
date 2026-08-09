@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
 import { generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { sakerstallCaption, talTokens } from "@/lib/content/writing-rules";
 
@@ -74,22 +75,9 @@ export async function POST(req: NextRequest) {
       ? "Karusellens slides:\n" + slides.map((s, i) => `${i + 1}. [${s.kind || "slide"}] ${s.headline || ""}${s.body ? ` — ${s.body}` : ""}`).join("\n")
       : [headline ? `Rubrik på bilden: ${headline}.` : "", headline2 ? `Underrubrik: ${headline2}.` : "", body ? `Text på bilden: ${body}.` : ""].filter(Boolean).join("\n");
 
-    // T-6c (rotation): senaste sparade captions (första raden = öppningen) → "NYLIGEN
-    // ANVÄNT" i kärnan, så nästa caption inte återanvänder samma ingång. Fail-open.
-    let nyligen: string[] = [];
-    try {
-      const { supabaseService } = await import("@/lib/supabase-admin");
-      const { data: senaste } = await supabaseService()
-        .from("studio_posts")
-        .select("caption")
-        .eq("client_id", clientId)
-        .not("caption", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      nyligen = (senaste ?? [])
-        .map((p) => (String(p.caption || "").split("\n").find((r) => r.trim()) || "").trim())
-        .filter(Boolean);
-    } catch {}
+    // T-6c (rotation), G-3d: senaste sparade captions (första raden = öppningen) →
+    // "NYLIGEN ANVÄNT" i kärnan, så nästa caption inte återanvänder samma ingång.
+    const nyligen = await hamtaNyligen(clientId, "caption");
 
     const bygg = await byggTextPrompt({
       clientId,

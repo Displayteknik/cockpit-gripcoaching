@@ -5,6 +5,7 @@
 
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { skrivreglerPa, taBortTankstreckHtml } from "@/lib/content/writing-rules";
 
 export interface InternalLink { title: string; url: string }
@@ -70,6 +71,11 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
     `- FÖRBJUDNA ord: ${FORBIDDEN.join(", ")}. Svenska tecken å/ä/ö korrekt överallt.`,
   ].join("\n");
 
+  // G-3d (rotation): tidigare artikelrubriker. En blogg vars rubriker alla följer samma
+  // mall ("Så gör du X", "Så gör du Y") läser som en innehållsfabrik — och rubriken är
+  // det enda som syns i Google och i delningen.
+  const nyligen = await hamtaNyligen(opts.clientId, "blogg");
+
   const b = await byggTextPrompt({
     clientId: opts.clientId,
     syfte: "blogg",
@@ -77,6 +83,7 @@ export async function generateBlogArticle(opts: BlogGenOpts): Promise<BlogArticl
     uppdrag,
     underlag: `Ämne/vinkel: ${opts.topic.trim()}. Skriv den kompletta artikeln nu enligt alla krav.`,
     knowledge: ["hook-playbook"],
+    nyligen,
     jsonSchema:
       '{"title":"...","metaTitle":"...","metaDescription":"...","urlSlug":"...","html":"<h2>...</h2><p>... <a href=\\"...\\">...</a></p>","faq":[{"q":"...","a":"..."}],"tags":["..."],"coverImagePrompt":"...","coverImageAlt":"..."}',
   });
@@ -151,11 +158,17 @@ export async function repurposeToSocial(opts: {
     "- Skapa 3 varianter, var och en med EN distinkt hook-typ (fråga/statistik/konträr/berättelse/påstående) och egen vinkel ur artikeln.",
   ].join("\n");
 
+  // G-3d (rotation): repurpose SKRIVER affischer till studio_posts (payload.headline1),
+  // så den läser samma historik som Studios egen affischtext — inte bloggens rubriker.
+  // Källan följer var resultatet hamnar, inte vilket syfte prompten råkar ha.
+  const nyligen = await hamtaNyligen(opts.clientId, "studio-text");
+
   const b = await byggTextPrompt({
     clientId: opts.clientId,
     syfte: "blogg",
     uppdrag,
     underlag: `Artikelns rubrik: ${opts.title}\n\nArtikel (utdrag):\n${opts.articleText.slice(0, 3500)}\n\nSkapa 3 sociala affisch-inlägg nu.`,
+    nyligen,
     jsonSchema: '[{"hookType":"fråga","headline1":"...","headline2":"...","body":"..."}, {...}, {...}]',
   });
 

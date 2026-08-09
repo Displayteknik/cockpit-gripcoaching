@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -67,11 +68,19 @@ export async function POST(req: NextRequest) {
 - CTA = EN sak (t.ex. "Boka provkörning" eller "Hör av dig"). Inte flera.
 - Hashtags: 6-10, blanda bilnischat + lokalt (Krokom/Jämtland/Östersund) + märke. Utan #-tecken.`;
 
+    // G-3d (rotation): uppdraget ovan LOVAR redan "Variera avslutet mellan inlägg —
+    // återanvänd INTE samma slutmening". Det löftet gick inte att hålla: modellen såg
+    // aldrig ett enda tidigare inlägg. Bilinlägg är dessutom det flöde där upprepningen
+    // syns mest — samma bransch, samma ort, en bil i taget. Sparas via /api/posts till
+    // hm_social_posts, alltså samma källa som resten av inläggsströmmen.
+    const nyligen = await hamtaNyligen(clientId, "social");
+
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "enskilt",
       kanal: platform === "facebook" ? "facebook" : "instagram",
       uppdrag,
+      nyligen,
       underlag: `FORDON ATT SÄLJA:
 Rubrik: ${v.title}
 Märke/modell: ${v.brand || ""} ${v.model || ""}

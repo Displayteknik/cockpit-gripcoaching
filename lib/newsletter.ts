@@ -4,6 +4,7 @@
 // sätts av anroparen (bloggens publika URL eller bokningslänk).
 import { generateJSONWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import type { CompassParams } from "@/lib/content-compass/prompt";
 import type { NewsletterContent } from "@/lib/newsletter-render";
 
@@ -37,11 +38,17 @@ export async function generateNewsletter(opts: NewsletterGenOpts): Promise<Newsl
     `- FÖRBJUDNA ord: ${FORBIDDEN.join(", ")}. Svenska tecken å/ä/ö korrekt. Inga emoji-väggar, ingen säljhype.`,
   ].join("\n");
 
+  // G-3d (rotation): tidigare ämnesrader. Ämnesraden är det enda mottagaren ser innan
+  // hen bestämmer sig för att öppna — fyra brev i rad med samma ingång läser som ett
+  // utskick, inte som ett brev.
+  const nyligen = await hamtaNyligen(opts.clientId, "nyhetsbrev");
+
   const b = await byggTextPrompt({
     clientId: opts.clientId,
     syfte: "nyhetsbrev",
     kanal: "mejl",
     uppdrag,
+    nyligen,
     underlag: `ARTIKELNS TITEL: ${opts.title || "(utan titel)"}\n\nARTIKELTEXT:\n${opts.articleText.slice(0, 8000)}\n\nSkriv nyhetsbrevet nu. Returnera enbart JSON.`,
     compass: opts.compass || undefined,
     jsonSchema: `{"subjects":["..."],"preheader":"...","greeting":"Hej!","intro":"...","sections":[{"heading":"...","body":"..."}],"cta_text":"...","signoff":"..."}`,

@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
       "- Fälten hör ihop: hook öppnar, body bär, cta avslutar med uppmaningen. Lägg aldrig uppmaningen i body.",
     ].join("\n");
 
+    // ⚠ G-3d: INGEN rotation här, med flit. Flödet skriver OM en text användaren just
+    // lämnat in. En undvik-lista som innehöll originalets egen öppning hade drivit
+    // omskrivningen bort från det den ska behålla.
     const bygg = await byggTextPrompt({
       // Samma syfte som improve-post: en omskrivning av en färdig text har ingen egen
       // funnel-nivå, så kärnan ger bar anatomi med CTA-golvet — aldrig en påtvingad

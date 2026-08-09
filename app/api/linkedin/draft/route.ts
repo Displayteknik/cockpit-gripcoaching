@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSONWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
@@ -114,20 +115,10 @@ ${seed.angle ? `Vinkel: ${seed.angle}` : ""}
 
 Skriv inlägget nu. Returnera bara JSON.`;
 
-    // T-6c (rotation): de senaste genererade hookarna → "NYLIGEN ANVÄNT" i kärnan,
+    // T-6c (rotation), G-3d: de senaste genererade hookarna → "NYLIGEN ANVÄNT" i kärnan,
     // så nästa utkast inte återanvänder samma ingång/öppning. Det egna utkastets
-    // hook-utgångspunkt (seed) ska förstås INTE undvikas — filtreras bort.
-    const { data: senaste } = await sb
-      .from("linkedin_posts")
-      .select("hook")
-      .eq("client_id", clientId)
-      .not("hook", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(6);
-    const nyligen = (senaste ?? [])
-      .map((p) => String(p.hook || ""))
-      .filter((h) => h && h !== seed.hook)
-      .slice(0, 5);
+    // hook-utgångspunkt (seed) ska förstås INTE undvikas — den utesluts.
+    const nyligen = await hamtaNyligen(clientId, "linkedin", { uteslut: [seed.hook ?? ""] });
 
     const b = await byggTextPrompt({
       clientId,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase-admin";
 import { iterateGenerate } from "@/lib/iterate";
 import { byggTextPrompt } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -92,12 +93,23 @@ export async function GET(req: NextRequest) {
       try {
         // TEXT-1 T-3: prompt-core bygger hela lagerkakan (brand-profil saknades förut —
         // nattflödet körde enbart på fingerprint + winning). Uppdrag = taskens systemprompt.
+        // G-3d (rotation): det HÄR är flödet där rotationen betyder mest. Loopen kör
+        // varje natt mot samma profil, med samma uppdrag och samma userPrompt — enda
+        // skillnaden mellan nätterna är temperaturen. Utan undvik-listan får kunden
+        // samma idé om och om igen i idébanken. Filtret på typ håller isär
+        // LinkedIn-idéerna från mejlidéerna: de ska inte undvika varandras öppningar.
+        const nyligen = await hamtaNyligen(clientId, "idebank", {
+          antal: task.keepTop * 3,
+          filter: { type: task.type },
+        });
+
         const bygg = await byggTextPrompt({
           clientId,
           syfte: "specialist",
           uppdrag: task.systemPrompt,
           underlag: task.userPrompt,
           kategori: task.category,
+          nyligen,
         });
         const result = await iterateGenerate({
           prebuilt: { system: bygg.system, fingerprint: bygg.fingerprint, winning: bygg.winning },

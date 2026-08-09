@@ -3,6 +3,7 @@ import { getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
 import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText, VARIANTREGEL } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { fixaObackadeSiffror, tillatnaTalFran } from "@/lib/content/siffergrind";
 import { getWinningPatterns, patternsToPromptBlock } from "@/lib/insights";
 import type { FunnelLevel } from "@/lib/content-compass/data";
@@ -107,10 +108,15 @@ export async function POST(req: NextRequest) {
     // TEXT-1 T-2: prompten byggs av prompt-core — KUND-blocket och rösten ägs av kärnan.
     // Flödets riktiga 4A/DISC/funnel skickas som compass-parametrar (annars hade kärnans
     // mjuka tofu-default kunnat motsäga vald funnel-nivå).
+    // G-3d (rotation): enskilt-flödet skriver till hm_social_posts och läser samma
+    // historik som social/generate — det är samma inläggsström för kunden.
+    const nyligen = await hamtaNyligen(clientId, "social");
+
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "enskilt",
       kanal: platform,
+      nyligen,
       uppdrag: buildUppdrag({ winning, fourA, disc, funnel, intent, format: input.format, formatLabel, platform }),
       underlag: `Ämne/vinkel: ${input.topic}
 ${input.angle ? `Specifik vinkel: ${input.angle}\n` : ""}

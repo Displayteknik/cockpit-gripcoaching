@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { skrivreglerPa, taBortTankstreckHtml } from "@/lib/content/writing-rules";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
@@ -74,11 +75,16 @@ HÅRDA REGLER:
   "internal_links_used": ["/blogg/slug1", "/blogg/slug2"]
 }`;
 
+    // G-3d (rotation): tidigare artikelrubriker ur hm_blog, samma källa som
+    // lib/studio/blog. Rubriken är det som syns i Google och i delningen.
+    const nyligen = await hamtaNyligen(clientId, "blogg");
+
     const b2 = await byggTextPrompt({
       clientId,
       syfte: "blogg",
       kanal: "webb",
       uppdrag,
+      nyligen,
       underlag: `Ämne: ${topic}
 ${angle ? `Vinkel: ${angle}` : ""}
 ${keyword ? `Primärt sökord: ${keyword}` : ""}

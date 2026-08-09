@@ -33,6 +33,9 @@ REGLER:
 - Inga mellanslag
 - Bygg på varumärkesprofilens plats, tjänster och befintliga hashtags ovan. Hitta aldrig på en ort eller en tjänst som inte står där.`;
 
+    // ⚠ G-3d: INGEN rotation här, med flit. Hashtags ska vara KONSEKVENTA över tid —
+    // det är så en lokal tagg byggs upp och blir sökbar. En undvik-lista hade tvingat
+    // fram nya taggar varje gång och motverkat hela poängen med ett hashtag-kluster.
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "social",

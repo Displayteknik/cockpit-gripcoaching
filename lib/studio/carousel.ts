@@ -4,6 +4,7 @@
 
 import { generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import type { CompassParams } from "@/lib/content-compass/prompt";
 import type { StudioSlide } from "@/lib/studio/payload";
 import { MAX_SLIDES } from "@/lib/studio/payload";
@@ -60,6 +61,11 @@ export async function generateCarousel(opts: {
     `- FÖRBJUDNA ord: ${FORBIDDEN.join(", ")}. Svenska tecken å/ä/ö korrekt. Skriv som människa.`,
   ].join("\n");
 
+  // G-3d (rotation): karusellens ingång är krok-slidens rubrik. Utan den här raden var
+  // rotationsregeln en uppmaning utan underlag — prompten sa "upprepa inte samma vinkel"
+  // och fick aldrig veta vilka vinklar som redan gått ut.
+  const nyligen = await hamtaNyligen(opts.clientId, "karusell");
+
   const b = await byggTextPrompt({
     clientId: opts.clientId,
     syfte: "karusell",
@@ -68,6 +74,7 @@ export async function generateCarousel(opts: {
     underlag: `Ämne/vinkel: ${opts.topic}\n\nSkriv karusellen nu (${roller.length} slides i ordningen ${roller.join(" → ")}).`,
     compass: opts.compass,
     knowledge: ["hook-playbook"],
+    nyligen,
     // Schemat byggs ur SAMMA rollista som anatomin. Förut räknades slides på tre ställen
     // med tre uttryck — nu kan de inte säga olika saker.
     jsonSchema: `[${roller.map((r) => `{"kind":"${r}","headline":"...","body":"..."}`).join(",")}]`,

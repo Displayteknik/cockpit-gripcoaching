@@ -41,6 +41,13 @@ export async function POST(req: NextRequest) {
 
     // T-6c (rotation): historiken skickas via kärnans nyligen-param och renderas som
     // "NYLIGEN ANVÄNT — undvik dessa ingångar/öppningar" (förr ett eget block i uppdraget).
+    //
+    // ⚠ G-3d, MEDVETET UNDANTAG: det här flödet behåller sin EGNA läsning i stället för
+    // lib/rotation. Två skillnader som den generella källan inte modellerar, och som båda
+    // hade tappats tyst i en "uppstädning": status-filtret (bara idéer som faktiskt blev
+    // något räknas) och pelarprefixet — här genereras N idéer i ETT anrop och ska fördelas
+    // mellan pelare, så modellen behöver veta vilken pelare varje använd hook tillhörde.
+    // Se lib/rotation.ts för resten av flödena.
     const { data: recentPosts } = await sb
       .from("linkedin_posts")
       .select("hook, pillar")

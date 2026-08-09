@@ -6,6 +6,7 @@
 
 import { iterateGenerate } from "@/lib/iterate";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
+import { hamtaNyligen } from "@/lib/rotation";
 import { harPrisuppgift } from "@/lib/content/writing-rules";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
 import { tillatnaHookTyper } from "@/lib/hook-typer";
@@ -159,12 +160,18 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
   // Före G-2 fanns story inte ens som syfte (G0 0.3a) och fick pa-bild-anatomin rakt av.
   const arStory = opts.format === "1080x1920" && !opts.videoUrl;
 
+  // G-3d (rotation): affischens ingång är headline1 ur tidigare sparade inlägg. Storyn
+  // läser samma historik — den ritas av samma mallar och sparas i samma tabell, och en
+  // story som öppnar likadant som gårdagens affisch är samma upprepning för kunden.
+  const nyligen = await hamtaNyligen(opts.clientId, "studio-text");
+
   const b = await byggTextPrompt({
     clientId: opts.clientId,
     // pa-bild-anatomin harmonierar med CTA-förbudet i uppdraget; storyn har sin egen.
     syfte: arStory ? "story" : "studio-text",
     uppdrag,
     knowledge: ["hook-playbook"],
+    nyligen,
     // KVALITET-3/punkt 5: ämnet och inläggets grundtext är det ANVÄNDAREN skrev.
     // Står ett pris där är det hens beslut; annars gäller prisregeln fullt ut.
     anvandarText: [opts.topic || "", caption].filter(Boolean).join("\n"),

@@ -91,6 +91,10 @@ export async function POST(req: NextRequest) {
     `- Anteckningar: ${c.notes || "(inga)"}`,
   ].join("\n");
 
+  // ⚠ G-3d: INGEN rotation här, med flit. Ett svar skrivs till EN person om det HEN
+  // skrev. Att be modellen undvika sina senaste öppningar hade tvingat fram konstlad
+  // variation i en inkorg — två personer som ställer samma fråga ska få samma raka svar,
+  // inte ett omskrivet för variationens skull.
   const bygg = await byggTextPrompt({
     clientId,
     syfte: "dm-svar",
