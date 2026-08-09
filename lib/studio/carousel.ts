@@ -35,8 +35,12 @@ export async function generateCarousel(opts: {
   /**
    * FIX-1-REST (Håkans beslut 9/8): INSATS är PÅ som standard — den behöver ingen data
    * och fullbordar formeln (krok lovar, insatsen säger varför det spelar roll).
-   * BEVIS är AV tills G-4 finns: en bevis-slide utan bevis-motor är en inbjudan att
-   * fabricera, och det är det enda vi aldrig gör.
+   *
+   * G-4: BEVIS är inte längre hårt av — men inte heller hårt på. Den slås på när
+   * tenanten FAKTISKT har verifierat material (lib/bevis), annars inte. Skälet står
+   * kvar ordagrant: en bevis-slide utan bevis är en inbjudan att fabricera. Skillnaden
+   * är att frågan nu går att ställa. Ett uttryckligt `medBevis` från anroparen vinner
+   * över automatiken i BÅDA riktningarna.
    */
   medInsats?: boolean; medBevis?: boolean;
 }): Promise<KarusellResultat> {
@@ -46,10 +50,16 @@ export async function generateCarousel(opts: {
   // G-2: anatomin ligger som DATA i lib/format-anatomi, inte som fritext här. Ändras en
   // roll slår det igenom i prompten, i slide-räkningen och i JSON-schemat samtidigt —
   // tidigare kunde de tre glida isär utan att någon märkte det.
+  // G-4: har tenanten något att belägga med? Frågan ställs FÖRE rollistan byggs, för
+  // att svaret avgör om bevis-sliden finns över huvud taget.
+  const { hamtaBevis } = await import("@/lib/bevis");
+  const bevis = await hamtaBevis(opts.clientId);
+
   const uppsattning: KarusellUppsattning = {
     punkter: points,
     medInsats: opts.medInsats !== false,
-    medBevis: opts.medBevis === true, // G-4 öppnar den, inte tidigare
+    // Anroparens uttryckliga val vinner; annars styr materialet.
+    medBevis: opts.medBevis ?? bevis.kanKravaBevis,
   };
   const roller = karusellRoller(uppsattning);
 

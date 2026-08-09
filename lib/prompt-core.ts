@@ -44,6 +44,9 @@ import {
 import { sasongsPromptRad } from "@/lib/content/sasong";
 import { STORY_ANATOMI } from "@/lib/format-anatomi";
 import { variantregelText } from "@/lib/hook-typer";
+// G-4: statiskt importerad ENBART för promptversionens hash (regeltexten måste kunna
+// läsas utan DB). Själva bevisläsningen sker dynamiskt nere i byggTextPrompt.
+import { bevisBlock, INGET_BEVIS } from "@/lib/bevis";
 
 export type TextSyfte =
   | "caption"
@@ -334,7 +337,7 @@ export function anatomiBlock(variant: "full" | "pa-bild" | "dialog" | "story", c
 // mitt i mening.
 //
 // PROFIL-1/F1: de fyra nykopplade fälten placeras efter sin klientunikhet.
-// "Erbjudande: priser (verifierade siffror)" och "Erbjudande: CTA-väg" står med
+// "Erbjudande: priser" (sanningsunderlag), "Verifierade siffror" (G-4) och "CTA-väg" står med
 // FLIT INTE i listan — de överlever alltså alltid (som Tonregler/USP/GÖR/GÖR INTE).
 // Motivering: priserna är den enda källan till konkreta tal som SANNINGSKRAVET
 // tillåter, och CTA-vägen är exakt det CTA-golvet hänvisar till. "Differentiering"
@@ -426,6 +429,12 @@ const VERSIONERADE_REGLER = (): string[] => [
   anatomiBlock("pa-bild"),
   anatomiBlock("dialog"),
   anatomiBlock("story"),
+  // G-4: BÅDA grenarna versioneras. Utan-material-grenen är ren regeltext; med-material-
+  // grenen matas med ett fast provvärde så att inramningen ("HÅRD REGEL", "PRISER ÄR
+  // INTE BEVIS") hashas utan att tenantens egna siffror hamnar i versionen. En version
+  // som skiljde sig mellan två kunder hade gjort hela G-1-mätningen oläsbar.
+  bevisBlock(INGET_BEVIS),
+  bevisBlock({ siffror: ["PROV"], citat: ["PROV"], harVinnande: false, kanKravaBevis: true }),
 ];
 
 /**
@@ -540,6 +549,26 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
         "\nVälj en annan retorisk ingång och en annan öppningsfras än ovanstående.",
     );
     lager.nyligen = true;
+  }
+
+  // 5c. BEVIS (G-4). Läggs på KÄRNANS väg, inte på 21 anropsställen — samma val som
+  // G-1 gjorde för generationsloggen, och av samma skäl: ett flöde som glöms bort blir
+  // en tyst lucka ingen upptäcker.
+  //
+  // Undantag `kanal-anpassning`: de flödena skriver OM en färdig text. Att mata in
+  // bevismaterial där hade bjudit in modellen att lägga till fakta som inte fanns i
+  // originalet — en omskrivning ska bevara påståenden, inte skaffa nya.
+  if (p.clientId && p.syfte !== "kanal-anpassning") {
+    try {
+      const { hamtaBevis, bevisBlock } = await import("@/lib/bevis");
+      const bevis = await hamtaBevis(p.clientId);
+      delar.push(bevisBlock(bevis));
+      // Flaggan säger om tenanten hade MATERIAL, inte om blocket lades in — blocket
+      // läggs alltid (utan material är det ett uttryckligt förbud, se lib/bevis).
+      lager.bevis = bevis.kanKravaBevis;
+    } catch (e) {
+      console.error("[prompt-core] bevis kunde inte hämtas:", e);
+    }
   }
 
   // Bildkontext — grunda texten i inlägget (mönstret ur B-paketet/copy.ts).

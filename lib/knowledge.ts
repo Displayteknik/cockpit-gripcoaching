@@ -81,7 +81,12 @@ export async function getProfileAsMarkdown(clientId?: string, opts?: { medVoice?
       ["Konkurrenter", data.competitors],
       ["Kundresa", data.customer_journey],
       ["Erbjudande: tjänster och produkter", data.services],
-      ["Erbjudande: priser (verifierade siffror)", data.pricing_notes],
+      // G-4: rubriken hette förut "Erbjudande: priser (verifierade siffror)" — den satte
+      // likhetstecken mellan pris och bevis, och det är precis skillnaden hela G-4 bygger
+      // på. Priserna är sanningsunderlag och skrivs aldrig ut; verifierade siffror är
+      // citerbara och har eget fält.
+      ["Verifierade siffror (får citeras i text)", data.verified_numbers],
+      ["Erbjudande: priser (SANNINGSUNDERLAG — skrivs aldrig ut)", data.pricing_notes],
       ["Erbjudande: CTA-väg (bokningslänk)", data.booking_url],
       ["GÖR", data.dos],
       ["GÖR INTE", data.donts],

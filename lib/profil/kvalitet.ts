@@ -362,8 +362,22 @@ function egnaDonts(indata: KvalitetsIndata): { rader: number; specifika: number 
   return { rader: rs.length, specifika: specifika.length };
 }
 
+// G-4: fälten som får bidra till "Siffror vi får använda". Skilt från PROMPTFALT på
+// exakt EN punkt, och den punkten är hela poängen: `pricing_notes` räknas INTE.
+//
+// Mätt 9/8 över alla nio profiler: 20 av 51 tal som det här kriteriet räknade fanns
+// BARA i pricing_notes (For Balance 17 av 31). Kriteriet heter "Siffror vi får använda"
+// och nivå 5 heter "Med bevis" — men prisregeln förbjuder motorn att skriva ut ett enda
+// av de talen. Mätaren lovade alltså bevismaterial som aldrig kunde levereras, samma
+// familj som SEO-nollorna som gick ut till kund.
+//
+// `verified_numbers` (nytt fält, G-4) är kundens egen utpekning av vad som FÅR citeras.
+// Ingen tenant byter nivå av rättningen — kontrollerat: de tre som klarade kravet på
+// fem siffror klarar det även utan priserna.
+const BEVISFALT = PROMPTFALT.filter((f) => f !== "pricing_notes").concat("verified_numbers");
+
 function verifieradeSiffror(indata: KvalitetsIndata): number {
-  const text = PROMPTFALT.map((f) => String(indata.profil?.[f] ?? "")).join("\n");
+  const text = BEVISFALT.map((f) => String(indata.profil?.[f] ?? "")).join("\n");
   return siffrorMedEnhet(text).length;
 }
 
@@ -443,8 +457,11 @@ export function beraknaKvalitet(indata: KvalitetsIndata): KvalitetsRapport {
       andel: Math.min(1, s / 5),
       antal: s,
       krav: 5,
-      atgard: s >= 5 ? "" : `Lägg in ${5 - s} siffror med enhet (pris, årtal, antal, mått) i profilen`,
-      varfor: "Skrivhjälpen får bara använda tal som står i profilen. Saknas de blir texten svävande.",
+      // G-4: åtgärden bad om "pris" som exempel — alltså exakt det tal som ALDRIG får
+      // hamna i en text. Nu pekar den på rutan Siffror du kan stå för, och exemplen är
+      // sådant som faktiskt får skrivas ut.
+      atgard: s >= 5 ? "" : `Skriv ${5 - s} siffror du kan stå för i rutan "Siffror du kan stå för" — årtal, antal jobb, leveranstid, mått`,
+      varfor: "Skrivhjälpen får bara använda tal som står i profilen. Saknas de blir texten svävande. Dina priser räknas inte här — de stannar i samtalet och skrivs aldrig i ett inlägg.",
     },
     {
       key: "vinnande",

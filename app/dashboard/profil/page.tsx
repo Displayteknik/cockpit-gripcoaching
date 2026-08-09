@@ -28,6 +28,7 @@ interface Profile {
   competitors: string;
   customer_journey: string;
   services: string;
+  verified_numbers: string;
   pricing_notes: string;
   booking_url: string;
   dos: string;
@@ -42,7 +43,7 @@ const EMPTY: Profile = {
   brand_story: "", usp: "", differentiators: "", tone_rules: "",
   icp_primary: "", icp_secondary: "", pain_points: "",
   customer_quotes: "", competitors: "", customer_journey: "",
-  services: "", pricing_notes: "", booking_url: "",
+  services: "", verified_numbers: "", pricing_notes: "", booking_url: "",
   dos: "", donts: "", hashtags_base: "",
 };
 
@@ -316,9 +317,18 @@ export default function ProfilPage() {
           onChange={(v) => update("services", v)}
           rows={4}
         />
+        {/* G-4: bevis-motorns egen ruta. Skild fran prisnotiserna nedan — tva olika
+            saker, tva olika regler. Det har far skrivas ut i en text; priser far det aldrig. */}
+        <TextArea
+          label="Siffror du kan stå för"
+          hint="Tal om verksamheten som får användas i texter — årtal, antal jobb, leveranstid, mått. Till exempel: ”Vi har satt upp över 400 skyltar sedan 1998” eller ”Offert inom 24 timmar”. Skriv inga priser här."
+          value={profile.verified_numbers}
+          onChange={(v) => update("verified_numbers", v)}
+          rows={3}
+        />
         <TextArea
           label="Prisnotiser (valfritt)"
-          hint="Om priser ska användas i inlägg, exakt som de ska skrivas."
+          hint="Vad saker kostar. Detta skrivs ALDRIG ut i ett inlägg — priset hör hemma i samtalet eller offerten. Det står här för att skrivhjälpen ska veta vad saker kostar och kunna peka uppmaningen rätt."
           value={profile.pricing_notes}
           onChange={(v) => update("pricing_notes", v)}
           rows={2}

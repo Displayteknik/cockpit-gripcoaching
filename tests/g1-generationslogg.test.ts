@@ -45,7 +45,11 @@ import { loggaGenerering, kopplaTillInlagg, markeraKasserad, loggFormat, loggFun
 // 2026-08-09: G-2 lade till storyns anatomi (712d3248 → 5082a4b7), G-3 byggde om
 // variantregeln ur hooktypslistan (5082a4b7 → 32a4ec3d). Testet fällde båda innan de
 // kunde passera tyst — det är exakt det förloppet låset finns för.
-const LAST_VERSION = "v1-32a4ec3d";
+// 2026-08-09: G-4 lade till bevislagret (32a4ec3d → b9ab87e2). BÅDA grenarna versioneras:
+// den med material ("använd dessa siffror, priser är inte bevis") och den utan
+// ("du har inget att belägga med — skriv utan sifferpåståenden"). Skillnaden i utfall
+// mellan de två grenarna är hela det G-4 ska gå att mäta.
+const LAST_VERSION = "v1-b9ab87e2";
 
 beforeEach(() => {
   svar.data = null;
