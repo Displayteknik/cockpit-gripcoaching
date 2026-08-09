@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateJSON } from "@/lib/gemini";
+import { generateJSONWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { supabaseService } from "@/lib/supabase-admin";
 import { getActiveClient, getActiveClientId, logActivity } from "@/lib/client-context";
@@ -140,7 +140,7 @@ Skriv inlägget nu. Returnera bara JSON.`;
       jsonSchema,
     });
 
-    const draft = await generateJSON<DraftResult>({
+    const { data: draft, generationId } = await generateJSONWithUsage<DraftResult>({
       model: "gemini-2.5-pro",
       systemInstruction: b.system,
       prompt: b.user,
@@ -215,6 +215,15 @@ Skriv inlägget nu. Returnera bara JSON.`;
         .select()
         .single();
       saved = data;
+    }
+
+    // G-1c: LinkedIn genererar och sparar i SAMMA request — kopplingen behöver ingen
+    // resa via klienten. Gäller både nytt utkast och omskrivning av ett befintligt:
+    // i båda fallen är det den här genereringen som blev innehållet i posten.
+    const sparatId = (saved as { id?: string } | null)?.id;
+    if (generationId && sparatId) {
+      const { kopplaTillInlagg } = await import("@/lib/generationslogg");
+      await kopplaTillInlagg(generationId, { tabell: "linkedin_posts", id: sparatId });
     }
 
     await logActivity(clientId, "linkedin_draft", `Skrev LinkedIn-inlägg (${length}): ${draft.hook?.slice(0, 60)}`, "/dashboard/linkedin");

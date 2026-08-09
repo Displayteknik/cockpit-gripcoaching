@@ -2,7 +2,7 @@
 // AI skriver TEXT (ämnesrader, intro, sektioner, CTA-text) — layouten (HTML) byggs
 // deterministiskt här, precis som Studio. AI hittar aldrig på länkar; CTA-URL:en
 // sätts av anroparen (bloggens publika URL eller bokningslänk).
-import { generateJSON } from "@/lib/gemini";
+import { generateJSONWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import type { CompassParams } from "@/lib/content-compass/prompt";
 import type { NewsletterContent } from "@/lib/newsletter-render";
@@ -47,7 +47,7 @@ export async function generateNewsletter(opts: NewsletterGenOpts): Promise<Newsl
     jsonSchema: `{"subjects":["..."],"preheader":"...","greeting":"Hej!","intro":"...","sections":[{"heading":"...","body":"..."}],"cta_text":"...","signoff":"..."}`,
   });
 
-  const raw = await generateJSON<Partial<NewsletterContent>>({
+  const { data: raw, generationId } = await generateJSONWithUsage<Partial<NewsletterContent>>({
     model: "gemini-2.5-pro",
     systemInstruction: b.system,
     prompt: b.user,
@@ -88,5 +88,6 @@ export async function generateNewsletter(opts: NewsletterGenOpts): Promise<Newsl
     sections,
     cta_text: cta_text || "Läs mer",
     signoff,
+    generationId,
   };
 }

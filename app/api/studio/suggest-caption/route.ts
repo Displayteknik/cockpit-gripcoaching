@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
-import { generate } from "@/lib/gemini";
+import { generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { sakerstallCaption, talTokens } from "@/lib/content/writing-rules";
@@ -111,15 +111,19 @@ export async function POST(req: NextRequest) {
 
     // Generera EN caption med given krok-vinkel + grinda mot AI-språk (regenerera 2 ggr).
     // Krok-vinkeln läggs som variant-suffix på underlaget (TEXT-1).
-    const genOne = async (vinkelInstruktion: string, skarpning = ""): Promise<string> => {
+    // G-1c: genOne lämnar tillbaka sitt genererings-id. Lokalt per anrop, inte i en
+    // delad variabel: A/B-läget kör tre varianter PARALLELLT och en gemensam `let`
+    // hade gett dem varandras id:n.
+    const genOne = async (vinkelInstruktion: string, skarpning = ""): Promise<{ text: string; generationId: string | null }> => {
       const prompt = vinkelInstruktion ? `${bygg.user}\n\n=== KROK-VINKEL ===\n${vinkelInstruktion}` : bygg.user;
       // KVALITET-3/11: CTA-skärpningen läggs SIST i systemprompten (väger tyngst) och
       // bara i omgenereringen — första försöket ska aldrig veta att den finns.
       const bas = skarpning ? `${bygg.system}\n\n${skarpning}` : bygg.system;
       let out = "";
+      let sisteGenerationId: string | null = null;
       for (let attempt = 0; attempt < 3; attempt++) {
         const sys = attempt === 0 ? bas : `${bas}\n\n=== VIKTIGT (försök ${attempt + 1}) ===\nFöregående förslag innehöll ett förbjudet uttryck. Skriv om HELT och undvik varje form av "handlar om", "kraftfull", "banbrytande", "nästa nivå", "holistisk", "skalbar". Var konkret och mänsklig.`;
-        out = (await generate({
+        const svar = await generateWithUsage({
           model: "gemini-2.5-flash", systemInstruction: sys, prompt,
           temperature: attempt === 0 ? 0.9 : 0.7,
           maxOutputTokens: longer ? 700 : 500,
@@ -132,10 +136,12 @@ export async function POST(req: NextRequest) {
             funnel: bygg.meta.funnel,
             lager: bygg.meta.lager,
           },
-        })).trim();
+        });
+        out = svar.text.trim();
+        sisteGenerationId = svar.generationId ?? sisteGenerationId;
         if (!hasBanned(out)) break;
       }
-      return hasBanned(out) ? sanitizeCaption(out) : out;
+      return { text: hasBanned(out) ? sanitizeCaption(out) : out, generationId: sisteGenerationId };
     };
 
     // Tal som får förekomma: profilens verifierade siffror + det användaren själv skrev.
@@ -161,15 +167,26 @@ export async function POST(req: NextRequest) {
     const genMedCtaGolv = async (
       vinkelInstruktion: string,
       etikett: string,
-    ): Promise<{ caption: string; ctaOmgenererad: boolean; ctaGodkand: boolean }> => {
-      const forsta = await saneraText(await genOne(vinkelInstruktion), clientId);
+    ): Promise<{ caption: string; ctaOmgenererad: boolean; ctaGodkand: boolean; generationId: string | null }> => {
+      const f = await genOne(vinkelInstruktion);
+      // G-1c: id:t för den SENASTE genereringen i den här varianten. Alla försök här
+      // delar samma prompt (samma `bygg`), så promptversionen är densamma oavsett
+      // vilket försök som till slut blev texten — och det är promptversionen mätningen
+      // frågar efter. Att spåra exakt vilket omtag som vann hade krävt att
+      // sakerstallCaptions fail-open-val läckte ut, utan att svara på en enda ny fråga.
+      let valdId = f.generationId;
+      const forsta = await saneraText(f.text, clientId);
       const r = await sakerstallCaption(
         forsta,
         tillatnaTal,
-        async (skarpning) => saneraText(await genOne(vinkelInstruktion, skarpning), clientId),
+        async (skarpning) => {
+          const o = await genOne(vinkelInstruktion, skarpning);
+          valdId = o.generationId ?? valdId;
+          return saneraText(o.text, clientId);
+        },
         etikett,
       );
-      return { caption: r.text, ctaOmgenererad: r.omgenererad, ctaGodkand: r.godkand };
+      return { caption: r.text, ctaOmgenererad: r.omgenererad, ctaGodkand: r.godkand, generationId: valdId };
     };
 
     // A/B-läge: distinkta krok-vinklar så varianterna faktiskt skiljer sig (spec Fas D).

@@ -9,6 +9,12 @@ export interface NewsletterContent {
   sections: { heading: string; body: string }[]; // kondenserar bloggen
   cta_text: string; // knapptext (URL sätts deterministiskt)
   signoff: string; // avslutning
+  /**
+   * G-1c: genereringen som skrev nyhetsbrevet. Ligger i innehållsobjektet därför att
+   * DET är vad som sparas (`content: b.content`) — id:t reser med utan att någon
+   * klientkomponent behöver ändras. Renderarna läser namngivna fält och rör den inte.
+   */
+  generationId?: string | null;
 }
 
 export interface RenderOpts {

@@ -9,16 +9,24 @@ export const runtime = "nodejs";
 // Admin-grindad av proxy.ts. Strikt RLS på tabellen → service-role här.
 
 /**
- * G-1c: kopplar en generering till inlägget den blev. Egen funktion för att hållas
- * kort och för att den ALDRIG får fälla sparningen — ett inlägg som inte sparas är
- * ett kundproblem, en generering som inte kopplas är en lucka i mätningen. Luckan
- * syns i `generation_per_promptversion.publicerade`.
+ * G-1c: kopplar genereringarna till inlägget de blev. FLERA, inte en: ett karusellinlägg
+ * kommer ur både karusellgenereringen och captiongenereringen, och varje omskrivning är
+ * en egen generering. Att bara binda den sista hade gjort de andra osynliga.
+ *
+ * Egen funktion för att hållas kort och för att den ALDRIG får fälla sparningen — ett
+ * inlägg som inte sparas är ett kundproblem, en generering som inte kopplas är en lucka
+ * i mätningen. Luckan syns i `generation_per_promptversion.publicerade`.
  */
-async function kopplaGenerering(generationId: unknown, postId: unknown): Promise<void> {
-  if (typeof generationId !== "string" || !generationId || !postId) return;
+async function kopplaGenereringar(rawIds: unknown, postId: unknown): Promise<void> {
+  // Tar emot både listan och det gamla enskilda fältet: en klient som ännu inte laddat
+  // om sidan efter en deploy skickar fortfarande det gamla formatet.
+  const ids = (Array.isArray(rawIds) ? rawIds : [rawIds]).filter((v): v is string => typeof v === "string" && !!v);
+  if (!ids.length || !postId) return;
   try {
     const { kopplaTillInlagg } = await import("@/lib/generationslogg");
-    await kopplaTillInlagg(generationId, { tabell: "studio_posts", id: String(postId) });
+    for (const id of ids) {
+      await kopplaTillInlagg(id, { tabell: "studio_posts", id: String(postId) });
+    }
   } catch { /* mätningen får aldrig kosta en sparning */ }
 }
 
@@ -106,7 +114,7 @@ export async function POST(req: NextRequest) {
     // G-1c: binder genereringen till inlägget den blev. Görs vid SPARNING, inte vid
     // genereringen — där vet ingen ännu om texten kommer att användas. Bara vid nyskapande:
     // en uppdatering av ett gammalt inlägg är inte det tillfälle då genereringen blev till.
-    await kopplaGenerering(body.generationId, data?.id);
+    await kopplaGenereringar(body.generationIds ?? body.generationId, data?.id);
     return NextResponse.json({ post: data });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

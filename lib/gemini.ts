@@ -201,17 +201,32 @@ export async function groundedGenerate(
   return { text, sources };
 }
 
-export async function generateJSON<T = unknown>(opts: GenerateOptions): Promise<T> {
-  // TEXT-1: samma skrivregler-default som generate() — JSON-läget är ett FORMAT, inte
-  // ett undantag från innehållsreglerna. Kundtext i JSON (LinkedIn, nyhetsbrev, social)
-  // ska ha reglerna; rena klassnings-/extraktionsanrop sätter skrivregler: false EXPLICIT.
-  const raw = await generate({ ...opts, jsonMode: true });
+/**
+ * Som generateJSON(), men lämnar tillbaka generations-id:t (G-1c) så flödet kan binda
+ * genereringen till det som sparas. Parsningen är identisk — den ligger i en delad
+ * hjälpare så de två vägarna aldrig kan börja tolka svaret olika.
+ */
+export async function generateJSONWithUsage<T = unknown>(
+  opts: GenerateOptions,
+): Promise<{ data: T; generationId: string | null }> {
+  const r = await generateWithUsage({ ...opts, jsonMode: true });
+  return { data: tolkaJsonSvar<T>(r.text), generationId: r.generationId ?? null };
+}
+
+/** Parsar Geminis JSON-svar. Faller tillbaka på första JSON-blocket i texten. */
+function tolkaJsonSvar<T>(raw: string): T {
   try {
     return JSON.parse(raw) as T;
   } catch {
-    // Fallback: extrahera första JSON-blocket
     const match = raw.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
     if (match) return JSON.parse(match[0]) as T;
     throw new Error("Gemini: kunde inte parsa JSON: " + raw.slice(0, 200));
   }
+}
+
+export async function generateJSON<T = unknown>(opts: GenerateOptions): Promise<T> {
+  // TEXT-1: samma skrivregler-default som generate() — JSON-läget är ett FORMAT, inte
+  // ett undantag från innehållsreglerna. Kundtext i JSON (LinkedIn, nyhetsbrev, social)
+  // ska ha reglerna; rena klassnings-/extraktionsanrop sätter skrivregler: false EXPLICIT.
+  return tolkaJsonSvar<T>(await generate({ ...opts, jsonMode: true }));
 }

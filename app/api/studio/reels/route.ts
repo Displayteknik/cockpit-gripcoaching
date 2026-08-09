@@ -82,6 +82,12 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await db.from("studio_reels").insert(rad).select("id").single();
     if (error) throw new Error(error.message);
+    // G-1c: manusets generering binds till reelen den blev. Id:t reste med inuti
+    // storyboarden, så ingen klientkomponent behövde ändras.
+    if (sb.generationId) {
+      const { kopplaTillInlagg } = await import("@/lib/generationslogg");
+      await kopplaTillInlagg(sb.generationId, { tabell: "studio_reels", id: String(data.id) });
+    }
     return NextResponse.json({ id: data.id, uppdaterad: false });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

@@ -61,6 +61,13 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await sb.from("newsletters").insert(row).select("id, subject, updated_at").single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // G-1c: genereringen binds till nyhetsbrevet den blev. Id:t reste med inuti
+    // innehållsobjektet, så ingen klientkomponent behövde ändras.
+    const genId = (row.content as { generationId?: string } | null)?.generationId;
+    if (genId && data?.id) {
+      const { kopplaTillInlagg } = await import("@/lib/generationslogg");
+      await kopplaTillInlagg(genId, { tabell: "newsletters", id: String(data.id) });
+    }
     return NextResponse.json({ newsletter: data });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

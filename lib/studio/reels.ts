@@ -50,6 +50,12 @@ export interface ReelStoryboard {
   durationMs: number;
   aiBekraftelseKravs: boolean;
   varningar: string[];
+  /**
+   * G-1c: genereringen som skrev manuset. Ligger i storyboarden och inte vid sidan av
+   * den därför att storyboarden ÄR det som skickas till sparningen (`storyboard: sb`) —
+   * id:t reser då med utan att en enda klientkomponent behöver ändras.
+   */
+  generationId?: string | null;
 }
 
 export interface ReelGenOpts {

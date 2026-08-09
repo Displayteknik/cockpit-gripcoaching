@@ -163,9 +163,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [slides, setSlides] = useState<StudioSlide[]>([]);
   const [slideIdx, setSlideIdx] = useState(0);
   const [genCarousel, setGenCarousel] = useState(false);
-  // G-1c: senaste genereringens id (generation_log). Sätts när AI:n skapat innehållet,
-  // skickas med vid sparning och nollas då — kopplingen ska bara ske en gång.
-  const [generationId, setGenerationId] = useState<string | null>(null);
+  // G-1c: genererings-id:n (generation_log) som bidragit till det som står i editorn.
+  // En LISTA och inte ett värde: ett karusellinlägg kommer ur BÅDE karusellgenereringen
+  // och captiongenereringen, och den som skriver om captionen tre gånger har fyra
+  // genereringar bakom sitt inlägg. Ett enda fält hade tyst kastat alla utom den sista.
+  // Töms vid sparning — kopplingen ska ske en gång per generering.
+  const [generationIds, setGenerationIds] = useState<string[]>([]);
+  const laggTillGeneration = useCallback((id: unknown) => {
+    if (typeof id === "string" && id) setGenerationIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  }, []);
   const [genSlideImgs, setGenSlideImgs] = useState(""); // "" = idle, annars "2/5"-progress
   // Vilka slides som ska få en genererad bild. Standard = de som saknar bild; `rorda`
   // håller reda på vilka användaren själv klickat i eller ur, så standardvalet fortsätter
@@ -213,7 +219,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [caption, setCaption] = useState("");
   const [suggestingCaption, setSuggestingCaption] = useState(false);
   // Fas D — A/B-varianter av captionen (olika krok-vinklar) att jämföra och välja.
-  const [captionVariants, setCaptionVariants] = useState<{ angle: string; caption: string }[]>([]);
+  // G-1c: varje variant bär sitt eget genererings-id, så den variant användaren VÄLJER
+  // är den som binds till inlägget. De som inte väljs förblir ovalda i loggen — det är
+  // just skillnaden mellan "genererat" och "använt" som gör mätningen värd något.
+  const [captionVariants, setCaptionVariants] = useState<{ angle: string; caption: string; generationId?: string | null }[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [ghlConnected, setGhlConnected] = useState<boolean | null>(null);
   const [ghlAccounts, setGhlAccounts] = useState<GhlAccount[]>([]);
@@ -758,7 +767,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       // G-1c: håll genererings-id:t tills inlägget sparas — då binds de ihop. Ligger i
       // state och inte i payloaden: kopplingen ska ske EN gång, inte varje gång ett
       // sparat inlägg öppnas och sparas om.
-      setGenerationId(d.generationId ?? null);
+      laggTillGeneration(d.generationId);
       const nya: StudioSlide[] = d.slides;
       const gamla = slides;
       const harInnehall = gamla.some((s) => s.imageUrl || s.headline?.trim() || s.body?.trim());
@@ -773,7 +782,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setGenCarousel(false);
     }
-  }, [topic, headline1, compass, slides]);
+  }, [topic, headline1, compass, slides, laggTillGeneration]);
 
   // Diff-dialogens "Använd valda förslag": bara aktivt ibockade slides får AI-texten.
   const applyCarouselDiffs = useCallback(() => {
@@ -1024,15 +1033,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const title = headline1 || caption.slice(0, 40) || body.slice(0, 40) || "Namnlöst inlägg";
       const r = await fetch("/api/studio/posts", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption, channelCaptions }, compass, generationId }),
+        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption, channelCaptions }, compass, generationIds }),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte spara i biblioteket");
       const id = d.post?.id ?? null;
       setLoadedPostId(id);
-      // G-1c: kopplingen är gjord. Nolla, annars binds samma generering om till nästa
-      // inlägg användaren sparar och loggen skulle påstå att den blev två saker.
-      if (generationId) setGenerationId(null);
+      // G-1c: kopplingen är gjord. Töm, annars binds samma genereringar om till nästa
+      // inlägg användaren sparar och loggen skulle påstå att en text blev två saker.
+      if (generationIds.length) setGenerationIds([]);
       await refreshPosts();
       return id;
     } catch (e) {
@@ -1041,7 +1050,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSavingPost(false);
     }
-  }, [headline1, body, caption, channelCaptions, loadedPostId, payload, refreshPosts, compass, generationId]);
+  }, [headline1, body, caption, channelCaptions, loadedPostId, payload, refreshPosts, compass, generationIds]);
 
   // "Spara utkast" = spara i biblioteket så det syns i "Tidigare skapelser" längst ner.
   // Det lokala autosparet sköts av useUtkast och behöver ingen knapp.
@@ -1154,12 +1163,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte föreslå bildtext");
       setCaption(d.caption || "");
+      laggTillGeneration(d.generationId);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSuggestingCaption(false);
     }
-  }, [headline1, headline2, body, topic, slides, postType, compass]);
+  }, [headline1, headline2, body, topic, slides, postType, compass, laggTillGeneration]);
 
   // CC-3: auto-klassa inläggets text → fyll Content Compass-chips (redigerbara efteråt).
   const autoClassify = useCallback(async () => {
@@ -2488,7 +2498,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     {captionVariants.map((v, i) => {
                       const vald = caption.trim() === v.caption.trim();
                       return (
-                        <button key={i} onClick={() => { setCaption(v.caption); }}
+                        <button key={i} onClick={() => { setCaption(v.caption); laggTillGeneration(v.generationId); }}
                           className={`text-left rounded-xl border p-3 transition-all hover:shadow-sm ${vald ? "ring-2" : ""}`}
                           style={vald ? { borderColor: primary, boxShadow: `0 0 0 2px ${primary}` } : { borderColor: "#e5e7eb" }}>
                           <div className="flex items-center gap-1.5 mb-1.5">

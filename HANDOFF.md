@@ -107,9 +107,26 @@ StudioMakers state → sparningen → `kopplaTillInlagg`. Bevisat i samma DoD: r
 ännu om texten kommer att användas. Id:t nollas efteråt så samma generering inte kan
 bindas till två inlägg.
 
-**Nästa steg (litet):** samma resa för caption, LinkedIn, nyhetsbrev och reels. Karusellen
-är mönstret — `generateWithUsage` i stället för `generate`, id ut i svaret, tillbaka vid
-sparning. Tills dess är `publicerade` sann bara för karuseller.
+**Alla flöden är nu inkopplade och körda skarpt** (`scripts/g1c-flodena-dod.mjs`):
+
+| Flöde | Kopplas till | Hur id:t reser |
+|---|---|---|
+| LinkedIn | `linkedin_posts` | Genererar och sparar i SAMMA request — ingen resa behövs |
+| Caption | `studio_posts` | Route → klientens lista → sparningen |
+| Karusell | `studio_posts` | Route → klientens lista → sparningen |
+| Reels | `studio_reels` | Inuti storyboarden, som ÄR det som sparas |
+| Nyhetsbrev | `newsletters` | Inuti innehållsobjektet, som ÄR det som sparas |
+
+Klienten håller en **lista** av id:n, inte ett värde: ett karusellinlägg kommer ur både
+karusell- och captiongenereringen, och den som skriver om captionen tre gånger har fyra
+genereringar bakom sitt inlägg. Ett enda fält hade tyst kastat alla utom den sista.
+A/B-varianterna bär sitt id var för sig, så bara den variant användaren VÄLJER binds —
+skillnaden mellan "genererat" och "använt" är hela poängen med mätningen.
+
+⚠ **Nyhetsbrevet är OBEVISAT.** Koden är identisk med reels-mönstret, men modulen är av
+för **samtliga** klienter (kontrollerat i DB), så flödet gick inte att köra. Att slå på
+den åt en kund för ett test vore att ändra hennes paket. Kör DoD:n igen när någon kund
+får modulen.
 
 ### Återstår
 

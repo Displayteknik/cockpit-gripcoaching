@@ -12,7 +12,7 @@
 // skrivregler och JSON-schemat SIST. Kit-direktiven hämtas lokalt enbart för BILDDELEN
 // (imageNegative) — donts-raden ägs av kärnans lager 7.
 
-import { generate } from "@/lib/gemini";
+import { generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, type ByggdPrompt } from "@/lib/prompt-core";
 import { getKitDirectives, NEUTRAL_DIRECTIVES } from "@/lib/studio/kit";
 import { sanitizeGenerated, skrivreglerPa } from "@/lib/content/writing-rules";
@@ -114,6 +114,7 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
   let title = "";
   let caption = "";
   const varningar: string[] = [];
+  let generationId: string | null = null;
 
   // Upp till tre försök. Modellen kan slarva med ordgränsen; loopen ger den chansen
   // att rätta sig innan vi kapar deterministiskt. Samma mönster som suggest-caption.
@@ -126,7 +127,7 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
       .filter(Boolean)
       .join("\n\n");
 
-    const svar = await generate({
+    const svar = await generateWithUsage({
       model: "gemini-2.5-pro",
       systemInstruction: system,
       prompt,
@@ -147,7 +148,10 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
       },
     });
 
-    const obj = tolkaJson<{ title?: unknown; caption?: unknown; scenes?: unknown }>(svar);
+    // G-1c: id:t för det senaste försöket. Alla försök delar samma prompt, så
+    // promptversionen är densamma oavsett vilket omtag som till slut gav manuset.
+    generationId = svar.generationId ?? generationId;
+    const obj = tolkaJson<{ title?: unknown; caption?: unknown; scenes?: unknown }>(svar.text);
     const scenes = Array.isArray(obj?.scenes) ? (obj.scenes as Record<string, unknown>[]) : [];
 
     if (scenes.length !== mall.scenes.length) {
@@ -209,6 +213,7 @@ export async function generateReelStoryboard(opts: ReelGenOpts): Promise<ReelSto
     durationMs,
     aiBekraftelseKravs: mall.kraverAktBekraftelse,
     varningar,
+    generationId,
   };
 }
 
