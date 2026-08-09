@@ -193,16 +193,70 @@ export function harledStatus(
   return "open";
 }
 
+// ── FIX-1-REST B2: VILANDE som eget läge ────────────────────────────────────
+//
+// Bakgrund (mätt 9/8 mot skarp data): Displaytekniks pipeline har ETT steg som heter
+// "Förlorad / Paus (nurture)" med 24 affärer i sig. Förlorad och pausad ligger alltså i
+// samma fack, och `harledStatus` läser ordet "paus" som förlorad. Varje kund Håkan
+// parkerat räknas därför som en förlorad affär.
+//
+// Håkans beslut: facket delas i två i MySales (manuellt — pipelinesteg går inte att
+// skapa via API:t, dokumenterat 9/8). Cockpit ska SPEGLA det, aldrig ha en egen
+// parallell vokabulär — det var precis den glidningen som gav karusellbuggen.
+//
+// ⚠ Därför är den här funktionen medvetet TYST tills steget finns:
+//   - Ett konfigurerat vilande-steg-id vinner alltid.
+//   - Namnfallbacken kräver ordet "vilande" och avvisar allt som också säger "förlorad".
+//   - Ordet "paus" ensamt räknas ALDRIG som vilande.
+// Nettot: inga av de 24 befintliga affärerna flyttar sig förrän Håkan delat facket.
+// Att flippa dem i förväg hade varit att gissa vilka som är parkerade och vilka som är
+// döda — och att presentera gissningen som fakta.
+export function arVilande(
+  stegId: string | null,
+  stegNamn: string | null,
+  vilande: Set<string>,
+): boolean {
+  if (stegId && vilande.has(stegId)) return true;
+  const n = (stegNamn || "").toLowerCase();
+  if (!/vilande/.test(n)) return false;
+  // "Förlorad / Paus / Vilande" är fortfarande ett förlorat-fack. Ett delat fack heter
+  // bara Vilande.
+  return !/förlorad|forlorad|\blost\b/.test(n);
+}
+
 /**
- * Håkans egna inställningar för locationen: vinst- och förluststeg samt vilken pipeline
- * som faktiskt används. Samma källa som Fokusmotorn läser, så vyerna aldrig motsäger
- * varandra. Tom mängd = inget facit, då gäller fallbacken.
+ * Fyrvägsläget för ett steg: vunnet, förlorat, vilande eller i spel.
+ *
+ * Egen funktion i stället för att bredda `harledStatus`: den har fem anropare som alla
+ * gör trevalsbeslut, och att ändra dess returtyp hade tvingat fram ändringar i vyer som
+ * inte är en del av den här etappen. Den som vill veta om något är parkerat frågar här.
+ */
+export function harledSteglage(
+  stegId: string | null,
+  stegNamn: string | null,
+  vinnare: Set<string>,
+  forlorare: Set<string>,
+  vilande: Set<string>,
+): "open" | "won" | "lost" | "vilande" {
+  // Vilande prövas FÖRE förlorad: ett delat fack ska aldrig kunna läsas som förlorat
+  // bara för att fallbacken råkar matcha ett ord i stegnamnet.
+  if (arVilande(stegId, stegNamn, vilande)) return "vilande";
+  return harledStatus(stegId, stegNamn, vinnare, forlorare);
+}
+
+/**
+ * Håkans egna inställningar för locationen: vinst-, förlust- och vilande-steg samt
+ * vilken pipeline som faktiskt används. Samma källa som Fokusmotorn läser, så vyerna
+ * aldrig motsäger varandra. Tom mängd = inget facit, då gäller fallbacken.
  */
 export async function hamtaStegFacit(
   locationId: string,
-): Promise<{ vinnare: Set<string>; forlorare: Set<string>; pipelines: Set<string> }> {
+): Promise<{ vinnare: Set<string>; forlorare: Set<string>; vilande: Set<string>; pipelines: Set<string> }> {
   const vinnare = new Set<string>();
   const forlorare = new Set<string>();
+  // B2: tom tills Håkan pekat ut det delade Vilande-steget. Tom mängd = ingen kontakt
+  // hamnar i vilozonen, vilket är rätt så länge steget inte finns.
+  const vilande = new Set<string>();
   const pipelines = new Set<string>();
   try {
     const sb = supabaseService();
@@ -211,12 +265,13 @@ export async function hamtaStegFacit(
       const os = u.personal_os || {};
       if (typeof os.__ghl_won_stage_id === "string" && os.__ghl_won_stage_id) vinnare.add(os.__ghl_won_stage_id);
       if (typeof os.__ghl_lost_stage_id === "string" && os.__ghl_lost_stage_id) forlorare.add(os.__ghl_lost_stage_id);
+      if (typeof os.__ghl_vilande_stage_id === "string" && os.__ghl_vilande_stage_id) vilande.add(os.__ghl_vilande_stage_id);
       if (typeof os.__ghl_pipeline_id === "string" && os.__ghl_pipeline_id) pipelines.add(os.__ghl_pipeline_id);
     }
   } catch {
     /* utan facit räcker stegnamnen */
   }
-  return { vinnare, forlorare, pipelines };
+  return { vinnare, forlorare, vilande, pipelines };
 }
 
 /**
