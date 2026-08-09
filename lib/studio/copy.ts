@@ -8,6 +8,7 @@ import { iterateGenerate } from "@/lib/iterate";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { harPrisuppgift } from "@/lib/content/writing-rules";
 import { getTemplateMeta } from "@/lib/studio/templates-meta";
+import { tillatnaHookTyper } from "@/lib/hook-typer";
 
 export interface StudioCopySuggestion {
   hookType: string;
@@ -66,12 +67,17 @@ export interface StudioCopyOpts {
 // men så länge berättelse-hooken BEGÄRS av flödet frestas modellen att uppfinna det
 // material den saknar. Utan story-bank eller kundröster i profilen begärs den inte.
 function tillatnaHooks(role: StudioCopyOpts["imageRole"], harSiffror: boolean, harBerattelser: boolean): string[] {
-  const bas =
+  // BILDENS ROLL ägs här — den vet bara det här flödet något om.
+  const rollBas =
     role === "problem" ? ["fråga", "konträr"]
     : role === "losning" ? ["påstående", "konträr"]
     : ["fråga", "konträr", "påstående"];
-  const ut = harBerattelser ? [...bas, "berättelse"] : bas;
-  return harSiffror ? [...ut, "statistik"] : ut;
+  // MATERIALKRAVET ägs av lib/hook-typer (G-3). Samma fråga ställs nu likadant överallt:
+  // statistik kräver verifierade siffror, berättelse kräver story-bank. Förut fanns
+  // regeln på två ställen med två formuleringar, och två formuleringar av samma regel
+  // hinner alltid glida isär.
+  const tillatetMaterial = new Set(tillatnaHookTyper({ harSiffror, harBerattelser }).map((h) => h.namn));
+  return [...rollBas, "berättelse", "statistik"].filter((n) => tillatetMaterial.has(n));
 }
 
 // Har tenanten verkligt berättelsematerial? Story-bank och kundröster är de sektioner
