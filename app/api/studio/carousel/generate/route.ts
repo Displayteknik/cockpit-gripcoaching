@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     // TEXT-1: skickas som parametrar — prompt-core renderar compass-blocket.
     const compass = body.compass && typeof body.compass === "object" ? (body.compass as CompassParams) : undefined;
 
-    const slides = await generateCarousel({
+    const { slides, generationId } = await generateCarousel({
       clientId,
       topic,
       points,
@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
       compass,
     });
     if (!slides.length) return NextResponse.json({ error: "Kunde inte generera karusell" }, { status: 500 });
-    return NextResponse.json({ slides });
+    // G-1c: id:t följer med till klienten och tillbaka vid sparning, så generationen kan
+    // bindas till inlägget den blev. Utan den resan vet loggen aldrig vad som användes.
+    return NextResponse.json({ slides, generationId });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

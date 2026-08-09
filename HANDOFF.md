@@ -73,7 +73,7 @@ AKUT-KARUSELL → AKUT-DM → **G-1** → G-2 → FIX-1-REST (B2+C) → G-3 → 
 3. **GHL med flera bilder** — `media[]` skickas, ej provat mot skarpt konto.
 4. **FIX-1 grupp A + B1** — inget test, ingen ommätning sedan fixen.
 
-### G-1 — generationsloggen (G-1a + G-1b KLARA och bevisade 9/8)
+### G-1 — generationsloggen (G-1a + G-1b + G-1c KLARA och bevisade 9/8)
 
 **Problemet G-0 beskrev:** `ai_usage_events` vet att ett anrop kostade fyra öre, men inte
 vilken text det blev, i vilket format eller ur vilken promptversion. Alla kvalitetsändringar
@@ -100,10 +100,16 @@ null), `varianter=5`, promptlagren, och `ai_usage_event_id` kopplat till
 gemini/gemini-2.5-flash. 12 kontroller gröna. Migrationen körd via Management API med
 `scripts/kor-migration.mjs`.
 
-⚠ **G-1c återstår:** `kopplaTillInlagg` är byggd och testad men har **ingen anropare**.
-Genererings-id:t når inte fram till där inlägget sparas — `generate()` returnerar bara
-texten. Därför är `publicerade` i vyn alltid 0. Det är den sista biten som gör att man kan
-fråga "blev de här texterna faktiskt publicerade?".
+**G-1c: kedjan generering → inlägg är stängd.** Id:t reser `generateCarousel` → routen →
+StudioMakers state → sparningen → `kopplaTillInlagg`. Bevisat i samma DoD: raden
+`8f88e0b1` fick `anvand_i_tabell=studio_posts`, `anvand_i_id=acf330a8`, och vyn räknar
+`publicerade: 1`. Kopplingen sker vid SPARNING, inte vid genereringen — där vet ingen
+ännu om texten kommer att användas. Id:t nollas efteråt så samma generering inte kan
+bindas till två inlägg.
+
+**Nästa steg (litet):** samma resa för caption, LinkedIn, nyhetsbrev och reels. Karusellen
+är mönstret — `generateWithUsage` i stället för `generate`, id ut i svaret, tillbaka vid
+sparning. Tills dess är `publicerade` sann bara för karuseller.
 
 ### Återstår
 

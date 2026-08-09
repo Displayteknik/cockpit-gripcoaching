@@ -163,6 +163,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [slides, setSlides] = useState<StudioSlide[]>([]);
   const [slideIdx, setSlideIdx] = useState(0);
   const [genCarousel, setGenCarousel] = useState(false);
+  // G-1c: senaste genereringens id (generation_log). Sätts när AI:n skapat innehållet,
+  // skickas med vid sparning och nollas då — kopplingen ska bara ske en gång.
+  const [generationId, setGenerationId] = useState<string | null>(null);
   const [genSlideImgs, setGenSlideImgs] = useState(""); // "" = idle, annars "2/5"-progress
   // Vilka slides som ska få en genererad bild. Standard = de som saknar bild; `rorda`
   // håller reda på vilka användaren själv klickat i eller ur, så standardvalet fortsätter
@@ -752,6 +755,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Karusell-generering misslyckades");
       if (!Array.isArray(d.slides) || !d.slides.length) return;
+      // G-1c: håll genererings-id:t tills inlägget sparas — då binds de ihop. Ligger i
+      // state och inte i payloaden: kopplingen ska ske EN gång, inte varje gång ett
+      // sparat inlägg öppnas och sparas om.
+      setGenerationId(d.generationId ?? null);
       const nya: StudioSlide[] = d.slides;
       const gamla = slides;
       const harInnehall = gamla.some((s) => s.imageUrl || s.headline?.trim() || s.body?.trim());
@@ -1017,12 +1024,15 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const title = headline1 || caption.slice(0, 40) || body.slice(0, 40) || "Namnlöst inlägg";
       const r = await fetch("/api/studio/posts", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption, channelCaptions }, compass }),
+        body: JSON.stringify({ id: asNew ? undefined : loadedPostId, title, payload: { ...payload, caption, channelCaptions }, compass, generationId }),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte spara i biblioteket");
       const id = d.post?.id ?? null;
       setLoadedPostId(id);
+      // G-1c: kopplingen är gjord. Nolla, annars binds samma generering om till nästa
+      // inlägg användaren sparar och loggen skulle påstå att den blev två saker.
+      if (generationId) setGenerationId(null);
       await refreshPosts();
       return id;
     } catch (e) {
@@ -1031,7 +1041,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSavingPost(false);
     }
-  }, [headline1, body, caption, channelCaptions, loadedPostId, payload, refreshPosts, compass]);
+  }, [headline1, body, caption, channelCaptions, loadedPostId, payload, refreshPosts, compass, generationId]);
 
   // "Spara utkast" = spara i biblioteket så det syns i "Tidigare skapelser" längst ner.
   // Det lokala autosparet sköts av useUtkast och behöver ingen knapp.

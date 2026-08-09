@@ -2,7 +2,7 @@
 // grundad i varumärkesröst (getProfileAsMarkdown) + hook-playbook + kit-donts.
 // Deterministisk render sker i ArkKarusell; AI rör bara text (aldrig layout).
 
-import { generate } from "@/lib/gemini";
+import { generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import type { CompassParams } from "@/lib/content-compass/prompt";
 import type { StudioSlide } from "@/lib/studio/payload";
@@ -17,9 +17,20 @@ function str(v: unknown): string {
 // Antal PUNKT-slides (utöver hook + cta). points=3 → 5 slides totalt.
 // TEXT-1 T-2: opts.compass är nu Compass-parametrar (inte ett färdigrenderat block) —
 // prompt-core bygger anatomi/compass-lagret, precis som röst, profil och kit-donts.
+/**
+ * G-1c: `generationId` följer med ut. Utan den kan ingen svara på om texten som
+ * genererades faktiskt blev ett inlägg — och en mätning som bara ser genereringar,
+ * aldrig utfall, kan inte skilja en bra promptversion från en som producerar skräp
+ * användaren kastar.
+ */
+export interface KarusellResultat {
+  slides: StudioSlide[];
+  generationId: string | null;
+}
+
 export async function generateCarousel(opts: {
   clientId: string; topic: string; points?: number; brandName?: string; industry?: string; compass?: CompassParams;
-}): Promise<StudioSlide[]> {
+}): Promise<KarusellResultat> {
   const points = Math.min(Math.max(2, opts.points ?? 3), MAX_SLIDES - 2);
   const brand = opts.brandName || "kunden";
 
@@ -45,7 +56,9 @@ export async function generateCarousel(opts: {
     jsonSchema: `[{"kind":"hook","headline":"...","body":"..."},${Array.from({ length: points }).map(() => '{"kind":"point","headline":"...","body":"..."}').join(",")},{"kind":"cta","headline":"...","body":"..."}]`,
   });
 
-  const raw = await generate({
+  // generateWithUsage i stället för generate: det är den enda vägen som lämnar tillbaka
+  // generations-id:t (G-1c). Anropet är i övrigt identiskt.
+  const svar = await generateWithUsage({
     model: "gemini-2.5-flash",
     systemInstruction: b.system,
     prompt: b.user,
@@ -65,9 +78,11 @@ export async function generateCarousel(opts: {
       varianter: points + 2, // hook + punkter + cta = antal slides anropet ska ge
     },
   });
+  const raw = svar.text;
+  const generationId = svar.generationId ?? null;
   let arr: unknown;
   try { arr = JSON.parse(raw); } catch { const m = raw.match(/\[[\s\S]*\]/); arr = m ? JSON.parse(m[0]) : []; }
-  if (!Array.isArray(arr)) return [];
+  if (!Array.isArray(arr)) return { slides: [], generationId };
 
   // TEXT-1: enhetlig sanering — karusellen saknade sanering helt före migreringen.
   const slides = await Promise.all(
@@ -86,5 +101,5 @@ export async function generateCarousel(opts: {
       })),
   );
 
-  return slides;
+  return { slides, generationId };
 }

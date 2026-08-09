@@ -8,6 +8,20 @@ export const runtime = "nodejs";
 // Studio-bibliotek: sparade skapelser (payload + bild) som kan återanvändas/redigeras.
 // Admin-grindad av proxy.ts. Strikt RLS på tabellen → service-role här.
 
+/**
+ * G-1c: kopplar en generering till inlägget den blev. Egen funktion för att hållas
+ * kort och för att den ALDRIG får fälla sparningen — ett inlägg som inte sparas är
+ * ett kundproblem, en generering som inte kopplas är en lucka i mätningen. Luckan
+ * syns i `generation_per_promptversion.publicerade`.
+ */
+async function kopplaGenerering(generationId: unknown, postId: unknown): Promise<void> {
+  if (typeof generationId !== "string" || !generationId || !postId) return;
+  try {
+    const { kopplaTillInlagg } = await import("@/lib/generationslogg");
+    await kopplaTillInlagg(generationId, { tabell: "studio_posts", id: String(postId) });
+  } catch { /* mätningen får aldrig kosta en sparning */ }
+}
+
 // GET /api/studio/posts — lista aktiv klients skapelser (nyast först)
 export async function GET() {
   const denied = await requireAdminOrCustomer();
@@ -89,6 +103,10 @@ export async function POST(req: NextRequest) {
       .select("id, template_id, format, title, image_url, payload, updated_at")
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // G-1c: binder genereringen till inlägget den blev. Görs vid SPARNING, inte vid
+    // genereringen — där vet ingen ännu om texten kommer att användas. Bara vid nyskapande:
+    // en uppdatering av ett gammalt inlägg är inte det tillfälle då genereringen blev till.
+    await kopplaGenerering(body.generationId, data?.id);
     return NextResponse.json({ post: data });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

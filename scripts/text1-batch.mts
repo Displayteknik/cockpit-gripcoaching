@@ -239,7 +239,7 @@ const FLOWS: Flow[] = [
     namn: "karusell",
     concurrency: 3,
     run: async (p, amne) => {
-      const slides = await generateCarousel({ clientId: p.id, topic: amne.tema, brandName: p.name, industry: p.industry });
+      const { slides } = await generateCarousel({ clientId: p.id, topic: amne.tema, brandName: p.name, industry: p.industry });
       if (!slides.length) throw new Error("Tom slide-array");
       return {
         output: JSON.stringify(slides),

@@ -63,21 +63,41 @@ const kolla = (ok, text) => { console.log(`${ok ? "OK  " : "FEL "} ${text}`); if
 const fore = (await fraga("select count(*)::int as n from public.generation_log"))[0].n;
 console.log(`# G-1 DoD — ${BASE}. Rader i generation_log före: ${fore}`);
 
+let sparatPostId = null;
 if (!BARA_LAS) {
+  const cookie = `admin_session=${mintAdmin(SECRET)}`;
   const AMNE = `DoD-korning ${new Date().toISOString().slice(0, 16)}`;
   const r = await fetch(`${BASE}/api/studio/carousel/generate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", cookie: `admin_session=${mintAdmin(SECRET)}` },
+    headers: { "Content-Type": "application/json", cookie },
     body: JSON.stringify({ topic: AMNE, points: 3 }),
   });
   const svar = await r.json().catch(() => ({}));
   kolla(r.ok, `Karusellanropet svarade HTTP ${r.status}${r.ok ? ` med ${svar.slides?.length ?? 0} slides` : `: ${JSON.stringify(svar).slice(0, 200)}`}`);
+  // G-1c: id:t ska ha rest hela vägen tillbaka till klienten.
+  kolla(!!svar.generationId, `Routen lämnade tillbaka generationId: ${svar.generationId || "SAKNAS"}`);
+
+  // Andra halvan av kedjan: spara ett inlägg med id:t och se att kopplingen skrivs.
+  const s = await fetch(`${BASE}/api/studio/posts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", cookie },
+    body: JSON.stringify({
+      title: AMNE,
+      payload: { templateId: "ark-karusell", format: "1080x1350", slides: svar.slides },
+      generationId: svar.generationId,
+    }),
+  });
+  const sd = await s.json().catch(() => ({}));
+  sparatPostId = sd.post?.id ?? null;
+  kolla(s.ok && !!sparatPostId, `Inlägget sparades: ${sparatPostId || JSON.stringify(sd).slice(0, 200)}`);
+
   // Loggningen sker efter svaret men i samma request — ge den ett ögonblick.
   await new Promise((k) => setTimeout(k, 2500));
 }
 
 const rader = await fraga(`
   select g.id, g.syfte, g.format, g.prompt_version, g.funnel, g.varianter, g.status,
+         g.anvand_i_tabell, g.anvand_i_id,
          g.tenant_id is not null            as har_tenant,
          g.ai_usage_event_id is not null    as har_kostnadskoppling,
          g.lager is not null                as har_lager,
@@ -107,6 +127,13 @@ if (!g) {
   // Hela poängen med att tabellen PEKAR på ledgern i stället för att duplicera den.
   kolla(g.har_kostnadskoppling, `ai_usage_event_id kopplat → ${g.provider}/${g.model}, usage-status ${g.usage_status}`);
   kolla(g.status === "ok", `status = ${g.status}`);
+  if (!BARA_LAS) {
+    // G-1c: hela poängen. Utan den här kopplingen vet loggen vad som genererades,
+    // aldrig vad som faktiskt användes — och då går bra och dålig promptversion
+    // inte att skilja åt.
+    kolla(g.anvand_i_tabell === "studio_posts", `anvand_i_tabell = ${g.anvand_i_tabell} (väntat studio_posts)`);
+    kolla(g.anvand_i_id === String(sparatPostId), `anvand_i_id = ${g.anvand_i_id} (samma som det sparade inlägget)`);
+  }
 }
 
 // Vyn ska kunna svara på frågan hela etappen finns för.
@@ -114,6 +141,16 @@ const vy = await fraga("select prompt_version, syfte, antal, publicerade, utan_k
 console.log("Vyn generation_per_promptversion:");
 console.log(JSON.stringify(vy, null, 2));
 kolla(vy.length > 0, "Vyn returnerar rader");
+if (!BARA_LAS) kolla(vy.some((v) => v.publicerade > 0), "Vyn räknar minst ett publicerat — kopplingen syns hela vägen ut");
+
+// Städa: DoD-inlägget är testdata och ska inte ligga kvar i Håkans bibliotek. Bara den
+// rad vi själva skapade sekunder tidigare, utpekad med sitt exakta id.
+if (sparatPostId) {
+  await fraga(`delete from public.studio_posts where id = '${sparatPostId}';`);
+  console.log(`\nStädat: DoD-inlägget ${sparatPostId} borttaget ur biblioteket.`);
+  console.log("Generationsraden behålls med flit — den ÄR mätdatan, och en kvarvarande");
+  console.log("koppling till ett borttaget inlägg är sann historik, inte ett fel.");
+}
 
 console.log(fel === 0 ? "\nG-1 DoD GRÖN" : `\nG-1 DoD RÖD — ${fel} kontroll(er) föll.`);
 process.exit(fel === 0 ? 0 : 1);
