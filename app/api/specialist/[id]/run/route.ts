@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { loggaAnrop } from "@/lib/ai-usage";
-import { getSpecialist, buildUserPrompt, guardrailsFor } from "@/lib/specialists";
+import { getSpecialist, buildUserPrompt, SPECIALIST_GUARDRAILS } from "@/lib/specialists";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
 import { iterateGenerate } from "@/lib/iterate";
@@ -67,17 +67,6 @@ export async function POST(
       kategori: specialist.category,
     });
 
-    // Offertkategorin räknar med riktiga pengar. Valutakursen hämtas live från Riksbanken och
-    // marknadsbilden med sökgrundad generering, båda som färdigt underlag i prompten — modellen
-    // ska aldrig gissa en kurs eller ett marknadspris. Misslyckas hämtningen står det i blocket.
-    let fxVarning: string | null = null;
-    if (specialist.category === "offert") {
-      const { byggOffertunderlag } = await import("@/lib/offert/underlag");
-      const underlag = await byggOffertunderlag(inputs, clientId);
-      bygg.user += underlag.block;
-      fxVarning = underlag.fxVarning;
-    }
-
     let text: string;
     let tokens_in: number | null = null;
     let tokens_out: number | null = null;
@@ -117,7 +106,7 @@ export async function POST(
             max_tokens: 4096,
             // Samma prompt-core-bygge som iterate-vägen — även direktkörda specialister
             // får brand-profil + röst + anatomi. Guardrails läggs sist (Anthropic-specifika).
-            system: bygg.system + guardrailsFor(specialist.category),
+            system: bygg.system + SPECIALIST_GUARDRAILS,
             messages: [{ role: "user", content: bygg.user }],
           }).finalMessage();
           return { resultat: m, tokensIn: m.usage?.input_tokens ?? 0, tokensUt: m.usage?.output_tokens ?? 0 };
@@ -171,7 +160,6 @@ export async function POST(
       voice_score,
       variant_count,
       iterated: useIterate,
-      fx_varning: fxVarning,
     });
   } catch (e) {
     const message = (e as Error).message ?? "Okänt fel";
