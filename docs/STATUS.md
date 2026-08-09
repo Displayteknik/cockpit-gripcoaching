@@ -207,7 +207,7 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
 |---|---|---|---|---|
 | G-0 read-only-rapport | KLART OCH VERIFIERAT | `docs/gransk/G0-RAPPORT.md` | Nej | Nej |
-| G-1 generationsloggen | BESTÄLLT, EJ PÅBÖRJAT | Startar nästa session. Ingen promptversionering finns i repot | Nej | Nej |
+| G-1 generationsloggen | PÅBÖRJAT | **G-1a klar 9/8:** promptversionering finns nu (`promptVersion()` i `lib/prompt-core.ts` — räknas ur regeltexten, inte ur ett handhållet nummer; nuvarande `v1-712d3248`, låst i test så en regeländring inte kan passera tyst). `migrations/generationslogg.sql` (tabell `generation_log` + vy `generation_per_promptversion`), `lib/generationslogg.ts` som enda väg in. **19 tester.** ⚠ **Migrationen är INTE körd i Supabase** — tabellen finns bara som fil. **G-1b återstår:** koppla in loggningen på de 21 anropsställena och binda genereringen till inlägget vid sparning | Nej | Nej |
 | G-2 formatanatomier som data | BESTÄLLT, EJ PÅBÖRJAT | Story saknas som syfte; karusellanatomin är fritext i flödesfilen; en reelmall saknar hook-scen | Ja | Nej |
 | G-3 hook-lagret | BESTÄLLT, EJ PÅBÖRJAT | Tre osammanhängande hooklistor idag | Ja | Nej |
 | G-4 bevis-motorn | BESTÄLLT, EJ PÅBÖRJAT | Beslut taget: `pricing_notes` förblir spärrad; bevis = verifierade siffror, story-bank-citat, vinnande exempel | Ja | Nej |

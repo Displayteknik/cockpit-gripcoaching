@@ -96,7 +96,12 @@ export interface ByggdPrompt {
   /** Lager 3-texten (klippt profil) — för anroparens deterministiska grindar
    *  (t.ex. copy.ts fail-closed siffergrind) utan en andra DB-läsning. */
   profilText: string;
-  meta: { lager: Record<string, boolean>; profilKlippt: string[] };
+  meta: {
+    lager: Record<string, boolean>;
+    profilKlippt: string[];
+    /** G-1: vilken regeluppsättning som byggde prompten. Skrivs i generationsloggen. */
+    promptVersion: string;
+  };
 }
 
 // ── Compass-default per syfte ─────────────────────────────────────────────────
@@ -369,6 +374,56 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// ── Promptversion (G-1) ──────────────────────────────────────────────────────
+// G-0 0.4: "Ingen promptversionering existerar (noll träffar på prompt_version).
+// En kvalitetsändring i prompt-core kan idag inte kopplas till ett före/efter i utfallet."
+//
+// Versionen räknas UR REGELTEXTEN, inte ur en siffra någon ska komma ihåg att höja.
+// Ett handhållet versionsnummer blir fel exakt den gång det spelar roll — någon
+// skärper sanningskravet, glömmer numret, och generationsloggen påstår att texterna
+// före och efter kom ur samma prompt. Hashen kan inte glömma.
+//
+// MAJOR höjs för hand när lagerordningen eller själva arkitekturen ändras (det syns
+// inte i regeltexten). Hashen fångar allt innehåll i de regler som styr kvaliteten.
+const PROMPT_MAJOR = 1;
+
+/** Liten, stabil sträng-hash (FNV-1a, 32 bitar). Ingen crypto — funkar i Node och Edge. */
+function fnv1a(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+
+// Reglerna som ÄR kvaliteten. Ändras en av dem ändras versionen — det är hela poängen.
+// Ordningen är låst: en omkastning här skulle ge ny version utan att någon regel ändrats.
+const VERSIONERADE_REGLER = (): string[] => [
+  CTA_GOLV,
+  SANNINGSKRAV,
+  PERSPEKTIVREGEL,
+  PRISREGEL_BAS,
+  VARIANTREGEL,
+  ROTATIONSREGEL,
+  WRITING_RULES_BLOCK,
+  WRITING_RULES_DIALOG,
+  // De tre anatomierna hämtas genom sin egen byggare, inte som råa konstanter: då
+  // fångas även en ändring i hur blocket sätts ihop, inte bara i texten det bygger av.
+  anatomiBlock("full"),
+  anatomiBlock("pa-bild"),
+  anatomiBlock("dialog"),
+];
+
+/**
+ * Promptversionen, t.ex. `v1-3f8a21c4`. Samma regeluppsättning ger ALLTID samma sträng,
+ * och en ändrad regel ger alltid en ny. Skrivs i generationsloggen (G-1) så ett utfall
+ * går att knyta till den prompt som faktiskt producerade det.
+ */
+export function promptVersion(): string {
+  return `v${PROMPT_MAJOR}-${fnv1a(VERSIONERADE_REGLER().join(" "))}`;
+}
+
 // ── Kärnan ───────────────────────────────────────────────────────────────────
 export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
   const delar: string[] = [p.uppdrag.trim()];
@@ -570,7 +625,7 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     fingerprint,
     winning,
     profilText,
-    meta: { lager, profilKlippt },
+    meta: { lager, profilKlippt, promptVersion: promptVersion() },
   };
 }
 

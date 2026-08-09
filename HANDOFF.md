@@ -73,9 +73,28 @@ AKUT-KARUSELL → AKUT-DM → **G-1** → G-2 → FIX-1-REST (B2+C) → G-3 → 
 3. **GHL med flera bilder** — `media[]` skickas, ej provat mot skarpt konto.
 4. **FIX-1 grupp A + B1** — inget test, ingen ommätning sedan fixen.
 
+### G-1 — påbörjad 9/8 (G-1a klar, G-1b återstår)
+
+**G-1a levererat:** promptversionering fanns inte i repot, nu gör den det.
+`promptVersion()` i `lib/prompt-core.ts` räknar en hash **ur regeltexten själv** (CTA-golv,
+sanningskrav, perspektiv, pris, variant, rotation, skrivregler, de tre anatomierna) i
+stället för ett nummer någon ska komma ihåg att höja — ett handhållet nummer blir fel
+exakt den gång det spelar roll. Nuvarande: `v1-712d3248`, låst i test.
+`migrations/generationslogg.sql` ger tabellen `generation_log` (pekar på
+`ai_usage_events`, samma mönster som credits) och vyn `generation_per_promptversion`.
+`lib/generationslogg.ts` är enda vägen in. 19 tester.
+
+⚠ **Migrationen är inte körd i Supabase.** Tabellen finns bara som fil — Håkans setup
+matar in den. Innan dess skriver loggen ingenting (tyst, med flit: mätningen får aldrig
+fälla en kunds text).
+
+**G-1b, nästa steg:** koppla in `loggaGenerering` på de 21 anropsställena och
+`kopplaTillInlagg` där inlägget sparas. Görs efter att tabellen finns — annars mäter man
+ingenting och tror att man mäter.
+
 ### Återstår
 
-- **G-1 … G-9** — inget påbörjat. G-1 (generationsloggen) är nästa etapp.
+- **G-2 … G-9** — inget påbörjat.
 - **FIX-1-REST** (B2 Vilande, grupp C) — mellan G-2 och G-3.
 - **BILD-9-spec** — beställd med hårt stopp, ingen spec finns i repot.
 - **PROFIL-2** — uppflyttad till direkt efter FIX-1-REST (UI-löfte utan täckning).
