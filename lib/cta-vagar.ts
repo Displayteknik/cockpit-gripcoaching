@@ -24,11 +24,23 @@ export interface CtaVag {
   namn: string;
   /** Instruktionen som läggs på krok-vinkeln. Talar om VAR uppmaningen ska landa. */
   instruktion: string;
+  /**
+   * CTA-3: hur STORT steg vägen begär av läsaren.
+   *   litet  — kostar ingenting: svara, spara, skicka vidare.
+   *   mellan — kostar ett klick eller en minut: läs, hämta, besök.
+   *   stort  — kostar kontakt: skriv till oss, boka, begär offert.
+   *
+   * Håkans fynd 10/8: ett TOFU-inlägg om ångest slutade "Boka ett första samtal via länken
+   * i profilen". Ett steg som är större än nivån läser som sälj på första mötet — motsatsen
+   * till det vi lär ut. Nivån väljer därför vilka vägar som ens får delas ut.
+   */
+  steg: "litet" | "mellan" | "stort";
 }
 
 export const CTA_VAGAR: CtaVag[] = [
   {
     namn: "kommentar",
+    steg: "litet",
     instruktion:
       "VÄG FRAMÅT (obligatorisk, och den ska skilja sig från de andra varianternas): led läsaren till KOMMENTARSFÄLTET. " +
       "Sista meningen är en uppmaning i imperativ som säger exakt vad hon ska skriva där — 'Skriv vilken av dem du känner igen i kommentaren', 'Berätta i kommentaren hur ni löser det idag'. " +
@@ -36,6 +48,7 @@ export const CTA_VAGAR: CtaVag[] = [
   },
   {
     namn: "meddelande",
+    steg: "stort",
     instruktion:
       "VÄG FRAMÅT (obligatorisk, och den ska skilja sig från de andra varianternas): led läsaren till ett DIREKTMEDDELANDE med något konkret i handen. " +
       "Sista meningen är en uppmaning i imperativ som namnger vad hon skickar och vad hon får tillbaka — 'Skicka en bild på din plats, så säger vi vad som går att göra'. " +
@@ -43,6 +56,7 @@ export const CTA_VAGAR: CtaVag[] = [
   },
   {
     namn: "spara-dela",
+    steg: "litet",
     instruktion:
       "VÄG FRAMÅT (obligatorisk, och den ska skilja sig från de andra varianternas): led läsaren till att SPARA eller SKICKA VIDARE inlägget. " +
       "Sista meningen är en uppmaning i imperativ som säger när det blir användbart eller vem det hör hemma hos — 'Spara det här till nästa gång solen ställer till det', 'Skicka det vidare till den som äger skyltfönstret'. " +
@@ -50,6 +64,7 @@ export const CTA_VAGAR: CtaVag[] = [
   },
   {
     namn: "egen-kanal",
+    steg: "mellan",
     instruktion:
       "VÄG FRAMÅT (obligatorisk, och den ska skilja sig från de andra varianternas): led läsaren till verksamhetens EGEN kanal — men bara en som faktiskt står i varumärkesprofilen (hemsidan, adressen, mottagningen, showroomet). " +
       "Sista meningen är en uppmaning i imperativ som namnger den — 'Läs mer på hemsidan', 'Kom in i showroomet och se skillnaden i verkligheten'. " +
@@ -58,12 +73,35 @@ export const CTA_VAGAR: CtaVag[] = [
 ];
 
 /**
- * Vägen för variant nummer `i` (0-baserat). Deterministisk: variant 1 får alltid
- * kommentaren, variant 2 meddelandet, och så vidare. Det är just determinismen som gör att
- * tre varianter aldrig kan råka landa i samma avslut.
+ * CTA-3: vilka steg nivån tillåter. TOFU får aldrig be om kontakt — inte ens kostnadsfritt,
+ * inte ens "om du vill veta mer". Samma regel står i prompt-core (STEGETS STORLEK FÖLJER
+ * NIVÅN); här är den dessutom byggd i urvalet, så en tofu-variant inte KAN få den vägen.
  */
-export function ctaVagForVariant(i: number): CtaVag {
-  return CTA_VAGAR[((i % CTA_VAGAR.length) + CTA_VAGAR.length) % CTA_VAGAR.length];
+const TILLATNA_STEG: Record<"tofu" | "mofu" | "bofu", CtaVag["steg"][]> = {
+  tofu: ["litet", "mellan"],
+  mofu: ["litet", "mellan", "stort"],
+  bofu: ["mellan", "stort"],
+};
+
+/** Vägarna som får delas ut på en nivå. Utan känd nivå: alla utom det stora steget. */
+export function vagarForFunnel(funnel?: string | null): CtaVag[] {
+  const niva = funnel === "mofu" || funnel === "bofu" ? funnel : funnel === "tofu" ? "tofu" : null;
+  // Okänd nivå behandlas som tofu i FRÅGAN OM STEGETS STORLEK — den försiktiga vägen är
+  // den som inte skadar. En för liten uppmaning är ett tappat steg; en för stor är sälj i
+  // ansiktet på någon som just fick syn på företaget.
+  const tillatna = TILLATNA_STEG[niva ?? "tofu"];
+  const urval = CTA_VAGAR.filter((v) => tillatna.includes(v.steg));
+  return urval.length ? urval : CTA_VAGAR;
+}
+
+/**
+ * Vägen för variant nummer `i` (0-baserat), inom det nivån tillåter. Deterministisk: samma
+ * variantnummer och nivå ger alltid samma väg, och tre varianter kan därför aldrig råka
+ * landa i samma avslut.
+ */
+export function ctaVagForVariant(i: number, funnel?: string | null): CtaVag {
+  const urval = vagarForFunnel(funnel);
+  return urval[((i % urval.length) + urval.length) % urval.length];
 }
 
 /**

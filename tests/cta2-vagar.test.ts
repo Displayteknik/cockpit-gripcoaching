@@ -10,7 +10,7 @@
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { CTA_VAGAR, CTA_VAG_ETIKETT, VINKEL_PERSPEKTIV, ctaVagForVariant, perspektivForVariant, vinkelMedVag } from "@/lib/cta-vagar";
+import { CTA_VAGAR, CTA_VAG_ETIKETT, VINKEL_PERSPEKTIV, ctaVagForVariant, perspektivForVariant, vagarForFunnel, vinkelMedVag } from "@/lib/cta-vagar";
 
 const las = (fil: string) => readFileSync(new URL(`../${fil}`, import.meta.url), "utf8");
 
@@ -29,12 +29,13 @@ describe("CTA-2 · vägarna är olika, och olika på det som syns", () => {
     expect(new Set(tre).size).toBe(3);
   });
 
-  it("fördelningen är deterministisk — samma variantnummer ger samma väg", () => {
-    expect(ctaVagForVariant(0).namn).toBe(ctaVagForVariant(0).namn);
-    expect(ctaVagForVariant(1).namn).not.toBe(ctaVagForVariant(0).namn);
-    // Går man förbi listans slut börjar den om, och negativa index kraschar inte.
-    expect(ctaVagForVariant(CTA_VAGAR.length).namn).toBe(CTA_VAGAR[0].namn);
-    expect(ctaVagForVariant(-1).namn).toBeTruthy();
+  it("fördelningen är deterministisk — samma variantnummer och nivå ger samma väg", () => {
+    expect(ctaVagForVariant(0, "mofu").namn).toBe(ctaVagForVariant(0, "mofu").namn);
+    expect(ctaVagForVariant(1, "mofu").namn).not.toBe(ctaVagForVariant(0, "mofu").namn);
+    // Går man förbi urvalets slut börjar det om, och negativa index kraschar inte.
+    const urval = vagarForFunnel("mofu");
+    expect(ctaVagForVariant(urval.length, "mofu").namn).toBe(urval[0].namn);
+    expect(ctaVagForVariant(-1, "mofu").namn).toBeTruthy();
   });
 
   it("varje väg SPÄRRAR de andras avslut — annars konvergerar de ändå", () => {
@@ -119,7 +120,7 @@ describe("CTA-2 · captionvägen delar faktiskt ut vägarna", () => {
   const route = las("app/api/studio/suggest-caption/route.ts");
 
   it("varje variant får sin väg via variantnumret", () => {
-    expect(route).toContain("ctaVagForVariant(i)");
+    expect(route).toContain("ctaVagForVariant(i, bygg.meta.funnel)");
     expect(route).toContain("vinkelMedVag(v.instruktion, vag, perspektivForVariant(i))");
   });
 
@@ -138,5 +139,62 @@ describe("CTA-2 · captionvägen delar faktiskt ut vägarna", () => {
   it("variantkortet visar vägen — annars syns skillnaden först efter att man läst allt", () => {
     const ui = las("components/StudioMaker.tsx");
     expect(ui).toContain("CTA_VAG_ETIKETT[v.ctaVag]");
+  });
+});
+
+describe("CTA-3 · steget följer nivån — inget sälj på första mötet", () => {
+  // Håkans fynd 10/8: ett TOFU-inlägg om ångest slutade "Boka ett första samtal via länken
+  // i profilen". Nivån var rätt, uppmaningen var för stor. Regeln står i prompt-core, men
+  // den ligger också i URVALET här: en tofu-variant kan inte FÅ den vägen.
+  it("varje väg har en stegstorlek", () => {
+    for (const v of CTA_VAGAR) {
+      expect(["litet", "mellan", "stort"], v.namn).toContain(v.steg);
+    }
+  });
+
+  it("tofu får aldrig en väg som ber om kontakt", () => {
+    const vagar = vagarForFunnel("tofu");
+    expect(vagar.length).toBeGreaterThanOrEqual(3);
+    expect(vagar.some((v) => v.steg === "stort")).toBe(false);
+    expect(vagar.map((v) => v.namn)).not.toContain("meddelande");
+  });
+
+  it("...och det gäller varje variant, inte bara den första", () => {
+    for (let i = 0; i < 12; i++) {
+      expect(ctaVagForVariant(i, "tofu").steg, `variant ${i}`).not.toBe("stort");
+    }
+  });
+
+  it("bofu får be om kontakt — det är hela poängen med nivån", () => {
+    expect(vagarForFunnel("bofu").some((v) => v.steg === "stort")).toBe(true);
+  });
+
+  it("mofu får hela bredden", () => {
+    expect(vagarForFunnel("mofu").length).toBe(CTA_VAGAR.length);
+  });
+
+  it("okänd eller saknad nivå behandlas som tofu — försiktigt, inte modigt", () => {
+    for (const okant of [null, undefined, "", "nonsens"]) {
+      expect(vagarForFunnel(okant).some((v) => v.steg === "stort"), String(okant)).toBe(false);
+    }
+  });
+
+  it("tre tofu-varianter får fortfarande tre OLIKA vägar", () => {
+    const tre = [0, 1, 2].map((i) => ctaVagForVariant(i, "tofu").namn);
+    expect(new Set(tre).size).toBe(3);
+  });
+
+  it("captionvägen skickar in nivån som faktiskt gällde", () => {
+    // bygg.meta.funnel är den effektiva nivån (flödets egen, annars syftets mjuka default).
+    expect(las("app/api/studio/suggest-caption/route.ts")).toContain("ctaVagForVariant(i, bygg.meta.funnel)");
+  });
+
+  it("prompt-core förbjuder bokning på tofu, i klartext", () => {
+    const kod = las("lib/prompt-core.ts");
+    expect(kod).toContain("STEGETS STORLEK FÖLJER NIVÅN");
+    expect(kod).toMatch(/- TOFU:[\s\S]{0,500}FÖRBJUDET/);
+    // Kryphålen som fyndet gick igenom: länk i profilen, kostnadsfritt, "veta mer".
+    expect(kod).toContain("även via länk i profilen");
+    expect(kod).toContain("även kostnadsfritt");
   });
 });

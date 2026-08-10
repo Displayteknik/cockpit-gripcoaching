@@ -212,7 +212,9 @@ export async function POST(req: NextRequest) {
       // en uppmaning som namnger en väg, det är VILKEN väg som skiljer sig.
       const variants = await Promise.all(
         valda.map(async (v, i) => {
-          const vag = ctaVagForVariant(i);
+          // CTA-3: nivån bestämmer vilka vägar som ens får delas ut. På tofu kan ingen
+          // variant få "skriv till oss" — steget är för stort för ett första möte.
+          const vag = ctaVagForVariant(i, bygg.meta.funnel);
           return {
             angle: v.angle,
             ctaVag: vag.namn,

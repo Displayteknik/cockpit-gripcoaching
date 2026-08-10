@@ -194,6 +194,15 @@ const CTA_TYP_KRAV = [
   // den mjuka grenens parentes. Fångat av tests/prompt-core.test.ts, som kräver att
   // ordet "förvald" aldrig dyker upp när parametrarna är uttryckliga.
   "VILKEN typ som passar styrs av funnel-nivån ovan. Byt ALDRIG till en säljande uppmaning om inte ämnet uttryckligen handlar om att köpa, boka eller begära offert.",
+  // CTA-3 (Håkans fynd 10/8): på ett TOFU-inlägg om ångest slutade texten "Boka ett första
+  // samtal via länken i profilen". Typkravet ovan sa vad som INTE får hända men lade
+  // kopplingen nivå → typ i en mjuk bisats, och då vinner den starkaste uppmaningen. Steget
+  // är nu utskrivet per nivå, med storleken på steget som mått.
+  "STEGETS STORLEK FÖLJER NIVÅN, och det är lika hårt som att uppmaningen finns:",
+  "- TOFU: läsaren möter er för första gången. Uppmaningen ska kosta henne nästan ingenting: svara i kommentaren, spara inlägget, skicka det vidare, berätta hur hon känner igen sig. Att BOKA, köpa, begära offert eller \"ta ett första samtal\" är FÖRBJUDET här — även via länk i profilen, även kostnadsfritt, även \"om du vill veta mer\".",
+  "- MOFU: hon känner er men har inte bestämt sig. Uppmaningen får kosta ett litet steg: hämta guiden, läs caset, ställ sin fråga. Fortfarande ingen bokning om inte ämnet handlar om just det.",
+  "- BOFU: hon är nära ett beslut. Då — och bara då — får uppmaningen be om kontakt, bokning eller offert.",
+  "Ett steg som är större än nivån är ett SÄMRE inlägg, inte ett modigare. Det läser som sälj på första mötet, och det är motsatsen till det vi lär ut.",
   "Nivån får alltså väga lätt. Kravet att uppmaningen har en typ och en väg väger ALDRIG lätt.",
 ].join("\n");
 

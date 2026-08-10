@@ -53,7 +53,12 @@ import { loggaGenerering, kopplaTillInlagg, markeraKasserad, loggFormat, loggFun
 // versioneras nu separat — det var den som ändrades: mjukningen gällde förut även
 // CTA-typen, så nivån OCH typen blev valfria tillsammans. Nu är typen hård i alla tre
 // grenarna (satt compass, mjuk default, ingen compass).
-const LAST_VERSION = "v1-3b3ea753";
+// 2026-08-10: CTA-3 skrev ut STEGETS STORLEK per funnel-nivå (3b3ea753 → 8f88f1c5).
+// Håkans fynd: ett TOFU-inlägg om ångest slutade "Boka ett första samtal via länken i
+// profilen". Typkravet sa vad som inte får hända, men kopplingen nivå → typ låg i en mjuk
+// bisats — och då vinner den starkaste uppmaningen. Nu är bokning FÖRBJUDEN på tofu,
+// även via länk i profilen och även kostnadsfritt.
+const LAST_VERSION = "v1-8f88f1c5";
 
 beforeEach(() => {
   svar.data = null;

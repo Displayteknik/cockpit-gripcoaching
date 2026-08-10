@@ -2139,8 +2139,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                   tomma löfte som före G-6. */}
               {curImg && bildGenerationId && (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
+                  {/* BILD-11 (Håkans fynd 10/8): han skrev "för mörk" HÄR och undrade varför
+                      "Ändra bild" inte gick att klicka — den rutan sitter längre ner och var
+                      tom. Två rutor med samma utseende, en rad ifrån varandra, och bara den
+                      ena tänder knappen. Rubrikerna säger nu vilken bild var ruta gäller. */}
                   <label className="block text-xs font-medium text-gray-600">
-                    Passade bilden? Ditt svar styr nästa bild vi gör åt dig.
+                    Passade bilden? Svaret ändrar inte den här bilden — det styr NÄSTA bild vi gör åt dig.
                   </label>
                   <SmartTextarea
                     value={bildOmdomeKommentar}
@@ -2170,16 +2174,28 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {/* Ändra bilden via kommentar (AI redigerar den befintliga bilden) */}
               {curImg && (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
-                  <label className="block text-xs font-medium text-gray-600">Ändra bilden: skriv vad du vill</label>
+                  <label className="block text-xs font-medium text-gray-600">Ändra DEN HÄR bilden: skriv vad du vill</label>
                   <SmartTextarea value={imgComment} onChange={(e) => setImgComment(e.target.value)} rows={2}
                     placeholder='T.ex. "ljusare bakgrund", "visa produkten större" eller "ta bort personen i bakgrunden"'
                     className={inputCls} />
+                  {/* BILD-11: skrev han sin önskan i omdömesrutan ovan är den inte förlorad —
+                      erbjud den här, i stället för att låta honom skriva om den. */}
+                  {!imgComment.trim() && bildOmdomeKommentar.trim() && (
+                    <button type="button" onClick={() => setImgComment(bildOmdomeKommentar.trim())}
+                      className="text-xs font-medium underline decoration-dotted" style={{ color: primary }}>
+                      Använd det du skrev ovan: ”{bildOmdomeKommentar.trim().slice(0, 40)}”
+                    </button>
+                  )}
                   <div className="flex items-center gap-2">
                     <button onClick={editImage} disabled={editingImg || !imgComment.trim()}
                       className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                       style={{ background: primary }}>
                       {editingImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Ändra bild
                     </button>
+                    {/* En knapp som ser trasig ut är värre än en som säger varför den sover. */}
+                    {!editingImg && !imgComment.trim() && (
+                      <span className="text-xs text-gray-500">Skriv i rutan ovan först — då tänds knappen.</span>
+                    )}
                     {prevImageUrl && (
                       <button onClick={undoImageEdit} disabled={editingImg}
                         className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
