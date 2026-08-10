@@ -3,6 +3,8 @@ import { getCustomerSession } from "@/lib/customer-context";
 import { getEffectiveModules } from "@/lib/entitlements";
 import CustomerModuleCards from "@/components/CustomerModuleCards";
 import CustomerSteps, { type Step } from "@/components/CustomerSteps";
+import { TokenKort } from "@/components/TokenMatare";
+import { hamtaSaldo, CREDIT_MODUL } from "@/lib/credits";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import { supabaseService } from "@/lib/supabase-admin";
 import { profilKvalitet } from "@/lib/profil/las";
@@ -29,6 +31,11 @@ export default async function CustomerHome() {
   const showSeo = has("seo");
   const showVisitors = has("besokare");
   const primary = session.primary_color;
+
+  // Tokensaldot till översiktskortet. Bara för kunder som faktiskt har modulen på —
+  // övriga ska inte möta ett saldo de aldrig fått höra talas om.
+  const saldo = has(CREDIT_MODUL) ? await hamtaSaldo(session.client_id) : null;
+  const tokenlage = saldo ? { anvant: saldo.anvant, tak: saldo.kvot + saldo.extra } : null;
 
   const sb = supabaseService();
   const cid = session.client_id;
@@ -200,6 +207,11 @@ export default async function CustomerHome() {
 
       {/* KOM IGÅNG — pedagogiskt stegflöde, bara tills kontot är igång */}
       {showSteps && <CustomerSteps steps={steps} primaryColor={primary} />}
+
+      {/* BETAL-1 (B-1): tokensaldot ska synas i ÖVERSIKTEN, inte bara på sin egen sida.
+          Kortet är rent visande här — översikten är en serverkomponent och kan inte
+          skicka med en klickfunktion, så påfyllningen sitter kvar på tokensidan. */}
+      {tokenlage && <TokenKort tokens={tokenlage} primaryColor={primary} href="/k/credits" />}
 
       {/* ATT GÖRA NU — leder sidan: 1–3 konkreta, KLICKBARA nästa steg. Datadrivna
           tillväxt-tips när det finns sök/trafik-data, annars kom-vidare-actions ur modulerna. */}

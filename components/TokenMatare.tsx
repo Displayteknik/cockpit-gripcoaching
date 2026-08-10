@@ -103,6 +103,7 @@ export function TokenKort({
   laddar,
   kompaktRubrik,
   kort,
+  href,
 }: {
   tokens: Tokenlage;
   primaryColor: string;
@@ -111,6 +112,12 @@ export function TokenKort({
   kompaktRubrik?: boolean;
   /** Kundens sparade kort. Satt = knappen säger vad som dras och var. */
   kort?: { marke: string; sista_fyra: string } | null;
+  /**
+   * Länk i stället för knapp. Används på översikten, som är en serverkomponent och
+   * därför inte kan skicka med en funktion. Kortet blir då rent visande och leder
+   * vidare till tokensidan där påfyllningen sitter.
+   */
+  href?: string;
 }) {
   const n = niva(tokens);
   const f = farg(n, primaryColor);
@@ -134,6 +141,15 @@ export function TokenKort({
             )}
           </div>
         </div>
+
+        {href && !onFyllPa && (
+          <Link
+            href={href}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Se dina tokens
+          </Link>
+        )}
 
         {onFyllPa && (
           <div className="text-right">
