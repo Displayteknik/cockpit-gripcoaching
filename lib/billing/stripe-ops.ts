@@ -185,6 +185,10 @@ export async function skapaTopupCheckout(clientId: string, planId = "topup_100")
     line_items: [rad],
     automatic_tax: { enabled: true },
     customer_update: { address: "auto" },
+    // ★ UTAN den här raden sparas kortet INTE. Ett engångsköp i Stripe lämnar inget
+    // efter sig om man inte ber om det, och då hade nästa påfyllning skickat kunden
+    // genom betalsidan igen — hela poängen med att dra på sparat kort hade fallit.
+    payment_intent_data: { setup_future_usage: "off_session" },
     // ★ Metadatan är hela kopplingen tillbaka: webhooken vet vem som ska krediteras
     // och med hur mycket, utan att behöva gissa ur beloppet.
     metadata: { client_id: clientId, plan_id: plan.id, credits: String(plan.credits || 0), syfte: "topup" },
@@ -251,6 +255,25 @@ async function hittaKortId(stripeKundId: string): Promise<string | null> {
 
   const lista = await stripe.paymentMethods.list({ customer: stripeKundId, type: "card", limit: 1 });
   return lista.data[0]?.id || null;
+}
+
+/**
+ * Gör kortet till kundens standardkort — men BARA om hon inte redan har ett.
+ *
+ * Skälet till spärren: har hon satt ett kort för abonnemanget ska ett tokenköp inte
+ * tyst flytta framtida dragningar till ett annat kort. Ett köp får lägga till en
+ * möjlighet, aldrig ändra ett val hon redan gjort.
+ */
+export async function sattStandardkortOmSaknas(stripeKundId: string, pmId: string): Promise<void> {
+  try {
+    const stripe = await stripeKlient();
+    const kund = await stripe.customers.retrieve(stripeKundId);
+    if (kund.deleted || kund.invoice_settings?.default_payment_method) return;
+    await stripe.customers.update(stripeKundId, { invoice_settings: { default_payment_method: pmId } });
+  } catch (e) {
+    // Misslyckas det fungerar allt ändå: hittaKortId faller tillbaka på listan.
+    console.error("[billing] kunde inte sätta standardkort:", (e as Error).message);
+  }
 }
 
 /** Kundens sparade kort, eller null när inget finns. Kastar aldrig. */

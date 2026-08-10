@@ -6,6 +6,7 @@ import {
   AlertTriangle, Copy, TrendingUp, Users, Clock, Ban, ExternalLink,
 } from "lucide-react";
 import Kundaffarer, { type Avtal, type Plan } from "./Kundaffarer";
+import KopplaStripe from "./KopplaStripe";
 
 // BETAL-1 — ownervyn. Fem flikar, en sanning.
 //
@@ -62,6 +63,7 @@ const tidpunkt = (s: string) =>
 const FLIKAR = [
   { id: "affarer", label: "Kundaffärer" },
   { id: "stripe", label: "Stripe" },
+  { id: "koppla", label: "Koppla ihop" },
   { id: "planer", label: "Planer och priser" },
   { id: "paminnelser", label: "Påminnelser och spärr" },
   { id: "handelser", label: "Händelser" },
@@ -172,6 +174,15 @@ export default function BetalningAdmin() {
         />
       )}
       {flik === "stripe" && <StripeFlik inst={data.installningar} webhookUrl={data.webhook_adress} skicka={skicka} />}
+      {flik === "koppla" && (
+        <KopplaStripe
+          klienter={data.avtal.map((a) => ({ client_id: a.client_id, klient: a.klient }))}
+          planer={data.planer}
+          kopplad={data.installningar.stripe_kopplad}
+          momssats={data.installningar.momssats}
+          skicka={skicka}
+        />
+      )}
       {flik === "planer" && <Planer planer={data.planer} kopplad={data.installningar.stripe_kopplad} skicka={skicka} />}
       {flik === "paminnelser" && <Paminnelser data={data} skicka={skicka} />}
       {flik === "handelser" && <Handelser data={data} />}

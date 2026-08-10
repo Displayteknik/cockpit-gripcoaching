@@ -59,7 +59,10 @@ interface Body {
   radera_avtal?: string;
   plan?: { id: string; label?: string; beskrivning?: string; belopp_sek?: number; active?: boolean };
   override?: { client_id: string; varde: "frys" | "las_upp" | null; note?: string };
-  atgard?: "testa_stripe" | "synka_planer" | "kor_dunning";
+  atgard?: "testa_stripe" | "synka_planer" | "kor_dunning" | "las_stripe";
+  koppla?: { client_id: string; stripe_customer_id: string; subscription_id: string };
+  slapp_koppling?: string;
+  koppla_pris?: { plan_id: string; price_id: string };
 }
 
 export async function POST(req: Request) {
@@ -120,6 +123,39 @@ export async function POST(req: Request) {
       b.override.varde === "las_upp" ? "Kunden är upplåst och automatiken rör den inte." :
       "Överstyrningen är borttagen, automatiken bestämmer igen.";
     return NextResponse.json({ ok, besked: ok ? text : "Det gick inte att spara." });
+  }
+
+  // ── Koppla ihop med det som redan finns i Stripe ──────────────────────────
+  // ⚠ Läser bara. Skapar aldrig något i Stripe — Håkans konto har riktiga abonnemang
+  // och riktiga pengar, och en dubblett där kostar en kund en extra debitering.
+  if (b.atgard === "las_stripe") {
+    try {
+      const { hamtaStripeOversikt } = await import("@/lib/billing/import");
+      return NextResponse.json({ ok: true, ...(await hamtaStripeOversikt()) });
+    } catch (e) {
+      return NextResponse.json({ ok: false, besked: (e as Error).message }, { status: 400 });
+    }
+  }
+
+  if (b.koppla?.client_id) {
+    const { kopplaAbonnemang } = await import("@/lib/billing/import");
+    const r = await kopplaAbonnemang({
+      clientId: b.koppla.client_id,
+      stripeCustomerId: b.koppla.stripe_customer_id,
+      subscriptionId: b.koppla.subscription_id,
+    });
+    return NextResponse.json(r, { status: r.ok ? 200 : 400 });
+  }
+
+  if (b.slapp_koppling) {
+    const { slappKoppling } = await import("@/lib/billing/import");
+    return NextResponse.json(await slappKoppling(b.slapp_koppling));
+  }
+
+  if (b.koppla_pris?.plan_id) {
+    const { kopplaPris } = await import("@/lib/billing/import");
+    const r = await kopplaPris(b.koppla_pris.plan_id, b.koppla_pris.price_id);
+    return NextResponse.json(r, { status: r.ok ? 200 : 400 });
   }
 
   // ── Knappar som gör något mot Stripe ──────────────────────────────────────

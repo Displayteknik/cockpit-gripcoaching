@@ -138,6 +138,22 @@ export async function hanteraHandelse(event: Stripe.Event): Promise<Utfall> {
             externReferens: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || session.id,
           });
           extra = `, ${credits} tokens tillagda`;
+
+          // Kortet sparades vid köpet (setup_future_usage). Gör det till standardkort
+          // om kunden inte redan har ett, så nästa påfyllning kan dras direkt.
+          try {
+            const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+            const kundId = kundIdAv(session.customer);
+            if (pi && kundId) {
+              const { stripeKlient } = await import("./stripe");
+              const { sattStandardkortOmSaknas } = await import("./stripe-ops");
+              const intent = await (await stripeKlient()).paymentIntents.retrieve(pi);
+              const pm = typeof intent.payment_method === "string" ? intent.payment_method : intent.payment_method?.id;
+              if (pm) await sattStandardkortOmSaknas(kundId, pm);
+            }
+          } catch (e) {
+            console.error("[billing] kunde inte spara kortet som standard:", (e as Error).message);
+          }
         } else if (session.metadata?.syfte === "abonnemang") {
           extra = ", abonnemang tecknat";
           if (clientId) await registreraBetalning(clientId);
