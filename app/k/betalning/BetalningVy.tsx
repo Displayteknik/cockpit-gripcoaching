@@ -27,7 +27,17 @@ interface Data {
   nasta_betalning_text: string;
   kvitton: Kvitto[];
   kan_hantera_kort: boolean;
+  kort: { marke: string; sista_fyra: string; giltigt_till: string } | null;
   foretag: { namn: string | null; org_nr: string | null };
+}
+
+/** Kortmärket som kunden känner igen det. Stripe svarar "visa", hon läser "Visa". */
+function kortnamn(marke: string): string {
+  const k: Record<string, string> = {
+    visa: "Visa", mastercard: "Mastercard", amex: "American Express",
+    discover: "Discover", diners: "Diners Club", jcb: "JCB", unionpay: "UnionPay",
+  };
+  return k[marke?.toLowerCase()] || "Kort";
 }
 
 const kr = (n: number) => `${new Intl.NumberFormat("sv-SE").format(Math.round(n))} kr`;
@@ -76,8 +86,13 @@ export default function BetalningVy({ primaryColor }: { primaryColor: string }) 
         body: JSON.stringify({ atgard }),
       });
       const j = await r.json();
-      if (!r.ok || !j.url) throw new Error(j.besked || "Det gick inte just nu");
-      window.location.href = j.url;
+      if (!r.ok) throw new Error(j.besked || "Det gick inte just nu");
+      // Behövs kundens egen medverkan skickar servern med en länk. Annars är köpet klart
+      // och vi visar kvittot direkt utan att skicka henne någonstans.
+      if (j.url) { window.location.href = j.url; return; }
+      setKvittotext(j.besked || "Klart.");
+      setJobbar("");
+      await hamta();
     } catch (e) {
       setFel((e as Error).message);
       setJobbar("");
@@ -175,6 +190,17 @@ export default function BetalningVy({ primaryColor }: { primaryColor: string }) 
           <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-600 flex-shrink-0" /> Alla verktyg i din portal</li>
         </ul>
 
+        {/* Vilket kort som ligger inne. Kunden ska aldrig behöva gissa vad som dras. */}
+        {data.kort && (
+          <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
+            <CreditCard className="h-4 w-4 flex-shrink-0 text-gray-400" />
+            <span className="text-gray-700">
+              {kortnamn(data.kort.marke)} som slutar på <strong className="tabular-nums">{data.kort.sista_fyra}</strong>
+            </span>
+            <span className="text-gray-500">giltigt till {data.kort.giltigt_till}</span>
+          </div>
+        )}
+
         <div className="mt-5 flex flex-wrap gap-2.5">
           {data.kan_hantera_kort && !sparrad && (
             <button
@@ -194,7 +220,7 @@ export default function BetalningVy({ primaryColor }: { primaryColor: string }) 
               className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
             >
               {jobbar === "tokens" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Köp fler tokens
+              {data.kort ? `Köp fler tokens med kortet som slutar på ${data.kort.sista_fyra}` : "Köp fler tokens"}
             </button>
           )}
         </div>

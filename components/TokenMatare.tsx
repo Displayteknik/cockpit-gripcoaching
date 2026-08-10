@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Plus, AlertTriangle } from "lucide-react";
+import { Sparkles, Plus, AlertTriangle, CreditCard, Loader2 } from "lucide-react";
+
+/** Kortmärket som kunden känner igen det. Stripe svarar "visa", hon läser "Visa". */
+function kortnamn(marke: string): string {
+  const k: Record<string, string> = {
+    visa: "Visa", mastercard: "Mastercard", amex: "American Express",
+    discover: "Discover", diners: "Diners Club", jcb: "JCB", unionpay: "UnionPay",
+  };
+  return k[marke?.toLowerCase()] || "kortet";
+}
 
 // BETAL-1 (B-1) — MySALES TOKENS.
 //
@@ -93,12 +102,15 @@ export function TokenKort({
   onFyllPa,
   laddar,
   kompaktRubrik,
+  kort,
 }: {
   tokens: Tokenlage;
   primaryColor: string;
   onFyllPa?: () => void;
   laddar?: boolean;
   kompaktRubrik?: boolean;
+  /** Kundens sparade kort. Satt = knappen säger vad som dras och var. */
+  kort?: { marke: string; sista_fyra: string } | null;
 }) {
   const n = niva(tokens);
   const f = farg(n, primaryColor);
@@ -124,13 +136,23 @@ export function TokenKort({
         </div>
 
         {onFyllPa && (
-          <button
-            onClick={onFyllPa}
-            disabled={laddar}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Fyll på tokens
-          </button>
+          <div className="text-right">
+            <button
+              onClick={onFyllPa}
+              disabled={laddar}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+            >
+              {laddar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Fyll på tokens
+            </button>
+            {/* Kunden ska veta VAD som händer innan hon trycker. Finns ett sparat kort
+                dras beloppet där direkt, och då måste knappen säga det. */}
+            {kort && (
+              <p className="mt-1.5 flex items-center justify-end gap-1 text-xs text-gray-500">
+                <CreditCard className="h-3.5 w-3.5" />
+                Dras på {kortnamn(kort.marke)} som slutar på {kort.sista_fyra}
+              </p>
+            )}
+          </div>
         )}
       </div>
 

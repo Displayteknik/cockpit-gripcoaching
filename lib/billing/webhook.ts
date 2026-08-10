@@ -22,6 +22,10 @@ export const HANTERADE_TYPER = [
   "customer.subscription.updated",
   "customer.subscription.deleted",
   "checkout.session.completed",
+  // BETAL-1b: dragning på sparat kort. Krediteringen sker redan direkt i routen, men
+  // händelsen hanteras även här som skyddsnät — tappar servern anslutningen mitt i
+  // dragningen har kunden ändå betalat, och då ska tokens komma fram.
+  "payment_intent.succeeded",
 ] as const;
 
 interface Utfall {
@@ -39,6 +43,7 @@ function sammanfatta(typ: string, clientNamn: string | null, extra: string): str
     case "customer.subscription.updated": return `Abonnemanget ändrades${kund}${extra}`;
     case "customer.subscription.deleted": return `Abonnemanget avslutades${kund}`;
     case "checkout.session.completed": return `Köp genomfört${kund}${extra}`;
+    case "payment_intent.succeeded": return `Kortbetalning genomförd${kund}${extra}`;
     default: return `${typ}${kund}`;
   }
 }
@@ -129,11 +134,38 @@ export async function hanteraHandelse(event: Stripe.Event): Promise<Utfall> {
             typ: "topup",
             note: `Påfyllning köpt och betald via Stripe (${credits} tokens).`,
             createdBy: "stripe",
+            // Referensen gör krediteringen idempotent mot direktdragningen.
+            externReferens: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || session.id,
           });
           extra = `, ${credits} tokens tillagda`;
         } else if (session.metadata?.syfte === "abonnemang") {
           extra = ", abonnemang tecknat";
           if (clientId) await registreraBetalning(clientId);
+        }
+        break;
+      }
+
+      case "payment_intent.succeeded": {
+        // Skyddsnät för direktdragningen. Har routen redan krediterat gör laggTillCredits
+        // ingenting, tack vare den unika referensen — men tappade servern anslutningen
+        // mitt i dragningen kommer tokens fram den här vägen i stället.
+        const intent = event.data.object as Stripe.PaymentIntent;
+        clientId = (intent.metadata?.client_id as string) || (await klientFranStripeKund(kundIdAv(intent.customer)));
+        const credits = Number(intent.metadata?.credits) || 0;
+
+        if (clientId && intent.metadata?.syfte === "topup" && credits > 0) {
+          await laggTillCredits({
+            tenantId: clientId,
+            credits,
+            typ: "topup",
+            note: `Påfyllning betald med kort (${credits} tokens).`,
+            createdBy: "stripe",
+            externReferens: intent.id,
+          });
+          extra = `, ${credits} tokens`;
+        } else {
+          // Abonnemangets egna betalningar går via invoice.paid. Ingen dubbelhantering.
+          return { hanterad: true, besked: "Betalningen hör till en faktura och hanteras där.", clientId };
         }
         break;
       }

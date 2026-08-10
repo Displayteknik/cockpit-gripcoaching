@@ -356,30 +356,57 @@ export async function dragCredits(opts: {
   }
 }
 
-/** Påfyllning: godkänd beställning eller manuell insättning från owner. */
+/**
+ * Påfyllning: godkänd beställning, betalning med kort eller manuell insättning från owner.
+ *
+ * ★ BETAL-1b, IDEMPOTENS: `externReferens` är betalningens id hos Stripe. En påfyllning
+ * kan komma in på två vägar — direkt när vi dragit på kundens sparade kort, och via
+ * webhooken när Stripe hör av sig om samma betalning. Med referensen satt krediteras
+ * köpet EN gång oavsett vilken väg som hinner först. Tokens som delats ut går inte att
+ * ta tillbaka, så det här är inte en detalj.
+ *
+ * Transaktionsraden skrivs FÖRST. Vinner den (unikt index) fortsätter vi och höjer
+ * saldot. Kolliderar den har någon annan redan krediterat, och vi gör ingenting.
+ */
 export async function laggTillCredits(opts: {
   tenantId: string;
   credits: number;
   typ: "topup" | "manual_grant";
   note: string;
   createdBy?: string;
+  externReferens?: string | null;
 }): Promise<boolean> {
   if (!opts.note?.trim()) return false; // notering är obligatorisk vid manuell insättning
   try {
     const sb = supabaseService();
     const konto = await sakerstallKonto(opts.tenantId);
     if (!konto) return false;
-    await sb
-      .from("credit_accounts")
-      .update({ extra_credits: konto.extra_credits + opts.credits, updated_at: new Date().toISOString() })
-      .eq("tenant_id", opts.tenantId);
-    await sb.from("credit_transactions").insert({
+
+    // Reservera köpet innan saldot rörs. Ordningen är medveten: kolliderar raden har
+    // köpet redan krediterats, och då får saldot inte höjas en gång till.
+    const { error: radFel } = await sb.from("credit_transactions").insert({
       tenant_id: opts.tenantId,
       delta: opts.credits,
       type: opts.typ,
       note: opts.note.slice(0, 500),
       created_by: opts.createdBy || "owner",
+      extern_referens: opts.externReferens || null,
     });
+
+    if (radFel) {
+      // 23505 = unique_violation → samma betalning har redan krediterats. Inte ett fel.
+      if (radFel.code === "23505") {
+        console.info("[credits] påfyllningen var redan krediterad:", opts.externReferens);
+        return true;
+      }
+      console.error("[credits] kunde inte skriva påfyllningsraden:", radFel.message);
+      return false;
+    }
+
+    await sb
+      .from("credit_accounts")
+      .update({ extra_credits: konto.extra_credits + opts.credits, updated_at: new Date().toISOString() })
+      .eq("tenant_id", opts.tenantId);
     return true;
   } catch (e) {
     console.error("[credits] påfyllning failade:", (e as Error).message);

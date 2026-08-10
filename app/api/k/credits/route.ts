@@ -31,7 +31,7 @@ export async function GET() {
   if (!saldo) return NextResponse.json({ error: "Kunde inte läsa saldot" }, { status: 500 });
 
   const sb = supabaseService();
-  const [{ data: tx }, { data: pending }, priser, planRes, stripePa] = await Promise.all([
+  const [{ data: tx }, { data: pending }, priser, planRes, stripePa, kort] = await Promise.all([
     sb.from("credit_transactions")
       .select("created_at, delta, type, note")
       .eq("tenant_id", tenantId)
@@ -42,6 +42,7 @@ export async function GET() {
     Promise.all((["social-bild", "hero-bild", "video"] as const).map(async (a) => [a, await creditPris(a)] as const)),
     sb.from("billing_plans").select("credits, belopp_sek").eq("id", "topup_100").maybeSingle(),
     import("@/lib/billing/stripe").then((m) => m.stripeKonfigurerat()),
+    import("@/lib/billing/stripe-ops").then((m) => m.hamtaSparatKort(tenantId)).catch(() => null),
   ]);
 
   const rader = (tx || []) as Array<{ created_at: string; delta: number; type: string; note: string | null }>;
@@ -73,6 +74,9 @@ export async function GET() {
       pris: Number(plan?.belopp_sek) || TOPUP_PRIS_SEK,
       // true = köpet går direkt via kort. false = beställning som Håkan godkänner (gamla vägen).
       direktkop: stripePa,
+      // Satt när kunden redan har ett kort hos oss. Då dras beloppet på det, och knappen
+      // säger vilket kort det gäller i stället för att bara heta "fyll på".
+      kort: kort ? { marke: kort.marke, sista_fyra: kort.sista_fyra } : null,
     },
   });
 }
@@ -99,9 +103,13 @@ export async function POST() {
   const { stripeKonfigurerat } = await import("@/lib/billing/stripe");
   if (await stripeKonfigurerat()) {
     try {
-      const { skapaTopupCheckout } = await import("@/lib/billing/stripe-ops");
-      const url = await skapaTopupCheckout(session.client_id);
-      return NextResponse.json({ ok: true, url, besked: "Vi skickar dig vidare till betalningen." });
+      // ★ Har kunden redan lagt in sitt kort dras beloppet direkt på det. Att skicka
+      // henne genom en ny betalsida och be om kortet igen vore att låtsas att vi inte
+      // redan känner henne. Saknas kort, eller vill banken ha en bekräftelse, får hon
+      // en betallänk tillbaka i stället — samma köp, andra vägen.
+      const { dragPaSparatKort } = await import("@/lib/billing/stripe-ops");
+      const r = await dragPaSparatKort(session.client_id);
+      return NextResponse.json(r, { status: r.ok ? 200 : 500 });
     } catch (e) {
       const { stripeFelText } = await import("@/lib/billing/stripe");
       return NextResponse.json(

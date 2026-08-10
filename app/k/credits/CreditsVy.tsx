@@ -19,7 +19,10 @@ interface Data {
   antal: Record<string, number>; priser: Record<string, number>;
   historik: Historikrad[];
   pending: { id: string; credits: number; created_at: string } | null;
-  topup: { credits: number; pris: number; direktkop: boolean };
+  topup: {
+    credits: number; pris: number; direktkop: boolean;
+    kort: { marke: string; sista_fyra: string } | null;
+  };
 }
 
 const TYP_TEXT: Record<string, string> = {
@@ -67,7 +70,8 @@ export default function CreditsVy({ primaryColor }: { primaryColor: string }) {
       const r = await fetch("/api/k/credits", { method: "POST" });
       const j = await r.json();
       if (!r.ok) throw new Error(j.besked || j.error || "Påfyllningen gick inte fram");
-      // Stripe-vägen: vi skickar kunden vidare till betalningen.
+      // Behövs kundens egen medverkan (inget sparat kort, eller banken vill ha en
+      // bekräftelse) skickar servern med en länk. Annars är köpet redan klart.
       if (j.url) { window.location.href = j.url; return; }
       setKvitto(j.besked);
       await hamta();
@@ -95,6 +99,7 @@ export default function CreditsVy({ primaryColor }: { primaryColor: string }) {
         primaryColor={primaryColor}
         onFyllPa={data.pending ? undefined : fyllPa}
         laddar={koper}
+        kort={data.topup.kort}
       />
 
       {data.pending && (

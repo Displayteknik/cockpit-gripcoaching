@@ -74,6 +74,11 @@ export async function GET() {
 
   const harStripeKund = !!(kundData as { stripe_customer_id: string } | null)?.stripe_customer_id;
 
+  // Sparat kort → påfyllning kan dras direkt, och kunden ska se vilket kort det gäller.
+  const kort = harStripeKund
+    ? await import("@/lib/billing/stripe-ops").then((m) => m.hamtaSparatKort(clientId)).catch(() => null)
+    : null;
+
   return NextResponse.json({
     status: session.billing_status,
     besked: statusbesked(session.billing_status),
@@ -93,6 +98,7 @@ export async function GET() {
     kvitton,
     // Kortknappen visas bara när det finns ett kort att hantera hos Stripe.
     kan_hantera_kort: harStripeKund,
+    kort: kort ? { marke: kort.marke, sista_fyra: kort.sista_fyra, giltigt_till: kort.giltigt_till } : null,
     foretag: { namn: inst.foretagsnamn, org_nr: inst.org_nr },
   });
 }
@@ -118,7 +124,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, url: await ops.skapaPortalLank(session.client_id) });
     }
     if (body.atgard === "tokens") {
-      return NextResponse.json({ ok: true, url: await ops.skapaTopupCheckout(session.client_id) });
+      // Dra på det sparade kortet när ett finns. Saknas kort, eller vill banken ha en
+      // bekräftelse, får kunden en betallänk tillbaka i stället.
+      return NextResponse.json(await ops.dragPaSparatKort(session.client_id));
     }
     return NextResponse.json({ ok: false, besked: "Okänd åtgärd." }, { status: 400 });
   } catch (e) {

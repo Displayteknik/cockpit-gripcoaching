@@ -225,6 +225,150 @@ export async function skapaAbonnemangCheckout(clientId: string, planId: string):
   return session.url;
 }
 
+// ── Dragning på kundens redan sparade kort ──────────────────────────────────
+//
+// Har kunden lagt in sitt kort en gång ska en påfyllning bara dras på det. Att skicka
+// henne genom en ny betalsida och be om kortet igen är att låtsas att vi inte redan
+// känner henne.
+
+export interface Sparatkort {
+  marke: string;      // "visa", "mastercard" …
+  sista_fyra: string;
+  giltigt_till: string; // "09/28"
+}
+
+/**
+ * Id på kortet vi ska dra på: standardkortet först, annars det första sparade.
+ * Kunden har i praktiken bara ett, och att svara "inget kort" när ett finns vore fel.
+ */
+async function hittaKortId(stripeKundId: string): Promise<string | null> {
+  const stripe = await stripeKlient();
+  const kund = await stripe.customers.retrieve(stripeKundId);
+  if (kund.deleted) return null;
+
+  const standard = kund.invoice_settings?.default_payment_method;
+  if (standard) return typeof standard === "string" ? standard : standard.id;
+
+  const lista = await stripe.paymentMethods.list({ customer: stripeKundId, type: "card", limit: 1 });
+  return lista.data[0]?.id || null;
+}
+
+/** Kundens sparade kort, eller null när inget finns. Kastar aldrig. */
+export async function hamtaSparatKort(clientId: string): Promise<Sparatkort | null> {
+  try {
+    const sb = supabaseService();
+    const { data } = await sb.from("billing_customers").select("stripe_customer_id").eq("client_id", clientId).maybeSingle();
+    const kundId = (data as { stripe_customer_id: string } | null)?.stripe_customer_id;
+    if (!kundId) return null;
+
+    const pmId = await hittaKortId(kundId);
+    if (!pmId) return null;
+
+    const stripe = await stripeKlient();
+    const pm = await stripe.paymentMethods.retrieve(pmId);
+    if (!pm.card) return null;
+
+    return {
+      marke: pm.card.brand,
+      sista_fyra: pm.card.last4,
+      giltigt_till: `${String(pm.card.exp_month).padStart(2, "0")}/${String(pm.card.exp_year).slice(-2)}`,
+    };
+  } catch {
+    // Inget sparat kort är ett normalt läge, inte ett fel att skrika om.
+    return null;
+  }
+}
+
+export interface Dragningssvar {
+  ok: boolean;
+  /** true = tokens är tillagda och saldot är redan uppdaterat. */
+  krediterat: boolean;
+  besked: string;
+  /** Satt när kunden måste göra något själv, t.ex. bekräfta med BankID hos sin bank. */
+  url?: string;
+}
+
+/**
+ * Drar beloppet direkt på kundens sparade kort och krediterar tokens med en gång.
+ *
+ * `off_session` betyder att kunden inte står vid skärmen ur bankens perspektiv, och då
+ * kan banken kräva att hon bekräftar. Det är inte ett fel utan ett helt normalt utfall —
+ * då skickar vi henne till betalsidan i stället, med samma köp.
+ */
+export async function dragPaSparatKort(clientId: string, planId = "topup_100"): Promise<Dragningssvar> {
+  const sb = supabaseService();
+  const { data } = await sb.from("billing_plans").select("*").eq("id", planId).eq("active", true).maybeSingle();
+  const plan = data as { id: string; label: string; belopp_sek: number; credits: number | null } | null;
+  if (!plan) return { ok: false, krediterat: false, besked: "Det gick inte att hitta paketet just nu." };
+
+  const kort = await hamtaSparatKort(clientId);
+  if (!kort) {
+    // Inget kort sparat → gå den vanliga vägen i stället för att svara med ett fel.
+    return { ok: true, krediterat: false, besked: "Vi skickar dig vidare till betalningen.", url: await skapaTopupCheckout(clientId, planId) };
+  }
+
+  try {
+    const stripe = await stripeKlient();
+    const kundId = await sakerstallStripeKund(clientId);
+    const pmId = await hittaKortId(kundId);
+
+    if (!pmId) {
+      return { ok: true, krediterat: false, besked: "Vi skickar dig vidare till betalningen.", url: await skapaTopupCheckout(clientId, planId) };
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: kronorTillOre(plan.belopp_sek),
+      currency: "sek",
+      customer: kundId,
+      payment_method: pmId,
+      off_session: true,
+      confirm: true,
+      description: plan.label,
+      metadata: { client_id: clientId, plan_id: plan.id, credits: String(plan.credits || 0), syfte: "topup" },
+    });
+
+    if (intent.status === "succeeded") {
+      const { laggTillCredits } = await import("../credits");
+      const antal = plan.credits || 0;
+      // Referensen gör krediteringen idempotent: kommer webhooken efteråt om samma
+      // betalning händer ingenting en andra gång.
+      await laggTillCredits({
+        tenantId: clientId,
+        credits: antal,
+        typ: "topup",
+        note: `Påfyllning betald med sparat kort (${antal} tokens).`,
+        createdBy: "stripe",
+        externReferens: intent.id,
+      });
+      return {
+        ok: true,
+        krediterat: true,
+        besked: `Klart. ${antal} tokens är tillagda och dragna på kortet som slutar på ${kort.sista_fyra}.`,
+      };
+    }
+
+    // Banken vill ha en bekräftelse → samma köp, men kunden får göra det själv.
+    return { ok: true, krediterat: false, besked: "Din bank vill att du bekräftar köpet.", url: await skapaTopupCheckout(clientId, planId) };
+  } catch (e) {
+    const fel = e as { code?: string; message?: string };
+    // Kortet nekades eller kräver bekräftelse. Båda löses av att kunden går till betalsidan.
+    if (fel.code === "authentication_required" || fel.code === "card_declined" || fel.code === "expired_card") {
+      const url = await skapaTopupCheckout(clientId, planId).catch(() => undefined);
+      return {
+        ok: true,
+        krediterat: false,
+        besked:
+          fel.code === "authentication_required"
+            ? "Din bank vill att du bekräftar köpet."
+            : "Kortet gick inte igenom. Prova igen eller använd ett annat kort.",
+        url,
+      };
+    }
+    const { stripeFelText } = await import("./stripe");
+    return { ok: false, krediterat: false, besked: `Betalningen gick inte igenom. Stripe ${stripeFelText(e)}` };
+  }
+}
+
 // ── Customer Portal ─────────────────────────────────────────────────────────
 
 /** Portalsession för kortbyte och kvitton. Länken är engångs och kortlivad. */
