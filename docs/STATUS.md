@@ -209,6 +209,29 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | Dialoganatomi utan CTA-golv | KLART OCH VERIFIERAT | `prompt-core.ts` `DIALOG_ANATOMI` + `WRITING_RULES_DIALOG` | Ja | Nej |
 | Skarp körning mot ett riktigt lead | KLART, EJ VERIFIERAT | Bevis: generera svar på ett riktigt lobbykort och läs efter påhitt/pris/uppmaning | Ja | Nej |
 
+## MENY, CTA-STEG OCH BILDTEXT — Håkans verifiering 10/8, kvällen
+
+| Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
+|---|---|---|---|---|
+| UTKAST-2 alla fem skaparytor töms vid klientbyte | KLART, EJ VERIFIERAT I DRIFT | `b60582d`, `tests/utkast2-alla-ytor.test.ts` (22 kontroller). Båda grindarna provade genom att brytas | Ja | Nej |
+| BILD-10 bildmodellen skriver ingen text | KLART, EJ VERIFIERAT I DRIFT | `c8a9c4f`, `tests/bild10-ingen-text-i-bild.test.ts` (12). **Rotorsaken var beställningen, inte grinden:** `DEPICTED_MESSAGE` krävde en kort svensk rad på VARJE synlig skylt, och modellen kan inte stava ("HÄLLBARA PROFILER FÖR FRAMITDEN" hos AluCon). Text i bild kommer nu bara ur fältet "Text i bilden", som vi ritar själva. Funnen felstavning ger 502 i stället för att släppas igenom när omtagen eller tidsbudgeten tar slut | **Ja** | **Var ja — nu nej** |
+| Utkastet bär klient-id inuti kuvertet | KLART OCH VERIFIERAT | `c8a9c4f`, `tests/utkast.test.ts`. Nyckeln kan inte upptäcka ett utkast som skrivits under fel kund — den är ju rätt. VERSION 1 → 2 slänger varje gammalt kuvert, inklusive de som bar Displaytekniks förslag i Håkans webbläsare | Ja | Nej |
+| CTA-2 tre varianter är tre val | KLART, EJ VERIFIERAT I DRIFT | `1dd807a`, `tests/cta2-vagar.test.ts`. Väg framåt OCH perspektiv delas ut per variant, deterministiskt — varianterna körs parallellt och kan inte undvika varandra. ⚠ **Obevisat:** att texterna faktiskt blir olika i skarp körning. Grinden låser instruktionerna, inte modellens utfall | Ja | Nej |
+| PLAN-2 planeringen är ÄGARENS kalender | KLART OCH VERIFIERAT | `3ad04ca`, `tests/plan2-egen-kalender.test.ts` (7). **Ingen kunddata korsades:** routen kräver huvudadmin (`getAdminScope() !== null` → 403), hq-tabellerna och kalenderspegeln har ingen klientkolumn, och den klient-scopade menyn saknar hq-sidorna. Felet var att sidan inte SA det — beskedet stod bara i det okopplade läget | Ja | **Var ja — nu nej** |
+| MENY-1 tre zoner efter åtkomst | KLART OCH VERIFIERAT | `0ed042f`, `tests/meny1-zoner.test.ts` (24). Ditt eget / Om valda kunden (rubriken bär kundens NAMN) / Kundens egna ytor. Zon 3 är bevisad mot `app/k/` på disk, inte bedömd. Testet låser att ingen av de 41 sidorna försvann och att ingen sida ligger i två zoner. Provad genom att brytas | Ja | Nej |
+| CTA-3 steget följer funnel-nivån | KLART, EJ VERIFIERAT I DRIFT | `1a2391d`. Ett TOFU-inlägg om ångest slutade "Boka ett första samtal via länken i profilen". Kopplingen nivå → typ låg i en mjuk bisats, och då vinner den starkaste uppmaningen. Nu är STEGETS STORLEK utskriven per nivå i prompt-core OCH byggd i urvalet (`vagarForFunnel`), så en tofu-variant inte KAN få kontaktvägen. Kryphålen namngivna: länk i profilen, kostnadsfritt, "veta mer". Promptversion `v1-3b3ea753` → **`v1-8f88f1c5`**, låset fällde ändringen | **Ja** | **Var ja — nu nej** |
+| BILD-11 "Ändra bild" gick inte att klicka | KLART OCH VERIFIERAT | `1a2391d`. Två likadana rutor en rad ifrån varandra, bara den nedre tänder knappen. Rubrikerna säger nu vilken bild var ruta gäller, knappen säger varför den sover, och text i fel ruta erbjuds med ett klick | **Ja** | **Var ja — nu nej** |
+
+### Öppet efter kvällen
+
+1. **Rotorsaken till hur Displaytekniks förslag hamnade under AluCons nyckel är inte fastställd.**
+   Kuvertkontrollen fångar den nu oavsett var skrivningen kom ifrån, men själva vägen är inte hittad i koden.
+2. **"Jag minns en kvinna som kom till mig..." stod i ALLA TRE varianterna hos For Balance** (Håkans skärmbild 10/8).
+   T-6b förbjuder uppfunna minnen uttryckligen. Antingen står händelsen i profilens story-bank (då är den tillåten)
+   eller så håller regeln inte. **Kräver läsning av For Balances story-bank i databasen — inte gjord.**
+3. **Skarp körning av CTA-2 och CTA-3 återstår.** Instruktionerna är låsta i test; vad modellen gör med dem är inte mätt.
+4. Siffran "15–30 panikångestattacker om dagen" i samma caption är inte kontrollerad mot profilens verifierade siffror.
+
 ## GRANSK G-0..G-9
 
 | Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
