@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import {
   Target, TrendingUp, Globe, Sparkles, Lightbulb, Calendar, Users,
-  Mail, Compass, LayoutGrid, FileText, BookOpen,
+  Mail, Compass, LayoutGrid, FileText, BookOpen, CreditCard, Coins,
 } from "lucide-react";
 
 // Ikon som accepterar både className och style (lucide-props).
@@ -39,7 +39,7 @@ export function InstagramIcon({ className, style }: { className?: string; style?
 // dess kundvy (och ikon) byggs.
 const MODULE_ICON: Record<string, IconType> = {
   Target, TrendingUp, Globe, Sparkles, Lightbulb, Calendar, Users,
-  Mail, Compass, FileText, BookOpen, Linkedin: LinkedinIcon,
+  Mail, Compass, FileText, BookOpen, CreditCard, Coins, Linkedin: LinkedinIcon,
 };
 
 export function moduleIcon(name: string | null | undefined): IconType {

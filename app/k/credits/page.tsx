@@ -1,13 +1,14 @@
 import { requireCustomerFeature } from "@/lib/customer-context";
-import { Coins } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { CREDIT_MODUL } from "@/lib/credits";
 import CreditsVy from "./CreditsVy";
 
 export const dynamic = "force-dynamic";
 
-// ETAPP K2-2 — kundens egen sida för bilder och video.
-// Klarspråk: kunden ser aldrig kronor, och aldrig ord som "tenant", "ledger" eller
-// plattformens interna namn. Credits förklaras med det de faktiskt ger: bilder och video.
+// ETAPP K2-2, omdöpt i BETAL-1 — kundens egen sida för tokens.
+// Klarspråk: kunden ser aldrig kronor för sin förbrukning, och aldrig ord som "tenant",
+// "ledger" eller plattformens interna namn. Tokens förklaras med det de faktiskt ger:
+// bilder och video.
 export default async function KCredits() {
   const session = await requireCustomerFeature(CREDIT_MODUL);
 
@@ -21,11 +22,12 @@ export default async function KCredits() {
           Bilder och video
         </span>
         <h1 className="font-display text-2xl font-bold text-gray-900 flex items-center gap-2 mt-1">
-          <Coins className="w-6 h-6" style={{ color: session.primary_color }} />
-          Din månadskvot
+          <Sparkles className="w-6 h-6" style={{ color: session.primary_color }} />
+          Dina tokens
         </h1>
+        {/* Förklaringsraden om vad tokens är står i kortet nedan, en gång och inte två. */}
         <p className="text-gray-600 text-sm mt-1">
-          Varje bild och video du skapar drar från månadens kvot. Texter är alltid fria och drar ingenting.
+          Här ser du hur många du använt, hur många som är kvar och vad varje sak kostar.
         </p>
       </div>
 

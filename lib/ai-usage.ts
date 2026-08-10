@@ -125,6 +125,8 @@ export interface ProviderSvar<T = unknown> {
   budgetstopp?: boolean;
   /** true = stoppet berodde på slut creditsaldo, inte på kronorsgränsen. */
   creditstopp?: boolean;
+  /** BETAL-1: true = tenanten är pausad för utebliven betalning. */
+  betalstopp?: boolean;
   /** Id på raden i ai_usage_events. Credits-ledgern (STEG 3) pekar på den. */
   handelseId?: string | null;
   /**
@@ -377,6 +379,17 @@ export async function anropaProvider<T = unknown>(
   raw_opts: AnropsMeta & { url: string; init: RequestInit; timeoutMs?: number },
 ): Promise<ProviderSvar<T>> {
   const opts = { ...raw_opts, ...(await fyllKontext(raw_opts)) };
+
+  // BETAL-1: betalspärren på den obligatoriska providervägen. Ligger FÖRE budgetgrinden
+  // eftersom en pausad kund inte ska kosta oss någonting alls, och den fångar även de
+  // flöden som körs utan session (cron, nattjobb) där API-grinden aldrig är inblandad.
+  if (opts.tenantId) {
+    const { arSparrad, SPARRAD_API_BESKED } = await import("./billing/status");
+    if (await arSparrad(opts.tenantId)) {
+      return { ok: false, status: 0, data: null, raw: "", fel: SPARRAD_API_BESKED, latencyMs: 0, budgetstopp: true, betalstopp: true };
+    }
+  }
+
   // Budgetstopp loggas INTE som ett providerfel: ingen provider kontaktades, och en
   // spärrad tenant får inte färga providerhälsan röd för alla andra.
   const budget = await kontrolleraBudget(opts.tenantId);
@@ -497,6 +510,12 @@ export async function loggaAnrop<T>(
   kor: () => Promise<{ resultat: T; tokensIn?: number; tokensUt?: number; mediaUnits?: number }>,
 ): Promise<T> {
   const meta = await fyllKontext(raw_meta);
+  // BETAL-1: samma betalspärr som fetch-vägen. Två ingångar, samma grind — annars vore
+  // SDK-vägen (Anthropic i iterate) en väg förbi hela spärren.
+  if (meta.tenantId) {
+    const { arSparrad, SPARRAD_API_BESKED } = await import("./billing/status");
+    if (await arSparrad(meta.tenantId)) throw new Error(SPARRAD_API_BESKED);
+  }
   const budget = await kontrolleraBudget(meta.tenantId);
   if (!budget.tillaten) throw new Error(budget.besked);
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -98,6 +98,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
         { href: "/dashboard/sms-paminnelse", label: "SMS-påminnelse", icon: MessageSquare },
         { href: "/dashboard/studio/reels", label: "Reels (test)", icon: Film },
+        { href: "/dashboard/betalning", label: "Betalning och abonnemang", icon: CreditCard },
         { href: "/dashboard/kostnader", label: "Vad AI:n kostar", icon: Coins },
         { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
         { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },

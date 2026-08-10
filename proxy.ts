@@ -37,6 +37,9 @@ function isPublicApi(path: string): boolean {
   // Metas webhook för Instagram: skickar ingen cookie. Grindas i stället HÅRT i routen på
   // X-Hub-Signature-256 (HMAC-SHA256 med app-secret) — se app/api/instagram/webhook.
   if (path === "/api/instagram/webhook") return true;
+  // Stripes webhook: samma sak. Ingen cookie, grindas på stripe-signature i routen
+  // (HMAC mot vår webhook-hemlighet). Utan giltig signatur avvisas anropet där.
+  if (path === "/api/stripe/webhook") return true;
   return false;                                            // OBS: /api/share (skapa) = admin
 }
 
@@ -51,6 +54,7 @@ const CRON_PATHS = new Set([
   "/api/reports/weekly-cron",
   "/api/scheduler/cron",
   "/api/meta/health/cron",
+  "/api/billing/cron",
 ]);
 
 // Rutter som BÅDE admin och kundportalen (/k) använder. Grindas i routen med

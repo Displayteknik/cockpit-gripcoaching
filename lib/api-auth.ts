@@ -37,6 +37,25 @@ export async function requireAdmin(): Promise<NextResponse | null> {
 // resolveClientId (referer-medveten). proxy:n släpper igenom dessa → grinden sker här.
 export async function requireAdminOrCustomer(): Promise<NextResponse | null> {
   if (await isAdmin()) return null;
+  const session = await getCustomerSession();
+  if (!session) return NextResponse.json({ error: "ej inloggad" }, { status: 401 });
+
+  // BETAL-1: betalspärren på API-nivå. Ligger HÄR, i grinden alla kundbetjänade routes
+  // redan anropar — en spärr som bara döljer knappar i gränssnittet är ingen spärr.
+  // Admin passerar ovan: Håkan når allt oavsett kundens betalläge.
+  if (session.billing_status === "sparrad") {
+    const { SPARRAD_API_BESKED } = await import("./billing/status");
+    return NextResponse.json({ error: SPARRAD_API_BESKED, betalsparr: true }, { status: 402 });
+  }
+  return null;
+}
+
+/**
+ * För de FÅ routes en spärrad kund måste nå: betalsidan själv och dess knappar.
+ * Utan det här undantaget kan en spärrad kund inte betala sig ut ur spärren.
+ */
+export async function requireAdminOrCustomerAvenSparrad(): Promise<NextResponse | null> {
+  if (await isAdmin()) return null;
   if (await getCustomerSession()) return null;
   return NextResponse.json({ error: "ej inloggad" }, { status: 401 });
 }

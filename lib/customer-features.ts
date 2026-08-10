@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail, BookOpen, Coins } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail, BookOpen, CreditCard } from "lucide-react";
 import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
@@ -60,13 +60,23 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     hideFromNav: true, // inbakad i "Skapa inlägg" (per-kanal) — göms i menyn, routen kvar
   },
   {
-    // ETAPP K2-2. Nyckeln matchar modul-id:t `credits` i platform_modules (default AV).
-    // Kunden möter aldrig ordet "kvot i kronor" — rubriken säger vad det faktiskt är.
+    // ETAPP K2-2, omdöpt i BETAL-1. Nyckeln matchar modul-id:t `credits` i
+    // platform_modules — kundvänt heter det TOKENS, internt fortsätter det heta credits.
+    // Ingen omdöpning i datalagret: nyckeln är samma, bara etiketten är ny.
     key: "credits",
-    label: "Bilder och video",
+    label: "Tokens",
     href: "/k/credits",
-    icon: Coins,
-    description: "Din månadskvot för bilder och video: hur mycket du använt, vad som är kvar och hur du fyller på.",
+    icon: Sparkles,
+    description: "Tokens för bilder och video: hur många du använt, hur många som är kvar och hur du fyller på.",
+  },
+  {
+    // BETAL-1 (B-3). Betalsidan är den ENDA sida en pausad kund når, därför får den
+    // aldrig gömmas bakom en modulgrind som kan vara avbockad.
+    key: "betalning",
+    label: "Abonnemang",
+    href: "/k/betalning",
+    icon: CreditCard,
+    description: "Nästa betalning, vad som ingår, kvitton och byte av betalkort.",
   },
   {
     key: "offert",

@@ -5,15 +5,23 @@ import { hamtaSaldo, skapaTopupOrder, creditPris, forbrukningKlartext, TOPUP_CRE
 
 export const runtime = "nodejs";
 
-// ETAPP K2-2 — kundens egen creditvy. Klienten resolvas ALLTID ur den HttpOnly-validerade
-// kund-sessionen: kunden kan aldrig se eller fylla på en annan tenants saldo.
+// ETAPP K2-2, utbyggd i BETAL-1 — kundens egen tokenvy. Klienten resolvas ALLTID ur den
+// HttpOnly-validerade kund-sessionen: kunden kan aldrig se eller fylla på en annan
+// tenants saldo.
 //
-// Kunden ser aldrig kronor. Förbrukningen skrivs i klartext ("14 bilder, 1 video"),
-// för credits är en abstraktion och siffran ensam säger inget om vad man fått.
+// Kunden ser aldrig kronor för sin förbrukning. Förbrukningen skrivs i klartext
+// ("14 bilder, 1 video"), för ett tokenbelopp säger inget om vad man faktiskt fått.
+//
+// NAMN: kundvänt heter det tokens. Internt heter det credits, och det gör det även här —
+// fältnamnen i svaret är oförändrade så inget som redan läser dem går sönder.
 
 export async function GET() {
   const session = await getCustomerSession();
   if (!session) return NextResponse.json({ error: "Ej inloggad" }, { status: 401 });
+  if (session.billing_status === "sparrad") {
+    const { SPARRAD_API_BESKED } = await import("@/lib/billing/status");
+    return NextResponse.json({ error: SPARRAD_API_BESKED, betalsparr: true }, { status: 402 });
+  }
   if (!session.features.includes(CREDIT_MODUL)) {
     return NextResponse.json({ error: "Saknar behörighet" }, { status: 403 });
   }
@@ -23,7 +31,7 @@ export async function GET() {
   if (!saldo) return NextResponse.json({ error: "Kunde inte läsa saldot" }, { status: 500 });
 
   const sb = supabaseService();
-  const [{ data: tx }, { data: pending }, priser] = await Promise.all([
+  const [{ data: tx }, { data: pending }, priser, planRes, stripePa] = await Promise.all([
     sb.from("credit_transactions")
       .select("created_at, delta, type, note")
       .eq("tenant_id", tenantId)
@@ -32,10 +40,13 @@ export async function GET() {
       .limit(200),
     sb.from("topup_orders").select("id, credits, created_at").eq("tenant_id", tenantId).eq("status", "pending").maybeSingle(),
     Promise.all((["social-bild", "hero-bild", "video"] as const).map(async (a) => [a, await creditPris(a)] as const)),
+    sb.from("billing_plans").select("credits, belopp_sek").eq("id", "topup_100").maybeSingle(),
+    import("@/lib/billing/stripe").then((m) => m.stripeKonfigurerat()),
   ]);
 
   const rader = (tx || []) as Array<{ created_at: string; delta: number; type: string; note: string | null }>;
   const pris = Object.fromEntries(priser) as Record<string, number>;
+  const plan = planRes.data as { credits: number | null; belopp_sek: number } | null;
 
   // Antal per åtgärd räknas ur credits delat med priset — transaktionen bär åtgärden i note.
   const antal: Record<string, number> = {};
@@ -57,17 +68,49 @@ export async function GET() {
     priser: pris,
     historik: rader.slice(0, 50),
     pending: pending || null,
-    topup: { credits: TOPUP_CREDITS, pris: TOPUP_PRIS_SEK },
+    topup: {
+      credits: plan?.credits || TOPUP_CREDITS,
+      pris: Number(plan?.belopp_sek) || TOPUP_PRIS_SEK,
+      // true = köpet går direkt via kort. false = beställning som Håkan godkänner (gamla vägen).
+      direktkop: stripePa,
+    },
   });
 }
 
-// POST — beställ en påfyllning. Ingen betalning här: owner godkänner och fakturerar utanför.
+/**
+ * POST — fyll på tokens.
+ *
+ * Två vägar, och den gamla behålls tills den nya är bevisad i skarp drift:
+ *   · Stripe kopplat → Checkout-länk tillbaka. Saldot ökar först när betalningen är klar,
+ *     via webhooken. Tokens som delas ut i förskott går inte att ta tillbaka.
+ *   · Stripe inte kopplat → beställning som Håkan godkänner, precis som förut.
+ */
 export async function POST() {
   const session = await getCustomerSession();
   if (!session) return NextResponse.json({ error: "Ej inloggad" }, { status: 401 });
+  if (session.billing_status === "sparrad") {
+    const { SPARRAD_API_BESKED } = await import("@/lib/billing/status");
+    return NextResponse.json({ error: SPARRAD_API_BESKED, betalsparr: true }, { status: 402 });
+  }
   if (!session.features.includes(CREDIT_MODUL)) {
     return NextResponse.json({ error: "Saknar behörighet" }, { status: 403 });
   }
+
+  const { stripeKonfigurerat } = await import("@/lib/billing/stripe");
+  if (await stripeKonfigurerat()) {
+    try {
+      const { skapaTopupCheckout } = await import("@/lib/billing/stripe-ops");
+      const url = await skapaTopupCheckout(session.client_id);
+      return NextResponse.json({ ok: true, url, besked: "Vi skickar dig vidare till betalningen." });
+    } catch (e) {
+      const { stripeFelText } = await import("@/lib/billing/stripe");
+      return NextResponse.json(
+        { ok: false, besked: `Betalningen kunde inte startas. Stripe ${stripeFelText(e)}` },
+        { status: 500 },
+      );
+    }
+  }
+
   const r = await skapaTopupOrder(session.client_id);
   return NextResponse.json(r, { status: r.ok ? 200 : 500 });
 }

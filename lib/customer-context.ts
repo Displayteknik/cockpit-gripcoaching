@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseService } from "./supabase-admin";
 import { getEffectiveModuleIds } from "./entitlements";
+import { hamtaBetalstatus, type Betalstatus } from "./billing/status";
 
 const TOKEN_COOKIE = "customer_token";
 const CLIENT_COOKIE = "customer_client_id";
@@ -13,6 +14,12 @@ export interface CustomerSession {
   primary_color: string;
   role: string;              // 'customer' (delad länk) | roll från platform_users
   features: string[];
+  /**
+   * BETAL-1: betalläget för tenanten. Ligger HÄR, i sessionen, av samma skäl som
+   * `features`: varje spärrlager (sidor, API, providervägen) läser samma källa, och
+   * en andra plats som "också vet" hade förr eller senare sagt något annat.
+   */
+  billing_status: Betalstatus;
 }
 
 // Validera token mot DB. Löser BÅDE en delad klient-token (customer_token) OCH
@@ -30,13 +37,16 @@ export async function resolveCustomerToken(token: string): Promise<CustomerSessi
     .eq("customer_token", token)
     .maybeSingle();
   if (data && data.customer_access_enabled) {
+    const id = data.id as string;
+    const [features, billing_status] = await Promise.all([getEffectiveModuleIds(id), hamtaBetalstatus(id)]);
     return {
-      client_id: data.id as string,
+      client_id: id,
       client_name: data.name as string,
       client_slug: data.slug as string,
       primary_color: (data.primary_color as string) || "#1A6B3C",
       role: "customer",
-      features: await getEffectiveModuleIds(data.id as string),
+      features,
+      billing_status,
     };
   }
 
@@ -56,13 +66,16 @@ export async function resolveCustomerToken(token: string): Promise<CustomerSessi
       if (!u.activated_at) {
         await sb.from("platform_users").update({ activated_at: new Date().toISOString() }).eq("id", u.id);
       }
+      const id = c.id as string;
+      const [features, billing_status] = await Promise.all([getEffectiveModuleIds(id), hamtaBetalstatus(id)]);
       return {
-        client_id: c.id as string,
+        client_id: id,
         client_name: c.name as string,
         client_slug: c.slug as string,
         primary_color: (c.primary_color as string) || "#1A6B3C",
         role: (u.role as string) || "customer",
-        features: await getEffectiveModuleIds(c.id as string),
+        features,
+        billing_status,
       };
     }
   }
@@ -88,6 +101,9 @@ export async function getCustomerSession(): Promise<CustomerSession | null> {
 export async function requireCustomerFeature(featureKey: string): Promise<CustomerSession> {
   const session = await getCustomerSession();
   if (!session) redirect("/k-utloggad");
+  // BETAL-1: spärrad kund når bara betalsidan. Layouten fångar det först, men grinden
+  // ligger även här — en sida som renderas utanför layouten ska inte bli en glipa.
+  if (session.billing_status === "sparrad" && featureKey !== "betalning") redirect("/k/betalning");
   if (!session.features.includes(featureKey)) redirect(`/k/ej-i-paket?m=${encodeURIComponent(featureKey)}`);
   return session;
 }
