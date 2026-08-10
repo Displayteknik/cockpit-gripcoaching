@@ -14,6 +14,13 @@ export const maxDuration = 60;
 
 const BUCKET = "studio-images";
 
+// G-6: bildvägens egen regelversion. Textvägen räknar sin ur prompt-core (G-1), men
+// bilden har ingen prompt-core-prompt — dess regeluppsättning är realism-receptet,
+// säsongsraden, motiv-grinden och stavningsgrinden. Höj den för hand när något av dem
+// ändras, annars går ett före/efter i bildkvaliteten inte att tolka.
+// v1 = läget vid G-6 (10/8): REALISM + säsong + motivPassar + stavningsgrind + kit.
+const BILD_PROMPT_VERSION = "bild-v1";
+
 // Realism-recept mot "AI-look": dokumentär stil, verklig vardagsmiljö, och framför allt —
 // skärmar i bilden visar ENKELT verkligt innehåll. Abstrakta färgvirvlar på en LED-skärm
 // är det största AI-avslöjandet i signage-sammanhang (skarp feedback från Håkan).
@@ -108,8 +115,14 @@ export async function POST(req: NextRequest) {
       // Två steg: gör om ämnet/bildtexten (ofta prosa) till en visuell scen först — annars
       // svarar bildmodellen NO_IMAGE på ett meddelande/råd.
       const scene = await visualScene(topic, niche);
-      const bas = `${scene} Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`;
-      const branschKrav = `${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}`;
+      // G-6: kundens egna omdömen om tidigare bilder. Tummen har funnits i gränssnittet
+      // och lovat "AI lär sig", men BARA legacy-vägen läste den — Studios Bildhjälpen,
+      // som är den väg kunderna faktiskt använder, gjorde det aldrig. Fail-open.
+      const { hamtaBildfeedback, bildfeedbackBlock } = await import("@/lib/bildfeedback");
+      const bildlage = await hamtaBildfeedback(await resolveClientId());
+      const FEEDBACK = bildlage.finns ? `\n${bildfeedbackBlock(bildlage)}` : "";
+      const bas = `${scene} Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
+      const branschKrav = `${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
       // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
       // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
       // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
@@ -166,9 +179,31 @@ export async function POST(req: NextRequest) {
       const up = await sb.storage.from(BUCKET).upload(path, Buffer.from(m[2], "base64"), { contentType: "image/png" });
       if (up.error) return NextResponse.json({ error: up.error.message }, { status: 500 });
       const pub = sb.storage.from(BUCKET).getPublicUrl(path);
+      // G-6: raden i generationsloggen som feedbacken ska kunna peka på. Bildflödena
+      // skrev inga rader dit förut — därför bar `motiv_kategori` (byggd i G-1) aldrig
+      // ett värde, och ett nedslag gick inte att knyta till modell eller promptversion.
+      // Skrivs EFTER uppladdningen: en bild som aldrig blev till ska inte ha en rad.
+      // Fail-open — loggningen får aldrig fälla en färdig bild.
+      let generationId: string | null = null;
+      try {
+        const { loggaGenerering } = await import("@/lib/generationslogg");
+        generationId = await loggaGenerering({
+          tenantId: clientId,
+          syfte: "bild",
+          format: ar,
+          // Bildvägen bygger ingen textprompt, så den har ingen prompt-core-version.
+          // Motivreceptet ÄR regeluppsättningen här, och det versioneras för sig.
+          promptVersion: BILD_PROMPT_VERSION,
+          motivKategori: promptIBruk === branschKrav ? "branschkrav-omtag" : "standard",
+        });
+      } catch (e) {
+        console.error("[suggest-image] generationsloggen kunde inte skrivas:", e);
+      }
       // Returnera scenbeskrivningen: textförslagen grundas i vad bilden faktiskt föreställer
       // (så en säljande rubrik inte hamnar ovanpå en problembild).
-      return NextResponse.json({ photos: [{ url: pub.data.publicUrl, thumb: pub.data.publicUrl, credit: "AI (Imagen 4.0)" }], description: scene, ...(stavning ? { stavning } : {}) });
+      // generationId följer med ut så tummen kan binda sitt omdöme till RÄTT generering
+      // i stället för att jämföra promptsträngar i efterhand.
+      return NextResponse.json({ photos: [{ url: pub.data.publicUrl, thumb: pub.data.publicUrl, credit: "AI (Imagen 4.0)" }], description: scene, generationId, ...(stavning ? { stavning } : {}) });
     }
 
     // stock (Pexels) — riktiga foton, brand-medveten sökfråga

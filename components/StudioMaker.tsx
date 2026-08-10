@@ -13,6 +13,7 @@ import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
   ExternalLink, CalendarClock, ClipboardCheck, X, Pencil, LayoutGrid, Sparkles,
+  ThumbsUp, ThumbsDown,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide, LogoVariantVal } from "@/lib/studio/payload";
@@ -154,6 +155,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [imgTextInfo, setImgTextInfo] = useState<{ metod: string; forsok: number; verifierad: boolean; avlastText: string } | null>(null);
   const [imageFocusY, setImageFocusY] = useState(40);
   const [imgComment, setImgComment] = useState("");
+  // G-6: genererings-id for den AI-bild som visas just nu, plus kundens omdome om den.
+  // Tummen fanns i ImagePicker och lovade "AI lar sig" — men Studios Bildhjalpen sparade
+  // aldrig nagot och las aldrig nagot. Id:t binder omdomet till RATT generering i stallet
+  // for att jamfora promptstrangar i efterhand.
+  const [bildGenerationId, setBildGenerationId] = useState<string | null>(null);
+  const [bildOmdome, setBildOmdome] = useState<1 | -1 | null>(null);
+  const [bildOmdomeKommentar, setBildOmdomeKommentar] = useState("");
+  const [bildOmdomeSparat, setBildOmdomeSparat] = useState(false);
   const [editingImg, setEditingImg] = useState(false);
   const [prevImageUrl, setPrevImageUrl] = useState("");
   const [brushColor, setBrushColor] = useState(DEFAULT_BRUSH);
@@ -550,6 +559,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       if (mode === "ai") hamtaCredits();
       // AI-läge ger en scenbeskrivning för den genererade bilden → koppla till dess URL.
       if (mode === "ai" && d.description && d.photos?.[0]?.url) setAiImageDesc({ url: String(d.photos[0].url), desc: String(d.description) });
+      if (mode === "ai") {
+        setBildGenerationId(d.generationId ? String(d.generationId) : null);
+        setBildOmdome(null); setBildOmdomeKommentar(""); setBildOmdomeSparat(false);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -594,13 +607,42 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Bildgenerering misslyckades");
       const url = d.photos?.[0]?.url;
-      if (url) { setImage(url); if (d.description) setAiImageDesc({ url, desc: String(d.description) }); } else throw new Error("Ingen bild genererades");
+      if (url) {
+        setImage(url);
+        if (d.description) setAiImageDesc({ url, desc: String(d.description) });
+        // G-6: nytt id, alltsa en ny bild — nollstall omdomet sa forra bildens tumme
+        // inte star kvar och ser ut att galla den har.
+        setBildGenerationId(d.generationId ? String(d.generationId) : null);
+        setBildOmdome(null); setBildOmdomeKommentar(""); setBildOmdomeSparat(false);
+      } else throw new Error("Ingen bild genererades");
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSearchingImg("");
     }
   }, [headline1, topic, body, format, setImage]);
+
+  // ── G-6: omdöme om AI-bilden ───────────────────────────────────────────────
+  // Sparar betyg + kundens egna ord, bundet till genereringen. Nästa bildgenerering
+  // läser tillbaka det (lib/bildfeedback) — det är först då tummens löfte "AI lär sig"
+  // blir sant. Fail-open: ett omdöme som inte kan sparas får aldrig störa arbetet.
+  const sparaBildOmdome = useCallback(async (rating: 1 | -1) => {
+    setBildOmdome(rating);
+    try {
+      await fetch("/api/images/feedback", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating,
+          generationId: bildGenerationId,
+          prompt: aiImageDesc?.url === curImg ? aiImageDesc.desc : "",
+          content_text: [headline1, topic].filter(Boolean).join(". ").slice(0, 500),
+          image_url: curImg,
+          kommentar: bildOmdomeKommentar,
+        }),
+      });
+      setBildOmdomeSparat(true);
+    } catch { /* tyst: omdömet är en bonus, inte ett steg i arbetet */ }
+  }, [bildGenerationId, aiImageDesc, curImg, headline1, topic, bildOmdomeKommentar]);
 
   // ── Ändra bild via kommentar (bild-till-bild, Nano Banana) ──
   const editImage = useCallback(async () => {
@@ -2048,6 +2090,39 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       <Trash2 className="w-3.5 h-3.5" /> Ta bort bilden på slide {slideIdx + 1}
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* G-6: omdöme om AI-bilden. Visas BARA när bilden faktiskt kommer ur en
+                  generering vi kan peka på — en tumme utan koppling hade varit samma
+                  tomma löfte som före G-6. */}
+              {curImg && bildGenerationId && (
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
+                  <label className="block text-xs font-medium text-gray-600">
+                    Passade bilden? Ditt svar styr nästa bild vi gör åt dig.
+                  </label>
+                  <SmartTextarea
+                    value={bildOmdomeKommentar}
+                    onChange={(e) => setBildOmdomeKommentar(e.target.value)}
+                    rows={2}
+                    placeholder='Valfritt: skriv varför. T.ex. "för mörkt", "fel sorts kunder" eller "precis rätt känsla"'
+                    className={inputCls}
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => sparaBildOmdome(1)}
+                      className={`inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg border transition-colors ${bildOmdome === 1 ? "bg-emerald-600 text-white border-emerald-600" : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      <ThumbsUp className="w-4 h-4" /> Bra bild
+                    </button>
+                    <button
+                      onClick={() => sparaBildOmdome(-1)}
+                      className={`inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg border transition-colors ${bildOmdome === -1 ? "bg-red-600 text-white border-red-600" : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      <ThumbsDown className="w-4 h-4" /> Passar inte
+                    </button>
+                    {bildOmdomeSparat && <span className="text-xs text-gray-500">Sparat — vi tar med det nästa gång.</span>}
+                  </div>
                 </div>
               )}
 
