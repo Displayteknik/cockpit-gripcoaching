@@ -88,6 +88,27 @@ export const DEPICTED_MESSAGE_EN =
 export const DEPICTED_MESSAGE_SV =
   "AVBILDAD SKYLTNING SKA BÄRA ETT BUDSKAP: syns en skärm, skylt, tavla, skyltfönster eller affisch ska den ha BÅDE ett tydligt motiv OCH en kort trovärdig rad på svenska — ett erbjudande, ett pris, ett event eller en tid — som är rimlig för verksamheten. Principen: menyskärmen visar rätten plus \"DAGENS LUNCH 129 KR\"; skyltfönstret visar det butiken faktiskt säljer plus en kort kampanjrad. Håll det till två till fem korta, vanliga svenska ord, rättstavade: använd å, ä och ö BARA i ord som verkligen har dem (skriv IDAG, inte IDÅG; VÄLKOMMEN, inte VÄKLLOMMEN) och dubblera aldrig bokstäver. Skriv aldrig en uppmaning som konkurrerar med inläggets egen — inga \"RING NU\", inga telefonnummer, inga webbadresser. Skyltning som inte är inläggets ämne får aldrig annonsera en högtid eller ett daterat evenemang: ingen griffeltavla, affisch eller skärm i bakgrunden får skriva ut en svensk högtid eller ett datum om inte inlägget handlar om just den händelsen. En bakgrundstavla säger vad verksamheten säljer, inte vad som står i kalendern.";
 
+// ── BILD-10 (Håkans beslut 2026-08-10): MODELLEN SKRIVER INGEN TEXT ─────────
+// Skarpt fall: AluCon fick en skylt i bild med "HÄLLBARA PROFILER FÖR FRAMITDEN" — två
+// felstavningar i tre ord. Rotorsaken satt inte i grinden utan i BESTÄLLNINGEN:
+// DEPICTED_MESSAGE krävde att varje synlig skylt SKA bära en kort svensk rad. Bildmodellen
+// kan inte stava svenska, och stavningsgrinden fångar inte allt (2 av 20 gick igenom i
+// BILD-8:s DoD). Vi beställde alltså felstavningarna själva.
+//
+// Nya ordningen: texten i en bild kommer BARA från fältet "Text i bilden" (B3), där den
+// ritas av oss och därför alltid är rättstavad. Fria bildmotiv har ingen läsbar text alls.
+// DEPICTED_MESSAGE finns kvar för den dagen en modell kan stava — den används inte nu.
+export const DEPICTED_NO_TEXT_EN =
+  "NO READABLE TEXT IN THE IMAGE: no words, letters, numbers, price tags, logos or captions anywhere — not on signs, screens, boards, posters, menus, packaging, walls, workwear or vehicles. " +
+  "Do NOT show a blank or empty sign, screen or board either: an empty sign reads as broken, not as clean. " +
+  "Compose the picture so signs and screens are out of frame, turned away, or naturally absent, and build it around the people, their hands at work, the product itself, the room and the light. " +
+  "If a screen must be visible it shows a photograph or the product, never text.";
+export const DEPICTED_NO_TEXT_SV =
+  "INGEN LÄSBAR TEXT I BILDEN: inga ord, bokstäver, siffror, prislappar, logotyper eller pålagda rubriker någonstans — varken på skyltar, skärmar, tavlor, affischer, menyer, förpackningar, väggar, arbetskläder eller fordon. " +
+  "Visa INTE en tom skylt, skärm eller tavla heller: en tom skylt läses som trasig, inte som ren. " +
+  "Komponera bilden så att skyltar och skärmar hamnar utanför bild, är vända bort eller saknas naturligt, och bygg den kring människorna, händerna som arbetar, produkten, rummet och ljuset. " +
+  "Måste en skärm synas visar den ett foto eller produkten, aldrig text.";
+
 // ── BILD-8b: blickriktning och uppmärksamhet ────────────────────────────────
 // Skarpt fel (Håkans skarptest 2026-07-31): butiksbild där kvinnan framför skärmen
 // tittade BORT från skärmen — hela poängen med bilden föll. En person i samma bild som
@@ -99,9 +120,20 @@ export const PERSON_ATTENTION_EN =
 export const PERSON_ATTENTION_SV =
   "PERSON OCH MOTIV SKA HÖRA IHOP: syns en person tillsammans med produkten, skärmen, skylten eller erbjudandet ska personen vara VÄND MOT det och synbart engagerad — tittar på skärmen, läser skylten, håller i eller använder produkten. Visa aldrig en person som tittar bort från eller står med ryggen mot det inlägget handlar om. Blick, huvud och överkropp ska läsas som uppmärksamhet riktad dit, och både personen och saken ska synas tydligt i bilden. Avvik bara om inläggets eget budskap uttryckligen kräver det.";
 
-/** Hela BILD-7a-regeln för flöden där avbildad skyltning får bära text. */
-export const DEPICTED_CONTENT_EN = `${DEPICTED_RELEVANCE_EN} ${DEPICTED_MESSAGE_EN} ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN}`;
-export const DEPICTED_CONTENT_SV = `${DEPICTED_RELEVANCE_SV} ${DEPICTED_MESSAGE_SV} ${PERSON_ATTENTION_SV} ${NO_DASH_IN_IMAGE_SV}`;
+/**
+ * BILD-7a-regeln i den form flödena SKA använda: relevans + inga bokstäver + blickriktning.
+ * Texten ägs av fältet "Text i bilden", aldrig av bildmodellen (BILD-10).
+ */
+export const DEPICTED_CONTENT_EN = `${DEPICTED_RELEVANCE_EN} ${DEPICTED_NO_TEXT_EN} ${PERSON_ATTENTION_EN}`;
+export const DEPICTED_CONTENT_SV = `${DEPICTED_RELEVANCE_SV} ${DEPICTED_NO_TEXT_SV} ${PERSON_ATTENTION_SV}`;
+
+/**
+ * Den GAMLA regeln, där avbildad skyltning skulle bära ett budskap. Kvar som dokumentation
+ * av vad som gällde till 10/8 och för den dag en bildmodell kan stava svenska — inget
+ * flöde använder den, och `tests/bild10-ingen-text-i-bild.test.ts` låser att det förblir så.
+ */
+export const DEPICTED_CONTENT_MED_BUDSKAP_EN = `${DEPICTED_RELEVANCE_EN} ${DEPICTED_MESSAGE_EN} ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN}`;
+export const DEPICTED_CONTENT_MED_BUDSKAP_SV = `${DEPICTED_RELEVANCE_SV} ${DEPICTED_MESSAGE_SV} ${PERSON_ATTENTION_SV} ${NO_DASH_IN_IMAGE_SV}`;
 
 export const IMAGE_STYLES = [
   { id: "cinematic", label: "Cinematic mörk", desc: "Filmisk, dramatisk belysning", prompt: "Cinematic commercial photography. Dramatic directional lighting with deep shadows. Film-grade color grading. Dark navy and warm accent tones. Shot on full-frame camera with 35mm lens." },
@@ -365,7 +397,10 @@ export async function visualScene(topic: string, niche: string, opts?: { textYta
       `Motivet ska omisskännligt höra hemma i just denna verksamhet (${niche}) — visa verksamhetens miljö, produkter eller kunder. ` +
       `Använd ALDRIG metaforer eller motiv från andra branscher (kläder, kaffe, schack och liknande). ` +
       `Beskriv en VERKLIG vardagsmiljö, gärna med människor eller kunder när det passar — aldrig en steril arkitekturbild. ` +
-      `${DEPICTED_RELEVANCE_SV} ${opts?.textYta ? "" : DEPICTED_MESSAGE_SV + " "}` +
+      // BILD-10: utan textyta ska scenen vara helt textfri. Förut stod DEPICTED_MESSAGE_SV
+      // här och BAD om en kort svensk rad på varje synlig skylt — beställningen som gav
+      // "HÄLLBARA PROFILER FÖR FRAMITDEN". Med textyta (B3) beskrivs ytan, aldrig texten.
+      `${DEPICTED_RELEVANCE_SV} ${opts?.textYta ? "" : DEPICTED_NO_TEXT_SV + " "}` +
       // BILD-8b: syns en person tillsammans med det som säljs ska scenen beskriva att
       // hon är vänd mot det (skarpt fel: kvinnan framför skärmen tittade bort).
       `${PERSON_ATTENTION_SV} ` +

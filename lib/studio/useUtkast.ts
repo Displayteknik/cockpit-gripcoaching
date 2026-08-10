@@ -18,11 +18,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const PREFIX = "cockpit-utkast";
-const VERSION = 1;
+// VERSION 2 (10/8): kuvertet bär klient-id INUTI sig, inte bara i nyckeln. Höjningen
+// slänger samtidigt varje kuvert som skrevs före den här regeln — inklusive de utkast
+// som bevisligen bar fel klients förslag i Håkans webbläsare.
+const VERSION = 2;
 
 interface Kuvert<T> {
   v: number;
   sparatVid: number; // epoch ms
+  /** Klienten datat tillhör. Nyckeln säger samma sak — men bara den ena kan kontrolleras. */
+  klient?: string;
   data: T;
 }
 
@@ -36,12 +41,21 @@ export function utkastNyckel(yta: string, klientId: string | null | undefined): 
   return `${PREFIX}:${yta}:${klientId}`;
 }
 
-/** Tolkar ett lagrat kuvert. Fel version, trasig JSON eller saknad data → null. */
-export function tolkaUtkast<T>(raw: string | null): { data: T; sparatVid: number | null } | null {
+/**
+ * Tolkar ett lagrat kuvert. Fel version, trasig JSON eller saknad data → null.
+ *
+ * `klient` är det andra låset. Nyckeln bär redan klient-id, men om något någon gång
+ * skriver ett utkast under FEL nyckel kan nyckeln inte upptäcka det — den är ju rätt.
+ * Kuvertet bär därför klienten som datat skrevs för, och står det inte samma sak som den
+ * klient vi läser för kastas utkastet. Ett kuvert utan `klient` är skrivet före regeln
+ * och kastas också (det är exakt de kuverten som visade fel kunds förslag).
+ */
+export function tolkaUtkast<T>(raw: string | null, klientId?: string | null): { data: T; sparatVid: number | null } | null {
   if (!raw) return null;
   try {
     const kuvert = JSON.parse(raw) as Kuvert<T>;
     if (!kuvert || kuvert.v !== VERSION || kuvert.data == null) return null;
+    if (klientId !== undefined && kuvert.klient !== (klientId || undefined)) return null;
     return { data: kuvert.data, sparatVid: typeof kuvert.sparatVid === "number" ? kuvert.sparatVid : null };
   } catch {
     return null;
@@ -124,7 +138,7 @@ export function useUtkast<T>({
     setSparatVid(null);
     const tomYtan = () => { if (byte) nollstallRef.current?.(); };
     try {
-      const tolkat = tolkaUtkast<T>(localStorage.getItem(nyckel));
+      const tolkat = tolkaUtkast<T>(localStorage.getItem(nyckel), klientId);
       if (!tolkat) { localStorage.removeItem(nyckel); tomYtan(); return; }
       if (!harInnehallRef.current(tolkat.data)) { localStorage.removeItem(nyckel); tomYtan(); return; }
       aterstallRef.current(tolkat.data);
@@ -135,7 +149,8 @@ export function useUtkast<T>({
       try { localStorage.removeItem(nyckel); } catch { /* ignorera */ }
       tomYtan();
     }
-  }, [nyckel]);
+    // klientId ingår bara som kuvertstämpel; nyckeln ändras alltid när klienten gör det.
+  }, [nyckel, klientId]);
 
   // ── Autospara (debounce) ──
   useEffect(() => {
@@ -150,7 +165,7 @@ export function useUtkast<T>({
           return;
         }
         const sparat = Date.now();
-        const kuvert: Kuvert<T> = { v: VERSION, sparatVid: sparat, data };
+        const kuvert: Kuvert<T> = { v: VERSION, sparatVid: sparat, klient: klientId || undefined, data };
         localStorage.setItem(nyckel, JSON.stringify(kuvert));
         setSparatVid(sparat);
       } catch {
@@ -158,7 +173,7 @@ export function useUtkast<T>({
       }
     }, fordrojning);
     return () => clearTimeout(t);
-  }, [nyckel, data, fordrojning]);
+  }, [nyckel, klientId, data, fordrojning]);
 
   const glomUtkast = useCallback(() => {
     try { if (nyckel) localStorage.removeItem(nyckel); } catch { /* ignorera */ }

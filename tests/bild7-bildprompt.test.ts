@@ -19,6 +19,8 @@ vi.mock("@/lib/supabase-admin", () => ({
 import {
   DEPICTED_CONTENT_EN,
   DEPICTED_CONTENT_SV,
+  DEPICTED_CONTENT_MED_BUDSKAP_EN,
+  DEPICTED_NO_TEXT_EN,
   DEPICTED_MESSAGE_EN,
   DEPICTED_MESSAGE_SV,
   DEPICTED_RELEVANCE_EN,
@@ -76,11 +78,20 @@ describe("BILD-7a — avbildat exempelinnehåll: relevans OCH budskap", () => {
     expect(DEPICTED_MESSAGE_SV).toContain("högtid eller ett daterat evenemang");
   });
 
-  it("den fulla regeln bär BILD-6a:s tankstrecksförbud vidare (bygger på, ersätter inte)", () => {
-    expect(DEPICTED_CONTENT_EN).toContain(NO_DASH_IN_IMAGE_EN);
+  // ⚠ ÄNDRAD 10/8 (BILD-10, Håkans beslut): den fulla regeln bär INTE längre
+  // budskapsregeln. Bildmodellen skrev "HÄLLBARA PROFILER FÖR FRAMITDEN" hos AluCon, och
+  // så länge vi BER om en svensk rad på varje skylt beställer vi felstavningar. Texten
+  // kommer nu bara från fältet "Text i bilden". Tankstrecksregeln handlar om text i bild
+  // och behövs därför inte i en textfri regel — den lever kvar i B3-vägen (REALISM_EXAKT_TEXT).
+  // Den gamla sammansättningen finns kvar som DEPICTED_CONTENT_MED_BUDSKAP_* och används
+  // inte av något flöde; tests/bild10-ingen-text-i-bild.test.ts låser båda halvorna.
+  it("den fulla regeln bär relevans + textförbud + blickriktning", () => {
     expect(DEPICTED_CONTENT_EN).toContain(DEPICTED_RELEVANCE_EN);
-    expect(DEPICTED_CONTENT_EN).toContain(DEPICTED_MESSAGE_EN);
-    expect(DEPICTED_CONTENT_SV).toContain("tankstreck");
+    expect(DEPICTED_CONTENT_EN).toContain(DEPICTED_NO_TEXT_EN);
+    expect(DEPICTED_CONTENT_EN).not.toContain(DEPICTED_MESSAGE_EN);
+    expect(DEPICTED_CONTENT_MED_BUDSKAP_EN).toContain(NO_DASH_IN_IMAGE_EN);
+    expect(DEPICTED_CONTENT_MED_BUDSKAP_EN).toContain(DEPICTED_MESSAGE_EN);
+    expect(DEPICTED_CONTENT_SV).toContain("INGEN LÄSBAR TEXT");
   });
 
   it("regeln är branschneutral — inga tenant- eller branschnamn hårdkodade", () => {

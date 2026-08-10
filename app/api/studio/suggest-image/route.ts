@@ -26,10 +26,10 @@ const BILD_PROMPT_VERSION = "bild-v1";
 // är det största AI-avslöjandet i signage-sammanhang (skarp feedback från Håkan).
 const REALISM_BAS =
   " Documentary-style photograph, believable everyday Swedish setting, natural light, candid realism with slight imperfections — not a sterile architectural render.";
-// BILD-7a: avbildat exempelinnehåll ska ha relevans OCH budskap (DEPICTED_CONTENT_EN
-// bär även BILD-6a:s tankstrecksregel). Den gamla raden krävde bara "enkelt verkligt
-// innehåll" — skyltarna blev relevanta men tomma.
-// (DEPICTED_CONTENT_EN bär även BILD-8b:s blickriktningsregel.)
+// BILD-10 (10/8): DEPICTED_CONTENT_EN bär nu relevans + INGEN LÄSBAR TEXT + blickriktning.
+// Fram till 10/8 krävde den i stället att varje synlig skylt SKULLE bära en kort svensk rad
+// — och bildmodellen stavade fel (AluCon: "HÄLLBARA PROFILER FÖR FRAMITDEN"). Text i bild
+// kommer nu bara från fältet "Text i bilden", som ritas av oss.
 const REALISM = `${REALISM_BAS} ${DEPICTED_CONTENT_EN}`;
 // Text-i-bild-vägen (B3) sätter den exakta texten själv — då gäller bara relevans-
 // halvan, annars konkurrerar två textkällor om samma yta. BILD-8b gäller ändå: en
@@ -92,6 +92,15 @@ export async function POST(req: NextRequest) {
             generera: async ({ skarpning }) => korExakt(skarpning),
           });
           res.image = grind.image;
+          // BILD-10: B3 äger sin EGEN text och stavar den rätt. Är det ÖVRIG text i bilden
+          // som är felstavad går bilden ändå inte ut — samma regel som friprompt-vägen.
+          if (!grind.utfall.ok) {
+            console.error("[suggest-image] BILD-10 (text i bilden): felstavad bakgrundstext kvar:", grind.utfall.fel);
+            return NextResponse.json({
+              error: "Bilden fick felstavad text i bakgrunden och stoppades. Prova en gång till, eller ”Sök foto”.",
+              stavfel: grind.utfall.fel,
+            }, { status: 502 });
+          }
         }
         const em = res.image?.match(/^data:image\/(\w+);base64,(.+)$/);
         if (res.error || !em) {
@@ -121,8 +130,8 @@ export async function POST(req: NextRequest) {
       const { hamtaBildfeedback, bildfeedbackBlock } = await import("@/lib/bildfeedback");
       const bildlage = await hamtaBildfeedback(await resolveClientId());
       const FEEDBACK = bildlage.finns ? `\n${bildfeedbackBlock(bildlage)}` : "";
-      const bas = `${scene} Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
-      const branschKrav = `${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden — skyltning som hör hemma i miljön följer regeln nedan.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
+      const bas = `${scene} Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden, och ingen läsbar text i motivet.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
+      const branschKrav = `${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden, och ingen läsbar text i motivet.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
       // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
       // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
       // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
@@ -156,6 +165,17 @@ export async function POST(req: NextRequest) {
             : undefined,
         });
         gen = { ...gen, image: grind.image };
+        // BILD-10, Håkans beslut 10/8: "vi kan inte skapa bilder med felstavningar".
+        // Förut släpptes en bild med FUNNEN felstavning igenom när omtagen eller
+        // tidsbudgeten tog slut — tyst, och kunden såg felet i stället för koden.
+        // Nu stoppas den, med ett besked som pekar på de två vägar som ÄR säkra.
+        if (!grind.utfall.ok) {
+          console.error("[suggest-image] BILD-10: felstavad text kvar efter", grind.omtag, "omtag:", grind.utfall.fel);
+          return NextResponse.json({
+            error: "Bilden fick felstavad text i motivet och stoppades. Prova ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva och stavar alltid rätt.",
+            stavfel: grind.utfall.fel,
+          }, { status: 502 });
+        }
         // Fältet följer bara med när anroparen ber om det — vanliga svar till Studio är oförändrade.
         if (diagnostik) {
           stavning = { orsak: grind.utfall.orsak, text: grind.utfall.text, ord: grind.utfall.ord, ordBak: grind.utfall.ordBak, fel: grind.utfall.fel, omtag: grind.omtag, blank: grind.blank, avlasningar };
