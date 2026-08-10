@@ -14,8 +14,38 @@ function LinkedinIcon({ className }: { className?: string }) {
 }
 import ClientPicker from "@/components/ClientPicker";
 
-interface NavItem { href: string; label: string; icon: React.ComponentType<{ className?: string }>; match?: string[] }
-interface NavSection { label: string; items: NavItem[] }
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  match?: string[];
+  /** Kundens motsvarande yta i portalen. Satt = kunden når samma innehåll själv. */
+  kundHref?: string;
+}
+interface NavSection { label: string; items: NavItem[]; zon?: ZonId }
+
+/**
+ * MENY-1 (Håkans beslut 2026-08-10) — tre zoner efter VEM SOM KOMMER ÅT INNEHÅLLET.
+ *
+ * Bakgrunden: han öppnade Planering, bytte kund och såg samma ifyllda vecka i två konton.
+ * Veckan var hans egen kalender (owner-grindad, ingen klientkolumn) — men sidan låg i samma
+ * meny som kundsakerna, under klientväljaren, och lästes därför som kundens. Felet var inte
+ * datat utan att menyn blandade tre olika slags sidor.
+ *
+ *   1. `eget`    — ditt, byter aldrig med kundväljaren. Ingen annan kommer åt det.
+ *   2. `byra`    — om den VALDA kunden, men bara du ser det. Byter med väljaren.
+ *   3. `kundens` — samma innehåll som kunden själv når i sin portal (/k/...).
+ *
+ * Zon 3 är bevisad, inte bedömd: varje post där har en `kundHref` som pekar på en sida som
+ * faktiskt finns under `app/k/`. Saknas motsvarigheten hör posten i zon 2.
+ */
+type ZonId = "eget" | "byra" | "kundens";
+
+const ZONER: { id: ZonId; rubrik: string; forklaring: string }[] = [
+  { id: "eget", rubrik: "Ditt eget", forklaring: "Bara du. Byter inte när du växlar kund." },
+  { id: "byra", rubrik: "Om valda kunden", forklaring: "Ditt arbete med kunden. Kunden ser inte det här." },
+  { id: "kundens", rubrik: "Kundens egna ytor", forklaring: "Samma innehåll som kunden når i sin portal." },
+];
 
 function buildNavSections(resourceModule: string): NavSection[] {
   const resourceItems: NavItem[] =
@@ -29,82 +59,101 @@ function buildNavSections(resourceModule: string): NavSection[] {
       : [];
 
   return [
+    // ── ZON 1: DITT EGET ────────────────────────────────────────────────────
     {
-      label: "Överblick",
+      zon: "eget",
+      label: "Din vecka",
       items: [
-        { href: "/dashboard", label: "Översikt", icon: Home },
         // Founder HQ = ägarens kommandobrygga. Den gamla länklistan bor på
         // /dashboard/genvagar och ligger med flit utanför menyn (REV-0).
         { href: "/dashboard/hq", label: "Founder HQ", icon: Command },
+        { href: "/dashboard/hq/planering", label: "Planering", icon: Calendar },
         { href: "/dashboard/hq/uppstart", label: "Uppstart", icon: Rocket },
         { href: "/dashboard/hq/kontakt", label: "Vem har bollen", icon: Radio },
-        { href: "/dashboard/hq/planering", label: "Planering", icon: Calendar },
+      ],
+    },
+    {
+      zon: "eget",
+      label: "Byrån",
+      items: [
         { href: "/dashboard/mysales-kunder", label: "MySales pionjärer", icon: Users },
-        // G-9: kvalitetssidan. Byråvy — vad varje regeluppsattning faktiskt producerade.
+        // Automatisk provisionering från enbart en webbadress (ONBOARD-1). Skild från
+        // "Onboarding-checklista", som är för en kund som redan finns.
+        { href: "/dashboard/onboarding", label: "Ny kund från webbadress", icon: Sparkles },
+        { href: "/dashboard/setup/onboard", label: "Onboarding-checklista", icon: Rocket },
+        { href: "/dashboard/betalning", label: "Betalning och abonnemang", icon: CreditCard },
+        { href: "/dashboard/kostnader", label: "Vad AI:n kostar", icon: Coins },
+        // G-9: kvalitetssidan. Byråvy — vad varje regeluppsättning faktiskt producerade.
         // Ligger i menyn med flit: en sida som inte går att hitta finns inte.
         { href: "/dashboard/kvalitet", label: "Kvalitet", icon: BarChart3 },
       ],
     },
     {
-      label: "Varumärke",
+      zon: "eget",
+      label: "Verktyg",
       items: [
-        { href: "/dashboard/profil", label: "Brand-profil", icon: Target },
+        { href: "/dashboard/setup", label: "Setup-agent", icon: Wrench },
+        { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
+        { href: "/dashboard/sms-paminnelse", label: "SMS-påminnelse", icon: MessageSquare },
+        { href: "/dashboard/studio/reels", label: "Reels (test)", icon: Film },
+        { href: "/dashboard/webbdata-demo", label: "Webbdata (demo)", icon: Activity },
+        { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
+        { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
+      ],
+    },
+
+    // ── ZON 2: OM DEN VALDA KUNDEN, MEN BARA DU SER DET ─────────────────────
+    {
+      zon: "byra",
+      label: "Läget",
+      items: [
+        { href: "/dashboard", label: "Översikt", icon: Home },
+        { href: "/dashboard/leads", label: "Nya leads", icon: Users },
+        { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
+        { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
+        { href: "/dashboard/paket", label: "Paket & moduler", icon: Package },
+        { href: "/dashboard/kund-access", label: "Kund-access (länk)", icon: ExternalLink },
+      ],
+    },
+    {
+      zon: "byra",
+      label: "Underlag och sajt",
+      items: [
         { href: "/dashboard/brand-kit", label: "Grafisk profil", icon: Palette },
         { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
         { href: "/dashboard/analysator", label: "Profil-analysator", icon: Search },
-      ],
-    },
-    {
-      label: "Innehåll",
-      items: [
         { href: "/dashboard/innehall", label: "Navet", icon: Compass, match: ["/dashboard/innehall"] },
-        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon, match: ["/dashboard/studio", "/dashboard/skapa"] },
-        { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText },
-        { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar },
-        { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon },
         { href: "/dashboard/mejl", label: "Mejl", icon: Mail },
-        { href: "/dashboard/nyhetsbrev", label: "Nyhetsbrev", icon: Mail },
-        { href: "/dashboard/agents", label: "Idé-bank", icon: Bot },
-      ],
-    },
-    {
-      label: "SEO & sajt",
-      items: [
-        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp },
-        { href: "/dashboard/webbdata-demo", label: "Webbdata (demo)", icon: Activity },
         { href: "/dashboard/sidor", label: "Sidor", icon: Layers },
         { href: "/dashboard/blogg", label: "Blogg-arkiv", icon: BookOpen },
         ...resourceItems,
       ],
     },
+
+    // ── ZON 3: KUNDENS EGNA YTOR ────────────────────────────────────────────
+    // Varje post här har en motsvarighet under app/k/ — kunden når samma innehåll själv.
+    // Ändrar du något här ser kunden det. Det är hela poängen med zonen.
     {
-      label: "Kunder",
+      zon: "kundens",
+      label: "Skapa och publicera",
       items: [
-        // Automatisk provisionering från enbart en webbadress (ONBOARD-1). Skild från
-        // "Onboarding" under System, som är checklistan för en kund som redan finns.
-        { href: "/dashboard/onboarding", label: "Ny kund från webbadress", icon: Sparkles },
-        { href: "/dashboard/fokus", label: "Fokus idag", icon: Target },
-        { href: "/dashboard/leads", label: "Nya leads", icon: Users },
-        { href: "/dashboard/offert", label: "Offerter", icon: FileText },
-        { href: "/dashboard/godkannande", label: "Godkännanden", icon: MessageSquare },
-        { href: "/dashboard/rapport", label: "Veckorapport", icon: FileBarChart },
-        { href: "/dashboard/paket", label: "Paket & moduler", icon: Package },
-        { href: "/dashboard/kund-access", label: "Kund-access (länk)", icon: ExternalLink },
-        { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass },
+        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon, match: ["/dashboard/studio", "/dashboard/skapa"], kundHref: "/k/studio" },
+        { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText, kundHref: "/k/blogg" },
+        { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar, kundHref: "/k/kalender" },
+        { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon, kundHref: "/k/linkedin" },
+        { href: "/dashboard/nyhetsbrev", label: "Nyhetsbrev", icon: Mail, kundHref: "/k/nyhetsbrev" },
+        { href: "/dashboard/agents", label: "Idé-bank", icon: Bot, kundHref: "/k/ideer" },
       ],
     },
     {
-      label: "System",
+      zon: "kundens",
+      label: "Kundens dag",
       items: [
-        { href: "/dashboard/setup/onboard", label: "Onboarding", icon: Rocket },
-        { href: "/dashboard/setup", label: "Setup-agent", icon: Wrench },
-        { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
-        { href: "/dashboard/sms-paminnelse", label: "SMS-påminnelse", icon: MessageSquare },
-        { href: "/dashboard/studio/reels", label: "Reels (test)", icon: Film },
-        { href: "/dashboard/betalning", label: "Betalning och abonnemang", icon: CreditCard },
-        { href: "/dashboard/kostnader", label: "Vad AI:n kostar", icon: Coins },
-        { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
-        { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
+        { href: "/dashboard/profil", label: "Brand-profil", icon: Target, kundHref: "/k/profil" },
+        { href: "/dashboard/fokus", label: "Fokus idag", icon: Target, kundHref: "/k/fokus" },
+        { href: "/dashboard/offert", label: "Offerter", icon: FileText, kundHref: "/k/offert" },
+        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp, kundHref: "/k/seo" },
+        { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass, kundHref: "/k/ikigai" },
       ],
     },
   ];
@@ -129,12 +178,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [resourceModule, setResourceModule] = useState<string>("automotive");
   const [scoped, setScoped] = useState(false);
+  // MENY-1: kundens namn skrivs i zonrubriken ("Om valda kunden: AluCon AB"), så det aldrig
+  // går att tro att en sida hör till kunden när den i själva verket är din egen.
+  const [klientNamn, setKlientNamn] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/clients/active")
       .then((r) => r.json())
       .then((c) => {
         if (c?.resource_module) setResourceModule(c.resource_module);
+        if (c?.name) setKlientNamn(String(c.name));
         setScoped(!!c?.scoped);
       })
       .catch(() => {});
@@ -182,8 +235,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {navSections.map((section) => (
+          {navSections.map((section, si) => (
             <div key={section.label} className="mb-5">
+              {/* MENY-1: zonrubriken skrivs EN gång, vid första sektionen i zonen. Den bär
+                  förklaringen — utan den är "Ditt eget" bara ett ord, och det var just
+                  otydligheten som fick Planering att läsas som kundens vecka. */}
+              {section.zon && section.zon !== navSections[si - 1]?.zon && (
+                <div className={si > 0 ? "mt-6 mb-3 pt-4 border-t border-gray-200" : "mb-3"}>
+                  <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-gray-900">
+                    {ZONER.find((z) => z.id === section.zon)?.rubrik}
+                    {section.zon === "byra" && klientNamn ? `: ${klientNamn}` : ""}
+                  </div>
+                  <div className="px-3 mt-0.5 text-[11px] leading-snug text-gray-400">
+                    {ZONER.find((z) => z.id === section.zon)?.forklaring}
+                  </div>
+                </div>
+              )}
               <div className="px-3 mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">{section.label}</div>
               <div className="space-y-0.5">
                 {section.items.map((item) => {
