@@ -262,3 +262,29 @@ describe("Karusell · punktnumret räknas om när slides läggs till eller tas b
     expect(punktNummer(s, 2)).not.toBe(3); // platsen är 3, numret är 2
   });
 });
+
+describe("Karusell · insats och bevis är inte användarens punkter", () => {
+  // Håkans fynd 10/8: han valde 3 punkter och fick 7 slides, varav FEM chip stod
+  // märkta "Punkt". Insatsen och beviset är kind "point" i datan — mallarna ritar tre
+  // slide-typer — men de är dramaturgi, inte hans punkter.
+  const s = (kind: "hook" | "point" | "cta", roll?: "insats" | "bevis") =>
+    ({ kind, ...(roll ? { roll } : {}), headline: "x", body: "", imageUrl: "" }) as never;
+
+  it("tre valda punkter numreras 01–03 även när dramaturgin lagt till slides", () => {
+    // krok + insats + 3 punkter + bevis + avslut = 7 slides, 3 numrerade punkter.
+    const slides = [s("hook"), s("point", "insats"), s("point"), s("point"), s("point"), s("point", "bevis"), s("cta")];
+    expect(slides.map((_, i) => punktNummer(slides, i))).toEqual([null, null, 1, 2, 3, null, null]);
+  });
+
+  it("insats och bevis får inget nummer alls", () => {
+    const slides = [s("point", "insats"), s("point", "bevis")];
+    expect(punktNummer(slides, 0)).toBeNull();
+    expect(punktNummer(slides, 1)).toBeNull();
+  });
+
+  it("en karusell utan roller beter sig precis som förut", () => {
+    // Gamla sparade karuseller saknar fältet helt.
+    const slides = [s("hook"), s("point"), s("point"), s("cta")];
+    expect(slides.map((_, i) => punktNummer(slides, i))).toEqual([null, 1, 2, null]);
+  });
+});

@@ -67,6 +67,16 @@ export interface StudioOverrides {
 // point = innehållspunkt, cta = avslutande uppmaning.
 export interface StudioSlide {
   kind: "hook" | "point" | "cta";
+  /**
+   * G-2:s dramaturgi-roller, som ETIKETT. `kind` styr fortfarande layouten — insats och
+   * bevis ritas som en punkt, och det ska de.
+   *
+   * ⚠ Hakans fynd 10/8: valde han 3 punkter fick han 7 slides, och editorn radade upp
+   * FEM chip markta "Punkt" med varsitt nummer. Insatsen och beviset ar inte hans
+   * punkter, men de sag ut sa. Faltet finns for att etiketten ska kunna saga sanningen
+   * utan att rendering, export eller slide-merge behover rora sig.
+   */
+  roll?: "insats" | "bevis";
   headline: string;
   body: string;
   imageUrl: string; // valfri; tom = ingen bild
@@ -104,8 +114,12 @@ export const MAX_SLIDES = 10;
  * aldrig kan räkna olika.
  */
 export function punktNummer(slides: StudioSlide[], i: number): number | null {
-  if (slides[i]?.kind !== "point") return null;
-  return slides.slice(0, i + 1).filter((s) => s.kind === "point").length;
+  // Insats och bevis ar kind "point" i datan men INTE anvandarens punkter. De far
+  // darfor inget nummer, och de raknas inte heller upp de andra: valjer man 3 punkter
+  // ska de heta 01, 02, 03 aven nar dramaturgin lagt till slides omkring dem.
+  const arPunkt = (s: StudioSlide | undefined) => s?.kind === "point" && !s.roll;
+  if (!arPunkt(slides[i])) return null;
+  return slides.slice(0, i + 1).filter(arPunkt).length;
 }
 
 export function emptySlide(kind: StudioSlide["kind"] = "point"): StudioSlide {
@@ -178,8 +192,12 @@ function normalizeSlides(raw: unknown): StudioSlide[] {
   return raw.slice(0, MAX_SLIDES).map((s): StudioSlide => {
     const o = (s || {}) as Partial<StudioSlide>;
     const kind: StudioSlide["kind"] = o.kind === "hook" || o.kind === "cta" ? o.kind : "point";
+    // Rollen foljer med om den finns. Gamla sparade karuseller saknar den helt och
+    // beter sig precis som forut.
+    const roll = o.roll === "insats" || o.roll === "bevis" ? o.roll : undefined;
     return {
       kind,
+      ...(roll ? { roll } : {}),
       headline: typeof o.headline === "string" ? o.headline : "",
       body: typeof o.body === "string" ? o.body : "",
       imageUrl: typeof o.imageUrl === "string" ? o.imageUrl : "",

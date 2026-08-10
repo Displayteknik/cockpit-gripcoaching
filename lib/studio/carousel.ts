@@ -123,12 +123,12 @@ export async function generateCarousel(opts: {
     arr
       .map((v: Record<string, unknown>): StudioSlide => {
         const k = str(v.kind);
-        // ⚠ G-2, medveten gräns: payloadens slide-typ har tre roller (hook/point/cta) och
-        // mallarna ritar tre. Insats och bevis styr alltså DRAMATURGIN i prompten men
-        // landar som "point" i datan. Att införa dem som egna slide-typer kräver att
-        // ArkKarusell, slide-merge och punktNummer ritar och räknar dem — eget steg.
+        // G-2:s gräns kvarstar for LAYOUTEN: mallarna ritar tre slide-typer, och insats
+        // och bevis ritas som en punkt. Men rollen sparas nu som etikett (10/8), for
+        // annars radade editorn upp fem chip markta "Punkt" nar anvandaren valt tre.
         const kind: StudioSlide["kind"] = k === "hook" || k === "cta" ? k : "point";
-        return { kind, headline: str(v.headline), body: str(v.body), imageUrl: "" };
+        const roll = k === "insats" || k === "bevis" ? (k as "insats" | "bevis") : undefined;
+        return { kind, ...(roll ? { roll } : {}), headline: str(v.headline), body: str(v.body), imageUrl: "" };
       })
       .filter((s) => s.headline)
       .slice(0, MAX_SLIDES)

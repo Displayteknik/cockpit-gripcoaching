@@ -47,6 +47,13 @@ const HOOK_LABEL: Record<string, string> = {
 };
 
 const SLIDE_KIND_LABEL: Record<string, string> = { hook: "Krok", point: "Punkt", cta: "Avslut" };
+// Hakans fynd 10/8: valde han 3 punkter fick han 7 slides, och editorn radade upp FEM
+// chip markta "Punkt". Insatsen och beviset ar kind "point" i datan (mallarna ritar tre
+// slide-typer) men de ar inte anvandarens punkter. Etiketten laser rollen nar den finns.
+const SLIDE_ROLL_LABEL: Record<string, string> = { insats: "Insats", bevis: "Bevis" };
+function slideEtikett(s: { kind: string; roll?: string }): string {
+  return (s.roll && SLIDE_ROLL_LABEL[s.roll]) || SLIDE_KIND_LABEL[s.kind] || "Slide";
+}
 
 // Punktnumret (01, 02 …) räknas i lib/studio/payload — samma källa som mallen ritar ur.
 const punktNr = punktNummer;
@@ -2297,7 +2304,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                             style={vald ? { background: primary, borderColor: primary } : undefined}>
                             {vald && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
                           </span>
-                          {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                          {i + 1}. {slideEtikett(s)}
                           {/* Punktnumret är INTE slidens plats — slide 6 kan bära "04".
                               Förut stod de två siffrorna nakna intill varandra ("2. Punkt 01")
                               och lästes som ett enda tal. Numret ritas nu som den BRICKA det
@@ -2392,7 +2399,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       <button key={i} onClick={() => setSlideIdx(i)}
                         className="rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors"
                         style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                        {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                        {i + 1}. {slideEtikett(s)}
                         {punktNr(slides, i) !== null && (
                           <span className="ml-1 text-[10px] font-bold text-gray-400 tabular-nums">{String(punktNr(slides, i)).padStart(2, "0")}</span>
                         )}
@@ -2409,7 +2416,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex gap-1.5">
                           {(["hook", "point", "cta"] as StudioSlide["kind"][]).map((k) => (
-                            <button key={k} onClick={() => updateSlide(slideIdx, { kind: k })}
+                            <button key={k} onClick={() => updateSlide(slideIdx, { kind: k, roll: undefined })}
                               className="rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                               style={slides[slideIdx].kind === k ? { borderColor: primary, color: primary, background: "#fff" } : { borderColor: "#e5e7eb", color: "#9ca3af" }}>
                               {SLIDE_KIND_LABEL[k]}
@@ -3068,7 +3075,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         <button key={i} onClick={() => setSlideIdx(i)}
                           className="rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors"
                           style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                          {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                          {i + 1}. {slideEtikett(s)}
                         </button>
                       ))}
                     </div>

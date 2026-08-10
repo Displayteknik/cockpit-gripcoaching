@@ -33,7 +33,10 @@ function slaIhopEn(gammal: StudioSlide | undefined, ny: StudioSlide | undefined,
   if (gammal && ny) {
     if (harText(gammal)) {
       // Egen text behålls. Bilden behålls. Skiljer sig förslaget → fråga, skriv aldrig över.
-      const slide = { ...gammal, imageUrl: gammal.imageUrl || ny.imageUrl };
+      // Rollen (insats/bevis) ar motorns dramaturgi-etikett, inte anvandarens innehall.
+      // Den foljer darfor med fran forslaget aven nar anvandarens egen text behalls —
+      // annars star en gammal sparad karusell kvar och kallar insatsen for "Punkt".
+      const slide = { ...gammal, ...(ny.roll ? { roll: ny.roll } : {}), imageUrl: gammal.imageUrl || ny.imageUrl };
       const skiljerSig = (ny.headline && ny.headline !== gammal.headline) || (ny.body && ny.body !== gammal.body);
       return skiljerSig
         ? {
