@@ -2298,8 +2298,19 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                             {vald && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
                           </span>
                           {i + 1}. {SLIDE_KIND_LABEL[s.kind]}
+                          {/* Punktnumret är INTE slidens plats — slide 6 kan bära "04".
+                              Förut stod de två siffrorna nakna intill varandra ("2. Punkt 01")
+                              och lästes som ett enda tal. Numret ritas nu som den BRICKA det
+                              faktiskt är på sliden, så ögat ser att det hör till punkten och
+                              inte till ordningen. Värdet räknas fram ur listan vid varje
+                              rendering — lägg till eller ta bort en punkt och resten numreras om. */}
                           {punktNr(slides, i) !== null && (
-                            <span className="text-[10px] font-bold text-gray-400 tabular-nums">{String(punktNr(slides, i)).padStart(2, "0")}</span>
+                            <span
+                              title={`Står som ${String(punktNr(slides, i)).padStart(2, "0")} på själva sliden`}
+                              className="text-[10px] font-bold tabular-nums px-1 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-500 leading-none"
+                            >
+                              {String(punktNr(slides, i)).padStart(2, "0")}
+                            </span>
                           )}
                           {harBild && <span className="text-[10px] text-gray-400">har foto</span>}
                         </button>

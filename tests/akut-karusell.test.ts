@@ -234,3 +234,31 @@ describe("AKUT-KARUSELL — GHL-utkastet", () => {
     expect(ghlUtkast[0].media).toEqual([{ url: SJU[0] }]);
   });
 });
+
+describe("Karusell · punktnumret räknas om när slides läggs till eller tas bort", () => {
+  // Håkans fynd 10/8: numren ska följa med när man redigerar. De lagras aldrig —
+  // de räknas fram ur listan vid varje rendering, och de här testerna låser det.
+  const punkt = (headline: string) => ({ kind: "point" as const, headline, body: "", imageUrl: "" });
+  const krok = { kind: "hook" as const, headline: "Krok", body: "", imageUrl: "" };
+  const avslut = { kind: "cta" as const, headline: "Avslut", body: "", imageUrl: "" };
+
+  it("tar man bort en punkt i mitten numreras de efterföljande om", () => {
+    const fore = [krok, punkt("A"), punkt("B"), punkt("C"), avslut];
+    expect(fore.map((_, i) => punktNummer(fore, i))).toEqual([null, 1, 2, 3, null]);
+
+    const efter = [krok, punkt("A"), punkt("C"), avslut]; // B borttagen
+    expect(efter.map((_, i) => punktNummer(efter, i))).toEqual([null, 1, 2, null]);
+  });
+
+  it("lägger man till en punkt först får den 01 och de gamla flyttas upp", () => {
+    const efter = [krok, punkt("NY"), punkt("A"), punkt("B"), avslut];
+    expect(efter.map((_, i) => punktNummer(efter, i))).toEqual([null, 1, 2, 3, null]);
+  });
+
+  it("numret är slidens PUNKT-ordning, aldrig dess plats i listan", () => {
+    // Med en insats-slide före punkterna hamnar punkt 01 på plats 3.
+    const s = [krok, { kind: "point" as const, headline: "Insats", body: "", imageUrl: "" }, punkt("A")];
+    expect(punktNummer(s, 2)).toBe(2);
+    expect(punktNummer(s, 2)).not.toBe(3); // platsen är 3, numret är 2
+  });
+});
