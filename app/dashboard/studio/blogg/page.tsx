@@ -246,6 +246,18 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
     [topic, wordCount, title, metaTitle, metaDescription, urlSlug, html, coverImageUrl, coverImageAlt, internalLinks, hasArticle, manualMode, plainBody, loadedBlogId],
   );
   type BloggUtkast = typeof utkast;
+
+  // UTKAST-2: tömmer ytan vid klientbyte när den nya klienten saknar utkast. Utan den stod
+  // förra klientens artikel kvar under den nya klientens namn (Håkans fynd 10/8 i Studio —
+  // bloggen bar samma brist). Publiceringskvittot och bildfelet nollas med: de gällde förra
+  // klientens artikel.
+  const tomYtan = useCallback(() => {
+    setTopic(""); setTitle(""); setMetaTitle(""); setMetaDescription(""); setUrlSlug("");
+    setHtml(""); setCoverImageUrl(""); setCoverImageAlt(""); setInternalLinks(0);
+    setHasArticle(false); setManualMode(false); setPlainBody(""); setLoadedBlogId("");
+    setPublishedUrl(""); setError(""); setBildFel(""); setRepurposed(0);
+  }, []);
+
   const { aterupptaget, sparatVid, glomUtkast } = useUtkast<BloggUtkast>({
     yta: "blogg",
     // Djuplänk (?post=) öppnar ett sparat inlägg och ska vinna över utkastet.
@@ -261,14 +273,13 @@ export default function StudioBloggPage({ customer = false }: { customer?: boole
       setLoadedBlogId(d.loadedBlogId ?? "");
     }, []),
     harInnehall: useCallback((d: BloggUtkast) => Boolean(d.topic?.trim() || d.title?.trim() || d.html?.trim() || d.plainBody?.trim()), []),
+    nollstall: tomYtan,
   });
+  // "Börja om" = släng utkastet OCH töm ytan. Samma tömning som vid klientbyte, en källa.
   const borjaOm = useCallback(() => {
     glomUtkast();
-    setTopic(""); setTitle(""); setMetaTitle(""); setMetaDescription(""); setUrlSlug("");
-    setHtml(""); setCoverImageUrl(""); setCoverImageAlt(""); setInternalLinks(0);
-    setHasArticle(false); setManualMode(false); setPlainBody(""); setLoadedBlogId("");
-    setPublishedUrl(""); setError("");
-  }, [glomUtkast]);
+    tomYtan();
+  }, [glomUtkast, tomYtan]);
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -77,6 +77,17 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
     [pasteMode, pasteTitle, pasteText, blogId, content, subject, ctaUrl, sourceBlogId, loadedId],
   );
   type NyhetsbrevUtkast = typeof utkast;
+
+  // UTKAST-2: tömmer ytan vid klientbyte när den nya klienten saknar utkast. Utan den stod
+  // förra klientens texter kvar under den nya klientens namn (Håkans fynd 10/8 i Studio —
+  // nyhetsbrevet bar samma brist). Kvittona ("Sparat", "Kopierat", testutskicket) nollas
+  // också: de gällde förra klientens brev och blir en falsk bekräftelse på det nya.
+  const tomYtan = useCallback(() => {
+    setPasteTitle(""); setPasteText(""); setBlogId("");
+    setContent(null); setSubject(""); setCtaUrl(""); setSourceBlogId(null); setLoadedId(null); setErr("");
+    setSaved(false); setCopied(false); setTestMsg("");
+  }, []);
+
   const { aterupptaget, sparatVid, glomUtkast } = useUtkast<NyhetsbrevUtkast>({
     yta: "nyhetsbrev",
     klientId: client?.id,
@@ -89,12 +100,13 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
       setSourceBlogId(d.sourceBlogId ?? null); setLoadedId(d.loadedId ?? null);
     }, []),
     harInnehall: useCallback((d: NyhetsbrevUtkast) => Boolean(d.content || d.pasteText?.trim() || d.pasteTitle?.trim()), []),
+    nollstall: tomYtan,
   });
+  // "Börja om" = släng utkastet OCH töm ytan. Samma tömning som vid klientbyte, en källa.
   const borjaOm = useCallback(() => {
     glomUtkast();
-    setPasteTitle(""); setPasteText(""); setBlogId("");
-    setContent(null); setSubject(""); setCtaUrl(""); setSourceBlogId(null); setLoadedId(null); setErr("");
-  }, [glomUtkast]);
+    tomYtan();
+  }, [glomUtkast, tomYtan]);
 
   const updateContent = (patch: Partial<NewsletterContent>) => { setContent((c) => (c ? { ...c, ...patch } : c)); setSaved(false); };
   const updateSection = (i: number, patch: Partial<{ heading: string; body: string }>) => {

@@ -192,6 +192,15 @@ export default function VeckoplanPage() {
     [theme, response, startDate, scheduleAll],
   );
   type VeckoUtkast = typeof utkast;
+
+  // UTKAST-2: tömmer ytan vid klientbyte när den nya klienten saknar utkast. Utan den stod
+  // förra klientens vecka kvar under den nya klientens namn (Håkans fynd 10/8 i Studio —
+  // veckoplanen bar samma brist). Sparkvittot nollas med: "7 inlägg sparade" gällde förra
+  // klientens kalender och hade läst som ett kvitto på den nya.
+  const tomYtan = useCallback(() => {
+    setTheme(""); setResponse(null); setError(null); setSaveResult(null); setSavedCount(0);
+  }, []);
+
   const { aterupptaget, sparatVid, glomUtkast } = useUtkast<VeckoUtkast>({
     yta: "veckoplan",
     klientId,
@@ -203,11 +212,13 @@ export default function VeckoplanPage() {
       setScheduleAll(Boolean(d.scheduleAll));
     }, []),
     harInnehall: useCallback((d: VeckoUtkast) => Boolean(d.response || d.theme?.trim()), []),
+    nollstall: tomYtan,
   });
+  // "Börja om" = släng utkastet OCH töm ytan. Samma tömning som vid klientbyte, en källa.
   const borjaOm = useCallback(() => {
     glomUtkast();
-    setTheme(""); setResponse(null); setError(null); setSaveResult(null); setSavedCount(0);
-  }, [glomUtkast]);
+    tomYtan();
+  }, [glomUtkast, tomYtan]);
 
   return (
     <div className="max-w-5xl space-y-6">

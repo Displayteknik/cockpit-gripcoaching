@@ -1057,6 +1057,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setOverrides(DEFAULT_OVERRIDES); setBadgeEnabled(false);
     setLoadedPostId(null); setError("");
     setBildGenerationId(null); setBildOmdome(null); setBildOmdomeKommentar(""); setBildOmdomeSparat(false);
+    // UTKAST-2: utkastet bär även Compass-chipsen och kanalvalet. Stod de kvar hörde de
+    // fortfarande till förra klientens inlägg, och `channelsSeeded` hade dessutom hindrat
+    // förikryssningen från att läsa den NYA klientens kopplingar.
+    // ⚠ Ärlig gräns: kopplingsstatusen läses vid sidladdning, så förikryssningen efter ett
+    // byte kan bara utgå från det som lästes då.
+    setCompass({ funnel: null, four_a: null, disc: [] });
+    setSelectedChannels(["ig"]); setChannelsSeeded(false);
   }, []);
 
   const { aterupptaget, sparatVid, glomUtkast } = useUtkast<StudioUtkast>({
@@ -1069,16 +1076,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   });
 
   // "Börja om" = släng utkastet OCH töm ytan, så raden inte kommer tillbaka direkt.
+  // Samma tömning som vid klientbyte: EN källa, två anropare. Två listor som ska hålla
+  // samma sak isär glider isär — den här bar redan fyra rader mindre än `tomYtan`
+  // (bildomdömet från G-6 låg kvar bundet till en bild som inte fanns på skärmen).
   const borjaOm = useCallback(() => {
     glomUtkast();
-    setHeadline1(""); setHeadline2(""); setBody(""); setTopic("");
-    setImageUrl(""); setImageEdit(null); setEditedPreview(""); setAiImageDesc(null);
-    setImgText(""); setImgTextInfo(null); setVideoUrl("");
-    setCaption(""); setChannelCaptions({ ig: "", fb: "", li: "" });
-    setSuggestions([]); setSlides([]); setSlideIdx(0);
-    setOverrides(DEFAULT_OVERRIDES); setBadgeEnabled(false);
-    setLoadedPostId(null); setError("");
-  }, [glomUtkast]);
+    tomYtan();
+  }, [glomUtkast, tomYtan]);
 
   // ── Bibliotek: tidigare skapelser (studio_posts) ──
   const refreshPosts = useCallback(async () => {

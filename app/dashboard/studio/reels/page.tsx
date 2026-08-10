@@ -113,6 +113,18 @@ export default function ReelsPage() {
     [templateKey, ide, disc, board, reelId, aiBekraftad],
   );
   type ReelUtkast = typeof utkast;
+
+  // UTKAST-2: tömmer ytan vid klientbyte när den nya klienten saknar utkast. Utan den stod
+  // förra klientens storyboard kvar under den nya klientens namn (Håkans fynd 10/8 i Studio —
+  // reels bar samma brist). Den färdigrenderade videon släpps också: den är byggd ur förra
+  // klientens scener, och en kvarlämnad film hade varit fel kunds material i rätt kunds yta.
+  const tomYtan = useCallback(() => {
+    setIde(""); setBoard(null); setReelId(null); setSparad(false);
+    setAiBekraftad(false); setDisc(new Set()); setError(null); setCopied(null);
+    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    setVideoUrl(null); setVideoMb(0); setRenderProgress(0);
+  }, [videoUrl]);
+
   const { aterupptaget, sparatVid, glomUtkast } = useUtkast<ReelUtkast>({
     yta: "reels",
     klientId,
@@ -126,12 +138,13 @@ export default function ReelsPage() {
       setAiBekraftad(Boolean(d.aiBekraftad));
     }, []),
     harInnehall: useCallback((d: ReelUtkast) => Boolean(d.board || d.ide?.trim()), []),
+    nollstall: tomYtan,
   });
+  // "Börja om" = släng utkastet OCH töm ytan. Samma tömning som vid klientbyte, en källa.
   const borjaOm = useCallback(() => {
     glomUtkast();
-    setIde(""); setBoard(null); setReelId(null); setSparad(false);
-    setAiBekraftad(false); setDisc(new Set()); setError(null);
-  }, [glomUtkast]);
+    tomYtan();
+  }, [glomUtkast, tomYtan]);
 
   const mall = REEL_TEMPLATE_LIST.find((m) => m.key === templateKey);
 
