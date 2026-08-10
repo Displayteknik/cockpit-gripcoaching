@@ -68,6 +68,14 @@ export interface UtkastOpts<T> {
   aterstall: (d: T) => void;
   /** Finns det något värt att spara/återställa? Tomt läge sparas aldrig. */
   harInnehall: (d: T) => boolean;
+  /**
+   * Tömmer ytan. Anropas när man BYTER klient och den nya klienten saknar utkast.
+   *
+   * Utan den stod förra klientens texter kvar under den nya klientens namn — Håkans
+   * fynd 10/8. Anropas ALDRIG vid första sidladdningen: då finns inget att tömma, och
+   * ett nollställande där hade slagit sönder djuplänkar och öppnade inlägg.
+   */
+  nollstall?: () => void;
   /** Debounce i ms innan skrivning. Default 800. */
   fordrojning?: number;
 }
@@ -78,6 +86,7 @@ export function useUtkast<T>({
   data,
   aterstall,
   harInnehall,
+  nollstall,
   fordrojning = 800,
 }: UtkastOpts<T>): UtkastLage {
   const nyckel = utkastNyckel(yta, klientId);
@@ -93,23 +102,38 @@ export function useUtkast<T>({
   aterstallRef.current = aterstall;
   const harInnehallRef = useRef(harInnehall);
   harInnehallRef.current = harInnehall;
+  const nollstallRef = useRef(nollstall);
+  nollstallRef.current = nollstall;
 
   // ── Läs vid sidladdning / klientbyte ──
   useEffect(() => {
     if (!nyckel || lastNyckel.current === nyckel) return;
+    // ⚠ Håkans fynd 10/8: ETT KLIENTBYTE ÄR INTE EN SIDLADDNING.
+    // Bytte man till en klient UTAN sparat utkast returnerade effekten direkt, och
+    // förra klientens texter stod kvar på skärmen under den nya klientens namn:
+    // Displaytekniks skyltförslag låg kvar när AluCon var vald. Ingen data läckte
+    // mellan konton — allt är byråvyn — men nästa klick kunde ha publicerat fel
+    // kunds text i rätt kunds kanal.
+    //
+    // `byte` skiljer det verkliga bytet från första läsningen: vid sidladdning finns
+    // ingenting att tömma, och att nollställa då hade slagit sönder djuplänkar och
+    // återställda inlägg.
+    const byte = lastNyckel.current !== "";
     lastNyckel.current = nyckel;
     setAterupptaget(false);
     setSparatVid(null);
+    const tomYtan = () => { if (byte) nollstallRef.current?.(); };
     try {
       const tolkat = tolkaUtkast<T>(localStorage.getItem(nyckel));
-      if (!tolkat) { localStorage.removeItem(nyckel); return; }
-      if (!harInnehallRef.current(tolkat.data)) { localStorage.removeItem(nyckel); return; }
+      if (!tolkat) { localStorage.removeItem(nyckel); tomYtan(); return; }
+      if (!harInnehallRef.current(tolkat.data)) { localStorage.removeItem(nyckel); tomYtan(); return; }
       aterstallRef.current(tolkat.data);
       setAterupptaget(true);
       setSparatVid(tolkat.sparatVid);
     } catch {
       // Trasig/ofullständig JSON ska aldrig blockera ytan.
       try { localStorage.removeItem(nyckel); } catch { /* ignorera */ }
+      tomYtan();
     }
   }, [nyckel]);
 

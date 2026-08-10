@@ -1045,12 +1045,27 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     return Boolean(new URLSearchParams(window.location.search).get("post"));
   });
 
+  // Tömmer ytan vid klientbyte när den nya klienten saknar utkast. Utan den stod
+  // förra klientens texter kvar under den nya klientens namn (Håkans fynd 10/8).
+  // Samma rensning som "Börja om", men utan glomUtkast — det finns inget att glömma.
+  const tomYtan = useCallback(() => {
+    setHeadline1(""); setHeadline2(""); setBody(""); setTopic("");
+    setImageUrl(""); setImageEdit(null); setEditedPreview(""); setAiImageDesc(null);
+    setImgText(""); setImgTextInfo(null); setVideoUrl("");
+    setCaption(""); setChannelCaptions({ ig: "", fb: "", li: "" });
+    setSuggestions([]); setSlides([]); setSlideIdx(0);
+    setOverrides(DEFAULT_OVERRIDES); setBadgeEnabled(false);
+    setLoadedPostId(null); setError("");
+    setBildGenerationId(null); setBildOmdome(null); setBildOmdomeKommentar(""); setBildOmdomeSparat(false);
+  }, []);
+
   const { aterupptaget, sparatVid, glomUtkast } = useUtkast<StudioUtkast>({
     yta: "studio",
     klientId: djuplankPost ? null : client?.id,
     data: utkastData,
     aterstall: aterstallUtkast,
     harInnehall: utkastHarInnehall,
+    nollstall: tomYtan,
   });
 
   // "Börja om" = släng utkastet OCH töm ytan, så raden inte kommer tillbaka direkt.
@@ -1786,7 +1801,18 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
                 <label className="block text-sm font-medium text-gray-600 mb-1.5">Vill du ha hjälp att skriva? Berätta kort vad det handlar om:</label>
                 <input value={topic} onChange={(e) => setTopic(e.target.value)}
-                  placeholder='t.ex. "sommarens buketter" eller "20% på tisdagar"'
+                  // Håkans fynd 10/8, två fel i en platshållare:
+                  //  1. "sommarens buketter" är en blomsterbutik. Den stod hos AluCon, som
+                  //     säljer profilsystem i aluminium — samma familj som veckoplanens
+                  //     platshållare (FIX-1 C3b), skriven för EN kund och läst som en
+                  //     instruktion av alla andra. Klientobjektet här bär ingen bransch,
+                  //     så exemplet är neutralt i stället för gissat.
+                  //  2. "20% på tisdagar" lärde ut att skriva en RABATT. Prisregeln
+                  //     förbjuder priser i inlägg, och användarens egen text är den enda
+                  //     väg som öppnar undantaget (anvandarText i prompt-core). Rutan bjöd
+                  //     alltså in precis det som annars är spärrat.
+                  // Exemplen nedan lär ut FORMATET — ett kort ämne — utan bransch och utan tal.
+                  placeholder='t.ex. "en fråga vi får ofta" eller "det här är nytt hos oss"'
                   className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-base outline-none focus:border-gray-400" />
               </div>
             </section>

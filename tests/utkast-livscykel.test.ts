@@ -21,7 +21,7 @@ interface Session {
 const TOMT: Session = { topic: "", headline1: "", imageUrl: "", caption: "", suggestions: [] };
 
 // En minimal "yta" som använder hooken exakt som Studio/blogg/veckoplan gör.
-function Yta({ klientId, spion }: { klientId: string | null; spion: { session: Session; aterupptaget: boolean; satt?: (p: Partial<Session>) => void } }) {
+function Yta({ klientId, spion }: { klientId: string | null; spion: { session: Session; aterupptaget: boolean; nollstalld?: number; satt?: (p: Partial<Session>) => void } }) {
   const [s, setS] = useState<Session>(TOMT);
   const data = useMemo(() => s, [s]);
   const { aterupptaget } = useUtkast<Session>({
@@ -30,6 +30,9 @@ function Yta({ klientId, spion }: { klientId: string | null; spion: { session: S
     data,
     aterstall: useCallback((d: Session) => setS({ ...TOMT, ...d }), []),
     harInnehall: useCallback((d: Session) => Boolean(d.topic || d.headline1 || d.imageUrl || d.caption || d.suggestions?.length), []),
+    // Hakans fynd 10/8: vid klientbyte utan utkast maste ytan tommas, annars star
+    // forra klientens texter kvar under den nya klientens namn.
+    nollstall: useCallback(() => { setS(TOMT); spion.nollstalld = (spion.nollstalld ?? 0) + 1; }, [spion]),
     fordrojning: 0,
   });
   spion.session = s;
@@ -41,7 +44,7 @@ function Yta({ klientId, spion }: { klientId: string | null; spion: { session: S
 async function montera(klientId: string | null) {
   const el = document.createElement("div");
   document.body.appendChild(el);
-  const spion = { session: TOMT, aterupptaget: false } as { session: Session; aterupptaget: boolean; satt?: (p: Partial<Session>) => void };
+  const spion = { session: TOMT, aterupptaget: false, nollstalld: 0 } as { session: Session; aterupptaget: boolean; nollstalld: number; satt?: (p: Partial<Session>) => void };
   let root: Root;
   await act(async () => {
     root = createRoot(el);
@@ -123,5 +126,45 @@ describe("UTKAST-1 — omladdning behåller allt", () => {
     expect(localStorage.getItem(utkastNyckel("test", "klient-1"))).not.toBeNull();
     await a.skriv({ topic: "" });
     expect(localStorage.getItem(utkastNyckel("test", "klient-1"))).toBeNull();
+  });
+});
+
+describe("UTKAST · klientbyte lämnar aldrig kvar förra klientens text", () => {
+  // Håkans fynd 10/8: han stod på AluCon men såg Displaytekniks skyltförslag. Effekten
+  // returnerade direkt när den NYA klienten saknade utkast — utan att tömma ytan. Ingen
+  // data läckte mellan konton (allt är byråvyn), men nästa klick kunde ha publicerat fel
+  // kunds text i rätt kunds kanal.
+  it("byte till en klient UTAN utkast tömmer ytan", async () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    const spion = { session: TOMT, aterupptaget: false, nollstalld: 0 } as { session: Session; aterupptaget: boolean; nollstalld: number; satt?: (p: Partial<Session>) => void };
+    let root: Root;
+    await act(async () => {
+      root = createRoot(el);
+      root.render(createElement(Yta, { klientId: "klient-A", spion }));
+    });
+    // Klient A får innehåll som autosparas.
+    await act(async () => { spion.satt!({ topic: "A:s ämne", headline1: "A:s rubrik" }); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(spion.session.headline1).toBe("A:s rubrik");
+
+    // Byt till klient B, som aldrig sparat något.
+    await act(async () => { root!.render(createElement(Yta, { klientId: "klient-B", spion })); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+
+    expect(spion.nollstalld).toBe(1);
+    expect(spion.session.headline1).toBe("");
+    expect(spion.session.topic).toBe("");
+  });
+
+  it("första laddningen nollställer ALDRIG", async () => {
+    // Vid sidladdning finns inget att tömma, och ett nollställande där hade slagit
+    // sönder djuplänkar och öppnade inlägg.
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    const spion = { session: TOMT, aterupptaget: false, nollstalld: 0 } as { session: Session; aterupptaget: boolean; nollstalld: number; satt?: (p: Partial<Session>) => void };
+    await act(async () => { createRoot(el).render(createElement(Yta, { klientId: "helt-ny-klient", spion })); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(spion.nollstalld).toBe(0);
   });
 });

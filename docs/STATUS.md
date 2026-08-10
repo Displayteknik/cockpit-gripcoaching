@@ -92,7 +92,7 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | Siffergrinden i veckoplanen | KLART OCH VERIFIERAT | `generate/week/route.ts:208` + `:322`, commits `ea53435`+`74658b5` | Nej | Nej |
 | Perspektivregel | KLART OCH VERIFIERAT | `tests/perspektivregel.test.ts` | Nej | Nej |
 | Prisregel | KLART OCH VERIFIERAT | `tests/prisregel.test.ts` | Ja | Nej |
-| Autospar 5 ytor (UTKAST-1) | KLART OCH VERIFIERAT | `tests/utkast.test.ts`, `utkast-livscykel.test.ts` | Ja | Nej |
+| Autospar 5 ytor (UTKAST-1) | KLART OCH VERIFIERAT | `tests/utkast.test.ts`, `utkast-livscykel.test.ts`. **Fynd 10/8 (Håkan, i skarp drift): klientbytet tömde inte ytan.** Han stod på AluCon men såg Displaytekniks skyltförslag. Orsak: `useUtkast` returnerade direkt när den NYA klienten saknade utkast, utan att nollställa — förra klientens texter stod kvar under den nya klientens namn. Ingen data läckte mellan konton (allt är byråvyn), men nästa klick kunde ha publicerat fel kunds text i rätt kunds kanal. Haken tar nu en `nollstall`-callback som körs vid BYTE men aldrig vid första laddningen (annars hade djuplänkar och öppnade inlägg slagits sönder). 2 nya tester. ⚠ **Bara Studio är inkopplad** — nyhetsbrev, reels, veckoplan och blogg har kvar samma brist och är första punkten nästa session | Ja | Nej |
 
 ## FIX-1
 
