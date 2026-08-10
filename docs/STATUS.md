@@ -15,14 +15,18 @@ facit. Statusnivåer: `KLART OCH VERIFIERAT` · `KLART, EJ VERIFIERAT` · `PÅB�
 
 | Nivå | Antal |
 |---|---|
-| KLART OCH VERIFIERAT | 34 |
-| KLART, EJ VERIFIERAT | 12 |
+| KLART OCH VERIFIERAT | 38 |
+| KLART, EJ VERIFIERAT | 11 |
 | PÅBÖRJAT | 6 |
-| BESTÄLLT, EJ PÅBÖRJAT | 26 |
+| BESTÄLLT, EJ PÅBÖRJAT | 23 |
 | PARKERAT | 8 |
 | **Totalt** | **86** |
 
 *Uppdaterad 9/8 efter Håkans STATUS-1-beslut: rapporterna dolda, två felmarkerade rader rättade.*
+*Uppdaterad 10/8: G-3d, G-4, G-5 och G-6 klara och bevisade. T-6c gick från KLART, EJ
+VERIFIERAT till verifierad; G-4/G-5/G-6 från BESTÄLLT till verifierade. Kvar i
+GRANSK-serien: G-7 (blindtestet — Håkans egen bedömning), G-8 (mätloopen — kräver
+Instagram-omkoppling per kund) och G-9 (kvalitetssidan).*
 
 ### Topp 5 kundsynliga brister, efter risk
 
