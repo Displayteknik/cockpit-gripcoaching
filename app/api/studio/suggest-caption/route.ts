@@ -4,6 +4,7 @@ import { generateWithUsage } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { hamtaNyligen } from "@/lib/rotation";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { ctaVagForVariant, perspektivForVariant, vinkelMedVag } from "@/lib/cta-vagar";
 import { sakerstallCaption, talTokens } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
@@ -202,8 +203,22 @@ export async function POST(req: NextRequest) {
       const valda = ANGLAR.slice(0, n);
       // Sanering + CTA-golv sker inuti genMedCtaGolv, per variant. Varje variant får
       // sin EGNA enda omgenerering — en variant som klarar golvet rörs aldrig.
+      //
+      // CTA-2 (Håkans fynd 10/8): kroken varierade, avslutet gjorde det inte. Alla tre
+      // varianter slutade "Skicka en bild på platsen så får du en offert inom 24 timmar"
+      // — profilens starkaste CTA vinner varje gång när ingenting säger något annat. Och
+      // varianterna körs PARALLELLT, så de kan inte undvika varandra: vägen framåt måste
+      // delas ut per variant, inte önskas. Golvet är orört — sista meningen är fortfarande
+      // en uppmaning som namnger en väg, det är VILKEN väg som skiljer sig.
       const variants = await Promise.all(
-        valda.map(async (v) => ({ angle: v.angle, ...(await genMedCtaGolv(v.instruktion, `variant ${v.angle}`)) })),
+        valda.map(async (v, i) => {
+          const vag = ctaVagForVariant(i);
+          return {
+            angle: v.angle,
+            ctaVag: vag.namn,
+            ...(await genMedCtaGolv(vinkelMedVag(v.instruktion, vag, perspektivForVariant(i)), `variant ${v.angle}/${vag.namn}`)),
+          };
+        }),
       );
       return NextResponse.json({ variants: variants.filter((v) => v.caption) });
     }

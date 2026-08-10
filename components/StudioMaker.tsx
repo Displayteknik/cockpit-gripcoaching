@@ -5,6 +5,7 @@ import { FunctionGuide } from "@/components/FunctionGuide";
 import ProfilGrind from "@/components/profile/ProfilGrind";
 import UtkastRad from "@/components/UtkastRad";
 import { useUtkast } from "@/lib/studio/useUtkast";
+import { CTA_VAG_ETIKETT } from "@/lib/cta-vagar";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -238,7 +239,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // G-1c: varje variant bär sitt eget genererings-id, så den variant användaren VÄLJER
   // är den som binds till inlägget. De som inte väljs förblir ovalda i loggen — det är
   // just skillnaden mellan "genererat" och "använt" som gör mätningen värd något.
-  const [captionVariants, setCaptionVariants] = useState<{ angle: string; caption: string; generationId?: string | null }[]>([]);
+  // CTA-2: `ctaVag` är vägen framåt varianten fick tilldelad (kommentar/meddelande/spara-dela/
+  // egen kanal). Den visas i kortet så skillnaden mellan varianterna syns FÖRE man läser dem.
+  const [captionVariants, setCaptionVariants] = useState<{ angle: string; ctaVag?: string; caption: string; generationId?: string | null }[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [ghlConnected, setGhlConnected] = useState<boolean | null>(null);
   const [ghlAccounts, setGhlAccounts] = useState<GhlAccount[]>([]);
@@ -2616,7 +2619,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {captionVariants.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant, jämför krokarna</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant — olika krok OCH olika väg framåt</span>
                     <button onClick={() => setCaptionVariants([])} className="text-xs text-gray-400 hover:text-gray-700">Dölj</button>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-2">
@@ -2628,6 +2631,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           style={vald ? { borderColor: primary, boxShadow: `0 0 0 2px ${primary}` } : { borderColor: "#e5e7eb" }}>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <span className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${primary}1a`, color: primary }}>{v.angle}</span>
+                            {v.ctaVag && <span className="text-xs text-gray-500">{CTA_VAG_ETIKETT[v.ctaVag] || v.ctaVag}</span>}
                             {vald && <span className="text-xs font-semibold text-emerald-600">✓ vald</span>}
                           </div>
                           <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-[10] leading-relaxed">{v.caption}</p>
