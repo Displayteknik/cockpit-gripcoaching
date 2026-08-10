@@ -168,6 +168,35 @@ const CTA_GOLV = [
   "Innehåller varumärkesprofilen färdiga CTA-formuleringar (Erbjudande/CTA-sektion, kundens egna ord): FÖREDRA dem framför nyskrivna.",
 ].join("\n");
 
+// ── CTA-TYPKRAVET (G-5) — typens EXISTENS är hård, nivån får vara mjuk ──────
+//
+// G-0 0.3d: FUNNEL_CTA och CTA_GOLV finns, men når nästan aldrig fram. Orsaken satt i
+// EN parentes: vid mjukt satt funnel lades raden "(Funnel-nivån ovan är förvald — väg in
+// den bara om inget annat framgår av ämnet.)" EFTER hela compass-blocket. Blocket bär
+// både funnel-nivån OCH CTA-typen, så mjukningen gällde båda. Nettot: nivån var mjuk
+// (som avsett) men TYPEN blev också frivillig (inte avsett), och kvar stod bara golvets
+// krav på "en uppmaning i imperativ" — vilket ger "Hör av dig gärna" och inget mer.
+//
+// Håkans beslut står fast: funnel-designen ändras inte, BOFU aldrig som default. Det
+// G-5 gör är att skilja de två frågorna åt:
+//   NIVÅN  (tofu/mofu/bofu) → styr VILKEN typ som passar och hur hårt den trycker. Mjuk.
+//   TYPEN  (att uppmaningen ÄR av en bestämd sort) → hård, alltid, oavsett läge.
+//
+// Blocket ligger sist (tyngst) och gäller varje "full"-variant, även den utan compass.
+const CTA_TYP_KRAV = [
+  "HÅRD REGEL (CTA-TYP): uppmaningen ska vara av EN bestämd typ, och typen ska synas i själva formuleringen:",
+  "- ENGAGEMANG: be om ett svar i kommentarerna eller en delning. \"Skriv JA i kommentarerna om du känner igen dig.\" \"Dela med någon som behöver läsa det här.\"",
+  "- NÄSTA STEG: peka på något konkret att hämta, läsa eller titta på. \"Skicka ordet GUIDE i DM så får du den.\" \"Läs hela caset via länken i profilen.\"",
+  "- DIREKT: be om kontakt för det klienten säljer. \"Boka ett kostnadsfritt samtal via länken.\"",
+  "EN UPPMANING UTAN TYP ÄR INGEN UPPMANING. \"Hör av dig gärna\", \"Vi finns här för dig\", \"Kontakta oss vid frågor\" och \"Tveka inte att höra av dig\" är konstateranden utan väg och är UNDERKÄNDA — de säger inte VAD läsaren ska göra eller VAR.",
+  // Meningen om FÖRVALD nivå hörde inte hemma här — den hårda grenen har en aktivt satt
+  // nivå och ska inte bära en sats om ett läge som inte gäller. Den ligger i stället i
+  // den mjuka grenens parentes. Fångat av tests/prompt-core.test.ts, som kräver att
+  // ordet "förvald" aldrig dyker upp när parametrarna är uttryckliga.
+  "VILKEN typ som passar styrs av funnel-nivån ovan. Byt ALDRIG till en säljande uppmaning om inte ämnet uttryckligen handlar om att köpa, boka eller begära offert.",
+  "Nivån får alltså väga lätt. Kravet att uppmaningen har en typ och en väg väger ALDRIG lätt.",
+].join("\n");
+
 // ── SANNINGSKRAV (T-6b, skärpt A2) — KRITISK trovärdighetsregel, alla flöden ─
 // Skarptestet fångade en caption som började "Jag minns en fastighetsägare som var
 // orolig..." — ett påhittat minne. Berättelser, kundcase, citat och siffror får
@@ -313,10 +342,19 @@ export function anatomiBlock(variant: "full" | "pa-bild" | "dialog" | "story", c
     ].join("\n");
   }
   const harParams = !!(compass && (compass.funnel || compass.four_a || (compass.disc || []).length));
-  if (harParams) return `${contentCompassBlock(compass!)}\n${CTA_GOLV}`;
+  if (harParams) return `${contentCompassBlock(compass!)}\n${CTA_GOLV}\n${CTA_TYP_KRAV}`;
   if (mjukDefault) {
     const block = contentCompassBlock({ funnel: mjukDefault, four_a: null, disc: [] });
-    return `${block}\n(Funnel-nivån ovan är förvald för den här innehållstypen — väg in den bara om inget annat framgår av ämnet.)\n${CTA_GOLV}`;
+    // G-5: mjukningen är omformulerad så den träffar NIVÅNS TYNGD, inte CTA-typen.
+    // Förut stod "väg in den bara om inget annat framgår av ämnet" efter hela blocket
+    // och gjorde även typen frivillig. Typkravet läggs sist och kan därför inte
+    // mjukas upp av raden ovanför.
+    return [
+      block,
+      "(Funnel-nivån ovan är förvald för den här innehållstypen, inte aktivt satt. Den styr hur hårt texten trycker — väg in tyngden lätt om ämnet drar åt annat håll. Uppmaningens TYP är däremot inte förhandlingsbar, se nedan: nivåns egen CTA-typ gäller som förstahandsval, och du byter typ bara om ämnet uppenbart kräver något annat.)",
+      CTA_GOLV,
+      CTA_TYP_KRAV,
+    ].join("\n");
   }
   return [
     "=== INLÄGGSANATOMI (följ i ordning) ===",
@@ -325,6 +363,10 @@ export function anatomiBlock(variant: "full" | "pa-bild" | "dialog" | "story", c
     `3. ${POST_ANATOMY.nytta}`,
     `4. ${POST_ANATOMY.cta}`,
     CTA_GOLV,
+    // G-5: även utan funnel-nivå ska uppmaningen ha en typ. Utan den här raden var
+    // det här den svagaste vägen av alla — golvet krävde en imperativ, men ingenting
+    // krävde att den ledde någonstans.
+    CTA_TYP_KRAV,
   ].join("\n");
 }
 
@@ -429,6 +471,10 @@ const VERSIONERADE_REGLER = (): string[] => [
   anatomiBlock("pa-bild"),
   anatomiBlock("dialog"),
   anatomiBlock("story"),
+  // G-5: den MJUKA grenen är en egen regeluppsättning och versioneras separat. Den
+  // var den svagaste vägen (mjukningen gällde även CTA-typen) och är den som ändrades
+  // — utan raden här hade rättelsen inte synts i promptversionen alls.
+  anatomiBlock("full", undefined, "tofu"),
   // G-4: BÅDA grenarna versioneras. Utan-material-grenen är ren regeltext; med-material-
   // grenen matas med ett fast provvärde så att inramningen ("HÅRD REGEL", "PRISER ÄR
   // INTE BEVIS") hashas utan att tenantens egna siffror hamnar i versionen. En version

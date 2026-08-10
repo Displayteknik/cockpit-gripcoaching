@@ -53,6 +53,14 @@ export const DISC_TONE: Record<DiscLetter, string> = {
   S: "trygghet, relation, vi-känsla, lugnt tempo",
   C: "fakta, detaljer, belägg, strukturerat",
 };
+// ⚠ G-5, KÄND LUCKA SOM MEDVETET INTE BYGGS (Håkans beslut): mallen ber läsaren svara
+// med ett NYCKELORD — men mottagarsidan finns inte. `/api/lobby/*` har `contacts`,
+// `extract`, `sync` och `suggest-reply`; ingen väg registrerar en kommentator som lead
+// när nyckelordet kommer in. Nyckelords-CTA:n fungerar alltså som text men leder inte
+// vidare i systemet, och den som svarar syns bara om någon läser kommentarerna manuellt.
+// Det är hanterbart idag EFTERSOM bofu aldrig är default (DEFAULT_FUNNEL i prompt-core
+// sätter aldrig bofu) — mallen når bara den som aktivt väljer bofu. Slås bofu på brett
+// måste mottagarsidan byggas först, annars lovar texten en väg in som inte finns.
 export const BOFU_CTA_MALL = "Om du är [målgrupp] och du inte [problem], då kommer jag [lösning] så att du kan [drömmål]. Svara [NYCKELORD].";
 
 // Bygger promptblocket (lager 2 till 5) för givna Compass-parametrar. Tom sträng om inget satt.

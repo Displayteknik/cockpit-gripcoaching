@@ -49,7 +49,11 @@ import { loggaGenerering, kopplaTillInlagg, markeraKasserad, loggFormat, loggFun
 // den med material ("använd dessa siffror, priser är inte bevis") och den utan
 // ("du har inget att belägga med — skriv utan sifferpåståenden"). Skillnaden i utfall
 // mellan de två grenarna är hela det G-4 ska gå att mäta.
-const LAST_VERSION = "v1-b9ab87e2";
+// 2026-08-10: G-5 lade till CTA-typkravet (b9ab87e2 → 3b3ea753). Den MJUKA grenen
+// versioneras nu separat — det var den som ändrades: mjukningen gällde förut även
+// CTA-typen, så nivån OCH typen blev valfria tillsammans. Nu är typen hård i alla tre
+// grenarna (satt compass, mjuk default, ingen compass).
+const LAST_VERSION = "v1-3b3ea753";
 
 beforeEach(() => {
   svar.data = null;

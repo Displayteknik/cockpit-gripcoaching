@@ -214,7 +214,7 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | G-2 formatanatomier som data | KLART OCH VERIFIERAT | **Kört skarpt 9/8, `scripts/g2-dod.mjs` (11 kontroller).** `lib/format-anatomi.ts` = anatomierna som data. **Story finns nu som syfte** (`TextSyfte`, egen anatomi, kopplad i `lib/studio/copy.ts` på 9:16 utan video) — bevisat: en story gav "Öppet till 18 idag", 4 ord, och raden i loggen bär `syfte=story`. **Karusellanatomin ur data** — rollista, anatomitext, JSON-schema och slide-räkning kommer nu ur SAMMA källa (förut tre uttryck på tre ställen); 4 punkter gav exakt 6 slides. Insats- och bevis-roller finns som valbara, av som standard. **Alla fyra reelmallar börjar med krok** — "Före och efter" saknade den helt och började med 3 s problem. **Säkerhetszon för statiska format** (`SAKER_ZON` + bildrad). **Skenfrågegrinden når alla flöden** via `rattaSkenfragor` i `saneraText`, deterministiskt. **Hashtags går genom prompt-core** — loggas nu med promptversion. **20 enhetstester.** ⚠ Insats/bevis styr dramaturgin i prompten men landar som `point` i payloaden: mallarna ritar tre roller | Ja | Nej |
 | G-3 hook-lagret | PÅBÖRJAT (G-3a klar) | **9/8:** `lib/hook-typer.ts` — EN lista i stället för tre. G-0 hittade tre osammanhängande: playbookens fem typer, VARIANTREGELNS åtta ingångar och DISC:ens fyra tonlägen. De var tre olika INDELNINGAR av samma sak, delvis motstridiga. Playbookens fem är nu stommen (flödena namnger dem redan i sin JSON), VARIANTREGELNS extra ingångar blev VINKLAR inom en typ. `kraver`-fältet bär materialkravet hos typen själv, så varje flöde kan ställa samma fråga — förut låg den kunskapen bara i `lib/studio/copy.ts`. `VARIANTREGEL` byggs ur listan. ⚠ **Fångat av test:** den genererade texten tappade först förbehållet "endast verifierad ur profilen" — utan det blir regeln en uppmaning att hitta på ett tal. Förbehållet följer nu med typen. Promptversion `v1-5082a4b7` → `v1-32a4ec3d`, låset fällde ändringen. **G-3b, `hook_typ` skrivs nu:** kolumnen har funnits sedan G-1 utan att någon skrev den — en kolumn som alltid är tom är samma tysta lösa löfte som resten av dagen handlat om. `iterateGenerate` tar `hookTyper[]` i samma ordning som `variantSuffixes`, och eftersom **varje variant är ett eget betalt anrop** får varje variant sin EGEN rad med rätt hooktyp. En sammanslagen rad hade dolt spridningen, som är hela poängen med iterationsloopen. **G-3c klar:** `copy.ts` ställer nu materialfrågan till `lib/hook-typer` i stället för att ha egen kod — bildrollen ägs kvar där (bara det flödet vet något om den). `tests/g3-hooktyper.test.ts` (11 tester) innehåller ett **ekvivalenstest** som kör gammal och ny regel mot alla bildroller × all täckning: uppstädningen fick inte vara en tyst regeländring. **G-3d KLAR 9/8:** `nyligen` nådde 4 av 21 anropsställen (G-0 mätte 2, två kopplades in däremellan) → nu **14 av 21** genom `lib/rotation.ts`, som ger varje flöde EN källa till sin egen historik. Nya inkopplingar: karusell, studio-text/story, reel, nyhetsbrev, blogg (två vägar), veckoplan (två vägar), enskilt, fordon och **nattloopen** — det flöde där rotationen betyder mest, eftersom den kör varje natt mot samma profil med samma uppdrag och utan undvik-lista producerade samma idé om och om igen. De 7 återstående är MEDVETNA undantag med skäl i koden: `kanal-anpassning` ×4 (skriver om en text användaren just lämnat in — undvik-listan hade dragit omskrivningen bort från det den ska behålla), `dm-svar` (ett svar till en person, inte ett inlägg i en serie), hashtags (ska vara KONSEKVENTA över tid, annars byggs ingen sökbar tagg) och interaktiv specialist (`specialist_runs` blandar alla specialister — de senaste raderna är oftast någon annans svar). LinkedIn-idéer behåller sin egen läsning: den bär pelarprefix och status-filter som den generella källan inte modellerar, och en tyst "uppstädning" hade tappat båda. **Bevis:** `scripts/g3d-dod.mjs` 18 kontroller, före/efter mot skarp tenant. **15 enhetstester.** ⚠ Fem källor är inkopplade men ännu obevisbara i skarp data (nyhetsbrev 1 rad, reel 2, veckoplan 1 tenant) — redovisas som "ingen historik", aldrig som godkänt | Ja | Nej |
 | G-4 bevis-motorn | KLART OCH VERIFIERAT | **9/8, `scripts/g4-dod.mjs` (19 kontroller) + `tests/g4-bevis.test.ts` (19 tester).** **Fyndet som blockerade etappen:** bevis-motorns utpekade huvudkälla — "profilens verifierade siffror" — fanns inte som fält. Enda numeriska fältet var `pricing_notes`, exakt det som prisregeln spärrar. Mätt över alla nio profiler: **20 av 51 tal som profilmätaren räknade som "siffror vi får använda" fanns BARA i pricing_notes** (For Balance 17 av 31). Nivå 5 heter "Med bevis" och lovar "texterna kan använda dina siffror" — ett löfte ingen kod kunde hålla. Åtgärdstexten bad dessutom kunden lägga in **priser** som bevissiffror. Håkans beslut 9/8: bygg fältet + rätta räkningen. **Byggt:** migration `g4_bevis.sql` (`verified_numbers`, körd), `lib/bevis.ts` (bevisläget per tenant + promptblocket), lagret inkopplat på KÄRNANS väg i `prompt-core` (når alla anropsställen, inte 21 ändringar — samma val som G-1), ny ruta "Siffror du kan stå för" i profilformuläret, och prisrutans hjälptext rättad (den lovade förut att priser skulle användas i inlägg — motsatsen till prisregeln, och sannolikt källan till missförståndet). Mätaren räknar inte längre `pricing_notes`; **ingen tenant byter nivå** av rättningen (kontrollerat: de tre som klarade fem siffror klarar det utan priserna). **Två grenar, och det är hela poängen:** med material blir lagret en INBJUDAN med siffrorna uppräknade; utan material ett uttryckligt FÖRBUD ("skriv helt utan sifferpåståenden", inkl. förbud mot antydd mätning som "många kunder vittnar om"). Ett tomt lager plus en anatomi som kräver bevis ÄR beställningen att fabricera. **Vinnande exempel förblir stilreferens**, aldrig citatkälla — en färdig text är ingen kontrollerad uppgift. **★ Karusellens bevis-slide är PÅ**, men gatad på faktiskt material: 7 slides hos Opticur (har bevis), 6 hos AluCon (har inte). **Bevis:** lager.bevis=true hos Opticur, false hos AluCon; **kundvägen bevisad före/efter** — AluCon gick false → true enbart av att ett värde skrevs i den nya rutan via samma API som formuläret, och fältet återställdes efteråt; **0 prisläckage** i 3 genereringar på prisfrågande ämnen mot For Balance (den tenant där risken är störst). Promptversion `v1-32a4ec3d` → **`v1-b9ab87e2`**, låset fällde ändringen. ⚠ Payloadens slide-typ har fortfarande tre roller — insats/bevis landar som `point` (känd G-2-gräns): antalet slides bevisar att rollistan bar bevis-sliden, inte att sliden bär ett bevis | Ja | **Var ja — nu nej** |
-| G-5 CTA-motorn | BESTÄLLT, EJ PÅBÖRJAT | BOFU aldrig default (31/7 står fast). Mottagarsidan för nyckelords-CTA saknas i `/api/lobby/*` | Ja | Nej |
+| G-5 CTA-motorn | KLART OCH VERIFIERAT | **10/8, `scripts/g5-dod.mts` (16 kontroller) + `tests/g5-cta-motor.test.ts` (25 tester).** **Rotorsaken satt i EN parentes:** vid mjukt satt funnel lades raden "(väg in den bara om inget annat framgår av ämnet)" EFTER hela compass-blocket. Blocket bär både funnel-nivån OCH CTA-typen, så mjukningen gällde båda. Nivån skulle vara mjuk (avsett), typen blev det också (inte avsett) — kvar stod bara golvets krav på en imperativ, vilket ger "Hör av dig gärna" och inget mer. **Byggt:** `CTA_TYP_KRAV` i prompt-core — typen är hård i ALLA tre grenarna (satt compass, mjuk default, ingen compass), mjukningen omformulerad så den träffar nivåns TYNGD. Plus en deterministisk grind, `harCtaVag` + `CTA_VAG_SKARPNING` i `sakerstallCaption`: golvet kontrollerade bara att en uppmaning FANNS, och "Hör av dig" passerade — verbet står i golvets egen godkända lista. Grinden kollar att avslutet NAMNGER en väg (kanal, länk, nyckelord, plats eller handling med konkret objekt) och gör exakt EN omgenerering, fail-open som resten. **BOFU orört:** typkravet säger uttryckligen att man aldrig byter till säljande uppmaning om inte ämnet handlar om att köpa; 57 genereringar i mätfönstret, noll fick bofu. **Bevis:** 12 skarpa captions över TVÅ branscher (For Balance, Engens Träd) — 12/12 slutar med en uppmaning som leder någonstans. ⚠ **Två fel som DoD:n hittade och som är rättade:** (1) första DoD:n var `.mjs`, kunde inte importera writing-rules, hoppade över hela mätningen och rapporterade ändå grönt — ihåligt grönt, nu `.mts` med import av produktionskoden; (2) grinden underkände fyra fungerande avslut i rad hos Engens ("Skicka en bild på trädet så tittar vi på det") — handlingens objekt ÄR vägen. Rättat och låst med fyra regressionstester. Promptversion `v1-b9ab87e2` → **`v1-3b3ea753`**. **Mottagarsidan för nyckelords-CTA är fortfarande inte byggd** (Håkans beslut) — noterad i koden vid `BOFU_CTA_MALL`: `/api/lobby/*` kan inte registrera en kommentator som lead. Hanterbart eftersom bofu aldrig är default; slås bofu på brett måste mottagarsidan byggas FÖRST | Ja | **Var ja — nu nej** |
 | G-6 bildfeedback | BESTÄLLT, EJ PÅBÖRJAT | Delvis förarbete finns: `image_feedback` + `ImagePicker` tumme, men bara i LEGACY-vägen (`/api/social/generate-image`). Studios Bildhjälpen läser den inte. Ingen kommentar, inget generations-id | Ja | Nej |
 | G-7 blindtest mot ribba | BESTÄLLT, EJ PÅBÖRJAT | — | Ja | Nej |
 | G-8 mätloopen | BESTÄLLT, EJ PÅBÖRJAT | Kräver Meta-omkoppling per tenant | Ja | Nej |
@@ -310,3 +310,74 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 - HANDOFF §3 "Pågår: inget bygge" och "Väntar på Håkan: Klartecken för STEG 2 (KOSTNAD-1)"
   — KOSTNAD-1 är levererad sedan 2/8
 - Rot-`STATUS.md` bör dateras om eller hänvisa hit, annars läses den som aktuell
+
+---
+
+# BETAL-1 — kundfakturering, Stripe och betalspärr (2026-08-09)
+
+Ersätter K2-4-piloten i masterkön. Bygger ovanpå K2-creditsystemet och KOSTNAD-1:s ledger.
+Ingenting rivet: `credit_accounts`, `credit_transactions`, `credit_pricing` och `topup_orders`
+är orörda, och Displaytekniks skarpa saldo (150/300) rördes aldrig.
+
+## Levererat
+
+| Del | Filer | Status |
+|---|---|---|
+| Databas (8 tabeller, RLS på utan anon-policy) | `migrations/billing.sql` | **KÖRD** mot Supabase, verifierad via REST |
+| Inställningar med krypterade Stripe-nycklar | `lib/billing/installningar.ts` | Verifierat: klartext finns inte i DB |
+| Stripe-klient och kopplingstest | `lib/billing/stripe.ts` | `stripe@22.4.0` |
+| Kundaffärer, datummatte, MRR | `lib/billing/avtal.ts` | 38 tester |
+| Statusmaskin och spärr | `lib/billing/status.ts` | Bevisad med curl, se nedan |
+| Webhooks med idempotens | `lib/billing/webhook.ts`, `app/api/stripe/webhook/route.ts` | Signaturgrindad, ej körd mot riktig Stripe |
+| Påminnelsetrappa | `lib/billing/paminnelser.ts` | Ej körd skarpt (dunning av) |
+| Ownervy, fem flikar | `app/dashboard/betalning/*`, `app/api/billing/route.ts` | Verifierad i webbläsaren |
+| Kundens betalsida | `app/k/betalning/*`, `app/api/k/betalning/route.ts` | Verifierad i webbläsaren |
+| Tokens (namnbyte, mätare, 80/95/100) | `components/TokenMatare.tsx`, `app/k/credits/*` | Verifierad i webbläsaren |
+| Dygnsjobb | `app/api/billing/cron/route.ts`, `vercel.json` | Ej körd i produktion |
+
+## Spärren — fyra lager, en källa (`hamtaBetalstatus`)
+
+1. `lib/customer-context.ts` — `billing_status` i sessionen
+2. `app/k/layout.tsx` — sidspärr för alla `/k`-sidor utom betalsidan
+3. `lib/api-auth.ts` `requireAdminOrCustomer()` — **402** på API-nivå
+4. `lib/ai-usage.ts` — betalstopp på providervägen (fångar cron utan session)
+
+**Bevis (localhost, 2026-08-09):** Displayteknik pausad via ownervyn →
+`POST /api/studio/suggest-caption` 402 · `POST /api/linkedin/ideas` 402 · `GET /api/fokus/board` 402 ·
+`GET /api/k/betalning` **200** (måste vara öppen, annars kan kunden inte betala sig ut).
+Upplåst igen → alla fyra 200. Tenanten står i `aktiv` efteråt.
+
+## Två skyddsnät som gör att INGEN kund kan spärras av misstag idag
+
+- `billing_settings.dunning_aktiv = false` — automatiken är av tills Håkan slår på den
+- Går statusläsningen sönder returneras `aktiv` (fail-open åt kundens håll)
+- En kund utan e-postadress spärras aldrig, den hamnar i listan `utan_mottagare` i stället
+
+## Ej gjort, medvetet
+
+- Ingen kundaffär inlagd. Beloppen och datumen är Håkans, inte mina — formuläret står tomt.
+- Stripe-nycklar ej ifyllda, Stripe-konto ej skapat, inget kört mot riktig Stripe-miljö.
+- Test clocks, hela livscykeln och kvittolistan med riktig PDF återstår (kräver Stripe-konto).
+
+## Tillägg 2026-08-10 — inmatningssidan byggd för att fyllas i
+
+Fliken Kundaffärer gjordes om från visningsyta till inmatningsyta, `app/dashboard/betalning/Kundaffarer.tsx`.
+
+- **Framstegsrad**: "0 av 13 kunder har en affär inlagd" plus knappen **Fyll i nästa**.
+- **Filterchips**: Alla · Saknar affär · Saknar fakturamejl · Betalproblem, med antal.
+- **Sök** på kundnamn.
+- **Spara och nästa kund** hoppar direkt till nästa kund som saknar affär, utan att stänga.
+- **Nästa betalning räknas fram medan man skriver** — samma funktioner som servern använder.
+  Räknelogiken flyttades till `lib/billing/datum.ts` (inga imports) så den kan köras i
+  webbläsaren. `avtal.ts` re-exporterar den, så inget anropsställe behövde ändras.
+- **Inga native-dropdowns** i de fält som rörs oftast: plan är kort, intervall, betalsätt
+  och status är segmenterade knappar, belopp har snabbval för planpriserna.
+- Kund med affär men utan fakturamejl flaggas i listan och i redigeraren, med texten om
+  att den aldrig kan påminnas och därför aldrig heller pausas.
+
+**Verifierat i webbläsaren 2026-08-10**: plan intro + startdatum 2026-02-15 gav direkt
+"Nästa betalning 15 augusti 2026, om 6 dagar, 2 488 kr med moms" utan att spara. Spara och
+nästa kund sparade AluCon, uppdaterade räknaren till 1 av 13, satte MRR till 1 990 kr och
+öppnade Annas Blommor. Testaffären raderades efteråt, `billing_avtal` är tom.
+
+Build ren, tsc ren, 895 tester passerar (41 på betalningslogiken).

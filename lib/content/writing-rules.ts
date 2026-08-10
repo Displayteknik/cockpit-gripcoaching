@@ -432,6 +432,61 @@ export const CTA_SKARPNING = [
   "Finns hashtags ligger de kvar EFTER uppmaningen, på egen rad sist.",
 ].join("\n");
 
+// ── CTA-VÄGEN (G-5) — uppmaningen ska leda NÅGONSTANS ───────────────────────
+//
+// Golvet ovan kontrollerar att det FINNS en imperativ uppmaning sist. Det räcker inte:
+// "Hör av dig gärna." passerar golvet fullständigt — verbet står till och med i den
+// godkända verblistan i CTA_SKARPNING. Men läsaren får ingen väg. G-0 0.3d beskrev
+// samma sak från prompthållet: CTA-TYPEN nådde nästan aldrig fram.
+//
+// Grinden är avsiktligt GENERÖS. Den letar efter minsta tecken på en väg — en kanal, en
+// länk, ett nyckelord, en plats, en handling som går att utföra. Hellre släppa igenom en
+// svag CTA än att skicka en fungerande text på omgenerering. Falskt utslag kostar ett
+// extra anrop; falskt godkännande kostar en text som inte leder någonstans.
+const CTA_VAG_MONSTER: RegExp[] = [
+  // Kanal: DM, meddelande, kommentar, mejl, telefon, chatt
+  // Böjningsformerna måste med: verbet ÄR ofta kanalen ("Mejla en bild", "Ringer du
+  // så..."). Ett \b direkt efter stammen missade "Mejla" — fångat av testet nedan.
+  /\b(dm|d\.m\.|direktmeddelande|meddelande|inkorg|kommentar\w*|mejl\w*|mail\w*|e-post\w*|ring\w*|telefon\w*|sms\w*|chatt\w*)\b/i,
+  // Länk och dess vanliga svenska omskrivningar
+  /\b(l(ä|a)nk(en|arna)?|bion?|profilen|hemsidan|sajten|webbplatsen|formul(ä|a)ret|kalendern|bokningssidan)\b/i,
+  // Nyckelord: versalt ord om minst tre tecken (mallen "Svara GUIDE")
+  /\b(skriv|svara|kommentera|mejla|skicka)\b[^.!?]{0,40}\b[A-ZÅÄÖ]{3,}\b/,
+  // Konkret handling med eget mål
+  /\b(boka|anm(ä|a)l|best(ä|a)ll|ladda ner|h(ä|a)mta|prova|testa|bes(ö|o)k|kom förbi|swisha|dela|tagga|f(ö|o)lj)\b/i,
+  // Handling vars OBJEKT är vägen: "Skicka en bild på trädet", "Visa oss ditt fönster",
+  // "Ställ din fråga". Läsaren vet exakt vad hen ska göra även utan utpekad kanal.
+  // ⚠ Fångat av G-5:s DoD mot Engens Träd: grinden underkände fyra fullt fungerande
+  // avslut i rad. Verbet ensamt räcker inte — det är verb + konkret objekt som gör
+  // vägen. Därför krävs ett efterföljande ord: "Skicka" ensamt duger inte, "Skicka en
+  // bild" gör det. "Hör av dig" och "Kontakta oss" fastnar fortfarande, som de ska.
+  /\b(skicka|visa|st(ä|a)ll|ber(ä|a)tta|beskriv|fyll i|svara)\b\s+\S+/i,
+  // Plats eller tid som gör handlingen utförbar
+  /\b(butiken|verkstaden|salongen|mottagningen|kontoret|(ö|o)ppet|adressen)\b/i,
+];
+
+/**
+ * Har uppmaningen i textens sista mening en VÄG — en kanal, länk, nyckelord, plats
+ * eller konkret handling? Returnerar true även när texten saknar CTA helt: den bristen
+ * ägs av harCtaISlutet, och två grindar som larmar om samma sak ger dubbel omgenerering.
+ */
+export function harCtaVag(text: string): boolean {
+  const sist = sistaMening(text);
+  if (!sist.trim()) return true;
+  if (!harImperativCta(sist)) return true; // CTA-golvet äger det fallet
+  return CTA_VAG_MONSTER.some((re) => re.test(sist));
+}
+
+/** Skärpningen vid typlös CTA. Exporterad för test och granskning. */
+export const CTA_VAG_SKARPNING = [
+  "=== RÄTTELSE: UPPMANINGEN SAKNAR VÄG (väger tyngst i den här körningen) ===",
+  "Föregående version avslutades med en uppmaning som inte säger VAR eller HUR. \"Hör av dig gärna\", \"Kontakta oss\" och \"Tveka inte att höra av dig\" lämnar läsaren utan nästa steg.",
+  "Skriv om SISTA MENINGEN så att den NAMNGER var handlingen sker. Meningen MÅSTE innehålla minst ett av dessa ord: kommentarerna, DM, meddelande, länken, profilen, bokningssidan, mejla, ring, besök, kom förbi — eller ett NYCKELORD i versaler som läsaren ska svara med.",
+  "Exempel som duger: \"Skriv JA i kommentarerna så hör vi av oss.\" \"Skicka ordet GUIDE i DM så får du den.\" \"Boka en tid via länken i profilen.\" \"Ring oss så tittar vi på det ihop.\"",
+  "DESSA ÄR FORTFARANDE UNDERKÄNDA, hur vänligt de än är formulerade: \"Kontakta oss\", \"Kontakta oss för att prata om dina idéer\", \"Hör av dig\", \"Tveka inte att höra av dig\", \"Vi finns här\". De namnger ingen väg — läsaren vet fortfarande inte var hen ska ta vägen.",
+  "Byt INTE budskap, ton eller längd i övrigt, och lägg inte till en andra uppmaning. Ändra bara avslutet så det leder någonstans.",
+].join("\n");
+
 export interface CtaGolvUtfall {
   text: string;
   /** Kördes omgenereringen? (Sker högst EN gång, aldrig i loop.) */
@@ -691,6 +746,9 @@ export async function sakerstallCaption(
   const brottFor = (t: string): string[] => {
     const b: string[] = [];
     if (!harCtaISlutet(t)) b.push("cta");
+    // G-5: typlös CTA. Kontrolleras bara när golvet är uppfyllt — annars larmar två
+    // grindar om samma brist och texten får två skärpningar för ett fel.
+    else if (!harCtaVag(t)) b.push("cta-vag");
     const siffror = obackadeSiffror(utanHashtags(t), tillatnaTal);
     if (siffror.length) b.push(`siffror:${siffror.join("|")}`);
     const sken = skenfragor(t);
@@ -702,6 +760,7 @@ export async function sakerstallCaption(
 
   const skarpning = [
     brott.some((b) => b === "cta") ? CTA_SKARPNING : "",
+    brott.some((b) => b === "cta-vag") ? CTA_VAG_SKARPNING : "",
     brott.some((b) => b.startsWith("siffror")) ? SIFFER_SKARPNING : "",
     brott.some((b) => b.startsWith("frageform")) ? FRAGEFORM_SKARPNING : "",
   ]
