@@ -381,3 +381,29 @@ nästa kund sparade AluCon, uppdaterade räknaren till 1 av 13, satte MRR till 1
 öppnade Annas Blommor. Testaffären raderades efteråt, `billing_avtal` är tom.
 
 Build ren, tsc ren, 895 tester passerar (41 på betalningslogiken).
+
+## BETAL-1b 2026-08-10 — påfyllning dras på kundens redan sparade kort
+
+`dragPaSparatKort()` drar off_session på standardkortet och krediterar tokens direkt.
+Tre utfall, alla med en väg framåt: kortet går igenom (tokens direkt), banken vill ha
+bekräftelse (betallänk, samma köp), inget kort eller nekat (betallänk, samma köp).
+
+**Dubbelkreditering var den verkliga risken** — påfyllningen kan nu komma in både direkt
+och via webhooken. `credit_transactions.extern_referens` (Stripes betalnings-id) med
+partiellt unikt index gör krediteringen idempotent. Raden skrivs först; kolliderar den
+har köpet redan krediterats och saldot rörs inte.
+
+**Bevisat mot databasen 2026-08-10:** två inserts med samma referens → första 201, andra
+409 med kod 23505. Testraden borttagen, Displaytekniks saldo orört på 150 av 300.
+
+`payment_intent.succeeded` hanteras nu också, som skyddsnät om servern tappar
+anslutningen mitt i dragningen.
+
+**Verifierat skarpt** efter deploy `f447cd0`: `/api/k/credits` svarar med det nya
+`kort`-fältet. Det står null eftersom Stripe ännu inte är kopplat, vilket är rätt.
+
+### Öppen risk: video saknas i prislistan
+`ai_pricing` har inget pris för video. En videogenerering loggas därför som 0 kr, taket
+på 200 kr reagerar aldrig, och de 15 tokens per påbörjat femsekundersklipp vilar inte på
+någon mätning. Ingen video har körts än, så ingenting läcker i dag. Sätt priset innan
+video släpps på en betalande kund.
