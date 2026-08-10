@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard } from "lucide-react";
+import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3 } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -40,6 +40,9 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/hq/kontakt", label: "Vem har bollen", icon: Radio },
         { href: "/dashboard/hq/planering", label: "Planering", icon: Calendar },
         { href: "/dashboard/mysales-kunder", label: "MySales pionjärer", icon: Users },
+        // G-9: kvalitetssidan. Byråvy — vad varje regeluppsattning faktiskt producerade.
+        // Ligger i menyn med flit: en sida som inte går att hitta finns inte.
+        { href: "/dashboard/kvalitet", label: "Kvalitet", icon: BarChart3 },
       ],
     },
     {

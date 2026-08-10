@@ -15,18 +15,17 @@ facit. Statusnivåer: `KLART OCH VERIFIERAT` · `KLART, EJ VERIFIERAT` · `PÅB�
 
 | Nivå | Antal |
 |---|---|
-| KLART OCH VERIFIERAT | 38 |
+| KLART OCH VERIFIERAT | 39 |
 | KLART, EJ VERIFIERAT | 11 |
 | PÅBÖRJAT | 6 |
-| BESTÄLLT, EJ PÅBÖRJAT | 23 |
+| BESTÄLLT, EJ PÅBÖRJAT | 22 |
 | PARKERAT | 8 |
 | **Totalt** | **86** |
 
 *Uppdaterad 9/8 efter Håkans STATUS-1-beslut: rapporterna dolda, två felmarkerade rader rättade.*
 *Uppdaterad 10/8: G-3d, G-4, G-5 och G-6 klara och bevisade. T-6c gick från KLART, EJ
-VERIFIERAT till verifierad; G-4/G-5/G-6 från BESTÄLLT till verifierade. Kvar i
-GRANSK-serien: G-7 (blindtestet — Håkans egen bedömning), G-8 (mätloopen — kräver
-Instagram-omkoppling per kund) och G-9 (kvalitetssidan).*
+VERIFIERAT till verifierad; G-4/G-5/G-6 från BESTÄLLT till verifierade. G-9 klar 10/8. Kvar i GRANSK-serien: G-7 (blindtestet — Håkans egen
+bedömning) och G-8 (mätloopen — kräver Instagram-omkoppling per kund).*
 
 ### Topp 5 kundsynliga brister, efter risk
 
@@ -222,7 +221,7 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | G-6 bildfeedback | KLART OCH VERIFIERAT | **10/8, `scripts/g6-dod.mts` (20 kontroller) + `tests/g6-bildfeedback.test.ts` (9 tester).** **Fyndet:** tummen lovade kunden "Bra bild — AI lär sig". Löftet var tomt i fyra led. (1) Bara legacy-vägen läste feedbacken; Studios Bildhjälpen — den väg kunderna faktiskt använder — läste den aldrig. (2) Bara ett betyg sparades, inget skäl. (3) Ingen koppling till genereringen. (4) **Mätt: alla tre rader som någonsin sparats har `client_id = NULL`** (skrevs i april, före multi-tenancy) och läsningen filtrerar på just det fältet — de tre tummarna har alltså aldrig påverkat en enda bild. Raderna lämnas orörda; en gissad tenant är värre än en tom historik. **Byggt:** migration `g6_bildfeedback.sql` (`generation_id` + `kommentar` + index, körd), `lib/bildfeedback.ts` (läsning + promptblock), inkopplat i `/api/studio/suggest-image`, feedback-routen tar kommentar och genererings-id, och tumme + fritextruta i StudioMaker. **Bildvägen loggar nu i generationsloggen** — den gjorde det inte alls förut, så `motiv_kategori` (byggd i G-1) bar aldrig ett värde. Egen regelversion `bild-v1`, eftersom bilden inte har någon prompt-core-prompt. **Routen var dessutom oskyddad:** den skrev med anon-nyckeln och saknade auth-grind helt; nu service-role + `requireAdminOrCustomer` som resten av kundvägarna. **Designbeslut:** kritiken väger tyngre än berömmet och ligger SIST i blocket ("choose a different subject entirely"), berömmet är en riktning som inte får kopieras rakt av. Skilt från rotationen (G-3d): rotationen säger "variera", feedbacken säger "det HÄR var fel". **Bevis:** hela kedjan körd skarpt — bild → rad i loggen med `syfte=bild`/`motiv_kategori=standard` → omdöme med kommentar bundet till genererings-id → nästa bildprompt bär kundens egna ord ordagrant. `rating=0` avvisas med 400. DoD:n städar efter sig | **Ja** | **Var ja — nu nej** |
 | G-7 blindtest mot ribba | BESTÄLLT, EJ PÅBÖRJAT | — | Ja | Nej |
 | G-8 mätloopen | BESTÄLLT, EJ PÅBÖRJAT | Kräver Meta-omkoppling per tenant | Ja | Nej |
-| G-9 kvalitetssidan | BESTÄLLT, EJ PÅBÖRJAT | `/dashboard/kvalitet` finns inte | Nej | Nej |
+| G-9 kvalitetssidan | KLART OCH VERIFIERAT | **10/8, `tests/g9-kvalitet.test.ts` (9 tester) + skarp läsning mot dev.** `/dashboard/kvalitet` + `/api/kvalitet` visar vyn `generation_per_promptversion`: antal, kasserade, publicerade och `utan_kostnadskoppling` per promptversion och syfte. **Beställningens hårda krav ("visa aldrig en nolla som ett mätvärde") är byggt som kod, inte som en formulering:** routen räknar ingen andel under 20 genereringar utan lämnar fältet `null`, och sidan skriver då "(för få — 5 av 20)". Tre lägen hålls isär: MÄTT, FÖR FÅ och SAKNAS — och SAKNAS säger rakt ut att data saknas i stället för att visa en tom tabell. Databasfel ger 500 med `rader: null`, aldrig en tom lista (en tom lista hade lästs som "inga genereringar"). Sidan sätter **inget betyg** — ett test låser att svaret inte innehåller fält som `score`/`betyg`/`rating`. **Bevisat mot riktig data:** 275 genereringar, 6 regeluppsättningar, 2 utan kostnadskoppling (bildvägen, som G-6 kopplade in). **Två saker som bara syntes genom att läsa den riktiga sidan:** (1) `0` följt av `0 %` renderades som "00 %" — nu parentes; (2) DoD-skriptens egna körningar ligger i siffrorna och visar 0 publicerade, vilket står utskrivet på sidan i stället för att tolkas som dålig kvalitet. Länkad i sidomenyn under Överblick — en sida som inte går att hitta finns inte | Nej | Nej |
 
 ## Mätbarhet / engagemang
 
