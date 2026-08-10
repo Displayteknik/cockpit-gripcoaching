@@ -150,7 +150,7 @@ export default function PlaneringPage() {
     <div className="space-y-6">
       <DashHero
         title="Planering"
-        subtitle="Så ligger veckan över dina tidstyper. Tisdag och torsdag är arbetsdagar, måndag, onsdag och fredag är white space. Dra ett block för att flytta det, ändringen går direkt till din kalender."
+        subtitle="Din egen kalender, inte kundens — sidan visar samma vecka vilken kund du än har vald. Tisdag och torsdag är arbetsdagar, måndag, onsdag och fredag är white space. Dra ett block för att flytta det, ändringen går direkt till din kalender."
         icon={CalendarRange}
         eyebrow={<LivePill label="veckan" />}
         chips={
@@ -187,6 +187,24 @@ export default function PlaneringPage() {
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800">
             Koppla Google Kalender <ExternalLink className="h-4 w-4" />
           </a>
+        </div>
+      )}
+
+      {/* PLAN-2 (Håkans fynd 10/8): han bytte klient och såg SAMMA ifyllda vecka i två konton,
+          och läste det som att veckoplanen låg ifylld hos kunderna. Datat är rätt — hq-tabellerna
+          och kalenderspegeln har ingen klientkolumn alls, och routen är grindad på huvudadmin
+          (`getAdminScope() !== null` → 403). Det är alltså ägarens EGEN kalender, en enda
+          uppsättning. Felet var att sidan inte sa det: den ligger under klientväljaren och
+          läste därför som den valda kundens vecka. Beskedet stod bara i det OKOPPLADE läget,
+          alltså exakt där det inte behövdes. */}
+      {data?.kopplad && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          <CalendarRange className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+          <p>
+            <span className="font-medium text-gray-900">Det här är din egen kalender.</span>{" "}
+            Ingen kund ser den, och innehållet byter inte när du växlar kund i väljaren högst upp —
+            veckan nedan är densamma oavsett vem som står där.
+          </p>
         </div>
       )}
 
