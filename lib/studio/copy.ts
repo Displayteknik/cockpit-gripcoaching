@@ -151,6 +151,15 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
     "- VASSARE SPRÅK: konkret substantiv före abstrakt (skyltfönster, inte 'kommunikationsyta'), aktivt verb, vardagsord. Inga floskler, ingen svengelska, ingen myndighetston.",
     "- FÖRBJUDET i alla fält: emoji, symboler (✅▶•), punktlistor, radbrytningslistor, signatur (t.ex. '— Ingela'), telefonnummer, URL, hashtag. Kontaktuppgifter finns REDAN i mallen.",
     "- Använd EN tydlig hook-typ och gör den scrollstoppande enligt playbooken (komprimerad till affisch-längd).",
+    // AFFISCH-1 (Håkans fynd 11/8): en berättelsekrok gav "Två månader senare står skärmen
+    // fortfarande där, i skuggan, osynlig för gatan, medan konkurrenten över gatan lyser upp
+    // hela trottoaren." Krokens uppgift i lib/hook-typer.ts är att ÖPPNA EN LOOP som läsaren
+    // vill veta slutet på — en caption-instruktion. På en affisch finns inget senare: tre korta
+    // fält, sen är det slut. Loopen öppnades och stängdes aldrig.
+    "- AFFISCHEN HAR INGET SENARE: öppna aldrig en loop du inte stänger på samma bild. En berättelsekrok här är ETT ögonblick som är begripligt utan början och utan fortsättning.",
+    "- FÖRBJUDNA ÖPPNINGAR: 'Två månader senare', 'Efter ett halvår', 'Sedan dess', 'Till slut' — de förutsätter en början som läsaren inte ser.",
+    "- LANDA NÅGONSTANS: sista fältet ger igenkänning, en insikt eller en väg framåt. Lämna ALDRIG läsaren i problemet, och gör aldrig en konkurrent till vinnaren i bilden.",
+    "- INGEN UPPREPNING: underrubriken och brödtexten får inte säga samma sak med andra ord. Säger de det är ett av fälten bortkastat.",
     "- Gyllene-zonen-kedjan: rubrik väcker → underrubrik skärper → body ger igenkänning eller konkret nytta.",
     "- Målgruppens EGNA ord ur profilen. Svenska tecken å/ä/ö korrekt. Uppfinn inget utanför kundens värld.",
   ].filter(Boolean).join("\n");
@@ -251,7 +260,13 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
       if (![s.headline1, s.headline2, s.body].every(noForbidden)) continue;
       if ([s.headline1, s.headline2, s.body].some(hasEmojiOrList)) continue; // affisch-format: rent
       if (hasContactInfo(s.body)) continue; // telefon/URL finns redan i mallens fot
-      if (arStaplad(s.body)) continue; // telegramspråk: staplade fragment
+      if (arStaplad(s.body)) continue; // telegramspråk: staplade fragment (även kommastaplat)
+      // AFFISCH-1: en öppnad loop som aldrig stängs. Deterministiskt på tidssprånget, för det
+      // är just det som förutsätter en början läsaren inte ser.
+      if ([s.headline1, s.headline2, s.body].some(arOppenLoop)) continue;
+      // AFFISCH-1: badgen (underrubriken) sa samma sak som brödtexten — "Som inte syns i
+      // solljus" mot "osynlig för gatan". Två av tre textrader bar ett budskap.
+      if (upprepar(s.headline2, s.body)) continue;
       if ([s.headline1, s.headline2, s.body].some(harCta)) continue; // CTA hör i bildtext + fot-knapp
       if ([s.headline1, s.headline2, s.body].some((f) => harObackadSiffra(f, profilTal))) continue; // aldrig påhittade siffror (även "7 av 10")
       if ([s.headline1, s.headline2, s.body].some((f) => harObackadStatistikfras(f, profilKomp))) continue; // kvot/procent-påståenden kräver frasen i profilen
@@ -272,7 +287,10 @@ export async function generateStudioCopyResultat(opts: StudioCopyOpts): Promise<
       // riskera en tom leverans (3-av-3-loopen genererar om). Undantaget: användaren
       // skrev själv in ett pris i ämnet eller grundtexten.
       if (!prisTillatet && [s.headline1, s.headline2, s.body].some(harPrisuppgift)) continue;
-      if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 150) continue;
+      // AFFISCH-1: grinden släppte 150 tecken där prompten ber om ~90 — 60 teckens slack som
+      // modellen tog varje gång (Håkans bild 11/8: 135 tecken på en affisch). Taket ligger nu
+      // strax över det vi ber om, med marginal för ett långt sammansatt ord.
+      if (s.headline1.length > Math.round(softMax * 1.8) || s.body.length > 105) continue;
       // Likhets-dedup: normalisera bort småord/skiljetecken så nästan-dubbletter
       // ("Vad säger blommorna?" vs "Vad säger dina blommor?") räknas som samma.
       // Gäller ÄVEN över rundgränser: en omgenerering får inte ge samma idé igen.
@@ -511,9 +529,57 @@ function hasContactInfo(s: string): boolean {
 
 // Staplade fristående fragment = telegramspråk ("Syns i dagsljus. En kontakt. Offert inom 24 h.").
 // Tre eller fler satser i en 90-teckens ruta är alltid stapling, aldrig en tanke.
+//
+// ⚠ AFFISCH-1 (Håkans bild 11/8): grinden räknade bara . ! ? : ; — och den staplade texten
+// var byggd med KOMMATECKEN: "står skärmen fortfarande där, i skuggan, osynlig för gatan,
+// medan konkurrenten över gatan lyser upp hela trottoaren." En sats enligt den gamla
+// räkningen, fyra tankar i praktiken. Kommat räknas därför med, men taket höjs till fyra
+// delar så en normal bisats ("När solen står som högst, syns din skylt ändå.") passerar.
 function arStaplad(s: string): boolean {
   const satser = s.split(/[.!?:;]+/).map((d) => d.trim()).filter((d) => d.length > 1);
-  return satser.length >= 3;
+  if (satser.length >= 3) return true;
+  const delar = s.split(/[.!?:;,]+/).map((d) => d.trim()).filter((d) => d.length > 1);
+  return delar.length >= 4;
+}
+
+/**
+ * AFFISCH-1: en öppning som förutsätter en början läsaren aldrig ser.
+ *
+ * Berättelsekroken är byggd för bildtexter, där loopen stängs längre ner. På en affisch finns
+ * inget längre ner. Tidsspånget är det som avslöjar den: "Två månader senare…", "Efter ett
+ * halvår…", "Sedan dess…". Regeln står också i prompten — den här grinden finns för att en
+ * regel i prompten är ett önskemål.
+ */
+export function arOppenLoop(s: string): boolean {
+  const t = (s || "").trim().toLowerCase();
+  if (!t) return false;
+  // String.raw behovs: i en vanlig strang blir \d bara "d" och \s bara "s" — monstret hade
+  // tappat sina teckenklasser och grinden aldrig fallt nagonting.
+  const tal = String.raw`(en|ett|två|tre|fyra|fem|sex|sju|åtta|nio|tio|ett par|några|\d+)`;
+  // halvår/halvtimme före år: "efter ett halvår" fastnade inte först (fångat av test).
+  const tid = "(sekunder|minuter|halvtimme|timmar|dagar|veckor|månader|halvår|kvartal|år|somrar|vintrar)";
+  return (
+    new RegExp(String.raw`^${tal}\s+${tid}\s+(senare|efteråt)`, "i").test(t) ||
+    new RegExp(String.raw`^efter\s+${tal}\s+${tid}`, "i").test(t) ||
+    /^(sedan dess|till slut|dagen därpå|nästa dag|då ringde|så småningom)\b/i.test(t)
+  );
+}
+
+/**
+ * AFFISCH-1: säger två fält samma sak? Jämför de BÄRANDE orden (småord och böjnings-s bort).
+ * Ligger alla underrubrikens bärande ord redan i brödtexten är ett av fälten bortkastat.
+ * Kräver minst två bärande ord — en underrubrik på ett ord kan legitimt eka brödtexten.
+ */
+export function upprepar(a: string, b: string): boolean {
+  const SMAORD = new Set(["och", "att", "som", "det", "den", "en", "ett", "för", "med", "på", "i", "av", "är", "inte", "till", "din", "ditt", "dina", "du", "vi", "man", "så", "men", "eller", "de", "har", "kan", "om", "när", "då", "här", "hela", "över"]);
+  const ord = (s: string) =>
+    (s || "").toLowerCase().normalize("NFC").replace(/[^a-zåäöéèü\s]/g, " ").split(/\s+/)
+      .map((o) => o.trim()).filter((o) => o.length > 2 && !SMAORD.has(o));
+  const aOrd = [...new Set(ord(a))];
+  const bOrd = new Set(ord(b));
+  if (aOrd.length < 2) return false;
+  const traff = aOrd.filter((o) => bOrd.has(o) || [...bOrd].some((x) => x.startsWith(o) || o.startsWith(x))).length;
+  return traff / aOrd.length >= 0.75;
 }
 
 // CTA hör i bildtexten + mallens fot-knapp. Två uppmaningar bryter mot skrivregel 4.
