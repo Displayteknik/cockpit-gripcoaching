@@ -180,7 +180,7 @@ export default function BildRedigerare({
                     cursor: "move",
                   }}
                 >
-                  <span className="absolute -top-6 left-0 text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background: primary, color: "#fff" }}>
+                  <span className="absolute -top-6 left-0 text-xs font-semibold px-1.5 py-0.5 rounded" style={{ background: primary, color: "#fff" }}>
                     {RATIO_LABELS[e.ratio]}
                   </span>
                 </div>

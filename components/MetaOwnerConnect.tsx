@@ -75,7 +75,7 @@ export default function MetaOwnerConnect() {
                     : "Token utan känt utgångsdatum"}
                 </div>
                 {owner.scopes?.length > 0 && (
-                  <div className="text-[11px] text-gray-400 mt-1 break-words">{owner.scopes.join(", ")}</div>
+                  <div className="text-xs text-gray-400 mt-1 break-words">{owner.scopes.join(", ")}</div>
                 )}
               </div>
             </div>

@@ -84,7 +84,13 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">{cadenceLabel}/vecka</span>
       </div>
       <p className="text-xs text-gray-500 mb-3">
-        Hela veckan färdigprofilerad enligt din innehållsplan, som utkast i kalendern med föreslagen bästa-tid. Inget publiceras, du granskar och godkänner varje inlägg.
+        {/* VECKA-2 (Håkans fynd 11/8): panelen sa "färdigprofilerad … som utkast" och han läste
+            det som färdiga inlägg. Det som skapas är BILDTEXTEN per dag plus ett underlag —
+            texten på bilden och bilden väljs när inlägget öppnas i Studio (medvetet: captionens
+            anatomi passar inte på en affisch, se lib/studio/pa-bild.ts). Löftet säger nu det. */}
+        Skriver <strong>bildtexten</strong> för varje dag enligt din innehållsplan och lägger den i kalendern på föreslagen bästa-tid.
+        Texten <em>på</em> bilden och själva bilden väljer du när du öppnar inlägget — de skrivs i affischformat, inte klippta ur bildtexten.
+        Inget publiceras.
       </p>
 
       {/* Publiceringsdagar: snabbval eller egna dagar. Styr både antal och vilka. */}
@@ -151,7 +157,7 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
       {result && (
         <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
-            <Check className="w-4 h-4" /> {result.saved} utkast skapade i kalendern
+            <Check className="w-4 h-4" /> {result.saved} {result.saved === 1 ? "bildtext" : "bildtexter"} skapade i kalendern
           </div>
           {result.notes.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-xs text-amber-700">
@@ -168,7 +174,10 @@ export default function WeekGenerator({ accent = "#7c3aed", onDone }: { accent?:
               </div>
             ))}
           </div>
-          <p className="mt-2 text-xs text-gray-400">Token-estimat denna körning: ca {result.token_estimate.toLocaleString("sv-SE")}. Öppna ett utkast i Studio för att lägga bild och publicera.</p>
+          <p className="mt-2 text-xs text-gray-500">
+            <strong>Kvar per inlägg:</strong> öppna det i Studio, välj text på bilden bland tre förslag som skrivs där, och lägg en bild. Först då är inlägget klart att publicera.
+          </p>
+          <p className="mt-1 text-xs text-gray-400">Token-estimat denna körning: ca {result.token_estimate.toLocaleString("sv-SE")}.</p>
         </div>
       )}
     </section>

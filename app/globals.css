@@ -31,6 +31,25 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
 
+  /* ── Typskala (FONT-1, Håkans användarfeedback 2026-08-11) ──────────────────
+     "på tok för onödigt små fonter på många ställen i systemet, användarna ser inte"
+
+     Kodbasen har ~1670 `text-xs` och ~1670 `text-sm`. Att byta klass på 3 300 ställen är
+     både riskabelt (badges och täta tabeller spränger) och omöjligt att granska. Skalan
+     höjs i stället HÄR — ett ställe, hela systemet, ingen layoutändring per komponent:
+
+       text-xs  12 → 13 px
+       text-sm  14 → 15 px
+
+     Radavståndet höjs med, annars blir större text tätare text. `text-base` och uppåt
+     lämnas orörda: de är redan över golvet, och att flytta dem hade ändrat rubrikhierarkin.
+     Golvet i arbetsreglerna (brödtext minst 12 px) gäller fortfarande — och nu med marginal.
+     `tests/font1-lasbarhet.test.ts` låser att inget i koden går under det. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.15rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.4rem;
+
   /* Container */
   --container-md: 1140px;
   --container-lg: 1320px;

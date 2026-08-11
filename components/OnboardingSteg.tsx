@@ -226,7 +226,7 @@ function Detalj({ onboarding, onTillbaka, onUppdaterad }: {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`font-semibold ${klart ? "text-gray-500 line-through decoration-gray-300" : "text-gray-900"}`}>{s.titel}</span>
                     {!klart && (
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${a.chip}`}>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${a.chip}`}>
                         <a.ikon className="h-3 w-3" /> {a.text}
                       </span>
                     )}

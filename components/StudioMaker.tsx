@@ -1135,6 +1135,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // bilden ärvs aldrig från captionen. Öppnas ett sådant inlägg genereras affischtexten
   // ur inlägget (pa-bild-anatomin i lib/studio/copy.ts) och användaren väljer bland tre.
   const [behoverPabildText, setBehoverPabildText] = useState(false);
+  // VECKA-2: samma sak, men som ett SYNLIGT besked. Håkan öppnade ett planerat inlägg, landade
+  // på steg 1 med tre förslag och drog slutsatsen att inlägget inte var skrivet. Bildtexten ÄR
+  // skriven — den ligger i steg 5. Det som är kvar är texten på bilden och bilden. Raden ligger
+  // kvar tills på-bild-texten är satt, så den försvinner av sig själv när arbetet är gjort.
+  const [oppnadeUnderlag, setOppnadeUnderlag] = useState(false);
 
   // Öppna en sparad skapelse i editorn för återanvändning/redigering.
   const openPost = useCallback((p: StudioPost) => {
@@ -1147,6 +1152,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     );
     const harUnderlag = Boolean(String(d.caption ?? "").trim() || String(d.brief ?? "").trim());
     setBehoverPabildText(!harPabild && harUnderlag);
+    setOppnadeUnderlag(!harPabild && harUnderlag);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [applyPayload]);
 
@@ -1995,16 +2001,39 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
           {/* ── Vänster: formulär ── */}
           <div className="space-y-6">
+            {/* VECKA-2: beskedet när ett planerat inlägg öppnas. Utan det ser sidan ut som en
+                tom skaparyta och det redan skrivna arbetet syns inte. */}
+            {oppnadeUnderlag && !headline1.trim() && !body.trim() && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                <p className="font-semibold">Bildtexten är redan skriven — den ligger i steg 5.</p>
+                <p className="mt-1 leading-relaxed">
+                  Det som är kvar är <strong>texten på bilden</strong> (steg 4, tre förslag skrivs fram åt dig här nedan) och en <strong>bild</strong> (steg 3).
+                  Texten på bilden skrivs i affischformat och kopieras aldrig ur bildtexten — därför är fältet tomt när du kommer hit.
+                </p>
+              </div>
+            )}
+
             {/* Steg 1 · Ämne — vad ska inlägget handla om? Välj/skapa först, sen stil & bild. */}
             <section className="bg-white border rounded-2xl p-6 space-y-4" style={stegRam(STEG_FARGER[0])}>
               <div>
                 <h2 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2"><StegNr n={1} color={STEG_FARGER[0]} /> Ämne</h2>
                 <p className="text-sm text-gray-500 mt-0.5 ml-9">Vad ska inlägget handla om? Skriv en rad, eller få 3 idéer att välja bland.</p>
               </div>
+              {/* VECKA-2 (Håkans fynd 11/8): veckoplanens underlag är FLERRADIGT
+                  ("Veckotema: …
+                  Dagens vinkel: …"). I en enradig ruta kollapsar radbrytningen och
+                  det läste som ett hopklistrat fel: "…för fastigheterDagens vinkel:". Fältet
+                  växer till flera rader när underlaget har radbrytningar, och är en vanlig
+                  enradig ruta annars. */}
               <div className="flex flex-col sm:flex-row gap-2">
-                <input id="studio-amne" value={topic} onChange={(e) => setTopic(e.target.value)}
-                  placeholder={isCarousel ? "Ämne för karusellen, t.ex. 3 misstag att undvika, 5 tips" : "t.ex. ett erbjudande, en nyhet, veckans bukett"}
-                  className={inputCls} />
+                {topic.includes("\n") ? (
+                  <textarea id="studio-amne" value={topic} onChange={(e) => setTopic(e.target.value)} rows={Math.min(5, topic.split("\n").length + 1)}
+                    className={`${inputCls} leading-relaxed`} style={{ whiteSpace: "pre-wrap" }} />
+                ) : (
+                  <input id="studio-amne" value={topic} onChange={(e) => setTopic(e.target.value)}
+                    placeholder={isCarousel ? "Ämne för karusellen, t.ex. 3 misstag att undvika, 5 tips" : "t.ex. ett erbjudande, en nyhet, veckans bukett"}
+                    className={inputCls} />
+                )}
                 {!isCarousel && (
                   <button onClick={() => suggest()} disabled={suggesting}
                     className="shrink-0 inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
@@ -2364,12 +2393,12 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                           {punktNr(slides, i) !== null && (
                             <span
                               title={`Står som ${String(punktNr(slides, i)).padStart(2, "0")} på själva sliden`}
-                              className="text-[10px] font-bold tabular-nums px-1 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-500 leading-none"
+                              className="text-xs font-bold tabular-nums px-1 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-500 leading-none"
                             >
                               {String(punktNr(slides, i)).padStart(2, "0")}
                             </span>
                           )}
-                          {harBild && <span className="text-[10px] text-gray-400">har foto</span>}
+                          {harBild && <span className="text-xs text-gray-400">har foto</span>}
                         </button>
                       );
                     })}
@@ -2451,7 +2480,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         style={i === slideIdx ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
                         {i + 1}. {slideEtikett(s)}
                         {punktNr(slides, i) !== null && (
-                          <span className="ml-1 text-[10px] font-bold text-gray-400 tabular-nums">{String(punktNr(slides, i)).padStart(2, "0")}</span>
+                          <span className="ml-1 text-xs font-bold text-gray-400 tabular-nums">{String(punktNr(slides, i)).padStart(2, "0")}</span>
                         )}
                       </button>
                     ))}

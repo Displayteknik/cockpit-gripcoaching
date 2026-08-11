@@ -114,9 +114,21 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
                   <div className={`text-xs mb-1 ${isToday ? "font-bold text-white inline-flex items-center justify-center w-5 h-5 rounded-full" : inMonth ? "text-gray-500" : "text-gray-300"}`} style={isToday ? { background: primary } : {}}>{d.getDate()}</div>
                   <div className="space-y-1">
                     {dayItems.slice(0, 4).map((it) => {
+                      // VECKA-2 (Håkans fynd 11/8): veckoplaneringen skapar bildtext + underlag,
+                      // inte färdiga inlägg. "3 utkast skapade" lästes som tre färdiga. Brickan
+                      // säger nu vad som fattas, i klarspråk, i stället för att se klar ut.
+                      const saknar = it.status === "published" ? [] : (it.saknar ?? []);
+                      const saknasText = saknar.length === 2
+                        ? "text på bilden + bild"
+                        : saknar[0] === "text-pa-bild" ? "text på bilden saknas" : saknar[0] === "bild" ? "bild saknas" : "";
                       const innehall = (
                         <>
                           <div className="flex items-center gap-1"><FourALabel value={it.four_a} compact /><span className="truncate flex-1 text-gray-700">{it.title}</span></div>
+                          {saknasText && (
+                            <div className="mt-0.5 inline-flex items-center gap-1 rounded bg-amber-100 px-1 py-0.5 text-xs font-medium text-amber-800">
+                              {saknasText}
+                            </div>
+                          )}
                           {(it.funnel_level || (it.disc && it.disc.length)) && <div className="flex items-center gap-1 mt-0.5"><FunnelLabel level={it.funnel_level} /><DiscDots disc={it.disc} size={12} /></div>}
                         </>
                       );
@@ -168,6 +180,7 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
         <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-3 rounded border-l-4 border-l-emerald-400 bg-emerald-50" /> Dags att sälja</span>
         <span className="font-semibold ml-2">Ton (hovra för förklaring):</span><DiscDots disc={["D", "I", "S", "C"]} size={14} />
         {onMove && <span className="ml-2">Dra ett inlägg till en annan dag för att flytta det. Publicerat och bloggposter sitter fast.</span>}
+        <span className="inline-flex items-center gap-1"><span className="rounded bg-amber-100 px-1 py-0.5 text-xs font-medium text-amber-800">text på bilden + bild</span> = bildtexten är skriven, resten väljer du i Studio</span>
       </div>
     </div>
   );

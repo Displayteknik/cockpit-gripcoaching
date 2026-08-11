@@ -737,7 +737,7 @@ function FaltRad({ def, falt, onChange }: { def: FaltDef; falt: Falt<unknown>; o
     <div className={`px-4 py-4 sm:px-5 ${harKonflikt ? "bg-rose-50/40" : finns ? "" : "bg-amber-50/40"}`}>
       <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span className="text-sm font-semibold text-gray-900">{def.etikett}</span>
-        <span className="text-[11px] text-gray-400">{GRUPP_FOR_FALT.get(def.nyckel)}</span>
+        <span className="text-xs text-gray-400">{GRUPP_FOR_FALT.get(def.nyckel)}</span>
         {klassEtikett && finns && (
           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${klassEtikett.chip}`}>
             {klassEtikett.text}
@@ -817,12 +817,12 @@ function FaltRad({ def, falt, onChange }: { def: FaltDef; falt: Falt<unknown>; o
                   )}
                   <span className="min-w-0">
                     <span className="block break-words">{text}</span>
-                    <span className="mt-0.5 block text-[11px] text-gray-500">
+                    <span className="mt-0.5 block text-xs text-gray-500">
                       {KALLA[k.kalla]?.text ?? k.kalla}
                       {k.kallUrl ? ` · ${k.kallUrl}` : ""}
                     </span>
                     {k.citat && (
-                      <span className="mt-0.5 block break-words text-[11px] italic text-gray-400">”{k.citat}”</span>
+                      <span className="mt-0.5 block break-words text-xs italic text-gray-400">”{k.citat}”</span>
                     )}
                   </span>
                 </button>

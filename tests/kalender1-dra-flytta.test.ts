@@ -127,3 +127,58 @@ describe("KALENDER-1 · flytta genom att dra", () => {
     expect(kalenderSida).toContain("flyttFel");
   });
 });
+
+describe("VECKA-2 · det syns vad som är skrivet och vad som är kvar", () => {
+  // Håkans fynd 11/8: han klickade ett planerat inlägg i kalendern, landade i Studio på steg 1
+  // med tre färska förslag, och drog slutsatsen "inlägget är INTE skrivet". Bildtexten VAR
+  // skriven — men veckoplaneringen lämnar texten PÅ bilden och bilden till Studio med flit
+  // (captionens anatomi passar inte på en affisch, se lib/studio/pa-bild.ts). Felet var alltså
+  // löftet, inte koden: "3 utkast skapade i kalendern" läses som tre färdiga inlägg.
+  //
+  // Hans beslut: gör det tydligare nu, automatisera senare (väg B, C är beställd).
+  const overview = las("lib/content/overview.ts");
+  const panel = las("components/content-compass/WeekGenerator.tsx");
+  const studio = las("components/StudioMaker.tsx");
+
+  it("panelen lovar bildtext, inte färdiga inlägg", () => {
+    expect(panel).toContain("<strong>bildtexten</strong>");
+    expect(panel).not.toContain("Hela veckan färdigprofilerad");
+    expect(panel).not.toContain("utkast skapade i kalendern");
+  });
+
+  it("panelen räknar upp vad som är kvar per inlägg", () => {
+    expect(panel).toContain("Kvar per inlägg");
+    expect(panel).toContain("välj text på bilden");
+  });
+
+  it("navet räknar ut vad ett inlägg saknar", () => {
+    expect(overview).toContain("saknasIStudioInlagg");
+    // Payloaden MÅSTE läsas — texten på bilden finns inte i någon kolumn.
+    expect(overview).toContain("four_a, disc, payload");
+  });
+
+  it("publicerat mäts inte — då är frågan inte längre vad som fattas", () => {
+    expect(las("components/content-compass/ContentCalendar.tsx")).toContain('it.status === "published" ? []');
+  });
+
+  it("brickan säger det i klarspråk, inte med en symbol", () => {
+    const kal = las("components/content-compass/ContentCalendar.tsx");
+    expect(kal).toContain("text på bilden + bild");
+    expect(kal).toContain("bild saknas");
+  });
+
+  it("Studio säger var den redan skrivna texten finns", () => {
+    expect(studio).toContain("Bildtexten är redan skriven");
+    expect(studio).toContain("steg 5");
+    // Raden slocknar av sig själv när på-bild-texten är satt.
+    expect(studio).toContain("oppnadeUnderlag && !headline1.trim() && !body.trim()");
+  });
+
+  it("det flerradiga underlaget visas på flera rader", () => {
+    // "…för fastigheterDagens vinkel:" var en radbrytning som kollapsade i en <input>.
+    // Radbrytningen står som TVÅ tecken i källkoden (\ följt av n) — String.raw håller
+    // escapen intakt, annars söker testet efter en riktig radbrytning och hittar inget.
+    expect(studio).toContain(String.raw`topic.includes("\n")`);
+    expect(studio).toContain("<textarea id=\"studio-amne\"");
+  });
+});

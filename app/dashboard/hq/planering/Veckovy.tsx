@@ -238,7 +238,7 @@ export default function Veckovy({ dagar, handelser, idag, mobilDag, onFlytta, on
                         {h.last && <Lock className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />}
                         <span className="truncate text-xs font-semibold leading-tight">{h.titel || "Namnlös"}</span>
                       </div>
-                      {h2 > 34 && <div className="text-[11px] tabular-nums opacity-75">{klocka(s)} till {klocka(e2)}</div>}
+                      {h2 > 34 && <div className="text-xs tabular-nums opacity-75">{klocka(s)} till {klocka(e2)}</div>}
                       {!h.last && (
                         <div onPointerDown={(ev) => taTag(ev, h, "langd")}
                           title="Dra för att ändra längd"
@@ -256,7 +256,7 @@ export default function Veckovy({ dagar, handelser, idag, mobilDag, onFlytta, on
         {helg.length > 0 && (
           <div className="w-24 shrink-0 border-l border-gray-200 p-1.5" style={{ height: hojd }}>
             {helgHandelser.length === 0 ? (
-              <p className="pt-3 text-center text-[11px] leading-tight text-gray-300">inget bokat</p>
+              <p className="pt-3 text-center text-xs leading-tight text-gray-300">inget bokat</p>
             ) : (
               <div className="space-y-1">
                 {helgHandelser.map((h) => {
@@ -265,8 +265,8 @@ export default function Veckovy({ dagar, handelser, idag, mobilDag, onFlytta, on
                     <button key={h.google_event_id} onClick={() => onOppna(h)}
                       className="w-full rounded-lg border-l-4 px-1.5 py-1 text-left"
                       style={{ background: r.bg, borderColor: r.kant, color: r.text }}>
-                      <div className="truncate text-[11px] font-semibold leading-tight">{h.titel || "Namnlös"}</div>
-                      <div className="text-[10px] tabular-nums opacity-75">{klocka(h.startMinut)}</div>
+                      <div className="truncate text-xs font-semibold leading-tight">{h.titel || "Namnlös"}</div>
+                      <div className="text-xs tabular-nums opacity-75">{klocka(h.startMinut)}</div>
                     </button>
                   );
                 })}
@@ -290,7 +290,7 @@ function HeldagsRad({ dagar, helg, handelser, onOppna }: {
   if (heldagar.length === 0) return null;
   return (
     <div className="flex border-b border-gray-100 bg-white">
-      <div className="flex w-14 shrink-0 items-center justify-end pr-2 text-[10px] uppercase tracking-wide text-gray-400">hela</div>
+      <div className="flex w-14 shrink-0 items-center justify-end pr-2 text-xs uppercase tracking-wide text-gray-400">hela</div>
       <div className="flex flex-1">
         {dagar.map((d) => {
           // Google anger slutdatumet EXKLUSIVE: 4 till 6 augusti betyder 4 och 5.
@@ -301,7 +301,7 @@ function HeldagsRad({ dagar, helg, handelser, onOppna }: {
                 const r = ramp(h.tidstyp?.farg_ramp);
                 return (
                   <button key={h.google_event_id + d} onClick={() => onOppna(h)}
-                    className="flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium"
+                    className="flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-xs font-medium"
                     style={{ background: r.bg, color: r.text }}>
                     <Lock className="h-2.5 w-2.5 shrink-0 opacity-50" />
                     <span className="truncate">{h.titel || "Namnlös"}</span>

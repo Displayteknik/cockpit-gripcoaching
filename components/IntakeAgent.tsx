@@ -616,11 +616,11 @@ export default function IntakeAgent({ open, onClose, onChanged, initialSessionId
                             <div className="text-xs font-semibold text-gray-900 mb-2">{d.label}</div>
                             <div className="grid gap-2 md:grid-cols-2">
                               <div>
-                                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Nuvarande</div>
+                                <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Nuvarande</div>
                                 <p className="text-xs text-gray-800 whitespace-pre-wrap">{d.current}</p>
                               </div>
                               <div>
-                                <div className="text-[11px] uppercase tracking-wide text-amber-700 mb-1">Föreslaget</div>
+                                <div className="text-xs uppercase tracking-wide text-amber-700 mb-1">Föreslaget</div>
                                 <p className="text-xs text-gray-800 whitespace-pre-wrap">{d.proposed}</p>
                               </div>
                             </div>

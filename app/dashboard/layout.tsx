@@ -242,11 +242,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   otydligheten som fick Planering att läsas som kundens vecka. */}
               {section.zon && section.zon !== navSections[si - 1]?.zon && (
                 <div className={si > 0 ? "mt-6 mb-3 pt-4 border-t border-gray-200" : "mb-3"}>
-                  <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-gray-900">
+                  <div className="px-3 text-xs font-bold uppercase tracking-wider text-gray-900">
                     {ZONER.find((z) => z.id === section.zon)?.rubrik}
                     {section.zon === "byra" && klientNamn ? `: ${klientNamn}` : ""}
                   </div>
-                  <div className="px-3 mt-0.5 text-[11px] leading-snug text-gray-400">
+                  <div className="px-3 mt-0.5 text-xs leading-snug text-gray-400">
                     {ZONER.find((z) => z.id === section.zon)?.forklaring}
                   </div>
                 </div>

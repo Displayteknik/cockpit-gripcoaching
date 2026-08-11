@@ -146,7 +146,7 @@ export default function KundMaterial({ onChange }: { onChange?: () => void }) {
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-gray-900">{b.hook}</div>
                   {b.idea_seed && <p className="text-xs text-gray-600 mt-0.5 line-clamp-3">{b.idea_seed}</p>}
-                  {!b.redigerbar && <span className="text-[11px] text-gray-400">Kom från uppstartssamtalet</span>}
+                  {!b.redigerbar && <span className="text-xs text-gray-400">Kom från uppstartssamtalet</span>}
                 </div>
                 {b.redigerbar && (
                   <button onClick={() => taBort("berattelse", b.id)} title="Ta bort"
@@ -206,7 +206,7 @@ export default function KundMaterial({ onChange }: { onChange?: () => void }) {
               <li key={k.id} className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 p-3">
                 <div className="min-w-0">
                   <p className="text-sm text-gray-800 italic">”{k.phrase}”</p>
-                  <span className="text-[11px] text-gray-400">{KATEGORI_ETIKETT[k.category] || k.category}{k.context ? ` · ${k.context}` : ""}</span>
+                  <span className="text-xs text-gray-400">{KATEGORI_ETIKETT[k.category] || k.category}{k.context ? ` · ${k.context}` : ""}</span>
                 </div>
                 <button onClick={() => taBort("kundord", k.id)} title="Ta bort"
                   className="p-1.5 rounded text-gray-300 hover:text-rose-600 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
