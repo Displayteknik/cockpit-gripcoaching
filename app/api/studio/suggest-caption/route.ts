@@ -5,6 +5,7 @@ import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { hamtaNyligen } from "@/lib/rotation";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { ctaVagForVariant, perspektivForVariant, vinkelMedVag } from "@/lib/cta-vagar";
+import { BERATTELSE_UTAN_STORYBANK, MINNE_SKARPNING, harStorybank, hittaUppfunnetMinne } from "@/lib/minnesgrind";
 import { sakerstallCaption, talTokens } from "@/lib/content/writing-rules";
 
 export const runtime = "nodejs";
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
     const genMedCtaGolv = async (
       vinkelInstruktion: string,
       etikett: string,
-    ): Promise<{ caption: string; ctaOmgenererad: boolean; ctaGodkand: boolean; generationId: string | null }> => {
+    ): Promise<{ caption: string; ctaOmgenererad: boolean; ctaGodkand: boolean; generationId: string | null; minnesTraffar: string[]; minnesOmgenererad: boolean }> => {
       const f = await genOne(vinkelInstruktion);
       // G-1c: id:t för den SENASTE genereringen i den här varianten. Alla försök här
       // delar samma prompt (samma `bygg`), så promptversionen är densamma oavsett
@@ -175,7 +176,47 @@ export async function POST(req: NextRequest) {
         },
         etikett,
       );
-      return { caption: r.text, ctaOmgenererad: r.omgenererad, ctaGodkand: r.godkand, generationId: valdId };
+      // T-6b-GRIND (Håkans fynd 10/8): fälls ett uppfunnet minne om en enskild kund görs
+      // EXAKT en omgenerering med förbudet plus alternativet. Håller texten sig fortfarande
+      // inte lämnas varianten UTAN caption — den slängs av anroparen. Fail-open är fel väg
+      // här: en påhittad scen om en verklig människas hälsa är värre än en variant mindre.
+      let text = r.text;
+      let minnesTraffar = hittaUppfunnetMinne(text);
+      let minnesOmgenererad = false;
+      if (minnesTraffar.length) {
+        console.error(`[suggest-caption] ${etikett}: uppfunnet minne (${minnesTraffar.join(" | ")}) — genererar om`);
+        minnesOmgenererad = true;
+        try {
+          const o = await genOne(vinkelInstruktion, MINNE_SKARPNING);
+          const sanerad = await saneraText(o.text, clientId);
+          const igen = hittaUppfunnetMinne(sanerad);
+          if (!igen.length) {
+            // Omtaget måste också klara CTA-golvet — annars byter vi ett fel mot ett annat.
+            const r2 = await sakerstallCaption(sanerad, tillatnaTal, async (sk) => {
+              const o2 = await genOne(vinkelInstruktion, `${MINNE_SKARPNING}
+
+${sk}`);
+              return saneraText(o2.text, clientId);
+            }, `${etikett}/minne`);
+            if (!hittaUppfunnetMinne(r2.text).length) {
+              text = r2.text;
+              valdId = o.generationId ?? valdId;
+              minnesTraffar = [];
+            } else {
+              minnesTraffar = hittaUppfunnetMinne(r2.text);
+            }
+          } else {
+            minnesTraffar = igen;
+          }
+        } catch (e) {
+          console.error(`[suggest-caption] ${etikett}: omgenereringen mot uppfunnet minne failade:`, e);
+        }
+      }
+      if (minnesTraffar.length) {
+        console.error(`[suggest-caption] ${etikett}: KASSERAD — minnet stod kvar efter omtag (${minnesTraffar.join(" | ")})`);
+        return { caption: "", ctaOmgenererad: r.omgenererad, ctaGodkand: r.godkand, generationId: valdId, minnesTraffar, minnesOmgenererad };
+      }
+      return { caption: text, ctaOmgenererad: r.omgenererad, ctaGodkand: r.godkand, generationId: valdId, minnesTraffar: [] as string[], minnesOmgenererad };
     };
 
     // A/B-läge: distinkta krok-vinklar så varianterna faktiskt skiljer sig (spec Fas D).
@@ -198,9 +239,18 @@ export async function POST(req: NextRequest) {
       { angle: "Siffra", instruktion: "Öppna med en konkret SIFFRA eller ett resultat som skapar nyfikenhet (hitta inte på — bara om innehållet ger det, annars en tydlig observation)." },
     ];
 
+    // T-6b-grind (Håkans fynd 10/8): berättelse-vinkeln ber om en händelse ur story-banken —
+    // men KLIPPORDNING i prompt-core klipper "Story-bank" FÖRST när profilen är för lång.
+    // Saknas den i den färdiga prompten är uppdraget "berätta om en kund" en beställning på
+    // ett påhitt, och modellen tog närmaste sak som liknade en händelse: en kundrecension.
+    const finnsStorybank = harStorybank(bygg.profilText);
+    const anglarIBruk = finnsStorybank
+      ? ANGLAR
+      : ANGLAR.map((a) => (a.angle === "Berättelse" ? { ...a, instruktion: BERATTELSE_UTAN_STORYBANK } : a));
+
     const n = Math.min(4, Math.max(0, Number((b as { variants?: number }).variants) || 0));
     if (n >= 2) {
-      const valda = ANGLAR.slice(0, n);
+      const valda = anglarIBruk.slice(0, n);
       // Sanering + CTA-golv sker inuti genMedCtaGolv, per variant. Varje variant får
       // sin EGNA enda omgenerering — en variant som klarar golvet rörs aldrig.
       //
@@ -222,10 +272,30 @@ export async function POST(req: NextRequest) {
           };
         }),
       );
-      return NextResponse.json({ variants: variants.filter((v) => v.caption) });
+      // En kasserad variant har tom caption och filtreras bort som förut. Blev ALLA
+      // kasserade är det inte "inga förslag" — det är ett besked: profilen saknar
+      // berättelser att skriva ur, och då ska ytan säga var de fylls i i stället för att
+      // visa en tom lista (samma regel som G-9: en nolla är inte ett mätvärde).
+      const kvar = variants.filter((v) => v.caption);
+      if (!kvar.length) {
+        const kasserade = variants.flatMap((v) => v.minnesTraffar);
+        if (kasserade.length) {
+          return NextResponse.json({
+            error: "Förslagen började berätta om en enskild kund som om den fanns i era anteckningar. Skriv in en riktig kundberättelse under Brand-profil → Kundberättelser, eller ta ett annat ämne — jag hittar inte på en person.",
+            minnesTraffar: kasserade,
+          }, { status: 502 });
+        }
+      }
+      return NextResponse.json({ variants: kvar });
     }
 
     const enda = await genMedCtaGolv("", "caption");
+    if (!enda.caption) {
+      return NextResponse.json({
+        error: "Texten började berätta om en enskild kund som om den fanns i era anteckningar. Skriv in en riktig kundberättelse under Brand-profil → Kundberättelser, eller ta ett annat ämne — jag hittar inte på en person.",
+        minnesTraffar: enda.minnesTraffar,
+      }, { status: 502 });
+    }
     return NextResponse.json(enda);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
