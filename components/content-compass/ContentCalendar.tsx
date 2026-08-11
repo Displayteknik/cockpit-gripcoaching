@@ -86,7 +86,12 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
               return (
                 <div
                   key={i}
-                  onDragOver={(e) => { if (!dragen) return; e.preventDefault(); setOverDag(k); }}
+                  onDragOver={(e) => {
+                    if (!dragen) return;
+                    e.preventDefault(); // utan detta vägrar webbläsaren släppa
+                    e.dataTransfer.dropEffect = "move";
+                    setOverDag(k);
+                  }}
                   onDragLeave={() => setOverDag((v) => (v === k ? null : v))}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -122,7 +127,14 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
                       const dragProps = gardra(it)
                         ? {
                             draggable: true,
-                            onDragStart: (e: React.DragEvent) => { setDragen(it); e.dataTransfer.effectAllowed = "move"; },
+                            onDragStart: (e: React.DragEvent) => {
+                              setDragen(it);
+                              e.dataTransfer.effectAllowed = "move";
+                              // setData är INTE valfritt: utan nyttolast startar Firefox aldrig
+                              // dragningen, och en bricka som inte går att dra ser trasig ut.
+                              // Chrome lägger själv in länkens href, Firefox gör det inte.
+                              try { e.dataTransfer.setData("text/plain", `${it.source}:${it.id}`); } catch { /* äldre webbläsare */ }
+                            },
                             onDragEnd: () => { setDragen(null); setOverDag(null); },
                             // Titeln säger varför en post går att dra, och den som inte går
                             // att dra säger varför den inte gör det (nedan).

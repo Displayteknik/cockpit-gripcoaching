@@ -112,6 +112,14 @@ describe("KALENDER-1 · flytta genom att dra", () => {
     expect(kalender).toMatch(/gammal.*getHours\(\)/);
   });
 
+  it("dragningen bär en nyttolast — annars startar Firefox den aldrig", () => {
+    // Håkan kunde inte dra 11/8. Huvudorsaken var att koden inte var deployad, men
+    // dragningen saknade också setData: Chrome lägger själv in länkens href, Firefox gör
+    // det inte, och utan nyttolast blir brickan orörlig utan felmeddelande.
+    expect(kalender).toContain('setData("text/plain"');
+    expect(kalender).toContain('dropEffect = "move"');
+  });
+
   it("sidan lägger tillbaka det gamla datumet om skrivningen failar", () => {
     expect(kalenderSida).toContain("const forra = it.when");
     expect(kalenderSida).toContain("Kunde inte flytta inlägget");
