@@ -64,6 +64,14 @@ export default function VeckoplanPage() {
     }).catch(() => {});
   }, []);
   const [theme, setTheme] = useState("");
+  // VECKA-1 (Håkans krav 11/8): sju inlägg ska inte vara påtvingade. Dagnamnen är samma som
+  // WEEK_ROLES i lib/content-framework — rollen (4A × DISC × funnel) hör till VECKODAGEN, så
+  // väljer man tisdag och torsdag får man de dagarnas roller, inte de två första i listan.
+  // Default är alla sju: den som inte bryr sig märker ingen skillnad.
+  const ALLA_DAGAR = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
+  const [valdaDagar, setValdaDagar] = useState<string[]>(ALLA_DAGAR);
+  const vaxlaDag = (dag: string) =>
+    setValdaDagar((prev) => (prev.includes(dag) ? prev.filter((d) => d !== dag) : ALLA_DAGAR.filter((d) => prev.includes(d) || d === dag)));
   const [generating, setGenerating] = useState(false);
   const [response, setResponse] = useState<WeekResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -140,6 +148,10 @@ export default function VeckoplanPage() {
       setError("Skriv ett veckotema");
       return;
     }
+    if (valdaDagar.length === 0) {
+      setError("Välj minst en dag att skriva för");
+      return;
+    }
     setError(null);
     setGenerating(true);
     setResponse(null);
@@ -147,7 +159,7 @@ export default function VeckoplanPage() {
       const r = await fetch("/api/generate/week", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme: theme.trim() }),
+        body: JSON.stringify({ theme: theme.trim(), dagar: valdaDagar }),
       });
       const d = await r.json();
       if (!r.ok || d.error) {
@@ -188,8 +200,8 @@ export default function VeckoplanPage() {
   // Sju genererade inlägg är 45–60 sekunders AI-arbete. En omladdning slängde alltihop,
   // inklusive de inline-redigeringar man hunnit göra i dagarna.
   const utkast = useMemo(
-    () => ({ theme, response, startDate, scheduleAll }),
-    [theme, response, startDate, scheduleAll],
+    () => ({ theme, response, startDate, scheduleAll, valdaDagar }),
+    [theme, response, startDate, scheduleAll, valdaDagar],
   );
   type VeckoUtkast = typeof utkast;
 
@@ -199,6 +211,10 @@ export default function VeckoplanPage() {
   // klientens kalender och hade läst som ett kvitto på den nya.
   const tomYtan = useCallback(() => {
     setTheme(""); setResponse(null); setError(null); setSaveResult(null); setSavedCount(0);
+    // VECKA-1: dagvalet är kundens kadens, inte vår inställning — nästa kund ska inte ärva
+    // förra kundens veckorytm. Fångat av UTKAST-2:s grind, som kräver att varje fält utkastet
+    // bär också töms.
+    setValdaDagar(ALLA_DAGAR);
   }, []);
 
   const { aterupptaget, sparatVid, glomUtkast } = useUtkast<VeckoUtkast>({
@@ -210,6 +226,7 @@ export default function VeckoplanPage() {
       setResponse(d.response ?? null);
       if (d.startDate) setStartDate(d.startDate);
       setScheduleAll(Boolean(d.scheduleAll));
+      if (Array.isArray(d.valdaDagar) && d.valdaDagar.length) setValdaDagar(d.valdaDagar);
     }, []),
     harInnehall: useCallback((d: VeckoUtkast) => Boolean(d.response || d.theme?.trim()), []),
     nollstall: tomYtan,
@@ -233,7 +250,7 @@ export default function VeckoplanPage() {
         <div>
           <h1 className="font-display text-2xl font-bold text-gray-900">Veckoplan</h1>
           <p className="text-gray-500 text-sm mt-1 max-w-2xl leading-relaxed">
-            Sju inlägg på en gång, ett per dag, med rätt ton och syfte för varje veckodag. Veckan varvar automatiskt mellan fakta, inspiration, handling och det personliga så den känns levande.
+            Flera inlägg på en gång, ett per dag du väljer, med rätt ton och syfte för varje veckodag. Veckan varvar automatiskt mellan fakta, inspiration, handling och det personliga så den känns levande.
           </p>
         </div>
       </div>
@@ -256,6 +273,45 @@ export default function VeckoplanPage() {
           />
         </div>
 
+        {/* Dagval — samma tanke som kalendervägens snabbval (CC-4), plus varje dag för sig.
+            Kadensen är kundens, inte vår. */}
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Vilka dagar?</span>
+            {[
+              { etikett: "Alla 7", dagar: ALLA_DAGAR },
+              { etikett: "3 dagar", dagar: ["Tisdag", "Torsdag", "Söndag"] },
+              { etikett: "2 dagar", dagar: ["Tisdag", "Torsdag"] },
+            ].map((v) => {
+              const vald = v.dagar.length === valdaDagar.length && v.dagar.every((d) => valdaDagar.includes(d));
+              return (
+                <button key={v.etikett} type="button" onClick={() => setValdaDagar(v.dagar)}
+                  className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors ${vald ? "text-white border-transparent" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+                  style={vald ? { background: accent } : {}}>
+                  {v.etikett}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {ALLA_DAGAR.map((dag) => {
+              const vald = valdaDagar.includes(dag);
+              return (
+                <button key={dag} type="button" onClick={() => vaxlaDag(dag)}
+                  className={`text-xs font-medium px-2.5 py-1.5 rounded-full border transition-colors ${vald ? "text-white border-transparent" : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"}`}
+                  style={vald ? { background: accent } : {}}>
+                  {dag.slice(0, 3)}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-400">
+            {valdaDagar.length === 0
+              ? "Välj minst en dag."
+              : `${valdaDagar.length} inlägg skrivs: ${valdaDagar.join(", ")}. Varje veckodag har sin egen ton och sitt syfte, så valet styr vilka roller veckan får.`}
+          </p>
+        </div>
+
         {error && (
           <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-sm text-rose-700 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -265,7 +321,7 @@ export default function VeckoplanPage() {
 
         <button
           onClick={generate}
-          disabled={generating || !theme.trim()}
+          disabled={generating || !theme.trim() || valdaDagar.length === 0}
           className="w-full flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-lg font-semibold shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
           style={{ background: accent }}
         >

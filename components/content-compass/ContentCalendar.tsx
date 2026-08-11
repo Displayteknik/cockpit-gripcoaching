@@ -10,8 +10,19 @@ import { funnelTintClass, FourALabel, FunnelLabel, DiscDots } from "@/components
 // hrefFor låter kundvyn peka brickorna till /k istället för /dashboard (default = editHref).
 // onSelect: när den finns öppnar brickan en detaljvy (redigera/radera) istället för att
 // länka direkt till verkstaden. Utan den beter sig kalendern precis som förut.
-export default function ContentCalendar({ items, primary = "#10B981", hrefFor, onSelect }: { items: ContentItem[]; primary?: string; hrefFor?: (it: ContentItem) => string; onSelect?: (it: ContentItem) => void }) {
+export default function ContentCalendar({ items, primary = "#10B981", hrefFor, onSelect, onMove }: { items: ContentItem[]; primary?: string; hrefFor?: (it: ContentItem) => string; onSelect?: (it: ContentItem) => void; onMove?: (it: ContentItem, nyttDatum: Date) => void | Promise<void> }) {
   const linkOf = (it: ContentItem) => (hrefFor ? hrefFor(it) : it.editHref);
+
+  // KALENDER-1 (Håkans krav 11/8): flytta ett inlägg genom att dra det till en annan dag.
+  // Utan onMove beter kalendern sig exakt som förut — kundvyn och navet får dra-och-släpp
+  // först när deras sida skickar in en flyttfunktion.
+  //
+  // Två saker får ALDRIG kunna dras, och det är samma två som API:t vägrar:
+  //   · publicerat innehåll — texten är redan ute, ett nytt datum hade bara gjort vyn osann
+  //   · bloggposter — deras datum ÄR publiceringstiden på sajten, inte ett schema
+  const [dragen, setDragen] = useState<ContentItem | null>(null);
+  const [overDag, setOverDag] = useState<string | null>(null);
+  const gardra = (it: ContentItem) => Boolean(onMove) && it.status !== "published" && it.source !== "blog";
   const [cursor, setCursor] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
 
   const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -73,7 +84,28 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
               const dayItems = itemsByDay.get(k) || [];
               const isToday = k === todayKey;
               return (
-                <div key={i} className={`min-h-[96px] rounded-lg border p-1.5 ${inMonth ? "bg-white border-gray-100" : "bg-gray-50/60 border-gray-50"}`}>
+                <div
+                  key={i}
+                  onDragOver={(e) => { if (!dragen) return; e.preventDefault(); setOverDag(k); }}
+                  onDragLeave={() => setOverDag((v) => (v === k ? null : v))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setOverDag(null);
+                    const it = dragen;
+                    setDragen(null);
+                    if (!it || !onMove) return;
+                    // Behåll klockslaget. Drar man en post från tisdag 20:00 till torsdag ska
+                    // den ligga 20:00 där — inte midnatt, som ett rent datumbyte hade gett.
+                    const gammal = it.when ? new Date(it.when) : null;
+                    const nytt = new Date(d);
+                    nytt.setHours(gammal && !isNaN(gammal.getTime()) ? gammal.getHours() : 9, gammal && !isNaN(gammal.getTime()) ? gammal.getMinutes() : 0, 0, 0);
+                    void onMove(it, nytt);
+                  }}
+                  className={`min-h-[96px] rounded-lg border p-1.5 transition-colors ${
+                    overDag === k && dragen ? "ring-2 ring-offset-1" : ""
+                  } ${inMonth ? "bg-white border-gray-100" : "bg-gray-50/60 border-gray-50"}`}
+                  style={overDag === k && dragen ? { boxShadow: `inset 0 0 0 2px ${primary}` } : {}}
+                >
                   <div className={`text-xs mb-1 ${isToday ? "font-bold text-white inline-flex items-center justify-center w-5 h-5 rounded-full" : inMonth ? "text-gray-500" : "text-gray-300"}`} style={isToday ? { background: primary } : {}}>{d.getDate()}</div>
                   <div className="space-y-1">
                     {dayItems.slice(0, 4).map((it) => {
@@ -87,10 +119,26 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
                       const cls = it.status === "failed"
                         ? "block w-full text-left rounded px-1.5 py-1 text-xs leading-tight hover:opacity-80 border-l-4 border-l-red-500 bg-red-50"
                         : `block w-full text-left rounded px-1.5 py-1 text-xs leading-tight hover:opacity-80 ${funnelTintClass(it.funnel_level) || "border-l-4 border-l-gray-200 bg-gray-50"}`;
+                      const dragProps = gardra(it)
+                        ? {
+                            draggable: true,
+                            onDragStart: (e: React.DragEvent) => { setDragen(it); e.dataTransfer.effectAllowed = "move"; },
+                            onDragEnd: () => { setDragen(null); setOverDag(null); },
+                            // Titeln säger varför en post går att dra, och den som inte går
+                            // att dra säger varför den inte gör det (nedan).
+                            title: `${it.title} — dra till en annan dag för att flytta`,
+                          }
+                        : {
+                            title: onMove
+                              ? `${it.title} — ${it.status === "published" ? "publicerat, kan inte flyttas" : "bloggdatum styrs av publiceringen"}`
+                              : it.title,
+                          };
+                      const flyttas = dragen && dragen.id === it.id && dragen.source === it.source;
+                      const dragCls = `${cls}${gardra(it) ? " cursor-grab active:cursor-grabbing" : ""}${flyttas ? " opacity-40" : ""}`;
                       return onSelect ? (
-                        <button key={`${it.source}-${it.id}`} onClick={() => onSelect(it)} title={it.title} className={cls}>{innehall}</button>
+                        <button key={`${it.source}-${it.id}`} onClick={() => onSelect(it)} className={dragCls} {...dragProps}>{innehall}</button>
                       ) : (
-                        <a key={`${it.source}-${it.id}`} href={linkOf(it)} title={it.title} className={cls}>{innehall}</a>
+                        <a key={`${it.source}-${it.id}`} href={linkOf(it)} className={dragCls} {...dragProps}>{innehall}</a>
                       );
                     })}
                     {dayItems.length > 4 && <div className="text-xs text-gray-400 pl-1">+{dayItems.length - 4} till</div>}
@@ -107,6 +155,7 @@ export default function ContentCalendar({ items, primary = "#10B981", hrefFor, o
         <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-3 rounded border-l-4 border-l-amber-300 bg-amber-50" /> Bygg förtroende</span>
         <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-3 rounded border-l-4 border-l-emerald-400 bg-emerald-50" /> Dags att sälja</span>
         <span className="font-semibold ml-2">Ton (hovra för förklaring):</span><DiscDots disc={["D", "I", "S", "C"]} size={14} />
+        {onMove && <span className="ml-2">Dra ett inlägg till en annan dag för att flytta det. Publicerat och bloggposter sitter fast.</span>}
       </div>
     </div>
   );

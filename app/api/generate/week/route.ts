@@ -76,7 +76,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Bygg en kombinerad prompt som genererar 7 inlägg i en JSON-call
-    const dayLines = WEEK_ROLES.map((role, i) => {
+    // VECKA-1 (Håkans krav 11/8): sju inlägg får inte vara påtvingade. Kalendervägen har
+    // haft dagval sedan CC-4; den här vägen räknade alltid sju. Body kan nu skicka
+    // `dagar: ["Tisdag","Torsdag"]` — utan den är beteendet exakt som förut (alla sju), så
+    // inget befintligt anropsställe ändras.
+    const bodyDagar = Array.isArray((body as { dagar?: unknown }).dagar)
+      ? (body as { dagar: unknown[] }).dagar.map(String)
+      : null;
+    const valda = bodyDagar?.length ? WEEK_ROLES.filter((r) => bodyDagar.includes(r.day)) : WEEK_ROLES;
+    // Tomt urval betyder inte "inga inlägg" — det betyder att valet inte gick att läsa, och
+    // då är hela veckan det ärliga svaret.
+    const valdaRoller = valda.length ? valda : WEEK_ROLES;
+    const antalDagar = valdaRoller.length;
+
+    const dayLines = valdaRoller.map((role, i) => {
       const overrideFormat = body.formats?.[role.day] as Format | undefined;
       const format = overrideFormat || role.recommended_formats[0];
       return `Dag ${i + 1} (${role.day}): 4A=${role.fourA}, DISC=${role.disc}, Funnel=${role.funnel}, Format=${FORMAT_LABELS[format]} (${format}). Intent: ${role.intent}`;
@@ -85,7 +98,7 @@ export async function POST(req: NextRequest) {
     // TEXT-1 T-2: prompten byggs av prompt-core — KUND-blocket (råfält) är ersatt av
     // kärnans brand-profil-lager, rösten/winning/skrivreglerna ägs av kärnan. Uppdraget =
     // WEEK_ROLES + 4A/DISC/Funnel-guiderna + Kane-hookreglerna + kvalitetskraven.
-    const uppdrag = `Du är världsklass copywriter. Du genererar 7 inlägg för en hel vecka — ETT inlägg per dag enligt veckorytmen. Varje dag har sin egen roll i 4A × DISC × Funnel.
+    const uppdrag = `Du är världsklass copywriter. Du genererar ${antalDagar} inlägg — ETT per vald dag enligt veckorytmen. Varje dag har sin egen roll i 4A × DISC × Funnel. Skriv inga andra dagar än de som står under VECKO-ROLLER.
 
 ═══ VECKO-ROLLER ═══
 ${dayLines}
@@ -103,31 +116,31 @@ ${Object.entries(FUNNEL_GUIDE).map(([k, v]) => `- ${k}: ${v}`).join("\n")}
 ${KANE_HOOK_RULES}
 
 ═══ KVALITETSKRAV ═══
-- Veckan ska ha PROGRESSION — söndag ska kännas annorlunda från måndag
+- Veckan ska ha PROGRESSION — sista dagen ska kännas annorlunda från den första
 - Variera HOOK-FORMAT över veckan: fråga, statistik, kontrast, story, påstående
 - ALDRIG AI-språk: "kraftfull", "banbrytande", "game-changer", "skalbar"
 - Skriv på svenska som personen själv hade skrivit
 - Varje CTA är EN sak att göra — varierande över veckan
 
 ${VARIANTREGEL}
-(Veckans 7 inlägg räknas som varianter: två dagar får aldrig dela retorisk ingång eller öppningsfras.)`;
+(Veckans ${antalDagar} inlägg räknas som varianter: två dagar får aldrig dela retorisk ingång eller öppningsfras.)`;
 
     const jsonSchema = `{
   "days": [
     {
-      "day": "Måndag",
+      "day": "${valdaRoller[0].day}",
       "hook": "...",
       "body": "...",
       "cta": "...",
       "hashtags": ["..."]
     },
-    ... 7 dagar totalt, i ordning Måndag→Söndag
+    ... ${antalDagar} dagar totalt, i ordning ${valdaRoller.map((r) => r.day).join(" → ")}
   ]
 }`;
 
     // G-3d (rotation): samma skäl som i lib/content-compass/vecka-prompt — VARIANTREGELN
     // sprider veckans sju inlägg mot varandra, aldrig mot förra veckans.
-    const nyligen = await hamtaNyligen(clientId, "veckoplan", { antal: 7 });
+    const nyligen = await hamtaNyligen(clientId, "veckoplan", { antal: Math.max(3, antalDagar) });
 
     const bygg = await byggTextPrompt({
       clientId,
@@ -168,7 +181,7 @@ Producera 7 inlägg som tillsammans tar målgruppen från medvetenhet till handl
       return v == null ? "" : String(v);
     };
 
-    const days: DayPlan[] = WEEK_ROLES.map((role, i) => {
+    const days: DayPlan[] = valdaRoller.map((role, i) => {
       const aiDay = parsed.days![i] || ({} as { hook?: string; body?: unknown; cta?: string; hashtags?: string[] });
       const overrideFormat = body.formats?.[role.day] as Format | undefined;
       const format = overrideFormat || role.recommended_formats[0];

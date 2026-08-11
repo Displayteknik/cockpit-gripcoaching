@@ -42,6 +42,37 @@ export default function KalenderPage() {
   }, []);
   useEffect(() => { refresh(); }, [refresh, client]);
 
+  // KALENDER-1 (Håkans krav 11/8): flytta ett inlägg genom att dra det.
+  //
+  // Optimistiskt: brickan hoppar direkt, för en flytt som laggar känns trasig. Går skrivningen
+  // fel läggs det GAMLA datumet tillbaka och felet skrivs ut — en bricka som ligger kvar på fel
+  // dag i vyn medan databasen säger något annat är värre än ett synligt fel.
+  const [flyttFel, setFlyttFel] = useState("");
+  const flytta = useCallback(async (it: ContentItem, nyttDatum: Date) => {
+    const forra = it.when;
+    const iso = nyttDatum.toISOString();
+    setFlyttFel("");
+    setItems((prev) => prev.map((x) => (x.id === it.id && x.source === it.source ? { ...x, when: iso, status: x.status === "draft" ? "scheduled" : x.status } : x)));
+    try {
+      const r = await fetch("/api/content/item", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: it.source, id: it.id, when: iso }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setItems((prev) => prev.map((x) => (x.id === it.id && x.source === it.source ? { ...x, when: forra, status: it.status } : x)));
+        setFlyttFel(d.error || "Kunde inte flytta inlägget.");
+        return;
+      }
+      // Läs om: statusen kan ha ändrats från utkast till schemalagt, och den räknas i grupperna.
+      void refresh();
+    } catch (e) {
+      setItems((prev) => prev.map((x) => (x.id === it.id && x.source === it.source ? { ...x, when: forra, status: it.status } : x)));
+      setFlyttFel((e as Error).message);
+    }
+  }, [refresh]);
+
   const groups = useMemo(() => ({
     scheduled: items.filter((i) => i.status === "scheduled").sort((a, b) => (a.when || "").localeCompare(b.when || "")),
     draft: items.filter((i) => i.status === "draft"),
@@ -120,7 +151,10 @@ export default function KalenderPage() {
 
       {view === "calendar" ? (
         <section className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-          <ContentCalendar items={items} primary={primary} />
+          {flyttFel && (
+            <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{flyttFel}</div>
+          )}
+          <ContentCalendar items={items} primary={primary} onMove={flytta} />
         </section>
       ) : (
         <>
