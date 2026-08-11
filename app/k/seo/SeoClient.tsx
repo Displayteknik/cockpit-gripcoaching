@@ -7,6 +7,7 @@ import { TrendingUp, FileSearch, Loader2, AlertCircle, CheckCircle2, Plus, Trash
 import { SeoReportBlock } from "@/components/SeoReport";
 import { FunctionGuide } from "@/components/FunctionGuide";
 import MarkdownView from "@/components/MarkdownView";
+import { byggRapportHtml } from "@/lib/seo/rapport-pdf";
 
 // SEO-1 / S-2: mätkolumnerna kan vara NULL i hm_seo_audits = "inte mätt".
 // Kunden ska se "Ej mätt", aldrig en nolla som ser ut som ett resultat.
@@ -693,19 +694,38 @@ export default function SeoClient({ primaryColor, clientName, publicUrl, showKey
       </div>
 
       {showAiAudit && <AiAuditModal primaryColor={primaryColor} onClose={() => setShowAiAudit(false)} />}
-      {openReport && <DeepReportModal report={openReport} clientName={clientName} primaryColor={primaryColor} onClose={() => setOpenReport(null)} />}
+      {openReport && <DeepReportModal report={openReport} clientName={clientName} primaryColor={primaryColor} clientUrl={publicUrl} onClose={() => setOpenReport(null)} />}
     </div>
   );
 }
 
-function DeepReportModal({ report, clientName, primaryColor, onClose }: { report: DeepReport; clientName: string; primaryColor: string; onClose: () => void }) {
-  function downloadMd() {
-    const blob = new Blob([report.body], { type: "text/markdown;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `SEO-AEO-djupgranskning-${clientName.replace(/[^a-z0-9]+/gi, "-")}.md`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+function DeepReportModal({ report, clientName, primaryColor, clientUrl, logoUrl, onClose }: { report: DeepReport; clientName: string; primaryColor: string; clientUrl?: string; logoUrl?: string | null; onClose: () => void }) {
+  /**
+   * Öppnar rapporten som utskriftsfärdigt dokument i en ny flik och startar utskriften.
+   *
+   * ★ VARFÖR INTE EN .md-NEDLADDNING (som förut): kunden fick en fil hon inte kan öppna,
+   *   inte läsa och inte visa för någon. En rapport hon inte kan lämna ifrån sig är i
+   *   praktiken ingen leverans.
+   *
+   * ★ VARFÖR NY FLIK OCH INTE ETT PDF-BIBLIOTEK: webbläsarens egen utskrift ger vektor-PDF
+   *   med sökbar text, riktiga sidbrytningar och rätt teckensnitt — utan att lägga till ett
+   *   beroende som ska underhållas. `@page`-reglerna i mallen styr marginaler och format.
+   */
+  function skrivUt() {
+    const html = byggRapportHtml(report.body, {
+      klientNamn: clientName,
+      url: clientUrl || "",
+      primarFarg: primaryColor,
+      logoUrl: logoUrl ?? null,
+    });
+    const w = window.open("", "_blank");
+    // Popup-blockerare är det enda som stoppar det här, och tystnad hade sett ut som en
+    // trasig knapp.
+    if (!w) { alert("Tillåt popup-fönster för att spara rapporten som PDF."); return; }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 500);
   }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -717,8 +737,8 @@ function DeepReportModal({ report, clientName, primaryColor, onClose }: { report
             SEO &amp; AEO-djupgranskning
           </h3>
           <div className="flex items-center gap-2">
-            <button onClick={downloadMd} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">
-              <Download className="w-3.5 h-3.5" /> Ladda ner
+            <button onClick={skrivUt} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-white hover:opacity-90" style={{ background: primaryColor }}>
+              <Download className="w-3.5 h-3.5" /> Spara som PDF
             </button>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1"><X className="w-5 h-5" /></button>
           </div>
