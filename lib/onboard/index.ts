@@ -25,6 +25,7 @@ import {
 import { harledProfil } from "./harled";
 import { hamtaGbp } from "./gbp";
 import { fargpalett } from "./farg";
+import { bokadirektLankUrSidor, hamtaBokadirekt } from "./bokadirekt";
 import {
   funnet, tomt, harVarde, medKonflikt, arStandardTillaten,
   type Analys, type Falt, type Forslag, type ForslagNyckel,
@@ -195,8 +196,18 @@ export async function analyseraSajt(råUrl: string, opts?: AnalysOpts): Promise<
   const { betyg: betygSchema, antal: antalSchema } = betygUrNod(nod, nodUrl);
   const omdomenSchema = omdomenUrNod(nod, nodUrl);
 
-  // ── 5 + 6 + 7. Härledning, grafik och GBP parallellt ───────────────────────
-  const [harlett, grafik, gbp] = await Promise.all([
+  // ── 5 + 6 + 7 (+ Bokadirekt). Härledning, grafik och externa källor parallellt ─
+  //
+  // ONBOARD-3: Bokadirekt-länken letas i de LÄSTA sidornas innehåll — sidupptäckten
+  // kastar externa länkar med flit (den bygger listan över våra egna sidor), så källan
+  // måste plockas här. För tjänsteföretagen ligger affären där: priser, kursdatum,
+  // recensioner och adress som hemsidan sällan bär.
+  //
+  // `KallstrukturFel` får däremot BUBBLA: har Bokadirekt bytt form ska körningen säga
+  // det högt, inte leverera en tunn profil som ser komplett ut. Nätfel ger null i
+  // hamtaBokadirekt och källan hoppar tyst — sajten är fortfarande analyserad.
+  const bokadirektUrl = bokadirektLankUrSidor(sidor);
+  const [harlett, grafik, gbp, bd] = await Promise.all([
     harledProfil(sidor, { tenantId: opts?.tenantId ?? null }),
     analyzeSite(rotUrl, undefined, start.html).catch(() => null),
     opts?.hoppaGbp
@@ -206,25 +217,50 @@ export async function analyseraSajt(råUrl: string, opts?: AnalysOpts): Promise<
           ort: adress.ort.varde,
           hemsida: origin,
         }).catch(() => null),
+    bokadirektUrl ? hamtaBokadirekt(bokadirektUrl) : Promise.resolve(null),
   ]);
 
   // ── Slå ihop. Hårda fakta vinner, härlett fyller luckorna. ─────────────────
-  const erbjudanden: Falt<Tjanst[]> = harVarde(priser)
-    ? priser
-    : harVarde(harlett.erbjudanden)
-      ? (harlett.erbjudanden as Falt<Tjanst[]>)
-      : tomt("Inga tjänster eller priser gick att belägga på sajten.");
+  //
+  // ONBOARD-3: Bokadirekt går FÖRE både sajtens prislista och det härledda. Skälet är
+  // inte att plattformen är finare — det är att bokningssidan är det kunden faktiskt
+  // BETALAR genom. Ett pris på hemsidan kan vara fjolårets; priset i bokningsflödet är
+  // per definition det som debiteras. Gittes sajt saknade priser helt, Annas likaså —
+  // för den här kundtypen ÄR Bokadirekt prislistan.
+  const erbjudanden: Falt<Tjanst[]> = bd && harVarde(bd.tjanster)
+    ? bd.tjanster
+    : harVarde(priser)
+      ? priser
+      : harVarde(harlett.erbjudanden)
+        ? (harlett.erbjudanden as Falt<Tjanst[]>)
+        : tomt("Inga tjänster eller priser gick att belägga på sajten eller bokningsplattformen.");
 
-  const kundcitat: Falt<string[]> = harVarde(omdomenSchema) ? omdomenSchema : harlett.kundcitat;
+  // Sajtens egna omdömen i schema väger tyngst (kundens aktiva urval). Bokadirekts
+  // topReviews därefter — de är verkliga men kurerade av plattformen, och fältet bär
+  // redan sin partiellt-flagga om före-språket som saknas. AI-härlett sist.
+  const kundcitat: Falt<string[]> = harVarde(omdomenSchema)
+    ? omdomenSchema
+    : bd && harVarde(bd.kundcitat)
+      ? bd.kundcitat
+      : harlett.kundcitat;
 
   const forslag: Forslag = {
     foretagsnamn: namn,
     kontaktperson: harlett.kontaktperson,
     epost,
-    telefon,
-    adress: adress.adress,
-    postnummer: adress.postnummer,
-    ort: harVarde(adress.ort) ? adress.ort : gbpFalt(gbp?.ort ?? null, gbp?.kallUrl ?? null, "Ingen ort hittades."),
+    // Adressfälten: sajten först, Bokadirekts JSON-LD som andra källa — via `valj`, så
+    // att två källor som säger OLIKA saker blir en konflikt och inte ett tyst val.
+    // Skarpt fall (Oppråby, 2026-08-11): sajten säger postnummer 726 94, Bokadirekt
+    // 725 94. Vilket som gäller kan bara kunden svara på. Och Bokadirekts PostalAddress
+    // är strukturerad — det är den som ersätter textgissningen där salongs-id:t 20545
+    // en gång blev postnummer.
+    telefon: valj([telefon, bd?.telefon ?? null], telNyckel) ?? telefon,
+    adress: valj([adress.adress, bd?.adress ?? null]) ?? adress.adress,
+    postnummer:
+      valj([adress.postnummer, bd?.postnummer ?? null], (v) => String(v).replace(/\D/g, "")) ??
+      adress.postnummer,
+    ort: valj([adress.ort, bd?.ort ?? null]) ??
+      gbpFalt(gbp?.ort ?? null, gbp?.kallUrl ?? null, "Ingen ort hittades."),
     land: funnet(LAND_STANDARD, "standard", null, { sakerhet: "hog" }),
     tidszon: funnet(TIDSZON_STANDARD, "standard", null, { sakerhet: "hog" }),
     hemsida: funnet(origin, "sajt", startNorm, { sakerhet: "hog" }),
@@ -239,15 +275,36 @@ export async function analyseraSajt(råUrl: string, opts?: AnalysOpts): Promise<
     kundcitat,
     usp: harlett.usp,
 
-    // ONBOARD-3: fylls av bokningsplattformen. Hemsidan bär sällan kursdatum i läsbar form,
-    // och ett evenemang utan datum är bara en tjänst — då hör det hemma i `erbjudanden`.
-    evenemang: tomt<Evenemang[]>("Inga kurser eller workshops med datum hittades. Bokningsplattformen är källan för dem."),
+    // ONBOARD-3: bokningsplattformen är källan för kursdatum. Hemsidan bär dem sällan i
+    // läsbar form, och ett evenemang utan datum är bara en tjänst — då hör det hemma i
+    // `erbjudanden`.
+    evenemang: bd && harVarde(bd.evenemang)
+      ? bd.evenemang
+      : tomt<Evenemang[]>(
+          bokadirektUrl
+            ? "Inga kurser eller workshops med datum fanns på Bokadirekt-sidan."
+            : "Inga kurser eller workshops med datum hittades. Bokningsplattformen är källan för dem, och ingen bokningslänk fanns på sajten.",
+        ),
 
+    // Öppettider: sajtens egna först, sedan Bokadirekt (kundens uppdaterade bokningsyta),
+    // sist Google-profilen som ingen kommer ihåg att uppdatera.
+    // Ett TOMT Bokadirekt-fält med förbehåll ("Varierande tider – öppet enligt bokning")
+    // är också ett svar — förbehållet är kundens egen beskrivning och ska nå granskningen,
+    // inte kastas för att veckodagsraderna saknas.
     oppettider: harVarde(oppettider)
       ? oppettider
-      : gbp?.oppettider?.length
-        ? funnet(gbp.oppettider, "gbp", gbp.kallUrl, { sakerhet: "hog" })
-        : tomt("Inga öppettider hittades, varken på sajten eller i Google-profilen."),
+      : bd && (harVarde(bd.oppettider) || bd.oppettider.forbehall)
+        ? bd.oppettider
+        : gbp?.oppettider?.length
+          ? funnet(gbp.oppettider, "gbp", gbp.kallUrl, { sakerhet: "hog" })
+          : tomt("Inga öppettider hittades, varken på sajten, Bokadirekt eller i Google-profilen."),
+    bokningslank: bd
+      ? bd.bokningslank
+      : tomt(
+          bokadirektUrl
+            ? "Bokadirekt-sidan svarade inte — länken hittades men kunde inte läsas."
+            : "Ingen bokningslänk (Bokadirekt) hittades på de lästa sidorna.",
+        ),
     socialaLankar: sociala,
     logotyp: grafik?.logo?.primaryUrl
       ? funnet(grafik.logo.primaryUrl, "sajt", startNorm, { citat: `hittad via ${grafik.found.logoSource}`, sakerhet: "medel" })

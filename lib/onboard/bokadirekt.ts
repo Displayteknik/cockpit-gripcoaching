@@ -17,7 +17,12 @@
 //   De ligger i `place.reviews.topReviews[].review.text` och i JSON-LD. Ingen headless
 //   browser behövs. Kontrollerat 2026-08-07 mot rå HTML utan rendering.
 
-import { funnet, kravForm, tomt, type Evenemang, type Falt, type Oppettid, type Tjanst } from "./typer";
+import { hamtaRatt } from "@/lib/seo-hamta";
+import { decodePayload } from "@/lib/seo-deep";
+import {
+  funnet, kravForm, tomt,
+  type Evenemang, type Falt, type OnboardSida, type Oppettid, type Tjanst,
+} from "./typer";
 
 // ── Adressen till profilsidan ────────────────────────────────────────────────
 
@@ -31,11 +36,16 @@ import { funnet, kravForm, tomt, type Evenemang, type Falt, type Oppettid, type 
  * "gitte-ostling-20545" och "gitte-ostling-for-balance-20545" pekar båda på samma salong,
  * men bara den senare svarar 200. Den förra ger 301. Därför väljs den LÄNGSTA slugen:
  * den är den fullständiga, och en redirect kostar en hämtning vi inte behöver slösa.
+ *
+ * ⚠ SLUGEN ÄR INTE ALLTID ASCII. Oppråby Gamla Skola länkar
+ *   `/places/oppråby-gamla-skola-58298` — med å. Teckenklassen [a-z0-9-] missade den
+ *   tyst, och hela Bokadirekt-källan försvann för kunden som behövde den mest.
+ *   Därför: allt utom URL-avslutare tillåts i slugen. fetch procentkodar själv.
  */
 export function profilUrlFranLankar(lankar: string[]): string | null {
   const kandidater: { slug: string; id: string }[] = [];
   for (const l of lankar) {
-    const m = l.match(/bokadirekt\.se\/(?:boka-tjanst|places)\/([a-z0-9-]*?)-(\d{3,})(?:\/|$)/i);
+    const m = l.match(/bokadirekt\.se\/(?:boka-tjanst|places)\/([^\s"'<>?#/]*?)-(\d{3,})(?=[/"'?#\s]|$)/iu);
     if (m) kandidater.push({ slug: m[1], id: m[2] });
   }
   if (!kandidater.length) return null;
@@ -43,6 +53,113 @@ export function profilUrlFranLankar(lankar: string[]): string | null {
   const samma = kandidater.filter((k) => k.id === id);
   const slug = samma.map((k) => k.slug).sort((a, b) => b.length - a.length)[0];
   return `https://www.bokadirekt.se/places/${slug}-${id}`;
+}
+
+/**
+ * Hittar Bokadirekt-profilen ur de redan lästa sidorna.
+ *
+ * ★ DETTA VAR HÅLET SOM HÖLL KÄLLAN URKOPPLAD. Sidupptäckten (upptack.ts) kastar
+ *   medvetet alla externa länkar — den bygger listan över VÅRA sidor att läsa, och där
+ *   hör bokadirekt.se inte hemma. Men Bokadirekt-länken är ingen sida att crawla, den
+ *   är en UPPGIFT på sajten, precis som ett telefonnummer. Därför letas den här, i de
+ *   färdiglästa sidornas innehåll, samma väg som socialaUrSidor går.
+ *
+ * Rå HTML räcker inte: JS-renderade sajter bär länkarna i payload (decodePayload), och
+ * sidor hämtade via renderingstjänsten har ingen HTML alls — då söks texten.
+ */
+export function bokadirektLankUrSidor(sidor: OnboardSida[]): string | null {
+  const lankar: string[] = [];
+  for (const s of sidor) {
+    const kalla = s.html ? decodePayload(s.html) : s.text;
+    for (const m of kalla.matchAll(/https?:\/\/(?:www\.)?bokadirekt\.se\/[^\s"'<>)]+/gi)) {
+      lankar.push(m[0]);
+    }
+  }
+  return profilUrlFranLankar(lankar);
+}
+
+// ── Hämtning och sammanställning ─────────────────────────────────────────────
+
+/** Det Bokadirekt-sidan bidrar med till förslaget. Fält utan täckning är null. */
+export interface BokadirektKallor {
+  kallUrl: string;
+  bokningslank: Falt;
+  tjanster: Falt<Tjanst[]>;
+  evenemang: Falt<Evenemang[]>;
+  kundcitat: Falt<string[]>;
+  oppettider: Falt<Oppettid[]>;
+  adress: Falt | null;
+  postnummer: Falt | null;
+  ort: Falt | null;
+  telefon: Falt | null;
+}
+
+/**
+ * JSON-LD på profilsidan. LocalBusiness bär adress och telefon — STRUKTURERAT.
+ *
+ * ★ DET HÄR ÄR RÄTTELSEN AV POSTNUMMER-BUGGEN. Textfallbacken i extrahera.ts läste
+ *   fem siffror ur sidtexten och fick salongs-id:t 20545 som postnummer. Ur
+ *   `"postalCode": "725 94"` går det inte att läsa fel — och finns ingen PostalAddress
+ *   lämnas fälten null i stället för att gissas ur text.
+ */
+function jsonLdLocalBusiness(html: string): Record<string, unknown> | null {
+  for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const j = JSON.parse(m[1]) as Record<string, unknown>;
+      const typ = j["@type"];
+      if (typ === "LocalBusiness" || (Array.isArray(typ) && typ.includes("LocalBusiness"))) return j;
+    } catch {
+      /* trasig JSON-LD är sajtens problem, inte vårt stopp */
+    }
+  }
+  return null;
+}
+
+/**
+ * Hämtar och läser Bokadirekt-profilen. En hämtning, alla parsers.
+ *
+ * Kastar `KallstrukturFel` när sidans form ändrats (se allaTjanster) — det ska smälla,
+ * inte tystna. Nätfel och icke-200 ger däremot null: en nere-för-underhåll-sida hos
+ * Bokadirekt får inte fälla hela analysen, bara lämna källan otillgänglig.
+ */
+export async function hamtaBokadirekt(profilUrl: string): Promise<BokadirektKallor | null> {
+  const r = await hamtaRatt(profilUrl, { timeoutMs: 15000, accepteraIckeOk: true });
+  if (r.logg.status !== 200 || !r.text) return null;
+  const html = r.text;
+
+  const state = lasPreloadedState(html);
+  // Verifierat live 2026-08-11 (place 58298): salongen ligger under state.place —
+  // toppnivån, inte nästlad. Saknas den har sidans form ändrats, och det ska synas.
+  kravForm(
+    !!state && typeof (state as Record<string, unknown>).place === "object",
+    "Bokadirekt",
+    "window.__PRELOADED_STATE__.place",
+    state ? `toppnycklar: ${Object.keys(state).join(", ")}` : "ingen __PRELOADED_STATE__ i sidan",
+  );
+  const place = (state as Record<string, unknown>).place as Record<string, unknown>;
+
+  const ld = jsonLdLocalBusiness(html);
+  const adr = (ld?.address ?? null) as Record<string, unknown> | null;
+  const gata = typeof adr?.streetAddress === "string" && adr.streetAddress.trim() ? adr.streetAddress.trim() : null;
+  const post = typeof adr?.postalCode === "string" && adr.postalCode.trim() ? adr.postalCode.trim() : null;
+  const ort = typeof adr?.addressLocality === "string" && adr.addressLocality.trim() ? adr.addressLocality.trim() : null;
+  const tel = typeof ld?.telephone === "string" && ld.telephone.trim() ? ld.telephone.trim() : null;
+
+  return {
+    kallUrl: profilUrl,
+    bokningslank: funnet(profilUrl, "sajt", profilUrl, {
+      citat: "Profilsidan på Bokadirekt, härledd ur sajtens bokningslänkar",
+      sakerhet: "hog",
+    }),
+    tjanster: tjansterFranPayload(place, profilUrl),
+    evenemang: evenemangFranPayload(place, profilUrl),
+    kundcitat: kundcitatFranPayload(place, profilUrl),
+    oppettider: oppettiderFranHtml(html, place, profilUrl),
+    adress: gata ? funnet(gata, "schema", profilUrl, { citat: `"streetAddress": "${gata}"`, sakerhet: "hog" }) : null,
+    postnummer: post ? funnet(post, "schema", profilUrl, { citat: `"postalCode": "${post}"`, sakerhet: "hog" }) : null,
+    ort: ort ? funnet(ort, "schema", profilUrl, { citat: `"addressLocality": "${ort}"`, sakerhet: "hog" }) : null,
+    telefon: tel ? funnet(tel.replace(/[\s\-()]/g, ""), "schema", profilUrl, { citat: `"telephone": "${tel}"`, sakerhet: "hog" }) : null,
+  };
 }
 
 // ── Payloaden ────────────────────────────────────────────────────────────────
@@ -235,8 +352,17 @@ export function evenemangStatus(datum: string | null, idag = new Date()): "komma
   return d.getTime() < idag.getTime() ? "passerat" : "kommande";
 }
 
-const KURS_TECKEN = /(utbildning|kurs|workshop|föreläsning|retreat|tillfällen|steg \d)/i;
+// "8 ggr" och "vecka 36-43" är Annas (Oppråby) skrivsätt för kursomgångar — lika mycket
+// kurstecken som "8 tillfällen", bara kortare.
+const KURS_TECKEN = /(utbildning|kurs|workshop|föreläsning|retreat|tillfällen|steg \d|\d+\s*ggr|vecka\s*\d)/i;
 const DATUM = /\b(\d{1,2}\s+(?:januari|februari|mars|april|maj|juni|juli|augusti|september|oktober|november|december))\b/i;
+/**
+ * Kursomgångar anges ofta som veckospann i stället för datum: "vecka 36-43, 8 ggr,
+ * tisdagar" (Oppråby). Det är ett datum i källans egen mening — tidsbegränsat och
+ * planerbart — och utan det här mönstret försvann alla Annas kursstarter ur förslaget.
+ * Året skrivs aldrig ut i formen, så status blir `okant` och granskningen får titta.
+ */
+const VECKOSPANN = /\b(vecka\s*\d{1,2}(?:\s*[-–—]\s*\d{1,2})?)\b/i;
 const SISTA_ANMALAN = /(?:sista\s+(?:anmälningsdag|anmälan|dag för anmälan)|anmälan\s+senast)[:\s]*([^.!\n]{3,40})/i;
 const TID = /\btid:?\s*(\d{1,2}[.:]\d{2}\s*[-–—]\s*\d{1,2}[.:]\d{2})/i;
 const PLATS = /\bplats:?\s*([^.\n]{4,70})/i;
@@ -257,7 +383,7 @@ export function evenemangFranPayload(place: Record<string, unknown>, kallUrl: st
     const text = `${namn ?? ""} ${beskrivning(t)}`;
     if (!namn) continue;
     if (!KURS_TECKEN.test(text)) continue;
-    const datum = text.match(DATUM)?.[1] ?? null;
+    const datum = text.match(DATUM)?.[1] ?? text.match(VECKOSPANN)?.[1] ?? null;
     // Ett "evenemang" utan datum är bara en tjänst. Då hör den hemma i tjänstelistan.
     if (!datum) continue;
 

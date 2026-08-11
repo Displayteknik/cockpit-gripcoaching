@@ -120,6 +120,25 @@ function delaNamn(helt: string | null): { fornamn: string | null; efternamn: str
  * Slutsatsen kräver inget API-anrop: återanvände vi kontot SAKNAS snapshotet. Hårt fel direkt.
  * Egen funktion för att beteendet ska gå att bevisa med test, inte bara läsas i en gren.
  */
+/**
+ * Steg 2 när byråtoken saknas. Två helt olika utfall beroende på om kontot redan finns.
+ *
+ * Egen funktion av samma skäl som `snapshotStegAterAnvant`: beteendet ska gå att bevisa
+ * med test, inte bara läsas i en gren. Se den långa kommentaren vid anropet.
+ */
+export function subAccountStegUtanByratoken(locationId: string | null): Steg {
+  if (locationId) {
+    return {
+      namn: "GHL sub-account",
+      status: "hoppade",
+      detalj:
+        `Kopplad sedan tidigare (${locationId}) — inget behövde skapas, så byråtoken krävdes inte. ` +
+        `${GHL_SAKNAS_TEXT} Det spelar roll först när ett NYTT konto ska skapas.`,
+    };
+  }
+  return { namn: "GHL sub-account", status: "fel", detalj: GHL_SAKNAS_TEXT };
+}
+
 export function snapshotStegAterAnvant(locationId: string): Steg {
   return {
     namn: "Snapshot-laddning",
@@ -174,8 +193,10 @@ export function byggCustomValues(f: Forslag): Record<string, string> {
     satt("LinkedIn", s.linkedin ?? null);
   }
 
-  // "Bokningslank" finns som tom platshållare i mallen men fylls inte här — motorn har
-  // ingen bokningslänk förrän ONBOARD-3 lärt sig läsa bokningsplattformar.
+  // ONBOARD-3: bokningslänken är Bokadirekt-profilen, härledd ur sajtens bokningslänkar
+  // och verifierad med en läsning. Det är länken kunden klistrar in i DM och mejl.
+  satt("Bokningslank", v(f.bokningslank));
+
   //
   // ⚠ LOGOTYPEN SKRIVS INTE LÄNGRE NÅGONSTANS. Den togs bort härifrån enligt principen
   //   ovan, men `hm_brand_profile` saknar logotyp-kolumn och `clients` har bara
@@ -260,8 +281,19 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
   let aterAnvantKonto = false;
 
   // ── Steg 2: GHL sub-account ────────────────────────────────────────────────
+  //
+  // ★ ETT STEG SOM INTE HADE NÅGOT ATT GÖRA ÄR INTE ETT FEL — SKARPT FALL 11/8 (Oppråby).
+  //
+  //   Byråtoken saknas i produktionsmiljön (den finns bara lokalt). När kontot REDAN var
+  //   kopplat gjorde steget ändå ingenting alls — och markerade sig som 'fel'. Följden är
+  //   värre än en röd rad: slutstatusen blir 'fel', och det unika indexet på `doman`
+  //   undantar just status='fel'. Domänlåset släpper alltså, och nästa körning kan skapa
+  //   en dubblett — precis det låset finns för att hindra.
+  //
+  //   Byråtoken behövs BARA för att skapa ett nytt konto. Finns location-id redan är
+  //   avsaknaden ovidkommande, och då ska steget säga "hoppade".
   if (!konfig) {
-    steg.push({ namn: "GHL sub-account", status: "fel", detalj: GHL_SAKNAS_TEXT });
+    steg.push(subAccountStegUtanByratoken(locationId));
   } else {
     try {
       // ★ SNAPSHOTET SLÅS UPP PÅ ID, INTE PÅ NAMN.

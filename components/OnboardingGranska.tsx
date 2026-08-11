@@ -91,6 +91,7 @@ const GRUPPER: Grupp[] = [
     ton: "bg-emerald-100 text-emerald-700",
     falt: [
       { nyckel: "oppettider", etikett: "Öppettider", editor: "oppettider" },
+      { nyckel: "bokningslank", etikett: "Bokningslänk", editor: "text", platshallare: "https://www.bokadirekt.se/places/…" },
       { nyckel: "socialaLankar", etikett: "Sociala kanaler", editor: "lankar" },
       { nyckel: "logotyp", etikett: "Logotyp (bildadress)", editor: "text" },
       { nyckel: "fargpalett", etikett: "Färger", editor: "farger" },

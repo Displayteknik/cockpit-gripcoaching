@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { citatFinns } from "@/lib/onboard/harled";
-import { stadaOrt } from "@/lib/onboard/extrahera";
+import { stadaOrt, adressUrNod } from "@/lib/onboard/extrahera";
 import { normalisera, klassaRoll } from "@/lib/onboard/upptack";
-import { domanAv, sluggify, byggCustomValues } from "@/lib/onboard/provisionera";
-import { funnet, tomt, harVarde, type Forslag } from "@/lib/onboard/typer";
+import {
+  domanAv, sluggify, byggCustomValues, subAccountStegUtanByratoken,
+} from "@/lib/onboard/provisionera";
+import { profilUrlFranLankar, bokadirektLankUrSidor } from "@/lib/onboard/bokadirekt";
+import { funnet, tomt, harVarde, type Forslag, type OnboardSida } from "@/lib/onboard/typer";
 import { rensaMarkdown } from "@/lib/onboard/hamta";
 
 // Testerna nedan skyddar de grindar som avgör om FEL DATA hamnar i ett kundkonto.
@@ -119,6 +122,7 @@ describe("byggCustomValues — bara belagda värden går till GHL", () => {
       kundcitat: tomt("saknas"),
       usp: tomt("saknas"),
       oppettider: tomt("saknas"),
+      bokningslank: funnet("https://www.bokadirekt.se/places/testbolaget-999", "sajt", "https://test.se"),
       socialaLankar: tomt("saknas"),
       logotyp: tomt("saknas"),
       fargpalett: tomt("saknas"),
@@ -139,6 +143,12 @@ describe("byggCustomValues — bara belagda värden går till GHL", () => {
     expect(cv["Adress"]).toBeUndefined();
   });
 
+  // ONBOARD-3: bokningslänken går till GHL — det är den kunden klistrar in i DM och mejl.
+  it("skickar bokningslänken till GHL när den är belagd", () => {
+    const cv = byggCustomValues(bas());
+    expect(cv["Bokningslank"]).toBe("https://www.bokadirekt.se/places/testbolaget-999");
+  });
+
   // Nycklarna är ett kontrakt mot mallkontot: bara det som ska kunna klistras in i en DM,
   // ett mejl eller ett SMS bor i GHL. Tjänster och priser bor i hm_brand_profile — två
   // sanningar om samma sak glider isär, och den som glider är den ingen tittar på.
@@ -147,6 +157,91 @@ describe("byggCustomValues — bara belagda värden går till GHL", () => {
     expect(cv["Tjanster"]).toBeUndefined();
     expect(cv["Tjänster"]).toBeUndefined();
     expect(Object.keys(cv).every((k) => /^[\x20-\x7E]+$/.test(k))).toBe(true);
+  });
+});
+
+// ── ONBOARD-3: Bokadirekt-källan ─────────────────────────────────────────────
+
+describe("profilUrlFranLankar — bokningslänken hittas oavsett skrivsätt", () => {
+  it("bygger profil-URL ur en djuplänk till en enskild tjänst", () => {
+    expect(
+      profilUrlFranLankar([
+        "https://www.bokadirekt.se/boka-tjanst/gitte-ostling-for-balance-20545/forsta-motet-1044315",
+      ]),
+    ).toBe("https://www.bokadirekt.se/places/gitte-ostling-for-balance-20545");
+  });
+
+  // ★ Skarpt fall: Oppråby Gamla Skola länkar med å i slugen. Teckenklassen [a-z0-9-]
+  //   missade den tyst och hela källan försvann för kunden som behövde den mest.
+  it("tål svenska tecken i slugen (Oppråby)", () => {
+    expect(
+      profilUrlFranLankar(["https://bokadirekt.se/places/oppråby-gamla-skola-58298"]),
+    ).toBe("https://www.bokadirekt.se/places/oppråby-gamla-skola-58298");
+  });
+
+  it("väljer den längsta slugen när samma id skrivs olika", () => {
+    expect(
+      profilUrlFranLankar([
+        "https://www.bokadirekt.se/places/gitte-ostling-20545",
+        "https://www.bokadirekt.se/places/gitte-ostling-for-balance-20545",
+      ]),
+    ).toBe("https://www.bokadirekt.se/places/gitte-ostling-for-balance-20545");
+  });
+
+  it("ger null när ingen bokadirekt-länk finns", () => {
+    expect(profilUrlFranLankar(["https://www.facebook.com/nagon", "https://kund.se/boka"])).toBeNull();
+  });
+});
+
+describe("bokadirektLankUrSidor — länken plockas ur lästa sidor, inte ur crawlen", () => {
+  const sida = (over: Partial<OnboardSida>): OnboardSida =>
+    ({ url: "https://kund.se/", html: null, text: "", via: "direkt", roll: "start", ...over }) as OnboardSida;
+
+  it("hittar länken i HTML", () => {
+    const s = sida({ html: `<a href="https://www.bokadirekt.se/places/oppråby-gamla-skola-58298">Boka</a>` });
+    expect(bokadirektLankUrSidor([s])).toBe("https://www.bokadirekt.se/places/oppråby-gamla-skola-58298");
+  });
+
+  it("hittar länken i ren text när sidan kom via rendering (html = null)", () => {
+    const s = sida({ via: "rendering", text: "Boka på https://www.bokadirekt.se/places/kund-123 idag" });
+    expect(bokadirektLankUrSidor([s])).toBe("https://www.bokadirekt.se/places/kund-123");
+  });
+
+  it("ger null när sidorna saknar bokadirekt-länkar", () => {
+    expect(bokadirektLankUrSidor([sida({ html: "<a href='/kontakt'>Kontakt</a>" })])).toBeNull();
+  });
+});
+
+describe("postnummer-fallbacken — ett salongs-id är inte ett postnummer", () => {
+  const sida = (text: string): OnboardSida =>
+    ({ url: "https://kund.se/", html: null, text, via: "direkt", roll: "start" }) as OnboardSida;
+
+  // ★ Skarpt fall: "gitte-ostling-for-balance-20545" i sidtexten gav postnummer 20545.
+  it("FÖRKASTAR fem siffror som sitter i en slug", () => {
+    const d = adressUrNod(null, null, [sida("Boka via gitte-ostling-for-balance-20545 Västerås idag")]);
+    expect(harVarde(d.postnummer)).toBe(false);
+  });
+
+  it("läser fortfarande ett riktigt postnummer med ort", () => {
+    const d = adressUrNod(null, null, [sida("Besök oss på Storgatan 1, 826 34 Söderhamn")]);
+    expect(d.postnummer.varde).toBe("826 34");
+    expect(d.ort.varde).toBe("Söderhamn");
+  });
+});
+
+describe("steg 2 utan byråtoken — ett steg som inget hade att göra är inget fel", () => {
+  // ★ Skarpt fall 11/8 (Oppråby): kontot fanns redan, steget gjorde ingenting, och
+  //   markerade sig ändå som 'fel'. Slutstatusen blev 'fel' — och det unika indexet på
+  //   `doman` undantar just status='fel', så DOMÄNLÅSET SLÄPPTE och nästa körning hade
+  //   kunnat skapa en dubblett. Byråtoken behövs bara för att SKAPA ett konto.
+  it("säger 'hoppade' när kontot redan finns", () => {
+    const s = subAccountStegUtanByratoken("8IwLH9CFouvrI2oUO9Hc");
+    expect(s.status).toBe("hoppade");
+    expect(s.detalj).toContain("8IwLH9CFouvrI2oUO9Hc");
+  });
+
+  it("säger 'fel' när inget konto finns — då blockerar det faktiskt körningen", () => {
+    expect(subAccountStegUtanByratoken(null).status).toBe("fel");
   });
 });
 

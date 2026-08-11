@@ -367,6 +367,11 @@ export interface Forslag {
 
   // Övrigt från sajten
   oppettider: Falt<Oppettid[]>;
+  /**
+   * ONBOARD-3: bokningsplattformens profilsida (Bokadirekt). Går som custom value till
+   * GHL — det är länken kunden klistrar in i DM och mejl, inte ett internt fält.
+   */
+  bokningslank: Falt;
   socialaLankar: Falt<Record<string, string>>;
   logotyp: Falt;
   fargpalett: Falt<string[]>;

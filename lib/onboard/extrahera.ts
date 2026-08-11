@@ -292,8 +292,13 @@ export function adressUrNod(nod: Ld | null, nodUrl: string | null, sidor: Onboar
   }
 
   // Fallback: svenskt postnummer + ort i brödtext ("826 34 Söderhamn").
+  //
+  // ⚠ Lookbehind-garden är inte pynt: fem siffror i löptext kan vara ett SALONGS-ID.
+  //   "gitte-ostling-for-balance-20545 Västerås" gav postnummer 20545 i skarpt läge.
+  //   Siffror som föregås av bindestreck eller fler siffror är del av en slug eller ett
+  //   längre tal — aldrig ett postnummer.
   for (const s of sidor) {
-    const m = s.text.match(/\b(\d{3}\s?\d{2})\s+([A-ZÅÄÖ][a-zåäöéü-]+(?:\s+[A-ZÅÄÖ][a-zåäöéü-]+)?)\b/);
+    const m = s.text.match(/(?<![-\d])(\d{3}\s?\d{2})\s+([A-ZÅÄÖ][a-zåäöéü-]+(?:\s+[A-ZÅÄÖ][a-zåäöéü-]+)?)\b/);
     if (m) {
       const kontext = s.text.slice(Math.max(0, m.index! - 60), m.index! + 60).trim();
       const ort = stadaOrt(m[2]);

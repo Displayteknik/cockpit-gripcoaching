@@ -168,7 +168,7 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 | Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
 |---|---|---|---|---|
 | ONBOARD-1 provisionering (URL in → förslag med källa per fält) | KLART OCH VERIFIERAT | Gitte live i GHL + Cockpit, Fokus-synk bevisad med riktigt kort | Ja | Nej |
-| ONBOARD-3 källorna (Bokadirekt) | PÅBÖRJAT | Byggd men **inte inkopplad**. Hämtvägen tappar externa länkar (curl ser dem, motorn inte). Postnummer-bugg: salongs-id `20545` lästes som postnummer | Ja | Nej |
+| ONBOARD-3 källorna (Bokadirekt) | KLART OCH VERIFIERAT | Inkopplad 11/8: länken plockas ur lästa sidors innehåll (externa länkar kastas fortfarande i crawlen, med flit), å-slugs tål (Oppråby), adress/telefon ur JSON-LD (postnummer-buggen borta — slug-siffror avvisas med lookbehind), tjänster+priser+recensioner ur payload, "vecka 36-43"-kurser läses, `bokningslank` nytt fält hela vägen till GHL custom value. Bevis: 29/29 test + skarp körning mot opprabygamlaskola.se (telefon/adress/priser/citat fyllda, postnummer-konflikt 726 94 mot 725 94 flaggad för aktivt val) | Ja | Nej |
 | ONBOARD-4+5 transkript + sammanvägning | BESTÄLLT, EJ PÅBÖRJAT | Etapp 3 i Håkans ordning | Nej | Nej |
 | ONBOARD-7 stegverktyg (11 steg) | KLART OCH VERIFIERAT | `d8bae1c`, `lib/onboard/steg.ts`, status härledd ur verkligheten | Nej | Nej |
 | ONBOARD-7 frågelistan i steg 8 | BESTÄLLT, EJ PÅBÖRJAT | Etapp 4 | Nej | Nej |
