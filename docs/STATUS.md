@@ -270,6 +270,20 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
 6. **NYTT FYND 11/8, EJ ÅTGÄRDAT: dra-och-släpp i kalendern är obeklickad.** Logiken är låst i test
    men själva dragningen kräver inloggad dashboard, och jag kan inte logga in. Första riktiga
    dragningen är beviset.
+7. **NYTT FYND 11/8, EJ ÅTGÄRDAT — Håkans fråga: balansmätaren STYR INGENTING.** Han frågade om nya
+   inlägg läggs "rätt" när mixen ligger fel. Svaret är nej. `planWeek()` i `lib/content-compass/rules.ts`
+   tar emot bara schemat och ett startdatum och läser aldrig `analyzeMix()` — de två funktionerna sitter i
+   samma fil utan att prata med varandra. Ligger tenanten på 33/33/33 mot målet 70/25 planeras nästa vecka
+   ändå rakt enligt veckodagskartan. Två regler agerar, men bara inom veckan de bygger: max ett BOFU per
+   vecka, och BOFU varannan vecka på låg takt. Panelen säger "Din mix mot målet" — ett löfte som ingen kod
+   håller. **Dessutom:** veckodagskartan är byggd för sju inlägg. Snabbvalet 3 dagar (tis/tors/sön) ger
+   `tofu · bofu · tofu` = 67 % TOFU, **0 % MOFU**, 33 % BOFU — kadensvalet ändrar mixen tyst, och åt fel
+   håll. Mätaren räknar dessutom 30 dagar BAKÅT (`t <= now`), så en korrigerande vecka syns inte förrän
+   datumen passerat. **Tre vägar lagda fram 11/8:** (1) låt `planWeek` läsa mixen och byta funnel på den
+   dag som ligger längst från målet, med klarspråksnotering — rekommenderad, ca en session; (2) rätta
+   snabbvalen så 3 dagar blir tis TOFU · tors MOFU · sön TOFU med BOFU varannan vecka, ca halv session;
+   (3) låt det vara men sluta lova styrning i panelens text. **Håkans besked: lägg på minnet, han kollar
+   vidare.** Ingen kod rörd.
 
 ## GRANSK G-0..G-9
 
