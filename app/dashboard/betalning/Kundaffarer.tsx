@@ -315,6 +315,9 @@ function Redigerare({
   });
   const [sparar, setSparar] = useState<"" | "spara" | "nasta">("");
   const forstaFalt = useRef<HTMLInputElement>(null);
+  // "Eget upplägg" ska inte se förvalt ut bara för att plan_id är tomt. En grön ram
+  // signalerar ett val, och för en kund utan affär är inget val gjort än.
+  const [egetValt, setEgetValt] = useState(harAffar(avtal) && !avtal.plan_id);
 
   const satt = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -421,7 +424,7 @@ function Redigerare({
               {abonnemang.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => satt("plan_id", p.id)}
+                  onClick={() => { satt("plan_id", p.id); setEgetValt(false); }}
                   className={`rounded-xl border p-3.5 text-left transition-colors ${
                     form.plan_id === p.id
                       ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-100"
@@ -436,9 +439,9 @@ function Redigerare({
                 </button>
               ))}
               <button
-                onClick={() => satt("plan_id", "")}
+                onClick={() => { satt("plan_id", ""); setEgetValt(true); }}
                 className={`rounded-xl border p-3.5 text-left transition-colors ${
-                  form.plan_id === ""
+                  egetValt
                     ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-100"
                     : "border-gray-200 bg-white hover:bg-gray-50"
                 }`}
@@ -681,13 +684,25 @@ function Text({
   );
 }
 
+/**
+ * Datumfält med svensk kvittens under.
+ *
+ * ⚠ Webbläsaren bestämmer själv formatet i ett date-fält, och står den på engelska visas
+ * mm/dd/yyyy. Då är 03/04 antingen 3 april eller 4 mars, och den som fyller i tretton
+ * kunder hinner gissa fel. Formatet går inte att tvinga bort, men datumet kan skrivas ut
+ * i klartext bredvid — då syns misstaget direkt i stället för tre veckor senare.
+ */
 function Datum({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const klartext = langtDatum(value);
   return (
-    <input
-      type="date"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
-    />
+    <div>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+      />
+      {klartext && <p className="mt-1 text-xs font-medium text-gray-600">{klartext}</p>}
+    </div>
   );
 }

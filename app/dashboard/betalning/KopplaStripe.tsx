@@ -20,7 +20,8 @@ interface Pris {
 interface Abonnemang {
   subscription_id: string; stripe_customer_id: string;
   kund_namn: string | null; kund_epost: string | null;
-  belopp_sek: number; intervall: string; status: string;
+  listpris_sek: number; belopp_sek: number; har_rabatt: boolean; rabatt_text: string | null;
+  intervall: string; status: string;
   nasta_betalning: string | null; price_id: string | null;
   kopplad_klient: string | null; forslag_klient: string | null; forslag_skal: string | null;
 }
@@ -199,7 +200,13 @@ export default function KopplaStripe({
 
                         <div className="tabular-nums text-right">
                           <div className="font-semibold text-gray-900">{kr(a.belopp_sek)}</div>
-                          <div className="text-xs text-gray-500">{INTERVALL[a.intervall] || a.intervall}</div>
+                          {a.har_rabatt ? (
+                            <div className="text-xs text-amber-700">
+                              rabatt från <span className="line-through">{kr(a.listpris_sek)}</span>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-500">{INTERVALL[a.intervall] || a.intervall}</div>
+                          )}
                         </div>
 
                         <div className="w-32 text-right">
@@ -255,6 +262,12 @@ export default function KopplaStripe({
                         )}
                       </div>
 
+                      {a.rabatt_text && (
+                        <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-700">
+                          <Info className="h-3.5 w-3.5 flex-shrink-0" />
+                          {a.rabatt_text}. Beloppet ovan är det kunden faktiskt betalar, inte listpriset.
+                        </p>
+                      )}
                       {!kopplad && a.forslag_skal && (
                         <p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
                           <Info className="h-3.5 w-3.5 flex-shrink-0" />

@@ -32,7 +32,12 @@ export interface StripeAbonnemang {
   stripe_customer_id: string;
   kund_namn: string | null;
   kund_epost: string | null;
+  /** Listpriset i Stripe, före eventuell rabatt. */
+  listpris_sek: number;
+  /** Det kunden FAKTISKT debiteras. Lika med listpriset när ingen rabatt finns. */
   belopp_sek: number;
+  har_rabatt: boolean;
+  rabatt_text: string | null;
   intervall: string;
   status: string;
   nasta_betalning: string | null;
@@ -58,6 +63,52 @@ function intervallFran(pris: { recurring?: { interval?: string; interval_count?:
   return "manad";
 }
 
+/**
+ * Rabatten på ett abonnemang.
+ *
+ * ⚠ Håkan ger kampanjkoder i Stripe. En kund kan alltså ha ett listpris på 2 490 men
+ * faktiskt betala 1 990. Läser vi bara `price.unit_amount` visar Cockpit fel belopp på
+ * hennes betalsida och räknar upp intäkten med pengar som aldrig kommer in.
+ *
+ * Fältet heter `discounts` (lista) i nyare Stripe och `discount` (ett) i äldre. Båda
+ * prövas, och båda kan vara antingen ett id eller ett expanderat objekt.
+ */
+export function rabattPa(sub: unknown): { procent: number; kronor_av: number; text: string | null } {
+  // Tom indata måste ge noll rabatt, inte en krasch. Funktionen läser data från ett
+  // externt API, och där är "fältet finns inte" ett normalt utfall.
+  const s = (sub || {}) as {
+    discount?: unknown;
+    discounts?: unknown[];
+  };
+  const raa = [...(Array.isArray(s.discounts) ? s.discounts : []), ...(s.discount ? [s.discount] : [])];
+
+  let procent = 0;
+  let kronorAv = 0;
+  const delar: string[] = [];
+
+  for (const d of raa) {
+    if (!d || typeof d === "string") continue; // oexpanderat id — går inte att räkna på
+    const kupong = (d as { coupon?: { percent_off?: number | null; amount_off?: number | null; name?: string | null; duration?: string } }).coupon;
+    if (!kupong) continue;
+    if (kupong.percent_off) {
+      procent += Number(kupong.percent_off);
+      delar.push(`${kupong.name || "Rabatt"} ${kupong.percent_off} procent`);
+    } else if (kupong.amount_off) {
+      kronorAv += Number(kupong.amount_off) / 100;
+      delar.push(`${kupong.name || "Rabatt"} ${Math.round(Number(kupong.amount_off) / 100)} kr`);
+    }
+    // En kupong som bara gäller första fakturan ska inte räknas som permanent intäkt.
+    if (kupong.duration === "once") delar.push("gäller bara första betalningen");
+  }
+
+  return { procent, kronor_av: kronorAv, text: delar.length ? delar.join(", ") : null };
+}
+
+/** Listpriset minus rabatten. EN formel, anvand bade i listan och vid koppling. */
+export function raknaEfterRabatt(listpris: number, r: { procent: number; kronor_av: number }): number {
+  return Math.max(0, Math.round((listpris * (1 - r.procent / 100) - r.kronor_av) * 100) / 100);
+}
+
 /** Normalisering för namnjämförelse: gemener, utan bolagsformer och skiljetecken. */
 function nyckel(s: string): string {
   return (s || "")
@@ -78,7 +129,9 @@ export async function hamtaStripeOversikt(): Promise<StripeOversikt> {
   const [priserSvar, abonnemangSvar, { data: klienter }, { data: planer }, { data: mappade }, { data: avtal }] =
     await Promise.all([
       stripe.prices.list({ active: true, limit: 100, expand: ["data.product"] }),
-      stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.customer"] }),
+      // Rabatterna expanderas med flit: utan dem går det inte att se vad kunden
+      // faktiskt betalar, bara vad priset står på.
+      stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.customer", "data.discounts"] }),
       sb.from("clients").select("id, name, slug, archived"),
       sb.from("billing_plans").select("id, stripe_price_id"),
       sb.from("billing_customers").select("client_id, stripe_customer_id"),
@@ -141,12 +194,19 @@ export async function hamtaStripeOversikt(): Promise<StripeOversikt> {
       skal = "samma företagsnamn";
     }
 
+    const listpris = oreTillKronor(rad?.price?.unit_amount);
+    const rabatt = rabattPa(s);
+    const efterRabatt = raknaEfterRabatt(listpris, rabatt);
+
     return {
       subscription_id: s.id,
       stripe_customer_id: kundId,
       kund_namn: namn,
       kund_epost: epost,
-      belopp_sek: oreTillKronor(rad?.price?.unit_amount),
+      listpris_sek: listpris,
+      belopp_sek: efterRabatt,
+      har_rabatt: efterRabatt !== listpris,
+      rabatt_text: rabatt.text,
       intervall: intervallFran(rad?.price || null),
       status: s.status,
       nasta_betalning: stripeTidTillDatum(periodSlut)?.slice(0, 10) || null,
@@ -184,10 +244,29 @@ export async function kopplaAbonnemang(opts: {
     const sb = supabaseService();
     const inst = await import("./installningar").then((m) => m.hamtaInstallningar());
 
-    const sub = await stripe.subscriptions.retrieve(opts.subscriptionId);
+    const sub = await stripe.subscriptions.retrieve(opts.subscriptionId, { expand: ["discounts"] });
     const rad = sub.items?.data?.[0];
-    const belopp = oreTillKronor(rad?.price?.unit_amount);
     const intervall = intervallFran(rad?.price || null);
+
+    // ★ Beloppet vi sparar måste vara det kunden FAKTISKT debiteras, inte listpriset.
+    // Stripes kommande faktura är den enda källan som räknat in kampanjkoder korrekt,
+    // inklusive kupongernas löptid. Går den inte att läsa räknar vi själva på rabatten,
+    // och sist av allt faller vi tillbaka på listpriset.
+    const listpris = oreTillKronor(rad?.price?.unit_amount);
+    const rabatt = rabattPa(sub);
+    let belopp = raknaEfterRabatt(listpris, rabatt);
+
+    try {
+      const kommande = await (stripe.invoices as unknown as {
+        retrieveUpcoming: (p: { customer: string }) => Promise<{ total: number; total_taxes?: Array<{ amount: number }> | null }>;
+      }).retrieveUpcoming({ customer: opts.stripeCustomerId });
+      const moms = (kommande.total_taxes || []).reduce((s, t) => s + (t.amount || 0), 0);
+      // Vi lagrar alltid EX moms, samma konvention som resten av systemet.
+      const exMoms = oreTillKronor(kommande.total - moms);
+      if (exMoms > 0) belopp = exMoms;
+    } catch {
+      // Ingen kommande faktura (t.ex. uppsagt abonnemang) — den beräknade siffran duger.
+    }
     const periodSlut =
       (rad as unknown as { current_period_end?: number } | undefined)?.current_period_end ??
       (sub as unknown as { current_period_end?: number }).current_period_end ??
@@ -237,7 +316,8 @@ export async function kopplaAbonnemang(opts: {
     if (fanns) await sb.from("billing_avtal").update(patch).eq("client_id", opts.clientId);
     else await sb.from("billing_avtal").insert(patch);
 
-    return { ok: true, besked: "Kopplad. Nästa betalning läses nu direkt från Stripe." };
+    const rabattnot = belopp !== listpris ? ` Kunden betalar ${belopp} kr, inte listpriset ${listpris} kr, eftersom en rabatt gäller.` : "";
+    return { ok: true, besked: `Kopplad. Nästa betalning läses nu direkt från Stripe.${rabattnot}` };
   } catch (e) {
     const { stripeFelText } = await import("./stripe");
     return { ok: false, besked: `Kopplingen misslyckades. Stripe ${stripeFelText(e)}` };
