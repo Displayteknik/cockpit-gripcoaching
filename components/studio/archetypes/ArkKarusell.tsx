@@ -17,10 +17,16 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
   const total = slides.length;
   const i = Math.min(Math.max(0, slideIndex), total - 1);
   const slide = slides[i];
+  const overrides = payload.overrides;
 
-  // Numret bland point-slides (för den numrerade punktrundeln). Räknas i lib/studio/payload
-  // så editorns etiketter och den ritade siffran aldrig kan glida isär.
-  const pointNo = punktNummer(slides, i) ?? 0;
+  // Numret bland point-slides. Räknas i lib/studio/payload så editorns etiketter och den
+  // ritade siffran aldrig kan glida isär.
+  //
+  // ⚠ KARUSELL-2 (Håkans fynd 11/8): `?? 0` gjorde null till noll, och noll ritades som "00".
+  // Insats- och bevis-sliden är kind "point" i datan men INTE användarens punkter, så de får
+  // med flit inget nummer — och fick därför "00" på bilden. Han såg "00" på flera slides och
+  // hade rätt: det var fel varje gång. Nu ritas siffran bara när det FINNS ett nummer.
+  const pointNo = punktNummer(slides, i);
 
   const onPrimary = isLightColor(c.primary) ? c.ink : c.paper;
   const onDeep = isLightColor(c.primaryDeep) ? c.ink : c.paper;
@@ -55,8 +61,11 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
         ))}
       </div>
 
-      {/* Point-nummer */}
-      {slide.kind === "point" ? (
+      {/* Punktnummer — bara på riktiga punkter, och bara när kunden bett om dem.
+          Håkans besked 11/8: "ser jag ingen mening att visa, dessutom fel hela tiden".
+          Siffran är därför AV som standard. `visaPunktNummer` i overrides tänder den igen
+          för den som vill numrera sina punkter, utan att koden behöver ändras. */}
+      {slide.kind === "point" && pointNo !== null && overrides?.visaPunktNummer ? (
         <div style={{ position: "absolute", top: 120, left: 80, fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 900, fontSize: 120, lineHeight: 1, color: c.accent, zIndex: 2, textShadow: hasImg ? "0 2px 16px rgba(0,0,0,0.5)" : undefined }}>
           {String(pointNo).padStart(2, "0")}
         </div>

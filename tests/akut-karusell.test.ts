@@ -288,3 +288,46 @@ describe("Karusell · insats och bevis är inte användarens punkter", () => {
     expect(slides.map((_, i) => punktNummer(slides, i))).toEqual([null, 1, 2, null]);
   });
 });
+
+describe("KARUSELL-2 · punktsiffran ljuger inte längre, och syns bara om man vill", () => {
+  // Håkans fynd 11/8: "de där 00 01 och liknande ser jag ingen mening att visa, dessutom fel
+  // hela tiden". Han hade rätt på båda punkterna.
+  //
+  // FELET: mallen gjorde `punktNummer(...) ?? 0` och ritade nollan som "00". Insats- och
+  // bevis-sliden är kind "point" i datan men INTE användarens punkter — de får med flit inget
+  // nummer, och fick därför "00" på bilden. Uträkningen var rätt hela tiden; mallen förvandlade
+  // "inget nummer" till "nummer noll".
+  //
+  // BESLUTET: siffran är AV som standard. `overrides.visaPunktNummer` tänder den för den som
+  // vill numrera sina punkter — uträkningen och editorns etiketter är orörda.
+  const mall = fs.readFileSync(new URL("../components/studio/archetypes/ArkKarusell.tsx", import.meta.url), "utf8");
+
+  it("nollan kan inte längre uppstå — inget ?? 0", () => {
+    expect(mall).not.toContain("punktNummer(slides, i) ?? 0");
+    expect(mall).toContain("const pointNo = punktNummer(slides, i);");
+  });
+
+  it("siffran ritas bara när det FINNS ett nummer", () => {
+    expect(mall).toContain("pointNo !== null");
+  });
+
+  it("och bara när kunden bett om den", () => {
+    expect(mall).toContain("overrides?.visaPunktNummer");
+  });
+
+  it("standardläget är av", () => {
+    const payload = fs.readFileSync(new URL("../lib/studio/payload.ts", import.meta.url), "utf8");
+    expect(payload).toContain("visaPunktNummer: false");
+  });
+
+  it("uträkningen är orörd — insats och bevis får fortfarande inget nummer", () => {
+    const s = [
+      { kind: "hook", headline: "H", body: "", imageUrl: "" },
+      { kind: "point", headline: "P1", body: "", imageUrl: "" },
+      { kind: "point", roll: "insats", headline: "Insats", body: "", imageUrl: "" },
+      { kind: "point", headline: "P2", body: "", imageUrl: "" },
+      { kind: "cta", headline: "C", body: "", imageUrl: "" },
+    ];
+    expect(s.map((_, i) => punktNummer(s as never, i))).toEqual([null, 1, null, 2, null]);
+  });
+});

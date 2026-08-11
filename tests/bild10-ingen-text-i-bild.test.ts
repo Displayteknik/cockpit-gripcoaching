@@ -122,3 +122,38 @@ describe("BILD-10 · en funnen felstavning stoppar bilden", () => {
     expect(route).toContain("grind.utfall.fel");
   });
 });
+
+describe("BILD-12 · bilden PÅ en avbildad skärm hör till köparens värld", () => {
+  // Håkans fynd 11/8: han testade bildskapande för ett skyltbolag och fick berg, isberg och
+  // frukt på skärmarna. "vem visar ett isberg på en skärm … bara tok som visas på skärmarna".
+  //
+  // ⚠ Det var MITT eget textförbud (BILD-10) som öppnade dörren: raden slutade "om en skärm
+  // måste synas visar den ett foto eller produkten, aldrig text" — och "ett foto" läste
+  // modellen som fritt val. Värst just i den här branschen: för ett skyltbolag ÄR innehållet
+  // på skärmen produkten, så en fjällbild säger att vi inte förstått affären.
+  it("dekormotiven är utpekade med namn, inte antydda", () => {
+    for (const ord of ["mountains", "icebergs", "forests", "sunsets", "space", "abstract art", "wildlife"]) {
+      expect(DEPICTED_NO_TEXT_EN, ord).toContain(ord);
+    }
+    for (const ord of ["berg", "isberg", "skogar", "solnedgångar", "rymd", "abstrakt konst", "vilda djur"]) {
+      expect(DEPICTED_NO_TEXT_SV, ord).toContain(ord);
+    }
+  });
+
+  it("undantaget finns: säljer verksamheten fjällbilder får den visa fjäll", () => {
+    expect(DEPICTED_NO_TEXT_EN).toContain("unless the business itself sells exactly that");
+    expect(DEPICTED_NO_TEXT_SV).toContain("om inte verksamheten säljer just det");
+  });
+
+  it("och det finns en väg ut som inte är en tom skylt-lögn", () => {
+    // En SLÄCKT skärm är ärlig. Det är skillnaden mot BILD-8:s kvarleva, där en TOM
+    // upplyst skylt lästes som trasig.
+    expect(DEPICTED_NO_TEXT_EN).toContain("switched off");
+    expect(DEPICTED_NO_TEXT_SV).toContain("visa den släckt");
+  });
+
+  it("regeln säger vad som SKA visas, inte bara vad som är förbjudet", () => {
+    expect(DEPICTED_NO_TEXT_EN).toContain("BUYER'S OWN WORLD");
+    expect(DEPICTED_NO_TEXT_SV).toContain("KÖPARENS EGEN VÄRLD");
+  });
+});

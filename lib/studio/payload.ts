@@ -51,6 +51,13 @@ export interface StudioOverrides {
   imageX: number; // -50..50 horisontell panorering (%)
   hideBrush: boolean;
   hideBadge: boolean;
+  /**
+   * KARUSELL-2 (Håkans besked 11/8): "de där 00 01 och liknande ser jag ingen mening att visa,
+   * dessutom fel hela tiden". Punktsiffran på bilden är därför AV som standard. Den som vill
+   * numrera sina punkter tänder den här — uträkningen (punktNummer) är orörd och används
+   * fortfarande av editorns etiketter.
+   */
+  visaPunktNummer?: boolean;
   // KVALITET-3/6b: manuellt loggval som overridar autovalet (BILD-5a/6b).
   // "" = auto (mät bakgrunden), "ljus" = ljus bakgrund → mörk originallogga,
   // "mork" = mörk bakgrund → vit variant, "platta" = auto-variant + platta bakom.
@@ -127,7 +134,7 @@ export function emptySlide(kind: StudioSlide["kind"] = "point"): StudioSlide {
 }
 
 export const DEFAULT_OVERRIDES: StudioOverrides = {
-  fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false,
+  fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false, visaPunktNummer: false,
   logoVariant: "",
   h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0,
 };
@@ -221,6 +228,7 @@ function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOv
     imageX: clamp(Number(o.imageX ?? 0), -50, 50),
     hideBrush: Boolean(o.hideBrush),
     hideBadge: Boolean(o.hideBadge),
+    visaPunktNummer: Boolean(o.visaPunktNummer),
     logoVariant: o.logoVariant === "ljus" || o.logoVariant === "mork" || o.logoVariant === "platta" ? o.logoVariant : "",
     h1X: clamp(Number(o.h1X ?? 0), -100, 100),
     h1Y: clamp(Number(o.h1Y ?? 0), -100, 100),

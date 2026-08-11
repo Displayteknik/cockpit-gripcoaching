@@ -102,12 +102,28 @@ export const DEPICTED_NO_TEXT_EN =
   "NO READABLE TEXT IN THE IMAGE: no words, letters, numbers, price tags, logos or captions anywhere — not on signs, screens, boards, posters, menus, packaging, walls, workwear or vehicles. " +
   "Do NOT show a blank or empty sign, screen or board either: an empty sign reads as broken, not as clean. " +
   "Compose the picture so signs and screens are out of frame, turned away, or naturally absent, and build it around the people, their hands at work, the product itself, the room and the light. " +
-  "If a screen must be visible it shows a photograph or the product, never text.";
+  "If a screen must be visible it shows a photograph or the product, never text. " +
+  // ⚠ BILD-12 (Håkans fynd 11/8): raden "shows a photograph" var en inbjudan till
+  // dekorbilder. Han fick berg, isberg och frukt på skyltarna hos ett skyltbolag — "vem
+  // visar ett isberg på en skärm". Det är dessutom värst just där: för ett skyltbolag ÄR
+  // innehållet på skärmen produkten, och en fjällbild säger att vi inte förstått affären.
+  "THE PICTURE ON A DEPICTED SCREEN BELONGS TO THE BUYER'S OWN WORLD — what that business's " +
+  "customers actually put on a screen: their goods, their dishes, their premises, their people, " +
+  "their event. NEVER a decorative stock subject: no mountains, no icebergs, no forests, no " +
+  "sunsets, no space, no abstract art, no wildlife, unless the business itself sells exactly that. " +
+  "Cannot you place a believable picture on it: turn the screen away, crop it out of frame, or " +
+  "show it switched off — an empty dark screen is honest, a mountain range is not.";
 export const DEPICTED_NO_TEXT_SV =
   "INGEN LÄSBAR TEXT I BILDEN: inga ord, bokstäver, siffror, prislappar, logotyper eller pålagda rubriker någonstans — varken på skyltar, skärmar, tavlor, affischer, menyer, förpackningar, väggar, arbetskläder eller fordon. " +
   "Visa INTE en tom skylt, skärm eller tavla heller: en tom skylt läses som trasig, inte som ren. " +
   "Komponera bilden så att skyltar och skärmar hamnar utanför bild, är vända bort eller saknas naturligt, och bygg den kring människorna, händerna som arbetar, produkten, rummet och ljuset. " +
-  "Måste en skärm synas visar den ett foto eller produkten, aldrig text.";
+  "Måste en skärm synas visar den ett foto eller produkten, aldrig text. " +
+  "BILDEN PÅ EN AVBILDAD SKÄRM HÖR TILL KÖPARENS EGEN VÄRLD — det verksamhetens kunder faktiskt " +
+  "visar på en skärm: sina varor, sina rätter, sina lokaler, sina människor, sitt evenemang. " +
+  "ALDRIG ett dekorativt stockmotiv: inga berg, inga isberg, inga skogar, inga solnedgångar, " +
+  "ingen rymd, ingen abstrakt konst, inga vilda djur — om inte verksamheten säljer just det. " +
+  "Går det inte att lägga en trovärdig bild där: vinkla skärmen bort, beskär den ur bild, eller " +
+  "visa den släckt. En släckt skärm är ärlig, en fjällpanorama är det inte.";
 
 // ── BILD-8b: blickriktning och uppmärksamhet ────────────────────────────────
 // Skarpt fel (Håkans skarptest 2026-07-31): butiksbild där kvinnan framför skärmen
