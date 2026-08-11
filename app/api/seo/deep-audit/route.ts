@@ -58,6 +58,25 @@ const AVSTANGD_TEXT =
  * visas igen — en rapport som skrevs ur ingenting blir inte sann av att vägen lagas.
  */
 const DOLJ_RAPPORTER_I_KUNDVYN = true;
+
+/**
+ * ★ DÖLJNINGEN GÄLLER BARA RAPPORTER SKRIVNA FÖRE GRINDEN — RÄTTAT 2026-08-11.
+ *
+ *   Flaggan ovan skrevs när genereringen var AVSTÄNGD. Då var "dölj allt" rätt: det fanns
+ *   inga nya rapporter, bara sju gamla byggda på misslyckade hämtningar.
+ *
+ *   När genereringen öppnades igen samma dag blev samma rad ett fel. GET returnerade
+ *   `reports: []` FÖRE läsningen, alltså även för en rapport som just skrivits med grinden
+ *   på plats — och `finalizePendingAudits` hoppades över, så batchen hämtades aldrig hem.
+ *   Utfallet för kunden: knappen snurrar, batchen skickas, och sedan händer ingenting.
+ *   Skarpt fall: Oppråby, batch msgbatch_01V2zRax…, låg kvar i `processing`.
+ *
+ *   Gränsen är tidpunkten då grinden gick live (commit 5151297). Allt före den är skrivet
+ *   utan underlagsgrind och ska granskas en och en innan det visas — Håkans villkor 7/8.
+ *   Allt efter är skrivet med grinden och får visas direkt.
+ */
+const GRIND_INFORD = Date.parse("2026-08-11T15:14:01Z");
+
 const DOLJ_TEXT =
   "Dina tidigare djupgranskningar är tillfälligt dolda. Vi upptäckte att de kunde innehålla " +
   "slutsatser byggda på en misslyckad läsning av sajten, och vi vill hellre visa ingenting än " +
@@ -70,16 +89,11 @@ export async function GET() {
   const denied = await requireAdminOrCustomer();
   if (denied) return denied;
 
-  // Döljningen ligger FÖRE läsningen: inga rapporter hämtas, inget kan läcka genom ett
-  // filter som någon råkar ändra senare. Kunden får ett ärligt besked i stället för en
-  // tom lista som ser ut som "du har inga rapporter".
-  if (DOLJ_RAPPORTER_I_KUNDVYN) {
-    return NextResponse.json({ reports: [], generating: [], dolt: true, doltText: DOLJ_TEXT });
-  }
-
   const sb = supabaseService(); // client_assets har strikt RLS → kräver service-role
   const clientId = await resolveClientId();
 
+  // Hämtar hem färdiga batchar. MÅSTE ligga före läsningen — annars står en klar rapport
+  // kvar som `processing` och kunden ser en knapp som snurrat färdigt utan resultat.
   await finalizePendingAudits(clientId).catch(() => 0);
 
   const { data } = await sb
@@ -91,10 +105,22 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(10);
 
-  const rows = (data ?? []) as Array<{ id: string; status: string; body?: string }>;
+  const rows = (data ?? []) as Array<{ id: string; status: string; body?: string; created_at: string }>;
+
+  // Se GRIND_INFORD: bara det som skrevs UTAN underlagsgrind döljs. Filtret jämför på
+  // tidpunkt, inte på en global flagga, så en ny rapport aldrig kan fastna bakom den.
+  const foreGrinden = (r: { created_at: string }) =>
+    DOLJ_RAPPORTER_I_KUNDVYN && Date.parse(r.created_at) < GRIND_INFORD;
+
+  const dolda = rows.filter(foreGrinden).length;
+  const synliga = rows.filter((r) => !foreGrinden(r));
+
   return NextResponse.json({
-    reports: rows.filter((r) => r.status === "active" && r.body?.trim()),
-    generating: rows.filter((r) => r.status === "processing").map((r) => r.id),
+    reports: synliga.filter((r) => r.status === "active" && r.body?.trim()),
+    generating: synliga.filter((r) => r.status === "processing").map((r) => r.id),
+    // Beskedet visas bara när något faktiskt är dolt — annars läser kunden det som att
+    // hennes nya rapport är undanhållen.
+    ...(dolda ? { dolt: true, doltText: DOLJ_TEXT } : {}),
   });
 }
 
