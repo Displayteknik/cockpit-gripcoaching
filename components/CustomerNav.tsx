@@ -7,7 +7,15 @@ import { CUSTOMER_FEATURES, OVERVIEW_NAV } from "@/lib/customer-features";
 // Kundportalens sidomeny med tydlig markering av vald sida (i kundens egen färg).
 export default function CustomerNav({ features, primaryColor, onNavigate }: { features: string[]; primaryColor: string; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const items = [OVERVIEW_NAV, ...CUSTOMER_FEATURES.filter((f) => features.includes(f.key) && !f.hideFromNav)];
+  // Syskonsidor hör till samma modul och följer med direkt efter sin förälder — se
+  // `syskon` i lib/customer-features.ts för varför de inte är egna moduler.
+  const items = [
+    OVERVIEW_NAV,
+    ...CUSTOMER_FEATURES.filter((f) => features.includes(f.key) && !f.hideFromNav).flatMap((f) => [
+      f,
+      ...(f.syskon ?? []),
+    ]),
+  ];
 
   return (
     <nav className="flex-1 py-4 space-y-1 px-3">

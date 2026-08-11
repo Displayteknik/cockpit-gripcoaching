@@ -1,9 +1,92 @@
 import { supabaseService } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
-import { crawlSite } from "@/lib/seo-deep";
+import { crawlSite, type SiteAudit } from "@/lib/seo-deep";
 import { anropaProvider } from "@/lib/ai-usage";
 
 const MODEL = "claude-sonnet-4-5";
+
+// ── UNDERLAGSGRINDEN ─────────────────────────────────────────────────────────
+//
+// ★ VARFÖR DJUPGRANSKNINGEN VAR AVSTÄNGD I FYRA DAGAR (7/8–11/8 2026).
+//
+//   Hämtningen av forbalance.se föll med HTTP 500 i VÅRT led. `crawlSite` kastar inte
+//   när sidorna inte går att läsa — den returnerar ett resultat med `homepageText: null`
+//   och sidorna i `misslyckade[]`. Generatorn skickade det vidare till modellen med
+//   parentesen "(startsidan kunde INTE läsas)" och bad om en rapport ändå.
+//
+//   Modellen gjorde det den blir ombedd att göra: den skrev en självsäker åtgärdslista
+//   ur ingenting — inklusive rådet att kunden skulle kontakta sitt webbhotell om ett
+//   serverfel som var vårt eget. Sid-analysen av samma URL gav minuter tidigare
+//   Teknisk SEO 83 och AEO 68. Sajten fungerade hela tiden.
+//
+//   Felet var alltså inte i modellen utan i att FRÅGAN ställdes. Ett underlag som saknas
+//   är inte ett underlag som säger "tomt" — och den skillnaden måste avgöras i kod,
+//   innan prompten byggs, inte överlåtas åt en instruktion i prompten. Jämför
+//   standardgrinden i lib/onboard/index.ts: regeln "belägg eller tomt" är bara värd
+//   något om den inte går att glida på.
+//
+// ⚠ TRÖSKELN ÄR MEDVETET LÅG. Målet är inte att kräva en fyllig sajt — en enkel ensidig
+//   företagssajt ska kunna granskas. Målet är att skilja "vi läste sajten" från "vi
+//   läste ingenting". Allt däremellan får bli en rapport med förbehåll.
+
+/** Under så här många tecken startsidetext är sajten inte läst, den är oläsbar. */
+const MIN_HOMEPAGE_TECKEN = 200;
+
+export interface UnderlagsDom {
+  duger: boolean;
+  /** Klartext på svenska när underlaget inte duger. Null när det duger. */
+  varfor: string | null;
+}
+
+/**
+ * Avgör om crawlen gav tillräckligt för att en rapport ska FÅ skrivas.
+ *
+ * Egen exporterad funktion för att beteendet ska gå att bevisa med test, inte bara läsas
+ * i en gren — samma skäl som `snapshotStegAterAnvant` i onboardingmotorn.
+ *
+ * Tre spärrar, alla med samma innebörd: vi har inget att uttala oss om.
+ */
+export function underlagDuger(site: SiteAudit): UnderlagsDom {
+  // 1. Ingen enda sida lästes. `pageCount` är verkligt lästa, aldrig antalet försök.
+  if (site.pageCount === 0) {
+    const orsaker = site.misslyckade
+      .slice(0, 3)
+      .map((m) => `${m.url} (${m.status ?? "inget svar"}${m.fel ? `: ${m.fel}` : ""})`)
+      .join("; ");
+    return {
+      duger: false,
+      varfor:
+        `Ingen av de ${site.pageCountForsokt} sidorna gick att läsa — ingen rapport skrivs. ` +
+        (orsaker ? `Först i listan: ${orsaker}. ` : "") +
+        `Det är nästan alltid ett fel i hämtningen, inte på sajten. Kontrollera att adressen svarar i en webbläsare och kör om.`,
+    };
+  }
+
+  // 2. Startsidan gick inte att läsa. null = kunde inte läsas, "" = lästes och var tom.
+  //    Utan startsidetext finns inget innehålls- eller E-E-A-T-underlag alls, och det är
+  //    just de delarna rapporten uttalar sig starkast om.
+  if (site.homepageText == null) {
+    const h = site.misslyckade.find((m) => m.url === site.root) ?? site.misslyckade[0];
+    return {
+      duger: false,
+      varfor:
+        `Startsidan (${site.root}) kunde inte läsas` +
+        (h ? ` — ${h.status ?? "inget svar"}${h.fel ? `: ${h.fel}` : ""}` : "") +
+        `. Ingen rapport skrivs, eftersom innehålls- och E-E-A-T-bedömningen då hade byggts på ingenting.`,
+    };
+  }
+
+  if (site.homepageText.trim().length < MIN_HOMEPAGE_TECKEN) {
+    return {
+      duger: false,
+      varfor:
+        `Startsidan svarade men innehöll bara ${site.homepageText.trim().length} tecken läsbar text — för lite för att granska. ` +
+        `Vanligaste orsaken är en sida som byggs med JavaScript vi inte kom åt, en parkerad domän, eller ett skal som kräver inloggning.`,
+    };
+  }
+
+  return { duger: true, varfor: null };
+}
 
 const SYSTEM_PROMPT = `Du genererar en professionell SEO/AEO-djupgranskning på svenska enligt en specifik mall. Rapporten ska kunna läsas och FÖLJAS av en företagare utan teknisk bakgrund — inga oförklarade förkortningar, och varje föreslagen text skriven ut i sin helhet.
 
@@ -217,6 +300,13 @@ export async function runDeepAudit(clientId: string, urlOverride?: string): Prom
     site = await crawlSite(url, { maxPages: 25 });
   } catch (e) {
     return { ok: false, error: `Kunde inte hämta sajten: ${(e as Error).message}`, duration_ms: Date.now() - t0 };
+  }
+
+  // ★ GRINDEN LIGGER HÄR, FÖRE PROMPTEN BYGGS. Se den långa förklaringen vid
+  //   `underlagDuger`. Ett hårt fel är billigt; en rapport ur ingenting är det inte.
+  const dom = underlagDuger(site);
+  if (!dom.duger) {
+    return { ok: false, error: dom.varfor!, duration_ms: Date.now() - t0 };
   }
 
   const gscAll = (gsc.data ?? []) as RawGscRow[];

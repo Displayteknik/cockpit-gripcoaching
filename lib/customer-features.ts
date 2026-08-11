@@ -1,4 +1,4 @@
-import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail, BookOpen, CreditCard } from "lucide-react";
+import { Home, Target, Sparkles, Lightbulb, Calendar, Users, TrendingUp, Globe, FileText, Compass, Mail, BookOpen, CreditCard, Palette } from "lucide-react";
 import { LinkedinIcon } from "./module-icons";
 
 // Katalog över moduler en kund kan få access till i portalen (/k).
@@ -13,6 +13,15 @@ export interface CustomerFeature {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   hideFromNav?: boolean; // modulen finns kvar (route + access) men visas inte i sidomenyn
+  /**
+   * Extra sidor som hör till SAMMA modul och visas direkt under den i sidomenyn.
+   *
+   * ★ VARFÖR INTE ETT EGET MODUL-ID: `normalizeFeatures` har ingen "impliceras av"-logik,
+   *   så en ny nyckel hade varit AVSTÄNGD för varje befintlig kund tills den bockats för
+   *   en och en i /dashboard/kund-access. Den grafiska profilen är inte en egen produkt —
+   *   den som köpt Brand-profil äger sina färger. Alltså samma modul, egen sida.
+   */
+  syskon?: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
 }
 
 export const CUSTOMER_FEATURES: CustomerFeature[] = [
@@ -21,7 +30,8 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     label: "Brand-profil",
     href: "/k/profil",
     icon: Target,
-    description: "Kunden ser och kompletterar sin egen röst, ICP, kund-citat och bilder.",
+    description: "Kunden ser och kompletterar sin egen röst, ICP, kund-citat och bilder. Inkluderar Färger & logga.",
+    syskon: [{ href: "/k/brand-kit", label: "Färger & logga", icon: Palette }],
   },
   {
     key: "seo",

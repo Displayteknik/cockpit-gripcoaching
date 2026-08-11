@@ -8,6 +8,8 @@ import {
 import { profilUrlFranLankar, bokadirektLankUrSidor } from "@/lib/onboard/bokadirekt";
 import { funnet, tomt, harVarde, type Forslag, type OnboardSida } from "@/lib/onboard/typer";
 import { rensaMarkdown } from "@/lib/onboard/hamta";
+import { underlagDuger } from "@/lib/deep-audit-generate";
+import type { SiteAudit } from "@/lib/seo-deep";
 
 // Testerna nedan skyddar de grindar som avgör om FEL DATA hamnar i ett kundkonto.
 // Alla utom det sista blocket är rena funktioner — inga nätanrop, inget AI.
@@ -260,5 +262,46 @@ describe("rensaMarkdown behåller länkmål (mejl och telefon ligger där)", () 
     const ut = rensaMarkdown("Kontakta [oss](mailto:info@test.se) idag");
     expect(ut).toContain("info@test.se");
     expect(ut).toContain("oss");
+  });
+});
+
+// ── Djupgranskningens underlagsgrind ─────────────────────────────────────────
+//
+// ★ VARFÖR DEN FINNS: hämtningen av forbalance.se föll med HTTP 500 i VÅRT led.
+//   `crawlSite` kastar inte — den returnerar homepageText: null. Generatorn bad modellen
+//   om en rapport ändå, och fick en självsäker åtgärdslista ur ingenting, inklusive rådet
+//   att kunden skulle kontakta sitt webbhotell om vårt eget serverfel.
+describe("underlagDuger — ingen rapport utan underlag", () => {
+  const bas = (over: Partial<SiteAudit>): SiteAudit =>
+    ({
+      root: "https://kund.se/", origin: "https://kund.se", pageCount: 3, pageCountForsokt: 3,
+      misslyckade: [], homepageText: "x".repeat(900),
+      ...over,
+    }) as unknown as SiteAudit;
+
+  it("VÄGRAR när ingen enda sida gick att läsa", () => {
+    const d = underlagDuger(bas({
+      pageCount: 0, pageCountForsokt: 4,
+      misslyckade: [{ url: "https://kund.se/", status: 500, bytes: null, orsak: null, fel: "Internal Server Error" }],
+    }));
+    expect(d.duger).toBe(false);
+    expect(d.varfor).toContain("500");
+  });
+
+  it("VÄGRAR när startsidan inte kunde läsas, även om andra sidor gick", () => {
+    const d = underlagDuger(bas({ homepageText: null, pageCount: 2 }));
+    expect(d.duger).toBe(false);
+    expect(d.varfor).toContain("Startsidan");
+  });
+
+  it("VÄGRAR när startsidan svarade men var i praktiken tom", () => {
+    expect(underlagDuger(bas({ homepageText: "Sidan är under uppbyggnad." })).duger).toBe(false);
+  });
+
+  // Tröskeln får inte bli en kvalitetsdom: en enkel ensidig företagssajt ska gå att granska.
+  it("SLÄPPER IGENOM en tunn men verklig ensidig sajt", () => {
+    const d = underlagDuger(bas({ pageCount: 1, pageCountForsokt: 1, homepageText: "y".repeat(250) }));
+    expect(d.duger).toBe(true);
+    expect(d.varfor).toBeNull();
   });
 });

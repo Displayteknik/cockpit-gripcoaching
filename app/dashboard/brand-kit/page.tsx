@@ -26,7 +26,20 @@ function shade(hex: string, t: number): string {
   return `#${p(0)}${p(2)}${p(4)}`;
 }
 
-export default function BrandKitPage() {
+/**
+ * ★ SAMMA SIDA I BÅDA YTORNA — /dashboard/brand-kit och /k/brand-kit.
+ *
+ *   Kunden ska kunna sköta sina egna färger (Håkans beslut 2026-08-11). Sidan återanvänds
+ *   rakt av, precis som /k/profil gör med profilsidan, så att de två vyerna inte kan glida
+ *   isär. `kundlage` styr bara det som faktiskt SKILJER.
+ *
+ * ⚠ VAD KUNDLÄGET DÖLJER OCH VARFÖR: knappen "Hämta från webbplatsen" anropar
+ *   /api/brand-kit/agent, och den rutten är inte kund-släppt i proxy.ts (den kostar
+ *   AI-krediter och saknar egen in-route-grind). I kundvyn hade den alltså gett 401.
+ *   En knapp som inte gör något lär användaren att knappar ljuger — samma princip som
+ *   den uteblivna åtgärdsknappen i onboardingens steg 8.
+ */
+export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean }) {
   const [kit, setKit] = useState<Kit>({});
   const [clientName, setClientName] = useState("");
   const [clientPrimary, setClientPrimary] = useState("#1A6B3C");
@@ -135,14 +148,16 @@ export default function BrandKitPage() {
 
         {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-        {/* Auto-setup från webbplatsen */}
-        <div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white shadow-sm p-4 flex items-center gap-3 flex-wrap">
-          <button onClick={runAgent} disabled={agentLoading} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40" style={{ background: previewColors.primary }}>
-            {agentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Hämta från webbplatsen
-          </button>
-          <span className="text-sm text-gray-500">Låt AI:n läsa av logga, färger och typsnitt från kundens sajt — du granskar och justerar innan du sparar.</span>
-          {agentNote && <span className="text-sm w-full font-medium" style={{ color: previewColors.primary }}>{agentNote}</span>}
-        </div>
+        {/* Auto-setup från webbplatsen — admin-yta, se kommentaren vid komponenten. */}
+        {!kundlage && (
+          <div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white shadow-sm p-4 flex items-center gap-3 flex-wrap">
+            <button onClick={runAgent} disabled={agentLoading} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40" style={{ background: previewColors.primary }}>
+              {agentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Hämta från webbplatsen
+            </button>
+            <span className="text-sm text-gray-500">Låt AI:n läsa av logga, färger och typsnitt från kundens sajt — du granskar och justerar innan du sparar.</span>
+            {agentNote && <span className="text-sm w-full font-medium" style={{ color: previewColors.primary }}>{agentNote}</span>}
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-[1fr_300px] gap-6 items-start">
           <div className="space-y-6">

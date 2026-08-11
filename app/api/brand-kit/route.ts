@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, getActiveClientId } from "@/lib/client-context";
 import { supabaseService } from "@/lib/supabase-admin";
-import { requireAdminOrCustomer, requireAdmin } from "@/lib/api-auth";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -29,8 +29,19 @@ export async function GET() {
 }
 
 // PUT /api/brand-kit — { kit } → sparar/uppdaterar klientens kit
+//
+// ★ KUNDEN FÅR SKRIVA SITT EGET KIT (Håkans beslut 2026-08-11). Tidigare fick hon LÄSA
+//   (GET) men inte spara, så färgerna gick bara att ändra av Håkan. Hennes grafiska
+//   profil är hennes, och den ska hon råda över.
+//
+// ⚠ SÄKERHETEN VILAR PÅ ATT `clientId` KOMMER FRÅN SESSIONEN, ALDRIG FRÅN ANROPET.
+//   `getActiveClientId()` låser en kund-session hårt till kundens egen klient (se
+//   lib/client-context.ts, gren 0 och 2). Det finns alltså ingen väg för en kund att
+//   skriva i en ANNAN kunds kit — inte ens genom att peta i anropets kropp, eftersom
+//   kroppen bara bär `kit`. Skulle någon i framtiden lägga till ett clientId-fält i
+//   kroppen och läsa det här, är den här grinden bruten. Gör inte det.
 export async function PUT(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdminOrCustomer();
   if (denied) return denied;
 
   try {

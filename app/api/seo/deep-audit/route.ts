@@ -9,25 +9,31 @@ export const runtime = "nodejs";
 export const maxDuration = 60; // POST submittar bara en batch (<10s) — genereringen sker async i bakgrunden
 
 /**
- * ★ AVSTÄNGD 2026-08-07 — djupgranskningen genererar rapporter ur misslyckade hämtningar.
+ * ★ ÅTERÖPPNAD 2026-08-11 — villkoret är uppfyllt, och här är vad som gäller nu.
  *
- * Vad som hände: hämtningen av forbalance.se föll med HTTP 500 i vårt led. Generatorn
+ * Bakgrunden: hämtningen av forbalance.se föll med HTTP 500 i vårt led. Generatorn
  * tolkade frånvaro av DATA som frånvaro av INNEHÅLL och skrev en självsäker åtgärdslista
  * ur ingenting — inklusive instruktionen att kunden skulle kontakta sitt webbhotell om ett
  * serverfel som var vårt eget. Sid-analysen av samma URL gav minuter tidigare Teknisk SEO
- * 83 och AEO 68, och sajten fungerar i webbläsare.
+ * 83 och AEO 68, och sajten fungerade i webbläsare.
  *
- * Varför det är värre än en vanlig bugg: utdatan är ett dokument kunden ska AGERA på, och
- * kunden kan starta körningen själv från /k/seo. En rapport som ser trovärdig ut och är
- * fel är sämre än ingen rapport alls.
+ * Varför det var värre än en vanlig bugg: utdatan är ett dokument kunden ska AGERA på, och
+ * kunden startar körningen själv från /k/seo. En rapport som ser trovärdig ut och är fel
+ * är sämre än ingen rapport alls.
  *
- * Samma princip som belägg-regeln i onboardingmotorn: en misslyckad hämtning ska ge ett
- * tydligt FEL, aldrig en rapport.
+ * ★ VILLKORET FÖR ÅTERÖPPNING VAR ATT GENERATORN VÄGRAR SKRIVA UTAN UNDERLAG.
+ *   Den grinden finns nu i `underlagDuger` (lib/deep-audit-generate.ts) och ligger FÖRE
+ *   prompten byggs: ingen läst sida, oläsbar startsida eller en startsida under 200 tecken
+ *   ger ett hårt fel med förklaring — aldrig en rapport. Fyra test låser beteendet.
  *
- * Öppnas igen när hämtvägen är lagad OCH generatorn vägrar skriva rapport utan underlag.
- * Läsning av redan sparade rapporter lämnas på — bara nygenerering stoppas.
+ *   Grinden sitter i generatorn, inte här, med flit: /api/analytics/deep-audit (admin)
+ *   anropar samma funktion, så skyddet kan inte kringgås genom att gå in en annan väg.
+ *
+ * ⚠ `DOLJ_RAPPORTER_I_KUNDVYN` nedan står KVAR PÅ. De gamla rapporterna skrevs innan
+ *   grinden fanns, och en rapport som skrevs ur ingenting blir inte sann av att vägen
+ *   lagas. De ska granskas en och en innan de visas igen — Håkans villkor 7/8.
  */
-const DJUPGRANSKNING_AVSTANGD = true;
+const DJUPGRANSKNING_AVSTANGD = false;
 const AVSTANGD_TEXT =
   "Djupgranskningen är tillfälligt ur funktion. Den kunde skriva rapporter även när sajten inte gick att läsa, " +
   "vilket gav åtgärdsförslag byggda på ingenting. Den är avstängd tills hämtningen är lagad. Sid-analysen fungerar som vanligt.";
