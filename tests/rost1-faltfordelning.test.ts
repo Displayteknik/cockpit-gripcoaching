@@ -171,7 +171,9 @@ describe("ROST-1 · ytorna som fått schemat", () => {
     // Annars kan modellen svara ett värde som inte finns i <select> och fältet blir tomt.
     expect(dm).toContain("alternativ: KANALER.map((k) => k.id)");
     expect(dm).toContain("alternativ: LAGEN.map((l) => String(l.id))");
-    expect(dm).toContain("...STAGES.map((st) => ({ id: st.id, label: st.label }))");
+    // DM-4 gjorde STAGES till grundplanens sju fack, så LAGEN speglar den rakt av i stället
+    // för att lägga till Bokad och Förlorad en andra gång.
+    expect(dm).toContain("const LAGEN: { id: Stage; label: string }[] = STAGES.map");
   });
 
   it("redigeringsytan sorterar talet i sina egna fält", () => {
@@ -201,11 +203,13 @@ describe("DM-3 · redigera ändrar HELA kortet", () => {
     }
   });
 
-  it("läget går att sätta tillbaka till Bokad eller Förlorad", () => {
-    // Kortet har knappar för det, men den som öppnat redigeringen ska inte behöva stänga
-    // den för att flytta kortet.
-    expect(dm).toContain('{ id: "won" as Stage, label: "Bokad" }');
-    expect(dm).toContain('{ id: "lost" as Stage, label: "Förlorad" }');
+  it("läget går att sätta till vilket av grundplanens sju fack som helst", () => {
+    // Kortet har snabbknappar, men den som öppnat redigeringen ska inte behöva stänga den
+    // för att flytta kortet. Sedan DM-4 kommer listan ur STAGES, alltså alla sju.
+    expect(dm).toContain('label: "Bokad"');
+    expect(dm).toContain('label: "Vilande"');
+    expect(dm).toContain('label: "Förlorad"');
+    expect(redigera).toContain("LAGEN.map((l) =>");
   });
 
   it("ett misslyckat sparande syns — det får aldrig se ut som att det gick igenom", () => {

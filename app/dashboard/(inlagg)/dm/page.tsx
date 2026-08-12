@@ -22,15 +22,20 @@ import {
   ToggleRight,
   Trophy,
   XCircle,
+  CalendarCheck,
+  PauseCircle,
   Pencil,
-  RotateCcw,
   Sparkles,
   Image as ImageIcon,
   CalendarClock,
   Bell,
 } from "lucide-react";
 
-type Stage = "new" | "acknowledge" | "connect" | "offer" | "won" | "lost";
+// DM-4 (Håkans fynd 11/8): "DM pipeline sitter inte ihop på samma sätt som pipeline i
+// grundplanen, det fattas 2 steg". MySales Kund pipeline har sju fack — Ny, Bekräftad,
+// Dialog, Erbjudande, Bokad, Vilande, Förlorad. VILANDE fanns inte här alls, och Bokad
+// och Förlorad låg i en lista under tavlan i stället för som egna fack.
+type Stage = "new" | "acknowledge" | "connect" | "offer" | "won" | "vilande" | "lost";
 
 interface Contact {
   id: string;
@@ -61,12 +66,22 @@ interface Rule {
   triggered_count: number;
 }
 
+// Samma sju fack som MySales Kund pipeline, i samma ordning. Namnen är kundens ord — byter
+// man dem här slutar tavlan spegla grundplanen, och det var hela felet.
 const STAGES: { id: Stage; label: string; icon: React.ComponentType<{ className?: string }>; color: string; desc: string }[] = [
   { id: "new", label: "Ny", icon: UserPlus, color: "bg-blue-500", desc: "Första kontakten, ej besvarad" },
   { id: "acknowledge", label: "Bekräftad", icon: Handshake, color: "bg-amber-500", desc: "Första svaret skickat, gett värde" },
   { id: "connect", label: "Dialog", icon: MessageCircle, color: "bg-purple-500", desc: "Dialog pågår, behov identifierat" },
   { id: "offer", label: "Erbjudande", icon: Target, color: "bg-emerald-500", desc: "Erbjudande presenterat" },
+  { id: "won", label: "Bokad", icon: CalendarCheck, color: "bg-emerald-600", desc: "Tid bokad eller affär vunnen" },
+  // VILANDE är inte en förlorad affär. Facket i MySales hette förut "Förlorad / Paus" och
+  // slog ihop dem, vilket räknade varje parkerad kund som förlorad (FIX-1 B2). Nu är de skilda.
+  { id: "vilande", label: "Vilande", icon: PauseCircle, color: "bg-slate-400", desc: "Parkerad, ska tas upp igen senare" },
+  { id: "lost", label: "Förlorad", icon: XCircle, color: "bg-rose-500", desc: "Ingen affär, ingen uppföljning" },
 ];
+
+/** De fack en kontakt aktivt arbetas i. Används där bara pågående kontakter räknas. */
+const AKTIVA_STEG: Stage[] = ["new", "acknowledge", "connect", "offer"];
 
 // Rent visuellt: mjuka färgbrickor per steg (matchar STAGES-färgerna, ändrar ingen logik).
 const STAGE_STYLES: Record<Stage, { tile: string; icon: string }> = {
@@ -75,6 +90,7 @@ const STAGE_STYLES: Record<Stage, { tile: string; icon: string }> = {
   connect: { tile: "bg-purple-50", icon: "text-purple-600" },
   offer: { tile: "bg-emerald-50", icon: "text-emerald-600" },
   won: { tile: "bg-emerald-50", icon: "text-emerald-600" },
+  vilande: { tile: "bg-slate-100", icon: "text-slate-600" },
   lost: { tile: "bg-rose-50", icon: "text-rose-600" },
 };
 
@@ -107,7 +123,10 @@ export default function DMPage({ customerMode = false }: { customerMode?: boolea
       <div>
         <h1 className="font-display text-2xl font-bold text-gray-900">DM & Pipeline</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Från första kommentar till bokad kund: Ny → Bekräftad → Dialog → Erbjudande.
+          {/* DM-4: raden räknade upp fyra steg medan grundplanen har sju. En rubrik som
+              beskriver en annan tavla än den under är samma sorts tysta löfte som resten. */}
+          Samma sju steg som i MySales: Ny → Bekräftad → Dialog → Erbjudande → Bokad, med Vilande för
+          det som ska tas upp igen och Förlorad för det som inte blev något.
         </p>
       </div>
 
@@ -188,18 +207,27 @@ function PipelineView() {
 
   const won = contacts.filter((c) => c.stage === "won").length;
   const lost = contacts.filter((c) => c.stage === "lost").length;
+  // DM-4: vilande är varken pågående eller avslutat. Räkningen "i pipeline" byggde förut på
+  // "alla minus bokade och förlorade", vilket hade räknat en parkerad kontakt som pågående
+  // arbete — exakt det fel som FIX-1 B2 handlar om, fast åt andra hållet.
+  const vilande = contacts.filter((c) => c.stage === "vilande").length;
+  const iPipeline = contacts.filter((c) => AKTIVA_STEG.includes(c.stage)).length;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-xl shadow-sm px-3 py-1.5 text-sm text-gray-600">
-            <span className="tabular-nums font-bold text-gray-900">{contacts.length - won - lost}</span>
+            <span className="tabular-nums font-bold text-gray-900">{iPipeline}</span>
             i pipeline
           </span>
           <span className="inline-flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl shadow-sm px-3 py-1.5 text-sm text-emerald-700">
             <Trophy className="w-3.5 h-3.5" />
             <span className="tabular-nums font-bold">{won}</span> bokade
+          </span>
+          <span className="inline-flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl shadow-sm px-3 py-1.5 text-sm text-slate-600">
+            <PauseCircle className="w-3.5 h-3.5" />
+            <span className="tabular-nums font-bold">{vilande}</span> vilande
           </span>
           <span className="inline-flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl shadow-sm px-3 py-1.5 text-sm text-rose-600">
             <XCircle className="w-3.5 h-3.5" />
@@ -228,8 +256,9 @@ function PipelineView() {
         </div>
       )}
 
+      {/* DM-4: sju fack, samma som grundplanen. På lg bryts de 4 + 3, på xl står de i rad. */}
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           {STAGES.map((stage) => {
             const stageContacts = contacts.filter((c) => c.stage === stage.id);
             const Icon = stage.icon;
@@ -287,31 +316,10 @@ function PipelineView() {
         </div>
       )}
 
-      {/* Bokade & förlorade — annars försvinner kontakten spårlöst när man markerar den. */}
-      {!loading && (won > 0 || lost > 0) && (
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
-          <div className="flex flex-wrap items-center gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Trophy className="w-[18px] h-[18px] text-gray-500" />
-            </div>
-            <h3 className="font-display font-bold text-sm text-gray-900">Bokade &amp; förlorade</h3>
-            <span className="text-xs text-gray-400">avslutade kontakter, klicka för att ta tillbaka till pipeline</span>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {contacts.filter((c) => c.stage === "won" || c.stage === "lost").map((c) => (
-              <div key={c.id} className="flex items-center gap-3 py-2">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${c.stage === "won" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>
-                  {c.stage === "won" ? "Bokad" : "Förlorad"}
-                </span>
-                <span className="text-sm text-gray-800 font-medium truncate flex-1">{c.display_name || c.ig_username || "Kontakt"}</span>
-                <button onClick={() => moveStage(c.id, "offer")} className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-800 flex-shrink-0">
-                  <RotateCcw className="w-3.5 h-3.5" /> Tillbaka till pipeline
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* DM-4: den gamla listan "Bokade & förlorade" är borta. Den fanns för att en
+          avslutad kontakt annars försvann spårlöst när man markerade den — men nu har
+          Bokad, Vilande och Förlorad egna fack på tavlan, och en lista som visar samma
+          kontakter en andra gång blir en plats där siffrorna kan glida isär. */}
 
       {showAdd && <AddContactModal onClose={() => setShowAdd(false)} onAdded={load} />}
 
@@ -626,6 +634,15 @@ function ContactCard({
               <Trophy className="w-3.5 h-3.5" />
             </button>
           )}
+          {contact.stage !== "vilande" && (
+            <button
+              onClick={() => onMoveTo("vilande")}
+              className="text-xs text-slate-500 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
+              title="Parkera som vilande — tas upp igen senare"
+            >
+              <PauseCircle className="w-3.5 h-3.5" />
+            </button>
+          )}
           {contact.stage !== "lost" && (
             <button
               onClick={() => onMoveTo("lost")}
@@ -679,13 +696,10 @@ const KALLOR: { id: string; label: string }[] = [
   { id: "import", label: "Import" },
 ];
 
-// Läget i pipelinen inkluderar Bokad och Förlorad här: ett kort kan stå där, och då ska det
-// gå att ändra tillbaka i redigeringen — inte bara med knapparna på kortet.
-const LAGEN: { id: Stage; label: string }[] = [
-  ...STAGES.map((st) => ({ id: st.id, label: st.label })),
-  { id: "won" as Stage, label: "Bokad" },
-  { id: "lost" as Stage, label: "Förlorad" },
-];
+// Läget i pipelinen = grundplanens sju fack, inget mer. Listan lade förut till Bokad och
+// Förlorad en andra gång; sedan DM-4 bär STAGES dem själv, och en dubblett i en <select>
+// hade gett två rader med samma namn.
+const LAGEN: { id: Stage; label: string }[] = STAGES.map((st) => ({ id: st.id, label: st.label }));
 
 const KONTAKT_ROSTFALT: FaltSpec[] = [
   { nyckel: "namn", etikett: "Namn", typ: "text", hjalp: "för- och efternamn på personen" },
@@ -743,14 +757,9 @@ interface Tolkning {
   paminnelseLasbar: string;
 }
 
-const STEG_VAL: { id: Stage; label: string }[] = [
-  { id: "new", label: "Ny" },
-  { id: "acknowledge", label: "Bekräftad" },
-  { id: "connect", label: "Dialog" },
-  { id: "offer", label: "Erbjudande" },
-  { id: "won", label: "Bokad" },
-  { id: "lost", label: "Förlorad" },
-];
+// DM-4: EN lista, samma sju fack som tavlan och som grundplanen. Den handskrivna kopian
+// saknade Vilande — och en <select> som saknar ett fack gör facket oanvändbart.
+const STEG_VAL: { id: Stage; label: string }[] = LAGEN;
 
 function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
   const [username, setUsername] = useState("");
