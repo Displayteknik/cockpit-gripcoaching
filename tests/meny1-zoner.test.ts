@@ -198,13 +198,15 @@ describe("DM-2 · redigeringen öppnas i full yta", () => {
   });
 
   it("fältet är stort och texten läsbar", () => {
-    expect(dm).toContain("rows={12}");
+    // DM-3 gjorde ytan till hela kortet, så fältet är 10 rader i stället för 12 — resten av
+    // höjden går till namn, kanal, läge och tider. Textstorleken är oförändrad.
+    expect(dm).toMatch(/rows=\{1[02]\}/);
     expect(dm).toContain("text-base leading-relaxed");
   });
 
   it("röstinmatningen finns kvar och förklaras", () => {
     expect(dm).toContain("Prata in det med mikrofonen");
-    expect(dm).toMatch(/SmartTextarea[\s\S]{0,400}rows=\{12\}/);
+    expect(dm).toMatch(/SmartTextarea[\s\S]{0,400}rows=\{10\}/);
   });
 
   it("Esc och klick utanför stänger — men aldrig mitt i en sparning", () => {

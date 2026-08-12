@@ -3,6 +3,7 @@
 import SmartTextarea from "@/components/SmartTextarea";
 import { CoachPanel, type ScoredCard } from "@/components/FokusClient";
 import { KANALER, kanalEtikett } from "@/lib/dm/skarmdump";
+import type { FaltSpec } from "@/lib/ai/faltfordelning";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
@@ -362,24 +363,79 @@ function kortFranKontakt(c: Contact): ScoredCard {
 //      medan den kom in. Nu syns den i klartext, och knappen ligger där tummen är.
 //   3. AVBRYT UTAN OLYCKA. Esc och klick utanför stänger, men bara när inget sparas — ett
 //      halvsparat kort som stängs mitt i skrivningen är värre än ett extra klick.
-function RedigeraKort({
-  contact, notes, setNotes, next, setNext, saving, onSave, onClose,
-}: {
-  contact: Contact;
-  notes: string;
-  setNotes: (v: string) => void;
-  next: string;
-  setNext: (v: string) => void;
-  saving: boolean;
-  onSave: () => void;
-  onClose: () => void;
-}) {
+function RedigeraKort({ contact, onSparad, onClose }: { contact: Contact; onSparad: () => void; onClose: () => void }) {
+  // DM-3 (Håkans krav 11/8): "när man klickar på redigera så vill man ju kunna ändra ALLT på
+  // kortet, inte bara en inforuta". Ytan ägde förut två fält — anteckningar och nästa steg —
+  // och allt annat gick bara att ändra genom att dra kortet eller via dess knappar.
+  // Nu bär den varje fält PATCH-vägen redan accepterar; inget behövde öppnas i API:t.
+  const [namn, setNamn] = useState(contact.display_name || "");
+  const [anvandarnamn, setAnvandarnamn] = useState(contact.ig_username || "");
+  const [kanal, setKanal] = useState(contact.channel || "instagram");
+  const [kalla, setKalla] = useState(contact.source || "manuell");
+  const [lage, setLage] = useState<Stage>(contact.stage);
+  const [motesTid, setMotesTid] = useState(isoTillFalt(contact.next_action_at));
+  const [paminnelse, setPaminnelse] = useState(isoTillFalt(contact.reminder_at));
+  const [next, setNext] = useState(contact.next_action || "");
+  const [notes, setNotes] = useState(contact.notes || "");
+  const [saving, setSaving] = useState(false);
+  const [fel, setFel] = useState<string | null>(null);
+
   // Esc stänger. Lyssnaren tas bort när ytan stängs, annars äter den Esc i resten av sidan.
   useEffect(() => {
     const pa = (e: KeyboardEvent) => { if (e.key === "Escape" && !saving) onClose(); };
     window.addEventListener("keydown", pa);
     return () => window.removeEventListener("keydown", pa);
   }, [saving, onClose]);
+
+  // ROST-1: dikteringen sorteras i ALLA fält här, inte bara i anteckningarna.
+  function fyllFranRost(varden: Record<string, string>) {
+    if (varden.namn) setNamn(varden.namn);
+    if (varden.anvandarnamn) setAnvandarnamn(varden.anvandarnamn.replace(/^@/, ""));
+    if (varden.kanal) setKanal(varden.kanal);
+    if (varden.kalla) setKalla(varden.kalla);
+    if (varden.lage) setLage(varden.lage as Stage);
+    if (varden.motestid) setMotesTid(varden.motestid);
+    if (varden.paminnelse) setPaminnelse(varden.paminnelse);
+    if (varden.nastaSteg) setNext(varden.nastaSteg);
+  }
+
+  async function spara() {
+    setSaving(true);
+    setFel(null);
+    try {
+      const r = await fetch("/api/dm/contacts/" + contact.id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          display_name: namn,
+          ig_username: anvandarnamn,
+          channel: kanal,
+          source: kalla,
+          stage: lage,
+          notes,
+          next_action: next,
+          next_action_at: faltTillIso(motesTid),
+          reminder_at: faltTillIso(paminnelse),
+        }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        // Ett tyst misslyckande hade sett ut som en lyckad sparning: ytan stängs, ändringen är
+        // borta, och nästa laddning visar det gamla värdet.
+        setFel(d.error || "Kunde inte spara ändringen");
+        return;
+      }
+      onSparad();
+      onClose();
+    } catch (e) {
+      setFel((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const falt = "w-full px-3.5 py-2.5 text-base border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300";
+  const etikett = "block text-sm font-medium text-gray-700 mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -388,40 +444,74 @@ function RedigeraKort({
         <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-gray-100">
           <div className="min-w-0">
             <h2 className="font-display text-lg font-bold text-gray-900 truncate">
-              {contact.display_name || `@${contact.ig_username}` || "Kontakt"}
+              {contact.display_name || (contact.ig_username ? "@" + contact.ig_username : "Kontakt")}
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {kanalEtikett(contact.channel, contact.ig_username)}
-              {contact.source ? ` · via ${contact.source}` : ""}
-            </p>
+            <p className="text-sm text-gray-500 mt-0.5">Ändra vad du vill — allt på kortet går att rätta här.</p>
           </div>
           <button onClick={onClose} disabled={saving} className="p-2 -mr-2 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" title="Stäng">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          {fel && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{fel}</div>}
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Vad har hänt i samtalet?</label>
+            <label className={etikett}>Namn</label>
+            <input value={namn} onChange={(e) => setNamn(e.target.value)} placeholder="För- och efternamn" className={falt} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={etikett}>Kanal</label>
+              <select value={kanal} onChange={(e) => setKanal(e.target.value)} className={falt}>
+                {KANALER.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={etikett}>Användarnamn <span className="font-normal text-gray-400">(om du har det)</span></label>
+              <input value={anvandarnamn} onChange={(e) => setAnvandarnamn(e.target.value)} placeholder="utan @" className={falt} />
+            </div>
+            <div>
+              <label className={etikett}>Läge i pipelinen</label>
+              <select value={lage} onChange={(e) => setLage(e.target.value as Stage)} className={falt}>
+                {LAGEN.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={etikett}>Kom in via</label>
+              <select value={kalla} onChange={(e) => setKalla(e.target.value)} className={falt}>
+                {KALLOR.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={etikett}>Bokad tid</label>
+              <input type="datetime-local" value={motesTid} onChange={(e) => setMotesTid(e.target.value)} className={falt} />
+            </div>
+            <div>
+              <label className={etikett}>Påminnelse</label>
+              <input type="datetime-local" value={paminnelse} onChange={(e) => setPaminnelse(e.target.value)} className={falt} />
+            </div>
+          </div>
+
+          <div>
+            <label className={etikett}>Nästa steg</label>
+            <input value={next} onChange={(e) => setNext(e.target.value)} placeholder="T.ex. Skicka förslag på två storlekar, senast fredag" className={falt} />
+          </div>
+
+          <div>
+            <label className={etikett}>Vad har hänt i samtalet?</label>
             <p className="text-sm text-gray-500 mb-2">
-              Prata in det med mikrofonen, eller klistra in en skärmdump av DM:et — texten läses av åt dig.
+              Prata in det med mikrofonen — namn, tid och nästa steg hamnar i sina egna fält, resten här.
             </p>
             <SmartTextarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={12}
-              autoFocus
+              rows={10}
               placeholder="T.ex. Hon frågade vad en skärm till entrén kostar och vill ha ett förslag före semestern."
               className="w-full px-4 py-3 text-base leading-relaxed border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nästa steg</label>
-            <input
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-              placeholder="T.ex. Skicka förslag på två storlekar, senast fredag"
-              className="w-full px-4 py-3 text-base border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
+              faltschema={KONTAKT_ROSTFALT}
+              onFalt={fyllFranRost}
             />
           </div>
         </div>
@@ -430,11 +520,7 @@ function RedigeraKort({
           <button onClick={onClose} disabled={saving} className="px-4 py-2.5 text-sm font-medium text-gray-600 rounded-xl hover:bg-gray-100 disabled:opacity-40">
             Avbryt
           </button>
-          <button
-            onClick={onSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 bg-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:bg-purple-700 disabled:opacity-50"
-          >
+          <button onClick={spara} disabled={saving} className="inline-flex items-center gap-2 bg-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:bg-purple-700 disabled:opacity-50">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             Spara
           </button>
@@ -461,22 +547,9 @@ function ContactCard({
   onMoveTo: (s: Stage) => void;
   onCoacha: () => void;
 }) {
+  // DM-3: kortet håller inget formulärstate längre. Redigeringsytan äger fälten, sparar
+  // själv och ropar onUpdate när den lyckats — två kopior av samma värden kunde glida isär.
   const [editing, setEditing] = useState(false);
-  const [notes, setNotes] = useState(contact.notes || "");
-  const [next, setNext] = useState(contact.next_action || "");
-  const [saving, setSaving] = useState(false);
-
-  async function save() {
-    setSaving(true);
-    await fetch(`/api/dm/contacts/${contact.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notes, next_action: next }),
-    });
-    setSaving(false);
-    setEditing(false);
-    onUpdate();
-  }
 
   return (
     <div
@@ -513,16 +586,7 @@ function ContactCard({
           den i full yta, med ett fält man faktiskt kan prata in i. Kortet blir inte högre av
           att man redigerar, och kolumnen hoppar inte till. */}
       {editing ? (
-        <RedigeraKort
-          contact={contact}
-          notes={notes}
-          setNotes={setNotes}
-          next={next}
-          setNext={setNext}
-          saving={saving}
-          onSave={save}
-          onClose={() => setEditing(false)}
-        />
+        <RedigeraKort contact={contact} onSparad={onUpdate} onClose={() => setEditing(false)} />
       ) : null}
 
       {(
@@ -599,6 +663,41 @@ function ContactCard({
 }
 
 // ── Tid: ISO ↔ fältet <input type="datetime-local"> (webbläsarens lokala tid) ──
+// ── ROST-1 + DM-3: kontaktkortets fält, EN gång ─────────────────────────────
+// Håkans två fynd 11/8:
+//   · mikrofonen lade allt i fältet den stod under ("Elisabeth Andersson" → Anteckningar)
+//   · "när man klickar på redigera vill man ju kunna ändra ALLT på kortet, inte bara en inforuta"
+//
+// Båda löses av samma sak: en lista över vad ett kontaktkort BÄR. Listan används av
+// röstfördelningen (vart hör det jag säger?) och av redigeringsytan (vad får jag ändra?).
+// Alternativen kommer ur samma listor som <select>-rutorna renderar — annars kan modellen
+// svara ett värde som inte finns i rutan, och fältet blir tyst tomt.
+const KALLOR: { id: string; label: string }[] = [
+  { id: "kommentar", label: "Kommentar" },
+  { id: "dm", label: "DM" },
+  { id: "manuell", label: "Manuellt tillagd" },
+  { id: "import", label: "Import" },
+];
+
+// Läget i pipelinen inkluderar Bokad och Förlorad här: ett kort kan stå där, och då ska det
+// gå att ändra tillbaka i redigeringen — inte bara med knapparna på kortet.
+const LAGEN: { id: Stage; label: string }[] = [
+  ...STAGES.map((st) => ({ id: st.id, label: st.label })),
+  { id: "won" as Stage, label: "Bokad" },
+  { id: "lost" as Stage, label: "Förlorad" },
+];
+
+const KONTAKT_ROSTFALT: FaltSpec[] = [
+  { nyckel: "namn", etikett: "Namn", typ: "text", hjalp: "för- och efternamn på personen" },
+  { nyckel: "anvandarnamn", etikett: "Användarnamn", typ: "text", hjalp: "handle utan @" },
+  { nyckel: "kanal", etikett: "Kanal", typ: "val", alternativ: KANALER.map((k) => k.id) },
+  { nyckel: "kalla", etikett: "Kom in via", typ: "val", alternativ: KALLOR.map((k) => k.id) },
+  { nyckel: "lage", etikett: "Läge i pipelinen", typ: "val", alternativ: LAGEN.map((l) => String(l.id)) },
+  { nyckel: "motestid", etikett: "Bokad tid", typ: "datumtid" },
+  { nyckel: "paminnelse", etikett: "Påminnelse", typ: "datumtid" },
+  { nyckel: "nastaSteg", etikett: "Nästa steg", typ: "text", hjalp: "vad som ska hända härnäst" },
+];
+
 function isoTillFalt(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -668,6 +767,28 @@ function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
   const [fel, setFel] = useState<string | null>(null);
   const [tolkning, setTolkning] = useState<Tolkning | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // ── ROST-1 (Håkans fynd 11/8): dikteringen ska hamna i RÄTT fält ────────────
+  // Han klickade mikrofonen, sa "Elisabeth Andersson", och namnet landade i ANTECKNINGAR
+  // medan namnrutan stod tom. Skärmdumpsvägen (lasAvBild) kunde fylla varje fält sedan
+  // tidigare — rösten hade aldrig fått samma behandling.
+  //
+  // Schemat beskriver formuläret för fördelningen. Alternativen är EXAKT samma listor som
+  // <select>-fälten renderar, så modellen aldrig kan svara ett värde som inte finns i rutan.
+  const rostFalt = KONTAKT_ROSTFALT;
+
+  // Fältnycklarna översätts till formulärets states. Okända nycklar kan inte komma hit —
+  // routen skär bort allt som inte står i schemat ovan.
+  function fyllFranRost(varden: Record<string, string>) {
+    if (varden.namn) setNamn(varden.namn);
+    if (varden.anvandarnamn) setUsername(varden.anvandarnamn.replace(/^@/, ""));
+    if (varden.kanal) setKanal(varden.kanal);
+    if (varden.kalla) setSource(varden.kalla);
+    if (varden.lage) setStage(varden.lage as Stage);
+    if (varden.motestid) setMotesTid(varden.motestid);
+    if (varden.paminnelse) setPaminnelse(varden.paminnelse);
+    if (varden.nastaSteg) setNastaSteg(varden.nastaSteg);
+  }
 
   // Skärmdump → färdigt formulär. Allt bildläsningen får ut fyller fälten direkt:
   // användaren ska aldrig skriva in det som redan står i bilden.
@@ -915,6 +1036,10 @@ function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
               // KVALITET-3/10: Bild-knappen ska gå till den strukturerade avläsningen,
               // inte den fria sammanfattningen — den kastade om vem som sagt vad.
               onBild={async (f) => { await lasAvBild(f); return true; }}
+              // ROST-1: säg "Elisabeth Andersson, kom in via kommentar, ring på tisdag" och
+              // varje uppgift hamnar i sitt fält. Det som inte hör i ett fält stannar här.
+              faltschema={rostFalt}
+              onFalt={fyllFranRost}
             />
           </div>
 

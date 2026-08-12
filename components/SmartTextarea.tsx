@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Image as ImageIcon, Loader2 } from "lucide-react";
 import { arPromptEko, ROST_FELMEDDELANDE, ROST_FOR_KORT } from "@/lib/ai/transkription";
+import { fordelningsSammanfattning, type FaltSpec, type Fordelning } from "@/lib/ai/faltfordelning";
 
 // Drop-in-ersättning för <textarea> med röstinmatning + bildanalys.
 // Byt bara ut taggen: <textarea .../> → <SmartTextarea .../>. Samma props (value/onChange/
@@ -20,6 +21,17 @@ type Props = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
    * bilden är omhändertagen; false/utelämnad faller tillbaka på vision-vägen.
    */
   onBild?: (file: File | Blob) => boolean | Promise<boolean>;
+  /**
+   * ROST-1 (Håkans fynd 11/8): mikrofonen lade allt i fältet den stod under. Sa han
+   * "Elisabeth Andersson" i "Lägg till kontakt" hamnade namnet i ANTECKNINGAR.
+   *
+   * Skickar en yta sitt FÄLTSCHEMA här sorteras dikteringen i stället: namnet till namnrutan,
+   * tiden till tidsfältet, resten hit. Utan schema är beteendet exakt som förut — det här
+   * fältet är ett tillägg, inte ett byte.
+   */
+  faltschema?: FaltSpec[];
+  /** Anropas med de fält som gick att placera. Anroparen sätter sina egna states. */
+  onFalt?: (varden: Record<string, string>) => void;
 };
 
 export default function SmartTextarea({
@@ -30,12 +42,16 @@ export default function SmartTextarea({
   onChange,
   onPaste,
   onBild,
+  faltschema,
+  onFalt,
   ...rest
 }: Props) {
   const [recording, setRecording] = useState(false);
   const [sekunder, setSekunder] = useState(0);
   const [jobbar, setJobbar] = useState<null | "röst" | "bild">(null);
   const [fel, setFel] = useState<string | null>(null);
+  // ROST-1: klarspråksrad om vad som hamnade var. En tyst fördelning går inte att lita på.
+  const [placerat, setPlacerat] = useState("");
   const mrRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -53,6 +69,35 @@ export default function SmartTextarea({
     if (!s) return;
     const cur = typeof value === "string" ? value : "";
     fireChange(cur ? `${cur.trim()} ${s}` : s);
+  };
+
+  /**
+   * ROST-1: sorterar dikteringen i formulärets fält när ytan skickat ett schema, annars lägger
+   * den texten i det egna fältet som förut.
+   *
+   * Fail-open i varje led: failar fördelningen hamnar HELA texten i fältet. En diktering som
+   * försvinner är värre än en som ligger på fel rad — den felplacerade ser man, den tappade
+   * märker man först när man undrar var den blev av.
+   */
+  const placera = async (text: string) => {
+    if (!faltschema?.length || !onFalt) { append(text); return; }
+    try {
+      const r = await fetch("/api/ai/rost-till-falt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, falt: faltschema }),
+      });
+      const d = (await r.json()) as Fordelning & { error?: string };
+      if (!r.ok || !d || typeof d !== "object") { append(text); return; }
+      const varden = d.varden && typeof d.varden === "object" ? d.varden : {};
+      if (Object.keys(varden).length) onFalt(varden);
+      if (d.oplacerat) append(d.oplacerat);
+      // Placerades ingenting alls hamnar allt här — annars hade texten kunnat försvinna.
+      if (!Object.keys(varden).length && !d.oplacerat) { append(text); return; }
+      setPlacerat(fordelningsSammanfattning({ varden, oplacerat: d.oplacerat || "" }, faltschema));
+    } catch {
+      append(text);
+    }
   };
 
   const stadaMic = () => {
@@ -74,6 +119,7 @@ export default function SmartTextarea({
 
   const startaRost = async () => {
     setFel(null);
+    setPlacerat("");
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setFel("Webbläsaren stödjer inte röstinspelning");
       return;
@@ -102,7 +148,7 @@ export default function SmartTextarea({
           const r = await fetch("/api/ai/transcribe", { method: "POST", body: fd });
           const d = await r.json();
           // Andra skyddsnätet: systeminstruktionen får aldrig hamna i fältet.
-          if (d.text && !arPromptEko(d.text)) append(d.text);
+          if (d.text && !arPromptEko(d.text)) await placera(d.text);
           else setFel(typeof d.error === "string" && d.error ? d.error : ROST_FELMEDDELANDE);
         } catch {
           setFel(ROST_FELMEDDELANDE);
@@ -230,6 +276,9 @@ export default function SmartTextarea({
         />
         {hint && <span className="text-sm text-gray-500">eller klistra in en skärmbild (Ctrl+V)</span>}
         {fel && <span className="text-sm text-red-600">{fel}</span>}
+        {/* ROST-1: säg vart dikteringen tog vägen. En fördelning man inte ser går inte att
+            lita på — och den som inte litar på den skriver om allt för hand. */}
+        {!fel && placerat && <span className="text-sm text-emerald-700">{placerat}</span>}
       </div>
     </div>
   );
