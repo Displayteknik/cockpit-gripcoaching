@@ -256,9 +256,14 @@ function PipelineView() {
         </div>
       )}
 
-      {/* DM-4: sju fack, samma som grundplanen. På lg bryts de 4 + 3, på xl står de i rad. */}
+      {/* DM-4b (Håkans fynd 11/8): "det går ju inte att läsa kortens rubriker". Sju fack i ett
+          rutnät gav 130 px per kolumn — "Bekr…", "Erbju…", "Vilan…", "Förlo…" och avhuggna namn
+          i korten. Ett rutnät delar bredden på antalet kolumner; en pipeline behöver i stället
+          fasta kolumner som RULLAR i sidled, precis som MySales egen tavla. Fyra fack syns på
+          en vanlig skärm, resten når man med att dra i sidled eller scrolla. */}
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto pb-2">
+        <div className="flex gap-4 w-max min-w-full">
           {STAGES.map((stage) => {
             const stageContacts = contacts.filter((c) => c.stage === stage.id);
             const Icon = stage.icon;
@@ -274,15 +279,16 @@ function PipelineView() {
                     setDraggedId(null);
                   }
                 }}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[400px] flex flex-col"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[400px] flex flex-col w-[272px] flex-shrink-0"
               >
                 <div className="px-4 py-3.5 border-b border-gray-100">
                   <div className="flex items-center gap-2.5">
-                    <div className={`${styles.tile} w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`w-[18px] h-[18px] ${styles.icon}`} />
+                    <div className={`${styles.tile} w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-[17px] h-[17px] ${styles.icon}`} />
                     </div>
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-display font-bold text-sm text-gray-900 truncate">{stage.label}</span>
+                      {/* Ingen truncate här: facknamnet ÄR rubriken, och "Förlo…" är ingen rubrik. */}
+                      <span className="font-display font-bold text-sm text-gray-900">{stage.label}</span>
                       <span className="tabular-nums text-xs font-semibold text-gray-500 bg-gray-100 rounded-full px-1.5 py-0.5">
                         {stageContacts.length}
                       </span>
@@ -313,6 +319,7 @@ function PipelineView() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
 
@@ -568,7 +575,9 @@ function ContactCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           {/* Namnet först. Användarnamnet finns bara på kanaler som har handles. */}
-          <div className="font-semibold text-sm text-gray-900 truncate">
+          {/* Namnet är kortets rubrik. Två rader är bättre än ett avhugget namn — "Elsa …"
+              säger inte vem det är (Håkans fynd 11/8). */}
+          <div className="font-semibold text-sm text-gray-900 leading-snug break-words">
             {contact.display_name || `@${contact.ig_username}`}
           </div>
           {contact.display_name && contact.ig_username && (
@@ -623,7 +632,9 @@ function ContactCard({
         </>
       )}
 
-      <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-1">
+      {/* DM-4b: raden bar fem knappar och klippte texten i en smal kolumn ("K" av
+          "Kundregister" syntes ensam). flex-wrap gör att den bryter i stället för att kapa. */}
+      <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex gap-1">
           {contact.stage !== "won" && (
             <button

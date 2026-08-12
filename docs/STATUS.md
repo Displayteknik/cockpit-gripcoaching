@@ -15,14 +15,14 @@ facit. Statusnivåer: `KLART OCH VERIFIERAT` · `KLART, EJ VERIFIERAT` · `PÅB�
 
 | Nivå | Antal |
 |---|---|
-| KLART OCH VERIFIERAT | 71 |
-| KLART, EJ VERIFIERAT | 21 |
-| PÅBÖRJAT | 9 |
+| KLART OCH VERIFIERAT | 77 |
+| KLART, EJ VERIFIERAT | 26 |
+| PÅBÖRJAT | 8 |
 | BESTÄLLT, EJ PÅBÖRJAT | 31 |
 | PARKERAT | 11 |
-| **Totalt** | **143** |
+| **Totalt** | **153** |
 
-*Räknat 2026-08-11 genom att läsa nivåkolumnen i varje tabellrad i den här filen, inte ur minnet.
+*Räknat 2026-08-11 (andra gången, efter eftermiddagens sju commits) genom att läsa nivåkolumnen i varje tabellrad i den här filen, inte ur minnet.
 Siffran gick från 86 till 143 för att de gamla talen aldrig räknades om när rader lades till under
 9–11 augusti — inte för att 57 nya beställningar tillkommit. Den som jämför datum mot datum ska veta
 det.*
@@ -286,6 +286,45 @@ Den avgör den enda öppna frågan ur TEXT-1-mätningen (röstträffen för Link
    snabbvalen så 3 dagar blir tis TOFU · tors MOFU · sön TOFU med BOFU varannan vecka, ca halv session;
    (3) låt det vara men sluta lova styrning i panelens text. **Håkans besked: lägg på minnet, han kollar
    vidare.** Ingen kod rörd.
+
+
+## DM, AFFISCH OCH RÖST — Håkans testning 2026-08-11, eftermiddag och kväll
+
+Alla rader nedan är pushade. Sju commits, i ordning: `4b0b361` · `7631208` · `98e332f` ·
+`45a0727` · `803428a` · `365e7c5` · den sista i tabellen.
+
+| Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
+|---|---|---|---|---|
+| AFFISCH-1 texten PÅ bilden | KLART, EJ VERIFIERAT I DRIFT | `4b0b361`, `tests/affisch1-krok-och-langd.test.ts` (15). Håkans dom: "innehållet var inte speciellt bra för ett inlägg". **Fyra fel, alla släppta igenom:** (1) ÖPPEN LOOP — krokens uppgift i `lib/hook-typer.ts` är att "öppna en loop läsaren vill veta slutet på", en CAPTION-instruktion. På en affisch finns inget senare, så "Två månader senare står skärmen fortfarande där…" blev en berättelse utan början vars slut är att konkurrenten vinner. (2) LÄNGDEN — prompten ber om ~90 tecken, grinden släppte 150, hans text var 135. Taket är nu 105. (3) KOMMASTAPLING — staplingsgrinden räknade bara `. ! ? : ;` medan texten var staplad med kommatecken: en sats enligt gamla räkningen, fyra tankar i praktiken. (4) UPPREPNING — badgen sa samma sak som brödtexten. Två fel fångades av testet under bygget: "efter ett halvår" saknades i tidslistan, och ett `\b` hade blivit ett backspace-tecken så tredje mönstret aldrig matchade | **Ja** | Nej |
+| BILD-12 skärmen visar köparens värld | KLART, EJ VERIFIERAT I DRIFT | `7631208`, `tests/bild10-ingen-text-i-bild.test.ts` utökad. Håkan fick berg, isberg och frukt på skyltarna hos ett SKYLTBOLAG: "vem visar ett isberg på en skärm". **Rotorsaken var min egen ändring dagen före:** BILD-10 förbjöd text och raden slutade "om en skärm måste synas visar den ett foto eller produkten" — och "ett foto" läste modellen som fritt val. Värst just där: för ett skyltbolag ÄR innehållet på skärmen produkten. Nu hör bilden till köparens egen värld, dekormotiven är utpekade med namn, och vägen ut är att visa skärmen SLÄCKT — en släckt skärm är ärlig, ett fjällpanorama är det inte | **Ja** | Nej |
+| KARUSELL-2 punktsiffran | KLART OCH VERIFIERAT | `7631208`, `tests/akut-karusell.test.ts` utökad. `punktNummer(...) ?? 0` ritade nollan som **"00"** — insats- och bevis-sliden är `kind: "point"` men inte användarens punkter, så de får med flit inget nummer och fick därför noll. Uträkningen var rätt hela tiden; mallen förvandlade "inget nummer" till "nummer noll". Håkans besked: siffran tillför inget. Den är AV som standard, `overrides.visaPunktNummer` tänder den — G-2-arbetet är tystat, inte rivet | **Ja** | **Var ja — nu nej** |
+| MENY-2 DM och veckoplanen i menyn | KLART OCH VERIFIERAT | `45a0727`, `tests/meny1-zoner.test.ts` utökad. Båda sidorna fanns men nåddes bara via flikraden i `PostsTabs` — alltså bara om man redan stod på en inläggssida. Han hittade inte veckoplanen när han skulle köra steg 11, och inte DM alls. Kvar utanför menyn med flit: `/dashboard/social` (legacy, ska bort per REV-4) och `/dashboard/fordon-inlagg` (ingen kundmotsvarighet) | **Ja** | Nej |
+| DM-2 + DM-3 redigeringen | KLART, EJ VERIFIERAT — OBEKLICKAD | `45a0727` + `803428a`. Redigeringen låg INNE i kanban-kortet: tre rader i minsta textstorlek i en smal kolumn, och kortet växte så kolumnen hoppade. Nu egen yta, 90 % av fönsterhöjden, fältet i brödtextstorlek. **DM-3:** ytan äger nu VARJE fält kortet bär (namn, användarnamn, kanal, källa, läge, bokad tid, påminnelse, nästa steg, anteckningar) — PATCH-routen accepterade dem redan. Kortet håller inget eget formulärstate längre (två kopior glider isär), och ett misslyckat sparande visas i stället för att se ut som att det gick igenom | **Ja** | Nej |
+| ROST-1 dikteringen hamnar i rätt fält | KLART, EJ VERIFIERAT — OBEKLICKAD | `803428a`, `lib/ai/faltfordelning.ts` + `app/api/ai/rost-till-falt/route.ts`, `tests/rost1-faltfordelning.test.ts` (29). Han sa "Elisabeth Andersson" i mikrofonen och namnet landade i ANTECKNINGAR. **Skärmdumpsvägen kunde fylla varje fält sedan tidigare; rösten hade aldrig fått samma behandling.** En yta skickar nu sitt fältschema och transkriptionen sorteras. Hårt mot tyst felplacering: bara nycklar ur schemat, ett val bara ur rutans egna alternativ, ett datum bara i fältets exakta form — och allt som kastas följer med till anteckningarna, för en tappad diktering är värre än en felplacerad. Användaren får en klarspråksrad om vad som hamnade var. Fail-open i varje led | **Ja** | **Var ja — nu nej** |
+| DM-4 sju steg som grundplanen | KLART OCH VERIFIERAT (mot skärmbild) | `365e7c5`, `migrations/dm_vilande.sql` **KÖRD** (HTTP 201), `tests/dm4-sju-steg.test.ts` (19). Skärmbilden från MySales (AluCon, Kund pipeline) visar sju fack: Ny · Bekräftad · Dialog · Erbjudande · Bokad · Vilande · Förlorad. DM hade FYRA kolumner, Bokad och Förlorad i en lista under tavlan, och **Vilande fanns inte alls** — inte som kolumn, inte i formulären, inte som tillåtet värde i databasen. **Tre handskrivna kopior** av samma pipeline (`STAGES` 4, `LAGEN` 4+2, `STEG_VAL` 6) blev en; ingen av dem hade Vilande, och en `<select>` som saknar ett fack gör facket oanvändbart. **Räkningen "i pipeline"** byggde på "alla minus bokade och förlorade" och hade räknat en parkerad kontakt som pågående arbete — samma sammanblandning som FIX-1 B2, fast åt andra hållet. CHECK-villkoret släpps via `pg_constraint` i stället för med ett gissat namn: tabellen skapades utanför repot | **Ja** | **Var ja — nu nej.** Rubriken räknade upp fyra steg |
+| DM-4b tavlan går att läsa | KLART, EJ VERIFIERAT — OBEKLICKAD | Sista commiten. "Det går ju inte att läsa kortens rubriker, duger inte." Sju kolumner i ett RUTNÄT delade bredden på sju → 130 px per fack, alltså "Bekr…", "Erbju…", "Vilan…", "Förlo…" och avhuggna namn. Ett rutnät är fel verktyg för en pipeline: det krymper kolumnerna när facken blir fler. Nu fasta kolumner på 272 px som rullar i sidled, som MySales egen tavla. Facknamnet och kontaktnamnet huggs aldrig av, och knappraden bryter i stället för att klippa "Kundregister" till "K" | **Ja** | Nej |
+
+### FIX-1 B2 — blockeraren är borta
+
+Skärmbilden 11/8 visar att facket **"Förlorad / Paus (nurture)" är delat i MySales**: Bokad,
+Vilande och Förlorad är nu tre egna fack. Det var spärren sedan 9/8, den som fick **varje
+parkerad kund att räknas som en förlorad affär**. Koden (`arVilande`, `harledSteglage` i
+`lib/hq/pipeline.ts`) är byggd och medvetet tyst tills steg-id:t pekas ut. **Kvar hos Håkan:**
+peka ut Vilande-stegets id, sortera de 12 affärerna. Kvar att bygga: VILOZON i UI:t, kravet på
+återkontaktsdatum, uppgiften i Fokus idag när datumet infaller.
+
+### AFFÄRSVY-1 — beställd 11/8, EJ PÅBÖRJAD
+
+Kunden ska se affärsrörelsen i Cockpit utan att byta system: rutan "På gång just nu" i
+kundvyn, en affärsrad i veckorapporten, och fellägen i klartext. Cockpit LÄSER från GHL och
+skriver ingenting, ingen AI i etappen. DoD mot två tenants (DT med separat affärspipeline och
+belopp på, en coachingtenant med enkel pipeline och belopp av).
+
+**Första hindret, hittat vid kartläggningen och värt att veta innan bygget:** `hamtaHqGhl()` i
+`lib/hq/pipeline.ts` slår upp **Displaytekniks** klientrad specifikt (`DT_CLIENT_ID`, eller
+namnet som reserv). Läsningen är alltså inte per tenant idag, och `hq_pipeline_cache` har ingen
+klientkolumn i det som lästs. Att göra läsningen tenant-buren är etappens första arbete, inte
+en detalj i den — och utan det kan DoD:n mot en coachingtenant inte köras.
 
 ## GRANSK G-0..G-9
 

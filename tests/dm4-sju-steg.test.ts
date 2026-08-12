@@ -108,3 +108,41 @@ describe("DM-4 · databasen tillåter det nya läget", () => {
     expect(migration).toContain("vilande=Vilande");
   });
 });
+
+describe("DM-4b · sju fack ska gå att LÄSA", () => {
+  // Håkans fynd 11/8, efter att facken kommit på plats: "det går ju inte att läsa kortens
+  // rubriker, duger inte". Sju kolumner i ett rutnät delade bredden på sju — 130 px per fack
+  // gav "Bekr…", "Erbju…", "Vilan…", "Förlo…" och avhuggna namn i korten.
+  //
+  // Ett rutnät är fel verktyg för en pipeline: det krymper kolumnerna när facken blir fler.
+  // En kanban har FASTA kolumner och rullar i sidled, precis som MySales egen tavla.
+  it("tavlan är inte ett rutnät som delar bredden", () => {
+    expect(dm).not.toContain("xl:grid-cols-7");
+    expect(dm).not.toContain("lg:grid-cols-4 xl:grid-cols-7");
+  });
+
+  it("kolumnerna har fast bredd och krymper inte", () => {
+    expect(dm).toContain("w-[272px] flex-shrink-0");
+  });
+
+  it("och tavlan rullar i sidled i stället", () => {
+    expect(dm).toContain("overflow-x-auto");
+    expect(dm).toContain("flex gap-4 w-max min-w-full");
+  });
+
+  it("facknamnet huggs aldrig av — det ÄR rubriken", () => {
+    // Ordagrant på spanen: ett bredare fönster fångade en truncate på en annan rad, vilket
+    // hade gjort testet till en gissning om var klassen låg.
+    expect(dm).toContain('<span className="font-display font-bold text-sm text-gray-900">{stage.label}</span>');
+  });
+
+  it("kontaktens namn får radbrytas i stället för att kapas", () => {
+    expect(dm).toContain("leading-snug break-words");
+    expect(dm).not.toContain('<div className="font-semibold text-sm text-gray-900 truncate">');
+  });
+
+  it("knappraden bryter i stället för att klippa texten", () => {
+    // "Kundregister" visade bara ett K i den smala kolumnen.
+    expect(dm).toContain("flex flex-wrap items-center justify-between gap-1.5");
+  });
+});
