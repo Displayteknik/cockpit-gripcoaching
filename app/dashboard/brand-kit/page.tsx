@@ -48,12 +48,25 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState("");
+  /**
+   * FARG-1 (Håkans fynd 2026-08-11): "det går ju för fasen inte att spara en ändrad färg, jag
+   * bytte ut den gula mot en grå men finns ingen spara knapp".
+   *
+   * Knappen FANNS — i hjälmen, tre skärmhöjder upp från färgrutorna. Och ingenting sa att han
+   * hade osparade ändringar, så sidan såg ut att sakna sparning helt. Två fel i samma upplevelse:
+   * åtgärden var utom synhåll, och tillståndet var osynligt.
+   *
+   * `sparatKit` är kopian av det som ligger i databasen. Skillnaden mot `kit` ÄR det osparade —
+   * ingen egen dirty-flagga som kan glömmas att nollas.
+   */
+  const [sparatKit, setSparatKit] = useState<Kit>({});
   const [agentLoading, setAgentLoading] = useState(false);
   const [agentNote, setAgentNote] = useState("");
 
   useEffect(() => {
     fetch("/api/brand-kit").then((r) => r.json()).then((d) => {
-      setKit(d.kit || {}); setClientName(d.clientName || ""); setClientPrimary(d.clientPrimary || "#1A6B3C");
+      setKit(d.kit || {}); setSparatKit(d.kit || {});
+      setClientName(d.clientName || ""); setClientPrimary(d.clientPrimary || "#1A6B3C");
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -77,9 +90,26 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
       const r = await fetch("/api/brand-kit", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kit }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte spara");
+      // Snapshoten flyttas fram FÖRST när servern svarat ok. Gör man det direkt vid klicket
+      // försvinner "osparat" fastän ändringen aldrig kom fram.
+      setSparatKit(structuredClone(kit));
       setSaved(true); setTimeout(() => setSaved(false), 1500);
     } catch (e) { setError((e as Error).message); } finally { setSaving(false); }
   }, [kit]);
+
+  // Osparat = kit skiljer sig från det sparade. Jämförelsen är på innehåll, inte på referens:
+  // `set()` klonar hela objektet vid varje tangenttryck, så en referensjämförelse hade sagt
+  // "osparat" för evigt.
+  const harOsparat = !loading && JSON.stringify(kit) !== JSON.stringify(sparatKit);
+
+  // Stänger man fliken med osparade ändringar frågar webbläsaren först. Färgvalen är
+  // handpåläggning man inte vill göra om.
+  useEffect(() => {
+    if (!harOsparat) return;
+    const varna = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", varna);
+    return () => window.removeEventListener("beforeunload", varna);
+  }, [harOsparat]);
 
   const uploadLogo = useCallback(async (file: File, slot: "primaryUrl" | "onDarkUrl" | "iconUrl") => {
     setError(""); setUploading(slot);
@@ -141,7 +171,8 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
           eyebrow={<LivePill label="Brand kit" />}
           right={
             <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 ring-1 ring-white/15 backdrop-blur hover:bg-white/15 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />} {saving ? "Sparar…" : saved ? "Sparat" : "Spara"}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}{" "}
+              {saving ? "Sparar…" : saved ? "Sparat" : harOsparat ? "Spara ändringar" : "Spara"}
             </button>
           }
         />
@@ -445,6 +476,37 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
           </div>
         </div>
       </div>
+
+      {/* FARG-1: åtgärden ska finnas DÄR man arbetar. Listen ligger fast längst ner så länge
+          något är osparat, och försvinner när allt är sparat — en knapp som alltid syns blir
+          en knapp man slutar se. */}
+      {harOsparat && (
+        <div className="sticky bottom-0 z-30 border-t border-amber-200 bg-amber-50/95 backdrop-blur">
+          <div className="max-w-5xl mx-auto px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm text-amber-900">
+              Du har ändringar som inte är sparade.
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setKit(structuredClone(sparatKit))}
+                disabled={saving}
+                className="px-3 py-2 text-sm font-medium text-amber-900 rounded-lg hover:bg-amber-100 disabled:opacity-40"
+              >
+                Ångra ändringarna
+              </button>
+              <button
+                onClick={save}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
+                style={{ background: previewColors.primary }}
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? "Sparar…" : "Spara"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

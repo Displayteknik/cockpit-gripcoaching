@@ -214,7 +214,9 @@ function PipelineView() {
   const iPipeline = contacts.filter((c) => AKTIVA_STEG.includes(c.stage)).length;
 
   return (
-    <div className="space-y-4">
+    // DM-4e: @container här gör att rutnätet nedan mäter DEN HÄR ytans bredd, inte fönstrets.
+    // Det var felet i kundportalen: fönstret var brett, ytan smal, och sju kolumner blev 110 px.
+    <div className="@container space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-xl shadow-sm px-3 py-1.5 text-sm text-gray-600">
@@ -265,8 +267,15 @@ function PipelineView() {
           fönstret sedan DM-4d, så kolumnerna blir ~210 px och rubrikerna får plats.
           Varje kolumn blir ~270 px på en vanlig skärm — samma bredd som var läsbar — och
           ingenting hamnar utanför bild. Läsordningen är fortfarande Ny → Förlorad. */}
+      {/* DM-4e AKUT (Håkans skärmbild 11/8, kundportalen): "för i helvete vad fult" — namnet
+          radbröts bokstav för bokstav. Orsaken: `2xl:` mäter FÖNSTRET, men tavlan får bara den
+          yta som sidan ger den. I kundportalen är ytan smalare än fönstret, så sju kolumner
+          blev ~110 px breda fastän skärmen var stor.
+          Rätt verktyg är en container-query: `@container` på wrappern och `@[1400px]:` på
+          rutnätet mäter den FAKTISKA bredden. Grundläget är fyra per rad — bryter mätningen
+          är det värsta som händer att sju fack står på två rader. */}
       {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 @[1400px]:grid-cols-7 gap-4">
           {STAGES.map((stage) => {
             const stageContacts = contacts.filter((c) => c.stage === stage.id);
             const Icon = stage.icon;

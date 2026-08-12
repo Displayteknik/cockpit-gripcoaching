@@ -121,13 +121,16 @@ describe("DM-4b · sju fack ska gå att LÄSA", () => {
     // Sju i rad är rätt bara när sidan är bred, alltså från 2xl och med max-w-none.
     // ⚠ Ingen negativ matchning på "xl:grid-cols-7" här: strängen är en delmängd av
     // "2xl:grid-cols-7" och testet fällde sig självt på det (fångat direkt).
-    expect(dm).toContain("2xl:grid-cols-7");
+    // ⚠ DM-4e: fönsterbrytpunkten (2xl) var FEL verktyg — den mäter fönstret, inte ytan tavlan
+    // får. I kundportalen är ytan smalare, och sju kolumner blev 110 px. Container-query mäter
+    // rätt sak. Den breda sidan i admin gör fortfarande nytta: den ger ytan att mäta.
+    expect(dm).toContain("@[1400px]:grid-cols-7");
     const layout = readFileSync(new URL("../app/dashboard/layout.tsx", import.meta.url), "utf8");
     expect(layout).toContain('BREDA_SIDOR = ["/dashboard/dm"]');
   });
 
-  it("på en vanlig laptop bryter de till 4 + 3", () => {
-    expect(dm).toContain("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4");
+  it("på en smal yta bryter de till 4 + 3", () => {
+    expect(dm).toContain("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 @[1400px]:grid-cols-7 gap-4");
   });
 
   it("ingen sidledsrullning — Håkans besked 11/8", () => {
@@ -175,12 +178,9 @@ describe("DM-4d · den tomma ytan används", () => {
     expect(lista.match(/"\/dashboard\//g)?.length).toBe(1);
   });
 
-  it("alla sju fack står i EN rad när skärmen räcker", () => {
-    // 2xl = från 1536 px. Med full bredd blir varje kolumn ~210 px, alltså läsbar.
-    expect(dm).toContain("2xl:grid-cols-7");
-  });
-
-  it("och bryter till 4 + 3 på smalare skärmar", () => {
-    expect(dm).toContain("lg:grid-cols-4 2xl:grid-cols-7");
+  it("alla sju fack står i EN rad när YTAN räcker (inte fönstret)", () => {
+    // Mätningen sitter på sidans egen container, så den gäller i både admin och kundportal.
+    expect(dm).toContain('<div className="@container space-y-4">');
+    expect(dm).toContain("@[1400px]:grid-cols-7");
   });
 });
