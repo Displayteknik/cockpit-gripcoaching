@@ -72,6 +72,8 @@ type RunResult = {
   tokens_in: number | null;
   tokens_out: number | null;
   duration_ms: number;
+  /** Sätts av offertkategorin när Riksbankens kurs saknas eller är gammal. */
+  fx_varning?: string | null;
 };
 
 export default function SpecialistRunnerPage({
@@ -305,6 +307,12 @@ function SpecialistRunnerInner({ params }: { params: Promise<{ id: string }> }) 
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {result?.fx_varning && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 text-sm">
+          Valutakurs: {result.fx_varning}
         </div>
       )}
 

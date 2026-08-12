@@ -22,6 +22,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   seo: "SEO/AEO/GEO",
   email: "Mejl-motor",
   outbound: "Outbound",
+  offert: "Offertmotor",
   general: "Övrigt",
 };
 
@@ -34,6 +35,7 @@ const CATEGORY_COLOR: Record<string, string> = {
   seo: "bg-teal-50 text-teal-700 border-teal-200",
   email: "bg-orange-50 text-orange-700 border-orange-200",
   outbound: "bg-rose-50 text-rose-700 border-rose-200",
+  offert: "bg-indigo-50 text-indigo-700 border-indigo-200",
   general: "bg-gray-50 text-gray-700 border-gray-200",
 };
 

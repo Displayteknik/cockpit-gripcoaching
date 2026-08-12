@@ -11,6 +11,11 @@ export interface FxRates {
   rates: Record<string, number>; // SEK per enhet, inkl. SEK: 1
   date: string;
   buffer: number;
+  /** Valutor vars kurs INTE gick att hämta. calcRate ger då 1 (= räknas som SEK), vilket
+   *  underskattar kostnaden kraftigt. Måste synas för användaren, aldrig tyst. */
+  saknas: string[];
+  /** Dygn mellan Riksbankens observationsdatum och idag. null när datum saknas. */
+  alderDagar: number | null;
 }
 
 let cache: { data: FxRates; at: number } | null = null;
@@ -39,9 +44,32 @@ export async function getRatesToSEK(): Promise<FxRates> {
       }
     }),
   );
-  const data: FxRates = { rates, date, buffer: FX_BUFFER };
-  cache = { data, at: Date.now() };
+  const saknas = Object.keys(SERIES).filter((cur) => !rates[cur]);
+  const data: FxRates = { rates, date, buffer: FX_BUFFER, saknas, alderDagar: alderIDagar(date) };
+  // Bara ett fullständigt svar får cachas i 6 h. Föll en valuta bort på ett nätfel ska nästa
+  // anrop försöka igen, annars ligger en trasig kurs kvar hela arbetsdagen.
+  cache = { data, at: saknas.length ? Date.now() - TTL + 60_000 : Date.now() };
   return data;
+}
+
+/** Dygn mellan Riksbankens observationsdatum (YYYY-MM-DD) och idag. */
+export function alderIDagar(date: string, nu = new Date()): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const dag = 24 * 3600 * 1000;
+  const diff = Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth(), nu.getUTCDate()) - Date.parse(`${date}T00:00:00Z`);
+  return Math.max(0, Math.round(diff / dag));
+}
+
+/** Klartext om kursläget, eller null när allt är färskt. Samma text i UI och i AI-underlaget. */
+export function fxVarning(fx: FxRates): string | null {
+  if (fx.saknas.length) {
+    return `Kursen för ${fx.saknas.join(", ")} gick inte att hämta från Riksbanken. Rader i den valutan räknas som SEK och blir kraftigt fel. Prissätt inte förrän kursen är hämtad.`;
+  }
+  // Riksbanken noterar inte helger och röda dagar, tre dygn täcker en långhelg utan brus.
+  if (fx.alderDagar != null && fx.alderDagar > 3) {
+    return `Riksbankens senaste notering är ${fx.alderDagar} dygn gammal (${fx.date}). Stäm av kursen innan du sätter pris.`;
+  }
+  return null;
 }
 
 /** Kalkylkurs (SEK per enhet) för en valuta, inkl. buffert. Okänd valuta → 1 (behandlas som SEK). */

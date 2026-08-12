@@ -82,16 +82,30 @@ export function buildUserPrompt(
   return lines.join("\n");
 }
 
+// Standardregeln: en copy-specialist far aldrig satta ett pris pa eget bevag.
+const PRISREGEL_STANDARD = `PRISER: ange ALDRIG priser eller prisintervall pa eget bevag och bygg ALDRIG pristabeller med gissade belopp. Priser ar ett affarsbeslut som anvandaren satter. Saknas pris: utelamna det helt eller skriv en tydlig platshallare som [ANGE PRIS] / [DIN SIFFRA]. Gissa aldrig.`;
+
+// Kategorin "offert": prissattningen AR uppdraget. Da vore standardregeln en sparr mot
+// specialistens egen uppgift. Forbudet mot pahittade underlag star kvar oforandrat -
+// priset far raknas fram, men bara ur siffror som finns i inputs.
+const PRISREGEL_OFFERT = `PRISER: har ar prissattning sjalva uppdraget - rakna fram utpriser, TB och pristabeller. Men bygg dem ENBART pa inpriser, fraktofferter och valutakurser som star i inputs. Hitta ALDRIG pa ett inpris, ett fraktpris eller en kurs. Saknas en siffra: skriv [SAKNAS: vad du behover], rakna tva scenarier i stallet, och flagga det for anvandaren.`;
+
 // Proffs-spärrar som gäller ALLA specialister (både iterate- och enkel-körvägen).
 // Klarspråk + aldrig påhittade siffror/priser + inga AI-floskler. Läggs sist i systemprompten.
-export const SPECIALIST_GUARDRAILS = `
+export function guardrailsFor(category?: string): string {
+  const prisregel = category === "offert" ? PRISREGEL_OFFERT : PRISREGEL_STANDARD;
+  return `
 
 === FORBJUDNA AI-FLOSKLER (anvand ALDRIG) ===
 kraftfull, banbrytande, holistisk, skalbar, handlar om, nasta niva, synergier, ekosystem, transformativ, navigera utmaningarna. Skriv som manniska, inte som AI.
 
 === FAKTA & PRISER (HARD REGEL) ===
 Hitta ALDRIG pa siffror, procent, svarstider eller kundantal. Anvand bara siffror som finns i inputs eller brand-profilen.
-PRISER: ange ALDRIG priser eller prisintervall pa eget bevag och bygg ALDRIG pristabeller med gissade belopp. Priser ar ett affarsbeslut som anvandaren satter. Saknas pris: utelamna det helt eller skriv en tydlig platshallare som [ANGE PRIS] / [DIN SIFFRA]. Gissa aldrig.
+${prisregel}
 
 === KLARSPRAK (HARD REGEL) ===
 Skriv sa en foretagare utan teknisk bakgrund forstar direkt. Forutsatt ALDRIG att lasaren kan en forkortning eller fackterm - forklara den forsta gangen i 3-5 ord, eller anvand ett svenskt ord i stallet. Skriv 'Kort sammanfattning', ALDRIG 'TL;DR'. Galler sarskilt CTR, GEO, AEO, SEO, CMS, schema, canonical, citerbar, E-E-A-T, slug, meta, nits/cd per m2. Forklara alltid vad en siffra betyder for kunden.`;
+}
+
+/** Bakåtkompatibel export: guardrails utan kategori (standardens prisregel). */
+export const SPECIALIST_GUARDRAILS = guardrailsFor();

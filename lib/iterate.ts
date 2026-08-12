@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { scoreOutput, fetchWinningExamples, type VoiceScore } from "./voice-score";
 import { getVoiceFingerprint, type VoiceFingerprint } from "./voice-fingerprint";
 import { supabaseService } from "./supabase-admin";
-import { SPECIALIST_GUARDRAILS } from "./specialists";
+import { guardrailsFor } from "./specialists";
 import { WRITING_RULES_BLOCK } from "./content/writing-rules";
 import { loggaAnrop } from "./ai-usage";
 import type { GenereringsMeta } from "./generationslogg";
@@ -112,7 +112,7 @@ export async function iterateGenerate(opts: IterateOptions): Promise<IterateResu
   // prompt-core redan avgjort fragan (inkl. per-tenant-flaggan writing_rules_enabled) —
   // skyddsnatet far inte kora over en avstangd flagga.
   if (!opts.prebuilt && !fullSystem.includes("GLOBALA SKRIVREGLER")) fullSystem += "\n\n" + WRITING_RULES_BLOCK;
-  fullSystem += SPECIALIST_GUARDRAILS;
+  fullSystem += guardrailsFor(opts.category);
 
   // Generera N varianter parallellt.
   // KOSTNAD-1: varje variant ar ETT betalt anrop och loggas som en egen rad genom

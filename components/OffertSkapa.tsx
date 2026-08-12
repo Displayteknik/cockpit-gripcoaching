@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Loader2, Plus, Trash2, Users, Package, TrendingUp, Search, Sparkles, ExternalLink, Database, AlertTriangle, Ban } from "lucide-react";
+import { X, Loader2, Plus, Trash2, Users, Package, TrendingUp, Search, Sparkles, ExternalLink, Database, AlertTriangle, Ban, Calculator } from "lucide-react";
 import { landat, prisFranPalagg, summera, overGolv } from "@/lib/offert/kalkyl";
 import { calcRate } from "@/lib/offert/fx";
 
@@ -60,6 +60,9 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
   const [fel, setFel] = useState<string | null>(null);
   const [rates, setRates] = useState<Record<string, number>>({ SEK: 1 });
   const [fxDatum, setFxDatum] = useState("");
+  // Går kursen inte att hämta räknar calcRate utländsk valuta som SEK. Kostnaden blir då
+  // tiofalt för låg utan att något ser fel ut. Därför måste kursläget synas i formuläret.
+  const [fxVarning, setFxVarning] = useState<string | null>(null);
 
   // OFFERT-2
   const [visaInkop, setVisaInkop] = useState(false);
@@ -73,7 +76,18 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
   useEffect(() => {
     fetch("/api/offert/products").then((r) => r.json()).then((d) => setProducts(d.products || [])).catch(() => {});
     fetch("/api/offert/customers").then((r) => r.json()).then((d) => setCustomers(d.customers || [])).catch(() => {});
-    fetch("/api/offert/fx").then((r) => r.json()).then((d) => { if (d.rates) setRates(d.rates); if (d.date) setFxDatum(d.date); }).catch(() => {});
+    fetch("/api/offert/fx")
+      .then((r) => r.json())
+      .then((d: { rates?: Record<string, number>; date?: string; saknas?: string[]; alderDagar?: number | null }) => {
+        if (d.rates) setRates(d.rates);
+        if (d.date) setFxDatum(d.date);
+        if (d.saknas?.length) {
+          setFxVarning(`Kursen för ${d.saknas.join(", ")} gick inte att hämta från Riksbanken. Rader i den valutan räknas som SEK och blir kraftigt fel. Ladda om innan du prissätter.`);
+        } else if (typeof d.alderDagar === "number" && d.alderDagar > 3) {
+          setFxVarning(`Riksbankens senaste notering är ${d.alderDagar} dygn gammal (${d.date}). Stäm av kursen innan du sätter pris.`);
+        }
+      })
+      .catch(() => setFxVarning("Valutakursen kunde inte hämtas. Prissätt inte importrader förrän kursen är på plats."));
     fetch("/api/offert/inkop/produkter").then((r) => r.json()).then((d) => {
       setInkopProdukter(d.produkter || []);
       setInkopFinns(!!d.prisbok);
@@ -180,6 +194,38 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
     } catch { setFel("Kunde inte spara"); } finally { setSparar(false); }
   };
 
+  // Offertmotorn (specialisten) körs på det underlag som redan står i formuläret. Raderna
+  // skickas som text i query-strängen — specialistsidan förifyller fält på nyckel.
+  // Kostnaden som följer med är LANDAD (EXW + frakt Kina→Sverige, omräknad till SEK), aldrig
+  // EXW-priset i sig. Skrivs den etiketten fel adderar kalkylen frakten en gång till.
+  const offertmotorLank = useMemo(() => {
+    const p = new URLSearchParams();
+    const kundrad = [namn.trim(), foretag.trim()].filter(Boolean).join(", ");
+    if (kundrad) p.set("kund", kundrad);
+
+    const namngivna = rows.filter((r) => r.name.trim());
+    if (namngivna.length) {
+      const rader = namngivna.map((r) => {
+        const bitar = [`${r.qty} st ${r.name.trim()}`];
+        bitar.push(r.cost != null ? `landad kostnad ${r.cost.toLocaleString("sv-SE")} kr/st` : "landad kostnad SAKNAS");
+        if (r.unit_price != null) bitar.push(`påtänkt utpris ${r.unit_price.toLocaleString("sv-SE")} kr/st`);
+        if (r.harkomst) bitar.push(`underlag: ${r.harkomst}`);
+        return `- ${bitar.join(" · ")}`;
+      });
+      p.set(
+        "produkter",
+        `${rader.join("\n")}\n\nLandad kostnad = leverantörens EXW-pris plus frakt Kina till Sverige, redan omräknad till SEK (Riksbanken${fxDatum ? ` ${fxDatum}` : ""}, plus 3 % buffert). Inrikes frakt, garantireserv och fasta kostnader är INTE inräknade.`,
+      );
+    }
+
+    const fraktsatt = Array.from(new Set(namngivna.map((r) => r.fraktsatt).filter((f): f is string => !!f)));
+    if (fraktsatt.length) {
+      p.set("frakt", `Valt fraktsätt Kina till Sverige: ${fraktsatt.join(", ")}. Inrikes frakt till kund är inte offererad än.`);
+    }
+
+    return `/dashboard/specialister/offertmotorn?${p.toString()}`;
+  }, [namn, foretag, rows, fxDatum]);
+
   const prodFiltrerade = products.filter((p) => !prodSok || p.name.toLowerCase().includes(prodSok.toLowerCase()));
   const kundFiltrerade = customers.filter((c) => !kundSok || `${c.name} ${c.company}`.toLowerCase().includes(kundSok.toLowerCase()));
 
@@ -197,6 +243,13 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
         </div>
 
         <div className="px-6 py-5 space-y-5">
+          {fxVarning && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5 text-xs text-amber-900 flex items-start gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+              <span>{fxVarning}</span>
+            </div>
+          )}
+
           {/* Kund */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -413,6 +466,30 @@ export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved
               ) : !golvOk && totals.costTotal > 0 ? (
                 <div className="col-span-3 text-xs text-red-600">⚠ Under 30 % golv — se över priser eller pålägg.</div>
               ) : null}
+            </div>
+          )}
+
+          {/* Offertmotorn — Displaytekniks regler för kalkyl, prisstege och kunddokument.
+              Öppnas i ny flik så att den påbörjade offerten ligger kvar i formuläret. */}
+          {rows.length > 0 && (
+            <div className="rounded-2xl border border-gray-100 bg-white p-4 flex items-start gap-3 shadow-sm">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${primaryColor}14` }}>
+                <Calculator className="w-4 h-4" style={{ color: primaryColor }} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-gray-900">Kör Offertmotorn på underlaget</div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Intern kalkyl (TB, prisgolv, garantireserv, total leveranstid), prisstege i 900-nivåer och färdigt kunddokument. Raderna ovan följer med.
+                </p>
+                <a
+                  href={offertmotorLank}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                >
+                  Öppna Offertmotorn <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
           )}
 
