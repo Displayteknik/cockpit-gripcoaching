@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3 } from "lucide-react";
+import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3, Tag } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -92,6 +92,8 @@ function buildNavSections(resourceModule: string): NavSection[] {
       zon: "eget",
       label: "Verktyg",
       items: [
+        // PRIS-1: speglar säljlagret från MySales Coach. Läser bara, ändrar inga priser.
+        { href: "/dashboard/prislistan", label: "Prislistan (granska)", icon: Tag },
         { href: "/dashboard/setup", label: "Setup-agent", icon: Wrench },
         { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
         { href: "/dashboard/sms-paminnelse", label: "SMS-påminnelse", icon: MessageSquare },
