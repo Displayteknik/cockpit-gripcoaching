@@ -260,11 +260,13 @@ function PipelineView() {
           Historiken bakom raden nedan, så ingen gör om något av misstagen:
             · grid-cols-7 delade bredden på sju → 130 px per fack, avhuggna rubriker
             · fasta kolumner + overflow-x gav läsbara fack men sidledsrullning
-          Lösningen är ett rutnät som BRYTER: fyra fack per rad, alltså 4 + 3 på två rader.
+          Lösningen är ett rutnät som BRYTER: fyra fack per rad, alltså 4 + 3 på två rader. På
+          riktigt breda skärmar (2xl, från 1536 px) ryms alla sju i EN rad — sidan får hela
+          fönstret sedan DM-4d, så kolumnerna blir ~210 px och rubrikerna får plats.
           Varje kolumn blir ~270 px på en vanlig skärm — samma bredd som var läsbar — och
           ingenting hamnar utanför bild. Läsordningen är fortfarande Ny → Förlorad. */}
       {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4">
           {STAGES.map((stage) => {
             const stageContacts = contacts.filter((c) => c.stage === stage.id);
             const Icon = stage.icon;

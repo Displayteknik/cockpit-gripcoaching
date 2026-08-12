@@ -201,6 +201,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navSections = scoped ? buildScopedNavSections() : buildNavSections(resourceModule);
 
+  // Sidor som visar en TAVLA (kolumner sida vid sida) får hela fönstret. Listan är kort med
+  // flit: varje sida här måste tåla 1600 px utan att bli glesa fält och lång radlängd.
+  const BREDA_SIDOR = ["/dashboard/dm"];
+  const bredSida = BREDA_SIDOR.some((h) => pathname === h || pathname.startsWith(h + "/"));
+
   const itemActive = (i: NavItem): boolean => {
     if (i.match) return i.match.some((m) => pathname === m || pathname.startsWith(m + "/"));
     return i.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(i.href);
@@ -339,7 +344,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">{children}</main>
+        {/* DM-4d (Håkans fynd 11/8): "det finns ju tom yta till både höger o vänster".
+            Innehållet är kapat till 1280 px (max-w-7xl) medan skärmen är bredare — så en
+            pipeline med sju fack trängdes ihop fastän utrymmet fanns. Tavelsidor får därför
+            hela bredden. Resten av sidorna behåller kapet: en löptext som är 1600 px bred är
+            svårläst, och det var inte det han klagade på. */}
+        <main className={`${bredSida ? "max-w-none" : "max-w-7xl"} mx-auto px-4 sm:px-6 lg:px-8 py-6`}>{children}</main>
       </div>
     </div>
   );

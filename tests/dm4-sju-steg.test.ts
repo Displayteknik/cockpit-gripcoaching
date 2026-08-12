@@ -116,14 +116,18 @@ describe("DM-4b · sju fack ska gå att LÄSA", () => {
   //
   // Ett rutnät är fel verktyg för en pipeline: det krymper kolumnerna när facken blir fler.
   // En kanban har FASTA kolumner och rullar i sidled, precis som MySales egen tavla.
-  it("tavlan är inte ett rutnät som delar bredden", () => {
-    expect(dm).not.toContain("xl:grid-cols-7");
-    expect(dm).not.toContain("lg:grid-cols-4 xl:grid-cols-7");
+  it("sju fack i en rad kräver att sidan fått hela bredden (DM-4d)", () => {
+    // Det ursprungliga felet var xl:grid-cols-7 INNANFÖR ett 1280 px-kap: 130 px per fack.
+    // Sju i rad är rätt bara när sidan är bred, alltså från 2xl och med max-w-none.
+    // ⚠ Ingen negativ matchning på "xl:grid-cols-7" här: strängen är en delmängd av
+    // "2xl:grid-cols-7" och testet fällde sig självt på det (fångat direkt).
+    expect(dm).toContain("2xl:grid-cols-7");
+    const layout = readFileSync(new URL("../app/dashboard/layout.tsx", import.meta.url), "utf8");
+    expect(layout).toContain('BREDA_SIDOR = ["/dashboard/dm"]');
   });
 
-  it("högst fyra fack per rad — då blir varje kolumn läsbar", () => {
-    // 7 fack i 4 kolumner bryter till 4 + 3. Kapet uppstod när alla sju delade EN rad.
-    expect(dm).toContain("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4");
+  it("på en vanlig laptop bryter de till 4 + 3", () => {
+    expect(dm).toContain("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4");
   });
 
   it("ingen sidledsrullning — Håkans besked 11/8", () => {
@@ -149,5 +153,34 @@ describe("DM-4b · sju fack ska gå att LÄSA", () => {
   it("knappraden bryter i stället för att klippa texten", () => {
     // "Kundregister" visade bara ett K i den smala kolumnen.
     expect(dm).toContain("flex flex-wrap items-center justify-between gap-1.5");
+  });
+});
+
+describe("DM-4d · den tomma ytan används", () => {
+  // Håkans fynd 11/8: "det finns ju tom yta till både höger o vänster". Innehållet är kapat
+  // till 1280 px (max-w-7xl) medan skärmen är bredare — så en pipeline med sju fack trängdes
+  // ihop fastän utrymmet fanns bredvid.
+  const layout = readFileSync(new URL("../app/dashboard/layout.tsx", import.meta.url), "utf8");
+
+  it("tavelsidor får hela fönstret", () => {
+    expect(layout).toContain('const BREDA_SIDOR = ["/dashboard/dm"]');
+    expect(layout).toContain('bredSida ? "max-w-none" : "max-w-7xl"');
+  });
+
+  it("men bara de — löptext ska inte bli 1600 px bred", () => {
+    // Kapet gäller fortfarande som standard. Det var trängseln han klagade på, inte bredden
+    // på texten i resten av systemet.
+    expect(layout).toContain('"max-w-7xl"');
+    const lista = layout.slice(layout.indexOf("const BREDA_SIDOR"), layout.indexOf("const bredSida"));
+    expect(lista.match(/"\/dashboard\//g)?.length).toBe(1);
+  });
+
+  it("alla sju fack står i EN rad när skärmen räcker", () => {
+    // 2xl = från 1536 px. Med full bredd blir varje kolumn ~210 px, alltså läsbar.
+    expect(dm).toContain("2xl:grid-cols-7");
+  });
+
+  it("och bryter till 4 + 3 på smalare skärmar", () => {
+    expect(dm).toContain("lg:grid-cols-4 2xl:grid-cols-7");
   });
 });
