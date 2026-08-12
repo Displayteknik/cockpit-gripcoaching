@@ -1069,6 +1069,12 @@ function AddContactModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
             <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors">
               Avbryt
             </button>
+            {/* ROST-2: "det går inte att lägga till" — knappen var släckt för att namn och
+                användarnamn båda var tomma (dikteringen hade failat), och skälet stod bara i en
+                hover-titel. En knapp som ser trasig ut är värre än en som säger varför. */}
+            {!kanFortsatta && (
+              <span className="text-sm text-gray-500 self-center mr-1">Fyll i namn eller användarnamn först</span>
+            )}
             <button
               onClick={save}
               disabled={saving || !kanFortsatta}

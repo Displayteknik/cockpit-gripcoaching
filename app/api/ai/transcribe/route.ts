@@ -8,6 +8,8 @@ import {
   ROST_FOR_KORT,
   MIN_LJUD_BYTES,
   rensaTranskription,
+  ROST_ORSAKSTEXT,
+  rostOrsak,
 } from "@/lib/ai/transkription";
 
 export const runtime = "nodejs";
@@ -86,8 +88,13 @@ export async function POST(req: NextRequest) {
   // Bara ett godkänt transkript får lämna routen — aldrig systeminstruktionen.
   const text = rensaTranskription(raa);
   if (!text) {
-    console.error(`[transcribe] inget godkänt transkript (mime=${mime}, bytes=${buf.length})`);
-    return NextResponse.json({ error: ROST_FELMEDDELANDE }, { status: 422 });
+    // ROST-2: säg VILKET av de tre lägena det var. "Kunde inte uppfatta rösten" fick Håkan
+    // att undra om tokens tagit slut (11/8) — och två av lägena är inte hans fel alls.
+    const orsak = rostOrsak(raa);
+    console.error(
+      `[transcribe] underkänt transkript (orsak=${orsak}, mime=${mime}, bytes=${buf.length}, rått="${raa.slice(0, 120)}")`,
+    );
+    return NextResponse.json({ error: ROST_ORSAKSTEXT[orsak], orsak }, { status: 422 });
   }
   return NextResponse.json({ text });
 }

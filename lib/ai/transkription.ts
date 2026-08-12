@@ -48,6 +48,38 @@ export const MIN_LJUD_BYTES = 1200;
 /** Inget tal uppfattades — användaren kan göra om försöket. */
 export const ROST_FELMEDDELANDE = "Kunde inte uppfatta rösten, försök igen";
 
+/**
+ * ROST-2 (Håkans fynd 2026-08-11): han sa "Eva Andersson via LinkedIn" och fick "Kunde inte
+ * uppfatta rösten, försök igen" — och frågade om tokens tagit slut. Det var inte tokens: kvot,
+ * betalning och kostnadstak har egna texter sedan 1/8. Men den generiska raden slår ihop TRE
+ * olika lägen, och två av dem är inte användarens fel:
+ *
+ *   tystnad → modellen svarade [INGET_TAL]. Ljudet saknade tydligt tal: för kort klipp, för
+ *             låg nivå, eller fel mikrofon vald i webbläsaren. HÄR kan användaren göra något.
+ *   eko     → modellen upprepade instruktionen i stället för att transkribera. Internt fel.
+ *   tomt    → modellen svarade ingenting alls. Internt fel.
+ *
+ * Ett meddelande som säger "försök igen" när felet ligger hos oss får användaren att prata
+ * tydligare i onödan — och att undra över tokens. Texterna är därför skilda, och orsaken
+ * följer med i svaret så loggen kan läsas i efterhand.
+ */
+export type RostOrsak = "tystnad" | "eko" | "tomt";
+
+export const ROST_ORSAKSTEXT: Record<RostOrsak, string> = {
+  tystnad:
+    "Hörde inget tal i inspelningen. Håll knappen intryckt medan du pratar, och kontrollera att rätt mikrofon är vald i webbläsaren.",
+  eko: "Röstavläsningen svarade fel — det är inget du har gjort. Försök igen.",
+  tomt: "Röstavläsningen kom tillbaka tom — det är inget du har gjort. Försök igen.",
+};
+
+/** Vilket av de tre lägena ett underkänt svar var. Anroparen väljer text ur ROST_ORSAKSTEXT. */
+export function rostOrsak(ravar: unknown, prompt: string = TRANSKRIBERINGS_PROMPT): RostOrsak {
+  const text = typeof ravar === "string" ? ravar.trim() : "";
+  if (!text) return "tomt";
+  if (arPromptEko(text, prompt)) return "eko";
+  return "tystnad";
+}
+
 /** Inspelningen blev för kort för att innehålla tal. */
 export const ROST_FOR_KORT = "Inspelningen blev för kort, håll knappen intryckt medan du pratar";
 
