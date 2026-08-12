@@ -2,7 +2,7 @@
 id: offertmotorn
 name: Offertmotorn (Displayteknik)
 category: offert
-model: claude-sonnet-4-5
+model: claude-fable-5
 target_app: cockpit
 version: 1
 iterate: false

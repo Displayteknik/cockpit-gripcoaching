@@ -202,6 +202,23 @@ export function nollstallPrisCache() {
   prisCache = null;
 }
 
+/**
+ * MODELL-1: finns ett aktivt pris för modellen? Anropas INNAN ett dyrare val görs.
+ *
+ * En modell utan prisrad loggas som 0 kr, och då reagerar varken kostnadstaket eller
+ * kostnadsvyn — samma tysta hål som video har i dag. Att välja en dyrare modell utan pris
+ * är alltså inte "lite dyrare", det är osynligt dyrare. Fail-safe: kan prislistan inte
+ * läsas svarar vi false, så anroparen faller tillbaka på standardmodellen.
+ */
+export async function harPris(provider: string, model: string): Promise<boolean> {
+  try {
+    const rader = await prislista();
+    return rader.some((r) => r.provider === provider && r.model === model);
+  } catch {
+    return false;
+  }
+}
+
 export function beraknaKostnad(
   rad: Prisrad | undefined,
   tokensIn: number,

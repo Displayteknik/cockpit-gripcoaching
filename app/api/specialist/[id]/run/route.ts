@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { loggaAnrop } from "@/lib/ai-usage";
+import { harPris, loggaAnrop } from "@/lib/ai-usage";
 import { getSpecialist, buildUserPrompt, guardrailsFor } from "@/lib/specialists";
 import { supabaseServer } from "@/lib/supabase-admin";
 import { getActiveClientId, logActivity } from "@/lib/client-context";
@@ -10,7 +10,16 @@ import { byggTextPrompt } from "@/lib/prompt-core";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const MODEL = "claude-sonnet-4-5";
+// MODELL-1 (Håkans fynd 12/8): specialistens `model:` i .md-filen lästes in i
+// `SpecialistMeta.model` men användes aldrig — routen körde en hårdkodad konstant. Sex
+// specialister deklarerade `claude-sonnet-4-6` och fick `claude-sonnet-4-5`. Ett fält som
+// finns i konfigurationen men inte har en kodväg är samma tomma löfte som resten av
+// granskningen handlat om.
+//
+// ⚠ Modellen måste ha en rad i `ai_pricing`, annars loggas anropet som 0 kr och
+// kostnadstaket reagerar aldrig (samma tysta hål som video har). `modellMedPris` faller
+// därför tillbaka på standarden när priset saknas, och skriver ut varför.
+const STANDARD_MODEL = "claude-sonnet-4-5";
 
 export async function POST(
   req: NextRequest,
@@ -50,6 +59,18 @@ export async function POST(
     const clientId = await getActiveClientId();
     const userPrompt = buildUserPrompt(specialist, inputs);
     const useIterate = specialist.iterate === true;
+
+    // MODELL-1: specialistens egen modell, men bara om den har ett pris att mäta med.
+    // Saknas priset körs standarden och skälet loggas — hellre rätt mätt på en billigare
+    // modell än osynligt dyrt på en dyrare.
+    const onskadModell = specialist.model || STANDARD_MODEL;
+    let MODEL = onskadModell;
+    if (onskadModell !== STANDARD_MODEL && !(await harPris("anthropic", onskadModell))) {
+      console.error(
+        `[specialist/${id}] ${onskadModell} saknar rad i ai_pricing — kör ${STANDARD_MODEL} i stället. Lägg in priset för att slå på modellen.`,
+      );
+      MODEL = STANDARD_MODEL;
+    }
 
     // TEXT-1 T-3: prompten byggs av prompt-core — specialisterna får därmed brand-profil
     // (saknades helt förut), röst, winning examples, anatomi och skrivregler i fast ordning.
@@ -114,7 +135,11 @@ export async function POST(
         async () => {
           const m = await anthropic.messages.stream({
             model: MODEL,
-            max_tokens: 4096,
+            // MODELL-1: offertsvaret är fyra block med tabeller och ett helt kunddokument —
+            // 4096 räckte inte ens för texten. På modeller där tänkandet alltid är på räknas
+            // det dessutom mot SAMMA tak, så ett snålt tak kapar svaret mitt i en pristabell.
+            // Anropet strömmar redan (finalMessage), så ett stort tak kostar ingen timeout.
+            max_tokens: specialist.category === "offert" ? 32000 : 8192,
             // Samma prompt-core-bygge som iterate-vägen — även direktkörda specialister
             // får brand-profil + röst + anatomi. Guardrails läggs sist (Anthropic-specifika).
             system: bygg.system + guardrailsFor(specialist.category),
