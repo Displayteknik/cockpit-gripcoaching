@@ -350,6 +350,100 @@ function kortFranKontakt(c: Contact): ScoredCard {
   };
 }
 
+
+// ── DM-2: full redigeringsyta ────────────────────────────────────────────────
+// Håkans krav 11/8: "när man redigerar en post är det för dåligt, den är jätte pluttig o
+// stökig i storlek. öppna den fullt o säkerställ att det går smart o enkelt att prata in info".
+//
+// Tre saker som gör skillnad, och alla tre var trasiga i den inline-versionen:
+//   1. PLATS. Fältet var 3 rader i text-xs inuti en 280 px kanban-kolumn. Nu 60 % av
+//      fönsterhöjden, brödtext i normal storlek, i en yta som inte konkurrerar med kortet.
+//   2. RÖSTEN. "Prata in" satt under ett pyttefält där transkriptionen inte gick att läsa
+//      medan den kom in. Nu syns den i klartext, och knappen ligger där tummen är.
+//   3. AVBRYT UTAN OLYCKA. Esc och klick utanför stänger, men bara när inget sparas — ett
+//      halvsparat kort som stängs mitt i skrivningen är värre än ett extra klick.
+function RedigeraKort({
+  contact, notes, setNotes, next, setNext, saving, onSave, onClose,
+}: {
+  contact: Contact;
+  notes: string;
+  setNotes: (v: string) => void;
+  next: string;
+  setNext: (v: string) => void;
+  saving: boolean;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  // Esc stänger. Lyssnaren tas bort när ytan stängs, annars äter den Esc i resten av sidan.
+  useEffect(() => {
+    const pa = (e: KeyboardEvent) => { if (e.key === "Escape" && !saving) onClose(); };
+    window.addEventListener("keydown", pa);
+    return () => window.removeEventListener("keydown", pa);
+  }, [saving, onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => { if (!saving) onClose(); }} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-gray-100">
+          <div className="min-w-0">
+            <h2 className="font-display text-lg font-bold text-gray-900 truncate">
+              {contact.display_name || `@${contact.ig_username}` || "Kontakt"}
+            </h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {kanalEtikett(contact.channel, contact.ig_username)}
+              {contact.source ? ` · via ${contact.source}` : ""}
+            </p>
+          </div>
+          <button onClick={onClose} disabled={saving} className="p-2 -mr-2 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" title="Stäng">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Vad har hänt i samtalet?</label>
+            <p className="text-sm text-gray-500 mb-2">
+              Prata in det med mikrofonen, eller klistra in en skärmdump av DM:et — texten läses av åt dig.
+            </p>
+            <SmartTextarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={12}
+              autoFocus
+              placeholder="T.ex. Hon frågade vad en skärm till entrén kostar och vill ha ett förslag före semestern."
+              className="w-full px-4 py-3 text-base leading-relaxed border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nästa steg</label>
+            <input
+              value={next}
+              onChange={(e) => setNext(e.target.value)}
+              placeholder="T.ex. Skicka förslag på två storlekar, senast fredag"
+              className="w-full px-4 py-3 text-base border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+          <button onClick={onClose} disabled={saving} className="px-4 py-2.5 text-sm font-medium text-gray-600 rounded-xl hover:bg-gray-100 disabled:opacity-40">
+            Avbryt
+          </button>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 bg-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:bg-purple-700 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            Spara
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ContactCard({
   contact,
   onDragStart,
@@ -414,36 +508,24 @@ function ContactCard({
         </div>
       </div>
 
+      {/* DM-2 (Håkans krav 11/8): redigeringen låg INNE i kortet — ett 3-raders fält i
+          text-xs inuti en smal kanban-kolumn. "jätte pluttig o stökig i storlek". Nu öppnas
+          den i full yta, med ett fält man faktiskt kan prata in i. Kortet blir inte högre av
+          att man redigerar, och kolumnen hoppar inte till. */}
       {editing ? (
-        <div className="mt-2 space-y-2">
-          <SmartTextarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Anteckningar, eller klistra in en skärmdump av DM:et / prata in det"
-            className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
-          />
-          <input
-            value={next}
-            onChange={(e) => setNext(e.target.value)}
-            placeholder="Nästa steg..."
-            className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-300"
-          />
-          <div className="flex gap-1.5">
-            <button
-              onClick={save}
-              disabled={saving}
-              className="flex-1 bg-purple-600 text-white text-xs py-1.5 rounded-lg font-semibold shadow-sm hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center gap-1 transition-colors"
-            >
-              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-              Spara
-            </button>
-            <button onClick={() => setEditing(false)} className="px-2.5 py-1.5 bg-white border border-gray-200 text-gray-500 text-xs rounded-lg hover:bg-gray-50 transition-colors">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      ) : (
+        <RedigeraKort
+          contact={contact}
+          notes={notes}
+          setNotes={setNotes}
+          next={next}
+          setNext={setNext}
+          saving={saving}
+          onSave={save}
+          onClose={() => setEditing(false)}
+        />
+      ) : null}
+
+      {(
         <>
           {contact.notes && (
             <div className="mt-2 text-xs text-gray-700 line-clamp-2 whitespace-pre-wrap">{contact.notes}</div>

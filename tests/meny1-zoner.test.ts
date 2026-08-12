@@ -162,3 +162,58 @@ describe("MENY-1 · omgrupperingen tappade ingen sida", () => {
     expect(kod).toContain("...resourceItems");
   });
 });
+
+describe("MENY-2 · DM och veckoplanen finns i menyn", () => {
+  // Håkans krav 11/8: "inloggad som displayteknik i cockpit (admin) ser jag inte dm pipelinen.
+  // vill ha den". Båda sidorna fanns men nåddes bara via flikraden i PostsTabs — alltså bara
+  // om man redan stod på en inläggssida. Han hittade inte veckoplanen heller när han skulle
+  // köra steg 11 i testlistan. En sida som inte går att hitta finns inte.
+  for (const href of ["/dashboard/dm", "/dashboard/veckoplan"]) {
+    it(`${href} går att hitta i menyn`, () => {
+      expect(ALLA_HREFS, `${href} saknas i menyn`).toContain(href);
+    });
+
+    it(`${href} ligger i kundzonen — kunden når samma yta`, () => {
+      const s = SEKTIONER.find((x) => x.hrefs.includes(href))!;
+      expect(s.zon).toBe("kundens");
+    });
+  }
+
+  it("och deras kundsidor finns på disk", () => {
+    for (const kundHref of ["/k/dm", "/k/veckoplan"]) {
+      expect(existsSync(new URL(`app${kundHref}/page.tsx`, ROT)), kundHref).toBe(true);
+    }
+  });
+});
+
+describe("DM-2 · redigeringen öppnas i full yta", () => {
+  // "när man redigerar en post är det för dåligt, den är jätte pluttig o stökig i storlek.
+  // öppna den fullt o säkerställ att det går smart o enkelt att prata in info."
+  // Förut: 3 rader i text-xs inuti en smal kanban-kolumn.
+  const dm = readFileSync(new URL("app/dashboard/(inlagg)/dm/page.tsx", ROT), "utf8");
+
+  it("redigeringen är en egen yta, inte ett fält inne i kortet", () => {
+    expect(dm).toContain("function RedigeraKort");
+    expect(dm).toContain("fixed inset-0 z-50");
+  });
+
+  it("fältet är stort och texten läsbar", () => {
+    expect(dm).toContain("rows={12}");
+    expect(dm).toContain("text-base leading-relaxed");
+  });
+
+  it("röstinmatningen finns kvar och förklaras", () => {
+    expect(dm).toContain("Prata in det med mikrofonen");
+    expect(dm).toMatch(/SmartTextarea[\s\S]{0,400}rows=\{12\}/);
+  });
+
+  it("Esc och klick utanför stänger — men aldrig mitt i en sparning", () => {
+    expect(dm).toContain('e.key === "Escape" && !saving');
+    expect(dm).toContain("if (!saving) onClose();");
+  });
+
+  it("lyssnaren städas när ytan stängs", () => {
+    // Annars äter den Esc i resten av sidan.
+    expect(dm).toContain('window.removeEventListener("keydown", pa)');
+  });
+});

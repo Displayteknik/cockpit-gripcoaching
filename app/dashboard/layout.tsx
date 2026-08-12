@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3 } from "lucide-react";
+import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3 } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -143,6 +143,12 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon, kundHref: "/k/linkedin" },
         { href: "/dashboard/nyhetsbrev", label: "Nyhetsbrev", icon: Mail, kundHref: "/k/nyhetsbrev" },
         { href: "/dashboard/agents", label: "Idé-bank", icon: Bot, kundHref: "/k/ideer" },
+        // MENY-2 (Håkans krav 11/8): "inloggad som displayteknik i cockpit (admin) ser jag inte
+        // dm pipelinen. vill ha den". DM och veckoplanen nåddes bara via flikraden i
+        // components/dashboard/PostsTabs.tsx — alltså bara om man redan stod på en inläggssida.
+        // Båda har en motsvarighet i kundportalen och hör därför i den här zonen.
+        { href: "/dashboard/dm", label: "DM & pipeline", icon: MessageSquare, kundHref: "/k/dm" },
+        { href: "/dashboard/veckoplan", label: "Veckoplan", icon: CalendarDays, kundHref: "/k/veckoplan" },
       ],
     },
     {
