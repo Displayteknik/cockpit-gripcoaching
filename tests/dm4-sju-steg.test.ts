@@ -121,13 +121,18 @@ describe("DM-4b · sju fack ska gå att LÄSA", () => {
     expect(dm).not.toContain("lg:grid-cols-4 xl:grid-cols-7");
   });
 
-  it("kolumnerna har fast bredd och krymper inte", () => {
-    expect(dm).toContain("w-[272px] flex-shrink-0");
+  it("högst fyra fack per rad — då blir varje kolumn läsbar", () => {
+    // 7 fack i 4 kolumner bryter till 4 + 3. Kapet uppstod när alla sju delade EN rad.
+    expect(dm).toContain("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4");
   });
 
-  it("och tavlan rullar i sidled i stället", () => {
-    expect(dm).toContain("overflow-x-auto");
-    expect(dm).toContain("flex gap-4 w-max min-w-full");
+  it("ingen sidledsrullning — Håkans besked 11/8", () => {
+    // Mellanlösningen var fasta kolumner + overflow-x. Läsbar, men "vi kan inte ha så man
+    // behöver skrolla i sidled". Två rader löser båda kraven samtidigt.
+    const tavla = dm.slice(dm.indexOf("DM-4c"), dm.indexOf("STAGES.map((stage)"));
+    expect(tavla).not.toContain("overflow-x-auto");
+    expect(dm).not.toContain("flex gap-4 w-max min-w-full");
+    expect(dm).not.toContain("w-[272px] flex-shrink-0");
   });
 
   it("facknamnet huggs aldrig av — det ÄR rubriken", () => {

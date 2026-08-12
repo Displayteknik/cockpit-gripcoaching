@@ -256,14 +256,15 @@ function PipelineView() {
         </div>
       )}
 
-      {/* DM-4b (Håkans fynd 11/8): "det går ju inte att läsa kortens rubriker". Sju fack i ett
-          rutnät gav 130 px per kolumn — "Bekr…", "Erbju…", "Vilan…", "Förlo…" och avhuggna namn
-          i korten. Ett rutnät delar bredden på antalet kolumner; en pipeline behöver i stället
-          fasta kolumner som RULLAR i sidled, precis som MySales egen tavla. Fyra fack syns på
-          en vanlig skärm, resten når man med att dra i sidled eller scrolla. */}
+      {/* DM-4c (Håkans besked 11/8): "vi kan inte ha så man behöver skrolla i sidled".
+          Historiken bakom raden nedan, så ingen gör om något av misstagen:
+            · grid-cols-7 delade bredden på sju → 130 px per fack, avhuggna rubriker
+            · fasta kolumner + overflow-x gav läsbara fack men sidledsrullning
+          Lösningen är ett rutnät som BRYTER: fyra fack per rad, alltså 4 + 3 på två rader.
+          Varje kolumn blir ~270 px på en vanlig skärm — samma bredd som var läsbar — och
+          ingenting hamnar utanför bild. Läsordningen är fortfarande Ny → Förlorad. */}
       {!loading && (
-        <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto pb-2">
-        <div className="flex gap-4 w-max min-w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {STAGES.map((stage) => {
             const stageContacts = contacts.filter((c) => c.stage === stage.id);
             const Icon = stage.icon;
@@ -279,7 +280,7 @@ function PipelineView() {
                     setDraggedId(null);
                   }
                 }}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[400px] flex flex-col w-[272px] flex-shrink-0"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[340px] flex flex-col"
               >
                 <div className="px-4 py-3.5 border-b border-gray-100">
                   <div className="flex items-center gap-2.5">
@@ -319,7 +320,6 @@ function PipelineView() {
               </div>
             );
           })}
-        </div>
         </div>
       )}
 
