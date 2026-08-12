@@ -16,11 +16,11 @@ facit. Statusnivåer: `KLART OCH VERIFIERAT` · `KLART, EJ VERIFIERAT` · `PÅB�
 | Nivå | Antal |
 |---|---|
 | KLART OCH VERIFIERAT | 77 |
-| KLART, EJ VERIFIERAT | 26 |
+| KLART, EJ VERIFIERAT | 30 |
 | PÅBÖRJAT | 8 |
 | BESTÄLLT, EJ PÅBÖRJAT | 31 |
 | PARKERAT | 11 |
-| **Totalt** | **153** |
+| **Totalt** | **157** |
 
 *Räknat 2026-08-11 (andra gången, efter eftermiddagens sju commits) genom att läsa nivåkolumnen i varje tabellrad i den här filen, inte ur minnet.
 Siffran gick från 86 till 143 för att de gamla talen aldrig räknades om när rader lades till under
@@ -325,6 +325,51 @@ belopp på, en coachingtenant med enkel pipeline och belopp av).
 namnet som reserv). Läsningen är alltså inte per tenant idag, och `hq_pipeline_cache` har ingen
 klientkolumn i det som lästs. Att göra läsningen tenant-buren är etappens första arbete, inte
 en detalj i den — och utan det kan DoD:n mot en coachingtenant inte köras.
+
+
+### Kvällens fyra sista (11/8) — alla pushade
+
+| Post | Status | Bevis / återstår | Kundsynligt | UI-löfte |
+|---|---|---|---|---|
+| DM-4c + DM-4d tavlans bredd | KLART, EJ VERIFIERAT — OBEKLICKAD | `0bfefaa` + `6f5543f`. Tre försök innan rätt: (1) `grid-cols-7` delade bredden på sju → 130 px per fack; (2) fasta kolumner + `overflow-x` gav läsbara fack men sidledsrullning, avvisat: "vi kan inte ha så man behöver skrolla i sidled"; (3) två rader 4 + 3 — läsbart, men "det finns ju tom yta till både höger o vänster". Rotorsaken var att innehållet kapades till 1280 px (`max-w-7xl`) medan skärmen är bredare. `BREDA_SIDOR` i dashboard-layouten ger tavelsidor `max-w-none`; listan har EN sida med flit, eftersom löptext på 1600 px är svårläst | Ja | Nej |
+| DM-4e tavlan mäter sin EGEN yta | KLART, EJ VERIFIERAT — OBEKLICKAD | `25ca976`, `tests/farg1-spara-brandkit.test.ts`. **Min egen regression, upptäckt av Håkan en halvtimme senare:** `2xl:grid-cols-7` mäter FÖNSTRET, men tavlan får bara den yta sidan ger den. Kundportalen (`/k/dm`, samma komponent) fick inte den breda sidan — så sju kolumner blev ~110 px och kontaktnamnet radbröts bokstav för bokstav. "För i helvete vad fult." Nu `@container` på sidans rot + `@[1400px]:grid-cols-7`, alltså mätning på den faktiska bredden i BÅDA ytorna. Grundläget är fyra per rad: värsta utfallet om mätningen inte slår till är två rader, aldrig 110 px. ⚠ **Samma misstag två gånger samma dag:** en JSX-kommentar som första syskon inne i `{!loading && (…)}` är inte giltig JSX — fångat av tsc båda gångerna | Ja | Nej |
+| ROST-2 röstfelet säger vad som gick fel | KLART, EJ VERIFIERAT — OBEKLICKAD | `d42efc4`, `tests/rost2-felorsaker.test.ts` (18). Han sa "Eva Andersson via LinkedIn", fick "Kunde inte uppfatta rösten, försök igen" och frågade om tokens tagit slut. **Det var inte tokens** — kvot, betalning och kostnadstak har egna texter sedan 1/8, och budgetstoppet svarar 429 med sin egen rad. Men raden för "inget användbart transkript" slog ihop TRE lägen: tystnad (`[INGET_TAL]` — kort klipp, låg nivå, fel mikrofon; användaren kan agera), eko (modellen upprepade instruktionen) och tomt svar. De två sista är interna fel, och "försök igen" fick honom att prata tydligare i onödan. Nu egen text per läge, orsaken i svaret, och loggen bär orsak + längd + RÅSVARET. Vid tystnad och kort klipp står längden i felet ("inspelningen var 1 sekund"). Den släckta "Lägg till"-knappen säger nu i text att namn eller användarnamn behövs — skälet stod bara i en hover-titel | **Ja** | **Var ja — nu nej** |
+| FARG-1 ändrad färg går att spara | KLART, EJ VERIFIERAT — OBEKLICKAD | `25ca976`, `tests/farg1-spara-brandkit.test.ts` (10). "Det går ju för fasen inte att spara en ändrad färg… finns ingen spara knapp." Knappen FANNS — i hjälmen, tre skärmhöjder upp från färgrutorna, och ingenting sa att något var osparat. Två fel i samma upplevelse: åtgärden utom synhåll, tillståndet osynligt. Nu håller sidan en kopia av det SPARADE kitet och skillnaden mot det visade ÄR det osparade (ingen egen dirty-flagga som kan glömmas att nollas). Osparat → en list fast längst ner med Spara och "Ångra ändringarna", som försvinner när allt är sparat. Snapshoten flyttas fram FÖRST när servern svarat ok, annars hade "osparat" slocknat fastän ändringen aldrig kom fram. Webbläsaren frågar innan fliken stängs med osparat | **Ja** | **Var ja — nu nej.** Sidan såg ut att sakna sparning |
+
+### AluCons gula accentfärg — DATA, inte kod
+
+Den gula accenten kommer ur AluCons brand kit i databasen, inte ur någon default i koden.
+Den går nu att byta och spara (FARG-1 ovan). **Kvar hos Håkan:** välj färgerna för AluCon och
+spara — och samma genomgång för övriga tenants, eftersom en accentfärg som inte hör till
+varumärket syns i varje bild och varje CTA-bricka som mallen ritar.
+
+### Deploy-kontroll utan gissning (11/8)
+
+Håkan såg den trasiga tavlan EFTER att fixen pushats och frågade om den var ute. Svaret gick
+att verifiera i stället för att gissa: **CSS-bunten är publik.** Hämta ett `<link rel=stylesheet>`
+från `cockpit.gripcoaching.se` och sök i texten.
+
+- Före deploy: bara `96rem` (fönsterbrytpunkten `2xl`), inget `container-type`, inget `1400px`.
+- Efter deploy: `@container (min-width:1400px){.@[1400px]:grid-cols-7{…}}` och `container-type`.
+
+Nyttigt varje gång något "ser gammalt ut": en 200 från servern säger ingenting om vilket bygge
+som ligger där, men en klass som finns eller inte finns i CSS:en gör det. Och kom ihåg att
+webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en slutsats.
+
+### START HÄR I NÄSTA SESSION
+
+1. **Håkan testar de sju obeklickade fixarna från i dag** (DM-tavlan, redigeringsytan,
+   röstfördelningen, röstfelen, brandkit-sparningen, affischtexten, skärminnehållet i bilder).
+   Allt är låst i test men ingenting är klickat av mig — jag kan inte logga in.
+2. **AFFÄRSVY-1 är beställd och ej påbörjad.** Första hindret är kartlagt: `hamtaHqGhl()` i
+   `lib/hq/pipeline.ts` slår upp **Displaytekniks** klientrad specifikt (`DT_CLIENT_ID`, med
+   namnet som reserv), och `hq_pipeline_cache` läses utan klientfilter. GHL-läsningen måste bli
+   tenant-buren FÖRST, annars kan DoD:n mot en coachingtenant inte köras.
+3. **FIX-1 B2 kan avslutas.** Facket är delat i MySales; kvar är att peka ut Vilande-stegets
+   steg-id och sortera de 12 affärerna, sedan går VILOZON att bygga.
+4. **Öppna beslut som väntar på Håkan:** ska ett tal ur ett kundcitat räknas som verifierad
+   siffra (sifferkontrollen släpper det i dag)? Ska balansmätaren styra planeringen eller bara
+   mäta? Får Bokadirekt-recensionen citeras ordagrant?
 
 ## GRANSK G-0..G-9
 
