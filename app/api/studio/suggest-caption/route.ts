@@ -5,6 +5,9 @@ import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { hamtaNyligen } from "@/lib/rotation";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { ctaVagForVariant, perspektivForVariant, vinkelMedVag } from "@/lib/cta-vagar";
+import { tonForVariant, tonInstruktion } from "@/lib/ton-varianter";
+import type { CompassParams } from "@/lib/content-compass/prompt";
+import type { DiscLetter } from "@/lib/content-compass/data";
 import { BERATTELSE_UTAN_STORYBANK, MINNE_SKARPNING, harStorybank, hittaUppfunnetMinne } from "@/lib/minnesgrind";
 import { sakerstallCaption, talTokens } from "@/lib/content/writing-rules";
 
@@ -81,6 +84,21 @@ export async function POST(req: NextRequest) {
     // "NYLIGEN ANVÄNT" i kärnan, så nästa caption inte återanvänder samma ingång.
     const nyligen = await hamtaNyligen(clientId, "caption");
 
+    // TON-1: hur många varianter som begärts måste vara känt INNAN prompten byggs, för i
+    // A/B-läget lyfts DISC ur den delade prompten och delas ut per variant i stället.
+    //
+    // Låg tonen kvar i systemprompten skulle den säga ETT tonläge medan variantinstruktionen
+    // säger ett annat — en självmotsägelse i samma prompt, och modellen följer då tillståndet
+    // snarare än förbudet (lesson_sjalvmotsagande_instruktion_ger_fabricering). Steg i
+    // kundresan och berättarform ligger kvar delade: de säger vad inlägget ÄR, och varierar
+    // man dem är det inte tre varianter av ett inlägg utan tre olika inlägg.
+    const n = Math.min(4, Math.max(0, Number((b as { variants?: number }).variants) || 0));
+    const abLage = n >= 2;
+    const inCompass: CompassParams | undefined =
+      b.compass && typeof b.compass === "object" ? (b.compass as CompassParams) : undefined;
+    const valdaDisc: DiscLetter[] = Array.isArray(inCompass?.disc) ? inCompass.disc : [];
+    const compassForPrompt = abLage && inCompass ? { ...inCompass, disc: [] } : inCompass;
+
     const bygg = await byggTextPrompt({
       clientId,
       syfte: "caption",
@@ -91,7 +109,7 @@ export async function POST(req: NextRequest) {
         contentBlock,
         "\nSkriv captionen nu — strukturerad enligt reglerna.",
       ].filter(Boolean).join("\n"),
-      compass: b.compass && typeof b.compass === "object" ? b.compass : undefined,
+      compass: compassForPrompt,
       nyligen,
       // KVALITET-3/punkt 5: ämnet är det användaren själv skrev. Skrev hen in ett
       // pris där är det hens beslut och undantaget öppnas. Rubrik/brödtext på bilden
@@ -248,8 +266,7 @@ ${sk}`);
       ? ANGLAR
       : ANGLAR.map((a) => (a.angle === "Berättelse" ? { ...a, instruktion: BERATTELSE_UTAN_STORYBANK } : a));
 
-    const n = Math.min(4, Math.max(0, Number((b as { variants?: number }).variants) || 0));
-    if (n >= 2) {
+    if (abLage) {
       const valda = anglarIBruk.slice(0, n);
       // Sanering + CTA-golv sker inuti genMedCtaGolv, per variant. Varje variant får
       // sin EGNA enda omgenerering — en variant som klarar golvet rörs aldrig.
@@ -265,10 +282,18 @@ ${sk}`);
           // CTA-3: nivån bestämmer vilka vägar som ens får delas ut. På tofu kan ingen
           // variant få "skriv till oss" — steget är för stort för ett första möte.
           const vag = ctaVagForVariant(i, bygg.meta.funnel);
+          // TON-1: tonläget delas ut här, med innehållsprofilens val som utgångspunkt.
+          // Variant 0 får dagens ton, resten fortsätter runt — förslaget för dagen körs
+          // alltså aldrig över, det får sällskap.
+          const ton = tonForVariant(i, valdaDisc);
           return {
             angle: v.angle,
             ctaVag: vag.namn,
-            ...(await genMedCtaGolv(vinkelMedVag(v.instruktion, vag, perspektivForVariant(i)), `variant ${v.angle}/${vag.namn}`)),
+            ton,
+            ...(await genMedCtaGolv(
+              vinkelMedVag(v.instruktion, vag, perspektivForVariant(i), tonInstruktion(ton)),
+              `variant ${v.angle}/${vag.namn}/${ton}`,
+            )),
           };
         }),
       );

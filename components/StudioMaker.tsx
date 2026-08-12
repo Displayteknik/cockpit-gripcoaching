@@ -241,7 +241,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // just skillnaden mellan "genererat" och "använt" som gör mätningen värd något.
   // CTA-2: `ctaVag` är vägen framåt varianten fick tilldelad (kommentar/meddelande/spara-dela/
   // egen kanal). Den visas i kortet så skillnaden mellan varianterna syns FÖRE man läser dem.
-  const [captionVariants, setCaptionVariants] = useState<{ angle: string; ctaVag?: string; caption: string; generationId?: string | null }[]>([]);
+  // TON-1: `ton` är tonläget varianten fick tilldelat (D/I/S/C). Det visas i kortet bredvid
+  // kroken och vägen framåt, och när en variant väljs flyttas tonen upp i innehållsprofilen
+  // — annars säger raden ett tonläge medan texten under är skriven i ett annat.
+  const [captionVariants, setCaptionVariants] = useState<{ angle: string; ctaVag?: string; ton?: DiscLetter; caption: string; generationId?: string | null }[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [ghlConnected, setGhlConnected] = useState<boolean | null>(null);
   const [ghlAccounts, setGhlAccounts] = useState<GhlAccount[]>([]);
@@ -2593,7 +2596,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={suggestCaptionVariants} disabled={loadingVariants || suggestingCaption}
-                    title="Få 3 varianter med olika krokar att jämföra"
+                    title="Få 3 varianter att jämföra — olika krok, olika tonläge och olika väg framåt"
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border shadow-sm hover:bg-gray-50 disabled:opacity-40"
                     style={{ borderColor: `${primary}55`, color: primary }}>
                     {loadingVariants ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />} Ge mig 3 att välja på
@@ -2641,7 +2644,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       {compassBusy === "review" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ClipboardCheck className="w-3.5 h-3.5" />} Granska
                     </button>
                   </div>
-                  <span className="w-full text-xs text-violet-600">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt.</span>
+                  <span className="w-full text-xs text-violet-600">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt. Ber du om tre förslag får varje förslag sitt eget tonläge, med det här som första val.</span>
                   {reviewResult && (
                     <div className={`w-full rounded-lg border p-3 mt-1 ${reviewResult.passed ? "border-emerald-200 bg-emerald-50/60" : "border-amber-200 bg-amber-50/60"}`}>
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
@@ -2664,14 +2667,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {captionVariants.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant — olika krok OCH olika väg framåt</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant — olika krok, olika tonläge, olika väg framåt</span>
                     <button onClick={() => setCaptionVariants([])} className="text-xs text-gray-400 hover:text-gray-700">Dölj</button>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-2">
                     {captionVariants.map((v, i) => {
                       const vald = caption.trim() === v.caption.trim();
                       return (
-                        <button key={i} onClick={() => { setCaption(v.caption); laggTillGeneration(v.generationId); }}
+                        <button key={i} onClick={() => { setCaption(v.caption); laggTillGeneration(v.generationId); if (v.ton) setCompass((c) => ({ ...c, disc: [v.ton as DiscLetter] })); }}
                           className={`text-left rounded-xl border p-3 transition-all hover:shadow-sm ${vald ? "ring-2" : ""}`}
                           style={vald ? { borderColor: primary, boxShadow: `0 0 0 2px ${primary}` } : { borderColor: "#e5e7eb" }}>
                           <div className="flex items-center gap-1.5 mb-1.5">
@@ -2679,6 +2682,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                             {v.ctaVag && <span className="text-xs text-gray-500">{CTA_VAG_ETIKETT[v.ctaVag] || v.ctaVag}</span>}
                             {vald && <span className="text-xs font-semibold text-emerald-600">✓ vald</span>}
                           </div>
+                          {v.ton && (
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <span className="w-5 h-5 rounded text-xs font-bold text-white flex items-center justify-center flex-shrink-0"
+                                style={{ background: v.ton === "D" ? "#ef4444" : v.ton === "I" ? "#f59e0b" : v.ton === "S" ? "#10b981" : "#3b82f6" }}>{v.ton}</span>
+                              <span className="text-xs text-gray-500">{DISC_LABEL_SV[v.ton]}</span>
+                            </div>
+                          )}
                           <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-[10] leading-relaxed">{v.caption}</p>
                         </button>
                       );

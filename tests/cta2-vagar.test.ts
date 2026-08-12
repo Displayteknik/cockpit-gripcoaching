@@ -85,6 +85,14 @@ describe("CTA-2 · vägarna håller sig inom reglerna som redan gäller", () => 
     expect(ut.indexOf(VINKEL_PERSPEKTIV[0])).toBeLessThan(ut.indexOf(CTA_VAGAR[0].instruktion));
   });
 
+  // TON-1: tonen kom till efteråt och lades mellan perspektivet och vägen. Vägen ska ligga
+  // SIST — den är den enda delen som måste överleva CTA-golvets efterhandskontroll.
+  it("tonen läggs efter perspektivet och före vägen framåt", () => {
+    const ut = vinkelMedVag("Kroken.", CTA_VAGAR[0], VINKEL_PERSPEKTIV[0], "TONLÄGE: testton.");
+    expect(ut.indexOf(VINKEL_PERSPEKTIV[0])).toBeLessThan(ut.indexOf("TONLÄGE: testton."));
+    expect(ut.indexOf("TONLÄGE: testton.")).toBeLessThan(ut.indexOf(CTA_VAGAR[0].instruktion));
+  });
+
   it("perspektivet är valfritt — utan det byggs instruktionen som förut", () => {
     expect(vinkelMedVag("Kroken.", CTA_VAGAR[0])).toBe(`Kroken.\n${CTA_VAGAR[0].instruktion}`);
   });
@@ -121,7 +129,9 @@ describe("CTA-2 · captionvägen delar faktiskt ut vägarna", () => {
 
   it("varje variant får sin väg via variantnumret", () => {
     expect(route).toContain("ctaVagForVariant(i, bygg.meta.funnel)");
-    expect(route).toContain("vinkelMedVag(v.instruktion, vag, perspektivForVariant(i))");
+    // TON-1 la till ett fjärde argument. Låset står kvar på att alla tre delarna som
+    // varierar per variant fortfarande går genom samma komposition.
+    expect(route).toContain("vinkelMedVag(v.instruktion, vag, perspektivForVariant(i), tonInstruktion(ton))");
   });
 
   it("vägen följer med i svaret så gränssnittet kan visa den", () => {

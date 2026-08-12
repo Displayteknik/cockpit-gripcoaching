@@ -105,11 +105,16 @@ export function ctaVagForVariant(i: number, funnel?: string | null): CtaVag {
 }
 
 /**
- * Krok-vinkeln och vägen framåt som EN instruktion. Kroken styr öppningen, vägen styr
- * avslutet — utan detta styrde kroken bara öppningen och avslutet blev likadant i alla.
+ * Allt som skiljer en variant från de andra, som EN instruktion. Kroken styr öppningen,
+ * perspektivet vad blicken riktas mot, tonen hur det skrivs, vägen avslutet — utan detta
+ * styrde kroken bara öppningen och resten blev likadant i alla.
+ *
+ * TON-1 (2026-08-12): `ton` kom till sist. Ordningen är medveten — tonen står FÖRE vägen
+ * framåt, eftersom vägen är den enda delen som måste överleva CTA-golvets efterhandskontroll
+ * och därför ska ligga sist och väga tyngst.
  */
-export function vinkelMedVag(vinkelInstruktion: string, vag: CtaVag, perspektiv?: string): string {
-  return [vinkelInstruktion, perspektiv, vag.instruktion].filter(Boolean).join("\n");
+export function vinkelMedVag(vinkelInstruktion: string, vag: CtaVag, perspektiv?: string, ton?: string): string {
+  return [vinkelInstruktion, perspektiv, ton, vag.instruktion].filter(Boolean).join("\n");
 }
 
 /**
