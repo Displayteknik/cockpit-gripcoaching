@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Space_Grotesk, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import CoachWidgetGate from "@/components/CoachWidgetGate";
 import VisitorTracker from "@/components/VisitorTracker";
@@ -19,16 +19,31 @@ function isHmMotorSurface(path: string): boolean {
   return true;
 }
 
-const spaceGrotesk = Space_Grotesk({
+// ★ TYPSNITTEN LIGGER I PROJEKTET, INTE HOS GOOGLE (Håkans beslut 13/8).
+//
+//   `next/font/google` hämtar filerna VID BYGGTIDEN. Deployen 19:09 föll på att
+//   fonts.gstatic.com svarade 404 på sju Inter-filer: Google hade bytt filnamn, medan
+//   Vercels byggcache satt kvar med den gamla CSS:en som pekade på de gamla namnen.
+//   Följdfelet i loggen ("Can't resolve @vercel/turbopack-next/internal/font/google/font")
+//   såg ut som ett kodfel men var det inte, och det stoppade allt tills cachen tömdes.
+//
+//   Ett bygge ska inte kunna falla för att en extern tjänst byter filnamn. Filerna är
+//   därför hämtade en gång och incheckade. Båda familjerna är variabla, alltså EN fil per
+//   familj som täcker 400 till 700. Latin-subsetet räcker: all kundsynlig text är svensk.
+//   Inter och Space Grotesk ligger båda under SIL Open Font License, som uttryckligen
+//   tillåter att filerna distribueras med projektet.
+const spaceGrotesk = localFont({
+  src: "./fonts/space-grotesk-var-latin.woff2",
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
-const inter = Inter({
+const inter = localFont({
+  src: "./fonts/inter-var-latin.woff2",
   variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
