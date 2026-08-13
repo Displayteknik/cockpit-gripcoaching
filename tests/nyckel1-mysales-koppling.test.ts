@@ -69,7 +69,8 @@ describe("NYCKEL-1 · en nyckel som inte fungerar sparas aldrig", () => {
   });
 
   it("vyn visar utfallet per behörighet, inte bara ett grönt kvitto", () => {
-    expect(VY).toContain("Vad nyckeln faktiskt får göra");
+    // Rubriken namnger dessutom VILKEN av de två nycklarna kvittot gäller (NYCKEL-1d).
+    expect(VY).toContain("vad den faktiskt får göra");
     expect(VY).toContain("— nekas (");
   });
 
@@ -93,7 +94,8 @@ describe("NYCKEL-1 · den bor i Inställningar", () => {
   });
 
   it("nyckeln ligger inte kvar i fältet efter sparning", () => {
-    expect(VY).toContain('setPit("")');
+    expect(VY).toContain('setPitAllt("")');
+    expect(VY).toContain('setPitSocial("")');
   });
 
   it("nyckeln returneras aldrig av GET", () => {
@@ -118,7 +120,7 @@ describe("NYCKEL-1b · en smalare nyckel får ALDRIG skriva över en bredare", (
 
   it("speglingen sker bara när den nya nyckeln klarar affärerna", () => {
     expect(ROUTE).toContain('const klararAffarer = behorigheter.find((b) => b.namn === "Affärer")?.ok === true');
-    expect(ROUTE).toContain('if (!klararAffarer) throw new Error("hoppar över spegling")');
+    expect(ROUTE).toContain('if (!skriv) throw new Error("hoppar över spegling")');
   });
 
   it("den gamla nyckeln lämnas orörd, och användaren får veta varför", () => {
@@ -128,7 +130,7 @@ describe("NYCKEL-1b · en smalare nyckel får ALDRIG skriva över en bredare", (
 
   it("svaret säger om speglingen skedde eller inte", () => {
     // Utan det fältet ser en halv koppling ut som en hel.
-    expect(ROUTE).toContain("speglad: klararAffarer");
+    expect(ROUTE).toContain("speglad: skriv");
   });
 });
 
@@ -153,15 +155,66 @@ describe("NYCKEL-1c · rutan visar sanningen INNAN man klistrar in", () => {
   });
 
   it("vyn visar två separata besked", () => {
-    expect(VY).toContain("Kanaler och kundlista");
-    expect(VY).toContain("Fokus, DM och leads");
+    expect(VY).toContain("Totalnyckeln");
+    expect(VY).toContain("Kanalnyckeln");
+    expect(VY).toContain("Fokus, DM, leads och onboarding");
   });
 
   it("vyn namnger vad som nekas, inte bara att något är fel", () => {
-    expect(VY).toContain("Nekas: ${trasiga.map((b) => b.namn.toLowerCase()).join(\", \")}");
+    expect(VY).toContain("nekas: ${trasiga.map((b) => b.namn.toLowerCase()).join(\", \")}");
   });
 
   it("vyn säger när de två använder olika nycklar", () => {
-    expect(VY).toContain("De två rutorna använder olika nycklar");
+    expect(VY).toContain("De två är olika nycklar");
+    expect(VY).toContain("Det är samma nyckel på båda ställena");
+  });
+});
+
+describe("NYCKEL-1d · två fält, och Håkan väljer själv vilket", () => {
+  // Håkans beställning 13/8: "gör två fält där jag kan ha en total nyckel om jag vill det,
+  // och en nyckel för det sociala". Det ENA fältet lät koden gissa utifrån behörigheterna
+  // vilken nyckel som skulle hamna var. Nu pekar han själv ut det.
+  it("målet skickas med och avgör vart nyckeln skrivs", () => {
+    expect(ROUTE).toContain('const mal: "allt" | "socialt" = b.mal === "socialt" ? "socialt" : "allt"');
+    expect(VY).toContain('koppla("allt")');
+    expect(VY).toContain('koppla("socialt")');
+  });
+
+  it("kanalfältet rör ALDRIG Fokus-nyckeln", () => {
+    // Hela poängen med ett eget fält: vill man bara byta den nyckel som publicerar ska
+    // inget annat kunna gå sönder av det.
+    const gren = ROUTE.slice(ROUTE.indexOf('if (mal === "socialt")'), ROUTE.indexOf("// TOTALNYCKELN"));
+    expect(gren).not.toContain("coach_users");
+    expect(gren).toContain("coachRader: 0");
+  });
+
+  it("äldre anropsställen utan mal beter sig som förut", () => {
+    // StudioMaker postar { locationId, pit } utan mal. Utan defaulten hade dess koppling
+    // tyst blivit en ren kanalkoppling.
+    expect(ROUTE).toContain('b.mal === "socialt" ? "socialt" : "allt"');
+  });
+
+  it("en smalare totalnyckel stoppas, men går att skriva över medvetet", () => {
+    expect(ROUTE).toContain("const skriv = klararAffarer || tvinga");
+    expect(ROUTE).toContain("kanTvinga: true");
+    expect(VY).toContain("Skriv över Fokus-nyckeln ändå");
+    expect(VY).toContain('koppla("allt", true)');
+  });
+
+  it("båda fälten har egen synlig rubrik — inte bara en platshållare", () => {
+    // Håkan såg bara ett fält för MySales-id och hittade inte nyckelfältet alls.
+    expect(VY).toContain("1. Location-id (kundens MySales-id)");
+    expect(VY).toContain("2. Totalnyckel — gäller allt");
+    expect(VY).toContain("3. Bara sociala kanaler");
+  });
+
+  it("rutan säger vad varje sparad nyckel gäller, inte bara att den finns", () => {
+    expect(VY).toContain("Nycklar som ligger inne nu");
+    expect(VY).toContain("Ingen nyckel sparad.");
+    expect(VY).toContain("Sparad, allt fungerar.");
+  });
+
+  it("inställningssidan beskriver att det är två fält", () => {
+    expect(INSTALLNINGAR).toContain("Två fält");
   });
 });

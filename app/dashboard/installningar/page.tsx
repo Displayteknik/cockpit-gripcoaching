@@ -39,7 +39,7 @@ const SECTIONS: SectionDef[] = [
     category: "integrations",
     title: "MySales (kundens konto)",
     icon: Plug,
-    description: "En nyckel som racker till allt: kanalerna, publiceringen och kundlistan. Testas mot MySales innan den sparas.",
+    description: "Två fält: en totalnyckel som gäller allt, eller en nyckel bara för de sociala kanalerna. Rutan visar vilka nycklar som redan ligger inne, och testar mot MySales innan något sparas.",
     customComponent: "mysales",
   },
   {

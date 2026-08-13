@@ -107,13 +107,25 @@ export async function GET() {
   }
 }
 
-// POST { locationId, pit } — validerar mot MySales INNAN sparning. Fel token sparas aldrig.
+// POST { locationId, pit, mal?, tvinga? } — validerar mot MySales INNAN sparning.
+// Fel token sparas aldrig.
+//
+// ★ NYCKEL-1d, Håkans beställning 13/8: "gör två fält där jag kan ha en total nyckel om jag
+// vill det, och en nyckel för det sociala". Det ENA fältet gjorde valet åt honom — koden
+// gissade utifrån behörigheterna vilken nyckel som skulle hamna var. Nu säger han det själv:
+//
+//   mal = "allt"     → nyckeln skrivs till BÅDA (kanalerna OCH Fokus/DM/leads/onboarding)
+//   mal = "socialt"  → nyckeln skrivs BARA till clients.ghl_pit, Fokus-nyckeln rörs aldrig
+//
+// Utan `mal` gäller "allt", så äldre anropsställen (StudioMaker) beter sig som förut.
 export async function POST(req: NextRequest) {
   try {
     const clientId = await getActiveClientId();
     const b = await req.json().catch(() => ({}));
     const locationId = (b.locationId || "").toString().trim();
     const pit = (b.pit || "").toString().trim();
+    const mal: "allt" | "socialt" = b.mal === "socialt" ? "socialt" : "allt";
+    const tvinga = b.tvinga === true;
     if (!locationId || !pit) return NextResponse.json({ error: "Location-id och nyckel krävs" }, { status: 400 });
 
     // Grindvillkoret är sociala konton: utan den kan Cockpit inte göra sitt huvudjobb, och
@@ -132,7 +144,22 @@ export async function POST(req: NextRequest) {
     const { error } = await sb.from("clients").update({ ghl_location_id: locationId, ghl_pit: pit }).eq("id", clientId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // EN NYCKEL RÄCKER — men BARA om den nya är minst lika bred som den den ersätter.
+    // Kanalfältet rör ALDRIG Fokus-nyckeln. Det är hela poängen med att det är ett eget fält:
+    // vill man bara byta den nyckel som publicerar, ska inget annat kunna gå sönder av det.
+    if (mal === "socialt") {
+      return NextResponse.json({
+        connected: true,
+        mal,
+        accounts: check.accounts.length,
+        kanaler: check.accounts.map((a) => ({ platform: a.platform, namn: a.name, utgangen: a.isExpired })),
+        behorigheter,
+        coachRader: 0,
+        speglad: false,
+        notis: "Sparad för kanalerna, publiceringen och kundlistan. Fokus, DM och leads använder sin egen nyckel — den är orörd.",
+      });
+    }
+
+    // TOTALNYCKELN skriver till båda — men en smalare nyckel får inte tyst slå ut en bredare.
     //
     // ⚠ FÖRSTA VERSIONEN SKREV ÖVER RAKT AV, och det var fel. Håkan påpekade att
     // affärsbehörigheten låg i en separat integration som lades in i onboarding-steget.
@@ -140,15 +167,16 @@ export async function POST(req: NextRequest) {
     // DM-tavlan. Mätt efteråt: precis så blev det — pipelines svarade 401 direkt efter
     // speglingen, på en kund där Fokus dessförinnan fungerade.
     //
-    // Regeln nu: spegla bara när den nya nyckeln klarar affärerna, för det är den
-    // behörighet Fokus-vägen faktiskt behöver. Klarar den inte det lämnas den gamla
-    // nyckeln orörd och svaret säger varför. Att byta en fungerande nyckel mot en smalare
-    // är ingen uppgradering.
+    // Regeln: klarar totalnyckeln affärerna skrivs den till båda direkt. Klarar den inte det
+    // STANNAR den — men den stannar inte i vägen. Svaret säger vad som saknas och erbjuder
+    // `tvinga`, så Håkan kan skriva över ändå när han vet vad han gör. Skillnaden mot förut
+    // är att beslutet är hans och att han ser vad det kostar innan han tar det.
     const klararAffarer = behorigheter.find((b) => b.namn === "Affärer")?.ok === true;
+    const skriv = klararAffarer || tvinga;
     let coachRader = 0;
-    if (!klararAffarer) console.warn("[ghl-config] nya nyckeln saknar affärsbehörighet — coach_users lämnas orörd");
+    if (!skriv) console.warn("[ghl-config] totalnyckeln saknar affärsbehörighet — coach_users lämnas orörd");
     try {
-      if (!klararAffarer) throw new Error("hoppar över spegling");
+      if (!skriv) throw new Error("hoppar över spegling");
       const { data: uppdaterade } = await sb
         .from("coach_users")
         .update({ ghl_api_token: pit })
@@ -162,14 +190,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       connected: true,
+      mal,
       accounts: check.accounts.length,
       kanaler: check.accounts.map((a) => ({ platform: a.platform, namn: a.name, utgangen: a.isExpired })),
       behorigheter,
       coachRader,
-      speglad: klararAffarer,
-      ...(klararAffarer
+      speglad: skriv,
+      ...(skriv
         ? {}
         : {
+            kanTvinga: true,
             varning:
               "Nyckeln saknar behörighet till affärerna, så Fokus idag och DM-tavlan använder fortfarande den nyckel som lades in vid onboardingen. " +
               "Lägg till Opportunities på integrationen i MySales och klistra in nyckeln igen, så räcker en enda.",
