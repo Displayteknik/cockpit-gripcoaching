@@ -150,6 +150,10 @@ function buildNavSections(resourceModule: string): NavSection[] {
         // components/dashboard/PostsTabs.tsx — alltså bara om man redan stod på en inläggssida.
         // Båda har en motsvarighet i kundportalen och hör därför i den här zonen.
         { href: "/dashboard/dm", label: "DM & pipeline", icon: MessageSquare, kundHref: "/k/dm" },
+        // KUNDREGISTER-1: står bredvid DM med flit — det är samma människor, sedda från
+        // två håll. Listan är alla kontakter i MySales, tavlan är de som har ett pågående
+        // samtal. En sida som inte finns i menyn finns inte (MENY-2).
+        { href: "/dashboard/kunder", label: "Kunder", icon: Users, kundHref: "/k/kunder" },
         { href: "/dashboard/veckoplan", label: "Veckoplan", icon: CalendarDays, kundHref: "/k/veckoplan" },
       ],
     },
