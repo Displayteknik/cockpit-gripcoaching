@@ -379,7 +379,7 @@ webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en 
 | KUNDTEXT | KLART OCH VERIFIERAT | Leverantörsfel (faktura, nyckel) döljs för kund, loggas fullt internt |
 | NATTLOOP | AVSTÄNGD | 52 kr/mån, två lås, koden orörd (`NATTLOOP_PA=1` slår på) |
 | KANAL-3 | KLART, EJ KLICKAD | Utkast **eller** publicera direkt. Statusvärdet verifierat mot live-API. Karusell publiceras aldrig direkt |
-| NYCKEL-1 + 1b | KLART OCH VERIFIERAT | MySales-koppling i Inställningar per kund, nyckeln testas mot fyra behörigheter före sparning |
+| NYCKEL-1, 1b, 1c | KLART OCH VERIFIERAT | MySales-koppling i Inställningar per kund. Nyckeln testas mot fyra behörigheter före sparning, en smalare nyckel skriver aldrig över en bredare, och rutan visar BÅDA nycklarnas status vid inläsning. ★ 1c kom ur Håkans invändning "det fanns bara ett ställe att klistra in på, då blev det ju fel" — ett verktyg som kräver att man gissar är inte färdigt |
 | `docs/API-KOSTNADER.md` | KLART | Alla API:er, konton, priser och luckor, mätt ur `ai_usage_events` |
 
 ### VÄNTAR PÅ HÅKAN (blockerar annars)
@@ -390,6 +390,9 @@ webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en 
    DM-tavlan svarar 401 för For Balance**. Lägg till View + Edit Opportunities och klistra in
    nyckeln igen i Inställningar → Integrationer → MySales. Grinden finns nu i koden
    (`klararAffarer`), men den redan överskrivna nyckeln måste ersättas för hand.
+   **Öppna rutan först** — den visar nu båda nycklarnas behörigheter och vad som nekas,
+   så du ser läget innan du rör något. Behåll alla scopes den gamla integrationen hade:
+   kundnyckeln används även av provisioneringen när ett konto sätts upp från grunden.
 2. **Samma nyckel-runda för AluCon och Makzy** — deras gamla nycklar ger 401 på allt.
 3. **Auto reload på Anthropic** — saldot tog slut mitt på dagen och ingenting varnade.
    Kontot följs inte automatiskt (`provider_accounts.saldo_kalla = manuellt`).
