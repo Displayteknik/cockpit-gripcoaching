@@ -646,7 +646,7 @@ async function detectDomainRedirect(rootUrl: string): Promise<{ primaryHost: str
   const bare = u.host.replace(/^www\./, "");
   const wwwHost = "www." + bare;
   const probe = async (host: string) => {
-    const r = await hamtaRatt(`${u.protocol}//${host}/`, { redirect: "manual", timeoutMs: 8000, accepteraIckeOk: true });
+    const r = await hamtaRatt(`${u.protocol}//${host}/`, { redirect: "manual", timeoutMs: 8000, accepteraIckeOk: true, forsok: 1 });
     let locHost = "";
     const loc = r.headers?.get("location");
     if (loc) { try { locHost = new URL(loc, `${u.protocol}//${host}`).host; } catch { /* ignore */ } }

@@ -89,6 +89,28 @@ function klassaKast(e: unknown): { orsak: HamtOrsak; fel: string } {
   return { orsak: "natverk", fel: `Nätverksfel: ${meddelande}` };
 }
 
+/**
+ * S-6 — headers en riktig webbläsare alltid skickar.
+ *
+ * FYNDET (Håkan 2026-08-13): djupgranskningen av forbalance.se föll på "Servern svarade
+ * HTTP 500". Sajten svarar 200 med 496 KB från en vanlig uppkoppling — med vilken
+ * user-agent som helst, även vår egen. Felet kom bara från drift.
+ *
+ * Skillnaden satt i det vi INTE skickade. Hämtningen satte enbart User-Agent, alltså gick
+ * begäran ut med ett tomt Accept-värde (allt-tillåtet) och utan `Accept-Language`. En begäran som utger sig för
+ * att vara Mozilla men saknar de headers varje webbläsare skickar är en känd bot-signatur,
+ * och skyddet framför GHL-sajter är märkbart hårdare mot ett datacenter-IP än mot en
+ * vanlig bredbandslinje. Därav 200 lokalt och 500 från Vercel.
+ *
+ * ⚠ Det här är fortfarande en HÄRLEDNING, inte ett återskapat fel: 500:an gick inte att
+ * framkalla härifrån. Headers gör begäran ärligare och kan inte göra något sämre, men
+ * beviset är att djupgranskningen går igenom i drift.
+ */
+const WEBBLASAR_HEADERS: Record<string, string> = {
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Language": "sv-SE,sv;q=0.9,en;q=0.8",
+};
+
 export interface HamtOpts {
   timeoutMs?: number;
   redirect?: RequestRedirect;
@@ -96,6 +118,19 @@ export interface HamtOpts {
   accepteraIckeOk?: boolean;
   /** Extra headers. User-Agent går aldrig att åsidosätta. */
   headers?: Record<string, string>;
+  /**
+   * Antal försök totalt. Default 2 = ett omtag.
+   *
+   * Bara 5xx, nätverksfel och timeout görs om — 4xx är ett svar, inte ett strul, och att
+   * göra om en 404 är att låtsas att den kan bli något annat. Redirect-proben skickar 1:
+   * den VILL ha sin 3xx och ska aldrig vänta.
+   */
+  forsok?: number;
+}
+
+/** 5xx, nätverksfel och timeout är värda ett omtag. Allt annat är sajtens svar. */
+function vardOmtag(status: number | null): boolean {
+  return status === null || status >= 500;
 }
 
 export interface HamtSvar {
@@ -110,11 +145,28 @@ export interface HamtSvar {
  * och redirect-proben, som har egna regler om vilka statuskoder som är meningsfulla.
  */
 export async function hamtaRatt(url: string, opts?: HamtOpts): Promise<HamtSvar> {
+  const forsok = Math.max(1, opts?.forsok ?? 2);
+  let sista: HamtSvar | null = null;
+  for (let n = 1; n <= forsok; n++) {
+    const svar = await hamtaEnGang(url, opts);
+    if (svar.logg.ok || !vardOmtag(svar.logg.status)) return svar;
+    sista = svar;
+    if (n < forsok) {
+      // Kort paus. Ett omtag i samma andetag träffar samma överbelastning eller samma
+      // spärr; en halv sekund räcker för att komma förbi ett tillfälligt strul utan att
+      // göra crawlen märkbart långsammare.
+      await new Promise((r) => setTimeout(r, 500 * n));
+    }
+  }
+  return sista!;
+}
+
+async function hamtaEnGang(url: string, opts?: HamtOpts): Promise<HamtSvar> {
   const t0 = Date.now();
   const timeoutMs = opts?.timeoutMs ?? 20000;
   try {
     const res = await fetch(url, {
-      headers: { ...(opts?.headers || {}), "User-Agent": SEO_USER_AGENT },
+      headers: { ...WEBBLASAR_HEADERS, ...(opts?.headers || {}), "User-Agent": SEO_USER_AGENT },
       signal: AbortSignal.timeout(timeoutMs),
       ...(opts?.redirect ? { redirect: opts.redirect } : {}),
     });
