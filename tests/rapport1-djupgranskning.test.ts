@@ -295,7 +295,8 @@ describe("R-2 · hela grinden i ett svep", () => {
     expect(g.text).toContain("Hemsida24");
     expect(g.text).toContain("[DIN SIFFRA]");
     expect(g.text).toContain("PLATSHÅLLARE");
-    expect(g.text).toContain("Luckor som måste fyllas i");
+    // R-5: lucklistan har kontext numera (sida, sektion och meningen talet står i).
+    expect(g.text).toContain("Siffror du behöver fylla i");
     expect(g.avvikelser.map((a) => a.typ)).toEqual(
       expect.arrayContaining(["tankstreck", "plattformsnamn", "obackad-siffra", "platshallare"]),
     );

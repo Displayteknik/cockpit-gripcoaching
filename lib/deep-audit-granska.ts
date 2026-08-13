@@ -21,6 +21,8 @@
 // listas sist så inget publiceras av misstag.
 
 import { obackadeSiffror, taBortTankstreck, talTokens } from "@/lib/content/writing-rules";
+import { grindaSiffror, lucklista, beslutstabell, type Sifferbeslut } from "@/lib/deep-audit-siffror";
+import { grindaCitat, type CitatDom } from "@/lib/deep-audit-citat";
 import { oversattPlattformIText } from "@/lib/plattform-namn";
 import { hittaInkonsistens } from "@/lib/deep-audit-tackning";
 
@@ -29,10 +31,22 @@ export interface GranskningsIndata {
   tillatnaTal: string[];
   /** URL:erna crawlen faktiskt läste. Underlag för konsistenskontrollen. */
   crawladeUrler: string[];
+  /** R-5: tal ur Googles data. Maskas aldrig. */
+  gscTal?: string[];
+  /** R-5: tenantens kunskapsfält, källa för branschfakta. */
+  kunskapsfalt?: string | null;
+  /** R-4: crawlad sajttext och profilens kundcitat. Enda tillåtna citatkällor. */
+  citatkallor?: string[];
+  /** R-4: verifierade siffror och story-bank, täckning för auktoritetsanspråk. */
+  tackningstext?: string | null;
+  /** R-4: profilens kundcitat var för sig. Avgör VAD som räknas som ett kundcitat. */
+  profilcitat?: string[];
 }
 
 export interface Avvikelse {
-  typ: "tankstreck" | "obackad-siffra" | "inkonsistens" | "plattformsnamn" | "platshallare";
+  typ:
+    | "tankstreck" | "obackad-siffra" | "inkonsistens" | "plattformsnamn" | "platshallare"
+    | "citat-utokat" | "citat-okant" | "ansprak" | "riktvarde" | "skrivfel";
   detalj: string;
 }
 
@@ -41,6 +55,10 @@ export interface GranskadRapport {
   avvikelser: Avvikelse[];
   /** Siffror som byttes mot [DIN SIFFRA]. Listas även i rapportens slut. */
   luckor: string[];
+  /** R-5: ett beslut per tal, med klass och källa. Går att stickprova. */
+  sifferbeslut: Sifferbeslut[];
+  /** R-4: varje citats utfall mot sin källa. */
+  citatdomar: CitatDom[];
 }
 
 /** Rubriken som markerar var de färdiga texterna börjar. Grinden är hårdast där. */
@@ -198,6 +216,34 @@ export function tillatnaTalFranKallor(...kallor: (string | null | undefined)[]):
 }
 
 /**
+ * Kända skrivfel ur skarpa rapporter.
+ *
+ * ⚠ DET HÄR ÄR INGEN STAVNINGSKONTROLL, och ska inte låtsas vara det. Det är en lista över
+ * fel Håkan hittat i levererad text, rättade en gång för alla. En generell svensk
+ * stavningskontroll på markdown skulle fälla facktermer, produktnamn och engelska block.
+ * Nya fel läggs till här när de upptäcks.
+ */
+const SKRIVFEL: [RegExp, string][] = [
+  [/\bVat det är\b/g, "Vad det är"],
+  [/\bvat det är\b/g, "vad det är"],
+  [/\bpusselsbitar\b/gi, "pusselbitar"],
+  [/\bdet största ranksignalen\b/gi, "den största ranksignalen"],
+  [/\bdet viktigaste ranksignalen\b/gi, "den viktigaste ranksignalen"],
+];
+
+export function rattaSkrivfel(md: string): { text: string; rattade: string[] } {
+  let text = md;
+  const rattade: string[] = [];
+  for (const [re, ratt] of SKRIVFEL) {
+    if (re.test(text)) {
+      rattade.push(ratt);
+      text = text.replace(re, ratt);
+    }
+  }
+  return { text, rattade };
+}
+
+/**
  * Kör hela grinden på en färdig rapport. Ordningen är medveten: språk först, sedan
  * siffror (så [DIN SIFFRA] inte råkar saneras), sedan markeringar och kontroller.
  */
@@ -209,6 +255,12 @@ export function granskaRapport(md: string, indata: GranskningsIndata): GranskadR
   if (tank.antal) avvikelser.push({ typ: "tankstreck", detalj: `${tank.antal} tankstreck togs bort` });
   let text = tank.text;
 
+  const skrivfel = rattaSkrivfel(text);
+  if (skrivfel.rattade.length) {
+    avvikelser.push({ typ: "skrivfel", detalj: skrivfel.rattade.join(", ") });
+    text = skrivfel.text;
+  }
+
   const plattform = oversattPlattformIText(text);
   if (plattform.bytta.length) {
     avvikelser.push({ typ: "plattformsnamn", detalj: plattform.bytta.join(", ") });
@@ -219,38 +271,67 @@ export function granskaRapport(md: string, indata: GranskningsIndata): GranskadR
   //   till "Anna, [DIN SIFFRA]" — åldern är ju obackad — och då matchar citatmönstret inte
   //   längre, så platshållaren slipper undan markeringen. Citaten plockas därför UT först,
   //   maskeras medan sifferngrinden går, och läggs tillbaka efteråt.
-  const citat = markeraPlatshallarcitat(text);
+  const platshallare = markeraPlatshallarcitat(text);
   const maskerade: string[] = [];
-  if (citat.funna.length) {
-    avvikelser.push({ typ: "platshallare", detalj: `exempelcitat markerade: ${citat.funna.join("; ")}` });
-    text = citat.text.replace(/> ⚠ PLATSHÅLLARE:[^\n]*/g, (m) => {
+  if (platshallare.funna.length) {
+    avvikelser.push({ typ: "platshallare", detalj: `exempelcitat markerade: ${platshallare.funna.join("; ")}` });
+    text = platshallare.text.replace(/> ⚠ PLATSHÅLLARE:[^\n]*/g, (m) => {
       maskerade.push(m);
       return `[[PLATSHALLARE_${maskerade.length - 1}]]`;
     });
   }
 
-  const { fore, efter } = delaVidKlistraIn(text);
-  let luckor: string[] = [];
-  if (efter) {
-    const grindad = luckorForObackadeSiffror(efter, tillatna);
-    luckor = grindad.luckor;
-    text = fore + grindad.text;
-    if (luckor.length) {
-      avvikelser.push({ typ: "obackad-siffra", detalj: `${luckor.length} tal utan källa blev [DIN SIFFRA]: ${luckor.join(", ")}` });
-      text +=
-        `\n\n### Luckor som måste fyllas i innan något publiceras\n\n` +
-        `Följande tal saknade källa i din sajttext, dina verifierade siffror och Googles data. ` +
-        `De är utbytta mot [DIN SIFFRA] i texterna ovan:\n\n` +
-        luckor.map((l) => `- ${l}`).join("\n") + "\n";
-    }
+  // ★ R-4: citaten först, INNAN siffergrinden. Ett utökat citat byts mot källans egen
+  //   formulering, och den bytta texten ska sedan grindas som allt annat.
+  const citat = grindaCitat(text, {
+    kallor: indata.citatkallor ?? [],
+    profilcitat: indata.profilcitat ?? [],
+    tackningstext: indata.tackningstext ?? null,
+  });
+  text = citat.text;
+  const utokade = citat.domar.filter((d) => d.utfall === "utokat");
+  const okanda = citat.domar.filter((d) => d.utfall === "okant");
+  if (utokade.length) avvikelser.push({ typ: "citat-utokat", detalj: `${utokade.length} citat kortades till kundens egna ord` });
+  if (okanda.length) avvikelser.push({ typ: "citat-okant", detalj: `${okanda.length} citat kunde inte hittas i någon källa` });
+  const otackta = citat.ansprak.filter((a) => !a.tackt);
+  if (otackta.length) {
+    avvikelser.push({ typ: "ansprak", detalj: otackta.map((a) => a.ansprak.fras).join("; ") });
+  }
+
+  // ★ R-5: siffergrinden körs på HELA rapporten med ETT beslut per tal, i tre källklasser.
+  //   Den gamla vägen grindade bara klistra-in-delen, vilket gjorde att samma tal kunde
+  //   vara omaskat i "Så här gör du" och maskat i den färdiga texten.
+  const siffror = grindaSiffror(text, {
+    belagda: tillatna,
+    kunskapsfalt: indata.kunskapsfalt ?? null,
+    gscTal: new Set(indata.gscTal ?? []),
+  });
+  text = siffror.text;
+  const luckor = siffror.luckor.map((l) => l.tal);
+  if (luckor.length) {
+    avvikelser.push({ typ: "obackad-siffra", detalj: `${luckor.length} tenant-tal utan täckning blev [DIN SIFFRA]` });
+    text += `\n\n${lucklista(siffror.luckor)}`;
+  }
+  const riktvarden = siffror.beslut.filter((b) => b.utfall === "riktvarde");
+  if (riktvarden.length) {
+    avvikelser.push({ typ: "riktvarde", detalj: `${riktvarden.length} branschfakta märktes som riktvärde i stället för att maskas` });
   }
 
   // Maskeringen tillbaka. Markeringen ska stå ORÖRD i den färdiga texten.
   text = text.replace(/\[\[PLATSHALLARE_(\d+)\]\]/g, (_, i: string) => maskerade[Number(i)] ?? "");
 
+  // ⚠ MÄTT: efter citat- och siffergrinden steg tankstrecken från 0 till 562, eftersom
+  //   BÅDA klistrar in ny text (källcitat, lucklista, riktvärdesmärkning) som aldrig gått
+  //   genom språksaneringen. Den körs därför en gång till, sist, på allt som står kvar.
+  const tankSist = saneraTankstreck(text);
+  if (tankSist.antal) {
+    avvikelser.push({ typ: "tankstreck", detalj: `${tankSist.antal} tankstreck i inklistrad text togs bort` });
+    text = tankSist.text;
+  }
+
   for (const i of hittaInkonsistens(text, indata.crawladeUrler)) {
     avvikelser.push({ typ: "inkonsistens", detalj: `${i.fras}: "${i.rad}"` });
   }
 
-  return { text, avvikelser, luckor };
+  return { text, avvikelser, luckor, sifferbeslut: siffror.beslut, citatdomar: citat.domar };
 }

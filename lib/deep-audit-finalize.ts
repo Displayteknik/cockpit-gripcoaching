@@ -1,6 +1,7 @@
 import { supabaseService } from "@/lib/supabase-admin";
 import { loggaHandelse } from "@/lib/ai-usage";
 import { granskaRapport } from "@/lib/deep-audit-granska";
+import { beslutstabell } from "@/lib/deep-audit-siffror";
 
 const MODEL = "claude-sonnet-4-5";
 
@@ -27,7 +28,11 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
   let finalized = 0;
   for (const row of (pending ?? []) as Array<{
     id: string;
-    metadata: { batch_id?: string; tillatna_tal?: string[]; crawlade_urler?: string[] } | null;
+    metadata: {
+      batch_id?: string; tillatna_tal?: string[]; crawlade_urler?: string[];
+      gsc_tal?: string[]; kunskapsfalt?: string | null;
+      citatkallor?: string[]; tackningstext?: string | null;
+    } | null;
   }>) {
     const batchId = row.metadata?.batch_id;
     if (!batchId) continue;
@@ -79,14 +84,35 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
       //   välskriven texten ser ut.
       let avvikelser: { typ: string; detalj: string }[] = [];
       let luckor: string[] = [];
+      let sifferbeslut: unknown[] = [];
       if (text) {
         const granskad = granskaRapport(text, {
           tillatnaTal: row.metadata?.tillatna_tal ?? [],
           crawladeUrler: row.metadata?.crawlade_urler ?? [],
+          gscTal: row.metadata?.gsc_tal ?? [],
+          kunskapsfalt: row.metadata?.kunskapsfalt ?? null,
+          citatkallor: row.metadata?.citatkallor ?? [],
+          tackningstext: row.metadata?.tackningstext ?? null,
         });
         text = granskad.text;
         avvikelser = granskad.avvikelser;
         luckor = granskad.luckor;
+        sifferbeslut = granskad.sifferbeslut;
+        // R-5/punkt 2: beslutstabellen bifogas rapporten sa varje tal gar att stickprova
+        // mot klass och kalla, utan att behova leta i loggar.
+        if (granskad.sifferbeslut.length) {
+          // R-5/punkt 2: beslutstabellen bifogas rapporten så varje tal går att stickprova
+          // mot klass och källa, utan att någon behöver leta i loggar.
+          text += [
+            "", "---", "",
+            "### Så här bedömdes varje siffra",
+            "",
+            "T = din egen uppgift, B = branschfakta, G = Googles data.",
+            "",
+            beslutstabell(granskad.sifferbeslut),
+            "",
+          ].join("\n");
+        }
         if (avvikelser.length) {
           console.warn(`[djupgranskning] grinden rättade ${avvikelser.length} avvikelser i ${row.id}: ` +
             avvikelser.map((a) => a.typ).join(", "));
@@ -105,6 +131,7 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
             // från en som var korrekt från början, och då kan felkällan aldrig mätas.
             grind_avvikelser: avvikelser,
             grind_luckor: luckor,
+            grind_sifferbeslut: sifferbeslut,
           },
         })
         .eq("id", row.id);

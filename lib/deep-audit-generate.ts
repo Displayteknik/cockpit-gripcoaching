@@ -257,6 +257,44 @@ vad kunden kommer att känna.
 Exempelcitat med påhittade personer ("Anna, 42") markeras alltid tydligt som platshållare
 som MÅSTE bytas före publicering, och tas med i att-göra-listan.
 
+# KUNDCITAT ÄR HELIGA (R-4, Håkans granskning 13/8)
+
+Rapportens första version skrev IN meningar i befintliga kundcitat och signerade dem med
+namn. X-Trafiks citat fick "Skärmarna är vädertåliga (IP66) och har aldrig behövt bytas"
+tillagt, och Platinum fick "folk stannar och tittar". Ingen av meningarna finns hos kunden.
+Texten var dessutom märkt färdig att klistra in, alltså uppmanades kunden att publicera ord
+en namngiven person aldrig sagt.
+
+- Ett citat återges ORDAGRANT eller inte alls. Utöka aldrig, korta aldrig så innebörden
+  ändras, skriv aldrig om inuti citattecknen. Källan är crawlad sajttext eller profilens
+  kundcitat, ingenting annat.
+- Kompletterande fakta skrivs UTANFÖR citattecknen som rapportens egen text, och lyder då
+  under sifferkraven som allt annat.
+- Vill du ha ett fylligare citat: skriv i stället en uppmaning till ägaren om att BE kunden
+  om en utökad version, med två eller tre konkreta förslagsfrågor. Kundens ord ska komma
+  från kunden.
+- AUKTORITETSANSPRÅK ("våra egna driftmätningar visar", "baserat på våra tester", "vi vet
+  efter 15 år") får bara skrivas om mätningen finns i profilens verifierade siffror eller
+  story-bank. Annars formuleras påståendet generellt.
+
+# SIFFROR HAR KÄLLKLASSER (R-5)
+
+Maska ALDRIG ett tal som hör till klass B eller G. Grinden efter dig känner igen klasserna,
+men du ska skriva rätt från början:
+
+- **KLASS T, tenantens egna:** priser, egna specifikationer, kundresultat, leveransdetaljer,
+  antal anställda, år i branschen. Kräver täckning i profilen eller den crawlade sajttexten.
+  Saknas den: skriv [DIN SIFFRA].
+- **KLASS B, branschfakta:** standardnummer (IEC 60529, IEC 62595), typiska intervall
+  (vanlig TV 300-400 nits, LED-livslängd 50 000-100 000 timmar), fysik. Finns de i
+  tenantens kunskapsfält skrivs de rakt ut. Saknas kunskapsfältet skriver du ut talet ändå
+  och märker det "riktvärde, verifiera mot din leverantör". Branschfakta blir ALDRIG en lucka.
+- **KLASS G, Googles data:** visningar, klick, position ur GSC. Alltid källbelagda, skrivs
+  alltid ut.
+
+Samma tal ska behandlas likadant i hela rapporten. Skriv aldrig ett tal i klartext i en
+åtgärdsinstruktion och som lucka i den färdiga texten.
+
 # STRUKTURERAD DATA (schema)
 
 - Lägg ALDRIG aggregateRating i schemat baserat på betyg från en tredjepartssajt
@@ -265,6 +303,10 @@ som MÅSTE bytas före publicering, och tas med i att-göra-listan.
   omdömena i texten, men inte i koden.
 - sameAs får BARA innehålla profiler som står i FAKTA under "sociala profiler". Hitta
   aldrig på ett konto, och utelämna aldrig ett som finns.
+- Saknas besöksadress på sajten: rekommendera ALDRIG att LocalBusiness-schemat tas bort.
+  En verksamhet kan ha en Google-företagsprofil utan publicerad adress, och då är schemat
+  rätt. Ställ en öppen fråga till ägaren i stället: "har du en Google-företagsprofil, och
+  ska den kopplas ihop med sajten?"
 
 # Vad du far i input
 
@@ -307,7 +349,7 @@ export async function runDeepAudit(clientId: string, urlOverride?: string): Prom
 
   const [client, profile, gsc, audits] = await Promise.all([
     sb.from("clients").select("name, slug, public_url").eq("id", clientId).maybeSingle(),
-    sb.from("hm_brand_profile").select("company_name, tagline, usp, icp_primary, services, tone_rules, customer_quotes, dos, donts").eq("client_id", clientId).maybeSingle(),
+    sb.from("hm_brand_profile").select("company_name, tagline, usp, icp_primary, services, tone_rules, customer_quotes, dos, donts, verified_numbers, ordlista, brand_story, location, opening_hours, pricing_notes").eq("client_id", clientId).maybeSingle(),
     sb.from("gsc_queries").select("query, clicks, impressions, position, period_start").eq("client_id", clientId).order("period_start", { ascending: false }).limit(500),
     sb.from("hm_seo_audits").select("url, seo_score, aeo_score, issues, has_schema, has_faq, has_og, word_count, meta_description, title").eq("client_id", clientId).order("audited_at", { ascending: false }).limit(3),
   ]);
@@ -381,7 +423,10 @@ export async function runDeepAudit(clientId: string, urlOverride?: string): Prom
 
   // Lokal verksamhet avgörs på profilens plats-fält. Utan adress är en Google-företagsprofil
   // inte självklart relevant, och en obligatorisk sektion om den vore utfyllnad.
-  const pr = profile.data as (RawProfile & { location?: string | null; opening_hours?: string | null; verified_numbers?: string | null }) | null;
+  const pr = profile.data as (RawProfile & {
+    location?: string | null; opening_hours?: string | null; verified_numbers?: string | null;
+    ordlista?: string | null; services?: string | null; customer_quotes?: string | null; brand_story?: string | null;
+  }) | null;
   const platsRad = (pr?.location ?? "").trim();
   const lokal = platsRad.length > 1;
   const aiAtgardsText = aiRobotsAtgard(site.aiRobots);
@@ -541,6 +586,12 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
         tillatna_tal: tillatnaTal,
         crawlade_urler: crawladeUrler,
         tackning: tackning.utfall,
+        // R-5: Googles tal maskas aldrig, och kunskapsfältet är källan för branschfakta.
+        gsc_tal: Array.from(new Set(gscRows.flatMap((r) => [String(r.clicks), String(r.impressions), String(Math.round(Number(r.position)))]))),
+        kunskapsfalt: [pr?.ordlista ?? "", pr?.services ?? "", pr?.verified_numbers ?? ""].filter(Boolean).join("\n") || null,
+        // R-4: enda tillåtna citatkällor, och täckningen för auktoritetsanspråk.
+        citatkallor: [...sidTexter.map((s) => s.text), pr?.customer_quotes ?? ""].filter(Boolean),
+        tackningstext: [pr?.verified_numbers ?? "", pr?.brand_story ?? "", pr?.customer_quotes ?? ""].filter(Boolean).join("\n") || null,
       },
     }).select("id").maybeSingle();
 
