@@ -125,6 +125,16 @@ export function klassaTal(kontext: string): Sifferklass {
 
 // ── Sektioner och meningar, så en lucka går att hitta ────────────────────────
 
+/**
+ * Styrtecken som aldrig får nå databasen.
+ *
+ * ⚠ MÄTT PÅ DEN SKARPA KÖRNINGEN 13/8: maskeringsmarkören hamnade i beslutens `mening`,
+ *   Postgres vägrar lagra NUL i text, och HELA sparningen föll TYST. Raden stod kvar som
+ *   `processing`, finaliseringen körde om samma rapport var 30:e sekund, och rapporten
+ *   blev aldrig klar. En sparning utan felkontroll är en sparning man inte vet något om.
+ */
+const STYRTECKEN = new RegExp("[\\u0000-\\u001f\\u007f]", "g");
+
 export function sektionFor(md: string, index: number): string {
   const fore = md.slice(0, index);
   const rubriker = fore.match(/^#{1,3} .+$/gm);
@@ -138,7 +148,15 @@ export function meningRunt(text: string, index: number, langd: number): string {
   let slut = text.indexOf(".", index + langd);
   const rad = text.indexOf(NY_RAD, index + langd);
   if (slut === -1 || (rad !== -1 && rad < slut)) slut = rad === -1 ? text.length : rad;
-  return text.slice(start, slut + 1).replace(/\s+/g, " ").trim().slice(0, 220);
+  // Maskeringstoken och styrtecken får ALDRIG följa med in i beslutet: raden sparas i
+  // databasen, och en mening med skräptecken fick hela sparningen att falla tyst.
+  return text
+    .slice(start, slut + 1)
+    .replace(MASK_RE, "")
+    .replace(STYRTECKEN, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 220);
 }
 
 export function meningFor(md: string, index: number, langd: number): string {
@@ -166,6 +184,22 @@ export interface SifferResultat {
   /** Bara äkta tenant-luckor, med plats och mening. */
   luckor: Sifferbeslut[];
 }
+
+/**
+ * Maskering av färdigbehandlade intervall, medan andra passet går.
+ *
+ * ⚠ MÄTT PÅ DEN SKARPA KÖRNINGEN: första versionen använde `` som markör. Tecknet
+ *   följde med in i beslutens `mening`, och Postgres VÄGRAR lagra `` i text. Varje
+ *   sparning av rapporten föll därför tyst, raden stod kvar som `processing`, och
+ *   finaliseringen körde om samma rapport var 30:e sekund i evighet. En tyst misslyckad
+ *   sparning är exakt den sortens fel som annars aldrig upptäcks.
+ *
+ *   Markören är nu vanliga tecken som aldrig förekommer i en rapport, och meningarna
+ *   rensas dessutom från styrtecken innan de sparas.
+ */
+const MASK_START = "«MSK";
+const MASK_SLUT = "MSK»";
+const MASK_RE = new RegExp(`${MASK_START}(i+)${MASK_SLUT}`, "g");
 
 const LUCKA = "[DIN SIFFRA]";
 const RIKTVARDE = " (riktvärde, verifiera mot din leverantör)";
@@ -247,7 +281,7 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
       gomda.push(resultat);
       // ⚠ Token får INTE innehålla siffror: andra passet matchade indexsiffran i den
       //   gamla masken och skrev "0 (riktvärde)" mitt i intervallet.
-      return ` ${"i".repeat(gomda.length)} `;
+      return `${MASK_START}${"i".repeat(gomda.length)}${MASK_SLUT}`;
     });
 
     ut = ut.replace(ENSKILT, (tal: string, i: number) => {
@@ -258,7 +292,7 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
       return tal;
     });
 
-    return ut.replace(/ (i+) /g, (_, m: string) => gomda[m.length - 1] ?? "");
+    return ut.replace(MASK_RE, (_, m: string) => gomda[m.length - 1] ?? "");
   };
 
   const text = bitar
