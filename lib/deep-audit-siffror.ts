@@ -48,7 +48,11 @@ export interface Sifferbeslut {
 //   är EN enhet. Ordningen i regexen är därför intervall först, sedan sammansatt tal.
 
 /** Ett tal: 45 000 · 2 500,50 · 19.8 · 300. Tusentalsavgränsare bara mellan siffergrupper. */
-const TAL = String.raw`\d{1,3}(?:[  ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?`;
+// ⚠ Ett tal som sitter FAST i ett ord är inget påstående om storlek. Utan lookaround blev
+//   plattformsnamnet "Hemsida24" till "Hemsida[DIN SIFFRA]" och klassningen "IP66" till
+//   "IP[DIN SIFFRA]". Bokstav före eller efter = talet är del av ett namn, en standard
+//   eller en produktbeteckning, aldrig en uppgift kunden ska fylla i.
+const TAL = String.raw`(?<![\p{L}\d])(?:\d{1,3}(?:[  ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)(?![\p{L}\d])`;
 /** Ett intervall: 2500-3500 · 50 000-100 000 · 10–20. Behandlas ALLTID som en helhet. */
 const INTERVALL = new RegExp(String.raw`(${TAL})\s*[-–—]\s*(${TAL})`, "gu");
 const ENSKILT = new RegExp(TAL, "gu");
@@ -88,19 +92,23 @@ const TENANT_MONSTER = [
  * pinsamt.
  */
 const EJ_PASTAENDE = [
-  /0\d{1,3}[-\s]?\d{2,3}\s?\d{2}\s?\d{2}/,     // 072 541 01 02, 08-123 45 67
-  /\d{6}-\d{4}/,                                  // person-/orgnummer
-  /(19|20)\d{2}-\d{2}-\d{2}/,                     // datum
-  /\+46\s?\d/,                                         // landsnummer
+  /0\d{1,3}[-\s]?\d{2,3}\s?\d{2}\s?\d{2}/,   // 072 541 01 02, 08-123 45 67
+  /\d{6}-\d{4}/,                                // person- eller orgnummer
+  /(19|20)\d{2}-\d{2}-\d{2}/,                   // datum
+  /\+46\s?\d/,                                       // landsnummer
 ];
 
 export function arEjPastaende(kontext: string): boolean {
   return EJ_PASTAENDE.some((m) => m.test(kontext));
 }
 
-function narmasteOrd(text: string, index: number, langd: number): string {
-  return text.slice(Math.max(0, index - 70), Math.min(text.length, index + langd + 70));
-}
+/**
+ * ⚠ KLASSNINGEN LÄSER TALETS EGEN MENING, inte ett tecken-fönster runt det.
+ *
+ * Med ±70 tecken drog "Priset är 45 000 kr" in ordet "kr" i grannmeningen, och
+ * "En TV har 300-400 nits" klassades som tenantens pris i stället för branschfakta.
+ * En mening är den minsta enhet där ett tal faktiskt betyder något.
+ */
 
 /**
  * Klassar ett tal på sitt sammanhang.
@@ -121,6 +129,16 @@ export function sektionFor(md: string, index: number): string {
   const fore = md.slice(0, index);
   const rubriker = fore.match(/^#{1,3} .+$/gm);
   return rubriker?.length ? rubriker[rubriker.length - 1].replace(/^#+\s*/, "").trim() : "(inledningen)";
+}
+
+/** Meningen ett tal står i, läst ur den sträng som faktiskt skannas. */
+export function meningRunt(text: string, index: number, langd: number): string {
+  const NY_RAD = "\n";
+  const start = Math.max(0, text.lastIndexOf(".", index) + 1, text.lastIndexOf(NY_RAD, index) + 1);
+  let slut = text.indexOf(".", index + langd);
+  const rad = text.indexOf(NY_RAD, index + langd);
+  if (slut === -1 || (rad !== -1 && rad < slut)) slut = rad === -1 ? text.length : rad;
+  return text.slice(start, slut + 1).replace(/\s+/g, " ").trim().slice(0, 220);
 }
 
 export function meningFor(md: string, index: number, langd: number): string {
@@ -166,75 +184,85 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
   // Kodblock lämnas orörda: schema-JSON och robots-rader är exakta.
   const bitar = md.split(/(```[\s\S]*?```)/g);
 
-  const avgor = (tal: string, kontext: string, index: number, langd: number): Sifferbeslut => {
+  const avgor = (tal: string, kontext: string, kalla: string, index: number, langd: number): Sifferbeslut => {
     const nyckel = talNyckel(tal);
     const befintligt = beslutPerNyckel.get(nyckel);
     if (befintligt) return befintligt;
 
     const klass = klassaTal(kontext);
     let utfall: Sifferutfall;
-    let kalla: string;
+    let varifran: string;
 
     if (arEjPastaende(kontext)) {
       utfall = "belagt";
-      kalla = "telefonnummer, orgnummer eller datum";
+      varifran = "telefonnummer, orgnummer eller datum";
     } else if (klass === "G" || indata.gscTal.has(nyckel)) {
       utfall = "belagt";
-      kalla = "Googles sökdata";
+      varifran = "Googles sökdata";
     } else if (indata.belagda.has(nyckel)) {
       utfall = "belagt";
-      kalla = "sajttext, profil eller mätvärde";
+      varifran = "sajttext, profil eller mätvärde";
     } else if (kunskapstal.has(nyckel)) {
       utfall = "belagt";
-      kalla = "tenantens kunskapsfält";
+      varifran = "tenantens kunskapsfält";
     } else if (klass === "B") {
       // Branschfakta maskas ALDRIG. Utan kunskapsfält skrivs de ut märkta i stället.
       utfall = "riktvarde";
-      kalla = "branschfakta utan kunskapsfält";
+      varifran = "branschfakta utan kunskapsfält";
     } else {
       utfall = "lucka";
-      kalla = "saknar täckning i profil och sajttext";
+      varifran = "saknar täckning i profil och sajttext";
     }
 
     const b: Sifferbeslut = {
-      tal, klass: indata.gscTal.has(nyckel) ? "G" : klass, utfall, kalla,
-      mening: meningFor(md, index, langd),
-      sektion: sektionFor(md, index),
+      tal, klass: indata.gscTal.has(nyckel) ? "G" : klass, utfall, kalla: varifran,
+      mening: meningRunt(kalla, index, langd),
+      sektion: sektionFor(md, Math.max(0, md.indexOf(meningRunt(kalla, index, langd).slice(0, 40)))),
     };
     beslutPerNyckel.set(nyckel, b);
     return b;
   };
 
-  const behandla = (del: string, offset: number): string => {
-    // 1. Intervall först, som EN enhet. Antingen står hela intervallet, eller blir hela
-    //    intervallet en lucka. "2500-[DIN SIFFRA] nits" får aldrig uppstå.
+  /**
+   * Ett steg per bit: intervall först som EN enhet, sedan enskilda tal.
+   *
+   * ⚠ TVÅ FEL SOM MÄTNINGEN VISADE, båda rättade här:
+   *   1. Intervallets delar fick riktvärdesmärkningen två gånger, eftersom andra passet
+   *      läste om texten första passet just skrivit. Behandlade intervall maskeras därför
+   *      medan andra passet går.
+   *   2. Klassningen läste fel mening när texten redan bytt längd. Sammanhanget hämtas nu
+   *      ur den sträng som faktiskt skannas, inte ur originalet med en förskjuten position.
+   */
+  const behandla = (del: string): string => {
+    const gomda: string[] = [];
+
     let ut = del.replace(INTERVALL, (traff, a: string, b: string, i: number) => {
-      const kontext = narmasteOrd(del, i, traff.length);
-      const ba = avgor(a, kontext, offset + i, traff.length);
-      const bb = avgor(b, kontext, offset + i, traff.length);
-      if (ba.utfall === "lucka" || bb.utfall === "lucka") return LUCKA;
-      const marker = ba.utfall === "riktvarde" || bb.utfall === "riktvarde" ? RIKTVARDE : "";
-      return `${traff}${marker}`;
+      const kontext = meningRunt(del, i, traff.length);
+      const ba = avgor(a, kontext, del, i, traff.length);
+      const bb = avgor(b, kontext, del, i, traff.length);
+      const resultat =
+        ba.utfall === "lucka" || bb.utfall === "lucka"
+          ? LUCKA
+          : `${traff}${ba.utfall === "riktvarde" || bb.utfall === "riktvarde" ? RIKTVARDE : ""}`;
+      gomda.push(resultat);
+      // ⚠ Token får INTE innehålla siffror: andra passet matchade indexsiffran i den
+      //   gamla masken och skrev "0 (riktvärde)" mitt i intervallet.
+      return ` ${"i".repeat(gomda.length)} `;
     });
 
-    // 2. Enskilda tal. LUCKA-texten innehåller inga siffror, så den kan inte träffas igen.
     ut = ut.replace(ENSKILT, (tal: string, i: number) => {
-      const kontext = narmasteOrd(ut, i, tal.length);
-      const b = avgor(tal, kontext, offset + i, tal.length);
+      const kontext = meningRunt(ut, i, tal.length);
+      const b = avgor(tal, kontext, ut, i, tal.length);
       if (b.utfall === "lucka") return LUCKA;
       if (b.utfall === "riktvarde") return `${tal}${RIKTVARDE}`;
       return tal;
     });
-    return ut;
+
+    return ut.replace(/ (i+) /g, (_, m: string) => gomda[m.length - 1] ?? "");
   };
 
-  let offset = 0;
   const text = bitar
-    .map((del) => {
-      const ut = del.startsWith("```") ? del : behandla(del, offset);
-      offset += del.length;
-      return ut;
-    })
+    .map((del) => (del.startsWith("```") ? del : behandla(del)))
     .join("");
 
   const beslut = Array.from(beslutPerNyckel.values());
