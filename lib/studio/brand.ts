@@ -79,7 +79,7 @@ export interface BrandKit {
   donts?: string[];
 }
 
-const ALLOWED_FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display"];
+const ALLOWED_FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display", "Kalnia", "Caveat"];
 
 // ── Publik ingång ────────────────────────────────────────────────
 export async function loadBrand(slug: string): Promise<StudioBrand> {

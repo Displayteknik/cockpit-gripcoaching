@@ -48,12 +48,18 @@ async function laddaFont(fil: string): Promise<Buffer | null> {
   }
 }
 
+// ⚠ Den här kartan är det femte stället ett typsnitt måste stå på för att fungera fullt ut
+// (de andra: studio-fonts.css, ALLOWED_FONTS, brand-kit-sidans FONTS, STUDIO_FONTS). Saknas
+// namnet HÄR ritas text-i-bild med reservtypsnittet — tyst, och bara i just det flödet.
+// `tests/font3-typsnitt.test.ts` låser att listorna hålls ihop.
 const PROFILFONT_FIL: Record<string, string> = {
   Inter: "inter-800.ttf",
   "Playfair Display": "playfair-900.ttf",
   Archivo: "archivo-800.ttf",
   Poppins: "poppins-700.ttf",
   Anton: "anton.ttf",
+  Kalnia: "kalnia.ttf",
+  Caveat: "caveat-700.ttf",
 };
 
 // Rendera text ovanpå en färdig bild — programmatiskt = alltid rättstavat.

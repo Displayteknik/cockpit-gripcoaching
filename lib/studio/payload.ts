@@ -140,7 +140,7 @@ export const DEFAULT_OVERRIDES: StudioOverrides = {
 };
 
 // Typsnitt som får väljas i editorn (self-hostade → live = export). "" = mallens standard.
-export const STUDIO_FONTS = ["Inter", "Playfair Display", "Archivo", "Poppins", "Anton"] as const;
+export const STUDIO_FONTS = ["Inter", "Playfair Display", "Archivo", "Poppins", "Anton", "Kalnia", "Caveat"] as const;
 
 export const FORMAT_DIMENSIONS: Record<StudioFormat, { w: number; h: number }> = {
   "1080x1350": { w: 1080, h: 1350 },

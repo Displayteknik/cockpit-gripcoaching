@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Palette, Save, Check, Loader2, Upload, Type, Sparkles, ImageIcon, Ban, Wand2, Layers } from "lucide-react";
 import { DashHero, LivePill } from "@/components/ui/dash";
 
-const FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display"];
+const FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display", "Kalnia", "Caveat"];
 const COLOR_ROLES: { key: string; label: string; hint: string }[] = [
   { key: "primary", label: "Primär", hint: "Rubriker, bärande ytor" },
   { key: "primaryDeep", label: "Primär mörk", hint: "Kontrast, footrar" },

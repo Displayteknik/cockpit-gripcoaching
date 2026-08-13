@@ -18,6 +18,13 @@
 @font-face { font-family: "Poppins"; src: url("/fonts/poppins-800.ttf") format("truetype"); font-weight: 800; font-style: normal; font-display: block; }
 @font-face { font-family: "Poppins"; src: url("/fonts/poppins-900.ttf") format("truetype"); font-weight: 900; font-style: normal; font-display: block; }
 @font-face { font-family: "Anton"; src: url("/fonts/anton.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: block; }
+/* Kalnia — For Balances rubriktypsnitt, mätt på forbalance.se (FÄRG-2). Variabelt snitt,
+   därför ett spann i stället för en vikt per fil, precis som Playfair. OFL-licensen ligger
+   bredvid filen i public/fonts/kalnia-OFL.txt — kravet här är att typsnitt bara får vara OFL. */
+@font-face { font-family: "Kalnia"; src: url("/fonts/kalnia.ttf") format("truetype"); font-weight: 100 700; font-style: normal; font-display: block; }
+/* Caveat — låg på disk sedan tidigare utan att vara inkopplad någonstans. Nu deklarerad,
+   så filen antingen används eller går att ta bort medvetet i stället för att bara ligga. */
+@font-face { font-family: "Caveat"; src: url("/fonts/caveat-700.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: block; }
 
 /* Render-ytan: nolla ev. marginaler så element-screenshot blir exakt. */
 #studio-render-root {
