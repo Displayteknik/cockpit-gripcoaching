@@ -906,9 +906,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         setGenSlideImgs(`${k + 1}/${valda.length} (slide ${n + 1})`);
         const s = list[n];
         const t = [s.headline, s.body].filter(Boolean).join(". ").slice(0, 220) || topic || headline1 || "on-brand bild";
+        // BILD-10 v2/K3: sliden måste säga VAR i serien den ligger. Utan position kan
+        // rotationen inte dela ut olika personkategorier, och karusellen fick fem bilder
+        // på samma man vid samma skärm. Rubrik och brödtext skickas var för sig så
+        // bevismeningen (K2) kan härledas ur poängen och inte ur en hopklistrad rad.
         const r = await fetch("/api/studio/suggest-image", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: "ai", topic: t, aspect }),
+          body: JSON.stringify({
+            mode: "ai", topic: t, aspect,
+            rubrik: s.headline || "", brodtext: s.body || "",
+            serieIndex: n, serieAntal: list.length,
+          }),
         });
         const d = await lasJson<any>(r);
         const url = d.photos?.[0]?.url;

@@ -130,8 +130,23 @@ export async function POST(req: NextRequest) {
       const { hamtaBildfeedback, bildfeedbackBlock } = await import("@/lib/bildfeedback");
       const bildlage = await hamtaBildfeedback(await resolveClientId());
       const FEEDBACK = bildlage.finns ? `\n${bildfeedbackBlock(bildlage)}` : "";
-      const bas = `${scene} Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden, och ingen läsbar text i motivet.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
-      const branschKrav = `${scene} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers — no metaphors from other industries. Verkligt foto, naturligt ljus. Ingen pålagd rubrik, uppmaning eller logotyp ovanpå bilden, och ingen läsbar text i motivet.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
+      // ★ BILD-10 v2: K1 till K4 kommer från den DELADE byggaren, aldrig härifrån.
+      //   Anroparen skickar rubrik, brödtext och sin position i serien; byggaren härleder
+      //   bevismeningen, väljer personkategori på positionen och lägger på rekvisitaregeln
+      //   och ljusvakten. Utan `serie` beter sig en enstaka bild som index 0.
+      const { byggBildPrompt } = await import("@/lib/bild/promptbyggare");
+      const serieIndex = Number.isFinite(body.serieIndex) ? Number(body.serieIndex) : 0;
+      const byggd = await byggBildPrompt({
+        clientId: await resolveClientId(),
+        niche,
+        syfte: body.serieAntal ? "karusell-slide" : "singel",
+        rubrik: String(body.rubrik || "").slice(0, 200) || topic,
+        brodtext: String(body.brodtext || "").slice(0, 400),
+        serie: body.serieAntal ? { index: serieIndex, antal: Number(body.serieAntal) } : undefined,
+        scen: scene,
+      });
+      const bas = `${byggd.prompt}${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
+      const branschKrav = `${byggd.prompt} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers, no metaphors from other industries.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
       // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
       // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
       // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
@@ -214,7 +229,15 @@ export async function POST(req: NextRequest) {
           // Bildvägen bygger ingen textprompt, så den har ingen prompt-core-version.
           // Motivreceptet ÄR regeluppsättningen här, och det versioneras för sig.
           promptVersion: BILD_PROMPT_VERSION,
-          motivKategori: promptIBruk === branschKrav ? "branschkrav-omtag" : "standard",
+          // BILD-10 v2/K2 + K3: bevismeningen och personkategorin loggas per bild. Utan
+          // dem går en dålig bild inte att spåra till en dålig fråga eller till en
+          // kategori som återkom för ofta — det var precis vad DT-karusellen led av.
+          motivKategori: [
+            promptIBruk === branschKrav ? "branschkrav-omtag" : "standard",
+            `person:${byggd.personkategori.slice(0, 40)}`,
+            `bevis:${byggd.bevismening.slice(0, 60)}`,
+            `rekvisita:${byggd.rekvisita.kalla}`,
+          ].join(" | "),
         });
       } catch (e) {
         console.error("[suggest-image] generationsloggen kunde inte skrivas:", e);
