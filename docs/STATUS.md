@@ -358,6 +358,38 @@ Nyttigt varje gång något "ser gammalt ut": en 200 från servern säger ingenti
 som ligger där, men en klass som finns eller inte finns i CSS:en gör det. Och kom ihåg att
 webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en slutsats.
 
+### KLART 12–13/8 (allt pushat, `0c9c5d5`, sajten 200)
+
+| Post | Status | Kärnan |
+|---|---|---|
+| OFFERT-2 offertmotorn | KLART, EJ KLICKAD | Kurs live från Riksbanken + marknadsbild med källor. Aldrig en gissad kurs |
+| TON-1 tonlägen per variant | KLART OCH VERIFIERAT | Tre förslag = tre tonlägen. Mätt mot två branscher |
+| MODELL-1 specialistens modell | KLART, EJ KLICKAD | `model:` i .md lästes ALDRIG — routen körde hårdkodad sonnet-4-5. Offertmotorn kör nu Fable 5. ⚠ **Migrationen `modell1_fable_pris.sql` måste köras**, annars faller den tillbaka |
+| FONT-2 + KLARSPRÅK-1 | KLART OCH VERIFIERAT | text-xs 13→14, text-sm 15→16. "Konträr" → "Tvärtom" |
+| KUNSKAP-1 + 1b | KLART OCH VERIFIERAT | Systemet läser ut ordets betydelse ur kundens EGEN profil. Ingen ordlista behöver fyllas i |
+| KUNDREGISTER-1 | KLART OCH VERIFIERAT | 137 kontakter hos DT. ⚠ For Balance + AluCon ger 401 — nycklarna saknar kontakt-scope |
+| FÄRG-2 + FONT-3 | KLART OCH VERIFIERAT | For Balances palett mätt på hennes sajt. Kalnia tillagd (OFL) |
+| S-6 hämtningen | KLART, EJ VERIFIERAT I DRIFT | Djupgranskningens 500 mot forbalance.se. ⚠ **Härledning, ej återskapat fel** |
+
+### VÄNTAR PÅ HÅKAN (blockerar annars)
+
+1. **Kör migrationen** `node scripts/kor-migration.mjs migrations/modell1_fable_pris.sql --ja` — utan den kör offertmotorn kvar på sonnet-4-5.
+2. **Kontakt-scope i MySales** för For Balance och AluCon, annars är deras kundlistor tomma (med felmeddelande, inte tyst).
+3. **Kör djupgranskningen på For Balance** — det är enda beviset för att S-6 löste 500:an.
+4. **Klicka igenom** offertmotorn och MODELL-1 (obeklickade).
+
+### BESTÄLLT, EJ PÅBÖRJAT
+
+**KANAL-2** (ersätter KANAL-1 helt). Verifieringen hans DEL 1c bad om ÄR gjord mot DT:
+`google/location`, `facebook/page`, `instagram×2`, `linkedin/page`, `linkedin/profile` — sex
+konton, inget utgånget. **GBP kommer redan med i API-svaret som `platform: "google"`** —
+kanalväljaren filtrerar bort den. Låsningen sitter i `CHANNELS` i StudioMaker (hårdkodad
+lista på tre) och `channelCaptions` (fast objekt med tre nycklar), inte i integrationen.
+TikTok/Pinterest/YouTube/Threads/Bluesky är inte kopplade hos DT → ska gråas, inte döljas.
+⚠ **Ej verifierat:** om publiceringsanropet accepterar ett Google-konto och vilka extra fält
+GBP kräver (knapp + mål-URL). Kräver dokumentation eller en skarp testpublicering — den
+senare är vad DoD:n begär, och Håkan ska säga ja innan något publiceras mot hans Google-profil.
+
 ### START HÄR I NÄSTA SESSION
 
 1. **Håkan testar de sju obeklickade fixarna från i dag** (DM-tavlan, redigeringsytan,
