@@ -398,7 +398,15 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
       },
     });
     if (!batchRes.ok || !batchRes.data?.id) {
-      return { ok: false, error: `Kunde inte starta granskningen: ${batchRes.fel || batchRes.raw}`, duration_ms: Date.now() - t0 };
+      // ★ Håkans beslut 13/8: ett fel hos VÅR leverantör (obetald faktura, avvisad nyckel)
+      // ska inte stå i klartext framför en kund. Hon kan inte göra något åt det, och det
+      // säger allt om sådant hon inte ska behöva veta.
+      //
+      // ⚠ Felet döljs, inte tystas: hela leverantörssvaret loggas här och i
+      // `ai_usage_events` med statuskod och svarskropp. Adminvyn `/dashboard/kostnader`
+      // visar den ocensurerade texten via `felklassTeknisk`.
+      console.error(`[djupgranskning] kunde inte starta batchen: ${batchRes.fel || batchRes.raw}`);
+      return { ok: false, error: "Funktionen kommer inom kort.", duration_ms: Date.now() - t0 };
     }
     const batch = batchRes.data;
 

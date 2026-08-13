@@ -154,8 +154,39 @@ export function klassaFel(status: number, kropp: string): Felklass {
   return "other";
 }
 
-/** Kort svensk klartext per felklass — används i adminvyns larmbanner. */
+/**
+ * Kort svensk klartext per felklass — används i adminvyns larmbanner OCH i kundsynliga
+ * felrutor.
+ *
+ * ★ Håkans beslut 13/8, taget på väg in i ett kundmöte: fel som beror på VÅR leverantör
+ * (obetald faktura, avvisad nyckel, okänd modell) ska inte stå i klartext framför en kund.
+ * De säger ingenting hon kan agera på och allt om vad hon inte ska behöva veta.
+ *
+ * ⚠ Det här döljer texten, ALDRIG felet. Varje sådant fel skrivs fortfarande i
+ * `ai_usage_events` med statuskod och hela svarskroppen, och `felklassTeknisk` nedan ger
+ * den ocensurerade raden till loggar och adminvyer. Regeln "inga tysta nollor" står kvar:
+ * en tyst nolla är när ingen kan se felet någonstans, inte när en kund slipper läsa det.
+ *
+ * Kvot är kvar i klartext med flit — den löser sig själv om en stund, och det är en
+ * upplysning kunden faktiskt har nytta av.
+ */
 export function felklassText(f: Felklass, provider: string): string {
+  switch (f) {
+    case "quota": return `${provider} har nått sin hastighetsgräns. Anropen går fram igen när kvoten återställs.`;
+    case "billing":
+    case "auth":
+    case "model":
+      return "Funktionen kommer inom kort.";
+    default: return "Funktionen kommer inom kort.";
+  }
+}
+
+/**
+ * Den ocensurerade raden. Till loggar, adminvyer och felsökning — aldrig till kundytor.
+ * Utan den här hade Håkans beslut ovan kostat oss diagnosen, och då vore det en tyst nolla
+ * på riktigt.
+ */
+export function felklassTeknisk(f: Felklass, provider: string): string {
   switch (f) {
     case "billing": return `${provider} svarar med betalningsfel. Kontrollera fakturan hos leverantören.`;
     case "auth": return `${provider} nekar nyckeln. Kontrollera att API-nyckeln är giltig och satt i miljövariablerna.`;

@@ -4,7 +4,7 @@ import { supabaseService } from "@/lib/supabase-admin";
 import {
   ROD_FELKLASS,
   TENANT_TAK_SEK,
-  felklassText,
+  felklassTeknisk,
   nollstallBudgetCache,
   type Felklass,
 } from "@/lib/ai-usage";
@@ -165,7 +165,7 @@ export async function GET() {
       ...h,
       rod,
       text: rod && h.senaste_felklass
-        ? `${felklassText(h.senaste_felklass, h.provider)} Senaste felet: ${new Date(h.senaste_fel!).toLocaleString("sv-SE")}.`
+        ? `${felklassTeknisk(h.senaste_felklass, h.provider)} Senaste felet: ${new Date(h.senaste_fel!).toLocaleString("sv-SE")}.`
         : null,
     };
   });
