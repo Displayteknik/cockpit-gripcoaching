@@ -20,7 +20,12 @@ interface Behorighet { namn: string; ok: boolean; status: number | null; betyder
 interface Kanal { platform: string; namn: string; utgangen?: boolean }
 
 export default function MySalesConnect() {
-  const [status, setStatus] = useState<{ connected: boolean; locationId: string } | null>(null);
+  const [status, setStatus] = useState<{
+    connected: boolean;
+    locationId: string;
+    studio?: { finns: boolean; behorigheter: Behorighet[] };
+    fokus?: { finns: boolean; sammaNyckel: boolean; behorigheter: Behorighet[] };
+  } | null>(null);
   const [loc, setLoc] = useState("");
   const [pit, setPit] = useState("");
   const [sparar, setSparar] = useState(false);
@@ -61,6 +66,7 @@ export default function MySalesConnect() {
   return (
     <div className="space-y-3">
       {status?.connected ? (
+        <>
         <div className="flex items-center gap-2 text-sm">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-semibold">
             <Check className="w-3.5 h-3.5" /> Kopplad
@@ -71,6 +77,42 @@ export default function MySalesConnect() {
             <Unplug className="w-3.5 h-3.5" /> Koppla från
           </button>
         </div>
+        {/* Sanningen INNAN man rör något. Håkans invändning: han hade ett fält men inget
+            sätt att se vad som gällde, och klistrade därför in i blindo. Två nycklar =
+            två besked, för det ÄR två olika nycklar med olika behörigheter. */}
+        <div className="grid sm:grid-cols-2 gap-2">
+          {([
+            ["Kanaler och kundlista", status.studio],
+            ["Fokus, DM och leads", status.fokus],
+          ] as const).map(([rubrik, del]) => {
+            const trasiga = (del?.behorigheter || []).filter((b) => !b.ok);
+            const allaOk = !!del?.finns && trasiga.length === 0 && (del?.behorigheter.length ?? 0) > 0;
+            return (
+              <div key={rubrik} className={`rounded-lg border px-3 py-2 ${allaOk ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+                <div className="flex items-center gap-1.5 text-sm font-semibold">
+                  {allaOk
+                    ? <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    : <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+                  <span className={allaOk ? "text-emerald-800" : "text-amber-900"}>{rubrik}</span>
+                </div>
+                <p className={`text-sm mt-0.5 ${allaOk ? "text-emerald-700" : "text-amber-800"}`}>
+                  {!del?.finns
+                    ? "Ingen nyckel sparad."
+                    : allaOk
+                      ? "Allt fungerar."
+                      : `Nekas: ${trasiga.map((b) => b.namn.toLowerCase()).join(", ")}.`}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        {status.fokus?.finns && !status.fokus.sammaNyckel && (
+          <p className="text-sm text-gray-500">
+            De två rutorna använder olika nycklar. Klistrar du in en nyckel nedan som klarar
+            alla fyra behörigheterna tar den över båda, och då räcker en enda.
+          </p>
+        )}
+        </>
       ) : (
         <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           Den här kunden är inte kopplad. Utan koppling kan Cockpit varken se kundens kanaler

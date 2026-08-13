@@ -131,3 +131,37 @@ describe("NYCKEL-1b · en smalare nyckel får ALDRIG skriva över en bredare", (
     expect(ROUTE).toContain("speglad: klararAffarer");
   });
 });
+
+describe("NYCKEL-1c · rutan visar sanningen INNAN man klistrar in", () => {
+  // Håkans invändning 13/8: "nu fanns ju bara ett ställe att klistra in på, då blev det ju
+  // fel". Han hade ett fält men inget sätt att se vad som gällde — alltså klistrade han in
+  // i blindo och kunde inte veta att det gjorde saken värre. Ett verktyg som kräver att man
+  // gissar är inte färdigt.
+  it("GET provar BÅDA nycklarna, inte bara den ena", () => {
+    expect(ROUTE).toContain('.select("ghl_api_token")');
+    expect(ROUTE).toContain("const [studio, fokus] = await Promise.all(");
+  });
+
+  it("Fokus-nyckeln hämtas på location — den kan vara en helt annan nyckel", () => {
+    // Den sätts av onboardingen. Att bara visa studio-nyckeln hade dolt exakt det som gick
+    // sönder.
+    expect(ROUTE).toContain('.not("ghl_api_token", "is", null)');
+  });
+
+  it("svaret säger om det är samma nyckel eller två olika", () => {
+    expect(ROUTE).toContain("sammaNyckel: !!pit && coachToken === pit");
+  });
+
+  it("vyn visar två separata besked", () => {
+    expect(VY).toContain("Kanaler och kundlista");
+    expect(VY).toContain("Fokus, DM och leads");
+  });
+
+  it("vyn namnger vad som nekas, inte bara att något är fel", () => {
+    expect(VY).toContain("Nekas: ${trasiga.map((b) => b.namn.toLowerCase()).join(\", \")}");
+  });
+
+  it("vyn säger när de två använder olika nycklar", () => {
+    expect(VY).toContain("De två rutorna använder olika nycklar");
+  });
+});

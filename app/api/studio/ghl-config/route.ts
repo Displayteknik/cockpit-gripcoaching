@@ -56,15 +56,51 @@ async function provaBehorigheter(locationId: string, pit: string): Promise<Behor
   return ut;
 }
 
-// GET — status för aktiv klient (utan att läcka token)
+// GET — status för aktiv klient (utan att läcka token).
+//
+// ★ Håkans invändning 13/8, och den var berättigad: "nu fanns ju bara ett ställe att klistra
+// in på, då blev det ju fel". Han hade ett fält men ingen möjlighet att SE vad som gällde —
+// alltså klistrade han in i blindo och kunde inte veta att det gjorde saken värre.
+//
+// Därför provas de sparade nycklarna direkt vid inläsning, båda två var för sig:
+//   · `clients.ghl_pit`           → kanalerna, publiceringen, kundlistan
+//   · `coach_users.ghl_api_token` → Fokus idag, DM-tavlan, leadflödet, onboardingen
+// Rutan visar då sanningen innan man rör något. Fyra anrop per sidladdning på en
+// inställningssida är billigt jämfört med att gissa.
 export async function GET() {
   try {
     const clientId = await getActiveClientId();
     const sb = supabaseService();
     const { data } = await sb.from("clients").select("ghl_location_id, ghl_pit").eq("id", clientId).maybeSingle();
+    const locationId = data?.ghl_location_id || "";
+    const pit = data?.ghl_pit || "";
+
+    // Fokus-nyckeln kan vara en HELT ANNAN nyckel — den sätts av onboardingen. Att bara
+    // visa den ena hade dolt exakt det som gick sönder.
+    let coachToken = "";
+    if (locationId) {
+      const { data: cu } = await sb
+        .from("coach_users")
+        .select("ghl_api_token")
+        .eq("ghl_location_id", locationId)
+        .not("ghl_api_token", "is", null)
+        .limit(1);
+      coachToken = ((cu as Array<{ ghl_api_token: string | null }> | null) || [])[0]?.ghl_api_token || "";
+    }
+
+    const [studio, fokus] = await Promise.all([
+      pit && locationId ? provaBehorigheter(locationId, pit) : Promise.resolve([]),
+      coachToken && locationId
+        ? provaBehorigheter(locationId, coachToken)
+        : Promise.resolve([]),
+    ]);
+
     return NextResponse.json({
-      connected: !!(data?.ghl_location_id && data?.ghl_pit),
-      locationId: data?.ghl_location_id || "",
+      connected: !!(locationId && pit),
+      locationId,
+      // Två separata besked, för det ÄR två separata nycklar.
+      studio: { finns: !!pit, behorigheter: studio },
+      fokus: { finns: !!coachToken, sammaNyckel: !!pit && coachToken === pit, behorigheter: fokus },
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
