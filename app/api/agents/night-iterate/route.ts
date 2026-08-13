@@ -63,6 +63,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // ★ AVSTÄNGD (Håkans beslut 13/8). Mätt i ai_usage_events: 180 anrop och 51,89 kr på
+  // 30 dagar, varje natt 02:30, oavsett om någon läste resultatet. Näst största posten på
+  // Anthropic-notan efter studio-texten.
+  //
+  // Schemat är borttaget ur vercel.json — spärren här är andra låset, så en kvarglömd
+  // manuell trigger eller ett återinlagt cron-jobb inte tyst börjar kosta igen.
+  // Koden är ORÖRD i övrigt: sätt NATTLOOP_PA=1 i miljövariablerna och lägg tillbaka
+  // cron-raden, så går den igen. Ingen fungerande väg är riven.
+  if (process.env.NATTLOOP_PA !== "1") {
+    return NextResponse.json({
+      ok: true,
+      avstangd: true,
+      info: "Nattloopen är avstängd. Sätt NATTLOOP_PA=1 för att slå på den igen.",
+    });
+  }
+
   const t0 = Date.now();
   const sb = supabaseService();
   const onlyClient = req.nextUrl.searchParams.get("client_id");
