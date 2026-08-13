@@ -78,20 +78,56 @@ export default function MySalesConnect() {
         </p>
       )}
 
-      <div className="space-y-2">
-        <input value={loc} onChange={(e) => setLoc(e.target.value)}
-          placeholder="Location-id i MySales"
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-          name="mysales-location" autoComplete="off" data-lpignore="true" data-1p-ignore spellCheck={false} />
-        <input value={pit} onChange={(e) => setPit(e.target.value)} type="password"
-          placeholder={status?.connected ? "Klistra in en ny nyckel för att byta" : "Private Integration-nyckel"}
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono outline-none focus:border-gray-400"
-          name="mysales-pit" autoComplete="off" data-lpignore="true" data-1p-ignore spellCheck={false} />
-        <p className="text-sm text-gray-500">
-          Skapa nyckeln i MySales under Settings → Private Integrations. Kryssa i
-          <strong> Social Planner</strong>, <strong>Users</strong>, <strong>Contacts</strong> och <strong>Opportunities</strong> —
-          då täcker samma nyckel publicering, kundlistan OCH Fokus. Utan Opportunities lämnas Fokus-nyckeln orörd.
-        </p>
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">1. Location-id</label>
+          <input value={loc} onChange={(e) => setLoc(e.target.value)}
+            placeholder="t.ex. HRRSfU2eczG7Dxm81Ac9"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono outline-none focus:border-gray-400"
+            name="mysales-location" autoComplete="off" data-lpignore="true" data-1p-ignore spellCheck={false} />
+          <p className="text-sm text-gray-500 mt-1">Står i MySales-adressen efter <code>/location/</code>.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            2. Nyckeln från Private Integration
+          </label>
+          {/* ⚠ type="text", INTE password. Med password autofyllde webbläsaren in ett sparat
+              lösenord, fältet såg ifyllt ut med prickar, och Håkan kunde inte se var han
+              skulle klistra in. autoComplete="off" räcker inte på lösenordsfält i Chrome.
+              Nyckeln visas alltså i klartext medan den klistras in — den lämnar ändå aldrig
+              servern efteråt (GET returnerar den aldrig) och töms ur fältet vid sparning. */}
+          <input value={pit} onChange={(e) => setPit(e.target.value)} type="text"
+            placeholder="pit-..."
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono outline-none focus:border-gray-400"
+            name="mysales-nyckel-falt" autoComplete="new-password" data-lpignore="true" data-1p-ignore
+            data-form-type="other" spellCheck={false} />
+          {status?.connected && (
+            <p className="text-sm text-gray-500 mt-1">
+              Fältet är tomt med flit. En sparad nyckel visas aldrig igen — klistra in en ny
+              bara när du vill byta.
+            </p>
+          )}
+        </div>
+        <div className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2.5 space-y-1.5">
+          <p className="text-sm font-semibold text-gray-700">Så skapar du nyckeln</p>
+          <p className="text-sm text-gray-600">
+            I <strong>kundens</strong> MySales: Settings → Private Integrations → skapa en, döp
+            den till <strong>Cockpit</strong>, och kryssa i dessa fyra:
+          </p>
+          <ul className="text-sm text-gray-600 space-y-0.5 pl-1">
+            <li>· <strong>Social Planner</strong> — kanalerna och publiceringen</li>
+            <li>· <strong>Users</strong> — avsändare vid publicering</li>
+            <li>· <strong>Contacts</strong> — kundlistan (taggarna följer med här)</li>
+            <li>· <strong>Opportunities</strong> — Fokus idag, DM och pipeline</li>
+          </ul>
+          <p className="text-sm text-gray-500">
+            Rutan provar de fyra ovan. Samma nyckel används dessutom av onboardingen när ett
+            konto sätts upp från grunden (custom values, taggar, workflows) — så skapar du en
+            ny nyckel: <strong>behåll allt den gamla integrationen hade</strong> och lägg till,
+            ta aldrig bort. Missar du Opportunities sparas nyckeln ändå, men Fokus fortsätter
+            använda den nyckel som lades in vid onboardingen.
+          </p>
+        </div>
         <button onClick={koppla} disabled={sparar || !loc.trim() || !pit.trim()}
           className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40">
           {sparar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
