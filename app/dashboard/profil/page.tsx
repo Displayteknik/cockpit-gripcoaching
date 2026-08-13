@@ -34,6 +34,7 @@ interface Profile {
   dos: string;
   donts: string;
   hashtags_base: string;
+  ordlista: string;
   updated_at?: string;
 }
 
@@ -44,7 +45,7 @@ const EMPTY: Profile = {
   icp_primary: "", icp_secondary: "", pain_points: "",
   customer_quotes: "", competitors: "", customer_journey: "",
   services: "", verified_numbers: "", pricing_notes: "", booking_url: "",
-  dos: "", donts: "", hashtags_base: "",
+  dos: "", donts: "", hashtags_base: "", ordlista: "",
 };
 
 export default function ProfilPage() {
@@ -436,6 +437,16 @@ export default function ProfilPage() {
           value={profile.hashtags_base}
           onChange={(v) => update("hashtags_base", v)}
           rows={2}
+        />
+        {/* KUNSKAP-1: fältet som gör att ett ord aldrig kan tolkas som något annat än
+            det kunden menar. Hjälptexten visar formatet med ett riktigt exempel — det
+            är det enda användaren behöver veta för att kunna fylla i. */}
+        <TextArea
+          label="Ord som betyder något särskilt hos er"
+          hint="Ett ord per rad: ordet, likhetstecken, vad det betyder hos er. Skriv in ord som betyder något annat i vardagsspråk — då kan texterna aldrig ta fel betydelse. Exempel: regression = regressionsterapi, en resa till ett tidigare liv. Aldrig statistik."
+          value={profile.ordlista}
+          onChange={(v) => update("ordlista", v)}
+          rows={4}
         />
       </Section>
 

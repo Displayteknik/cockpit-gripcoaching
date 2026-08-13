@@ -694,6 +694,40 @@ export async function byggTextPrompt(p: ByggParams): Promise<ByggdPrompt> {
     lager.forbjudnaOrd = true;
   }
 
+  // 8b-2. KUNSKAP-1 — kundens egna ord. Ligger HÄR, sent bland innehållsreglerna, och
+  // med flit inte inne i profilblocket: profilen klipps när den är för lång, och en
+  // definition som kan klippas bort är ingen definition. Måste dessutom väga tyngre än
+  // modellens allmänna kunskap, och i den här prompten är det placeringen som avgör vikt.
+  //
+  // Mätt fynd som motiverar lagret: hos For Balance stod "regression" bara som en
+  // produktrad och en prisrad — aldrig som en förklaring. Bloggen klarade sig på
+  // sammanhanget bredvid, det korta inlägget hade ingen sådan plats och föll tillbaka på
+  // statistisk regression. Alla flöden hämtade samma profil; det som saknades var
+  // betydelsen, inte hämtningen.
+  if (p.clientId) {
+    try {
+      const { hamtaOrdlista, ordlistaBlock, amnesordIProfilen, amnesordBlock } = await import("@/lib/ordlista");
+      const poster = await hamtaOrdlista(p.clientId);
+      const block = ordlistaBlock(poster);
+      if (block) {
+        delar.push(block);
+        lager.ordlista = true;
+      }
+      // Skyddsnätet för ord kunden ännu inte skrivit in. Matchas mot profilTEXTEN (den
+      // klippta), inte den råa: står ordet i en bortklippt sektion finns det inte i
+      // prompten, och då vore påminnelsen en hänvisning till tomma luften.
+      const amne = p.anvandarText ?? p.underlag ?? "";
+      const traffar = amnesordIProfilen(amne, profilText, poster);
+      const amnesblock = amnesordBlock(traffar);
+      if (amnesblock) {
+        delar.push(amnesblock);
+        lager.amnesord = true;
+      }
+    } catch (e) {
+      console.error("[prompt-core] ordlistan kunde inte hämtas:", e);
+    }
+  }
+
   // 8c. Sanningskrav (T-6b) — ALLTID, alla syften (även pa-bild och utan clientId:
   // utan profil finns INGET grundat material, då gäller förbudet fullt ut). Sent
   // block = väger tyngst; formatkravet nedan styr bara formen.
