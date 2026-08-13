@@ -72,13 +72,32 @@ export async function GET() {
     const clientId = await getActiveClientId();
     const sb = supabaseService();
     const { data } = await sb.from("clients").select("ghl_location_id, ghl_pit").eq("id", clientId).maybeSingle();
-    const locationId = data?.ghl_location_id || "";
     const pit = data?.ghl_pit || "";
 
-    // Fokus-nyckeln kan vara en HELT ANNAN nyckel — den sätts av onboardingen. Att bara
-    // visa den ena hade dolt exakt det som gick sönder.
+    // ★ MÄTT 13/8 på For Balance, och det är en riktig bugg: rutan sa "Ingen nyckel sparad"
+    // trots att onboardingen lagt in en nyckel som FUNGERAR för kanalerna. Orsaken: Fokus-
+    // nyckeln slogs upp på `ghl_location_id`, och For Balances klientrad hade inget location-
+    // id alls. Nyckeln fanns, men på ett fält vi aldrig tittade i.
+    //
+    // `coach_users.id` ÄR klient-id:t (provisionera.ts skriver in raden så). Därför slås
+    // raden upp på id först, och location-id läses därifrån när klientraden saknar det.
+    // Då hittar rutan nyckeln OCH kan fylla i id-fältet åt användaren.
     let coachToken = "";
-    if (locationId) {
+    let coachLocation = "";
+    const { data: viaId } = await sb
+      .from("coach_users")
+      .select("ghl_api_token, ghl_location_id")
+      .eq("id", clientId)
+      .maybeSingle();
+    const rad = viaId as { ghl_api_token: string | null; ghl_location_id: string | null } | null;
+    if (rad) {
+      coachToken = rad.ghl_api_token || "";
+      coachLocation = rad.ghl_location_id || "";
+    }
+    const locationId = data?.ghl_location_id || coachLocation || "";
+    // Displayteknik har TVÅ coach_users-rader på samma location, och bara den ena bär
+    // klient-id:t. Hittades ingen nyckel via id letar vi därför på location också.
+    if (!coachToken && locationId) {
       const { data: cu } = await sb
         .from("coach_users")
         .select("ghl_api_token")
@@ -95,12 +114,25 @@ export async function GET() {
         : Promise.resolve([]),
     ]);
 
+    // Håkan 13/8: "varför inte tala om VAD som eventuellt ÄR inne så man kan se". Ett
+    // ja/nej räcker inte — han ska kunna se VILKEN nyckel som ligger där och känna igen
+    // den. Början av nyckeln räcker för att skilja två nycklar åt; resten visas aldrig.
+    const borjan = (t: string) => (t ? `${t.slice(0, 12)}…` : "");
+
     return NextResponse.json({
       connected: !!(locationId && pit),
       locationId,
+      // Sant när id:t kommer från onboardingen i stället för klientraden — då ska rutan
+      // säga varifrån det kom, annars ser ett ifyllt fält ut som något användaren skrivit.
+      locationFranOnboarding: !data?.ghl_location_id && !!coachLocation,
       // Två separata besked, för det ÄR två separata nycklar.
-      studio: { finns: !!pit, behorigheter: studio },
-      fokus: { finns: !!coachToken, sammaNyckel: !!pit && coachToken === pit, behorigheter: fokus },
+      studio: { finns: !!pit, borjan: borjan(pit), behorigheter: studio },
+      fokus: {
+        finns: !!coachToken,
+        borjan: borjan(coachToken),
+        sammaNyckel: !!pit && coachToken === pit,
+        behorigheter: fokus,
+      },
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

@@ -38,8 +38,9 @@ export default function MySalesConnect() {
   const [status, setStatus] = useState<{
     connected: boolean;
     locationId: string;
-    studio?: { finns: boolean; behorigheter: Behorighet[] };
-    fokus?: { finns: boolean; sammaNyckel: boolean; behorigheter: Behorighet[] };
+    locationFranOnboarding?: boolean;
+    studio?: { finns: boolean; borjan?: string; behorigheter: Behorighet[] };
+    fokus?: { finns: boolean; borjan?: string; sammaNyckel: boolean; behorigheter: Behorighet[] };
   } | null>(null);
   const [loc, setLoc] = useState("");
   const [pitAllt, setPitAllt] = useState("");
@@ -97,39 +98,43 @@ export default function MySalesConnect() {
           två besked, för det ÄR två olika nycklar med olika behörigheter. */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-sm font-semibold text-gray-700">Nycklar som ligger inne nu</span>
+          <span className="text-sm font-semibold text-gray-700">Så ser det ut för den här kunden just nu</span>
           {status?.connected && (
-            <>
-              <span className="text-sm text-gray-400 font-mono">{status.locationId}</span>
-              <button onClick={kopplaFran} disabled={!!sparar}
-                className="ml-auto inline-flex items-center gap-1 text-sm text-gray-400 hover:text-red-600 disabled:opacity-40">
-                <Unplug className="w-3.5 h-3.5" /> Koppla från
-              </button>
-            </>
+            <button onClick={kopplaFran} disabled={!!sparar}
+              className="ml-auto inline-flex items-center gap-1 text-sm text-gray-400 hover:text-red-600 disabled:opacity-40">
+              <Unplug className="w-3.5 h-3.5" /> Ta bort kopplingen
+            </button>
           )}
         </div>
         <div className="grid sm:grid-cols-2 gap-2">
           {([
-            ["Totalnyckeln", "Fokus, DM, leads och onboarding", status?.fokus],
-            ["Kanalnyckeln", "Kanaler, publicering och kundlista", status?.studio],
-          ] as const).map(([rubrik, vad, del]) => {
+            ["Fokus idag, DM och leads", status?.fokus],
+            ["Facebook, Instagram, LinkedIn och kundlistan", status?.studio],
+          ] as const).map(([rubrik, del]) => {
             const trasiga = (del?.behorigheter || []).filter((b) => !b.ok);
             const allaOk = !!del?.finns && trasiga.length === 0 && (del?.behorigheter.length ?? 0) > 0;
             return (
               <div key={rubrik} className={`rounded-lg border px-3 py-2 ${allaOk ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-                <div className="flex items-center gap-1.5 text-sm font-semibold">
+                <div className="flex items-start gap-1.5 text-sm font-semibold">
                   {allaOk
-                    ? <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    : <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+                    ? <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    : <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />}
                   <span className={allaOk ? "text-emerald-800" : "text-amber-900"}>{rubrik}</span>
                 </div>
-                <p className={`text-sm ${allaOk ? "text-emerald-700" : "text-amber-800"}`}>{vad}</p>
-                <p className={`text-sm mt-0.5 font-medium ${allaOk ? "text-emerald-700" : "text-amber-900"}`}>
-                  {!del?.finns
-                    ? "Ingen nyckel sparad."
-                    : allaOk
-                      ? "Sparad, allt fungerar."
-                      : `Sparad, men nekas: ${trasiga.map((b) => b.namn.toLowerCase()).join(", ")}.`}
+                {/* Håkan 13/8: "varför inte tala om VAD som eventuellt ÄR inne så man kan se".
+                    Början av nyckeln räcker för att känna igen den — och för att se att det
+                    FINNS något där, vilket är hela skillnaden mot ett tomt ja/nej. */}
+                <p className={`text-sm mt-0.5 ${allaOk ? "text-emerald-700" : "text-amber-900"}`}>
+                  {!del?.finns ? (
+                    "Ingen nyckel ligger här. Den här delen fungerar inte förrän du lagt in en."
+                  ) : (
+                    <>
+                      Här ligger nyckeln <span className="font-mono">{del.borjan}</span>{" "}
+                      {allaOk
+                        ? "och den fungerar."
+                        : `men MySales säger nej till ${trasiga.map((b) => b.namn.toLowerCase()).join(" och ")}.`}
+                    </>
+                  )}
                 </p>
               </div>
             );
@@ -138,19 +143,23 @@ export default function MySalesConnect() {
         {status?.fokus?.finns && status?.studio?.finns && (
           <p className="text-sm text-gray-500 mt-1.5">
             {status.fokus.sammaNyckel
-              ? "Det är samma nyckel på båda ställena — en enda räcker alltså för den här kunden."
-              : "De två är olika nycklar. Vill du ha en enda: klistra in den i totalfältet nedan."}
+              ? "Det är samma nyckel på båda ställena. En enda räcker alltså för den här kunden."
+              : "Det är två olika nycklar. Vill du klara dig med en enda: lägg in den i fält 2."}
           </p>
         )}
       </div>
 
       {/* ── 1. LOCATION-ID ───────────────────────────────────────────────────────────── */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">1. Location-id (kundens MySales-id)</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-1">1. Kundens id-nummer i MySales</label>
         <input value={loc} onChange={(e) => setLoc(e.target.value)}
           placeholder="t.ex. HRRSfU2eczG7Dxm81Ac9"
           className={faltCls} name="mysales-location" {...skydd} />
-        <p className="text-sm text-gray-500 mt-1">Står i MySales-adressen efter <code>/location/</code>. Gäller båda nycklarna nedan.</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {status?.locationFranOnboarding
+            ? "Ifyllt åt dig — numret kom med från onboardingen. Ändra bara om det är fel."
+            : <>Logga in i kundens MySales. Numret står i adressfältet direkt efter <code>/location/</code>.</>}
+        </p>
       </div>
 
       {/* ── 2. TOTALNYCKELN ──────────────────────────────────────────────────────────── */}
@@ -161,59 +170,63 @@ export default function MySalesConnect() {
           (GET returnerar den aldrig) och töms ur fältet vid sparning. */}
       <div className="rounded-xl border-2 border-gray-900 p-4 space-y-2">
         <div>
-          <label className="block text-base font-bold text-gray-900">2. Totalnyckel — gäller allt</label>
+          <label className="block text-base font-bold text-gray-900">2. En nyckel som ska gälla ALLT</label>
           <p className="text-sm text-gray-600 mt-0.5">
-            Skrivs till <strong>båda</strong> ställena: kanalerna, publiceringen och kundlistan
-            — och Fokus idag, DM-tavlan, leadflödet och onboardingen. Det här är samma fält som
-            nyckeln vid onboardingen låg i.
+            Lägg nyckeln här om <strong>samma</strong> nyckel ska sköta hela kunden. Den ersätter
+            båda rutorna ovan — alltså både publiceringen och Fokus idag, DM och leads.
+            Det är den vägen som ger minst att hålla reda på.
           </p>
         </div>
         <input value={pitAllt} onChange={(e) => setPitAllt(e.target.value)} type="text"
-          placeholder="Klistra in totalnyckeln här (pit-…)"
+          placeholder="Klistra in nyckeln här (den börjar med pit-)"
           className={faltCls} name="mysales-totalnyckel" {...skydd} />
         <button onClick={() => koppla("allt")} disabled={!!sparar || !loc.trim() || !pitAllt.trim()}
           className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40">
           {sparar === "allt" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-          Testa och spara totalnyckeln
+          Spara nyckeln som gäller allt
         </button>
       </div>
 
       {/* ── 3. KANALNYCKELN ──────────────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-gray-300 p-4 space-y-2">
         <div>
-          <label className="block text-base font-bold text-gray-900">3. Bara sociala kanaler</label>
+          <label className="block text-base font-bold text-gray-900">3. En nyckel bara för sociala medier</label>
           <p className="text-sm text-gray-600 mt-0.5">
-            Skrivs <strong>bara</strong> till kanalerna, publiceringen och kundlistan. Fokus, DM
-            och leads behåller sin egen nyckel — den rörs aldrig härifrån.
+            Lägg nyckeln här om du <strong>bara</strong> vill byta den som publicerar på Facebook,
+            Instagram och LinkedIn, och läser kundlistan. Fokus idag, DM och leads behåller sin
+            egen nyckel — den rörs inte härifrån.
           </p>
         </div>
         <input value={pitSocial} onChange={(e) => setPitSocial(e.target.value)} type="text"
-          placeholder="Klistra in kanalnyckeln här (pit-…)"
+          placeholder="Klistra in nyckeln här (den börjar med pit-)"
           className={faltCls} name="mysales-kanalnyckel" {...skydd} />
         <button onClick={() => koppla("socialt")} disabled={!!sparar || !loc.trim() || !pitSocial.trim()}
           className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40">
           {sparar === "socialt" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-          Testa och spara kanalnyckeln
+          Spara nyckeln för sociala medier
         </button>
       </div>
 
       <div className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2.5 space-y-1.5">
-        <p className="text-sm font-semibold text-gray-700">Så skapar du nyckeln</p>
+        <p className="text-sm font-semibold text-gray-700">Var får du tag i nyckeln?</p>
         <p className="text-sm text-gray-600">
-          I <strong>kundens</strong> MySales: Settings → Private Integrations → skapa en, döp
-          den till <strong>Cockpit</strong>, och kryssa i dessa fyra:
+          Inne i <strong>kundens egen</strong> MySales: Settings → Private Integrations → Create
+          new. Döp den till <strong>Cockpit</strong> och kryssa i de här fyra:
         </p>
         <ul className="text-sm text-gray-600 space-y-0.5 pl-1">
-          <li>· <strong>Social Planner</strong> — kanalerna och publiceringen</li>
-          <li>· <strong>Users</strong> — avsändare vid publicering</li>
-          <li>· <strong>Contacts</strong> — kundlistan (taggarna följer med här)</li>
-          <li>· <strong>Opportunities</strong> — Fokus idag, DM och pipeline</li>
+          <li>· <strong>Social Planner</strong> — så att vi kan publicera åt kunden</li>
+          <li>· <strong>Users</strong> — MySales kräver en avsändare när något publiceras</li>
+          <li>· <strong>Contacts</strong> — så att kundlistan går att läsa</li>
+          <li>· <strong>Opportunities</strong> — så att Fokus idag, DM och leads fungerar</li>
         </ul>
+        <p className="text-sm text-gray-600">
+          Nyckeln visas <strong>en enda gång</strong> — kopiera den direkt. Saknas Opportunities
+          duger den till fält 3 men inte till fält 2.
+        </p>
         <p className="text-sm text-gray-500">
-          Rutan provar de fyra ovan. Samma nyckel används dessutom av onboardingen när ett
-          konto sätts upp från grunden (custom values, taggar, workflows) — så skapar du en
-          ny nyckel: <strong>behåll allt den gamla integrationen hade</strong> och lägg till,
-          ta aldrig bort. En nyckel utan Opportunities hör hemma i kanalfältet.
+          Skapar du en ny nyckel: <strong>behåll allt den gamla hade</strong> och lägg till.
+          Ta aldrig bort en bock — onboardingen använder samma nyckel till mer än de fyra ovan,
+          och det som försvinner märks först när något slutar fungera.
         </p>
       </div>
 
@@ -228,7 +241,7 @@ export default function MySalesConnect() {
       {resultat && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2">
           <div className="text-sm font-semibold text-gray-700">
-            {resultat.mal === "allt" ? "Totalnyckeln" : "Kanalnyckeln"} — vad den faktiskt får göra
+            Nyckeln du just sparade {resultat.mal === "allt" ? "(fält 2, gäller allt)" : "(fält 3, sociala medier)"} — vad den faktiskt får göra
           </div>
           <ul className="space-y-1">
             {resultat.behorigheter.map((b) => (

@@ -155,17 +155,17 @@ describe("NYCKEL-1c · rutan visar sanningen INNAN man klistrar in", () => {
   });
 
   it("vyn visar två separata besked", () => {
-    expect(VY).toContain("Totalnyckeln");
-    expect(VY).toContain("Kanalnyckeln");
-    expect(VY).toContain("Fokus, DM, leads och onboarding");
+    // Rubrikerna säger vad delen GÖR, inte vad nyckeln heter internt (NYCKEL-1e).
+    expect(VY).toContain("Fokus idag, DM och leads");
+    expect(VY).toContain("Facebook, Instagram, LinkedIn och kundlistan");
   });
 
   it("vyn namnger vad som nekas, inte bara att något är fel", () => {
-    expect(VY).toContain("nekas: ${trasiga.map((b) => b.namn.toLowerCase()).join(\", \")}");
+    expect(VY).toContain('MySales säger nej till ${trasiga.map((b) => b.namn.toLowerCase()).join(" och ")}');
   });
 
   it("vyn säger när de två använder olika nycklar", () => {
-    expect(VY).toContain("De två är olika nycklar");
+    expect(VY).toContain("Det är två olika nycklar");
     expect(VY).toContain("Det är samma nyckel på båda ställena");
   });
 });
@@ -203,18 +203,55 @@ describe("NYCKEL-1d · två fält, och Håkan väljer själv vilket", () => {
 
   it("båda fälten har egen synlig rubrik — inte bara en platshållare", () => {
     // Håkan såg bara ett fält för MySales-id och hittade inte nyckelfältet alls.
-    expect(VY).toContain("1. Location-id (kundens MySales-id)");
-    expect(VY).toContain("2. Totalnyckel — gäller allt");
-    expect(VY).toContain("3. Bara sociala kanaler");
-  });
-
-  it("rutan säger vad varje sparad nyckel gäller, inte bara att den finns", () => {
-    expect(VY).toContain("Nycklar som ligger inne nu");
-    expect(VY).toContain("Ingen nyckel sparad.");
-    expect(VY).toContain("Sparad, allt fungerar.");
+    expect(VY).toContain("1. Kundens id-nummer i MySales");
+    expect(VY).toContain("2. En nyckel som ska gälla ALLT");
+    expect(VY).toContain("3. En nyckel bara för sociala medier");
   });
 
   it("inställningssidan beskriver att det är två fält", () => {
     expect(INSTALLNINGAR).toContain("Två fält");
+  });
+});
+
+describe("NYCKEL-1e · rutan hittar nyckeln som FINNS, och säger vilken det är", () => {
+  // ⚠ RIKTIG BUGG, mätt på For Balance 13/8: rutan sa "Ingen nyckel sparad" på BÅDA
+  // rutorna, trots att onboardingen lagt in en nyckel som fungerar för kanalerna
+  // (social=200, kontakter=200, affärer=401). Orsaken: Fokus-nyckeln slogs upp på
+  // `ghl_location_id`, och For Balances klientrad hade inget location-id alls. Nyckeln
+  // fanns, på ett fält vi aldrig tittade i. Håkan fick veta att inget fanns — och skulle
+  // ha skapat en ny nyckel i onödan.
+  it("nyckeln slås upp på klient-id, inte bara på location", () => {
+    // coach_users.id ÄR klient-id:t — provisionera.ts skriver in raden så.
+    expect(ROUTE).toContain('.eq("id", clientId)');
+  });
+
+  it("location-id läses från onboardingen när klientraden saknar det", () => {
+    expect(ROUTE).toContain("const locationId = data?.ghl_location_id || coachLocation");
+    expect(ROUTE).toContain("locationFranOnboarding:");
+    expect(VY).toContain("numret kom med från onboardingen");
+  });
+
+  it("uppslaget på location finns kvar som andra väg", () => {
+    // Displayteknik har TVÅ coach_users-rader på samma location och bara den ena bär
+    // klient-id:t. Tas location-vägen bort tappas den andra raden.
+    expect(ROUTE).toContain("if (!coachToken && locationId)");
+    expect(ROUTE).toContain('.eq("ghl_location_id", locationId)');
+  });
+
+  it("rutan visar BÖRJAN av nyckeln — inte bara ja eller nej", () => {
+    // Håkans krav: "varför inte tala om VAD som eventuellt ÄR inne så man kan se".
+    expect(ROUTE).toContain("const borjan = (t: string) =>");
+    expect(ROUTE).toContain("t.slice(0, 12)");
+    expect(VY).toContain("Här ligger nyckeln");
+  });
+
+  it("hela nyckeln returneras fortfarande aldrig", () => {
+    const get = ROUTE.slice(ROUTE.indexOf("export async function GET"), ROUTE.indexOf("// POST {"));
+    expect(get).not.toMatch(/pit:\s*pit/);
+    expect(get).not.toMatch(/token:\s*coachToken/);
+  });
+
+  it("tom ruta säger vad det betyder, inte bara att den är tom", () => {
+    expect(VY).toContain("Ingen nyckel ligger här. Den här delen fungerar inte förrän du lagt in en.");
   });
 });
