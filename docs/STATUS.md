@@ -643,3 +643,53 @@ funktionen läser ett externt API där saknade fält är normalt.
 på 200 kr reagerar aldrig, och de 15 tokens per påbörjat femsekundersklipp vilar inte på
 någon mätning. Ingen video har körts än, så ingenting läcker i dag. Sätt priset innan
 video släpps på en betalande kund.
+
+---
+
+## RAPPORT-1 2026-08-13 — djupgranskningen läser hela sajten, eller säger varför inte
+
+**Beställningens kärna:** en rapport får aldrig dra slutsatser ur data som saknas, och det
+ska vara mekaniskt, inte en regel i en prompt.
+
+### R-0 (godkänd) — rotorsaken, mätt
+
+| Fynd | Bevis |
+|---|---|
+| `crawlSite` byggde sidlistan ENBART på `/sitemap.xml` och följde aldrig en länk | koden, `lib/seo-deep.ts` |
+| forbalance.se:s `/sitemap.xml` ÄR ett index. De två `<loc>` är sitemapFILER, som crawlades som sidor | mätt: index → `sitemap_pages.xml` (10) + `sitemap_blog.xml` (7). Rapportens "3 sidor" = startsidan + två XML-filer |
+| Sajten svarar 500 på varje cache-miss, för ALLA user-agents | Chrome, Googlebot och utan UA gav samma 500. **S-6:s headers-hypotes är därmed avfärdad** |
+| robots.txt spärrar ~46 AI-crawlers med `Disallow: /`, `*` får `Allow: /` | vår `CockpitSEO/1.0` är alltså inte blockerad. Den externa hämtaren identifierade sig som AI-bot |
+| Gemensam rotorsak med onboardingmotorn | **avfärdad.** `lib/onboard/upptack.ts` gjorde redan rätt, och bar varningen om SEO-motorn i en kommentar |
+
+### R-1 till R-3 — byggt, commit `80848e9`
+
+- **En länkupptäckt**, `lib/lankupptackt.ts`, delad av båda motorerna. Filter som konfiguration.
+- **Täckningsgrind med tre utfall**, `lib/deep-audit-tackning.ts`: full · partiell (blockeringsrapport) · totalfel. 404 från menyn är ett FYND, inte ett hål. Gräns för blockering: 30 % serverfel eller högst en läst sida.
+- **Blockeringsrapporten**, `lib/deep-audit-blockering.ts`, skrivs deterministiskt i kod. Serverfelet är fynd nummer ett med konsekvensen för Google. Noll klistra-in-texter.
+- **Sanningsgrind på färdig text**, `lib/deep-audit-granska.ts`, körs i finaliseringen: tankstreck, obackade tal → `[DIN SIFFRA]` + lucklista, platshållarcitat markeras, plattformsnamn översätts, konsistens mot sidlistan.
+- **AEO-teknikkontroll**, `lib/seo/ai-robots.ts`: 12 kända AI-robotar klassas mot robots.txt.
+- Plattformskarta, `lib/plattform-namn.ts`: BaseKit → **Hemsida24**, GoHighLevel → **MySales**, okänd → "din webbplattform".
+
+### Två egna buggar som mätningen avslöjade, båda fixade
+
+1. `decodePayload` avkodade inte `\uXXXX` generellt → `/klienten-berättar` blev
+   `/klienten-ber/u00e4ttar` och gav 404. **Vi hade rapporterat en död länk som inte finns.**
+2. Cloudflares `/cdn-cgi/l/email-protection` i displaytekniks sidfot gav 404 och drog ned
+   täckningen till partiell.
+
+### DoD-läget
+
+| Punkt | Status |
+|---|---|
+| 1a full rapport mot displayteknik.se | **Crawlen bevisad: 11/11 sidor, noll spöksidor.** Rapporten är inlämnad som batch `msgbatch_014iMc3bu7gfCoMThLJipzN9`, asset `392a13b9`. Väntar på Anthropic |
+| 1b blockeringsfallet mot forbalance.se | **Kan inte köras just nu:** sajten svarar från cache igen, 17/17 lästa, utfall `full`. Blockeringsvägen är bevisad med test, och utlöses skarpt nästa gång sajten 500:ar |
+| Noll tankstreck | Grinden bevisad på verklig text i test. Mäts på DT-rapporten när den landar |
+| Fem sifferstickprov | Väntar på rapporten |
+| Generalitet, andra branscher | **Klart:** engenstrad.se 20/20 (WordPress, sitemapen tom, länkarna bar crawlen), opprabygamlaskola.se 1/1 |
+| Rapporter dolda i kundvyn | **Står kvar.** `DOLJ_RAPPORTER_I_KUNDVYN = true` |
+
+### Fynd om kundernas sajter (inte om koden)
+
+- **forbalance.se** har tre döda menylänkar: `/holistisk`, `/kropp`, `/kurser-workshops`
+- **forbalance.se** spärrar nio AI-robotar i robots.txt, inklusive GPTBot och ClaudeBot
+- **forbalance.se** 500:ar på cache-miss. Hemsida24 måste laga ursprungsservern
