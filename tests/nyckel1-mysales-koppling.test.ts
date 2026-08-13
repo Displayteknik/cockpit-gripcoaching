@@ -102,3 +102,32 @@ describe("NYCKEL-1 · den bor i Inställningar", () => {
     expect(get).not.toMatch(/pit:\s*data/);
   });
 });
+
+describe("NYCKEL-1b · en smalare nyckel får ALDRIG skriva över en bredare", () => {
+  // ⚠ Detta är en rättelse av mitt eget bygge samma dag. Första versionen speglade rakt av.
+  // Håkan påpekade att affärsbehörigheten låg i en separat integration som lades in vid
+  // ONBOARDINGEN, i samma fält (`coach_users.ghl_api_token`). En ny nyckel med bara
+  // socialplanner + contacts slog därför tyst ut Fokus idag och DM-tavlan.
+  //
+  // Mätt efteråt på For Balance: pipelines svarade 401 direkt efter speglingen.
+  // En tyst försämring är värre än ett fel som syns.
+  it("affärsbehörigheten provas, inte bara de tre första", () => {
+    expect(ROUTE).toContain('namn: "Affärer"');
+    expect(ROUTE).toContain("opportunities/pipelines");
+  });
+
+  it("speglingen sker bara när den nya nyckeln klarar affärerna", () => {
+    expect(ROUTE).toContain('const klararAffarer = behorigheter.find((b) => b.namn === "Affärer")?.ok === true');
+    expect(ROUTE).toContain('if (!klararAffarer) throw new Error("hoppar över spegling")');
+  });
+
+  it("den gamla nyckeln lämnas orörd, och användaren får veta varför", () => {
+    expect(ROUTE).toContain("varning:");
+    expect(ROUTE).toContain("använder fortfarande den nyckel som lades in vid onboardingen");
+  });
+
+  it("svaret säger om speglingen skedde eller inte", () => {
+    // Utan det fältet ser en halv koppling ut som en hel.
+    expect(ROUTE).toContain("speglad: klararAffarer");
+  });
+});

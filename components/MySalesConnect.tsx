@@ -25,7 +25,7 @@ export default function MySalesConnect() {
   const [pit, setPit] = useState("");
   const [sparar, setSparar] = useState(false);
   const [fel, setFel] = useState("");
-  const [resultat, setResultat] = useState<{ behorigheter: Behorighet[]; kanaler: Kanal[]; coachRader: number } | null>(null);
+  const [resultat, setResultat] = useState<{ behorigheter: Behorighet[]; kanaler: Kanal[]; coachRader: number; varning?: string } | null>(null);
 
   const las = useCallback(async () => {
     try {
@@ -46,7 +46,7 @@ export default function MySalesConnect() {
       });
       const d = await r.json();
       if (!r.ok) { setFel(d.error || "Kopplingen misslyckades."); return; }
-      setResultat({ behorigheter: d.behorigheter || [], kanaler: d.kanaler || [], coachRader: d.coachRader || 0 });
+      setResultat({ behorigheter: d.behorigheter || [], kanaler: d.kanaler || [], coachRader: d.coachRader || 0, varning: d.varning });
       setPit(""); // nyckeln ska inte ligga kvar i ett fält efter sparning
       await las();
     } catch (e) { setFel((e as Error).message); } finally { setSparar(false); }
@@ -89,8 +89,8 @@ export default function MySalesConnect() {
           name="mysales-pit" autoComplete="off" data-lpignore="true" data-1p-ignore spellCheck={false} />
         <p className="text-sm text-gray-500">
           Skapa nyckeln i MySales under Settings → Private Integrations. Kryssa i
-          <strong> Social Planner</strong>, <strong>Users</strong> och <strong>Contacts</strong> —
-          då täcker samma nyckel både publicering och kundlistan.
+          <strong> Social Planner</strong>, <strong>Users</strong>, <strong>Contacts</strong> och <strong>Opportunities</strong> —
+          då täcker samma nyckel publicering, kundlistan OCH Fokus. Utan Opportunities lämnas Fokus-nyckeln orörd.
         </p>
         <button onClick={koppla} disabled={sparar || !loc.trim() || !pit.trim()}
           className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40">
@@ -132,6 +132,14 @@ export default function MySalesConnect() {
           {resultat.coachRader > 0 && (
             <div className="text-sm text-gray-500">
               Samma nyckel används nu även av Fokus och kundlistan.
+            </div>
+          )}
+          {/* En smalare nyckel skriver aldrig över en bredare. Sägs rakt ut, annars ser en
+              halv koppling ut som en hel. */}
+          {resultat.varning && (
+            <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{resultat.varning}</span>
             </div>
           )}
         </div>

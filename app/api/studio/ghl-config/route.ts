@@ -42,6 +42,7 @@ async function provaBehorigheter(locationId: string, pit: string): Promise<Behor
     { namn: "Sociala konton", url: `${BASE}/social-media-posting/${locationId}/accounts`, betyder: "Kanalvalet och publiceringen till Facebook, Instagram, LinkedIn och Google" },
     { namn: "Användare", url: `${BASE}/users/?locationId=${locationId}`, betyder: "Publicering (MySales kräver en avsändare)" },
     { namn: "Kontakter", url: `${BASE}/contacts/?locationId=${locationId}&limit=1`, betyder: "Kundlistan" },
+    { namn: "Affärer", url: `${BASE}/opportunities/pipelines?locationId=${locationId}`, betyder: "Fokus idag, DM och pipeline" },
   ];
   const ut: Behorighet[] = [];
   for (const p of prov) {
@@ -95,10 +96,23 @@ export async function POST(req: NextRequest) {
     const { error } = await sb.from("clients").update({ ghl_location_id: locationId, ghl_pit: pit }).eq("id", clientId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // EN NYCKEL RÄCKER: samma nyckel till coach_users-raderna för samma location, så Fokus
-    // och kundregistret slutar läsa en egen (och i praktiken död) nyckel.
+    // EN NYCKEL RÄCKER — men BARA om den nya är minst lika bred som den den ersätter.
+    //
+    // ⚠ FÖRSTA VERSIONEN SKREV ÖVER RAKT AV, och det var fel. Håkan påpekade att
+    // affärsbehörigheten låg i en separat integration som lades in i onboarding-steget.
+    // En ny nyckel med bara socialplanner + contacts slog då tyst ut Fokus idag och
+    // DM-tavlan. Mätt efteråt: precis så blev det — pipelines svarade 401 direkt efter
+    // speglingen, på en kund där Fokus dessförinnan fungerade.
+    //
+    // Regeln nu: spegla bara när den nya nyckeln klarar affärerna, för det är den
+    // behörighet Fokus-vägen faktiskt behöver. Klarar den inte det lämnas den gamla
+    // nyckeln orörd och svaret säger varför. Att byta en fungerande nyckel mot en smalare
+    // är ingen uppgradering.
+    const klararAffarer = behorigheter.find((b) => b.namn === "Affärer")?.ok === true;
     let coachRader = 0;
+    if (!klararAffarer) console.warn("[ghl-config] nya nyckeln saknar affärsbehörighet — coach_users lämnas orörd");
     try {
+      if (!klararAffarer) throw new Error("hoppar över spegling");
       const { data: uppdaterade } = await sb
         .from("coach_users")
         .update({ ghl_api_token: pit })
@@ -116,6 +130,14 @@ export async function POST(req: NextRequest) {
       kanaler: check.accounts.map((a) => ({ platform: a.platform, namn: a.name, utgangen: a.isExpired })),
       behorigheter,
       coachRader,
+      speglad: klararAffarer,
+      ...(klararAffarer
+        ? {}
+        : {
+            varning:
+              "Nyckeln saknar behörighet till affärerna, så Fokus idag och DM-tavlan använder fortfarande den nyckel som lades in vid onboardingen. " +
+              "Lägg till Opportunities på integrationen i MySales och klistra in nyckeln igen, så räcker en enda.",
+          }),
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
