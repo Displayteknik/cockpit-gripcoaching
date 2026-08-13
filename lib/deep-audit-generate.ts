@@ -2,6 +2,12 @@ import { supabaseService } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/client-context";
 import { crawlSite, type SiteAudit } from "@/lib/seo-deep";
 import { anropaProvider } from "@/lib/ai-usage";
+import { bedomTackning, MIN_HOMEPAGE_TECKEN } from "@/lib/deep-audit-tackning";
+import { byggBlockeringsrapport } from "@/lib/deep-audit-blockering";
+import { tillatnaTalFranKallor } from "@/lib/deep-audit-granska";
+import { plattformIText } from "@/lib/plattform-namn";
+import { aiRobotsAtgard } from "@/lib/seo/ai-robots";
+import { WRITING_RULES_BLOCK, SIFFER_SKARPNING } from "@/lib/content/writing-rules";
 
 const MODEL = "claude-sonnet-4-5";
 
@@ -29,8 +35,7 @@ const MODEL = "claude-sonnet-4-5";
 //   företagssajt ska kunna granskas. Målet är att skilja "vi läste sajten" från "vi
 //   läste ingenting". Allt däremellan får bli en rapport med förbehåll.
 
-/** Under så här många tecken startsidetext är sajten inte läst, den är oläsbar. */
-const MIN_HOMEPAGE_TECKEN = 200;
+export { MIN_HOMEPAGE_TECKEN };
 
 export interface UnderlagsDom {
   duger: boolean;
@@ -41,51 +46,14 @@ export interface UnderlagsDom {
 /**
  * Avgör om crawlen gav tillräckligt för att en rapport ska FÅ skrivas.
  *
- * Egen exporterad funktion för att beteendet ska gå att bevisa med test, inte bara läsas
- * i en gren — samma skäl som `snapshotStegAterAnvant` i onboardingmotorn.
- *
- * Tre spärrar, alla med samma innebörd: vi har inget att uttala oss om.
+ * ★ RAPPORT-1: den riktiga bedömningen bor numera i `bedomTackning`, som har TRE utfall
+ *   i stället för två (full / partiell / totalfel). Den här funktionen är kvar som den
+ *   smala ja/nej-frågan "får något alls skrivas", eftersom flera anropsställen och tester
+ *   ställer just den frågan. En fungerande väg rivs aldrig.
  */
 export function underlagDuger(site: SiteAudit): UnderlagsDom {
-  // 1. Ingen enda sida lästes. `pageCount` är verkligt lästa, aldrig antalet försök.
-  if (site.pageCount === 0) {
-    const orsaker = site.misslyckade
-      .slice(0, 3)
-      .map((m) => `${m.url} (${m.status ?? "inget svar"}${m.fel ? `: ${m.fel}` : ""})`)
-      .join("; ");
-    return {
-      duger: false,
-      varfor:
-        `Ingen av de ${site.pageCountForsokt} sidorna gick att läsa — ingen rapport skrivs. ` +
-        (orsaker ? `Först i listan: ${orsaker}. ` : "") +
-        `Det är nästan alltid ett fel i hämtningen, inte på sajten. Kontrollera att adressen svarar i en webbläsare och kör om.`,
-    };
-  }
-
-  // 2. Startsidan gick inte att läsa. null = kunde inte läsas, "" = lästes och var tom.
-  //    Utan startsidetext finns inget innehålls- eller E-E-A-T-underlag alls, och det är
-  //    just de delarna rapporten uttalar sig starkast om.
-  if (site.homepageText == null) {
-    const h = site.misslyckade.find((m) => m.url === site.root) ?? site.misslyckade[0];
-    return {
-      duger: false,
-      varfor:
-        `Startsidan (${site.root}) kunde inte läsas` +
-        (h ? ` — ${h.status ?? "inget svar"}${h.fel ? `: ${h.fel}` : ""}` : "") +
-        `. Ingen rapport skrivs, eftersom innehålls- och E-E-A-T-bedömningen då hade byggts på ingenting.`,
-    };
-  }
-
-  if (site.homepageText.trim().length < MIN_HOMEPAGE_TECKEN) {
-    return {
-      duger: false,
-      varfor:
-        `Startsidan svarade men innehöll bara ${site.homepageText.trim().length} tecken läsbar text — för lite för att granska. ` +
-        `Vanligaste orsaken är en sida som byggs med JavaScript vi inte kom åt, en parkerad domän, eller ett skal som kräver inloggning.`,
-    };
-  }
-
-  return { duger: true, varfor: null };
+  const dom = bedomTackning(site);
+  return dom.utfall === "totalfel" ? { duger: false, varfor: dom.varfor } : { duger: true, varfor: null };
 }
 
 const SYSTEM_PROMPT = `Du genererar en professionell SEO/AEO-djupgranskning på svenska enligt en specifik mall. Rapporten ska kunna läsas och FÖLJAS av en företagare utan teknisk bakgrund — inga oförklarade förkortningar, och varje föreslagen text skriven ut i sin helhet.
@@ -156,10 +124,27 @@ Föreslå konkret var på sajten siffror/citat/expertspråk ska in — och lägg
 
 ---
 
+# Syns du där kunderna letar lokalt
+
+[OBLIGATORISK sektion när FAKTA innehåller "lokal verksamhet: ja". Två delar, båda i klartext:
+
+**Google-företagsprofil** (kartan och rutan till höger i Google): är profilen anspråkad,
+står rätt kategori, rätt öppettider, rätt adress? Kan vi inte kontrollera det utifrån
+skriver du det som en ÖPPEN FRÅGA, aldrig som ett påstående. Ta upp recensioner: har
+företaget omdömen på andra ställen men få eller inga på Google, säg det och beskriv hur man
+ber om dem. Det här är för de flesta lokala verksamheter den största enskilda hävstången,
+och den ligger därför i steg 1, inte under "Löpande".
+
+**Google Search Console** (Googles egen mätsida): verifierad, sitemap inskickad, sidorna
+indexerade? Samma regel: skriv öppen fråga när det inte går att mäta utifrån.]
+
+---
+
 # Att göra — i prioritetsordning
 
 ## Steg 1 — denna vecka (snabbt + störst effekt) → ~X timmar
-[5-6 numrerade punkter]
+[5-6 numrerade punkter. Är verksamheten lokal ska Google-företagsprofil och Search Console
+finnas med HÄR.]
 
 **Förväntad effekt:** [kvalitativ effekt i klartext — inga påhittade klick-/procentsiffror]
 
@@ -245,6 +230,42 @@ Avsluta med 2-3 rader om hur man maxar effekten: internlänka varje post till pe
 - KOMPLETTA EXEMPEL: varje föreslagen text (definition, jämförelsetabell, FAQ, schema) skrivs ut i SIN HELHET under "Färdiga texter att klistra in" — färdig att kopiera rakt in. Aldrig fragment, aldrig "[...]", aldrig "och så vidare". I steg-listorna hänvisar du bara dit. Enda tillåtna lucka är [DIN SIFFRA] för en siffra du faktiskt inte har.
 - Korta stycken, vardagliga ord. Förklara alltid en siffra med vad den betyder för kunden ("position 14 = sida 2, syns knappt").
 
+# SKRIVREGLER (RAPPORT-1, R-2 — gäller HELA dokumentet inklusive tabeller och klistra-in-texter)
+
+${WRITING_RULES_BLOCK}
+
+Tankstrecksregeln gäller varje rad i rapporten. Rapporten hade tidigare tankstreck rakt
+igenom, eftersom generatorn aldrig gick genom skrivreglerna. Använd komma, punkt eller
+kolon i stället.
+
+${SIFFER_SKARPNING}
+
+# SIFFERKRAV I KLISTRA-IN-TEXTERNA (hårdare än i löptexten)
+
+Texterna under "Färdiga texter att klistra in" är märkta färdiga och går rakt ut på kundens
+sajt utan granskning. Därför gäller: VARJE siffra, pris, antal, tidsangivelse och
+utfästelse måste ha källa i (a) den crawlade sajttexten, (b) profilens verifierade siffror,
+eller (c) inhämtad strukturerad data som står i FAKTA. Saknas källa skriver du [DIN SIFFRA]
+eller utelämnar påståendet helt. Skriv ALDRIG ut ett upplägg ("en serie om tio tillfällen",
+"max åtta deltagare") som inte står ordagrant i underlaget. Detta gäller även tal skrivna
+med bokstäver.
+
+Utfästelser om RESULTAT ("många känner skillnad redan första gången") kräver täckning i
+kundcitat eller verifierade siffror. Utan täckning: skriv generellt om vad som ingår, inte
+vad kunden kommer att känna.
+
+Exempelcitat med påhittade personer ("Anna, 42") markeras alltid tydligt som platshållare
+som MÅSTE bytas före publicering, och tas med i att-göra-listan.
+
+# STRUKTURERAD DATA (schema)
+
+- Lägg ALDRIG aggregateRating i schemat baserat på betyg från en tredjepartssajt
+  (Bokadirekt, Google, Facebook). Google vill att betyget ska vara insamlat av sajten själv,
+  och tredjepartsbetyg i eget schema är en gråzon som kan ge manuell åtgärd. Nämn gärna
+  omdömena i texten, men inte i koden.
+- sameAs får BARA innehålla profiler som står i FAKTA under "sociala profiler". Hitta
+  aldrig på ett konto, och utelämna aldrig ett som finns.
+
 # Vad du far i input
 
 - Klient-namn + URL
@@ -269,6 +290,8 @@ export interface DeepAuditResult {
   asset_id?: string | null;
   batch_id?: string;
   error?: string;
+  /** true = blockeringsrapport levererad i stället för full rapport (partiell täckning). */
+  blockering?: boolean;
   duration_ms: number;
 }
 
@@ -302,11 +325,47 @@ export async function runDeepAudit(clientId: string, urlOverride?: string): Prom
     return { ok: false, error: `Kunde inte hämta sajten: ${(e as Error).message}`, duration_ms: Date.now() - t0 };
   }
 
-  // ★ GRINDEN LIGGER HÄR, FÖRE PROMPTEN BYGGS. Se den långa förklaringen vid
-  //   `underlagDuger`. Ett hårt fel är billigt; en rapport ur ingenting är det inte.
-  const dom = underlagDuger(site);
-  if (!dom.duger) {
-    return { ok: false, error: dom.varfor!, duration_ms: Date.now() - t0 };
+  // ★ TÄCKNINGSGRINDEN LIGGER HÄR, FÖRE PROMPTEN BYGGS (RAPPORT-1, beslut 2).
+  //   Tre utfall: totalfel stoppar allt, partiell ger en blockeringsrapport skriven i kod,
+  //   full går vidare till modellen.
+  const tackning = bedomTackning(site);
+  const plattform = plattformIText(site.platform);
+
+  if (tackning.utfall === "totalfel") {
+    // Internt fel till oss. Ingen kundrapport alls: det finns inget att säga.
+    console.error(`[djupgranskning] totalfel för ${url}: ${tackning.varfor}`);
+    return { ok: false, error: tackning.varfor, duration_ms: Date.now() - t0 };
+  }
+
+  if (tackning.utfall === "partiell") {
+    // ★ Proffssvaret: säg att servern är trasig som fynd nummer ett i stället för att
+    //   svara "kan ej leverera". Rapporten skrivs deterministiskt, ingen modell tillfrågas,
+    //   och den innehåller BARA det vi mätte.
+    const rapport = byggBlockeringsrapport(site, tackning, {
+      klientnamn: c.name,
+      url,
+      datum: new Date().toISOString().slice(0, 10),
+      plattform: site.platform ? plattform : null,
+    });
+    const { data: sparad } = await sb.from("client_assets").insert({
+      client_id: clientId,
+      asset_type: "document",
+      category: "deep_audit_report",
+      subcategory: "seo_aeo",
+      body: rapport,
+      status: "active",
+      metadata: {
+        url,
+        sort: "blockering",
+        tackning: tackning.utfall,
+        ej_lasta: tackning.ejLasta.map((e) => `${e.url} (${e.status ?? "inget svar"})`),
+        huvudfel: tackning.huvudfel?.monster ?? null,
+        generated_at: new Date().toISOString(),
+      },
+    }).select("id").maybeSingle();
+
+    await logActivity(clientId, "deep_audit", `Blockeringsrapport for ${url}: ${tackning.varfor}`, "/dashboard/seo");
+    return { ok: true, asset_id: sparad?.id ?? null, blockering: true, duration_ms: Date.now() - t0 };
   }
 
   const gscAll = (gsc.data ?? []) as RawGscRow[];
@@ -319,6 +378,26 @@ export async function runDeepAudit(clientId: string, urlOverride?: string): Prom
 
   const p = profile.data as RawProfile | null;
   const auditSummary = (audits.data ?? []).map((a) => `${(a as { url: string }).url}: SEO ${(a as { seo_score: number }).seo_score} / AEO ${(a as { aeo_score: number }).aeo_score}`).join("\n") || "Inga tidigare audits.";
+
+  // Lokal verksamhet avgörs på profilens plats-fält. Utan adress är en Google-företagsprofil
+  // inte självklart relevant, och en obligatorisk sektion om den vore utfyllnad.
+  const pr = profile.data as (RawProfile & { location?: string | null; opening_hours?: string | null; verified_numbers?: string | null }) | null;
+  const platsRad = (pr?.location ?? "").trim();
+  const lokal = platsRad.length > 1;
+  const aiAtgardsText = aiRobotsAtgard(site.aiRobots);
+
+  // Sidtexterna är siffergrindens källa, inte promptens. Utan den här raden hade prompten
+  // svällt med hela sajtens brödtext en gång till.
+  const { sidTexter, ...sitePrompt } = site;
+  const tillatnaTal = tillatnaTalFranKallor(
+    ...sidTexter.map((s) => s.text),
+    site.homepageText,
+    pr?.verified_numbers ?? null,
+    (pr as { pricing_notes?: string | null } | null)?.pricing_notes ?? null,
+    pr?.opening_hours ?? null,
+    gscRows.map((r) => `${r.clicks} ${r.impressions} ${r.position}`).join(" "),
+  );
+  const crawladeUrler = site.pages.filter((s) => s.ejMattOrsak == null).map((s) => s.url);
 
   const userPrompt = `Generera djupgranskning for denna klient.
 
@@ -341,10 +420,37 @@ ${gscSummary}
 # Tidigare audits
 ${auditSummary}
 
+# Plattform (skriv ALLTID detta namn, aldrig tekniknamnet under huven)
+${plattform}
+
+# Lokal verksamhet: ${lokal ? "ja" : "nej"}
+${lokal ? `Adress/ort i profilen: ${platsRad}. Sektionen "Syns du där kunderna letar lokalt" är därmed OBLIGATORISK och ligger i steg 1.` : "Ingen fysisk adress i profilen. Hoppa över den lokala sektionen."}
+
+# Sociala profiler som sajten själv länkar till (enda tillåtna källa för sameAs)
+${site.socialaProfiler.length ? site.socialaProfiler.join("\n") : "(inga hittade på sajten)"}
+
+# AI-sökmotorernas robotar (AEO-teknikkontroll)
+${site.aiRobots.sammanfattning}
+${aiAtgardsText ? `Spärrade robotar: ${site.aiRobots.blockerade.join(", ")}. Detta ska vara TOPPFYND i AEO-sektionen: rapporten får inte rekommendera att synas i ChatGPT och Perplexity utan att först säga att sajten stänger ute dem. Färdig åtgärdstext finns nedan, återge den under "Färdiga texter att klistra in".\n\n${aiAtgardsText}` : ""}
+
+# Döda länkar och sidor som föll (eget fyndkapitel i rapporten)
+${tackning.dodaLankar.length
+  ? `Följande adresser länkas från sajten eller står i sitemapen men svarar att de inte finns (404). Ta upp dem som ett eget fynd under "Övriga tekniska anmärkningar": antingen ska länken rättas eller sidan återskapas. Skriv ut adresserna.\n${tackning.dodaLankar.map((d) => `- ${d.url}`).join("\n")}`
+  : "Inga döda länkar hittades."}
+${tackning.serverfel.length
+  ? `\nDessa sidor svarade med serverfel men resten av sajten lästes. Nämn dem som ett fynd, inte som en gissning om innehållet:\n${tackning.serverfel.map((d) => `- ${d.url} (${d.status ?? "inget svar"})`).join("\n")}`
+  : ""}
+
+# Så byggdes sidlistan (täckning)
+Från sitemap: ${site.upptackt.franSitemap.length} adresser${site.upptackt.sitemapArIndex ? ` (sitemapen är ett index med ${site.upptackt.barnSitemaps.length} delfiler)` : ""}
+Från länkar på startsidan: ${site.upptackt.franLankar.length} adresser
+Lästa: ${site.pageCount} av ${site.pageCountForsokt} försökta
+${site.upptackt.overTaket.length ? `Utanför taket (${site.upptackt.maxPages} sidor), alltså varken lästa eller trasiga: ${site.upptackt.overTaket.length} adresser. Säg det rakt ut i rapporten.` : "Inga adresser föll utanför taket."}
+
 # UPPMÄTT FAKTA — HELA SAJTEN (render-medvetet, deterministiskt — använd EXAKT, hitta inte på)
-Alla sidor nedan är hämtade från sitemap och granskade. "pages" = varje sidas mätvärden. "crossPage" = tvärsides-analys.
+Alla sidor nedan är hämtade från sitemap OCH från länkarna på sajten, och granskade. "pages" = varje sidas mätvärden. "crossPage" = tvärsides-analys.
 \`\`\`json
-${JSON.stringify(site)}
+${JSON.stringify(sitePrompt)}
 \`\`\`
 
 # Startsidans synliga text (för innehålls- och E-E-A-T-bedömning)
@@ -354,6 +460,8 @@ ${site.homepageText ?? "(startsidan kunde INTE läsas — se misslyckade[] i JSO
 
 Generera komplett rapport enligt mallen, för HELA sajten. Regler:
 - "pages" är ALLA sidor som finns — föreslå ALDRIG att skapa en sida som redan finns i listan. Föreslå istället internlänkning, förstärkning eller sammanslagning.
+- FÖRBÄTTRA-SPÅRET: när en sida för ett ämne redan finns ska rekommendationen vara att göra den befintliga sidan bättre (titel, definition i klartext, FAQ, ortsnamn, internlänkar), inte att skapa något från noll. Att föreslå fem nya undersidor när de redan finns är det dyraste felet en rapport kan göra: kunden betalar för arbete hon redan gjort.
+- Nämn ALDRIG innehåll (bloggposter, undersidor, länkar) som inte finns i "pages". Rapporten får inte hänvisa till något den samtidigt säger saknas.
 - Del 1 (baseline) = översiktstabell per sida (url, title-längd, canonical-källa, H1, schema, ord, seo/aeo-poäng).
 - Analysera HELHETEN: canonical-konsekvens (crossPage.canonicalInconsistent), dubbletter, tunna sidor, internlänkning mellan sidor (avgInternalLinks), alt-täckning.
 - canonical/robots/sitemap/schema är redan uppmätta — säg aldrig "saknas" om FAKTA visar att de finns.
@@ -422,6 +530,12 @@ Generera komplett rapport enligt mallen, för HELA sajten. Regler:
         batch_id: batch.id,
         started_at: new Date().toISOString(),
         gsc_rows: gscRows.length,
+        // R-2: grinden körs när batchen kommer hem, timmar senare. Underlaget måste
+        // därför följa med hit — det går inte att crawla om sajten för att kontrollera
+        // en siffra i efterhand.
+        tillatna_tal: tillatnaTal,
+        crawlade_urler: crawladeUrler,
+        tackning: tackning.utfall,
       },
     }).select("id").maybeSingle();
 

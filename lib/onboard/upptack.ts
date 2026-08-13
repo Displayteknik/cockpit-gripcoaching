@@ -5,13 +5,17 @@
 // företagsfakta. Vi vill ha de FÅ sidor som bär svaren — kontakt, om oss, tjänster,
 // priser, omdömen — och startsidan.
 //
-// ⚠ SEO-motorns `crawlSite` bygger sin sidlista ENBART på /sitemap.xml. Det räcker inte
-//   här: småföretagssajter (och just de kunder detta flöde finns för) saknar ofta sitemap
-//   helt. Därför kombineras två källor — sitemap OCH länkarna på startsidan — och
-//   resultatet rangordnas på hur troligt det är att sidan bär företagsfakta.
+// Två källor kombineras — sitemap OCH länkarna på startsidan — och resultatet rangordnas
+// på hur troligt det är att sidan bär företagsfakta. Småföretagssajter (och just de kunder
+// detta flöde finns för) saknar ofta sitemap helt, så länkkällan är inte en bonus här.
+//
+// ★ SJÄLVA UPPTÄCKTEN BOR NUMERA I `lib/lankupptackt.ts` — Håkans beslut 13/8.
+//   Den här filen hade rätt logik medan djupgranskningen hade fel, och varningen om det
+//   stod kvar här i en kommentar i stället för att bli en delad modul. Det som skiljer
+//   konsumenterna åt är bara FILTRET: onboardingen sorterar bort bloggen (den bär sällan
+//   företagsfakta), djupgranskningen tar med den. Filtret skickas därför som konfiguration.
 
-import { hamtaRatt } from "@/lib/seo-hamta";
-import { decodePayload } from "@/lib/seo-deep";
+import { upptackUrler, normalisera as normaliseraDelad } from "@/lib/lankupptackt";
 import type { SidRoll } from "./typer";
 
 /**
@@ -57,23 +61,11 @@ export interface UpptacktSida {
 }
 
 /**
- * Normaliserar en URL till en jämförbar form: samma värd, utan hash, utan query, utan
- * avslutande snedstreck. Utan detta blir /kontakt, /kontakt/ och /kontakt?utm=x tre sidor.
+ * Normaliserar en URL till en jämförbar form. Re-export från den delade modulen — den
+ * här filens anropare (och tester) importerar den härifrån sedan tidigare, och en
+ * fungerande väg rivs aldrig.
  */
-export function normalisera(raw: string, origin: string): string | null {
-  try {
-    const u = new URL(raw, origin);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
-    u.hash = "";
-    u.search = "";
-    let p = u.pathname.replace(/\/+$/, "");
-    if (p === "") p = "/";
-    u.pathname = p;
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
+export const normalisera = normaliseraDelad;
 
 /** Vilken roll spelar sidan? Avgörs på sökvägen — inte på innehållet, som vi inte läst än. */
 export function klassaRoll(url: string, rotUrl: string): { roll: SidRoll; vikt: number } {
@@ -92,50 +84,16 @@ export function klassaRoll(url: string, rotUrl: string): { roll: SidRoll; vikt: 
   return { roll: "ovrig", vikt: djup <= 1 ? 30 : 10 };
 }
 
-/** Hämtar sitemapens URL:er. null = sitemapen kunde inte läsas (≠ tom sitemap). */
-async function sitemapUrler(origin: string): Promise<string[] | null> {
-  const r = await hamtaRatt(`${origin}/sitemap.xml`, { timeoutMs: 10000, accepteraIckeOk: true });
-  if (r.logg.status !== 200 || r.text == null) return null;
-
-  const urler = new Set<string>();
-  for (const m of r.text.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) urler.add(m[1].trim());
-
-  // Sitemap-index: <sitemap><loc> pekar på fler sitemaps. Följ de tre första.
-  if (/<sitemapindex/i.test(r.text)) {
-    const barn = Array.from(urler).slice(0, 3);
-    urler.clear();
-    for (const b of barn) {
-      const rb = await hamtaRatt(b, { timeoutMs: 10000, accepteraIckeOk: true });
-      if (rb.logg.status === 200 && rb.text) {
-        for (const m of rb.text.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) urler.add(m[1].trim());
-      }
-    }
-  }
-  return Array.from(urler);
-}
-
-/** Plockar interna länkar ur startsidans HTML. Fungerar även på JS-renderad payload. */
-export function lankarIHtml(html: string, origin: string): string[] {
-  const kalla = decodePayload(html);
-  const ut = new Set<string>();
-  for (const m of kalla.matchAll(/href\s*=\s*["']([^"'#]+)["']/gi)) {
-    const n = normalisera(m[1], origin);
-    if (!n) continue;
-    try {
-      if (new URL(n).origin !== origin) continue; // bara samma sajt
-    } catch {
-      continue;
-    }
-    ut.add(n);
-  }
-  return Array.from(ut);
-}
+export { lankarIHtml } from "@/lib/lankupptackt";
 
 /**
  * Bygger sidlistan att läsa: startsidan först, sedan de tyngsta rollerna.
  *
  * `startHtml` är startsidans HTML om vi redan hämtat den — då slipper vi en extra
  * hämtning och får länkupptäckt gratis.
+ *
+ * Upptäckten görs av den delade modulen; det här flödets EGET bidrag är filtret
+ * (bloggen bort) och rangordningen på roll.
  */
 export async function upptackSidor(
   rotUrl: string,
@@ -145,30 +103,19 @@ export async function upptackSidor(
   const origin = new URL(rotUrl).origin;
   const rotNorm = normalisera(rotUrl, origin)!;
 
-  const kandidater = new Set<string>([rotNorm]);
-
-  const franSitemap = await sitemapUrler(origin);
-  for (const u of franSitemap ?? []) {
-    const n = normalisera(u, origin);
-    if (n && n.startsWith(origin)) kandidater.add(n);
-  }
-
-  if (startHtml) {
-    for (const u of lankarIHtml(startHtml, origin)) kandidater.add(u);
-  }
+  const upptackt = await upptackUrler({
+    rotUrl,
+    startHtml,
+    // Onboardingens filter, oförändrat: sidor som inte bär företagsfakta och maskinytor
+    // som aktivt förgiftar underlaget.
+    hoppaMonster: [SKIP_MONSTER, SKIP_MASKIN],
+  });
 
   const rankade: UpptacktSida[] = [];
-  for (const url of kandidater) {
-    if (url !== rotNorm) {
-      if (SKIP_ANDELSE.test(url)) continue;
-      let sokvag = "";
-      try {
-        sokvag = new URL(url).pathname;
-      } catch {
-        continue;
-      }
-      if (SKIP_MONSTER.test(sokvag) || SKIP_MASKIN.test(sokvag)) continue;
-    }
+  for (const url of upptackt.urls) {
+    // SKIP_ANDELSE täcks numera av den delade maskinfilsfiltreringen, men behålls som
+    // extra nät: listan här är bredare på bildformat än den delade.
+    if (url !== rotNorm && SKIP_ANDELSE.test(url)) continue;
     const { roll, vikt } = klassaRoll(url, rotUrl);
     rankade.push({ url, roll, vikt });
   }

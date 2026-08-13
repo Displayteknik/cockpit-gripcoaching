@@ -141,12 +141,22 @@ describe("S-2 · DoD: hämtningen mockad till 403", () => {
 
     const site = await crawlSite("https://exempel.se/", { maxPages: 25, skipLighthouse: true });
 
-    expect(site.pageCountForsokt).toBe(2);
-    expect(site.pageCount).toBe(1);            // bara startsidan lästes
+    // RAPPORT-1: sidlistan bygger numera på sitemap OCH startsidans länkar. Startsidan
+    // länkar till /en, /tva och /tre, så fem URL:er försöks: root + /trasig + de tre.
+    // Förut lästes bara sitemapen, och en meny kunde aldrig upptäckas.
+    expect(site.pageCountForsokt).toBe(5);
+    expect(site.pageCount).toBe(4);            // alla utom den trasiga lästes
+    // Länkupptäckten läser ALLA href-attribut, inte bara <a> — på JS-renderade sajter
+    // ligger menyn ofta i en payload utan a-taggar. Därför följer canonical-taggens
+    // egen URL med, vilket är ofarligt: startsidan dedupas bort.
+    expect(site.upptackt.franLankar).toContain("https://exempel.se/en");
+    expect(site.upptackt.franLankar).toContain("https://exempel.se/tva");
+    expect(site.upptackt.franLankar).toContain("https://exempel.se/tre");
     expect(site.misslyckade.map((m) => m.url)).toEqual(["https://exempel.se/trasig"]);
     expect(site.misslyckade[0].status).toBe(500);
-    // Aggregaten bygger BARA på den lästa sidan — den trasiga drar inte ned snittet till noll.
-    expect(site.crossPage.totalImagesNoAlt).toBe(75);
+    // Aggregaten bygger BARA på de LÄSTA sidorna — den trasiga drar inte ned snittet till
+    // noll. Fyra lästa sidor à 75 bilder utan alt = 300.
+    expect(site.crossPage.totalImagesNoAlt).toBe(300);
     expect(site.crossPage.avgInternalLinks).toBe(3);
     expect(site.crossPage.ejMattaSidor).toEqual(["https://exempel.se/trasig"]);
   });

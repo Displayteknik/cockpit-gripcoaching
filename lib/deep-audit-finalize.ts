@@ -1,5 +1,6 @@
 import { supabaseService } from "@/lib/supabase-admin";
 import { loggaHandelse } from "@/lib/ai-usage";
+import { granskaRapport } from "@/lib/deep-audit-granska";
 
 const MODEL = "claude-sonnet-4-5";
 
@@ -24,7 +25,10 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
   const { data: pending } = await q;
 
   let finalized = 0;
-  for (const row of (pending ?? []) as Array<{ id: string; metadata: { batch_id?: string } | null }>) {
+  for (const row of (pending ?? []) as Array<{
+    id: string;
+    metadata: { batch_id?: string; tillatna_tal?: string[]; crawlade_urler?: string[] } | null;
+  }>) {
     const batchId = row.metadata?.batch_id;
     if (!batchId) continue;
     try {
@@ -70,12 +74,38 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
           failed = true;
         }
       }
+      // ★ SANNINGSGRINDEN (RAPPORT-1, R-2). Prompten är första försvaret; det här är
+      //   spärren. Deterministisk och körs på ALLT som kommer tillbaka, oavsett hur
+      //   välskriven texten ser ut.
+      let avvikelser: { typ: string; detalj: string }[] = [];
+      let luckor: string[] = [];
+      if (text) {
+        const granskad = granskaRapport(text, {
+          tillatnaTal: row.metadata?.tillatna_tal ?? [],
+          crawladeUrler: row.metadata?.crawlade_urler ?? [],
+        });
+        text = granskad.text;
+        avvikelser = granskad.avvikelser;
+        luckor = granskad.luckor;
+        if (avvikelser.length) {
+          console.warn(`[djupgranskning] grinden rättade ${avvikelser.length} avvikelser i ${row.id}: ` +
+            avvikelser.map((a) => a.typ).join(", "));
+        }
+      }
+
       await sb
         .from("client_assets")
         .update({
           body: text,
           status: failed || !text ? "failed" : "active",
-          metadata: { ...(row.metadata ?? {}), generated_at: new Date().toISOString() },
+          metadata: {
+            ...(row.metadata ?? {}),
+            generated_at: new Date().toISOString(),
+            // Bevis på vad grinden gjorde. Utan detta går en rättad rapport inte att skilja
+            // från en som var korrekt från början, och då kan felkällan aldrig mätas.
+            grind_avvikelser: avvikelser,
+            grind_luckor: luckor,
+          },
         })
         .eq("id", row.id);
       if (!failed && text) finalized++;

@@ -16,6 +16,15 @@
 //    med 678 ord och 75 bilder, och grönt ljus på "inga bilder utan alt-text".
 
 import { hamtaSida, hamtaRatt, arSidaEjLast, type HamtLogg, type HamtOrsak } from "./seo-hamta";
+import {
+  decodePayload,
+  lankarIHtml,
+  socialaProfilerIHtml,
+  upptackUrler,
+  arMaskinfil,
+  type UpptacktUtfall,
+} from "@/lib/lankupptackt";
+import { analyseraAiRobots, type AiRobotsDom } from "@/lib/seo/ai-robots";
 
 export { SEO_USER_AGENT, SidaEjLast, arSidaEjLast, MIN_SIDSTORLEK_BYTE } from "./seo-hamta";
 export type { HamtLogg } from "./seo-hamta";
@@ -55,6 +64,13 @@ export interface PageSignals {
   listCount: number | null;
   images: { total: number; withoutAlt: number } | null;
   links: { internal: number; external: number } | null;
+  /**
+   * De interna länkarnas URL:er, normaliserade. Fanns bara som ANTAL förut, vilket är
+   * varför crawlen aldrig kunde följa en meny: siffran går inte att gå vidare på.
+   */
+  internaLankar: string[] | null;
+  /** Sociala profiler sajten själv länkar till. Källa för schemats `sameAs`. */
+  socialaProfiler: string[] | null;
   hasUpdatedDate: boolean | null;
   // Plattform + teknisk hygien hämtad live
   platform: string | null;
@@ -80,16 +96,9 @@ const stripText = (html: string) =>
     .trim();
 
 // Avkoda JS-strängars escaping så client-side-renderade taggar blir sökbara.
-// Exporterad för att onboarding-skrapan (lib/onboard) ska läsa GHL- och Next-sajter
-// likadant som SEO-motorn gör — en kopia här hade garanterat glidit isär över tid.
-export const decodePayload = (html: string) =>
-  html
-    .replace(/\\u003C/gi, "<")
-    .replace(/\\u003E/gi, ">")
-    .replace(/\\u0026/gi, "&")
-    .replace(/\\u002F/gi, "/")
-    .replace(/\\"/g, '"')
-    .replace(/\\\//g, "/");
+// Bor i lib/lankupptackt (delad av SEO-motorn och onboarding-skrapan); re-exporteras här
+// eftersom flera anropsställen importerar den härifrån sedan tidigare.
+export { decodePayload } from "@/lib/lankupptackt";
 
 const first = (html: string, re: RegExp) => (html.match(re)?.[1] || "").trim();
 const allMatches = (html: string, re: RegExp) => Array.from(html.matchAll(re));
@@ -135,6 +144,8 @@ interface RobotsSitemapResultat {
   robotsTxt: PageSignals["robotsTxt"];
   sitemap: PageSignals["sitemap"];
   fel: { robots: string | null; sitemap: string | null };
+  /** AEO-teknikkontrollen: släpps AI-sökmotorernas robotar in? null = robots.txt ej läst. */
+  aiRobots: AiRobotsDom;
 }
 
 /** 404/410 = filen finns verkligen inte. Allt annat icke-200 = vi VET inte. */
@@ -144,20 +155,29 @@ async function fetchRobotsAndSitemap(url: string): Promise<RobotsSitemapResultat
   let robotsTxt: PageSignals["robotsTxt"] = null;
   let sitemap: PageSignals["sitemap"] = null;
   const fel: { robots: string | null; sitemap: string | null } = { robots: null, sitemap: null };
+  // null tills robots.txt faktiskt lästs — en ohämtad fil får aldrig bli "allt tillåtet".
+  let robotsRa: string | null = null;
   let origin: string;
   try {
     origin = new URL(url).origin;
   } catch {
-    return { robotsTxt, sitemap, fel: { robots: `Ogiltig URL: ${url}`, sitemap: `Ogiltig URL: ${url}` } };
+    return {
+      robotsTxt, sitemap,
+      fel: { robots: `Ogiltig URL: ${url}`, sitemap: `Ogiltig URL: ${url}` },
+      aiRobots: analyseraAiRobots(null),
+    };
   }
 
   const r = await hamtaRatt(`${origin}/robots.txt`, { timeoutMs: 8000, accepteraIckeOk: true });
   if (r.logg.status === 200 && r.text != null) {
     const t = r.text;
+    robotsRa = t;
     const sm = first(t, /sitemap:\s*(\S+)/i) || null;
     const blocksEverything = /user-agent:\s*\*[\s\S]*?disallow:\s*\/\s*$/im.test(t);
     robotsTxt = { found: true, blocksEverything, sitemapDeclared: sm };
   } else if (arEjHittad(r.logg.status)) {
+    // Ingen robots.txt = inga spärrar. Det är ett MÄTT läge, inte ett okänt.
+    robotsRa = "";
     robotsTxt = { found: false, blocksEverything: false, sitemapDeclared: null };
   } else {
     // Ej 200 och ej 404 → okänt. Får ALDRIG bli "ingen robots.txt".
@@ -174,7 +194,7 @@ async function fetchRobotsAndSitemap(url: string): Promise<RobotsSitemapResultat
     fel.sitemap = s.logg.fel || `sitemap gav HTTP ${s.logg.status ?? "-"}`;
   }
 
-  return { robotsTxt, sitemap, fel };
+  return { robotsTxt, sitemap, fel, aiRobots: analyseraAiRobots(robotsRa) };
 }
 
 // PSI Lighthouse: renderad (headless Chrome) → SEO-score + CWV-fältdata (CrUX)
@@ -416,6 +436,8 @@ export function omattaSignaler(url: string, logg: HamtLogg): PageSignals {
     listCount: null,
     images: null,
     links: null,
+    internaLankar: null,
+    socialaProfiler: null,
     hasUpdatedDate: null,
     platform: null,
     robotsTxt: null,
@@ -502,7 +524,7 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
 
   const hasUpdatedDate = /datemodified|datepublished|uppdaterad|senast ändrad|published|updated/i.test(hay);
 
-  const tomRobots: RobotsSitemapResultat = { robotsTxt: null, sitemap: null, fel: { robots: null, sitemap: null } };
+  const tomRobots: RobotsSitemapResultat = { robotsTxt: null, sitemap: null, fel: { robots: null, sitemap: null }, aiRobots: analyseraAiRobots(null) };
   const [rs, lh] = await Promise.all([
     opts?.skipRobotsSitemap ? Promise.resolve(tomRobots) : fetchRobotsAndSitemap(url),
     opts?.skipLighthouse ? Promise.resolve({ seo: null, cwv: null, audits: null }) : fetchLighthouse(url),
@@ -536,6 +558,10 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
     listCount,
     images: { total: imgs.length, withoutAlt },
     links: { internal, external },
+    // Läses ur den AVKODADE källan: på client-side-renderade sajter (GHL, Next) ligger
+    // menyn i en JS-payload, och en rå href-sökning hittar då ingenting.
+    internaLankar: lankarIHtml(raw, new URL(url).origin),
+    socialaProfiler: socialaProfilerIHtml(raw),
     hasUpdatedDate,
     platform,
     robotsTxt: rs.robotsTxt,
@@ -600,6 +626,24 @@ export interface SiteAudit {
   /** null = sitemap kunde inte läsas. 0 = sitemap lästes och var tom. */
   sitemapUrlCount: number | null;
   sitemapFel: string | null;
+  /** AEO-teknikkontrollen: släpps ChatGPT:s, Claudes och Perplexitys robotar in? */
+  aiRobots: AiRobotsDom;
+  /** Sociala profiler sajten själv länkar till. Enda tillåtna källa för schemats sameAs. */
+  socialaProfiler: string[];
+  /**
+   * Hur sidlistan blev till. Utan detta går täckningsgrinden inte att granska i efterhand,
+   * och en avkortad lista ser ut som en liten sajt.
+   */
+  upptackt: {
+    franSitemap: string[];
+    franLankar: string[];
+    sitemapArIndex: boolean;
+    barnSitemaps: string[];
+    bortfiltrerade: { url: string; skal: string }[];
+    /** URL:er som föll utanför maxPages-taket. Redovisas alltid, aldrig tyst. */
+    overTaket: string[];
+    maxPages: number;
+  };
   platform: string | null;
   robotsTxt: PageSignals["robotsTxt"];
   robotsTxtFel: string | null;
@@ -607,6 +651,14 @@ export interface SiteAudit {
   homepageCwv: PageSignals["cwv"];
   /** null = startsidan kunde inte läsas. "" = lästes och var tom. */
   homepageText: string | null;
+  /**
+   * Varje läst sidas text. ENDA källan som gör siffergrinden möjlig: ett tal i en
+   * klistra in-text måste kunna spåras till något kunden faktiskt skrivit på sin sajt.
+   *
+   * ⚠ Skickas ALDRIG med i prompten (den skulle svälla flera hundra kilobyte).
+   * `runDeepAudit` plockar bort fältet innan JSON:en byggs.
+   */
+  sidTexter: { url: string; text: string }[];
   domainRedirect: { primaryHost: string; redirectWorks: boolean | null; note: string };
   pages: SitePageSummary[];
   crossPage: {
@@ -625,17 +677,10 @@ export interface SiteAudit {
   };
 }
 
-/** null = sitemapen kunde inte läsas. [] = den lästes och innehöll inga URL:er. */
-async function fetchSitemapUrls(origin: string): Promise<{ urls: string[] | null; fel: string | null }> {
-  const r = await hamtaRatt(`${origin}/sitemap.xml`, { timeoutMs: 10000, accepteraIckeOk: true });
-  if (r.logg.status === 200 && r.text != null) {
-    const urls = new Set<string>();
-    for (const m of r.text.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) urls.add(m[1].trim());
-    return { urls: Array.from(urls), fel: null };
-  }
-  if (arEjHittad(r.logg.status)) return { urls: [], fel: null }; // finns verkligen inte
-  return { urls: null, fel: r.logg.fel || `sitemap.xml gav HTTP ${r.logg.status ?? "-"}` };
-}
+// ⚠ `fetchSitemapUrls` är BORTTAGEN (RAPPORT-1). Den läste `/sitemap.xml` rakt av och
+//    tog `<loc>`-värdena som sidor. I ett `<sitemapindex>` är de andra sitemapFILER, och
+//    det gjorde forbalance.se:s 17 sidor till 3. Sitemapläsningen bor nu i
+//    `lib/lankupptackt.ts` och delas med onboardingmotorn.
 
 // Detektera vilken domänvariant som är primär: redirectar www → icke-www (eller tvärtom)?
 // Förhindrar falsklarm "duplicerad sajt" när en 301 redan finns.
@@ -686,19 +731,31 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number; ski
   const rootNorm = norm(primaryRoot)!;
 
   // Sajtnivå (en gång): robots/sitemap + Lighthouse på startsidan (primär variant)
-  const [rs, sitemapRes, home] = await Promise.all([
+  const [rs, home] = await Promise.all([
     fetchRobotsAndSitemap(primaryRoot),
-    fetchSitemapUrls(origin),
     signalerEllerOmatt(primaryRoot, { skipRobotsSitemap: true, skipLighthouse }),
   ]);
 
-  // Sid-lista: normaliserad + dedupad (ingen www/icke-www-dubblett), startsidan först
+  // ★ SID-LISTAN KOMMER NU FRÅN BÅDA KÄLLORNA (RAPPORT-1, beslut 1).
+  //   Sitemap (index-medvetet) OCH startsidans egna länkar, genom den delade modulen.
+  //   Djupgranskningen skickar INGET blogg-filter: den ska granska allt kunden publicerat.
+  //   Maskinfiler (.xml, .pdf …) filtreras bort — de var forbalance-rapportens spöksidor.
+  const upptackt: UpptacktUtfall = await upptackUrler({
+    rotUrl: primaryRoot,
+    startHtml: null, // länkarna kommer färdigt normaliserade från startsidans signaler
+  });
   const seen = new Set<string>();
   const list: string[] = [];
-  for (const raw of [primaryRoot, ...(sitemapRes.urls ?? [])]) {
-    const n = norm(raw); if (!n || seen.has(n)) continue; seen.add(n); list.push(n);
+  for (const raw of [primaryRoot, ...upptackt.urls, ...(home.internaLankar ?? [])]) {
+    const n = norm(raw);
+    if (!n || seen.has(n)) continue;
+    if (n !== rootNorm && arMaskinfil(n)) continue;
+    seen.add(n);
+    list.push(n);
   }
   const urls = list.slice(0, maxPages);
+  // Vad taket sorterade bort ska SYNAS. En tyst avkortning läses som "det var allt".
+  const overTaket = list.slice(maxPages);
 
   const pages: SitePageSummary[] = [];
   const toSummary = (s: PageSignals): SitePageSummary => {
@@ -721,6 +778,11 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number; ski
   // Startsidan är redan hämtad — mätt eller omätt, den räknas alltid med.
   pages.push(toSummary({ ...home, sajtHamtFel: home.ejMattOrsak ? home.sajtHamtFel : rs.fel, robotsTxt: home.ejMattOrsak ? null : rs.robotsTxt }));
 
+  // Texterna samlas för siffergrinden, inte för prompten. Se fältkommentaren i SiteAudit.
+  const sidTexter: { url: string; text: string }[] = [];
+  if (home.mainText) sidTexter.push({ url: home.url, text: home.mainText.slice(0, 6000) });
+  const socialaAlla = new Set<string>(home.socialaProfiler ?? []);
+
   const rest = urls.filter((u) => u !== rootNorm);
   const CONCURRENCY = 4;
   for (let i = 0; i < rest.length; i += CONCURRENCY) {
@@ -728,7 +790,11 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number; ski
     const results = await Promise.all(
       batch.map((u) => signalerEllerOmatt(u, { skipLighthouse: true, skipRobotsSitemap: true })),
     );
-    for (const r of results) pages.push(toSummary(r));
+    for (const r of results) {
+      pages.push(toSummary(r));
+      if (r.mainText) sidTexter.push({ url: r.url, text: r.mainText.slice(0, 6000) });
+      for (const s of r.socialaProfiler ?? []) socialaAlla.add(s);
+    }
   }
 
   // Tvärsides-aggregat — BARA på sidor som faktiskt mättes.
@@ -751,14 +817,26 @@ export async function crawlSite(rootUrl: string, opts?: { maxPages?: number; ski
     misslyckade: pages
       .filter((p) => p.ejMattOrsak != null)
       .map((p) => ({ url: p.url, status: p.hamtning.status, bytes: p.hamtning.bytes, orsak: p.hamtning.orsak, fel: p.ejMattOrsak })),
-    sitemapUrlCount: sitemapRes.urls == null ? null : sitemapRes.urls.length,
-    sitemapFel: sitemapRes.fel,
+    sitemapUrlCount: upptackt.sitemap.urls == null ? null : upptackt.sitemap.urls.length,
+    sitemapFel: upptackt.sitemap.fel,
+    aiRobots: rs.aiRobots,
+    socialaProfiler: Array.from(socialaAlla),
+    upptackt: {
+      franSitemap: upptackt.franSitemap,
+      franLankar: home.internaLankar ?? [],
+      sitemapArIndex: upptackt.sitemap.arIndex,
+      barnSitemaps: upptackt.sitemap.barn,
+      bortfiltrerade: upptackt.bortfiltrerade,
+      overTaket,
+      maxPages,
+    },
     platform: home.platform,
     robotsTxt: rs.robotsTxt,
     robotsTxtFel: rs.fel.robots,
     homepageLighthouseSeo: home.lighthouseSeo,
     homepageCwv: home.cwv,
     homepageText: home.mainText == null ? null : home.mainText.slice(0, 8000),
+    sidTexter,
     domainRedirect,
     pages,
     crossPage: {
