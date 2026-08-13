@@ -371,12 +371,32 @@ webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en 
 | FÄRG-2 + FONT-3 | KLART OCH VERIFIERAT | For Balances palett mätt på hennes sajt. Kalnia tillagd (OFL) |
 | S-6 hämtningen | KLART, EJ VERIFIERAT I DRIFT | Djupgranskningens 500 mot forbalance.se. ⚠ **Härledning, ej återskapat fel** |
 
+### KLART SENARE 13/8 (också pushat, `987901c`)
+
+| Post | Status | Kärnan |
+|---|---|---|
+| KUNDREGISTER-1 | KLART OCH VERIFIERAT | 137 kontakter hos DT. ★ Dubblettbugg hittad på den färdiga sidan, inte i DoD:n |
+| KUNDTEXT | KLART OCH VERIFIERAT | Leverantörsfel (faktura, nyckel) döljs för kund, loggas fullt internt |
+| NATTLOOP | AVSTÄNGD | 52 kr/mån, två lås, koden orörd (`NATTLOOP_PA=1` slår på) |
+| KANAL-3 | KLART, EJ KLICKAD | Utkast **eller** publicera direkt. Statusvärdet verifierat mot live-API. Karusell publiceras aldrig direkt |
+| NYCKEL-1 + 1b | KLART OCH VERIFIERAT | MySales-koppling i Inställningar per kund, nyckeln testas mot fyra behörigheter före sparning |
+| `docs/API-KOSTNADER.md` | KLART | Alla API:er, konton, priser och luckor, mätt ur `ai_usage_events` |
+
 ### VÄNTAR PÅ HÅKAN (blockerar annars)
 
-1. **Kör migrationen** `node scripts/kor-migration.mjs migrations/modell1_fable_pris.sql --ja` — utan den kör offertmotorn kvar på sonnet-4-5.
-2. **Kontakt-scope i MySales** för For Balance och AluCon, annars är deras kundlistor tomma (med felmeddelande, inte tyst).
-3. **Kör djupgranskningen på For Balance** — det är enda beviset för att S-6 löste 500:an.
-4. **Klicka igenom** offertmotorn och MODELL-1 (obeklickade).
+1. **★ Opportunities på Gittes nya MySales-nyckel.** NYCKEL-1:s första version speglade
+   nyckeln till `coach_users.ghl_api_token` — samma fält onboarding-steget sätter — utan att
+   kontrollera bredden. Den nya nyckeln saknar affärsbehörighet, så **Fokus idag och
+   DM-tavlan svarar 401 för For Balance**. Lägg till View + Edit Opportunities och klistra in
+   nyckeln igen i Inställningar → Integrationer → MySales. Grinden finns nu i koden
+   (`klararAffarer`), men den redan överskrivna nyckeln måste ersättas för hand.
+2. **Samma nyckel-runda för AluCon och Makzy** — deras gamla nycklar ger 401 på allt.
+3. **Auto reload på Anthropic** — saldot tog slut mitt på dagen och ingenting varnade.
+   Kontot följs inte automatiskt (`provider_accounts.saldo_kalla = manuellt`).
+4. **Kör djupgranskningen på For Balance** — enda beviset för att S-6 löste 500:an.
+5. **Klicka igenom** offertmotorn (Fable 5) och kanalvalet utkast/publicera.
+
+*Migrationen `modell1_fable_pris.sql` är körd och verifierad — offertmotorn kör Fable 5.*
 
 ### BESTÄLLT, EJ PÅBÖRJAT
 
