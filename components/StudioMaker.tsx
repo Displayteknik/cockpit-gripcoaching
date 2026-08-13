@@ -269,6 +269,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   // per-kanal publiceringsstatus. Grund-captionen (steg 4) är källa; kanal-caption faller
   // tillbaka på den tills man anpassar.
   const [selectedChannels, setSelectedChannels] = useState<ChannelKey[]>(["ig"]);
+  // KANAL-3 (Hakans beslut 13/8): utkast eller publicera direkt. Utkast ar grundlaget med
+  // flit — det gar att angra i MySales, ett publicerat inlagg har redan motts av folk.
+  const [publiceraDirekt, setPubliceraDirekt] = useState(false);
   const [channelsSeeded, setChannelsSeeded] = useState(false);
   const [channelCaptions, setChannelCaptions] = useState<Record<ChannelKey, string>>({ ig: "", fb: "", li: "" });
   const [adapting, setAdapting] = useState(false);
@@ -1514,7 +1517,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         const platform = k === "fb" ? "facebook" : k === "li" ? "linkedin" : "instagram";
         const accs = ghlFor(platform).map((a) => a.id).filter((id) => selectedAccounts.includes(id));
         if (!accs.length) throw new Error(`Inga valda ${CHANNEL_BRAND[k].label}-konton i GHL.`);
-        reqBody = { postId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl: designUrl, slideUrls, videoUrl, format, scheduleDate: scheduleDate || undefined };
+        reqBody = { postId, channel: "ghl-social", accountIds: accs, caption: capFor(k), imageUrl: designUrl, slideUrls, videoUrl, format, scheduleDate: scheduleDate || undefined, publicera: publiceraDirekt };
       }
       const r = await fetch("/api/studio/publish", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -1535,7 +1538,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setPubBusy("");
     }
-  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, mode, isCarousel, slideCount, renderAllPngs, renderDesignPng, uploadEditedImage, ghlFor, selectedAccounts, scheduleDate, refreshPosts, loadMedia, savePost, headline1, body]);
+  }, [igConn, loadedPostId, capFor, imageUrl, videoUrl, format, postType, mode, isCarousel, slideCount, renderAllPngs, renderDesignPng, uploadEditedImage, ghlFor, selectedAccounts, scheduleDate, publiceraDirekt, refreshPosts, loadMedia, savePost, headline1, body]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const simpleFileRef = useRef<HTMLInputElement>(null);
@@ -2860,9 +2863,16 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     <Icon className="w-3 h-3" />
                   </span>
                   {brand.label}
+                  {/* KANAL-3b (Hakans fynd 13/8): Gittes Instagram var kopplad i MySales,
+                      men Cockpit saknade nyckeln till hennes konto — och da stod ALLA tre
+                      kanalerna som "ej kopplad". Det ar tva helt olika saker, och att kalla
+                      dem samma sak skickar felsokningen at fel hall: hon letar efter sin
+                      Instagram-koppling nar det ar en nyckel som fattas hos oss.
+                      Samma regel som resten av systemet: sag vad som faktiskt ar fel. */}
                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-                    style={conn ? { background: "#dcfce7", color: "#15803d" } : { background: "#f3f4f6", color: "#9ca3af" }}>
-                    {conn ? "kopplad" : "ej kopplad"}
+                    title={conn ? undefined : ghlConnected === false ? "Cockpit saknar nyckeln till kundens MySales-konto. Kopplingen i MySales kan vara helt korrekt — det ar nyckeln hit som fattas." : undefined}
+                    style={conn ? { background: "#dcfce7", color: "#15803d" } : ghlConnected === false ? { background: "#fef3c7", color: "#92400e" } : { background: "#f3f4f6", color: "#9ca3af" }}>
+                    {conn ? "kopplad" : ghlConnected === false ? "nyckel saknas" : "ej kopplad"}
                   </span>
                 </button>
               );
@@ -2959,11 +2969,32 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       </>
                     ) : canPublish ? (
                       <>
+                      {/* KANAL-3: utkast eller direkt. Doljs nar en tid ar vald — da ar
+                          valet redan gjort, och tva besked som sager olika saker forvirrar.
+                          Karusell tvingas till utkast: flera bilder mot GHL ar inte bevisat. */}
+                      {!scheduleDate && (
+                        <div className="flex items-center gap-1 mb-2">
+                          {([[false, "Spara som utkast"], [true, "Publicera direkt"]] as const).map(([v, txt]) => {
+                            const vald = publiceraDirekt === v;
+                            const sparrad = v === true && isCarousel && slideCount >= 2;
+                            return (
+                              <button key={txt} type="button" disabled={sparrad}
+                                onClick={() => setPubliceraDirekt(v)}
+                                title={sparrad ? "Karuseller skapas alltid som utkast — flera bilder mot MySales ar inte bevisat an." : undefined}
+                                className={`flex-1 text-sm font-semibold px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 ${vald ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}>
+                                {txt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                       <button onClick={() => publishTo(key)} disabled={busy || !eff.trim() || missingMedia}
                         className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                         style={{ background: brand.gradient }}>
-                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                        {res === "ok" ? (scheduleDate ? `Schemalagt på ${label} ✓` : `Utkast skapat på ${label} ✓`) : (scheduleDate ? `Schemalägg på ${label}` : `Skapa utkast på ${label}`)}
+                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : res === "ok" ? <Check className="w-4 h-4" /> : scheduleDate ? <CalendarClock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                        {res === "ok"
+                          ? (scheduleDate ? `Schemalagt på ${label} ✓` : publiceraDirekt && !(isCarousel && slideCount >= 2) ? `Publicerat på ${label} ✓` : `Utkast skapat på ${label} ✓`)
+                          : (scheduleDate ? `Schemalägg på ${label}` : publiceraDirekt && !(isCarousel && slideCount >= 2) ? `Publicera nu på ${label}` : `Skapa utkast på ${label}`)}
                       </button>
                       {missingMedia && <p className="text-xs text-amber-600">{postType === "reel" ? "Lägg till en video för att kunna publicera." : "Lägg till en bild för att kunna publicera."}</p>}
                       {isCarousel && slideCount >= 2 && !missingMedia && (

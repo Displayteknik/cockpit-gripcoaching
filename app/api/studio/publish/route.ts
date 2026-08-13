@@ -42,7 +42,9 @@ export async function POST(req: NextRequest) {
       // Direkt IG: bilden i mediaUrl (konverteras till JPEG i lib/publish), reel via videoUrl. Ingen schemaläggning.
       // Karusell: slideUrls går som children-containers (publishCarousel).
       ? await publishContent({ clientId, channel: "ig-graph", postType, caption, mediaUrl: imageUrl, slideUrls: arKarusell ? slideUrls : undefined, videoUrl: videoUrl || undefined })
-      : await publishContent({ clientId, channel: "ghl-social", accountIds, postType, caption, mediaUrl, slideUrls: arKarusell ? slideUrls : undefined, scheduleDate });
+      // KANAL-3: publicera direkt i stallet for utkast. Schemalagd tid vinner alltid,
+      // och en karusell publiceras aldrig direkt (spärr i lib/publish).
+      : await publishContent({ clientId, channel: "ghl-social", accountIds, postType, caption, mediaUrl, slideUrls: arKarusell ? slideUrls : undefined, scheduleDate, publicera: body.publicera === true });
     if (result.status === "failed" || !result.id) {
       return NextResponse.json({ error: result.error || "Publicering misslyckades" }, { status: 400 });
     }
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
       } catch { /* kvittolänken är valfri */ }
     }
 
-    return NextResponse.json({ ok: true, postId: result.id, status: result.status, permalink });
+    return NextResponse.json({ ok: true, postId: result.id, status: result.status, permalink, notis: result.notis });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

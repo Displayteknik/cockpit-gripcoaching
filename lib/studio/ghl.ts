@@ -82,17 +82,39 @@ export async function ghlCreateDraft(
   cfg: GhlConfig,
   // mediaUrls = en eller flera bilder i ordning (karusell). mediaUrl behålls som
   // enkelform så äldre anropare fungerar oförändrat (aldrig ta bort en fungerande väg).
-  opts: { accountIds: string[]; summary: string; mediaUrl?: string; mediaUrls?: string[]; userId: string; postType?: "post" | "story" | "reel"; scheduleDate?: string },
-): Promise<{ postId?: string; error?: string; scheduled?: boolean }> {
+  opts: {
+    accountIds: string[];
+    summary: string;
+    mediaUrl?: string;
+    mediaUrls?: string[];
+    userId: string;
+    postType?: "post" | "story" | "reel";
+    scheduleDate?: string;
+    /**
+     * KANAL-3 (Håkans beställning 13/8): "jag vill kunna välja på det eller publicera direkt".
+     *
+     * `publicera: true` lägger ut inlägget NU i stället för att lämna ett utkast.
+     *
+     * ⚠ Värdet är VERIFIERAT mot live-API:t, inte gissat. Ett avsiktligt ogiltigt status
+     * gav 422 med hela listan: in_progress, draft, failed, published, scheduled, in_review,
+     * notification_sent, pending, deleted. Ingenting publicerades av den kontrollen.
+     *
+     * scheduleDate vinner över publicera — har man valt en tidpunkt är det den som gäller.
+     */
+    publicera?: boolean;
+  },
+): Promise<{ postId?: string; error?: string; scheduled?: boolean; publicerad?: boolean }> {
   try {
-    // scheduleDate satt → schemalägg (publiceras vid tidpunkten). Annars utkast.
+    // Ordningen är medveten: schemalagt → publicerat → utkast. En vald tidpunkt är ett
+    // starkare besked än "publicera nu", och utkast är det säkra grundläget.
     const scheduled = !!opts.scheduleDate;
+    const publicerad = !scheduled && opts.publicera === true;
     const body: Record<string, unknown> = {
       accountIds: opts.accountIds,
       summary: opts.summary || "",
       type: opts.postType || "post",
       userId: opts.userId,
-      status: scheduled ? "scheduled" : "draft",
+      status: scheduled ? "scheduled" : publicerad ? "published" : "draft",
       ...(scheduled ? { scheduleDate: opts.scheduleDate } : {}),
       media: (opts.mediaUrls?.length ? opts.mediaUrls : opts.mediaUrl ? [opts.mediaUrl] : []).map((url) => ({ url })),
     };
@@ -109,7 +131,7 @@ export async function ghlCreateDraft(
     // Svaret är { results: { post: { _id } } } (verifierat mot live-API).
     const p = d?.results?.post || d?.post || d;
     const postId = p?._id || p?.id;
-    return { postId: postId ? String(postId) : undefined, scheduled };
+    return { postId: postId ? String(postId) : undefined, scheduled, publicerad };
   } catch (e) {
     return { error: (e as Error).message };
   }

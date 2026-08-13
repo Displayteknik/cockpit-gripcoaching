@@ -28,6 +28,11 @@ export interface PublishRequest {
   videoUrl?: string;       // reel
   coverUrl?: string;       // reel-omslag
   scheduleDate?: string; // ISO → schemalägg
+  /**
+   * KANAL-3: true = publicera direkt i stället för att lämna ett utkast.
+   * scheduleDate vinner alltid, och en karusell publiceras aldrig direkt (se publishGhlSocial).
+   */
+  publicera?: boolean;
   // blogg-fält
   blog?: {
     blogId?: string; title: string; html: string; description?: string; urlSlug?: string;
@@ -40,6 +45,8 @@ export interface PublishResult {
   id?: string; // backend-postens id
   error?: string;
   channel: PublishChannel;
+  /** Klartext när utfallet blev något annat än det användaren bad om. */
+  notis?: string;
 }
 
 function fail(channel: PublishChannel, error: string): PublishResult {
@@ -148,12 +155,30 @@ async function publishGhlSocial(req: PublishRequest): Promise<PublishResult> {
   const mediaUrls = (req.slideUrls && req.slideUrls.length >= 2)
     ? req.slideUrls
     : (req.mediaUrl ? [req.mediaUrl] : []);
-  const { postId, error, scheduled } = await ghlCreateDraft(cfg, {
+
+  // KANAL-3: "publicera direkt" är tillåtet — MEN aldrig för en karusell.
+  //
+  // Skälet står i stycket ovan och gäller fortfarande: multi-media mot GHL är inte
+  // verifierat mot ett skarpt konto. Ett utkast som blev fel går att rätta i GHL innan
+  // någon ser det; ett publicerat inlägg som blev fel har redan mött kundens följare.
+  // Direktpublicering av det oprövade vore att flytta risken från oss till kunden.
+  const flerBilder = mediaUrls.length >= 2;
+  const villPublicera = req.publicera === true && !flerBilder;
+
+  const { postId, error, scheduled, publicerad } = await ghlCreateDraft(cfg, {
     accountIds, summary: req.caption || "", mediaUrls, userId,
-    postType: req.postType, scheduleDate: req.scheduleDate,
+    postType: req.postType, scheduleDate: req.scheduleDate, publicera: villPublicera,
   });
   if (error || !postId) return fail("ghl-social", error || "GHL skapade inget inlägg.");
-  return { status: scheduled ? "scheduled" : "draft", id: postId, channel: "ghl-social" };
+  return {
+    status: scheduled ? "scheduled" : publicerad ? "published" : "draft",
+    id: postId,
+    channel: "ghl-social",
+    // Sägs rakt ut i svaret så vyn kan förklara varför det blev ett utkast ändå.
+    ...(req.publicera === true && flerBilder
+      ? { notis: "Karusellen skapades som utkast. Flera bilder mot GHL är inte bevisat än, så den ska granskas i MySales innan den publiceras." }
+      : {}),
+  };
 }
 
 // ── GHL Blogs (utkast) ──
