@@ -5,6 +5,7 @@ import { Save, Loader2, Check, Globe, Search, Zap, BarChart3, Lock, Copy, Info, 
 import GoogleConnect from "@/components/GoogleConnect";
 import TenantIgConnect from "@/components/TenantIgConnect";
 import LeadIntakeSettings from "@/components/LeadIntakeSettings";
+import MySalesConnect from "@/components/MySalesConnect";
 
 type Settings = Record<string, string>;
 
@@ -25,11 +26,22 @@ interface SectionDef {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   fields?: FieldDef[];
-  customComponent?: "google" | "instagram" | "meta" | "leads";
+  customComponent?: "google" | "instagram" | "meta" | "leads" | "mysales";
 }
 
 const SECTIONS: SectionDef[] = [
   // INTEGRATIONS
+  {
+    // Hakans invandning 13/8: kopplingen lag begravd i Skapa inlagg och dok bara upp nar
+    // man rakade valja Facebook eller LinkedIn. Den hor hemma har, per kund. Star forst
+    // for att allt annat i Cockpit hanger pa den.
+    id: "mysales",
+    category: "integrations",
+    title: "MySales (kundens konto)",
+    icon: Plug,
+    description: "En nyckel som racker till allt: kanalerna, publiceringen och kundlistan. Testas mot MySales innan den sparas.",
+    customComponent: "mysales",
+  },
   {
     id: "meta",
     category: "integrations",
@@ -289,6 +301,7 @@ export default function InstallningarPage() {
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
+                {section.customComponent === "mysales" && <MySalesConnect />}
                 {section.customComponent === "instagram" && <TenantIgConnect />}
                 {section.customComponent === "google" && <GoogleConnect />}
                 {section.customComponent === "leads" && <LeadIntakeSettings />}
