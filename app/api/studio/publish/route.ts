@@ -38,6 +38,37 @@ export async function POST(req: NextRequest) {
     const scheduleDate = body.scheduleDate ? new Date(body.scheduleDate).toISOString() : undefined;
     if (postType === "reel" && !videoUrl) return NextResponse.json({ error: "Reel kräver en uppladdad video" }, { status: 400 });
 
+    // ★ KANAL-4: KARUSELLEN TILL INSTAGRAM GÅR I TVÅ STEG.
+    //
+    //   Ett anrop hann inte klart inom 60 sekunder, och taket går inte att höja på
+    //   Vercels Hobby-plan. Steg 1 bygger containrarna och svarar direkt, steg 2
+    //   publicerar när Meta säger att de är klara. Klienten frågar om steg 2 tills den
+    //   får ett id eller ett fel, och varje anrop tar bara några sekunder.
+    if (channel === "ig-graph" && (body.steg === "forbered" || body.steg === "publicera")) {
+      const { igKonto, forberedKarusell, publiceraContainer, jpegUrler } = await import("@/lib/studio/ig-karusell");
+      const konto = await igKonto(clientId);
+      if (!konto) return NextResponse.json({ error: "Instagram är inte kopplat för den här kunden." }, { status: 400 });
+
+      if (body.steg === "forbered") {
+        if (!arKarusell) return NextResponse.json({ error: "En karusell kräver minst två bilder." }, { status: 400 });
+        const urler = await jpegUrler(slideUrls);
+        const f = await forberedKarusell(konto.ig_account_id, konto.ig_access_token, urler, caption);
+        return NextResponse.json({ steg: "forberedd", creationId: f.creationId, bilder: f.barn });
+      }
+
+      const creationId = String(body.creationId || "");
+      if (!creationId) return NextResponse.json({ error: "creationId saknas" }, { status: 400 });
+      const p = await publiceraContainer(konto.ig_account_id, konto.ig_access_token, creationId);
+      if ("vantar" in p) return NextResponse.json({ steg: "vantar", status: p.status });
+      if (body.postId) {
+        const sb = supabaseService();
+        await sb.from("studio_posts")
+          .update({ ghl_status: "published", ghl_post_id: p.id, caption, updated_at: new Date().toISOString() })
+          .eq("id", body.postId).eq("client_id", clientId);
+      }
+      return NextResponse.json({ steg: "publicerad", status: "published", id: p.id, channel: "ig-graph" });
+    }
+
     const result = channel === "ig-graph"
       // Direkt IG: bilden i mediaUrl (konverteras till JPEG i lib/publish), reel via videoUrl. Ingen schemaläggning.
       // Karusell: slideUrls går som children-containers (publishCarousel).

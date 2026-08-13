@@ -77,6 +77,68 @@ export async function publishReel(igAccountId: string, token: string, videoUrl: 
   return { id: published.id };
 }
 
+// ── KARUSELL I TVÅ STEG (KANAL-4, Håkans beställning 13/8) ──────────────────
+//
+// ★ PROBLEMET, MÄTT I DRIFT: en sjuslides-karusell föll på "det tog för lång tid".
+//   `/api/studio/publish` har 60 sekunders tak, och det taket går INTE att höja på
+//   Vercels Hobby-plan. En karusell hinner inte: Meta HÄMTAR varje bild själv, en
+//   container per slide, och först därefter byggs karusellen och publiceras.
+//
+//   Lösningen är samma mönster som djupgranskningens batch: dela upp arbetet så att
+//   INGET enskilt anrop behöver vänta på hela kedjan.
+//
+//     steg 1  `forberedKarusell`  skapar barn-containers och karusell-containern.
+//                                 Returnerar direkt, väntar inte på att Meta blir klar.
+//     steg 2  `publiceraContainer` frågar om containern är klar och publicerar då.
+//                                 Är den inte klar svarar den "vänta", och klienten
+//                                 frågar igen. Varje anrop är några sekunder.
+//
+//   Den gamla `publishCarousel` står kvar orörd: schemaläggning och andra anropare
+//   använder den, och en fungerande väg rivs aldrig.
+
+/** Steg 1: bygg containrarna. Väntar aldrig på att Meta blir klar. */
+export async function forberedKarusell(
+  igAccountId: string,
+  token: string,
+  imageUrls: string[],
+  caption: string,
+): Promise<{ creationId: string; barn: number }> {
+  if (imageUrls.length < 2 || imageUrls.length > 10) throw new Error("Carousel kräver 2–10 bilder");
+  const childrenIds: string[] = [];
+  for (const url of imageUrls) {
+    const c = await igPost(`/${igAccountId}/media`, token, { image_url: url, is_carousel_item: "true" });
+    childrenIds.push(c.id);
+  }
+  const carousel = await igPost(`/${igAccountId}/media`, token, {
+    media_type: "CAROUSEL",
+    children: childrenIds.join(","),
+    caption,
+  });
+  return { creationId: carousel.id, barn: childrenIds.length };
+}
+
+/**
+ * Steg 2: publicera när containern är klar.
+ *
+ * Fail-safe: `FINISHED` publicerar, `ERROR` ger ett fel med Metas egen förklaring, allt
+ * annat betyder "inte klar än" och klienten frågar igen. Ingen loop här inne, för det var
+ * väntandet som sprängde tidsgränsen från början.
+ */
+export async function publiceraContainer(
+  igAccountId: string,
+  token: string,
+  creationId: string,
+): Promise<{ id: string } | { vantar: true; status: string }> {
+  const s = await igGet(`/${creationId}`, token, { fields: "status_code,status" });
+  const kod = String(s?.status_code || "");
+  if (kod === "ERROR" || kod === "EXPIRED") {
+    throw new Error(`Instagram kunde inte behandla bilderna (${kod}). ${String(s?.status || "").slice(0, 160)}`);
+  }
+  if (kod !== "FINISHED") return { vantar: true, status: kod || "IN_PROGRESS" };
+  const published = await igPost(`/${igAccountId}/media_publish`, token, { creation_id: creationId });
+  return { id: published.id };
+}
+
 // CAROUSEL: skapa item-containers, sen carousel-container, publicera
 export async function publishCarousel(igAccountId: string, token: string, imageUrls: string[], caption: string): Promise<{ id: string }> {
   if (imageUrls.length < 2 || imageUrls.length > 10) throw new Error("Carousel kräver 2–10 bilder");

@@ -1518,6 +1518,37 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       }
 
       let reqBody: Record<string, unknown>;
+      // ★ KANAL-4: karusell till Instagram går i TVÅ steg. Ett anrop hann inte klart inom
+      //   funktionens 60-sekunderstak (taket går inte att höja på Hobby-planen), och
+      //   Håkans sjuslides-karusell föll med "det tog för lång tid". Nu förbereder vi
+      //   containrarna i ett anrop och frågar sedan om publicering tills Meta är klar.
+      if (k === "ig" && igConn?.connected && isCarousel && slideUrls.length >= 2) {
+        const f = await fetch("/api/studio/publish", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ postId, channel: "ig-graph", steg: "forbered", caption: capFor("ig"), slideUrls, format }),
+        });
+        const fd = await lasJson<any>(f);
+        if (!f.ok) throw new Error(fd.error || "Kunde inte förbereda karusellen");
+
+        // Meta behöver några sekunder per bild. Vi frågar i upp till två minuter, med
+        // fem sekunder mellan försöken. Varje anrop är kort, så taket träffas aldrig.
+        for (let n = 0; ; n++) {
+          await new Promise((s) => setTimeout(s, 5000));
+          const p = await fetch("/api/studio/publish", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ postId, channel: "ig-graph", steg: "publicera", creationId: fd.creationId, caption: capFor("ig") }),
+          });
+          const pd = await lasJson<any>(p);
+          if (!p.ok) throw new Error(pd.error || "Publiceringen misslyckades");
+          if (pd.steg === "publicerad") break;
+          if (n >= 24) throw new Error("Instagram blev inte klar med bilderna i tid. Bilderna ligger kvar hos dem, prova publicera igen om en stund.");
+        }
+        setPubResult((p) => ({ ...p, [k]: "ok" }));
+        await refreshPosts();
+        loadMedia();
+        return;
+      }
+
       if (k === "ig" && igConn?.connected) {
         // Direkt till klientens Instagram — publiceras nu (inget utkast/schema).
         reqBody = { postId, channel: "ig-graph", caption: capFor("ig"), imageUrl: designUrl, slideUrls, videoUrl, format };
