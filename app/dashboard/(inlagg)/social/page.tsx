@@ -254,7 +254,7 @@ export default function SocialPage() {
           <Sparkles className="w-5 h-5 text-purple-600" />
           Social-generator
         </h2>
-        <p className="text-xs text-gray-500 mb-4">Konverterande inlägg — Instagram + Facebook.</p>
+        <p className="text-xs text-gray-500 mb-4">Inlägg som får folk att höra av sig — Instagram + Facebook.</p>
 
         <div className="space-y-4">
           <div>

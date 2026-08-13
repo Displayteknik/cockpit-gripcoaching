@@ -44,11 +44,27 @@
      Radavståndet höjs med, annars blir större text tätare text. `text-base` och uppåt
      lämnas orörda: de är redan över golvet, och att flytta dem hade ändrat rubrikhierarkin.
      Golvet i arbetsreglerna (brödtext minst 12 px) gäller fortfarande — och nu med marginal.
-     `tests/font1-lasbarhet.test.ts` låser att inget i koden går under det. */
-  --text-xs: 0.8125rem;
-  --text-xs--line-height: 1.15rem;
-  --text-sm: 0.9375rem;
-  --text-sm--line-height: 1.4rem;
+     `tests/font1-lasbarhet.test.ts` låser att inget i koden går under det.
+
+     ── FONT-2 (efter Håkans möte med Gitte, 2026-08-12) ────────────────────────
+     Ett steg räckte inte. MÄTT i den inloggade dashboarden, inte bedömt: 22 synliga
+     textelement renderade på 13 px redan på startsidan, och de var inte brickor eller
+     tabellceller — de var förklarande meningar ("Bara du. Byter inte när du växlar kund.",
+     "Ditt arbete med kunden. Kunden ser inte det här."). Den sortens text är till för att
+     LÄSAS, och 13 px är för litet för det.
+
+       text-xs  13 → 14 px
+       text-sm  15 → 16 px
+
+     ⚠ Att `text-sm` därmed möter `text-base` (16 px) är avsiktligt och kostar ingenting:
+     de låg redan 1 px isär, alltså fanns skillnaden bara i koden, aldrig i ögat. Rubrikerna
+     (`text-base` och uppåt) lämnas fortfarande orörda — de sitter på 16, 18, 20, 32 och 36 px
+     och är inte det Gitte hade svårt att läsa. Skulle det behövas ett steg till är det HELA
+     skalan som ska flyttas, inte botten igen, annars trycks hierarkin ihop på riktigt. */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5rem;
 
   /* Container */
   --container-md: 1140px;

@@ -42,8 +42,12 @@ interface Suggestion { hookType: string; headline1: string; headline2: string; b
 interface StudioPost { id: string; template_id: string; format: StudioFormat; title: string; image_url: string | null; payload: Record<string, unknown>; updated_at: string }
 interface GhlAccount { id: string; name: string; platform: string; type: string; avatar?: string; isExpired?: boolean }
 
+// KLARSPRÅK-1 (Håkans fynd 12/8): "jag läste ordet konträr någonstans och fattar inte ens
+// vad det betyder". Nyckeln till vänster är DATA — den är vad AI-flödena skriver i sin JSON
+// och vad `lib/hook-typer` slår upp på, så den får inte röras. Etiketten till höger är det
+// enda användaren ser, och den ska gå att förstå utan att slå upp något.
 const HOOK_LABEL: Record<string, string> = {
-  "fråga": "Fråga", "statistik": "Statistik", "konträr": "Konträr",
+  "fråga": "Fråga", "statistik": "Siffra", "konträr": "Tvärtom",
   "berättelse": "Berättelse", "påstående": "Påstående",
 };
 
@@ -2644,7 +2648,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       {compassBusy === "review" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ClipboardCheck className="w-3.5 h-3.5" />} Granska
                     </button>
                   </div>
-                  <span className="w-full text-xs text-violet-600">Förslag för dagen. Styr ton och struktur i genereringen. Ändra fritt. Ber du om tre förslag får varje förslag sitt eget tonläge, med det här som första val.</span>
+                  <span className="w-full text-sm text-violet-600">Förslag för dagen — styr ton och struktur. Ändra fritt. Tre förslag ger tre tonlägen, med det här först.</span>
                   {reviewResult && (
                     <div className={`w-full rounded-lg border p-3 mt-1 ${reviewResult.passed ? "border-emerald-200 bg-emerald-50/60" : "border-amber-200 bg-amber-50/60"}`}>
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800">

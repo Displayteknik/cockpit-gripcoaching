@@ -35,7 +35,7 @@ export default function HandbokPage() {
         </Ol>
       </Card>
 
-      <Card icon={Sparkles} color="purple" title="Social-generator — så får du konverterande inlägg">
+      <Card icon={Sparkles} color="purple" title="Social-generator — så får du inlägg som ger napp">
         <Ol>
           <li>Välj plattform (IG eller FB) och format som passar syftet.</li>
           <li>Koppla ett fordon om inlägget ska sälja något specifikt — Gemini använder specs automatiskt.</li>
