@@ -82,7 +82,19 @@ export function saneraTankstreck(md: string): { text: string; antal: number } {
     .map(({ kod, del }) => {
       if (kod) return del;
       antal += (del.match(/[–—]/g) || []).length;
-      return taBortTankstreck(del);
+      let ut = taBortTankstreck(del);
+      // ★ MÄTT PÅ DEN SKARPA DT-RAPPORTEN 13/8: `taBortTankstreck` tog 145 tankstreck men
+      //   lämnade 82. Två sorter överlevde, båda med flit i den delade funktionen:
+      //     1. INTERVALL ("2500–3500 nits", "P4–P10", "10–20 år") — typografiskt korrekta,
+      //        men Håkans krav på rapporten är NOLL tankstreck. Bindestreck läser lika bra.
+      //     2. Tankstreck inuti punkt- och nummerlistor, som funktionen hoppar över för att
+      //        inte råka äta upp listans egen inledande streckmarkör.
+      //   Rapporten är kundsynlig prosa och tar därför det hårdare kravet. Den delade
+      //   regeln lämnas orörd: i en caption ÄR ett intervallstreck rätt.
+      ut = ut.replace(/(\w)\s*[–—]\s*(\w)/g, "$1-$2");
+      ut = ut.replace(/\s+[–—]\s+/g, ", ");
+      ut = ut.replace(/[–—]/g, "-");
+      return ut;
     })
     .join("");
   return { text, antal };
@@ -151,12 +163,36 @@ export function markeraPlatshallarcitat(md: string): { text: string; funna: stri
   return { text, funna };
 }
 
+/**
+ * Tal ur en KÄLLTEXT, för mängden av vad som är belagt.
+ *
+ * ⚠ MÄTT 13/8 och det höll på att sänka hela grinden: `talTokens` matchar `\d[\d\s.,]*\d`,
+ * alltså greedy TVÄRS mellanslag. I en kort caption spelar det ingen roll, men i 49 505
+ * tecken sajttext klistras varje tal ihop med sin granne: "24 2011 160" blir ett enda
+ * token "242011160". Displaytekniks elva sidor gav därför 61 tillåtna tal i stället för
+ * flera hundra, och grinden bytte ut sajtens EGNA siffror mot [DIN SIFFRA].
+ *
+ * Källsidan tokeniseras därför på båda sätten: hela svepet (så "3 500" blir "3500") OCH
+ * varje del för sig (så "3 500 nits 250 tum" ger 3500, 3, 500 och 250). Att vara generös
+ * på KÄLLSIDAN är rätt: allt som står tryckt på kundens sajt är belagt per definition.
+ * Grinden mot rapporttexten är oförändrat sträng.
+ */
+export function talTokenForKalla(text: string): Set<string> {
+  const ut = new Set<string>();
+  for (const t of talTokens(text)) ut.add(t);
+  for (const m of String(text || "").matchAll(/\d+(?:[.,]\d+)?/g)) {
+    ut.add(m[0].replace(/[.,]/g, ""));
+    ut.add(m[0]);
+  }
+  return ut;
+}
+
 /** Bygger mängden tal som räknas som belagda. */
 export function tillatnaTalFranKallor(...kallor: (string | null | undefined)[]): string[] {
   const ut = new Set<string>();
   for (const k of kallor) {
     if (!k) continue;
-    for (const t of talTokens(String(k))) ut.add(t);
+    for (const t of talTokenForKalla(String(k))) ut.add(t);
   }
   return Array.from(ut);
 }

@@ -392,6 +392,11 @@ export async function runDeepAudit(clientId: string, urlOverride?: string): Prom
   const tillatnaTal = tillatnaTalFranKallor(
     ...sidTexter.map((s) => s.text),
     site.homepageText,
+    // ⚠ MÄTT PÅ DT-RAPPORTEN 13/8: grinden bytte ut "167 bilder saknar alt-text" mot
+    // [DIN SIFFRA]. Talet är VÅRT EGET mätvärde ur crawlen, alltså källa (c) i
+    // beställningen: inhämtad strukturerad data. Utan den här raden straffar grinden
+    // rapporten för att den återger vad vi själva räknat fram.
+    JSON.stringify(sitePrompt),
     pr?.verified_numbers ?? null,
     (pr as { pricing_notes?: string | null } | null)?.pricing_notes ?? null,
     pr?.opening_hours ?? null,
