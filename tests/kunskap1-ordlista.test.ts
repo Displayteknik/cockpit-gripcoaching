@@ -74,29 +74,53 @@ describe("KUNSKAP-1 · promptblocket säger att betydelsen vinner", () => {
   });
 });
 
-describe("KUNSKAP-1 · skyddsnätet för ord som inte står i listan", () => {
-  const profil = "## Erbjudande\n- Regression, resa till ett tidigare liv\n- Hypnoterapi vid stress";
+describe("KUNSKAP-1 · systemet läser ut betydelsen själv", () => {
+  // Håkans invändning: det ska inte behöva STÅ "regression" någonstans i systemet — det
+  // ska fatta vad Gitte menar. En ordlista han måste fylla i är ingen förståelse.
+  const profil = [
+    "## Erbjudande: tjänster och produkter",
+    "- Regression, resa till ett tidigare liv: två tillfällen",
+    "- Hypnoterapi vid stress och sömnproblem",
+    "## Erbjudande: priser (SANNINGSUNDERLAG — skrivs aldrig ut)",
+    "- Regression, resa till ett tidigare liv: 3 600 kr + 1 300 kr",
+  ].join("\n");
 
-  it("hittar ämnesord som faktiskt står i profilen", () => {
-    expect(amnesordIProfilen("Ett inlägg om hypnoterapi", profil)).toEqual(["hypnoterapi"]);
+  it("plockar ut kundens EGNA rader som betydelse, inte bara ordet", () => {
+    const t = amnesordIProfilen("Ett inlägg om regression", profil);
+    expect(t).toHaveLength(1);
+    expect(t[0].ord).toBe("regression");
+    expect(t[0].rader[0]).toContain("resa till ett tidigare liv");
   });
 
-  it("ord som redan står i ordlistan flaggas inte igen — de har ju en betydelse", () => {
+  // Det viktigaste testet i filen. Ordet står i BÅDE tjänste- och prissektionen hos
+  // For Balance. Utan filtreringen hade prisraden följt med in i prompten som
+  // "förklaring" — en bakväg förbi prisregeln, exakt det G-4 stängde.
+  it("prisraden följer ALDRIG med som betydelse", () => {
+    const t = amnesordIProfilen("regression", profil);
+    const allt = t[0].rader.join(" ");
+    expect(allt).not.toContain("3 600");
+    expect(allt).not.toContain("kr");
+  });
+
+  it("hittar flera ord i samma ämne", () => {
+    const t = amnesordIProfilen("regression och hypnoterapi", profil);
+    expect(t.map((x) => x.ord).sort()).toEqual(["hypnoterapi", "regression"]);
+  });
+
+  it("ord som redan står i ordlistan tas inte upp igen — de har ju en betydelse", () => {
     const poster: Ordpost[] = [{ ord: "regression", betydelse: "terapi" }];
     expect(amnesordIProfilen("om regression", profil, poster)).toEqual([]);
   });
 
-  it("vanliga ord flaggas aldrig, annars träffar varje ämne", () => {
+  it("vanliga ord tas aldrig upp, annars träffar varje ämne", () => {
     expect(amnesordIProfilen("kunden och företaget arbetar", profil)).toEqual([]);
   });
 
-  it("korta ord flaggas inte — de träffar av en slump", () => {
+  it("korta ord tas inte upp — de träffar av en slump", () => {
     expect(amnesordIProfilen("liv", profil)).toEqual([]);
   });
 
-  it("matchas mot den KLIPPTA profiltexten — ett bortklippt ord finns inte i prompten", () => {
-    // Står ordet i en sektion som klipptes bort vore påminnelsen en hänvisning till
-    // tomma luften: modellen ser ingen profilrad att hämta betydelsen ur.
+  it("ett ord utan rad i profilen ger ingen träff", () => {
     expect(amnesordIProfilen("om hypnoterapi", "## Företagsnamn\nFor Balance")).toEqual([]);
   });
 
@@ -104,12 +128,17 @@ describe("KUNSKAP-1 · skyddsnätet för ord som inte står i listan", () => {
     expect(amnesordBlock([])).toBe("");
   });
 
-  it("blocket pekar på profilens betydelse och förbjuder påhittade definitioner", () => {
-    const b = amnesordBlock(["hypnoterapi"]);
-    expect(b).toContain("hypnoterapi");
-    // Radbrytning mitt i meningen — matcha över den, inte runt den.
-    expect(b).toMatch(/aldrig\s+en allmän betydelse/);
-    expect(b).toMatch(/hitta aldrig på en definition/);
+  it("blocket lär ut betydelsen med kundens egna ord", () => {
+    const b = amnesordBlock([{ ord: "regression", rader: ["Regression, resa till ett tidigare liv"] }]);
+    expect(b).toContain("SÅ ANVÄNDER DEN HÄR KUNDEN ORDEN");
+    expect(b).toContain("Regression, resa till ett tidigare liv");
+    expect(b).toMatch(/även om\s+ordet betyder något helt annat/);
+  });
+
+  it("blocket skiljer betydelse från fakta — annars byts ett fel mot ett annat", () => {
+    const b = amnesordBlock([{ ord: "regression", rader: ["Regression, resa till ett tidigare liv"] }]);
+    expect(b).toMatch(/betydelse, inte fakta att återge/);
+    expect(b).toMatch(/Sanningskravet och prisregeln gäller oförändrat/);
   });
 });
 
@@ -155,9 +184,12 @@ describe("KUNSKAP-1 · fältet går att fylla i", () => {
     expect(sida).toMatch(/regression = regressionsterapi/);
   });
 
-  it("migrationen finns och skriver aldrig över en ifylld ordlista", () => {
+  it("migrationen skapar fältet men seedar INGEN kund", () => {
     const sql = las("migrations/kunskap1_ordlista.sql");
     expect(sql).toContain("add column if not exists ordlista");
-    expect(sql).toMatch(/ordlista is null or btrim\(ordlista\) = ''/);
+    // Håkans rättelse: ingen ska behöva ha ordet inskrivet för att systemet ska fatta.
+    // En seedad rad hade dolt att den självlärda vägen är huvudmekanismen.
+    expect(sql).toContain("INGEN SEEDNING");
+    expect(sql).not.toMatch(/^\s*update hm_brand_profile/im);
   });
 });

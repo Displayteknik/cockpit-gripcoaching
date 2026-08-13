@@ -24,12 +24,19 @@ comment on column hm_brand_profile.ordlista is
   'läggs som eget promptlager i prompt-core, sent (väger tyngst) och utanför profilklippningen. '
   'Definierar BETYDELSE, aldrig sanning — sanningskravet och prisregeln gäller oförändrat.';
 
--- Gittes eget exempel, formulerat ur hennes egen profiltext ("Regression, resa till ett
--- tidigare liv") — inte påhittat åt henne. Skrivs bara om fältet är tomt, så en ordlista
--- hon själv fyllt i aldrig skrivs över av en migration.
-update hm_brand_profile
-set ordlista = 'regression = regressionsterapi, en guidad resa till ett tidigare liv. Aldrig statistisk regression, matematik eller dataanalys.'
-where client_id = 'd07d7288-2651-47df-b5f3-a010c1a1a97f'
-  and (ordlista is null or btrim(ordlista) = '');
+-- ★ INGEN SEEDNING, och det är en rättelse efter Håkans invändning:
+-- "det ska ju inte STÅ regression i systemet, jag vill att systemet FATTAR när hon vill
+-- använda det." Han har rätt. En ordlista någon måste fylla i är ingen förståelse — det är
+-- en lapp, och den lappen måste underhållas för varje ord, hos varje kund, för alltid.
+--
+-- Huvudmekanismen är därför självlärd: `amnesordIProfilen` letar upp ämnesordet i kundens
+-- egen profil och lyfter in HENNES EGNA RADER som betydelse. Hos For Balance ger det
+-- "Regression, resa till ett tidigare liv: två tillfällen…" — hon hade redan skrivit vad
+-- hon menar; raden stod bara aldrig på en plats där den gällde som betydelse.
+-- Bevisat med tom ordlista: `scripts/kunskap1-dod.mts`.
+--
+-- Fältet finns kvar som ÖVERSTYRNING för de fall profilen inte räcker (ett ord kunden
+-- använder men aldrig skrivit ned, eller en betydelse som behöver avgränsas mot något
+-- annat). Det ska vara tomt tills någon har ett skäl att fylla i det.
 
 notify pgrst, 'reload schema';

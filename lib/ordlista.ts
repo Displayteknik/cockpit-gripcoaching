@@ -106,38 +106,89 @@ const STOPPORD = new Set([
   "mycket", "riktigt", "alltid", "aldrig", "genom", "varför", "vilket", "eftersom",
 ]);
 
+/** Ett ord ur ämnet, och de rader i kundens egen profil som visar vad hon menar med det. */
+export interface Amnesord {
+  ord: string;
+  /** Raderna ur profilen där ordet står — kundens egna formuleringar, ordagrant. */
+  rader: string[];
+}
+
+// Sektioner vars rader ALDRIG får bli betydelse-underlag.
+//
+// Priserna är märkta "skrivs aldrig ut" och prisregeln spärrar dem. Att lyfta in en prisrad
+// som förklaring vore att smuggla in priset i prompten via bakvägen — och det är exakt den
+// sortens tysta kryphål som G-4 byggdes för att stänga. Hos For Balance står ordet i BÅDE
+// tjänste- och prissektionen, så utan den här filtreringen hade prisraden följt med.
+const FORBJUDNA_SEKTIONER = [/^##\s*Erbjudande:\s*priser/i, /^##\s*Verifierade siffror/i];
+
 /**
- * Skyddsnätet för ord som ännu inte står i ordlistan.
+ * KUNSKAP-1, huvudmekanismen: systemet listar ut betydelsen SJÄLVT.
  *
- * Beställningens krav gäller "tenantens egen kunskap ELLER profil". Ordlistan täcker det
- * kunden hunnit skriva in; det här täcker resten: ett ämnesord som faktiskt förekommer i
- * profilen får en uttrycklig påminnelse om att profilens betydelse gäller. Deterministiskt,
- * ingen AI, inga nya anrop.
+ * Håkans invändning, och den är riktig: det ska inte behöva stå "regression" någonstans i
+ * systemet. Han vill att det FATTAR vad Gitte menar när hon skriver ett inlägg om det.
+ * En ordlista han måste fylla i är ingen förståelse — det är en lapp.
+ *
+ * Så det här är inte längre bara en påminnelse om att profilens betydelse gäller. Funktionen
+ * plockar ut RADERNA där ordet står, i kundens egna formuleringar, och de raderna ÄR
+ * definitionen. Hos For Balance ger "regression" raden "Regression, resa till ett tidigare
+ * liv: två tillfällen…" — hon har redan skrivit vad hon menar, den stod bara aldrig på en
+ * plats där den gällde som betydelse.
+ *
+ * Deterministiskt: ingen AI, inga nya anrop, inget att underhålla.
  *
  * Medvetet snålt: minst 5 tecken, inga stoppord, och ordet måste finnas i profilTEXTEN som
  * modellen faktiskt får se — inte i den råa profilen. Står ordet i en sektion som klipptes
  * bort finns det inte i prompten, och då vore påminnelsen en hänvisning till tomma luften.
  */
-export function amnesordIProfilen(amne: string, profilText: string, redanIOrdlistan: Ordpost[] = []): string[] {
+export function amnesordIProfilen(amne: string, profilText: string, redanIOrdlistan: Ordpost[] = []): Amnesord[] {
   if (!amne?.trim() || !profilText) return [];
   const kanda = new Set(redanIOrdlistan.map((p) => p.ord.toLowerCase()));
-  const profilLower = profilText.toLowerCase();
-  const traffar = new Set<string>();
+
+  // Radera raderna i förbjudna sektioner INNAN uppslagningen, så en prisrad varken kan
+  // träffa eller följa med som förklaring.
+  const rader: string[] = [];
+  let spärrad = false;
+  for (const rad of profilText.split("\n")) {
+    if (/^#{1,2}\s/.test(rad)) spärrad = FORBJUDNA_SEKTIONER.some((re) => re.test(rad));
+    if (!spärrad) rader.push(rad);
+  }
+
+  const ut: Amnesord[] = [];
+  const sedda = new Set<string>();
   for (const rått of amne.split(/[^a-zA-ZåäöÅÄÖ0-9-]+/)) {
     const ord = rått.toLowerCase();
-    if (ord.length < 5 || STOPPORD.has(ord) || kanda.has(ord)) continue;
-    if (profilLower.includes(ord)) traffar.add(ord);
+    if (ord.length < 5 || STOPPORD.has(ord) || kanda.has(ord) || sedda.has(ord)) continue;
+    sedda.add(ord);
+    const traffar = rader
+      .filter((r) => r.toLowerCase().includes(ord) && r.trim().length > ord.length + 3)
+      .map((r) => r.replace(/^\s*[-*•]\s*/, "").trim())
+      .slice(0, 4);
+    if (traffar.length) ut.push({ ord, rader: traffar });
   }
-  return [...traffar];
+  return ut;
 }
 
-/** Påminnelsen för orden ovan. Tom sträng när inget träffade. */
-export function amnesordBlock(ord: string[]): string {
-  if (!ord.length) return "";
-  return [
-    `=== ORD UR ÄMNET SOM FINNS I KUNDENS PROFIL: ${ord.join(", ")} ===`,
-    "De här orden står i kundens egen profil. Använd den betydelse profilen ger dem, aldrig",
-    "en allmän betydelse från ett annat område. Är profilens betydelse otydlig: skriv om ordet",
-    "på ett sätt som stämmer med kundens verksamhet, och hitta aldrig på en definition.",
-  ].join("\n");
+/**
+ * Blocket som lär modellen ordet ur kundens egen profil. Tom sträng när inget träffade.
+ *
+ * Formuleringen är viktig: raderna presenteras som BETYDELSE, inte som fakta att återge.
+ * Utan den gränsen blir en profilrad en inbjudan att skriva av den, och då har vi bytt ett
+ * betydelsefel mot ett sanningsproblem.
+ */
+export function amnesordBlock(traffar: Amnesord[]): string {
+  if (!traffar.length) return "";
+  const delar: string[] = ["=== SÅ ANVÄNDER DEN HÄR KUNDEN ORDEN I ÄMNET ==="];
+  for (const t of traffar) {
+    delar.push(`"${t.ord}" — så här står det i kundens egen profil:`);
+    for (const r of t.rader) delar.push(`   ${r}`);
+  }
+  delar.push(
+    "",
+    "Raderna ovan visar vad kunden MENAR med orden. Det är den betydelsen som gäller, även om",
+    "ordet betyder något helt annat i vardagsspråk eller i ett annat yrke. Skriv aldrig om den",
+    "allmänna betydelsen och blanda aldrig ihop de två i samma text.",
+    "De visar betydelse, inte fakta att återge: skriv inte av raderna, och behandla inga siffror",
+    "eller villkor i dem som något du får påstå. Sanningskravet och prisregeln gäller oförändrat.",
+  );
+  return delar.join("\n");
 }

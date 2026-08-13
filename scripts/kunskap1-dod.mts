@@ -57,12 +57,36 @@ const kolla = (ok: boolean, text: string, extra = "") => {
 
 console.log("KUNSKAP-1 DoD — Gittes exempel i tre flöden\n");
 
-// ── Steg 1: ordlistan finns och når prompten ────────────────────────────────
+// ── Steg 1: fattar systemet det SJÄLVT? ─────────────────────────────────────
+//
+// Håkans krav, och det är det verkliga provet: det ska inte behöva stå "regression"
+// någonstans. Systemet ska förstå vad Gitte menar när hon skriver ett inlägg om det.
+// Därför körs mätningen med ordlistan TOM — bara det som redan står i hennes profil.
 const poster = await hamtaOrdlista(FORBALANCE);
-console.log("Ordlistan hos For Balance:");
-for (const p of poster) console.log(`  "${p.ord}" → ${p.betydelse}`);
-kolla(poster.length > 0, "ordlistan är ifylld");
-kolla(poster.some((p) => p.ord.toLowerCase() === "regression"), "ordet regression finns i listan");
+console.log(`Ordlistan hos For Balance: ${poster.length} post(er) — mätningen körs UTAN dem.`);
+
+const { getProfileAsMarkdown } = await import("../lib/knowledge");
+const { amnesordIProfilen, amnesordBlock } = await import("../lib/ordlista");
+const profil = await getProfileAsMarkdown(FORBALANCE, { medVoice: false });
+const sjalvlart = amnesordIProfilen(AMNE, profil, []);
+console.log("\nVad systemet listar ut på egen hand ur profilen:");
+for (const t of sjalvlart) {
+  console.log(`  "${t.ord}":`);
+  for (const r of t.rader) console.log(`     ${r}`);
+}
+kolla(sjalvlart.length > 0, "systemet hittar ordet i profilen utan att någon skrivit en ordlista");
+kolla(
+  sjalvlart.some((t) => t.rader.some((r) => /tidigare liv/i.test(r))),
+  "det hittar kundens EGEN förklaring, inte bara ordet",
+);
+// Mät RADERNA, inte hela blocket: blockets egen brödtext innehåller "kr" inuti ordet
+// "Skriv", och första versionen fällde sig själv på det.
+const utpluckade = sjalvlart.flatMap((t) => t.rader).join(" ");
+kolla(
+  !/\d[\d\s]*kr\b/.test(utpluckade),
+  "prisraden följer inte med som förklaring",
+  utpluckade.match(/[^.]*\d[\d\s]*kr[^.]*/)?.[0] ?? "",
+);
 
 const FLODEN = [
   { namn: "blogg",       syfte: "blogg",       kanal: "webb",      knowledge: ["blog-playbook", "conversion"] },
@@ -84,9 +108,11 @@ for (const f of FLODEN) {
     knowledge: f.knowledge,
   });
   byggda[f.namn] = { system: b.system, user: b.user };
-  const harBlock = b.system.includes("KUNDENS EGNA ORD");
-  const harBetydelse = /regressionsterapi/i.test(b.system);
-  kolla(harBlock && harBetydelse, `${f.namn}: kundens egna ord finns i prompten`);
+  // Med tom ordlista är det den SJÄLVLÄRDA vägen som ska bära betydelsen — alltså
+  // kundens egen profilrad, inte en ordlistepost någon skrivit in.
+  const harBlock = b.system.includes("SÅ ANVÄNDER DEN HÄR KUNDEN ORDEN");
+  const harBetydelse = /tidigare liv/i.test(b.system);
+  kolla(harBlock && harBetydelse, `${f.namn}: kundens egen förklaring finns i prompten`);
 }
 
 // ── Steg 2: skarp generering ────────────────────────────────────────────────
@@ -121,9 +147,9 @@ for (const f of FLODEN.slice(0, 3)) {
 console.log("\nKontroll — samma prompt UTAN kundens egna ord (ska bli sämre):");
 const utan = byggda["inlägg"].system
   .split("\n\n")
-  .filter((block) => !block.startsWith("=== KUNDENS EGNA ORD") && !block.startsWith("=== ORD UR ÄMNET"))
+  .filter((block) => !block.startsWith("=== KUNDENS EGNA ORD") && !block.startsWith("=== SÅ ANVÄNDER DEN HÄR KUNDEN"))
   .join("\n\n");
-kolla(!utan.includes("KUNDENS EGNA ORD"), "kontrollprompten saknar verkligen blocket");
+kolla(!utan.includes("SÅ ANVÄNDER DEN HÄR KUNDEN"), "kontrollprompten saknar verkligen blocket");
 
 const kontroll = await generateWithUsage({
   model: "gemini-2.5-flash",
