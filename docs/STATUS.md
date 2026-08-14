@@ -371,6 +371,26 @@ webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en 
 | FÄRG-2 + FONT-3 | KLART OCH VERIFIERAT | For Balances palett mätt på hennes sajt. Kalnia tillagd (OFL) |
 | S-6 hämtningen | KLART, EJ VERIFIERAT I DRIFT | Djupgranskningens 500 mot forbalance.se. ⚠ **Härledning, ej återskapat fel** |
 
+### BESTÄLLT 13/8, EJ PÅBÖRJAT — R-5b (litet varv)
+
+Håkans ord, ordagrant:
+
+> Makzy-rapporten bifogas. Tre kalibreringsfel i siffergrinden:
+> (1) strukturtal (list-, tabell-, rubriknumrering, datum i sidhuvud) undantas från grinden
+>     och beslutstabellen,
+> (2) generisk SEO-fakta (meta-beskrivningens 150-160 tecken m.fl.) klassas B, bygg en liten
+>     faktalista,
+> (3) crawlens egna mätvärden (bildantal, ordantal) är alltid belagda, aldrig luckor.
+> DoD: omkörd Makzy-rapport med noll strukturtal i lucklistan och ren beslutstabell.
+
+⚠ **Rapporten var INTE bifogad** i meddelandet. Be om den, eller kör om en Makzy-rapport
+själv som utgångsläge — utan ett före-läge går DoD:n ("noll strukturtal i lucklistan") inte
+att bevisa, bara påstå.
+
+Rör siffergrinden i `lib/content/writing-rules` (`talTokens`, `sakerstallCaption`) och
+sanningskravet i `lib/prompt-core`. Se raden om sifferkontrollen bland de öppna besluten:
+tal ur kundcitat räknas i dag som verifierade.
+
 ### KLART SENARE 13/8 (också pushat, `987901c`)
 
 | Post | Status | Kärnan |
