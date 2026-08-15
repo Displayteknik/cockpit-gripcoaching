@@ -358,7 +358,7 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
         {/* Flytta steg — samma skrivväg som Fokus idag (/api/fokus/move-stage) */}
         {lage.stegInfo && lage.stegInfo.steg.length > 1 && (
           <div className="mt-4">
-            <PipelineStegRad oppId={lage.ghlOpportunityId} stegInfo={lage.stegInfo} primaryColor={primary} onMoved={ladda} />
+            <PipelineStegRad oppId={lage.ghlOpportunityId} stegInfo={lage.stegInfo} primaryColor={primary} onMoved={ladda} stor />
           </div>
         )}
 

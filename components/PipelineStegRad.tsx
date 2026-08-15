@@ -18,11 +18,16 @@ export default function PipelineStegRad({
   stegInfo,
   primaryColor,
   onMoved,
+  stor = false,
 }: {
   oppId: string;
   stegInfo: StegInfo;
   primaryColor: string;
   onMoved: () => void;
+  /** Rymligt läge: större pillar som radbryts i stället för att skrollas — för fullbreddsytor
+   *  (t.ex. DRIV-kortet) med gott om plats. Standard (false) = oförändrad, kompakt rad för
+   *  Fokus-kortet och Nya leads, som är byggda för trånga listkort. */
+  stor?: boolean;
 }) {
   const [flyttar, setFlyttar] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -52,10 +57,10 @@ export default function PipelineStegRad({
   };
 
   return (
-    <div className="mt-3">
+    <div className={stor ? "mt-4" : "mt-3"}>
       {/* Förklarande rubrik */}
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400">
+      <div className={`flex items-center justify-between gap-2 ${stor ? "mb-2.5" : "mb-1.5"}`}>
+        <div className={`flex items-center gap-1.5 font-semibold uppercase tracking-wider text-gray-400 ${stor ? "text-xs" : "text-xs"}`}>
           <TrendingUp className="w-3.5 h-3.5" />
           Var i pipelinen{stegInfo.pipelineNamn ? ` · ${stegInfo.pipelineNamn}` : ""}
         </div>
@@ -66,7 +71,7 @@ export default function PipelineStegRad({
         )}
       </div>
 
-      <div className="flex items-center gap-1 overflow-x-auto pb-1.5 -mx-0.5 px-0.5">
+      <div className={stor ? "flex flex-wrap items-center gap-2" : "flex items-center gap-1 overflow-x-auto pb-1.5 -mx-0.5 px-0.5"}>
         {stegInfo.steg.map((s, i) => {
           const aktuell = i === aktuellIndex;
           const passerad = i < aktuellIndex;
@@ -94,7 +99,7 @@ export default function PipelineStegRad({
                 if (!aktuell) flytta(s.id, s.namn);
               }}
               title={aktuell ? `Nuvarande steg: ${s.namn} — dra hit till ett annat steg` : `Flytta till "${s.namn}"`}
-              className={`group relative flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`group relative inline-flex items-center transition-all ${stor ? "gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" : "flex-shrink-0 gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold"} ${
                 aktuell ? "text-white shadow-sm cursor-grab active:cursor-grabbing" : passerad ? "text-white/95" : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
               } ${!aktuell && !flyttar ? "cursor-pointer" : ""} ${flyttar && !laddar ? "opacity-50" : ""} ${isTarget ? "ring-2 ring-offset-1 scale-105" : ""}`}
               style={{
@@ -103,20 +108,20 @@ export default function PipelineStegRad({
               }}
             >
               {laddar ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className={stor ? "w-3.5 h-3.5 animate-spin" : "w-3 h-3 animate-spin"} />
               ) : aktuell ? (
-                <GripVertical className="w-3 h-3 opacity-80" />
+                <GripVertical className={stor ? "w-3.5 h-3.5 opacity-80" : "w-3 h-3 opacity-80"} />
               ) : passerad ? (
-                <Check className="w-3 h-3" />
+                <Check className={stor ? "w-3.5 h-3.5" : "w-3 h-3"} />
               ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                <span className={stor ? "w-2 h-2 rounded-full bg-gray-400" : "w-1.5 h-1.5 rounded-full bg-gray-400"} />
               )}
               <span className="whitespace-nowrap">{s.namn}</span>
             </button>
           );
         })}
       </div>
-      <p className="text-xs text-gray-400 mt-0.5">
+      <p className={`text-gray-400 ${stor ? "text-xs mt-2" : "text-xs mt-0.5"}`}>
         Dra det markerade steget eller klicka ett steg för att flytta affären i MySales{aktuellNamn ? ` (nu: ${aktuellNamn})` : ""}.
       </p>
     </div>
