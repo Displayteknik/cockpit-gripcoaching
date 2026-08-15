@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import PipelineStegRad, { type StegInfo } from "@/components/PipelineStegRad";
 import { CoachContextInput } from "@/components/FokusClient";
+import { mysalesKontaktUrl } from "@/lib/mysales";
 
 type SvarsData =
   | { kanal: "gmail"; tradId: string; messageIdHeader: string; motpart: string; amne: string }
@@ -29,6 +30,7 @@ interface DrivKort {
     epost: string | null; telefon: string | null; taggar: string[]; stegNamn: string | null;
     stegInfo: StegInfo | null; varde: number;
     dagarISteget: number | null; nastaSteg: { titel: string; datum: string } | null; saknarNastaSteg: boolean;
+    locationId: string;
   };
   senasteKontakt: { text: string; bollenHos: "kund" | "oss" | "okant" };
   tidslinje: TidslinjePost[];
@@ -291,6 +293,7 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
   const offertParams = new URLSearchParams({ kund: lage.namn || "", foretag: lage.foretag || "", opp: lage.ghlOpportunityId });
   if (lage.ghlContactId) offertParams.set("kontakt", lage.ghlContactId);
   const offertHref = `/dashboard/offert?${offertParams}`;
+  const mysalesHref = mysalesKontaktUrl(lage.locationId, lage.ghlContactId);
 
   const prisTraffar = prislista.filter((p) => {
     const s = prisSok.trim().toLowerCase();
@@ -388,7 +391,7 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
         )}
 
         {/* DRIV-3: Skapa offert — samma URL-mönster/väg som Fokus idag redan använder */}
-        <div className="mt-4">
+        <div className="mt-4 flex items-center gap-2 flex-wrap">
           <a
             href={offertHref}
             title="Öppnar offertmotorn med kunden ifylld"
@@ -397,6 +400,16 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
           >
             <FileText className="w-4 h-4" /> Skapa offert <ExternalLink className="w-3.5 h-3.5" />
           </a>
+          {mysalesHref && (
+            <a
+              href={mysalesHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+            >
+              Öppna i MySales <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
         </div>
       </div>
 
