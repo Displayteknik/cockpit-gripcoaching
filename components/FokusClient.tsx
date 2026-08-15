@@ -29,6 +29,7 @@ import {
   FileText,
   MessageCircle,
   Send,
+  LayoutGrid,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { mysalesKontaktUrl } from "@/lib/mysales";
@@ -881,6 +882,14 @@ function DragKort({
             <FileText className="w-4 h-4" /> Skapa offert
           </a>
         )}
+        {/* DRIV-1: kortet — tidslinje (GHL+Gmail+kalender+offerter) + läget, en klick bort */}
+        <a
+          href={`/dashboard/driv/${c.id}`}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-white border shadow-sm hover:bg-gray-50"
+          style={{ borderColor: `${primaryColor}55`, color: primaryColor }}
+        >
+          <LayoutGrid className="w-4 h-4" /> Öppna kort
+        </a>
         {deeplink && (
           <a
             href={deeplink}
@@ -1013,7 +1022,8 @@ function PresetKnapp({ label, onClick, disabled }: { label: string; onClick: () 
 }
 
 // ── Kontext-input med röstinmatning + bildanalys (återanvänder /api/ai/transcribe + /api/ai/vision) ──
-function CoachContextInput({
+// DRIV-2: återanvänds av kortets "Anteckna"-läge (text/röst/bild → GHL-notering).
+export function CoachContextInput({
   value,
   onChange,
   onSubmit,

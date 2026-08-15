@@ -70,6 +70,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/hq/planering", label: "Planering", icon: Calendar },
         { href: "/dashboard/hq/uppstart", label: "Uppstart", icon: Rocket },
         { href: "/dashboard/hq/kontakt", label: "Vem har bollen", icon: Radio },
+        { href: "/dashboard/driv/stadning", label: "Städa pipelinen", icon: Wrench },
       ],
     },
     {

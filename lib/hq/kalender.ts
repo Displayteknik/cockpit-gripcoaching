@@ -39,15 +39,22 @@ const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
 // hitta korrespondensen med en viss adress utan att räkna igenom hela brevlådan.
 // Koden ber därför aldrig om brödtexten: varje hämtning sker med format=metadata och
 // en uttrycklig lista över rubriker. Brödtext lämnar aldrig Google, och lagras aldrig.
+// DRIV-2: gmail.send tillagt för svarsknappen (lib/driv/gmail.ts::skickaSvar). Samma
+// prompt=consent-mönster som redan gäller: en omkoppling räcker, ingen ny redirect-URI.
+// ⚠ Befintliga kopplingar (gjorda innan denna rad lades till) saknar send-scopet tills
+// ägaren kopplar om — se harGmailSend/kopplingsScope nedan, som avslöjar det innan ett
+// klick på Skicka misslyckas i onödan.
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.send",
   "https://www.googleapis.com/auth/userinfo.email",
   "openid",
 ];
 
 /** Scope-strängar som måste finnas i kopplingen för att en funktion ska fungera. */
 export const KRAVER_GMAIL = "gmail.readonly";
+export const KRAVER_GMAIL_SEND = "gmail.send";
 export const KRAVER_KALENDER = "calendar.events";
 
 /** `state`-värdet som skiljer ägarens kalenderflöde från klienternas (som skickar sitt klient-id). */
@@ -145,12 +152,12 @@ export async function hamtaKoppling(): Promise<Koppling | null> {
  * lades till bär bara kalender-scopet, och då måste ägaren koppla om. Att upptäcka det
  * här är bättre än ett 403 mitt i en synk.
  */
-export async function kopplingsScope(): Promise<{ harGmail: boolean; harKalender: boolean; scopes: string } | null> {
+export async function kopplingsScope(): Promise<{ harGmail: boolean; harGmailSend: boolean; harKalender: boolean; scopes: string } | null> {
   const { data } = await supabaseService().from("hq_google_koppling").select("scopes, refresh_token").eq("id", 1).maybeSingle();
   const rad = data as { scopes: string | null; refresh_token: string | null } | null;
   if (!rad?.refresh_token) return null;
   const s = rad.scopes || "";
-  return { harGmail: s.includes(KRAVER_GMAIL), harKalender: s.includes(KRAVER_KALENDER), scopes: s };
+  return { harGmail: s.includes(KRAVER_GMAIL), harGmailSend: s.includes(KRAVER_GMAIL_SEND), harKalender: s.includes(KRAVER_KALENDER), scopes: s };
 }
 
 /** Giltig access-token för ägarens Google-konto. Delas av kalendern och Gmail. */

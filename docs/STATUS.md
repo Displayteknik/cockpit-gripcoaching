@@ -1541,3 +1541,103 @@ händer när en offert faktiskt skickas härifrån — det finns bara en enda te
 systemet och den är aldrig skickad, så jag har byggt och kontrollerat koden noga men
 inte sett den riktiga varningen dyka upp. Första gången du skickar en offert på riktigt
 är ett bra tillfälle att kolla att den dyker upp i kortets tidslinje som den ska.
+
+---
+
+## DRIV-4 2026-08-15 — morgonkön "Dagens drag"
+
+**Beställningens kärna:** en rankad kö överst i Fokus idag — förfallna uppgifter,
+obesvarade kunder, gamla offerter, dagens möten — med Klart/Senare/Vecka-knappar och
+förberedda mötesfrågor. Byggt och **live-verifierat mot skarp DT-pipeline: 27 riktiga
+rader, korrekt rankade.**
+
+### Ett medvetet avsteg: ingen extern cron som primär mekanism
+
+Ordern bad om en cron. Det här repot har redan mätt, i klartext, att GitHub Actions cron
+inte går att lita på för tidskänsligt (`.github/workflows/scheduler.yml`: snitt 102 min
+mellan körningar trots var-15:e-minut-schema, värsta lucka 3,8 timmar). En morgonkö som
+bara byggs av en flaky extern klocka kan stå tom eller gammal exakt den morgon den ska
+funka. Lösningen: **beräkning on-demand**, en gång per (tenant, dag) — första sidladdningen
+en dag bygger kön, resten av dagen läses den cachade. Samma idempotenta engångslogik
+som `driv_ko_dag_idx` (unikt per dag) skyddar. En extern cron för förvärmning kan läggas
+till senare utan att ändra kontraktet, men är inte en förutsättning för att kön ska funka.
+
+### Rankningen återanvänder Fokusmotorns formel rakt av
+
+`lib/fokus/priority.ts::vardepoang` + `bradska` och `lib/fokus/config.ts::regelForSteg`
+anropas direkt — samma "värme, värde, tid"-formel Fokus idag redan visar, inte en ny
+parallell. DRIV-4 lägger bara på de signaler Fokusmotorn själv inte ser (obesvarat över
+GHL+Gmail, offert-uppföljning, kalendermöten).
+
+### Ett riktigt fel hittat på skarp data, INNAN det hann bli en olägenhet
+
+Första körningen gav 20 `steg_aldrat`-rader. Genomläsning av logiken visade att regeln
+flaggade en affär även om den redan hade ett FRAMTIDA nästa steg satt (t.ex. av
+DRIV-1:s städning) — bara "förfaller idag"-uppgifter filtrerades bort, inte "har redan
+en plan om en vecka". Utan rättningen hade kön tjatat om exakt de affärer städningen
+redan löst, varje morgon, för alltid. Rättat: `steg_aldrat` kräver nu `!uppfoljning_datum`
+— ingen plan alls, inte bara "inte idag". Verifierat live (ny text: "...inget nästa steg
+satt").
+
+### Live-verifierat, skarp DT-data 2026-08-15
+
+- **27 rader**: 6 obesvarat (Sofia Boudon överst, väntat 12 dagar på svar om en riktig
+  mejlrubrik), 20 åldrade steg, 1 förfallen uppgift. 0 offert-uppföljning och 0
+  mötesförberedelse — korrekt, DT har ingen skickad offert och inget möte matchat idag.
+- Rankningen stämmer: de tre obesvarade kunderna (150, 90, 65.75 poäng) ligger överst,
+  före alla åldrade steg (max 42 poäng) — precis den prioritering en säljare hade valt
+  själv.
+- **Senare idag**-knappen testad live på en riktig rad (statusuppdatering, ingen
+  GHL-skrivning för den här typen) — fungerade, verifierat i databasen, återställd
+  efteråt så din riktiga kö inte bär spår av mitt test.
+- **Klart/Vecka på en förfallen uppgift** (skriver till GHL) är kodgranskat men INTE
+  körd av mig — samma princip som hela sessionen: den skrivningen är din.
+
+### Mötesförberedelsekort
+
+Byggt (`lib/driv/mote-forberedelse.ts`), återanvänder samma "dm-svar"-familj och
+sanningskrav som Svara-utkasten — tre frågor byggda ENDAST på kortets egna tidslinje,
+aldrig påhittade. Inte sett triggra på riktigt idag eftersom inget kalendermöte matchade
+en affär i dag. Testas automatiskt nästa gång du har ett möte med en riktig kund inbokat.
+
+### DoD DRIV-4
+
+| Krav | Status |
+|---|---|
+| Fem vardagsmorgnar i rad, topp 3 rätt prioriterat | **Kan inte verifieras på en sittning** — det är i sakens natur fem riktiga dagar. Dag 1 ser rätt ut: obesvarat före allt annat |
+| Varje kort öppnas med förberett utkast | **Byggt annorlunda än bokstavligen**: utkastet förbereds inte vid köbygget (för tunt underlag där, bara ämnesraden) utan triggas automatiskt när kortet öppnas från kön (`?auto=1`), med kortets fulla kontext — samma mekanism som redan bevisat leverera bra utkast på under 3 sekunder i DRIV-2 |
+| Klart/Senare skriver korrekt till GHL | **Senare (utan uppgift) verifierat live. Klart/Vecka (med uppgift, skriver GHL) kodgranskat, ej kört** |
+| Tomt läge, inte en tom yta | **Byggt** ("Allt är gjort, bra jobbat 🎉") — overifierat visuellt eftersom DT:s kö faktiskt har 27 rader idag |
+
+### Beställt men ej levererat
+
+- Lobby-leads i kön (spec: "endast affärer i pipeline i v1" — jag höll mig till v1-defaulten)
+- Extern cron för förvärmning (on-demand-vägen är den faktiska garantin, se ovan)
+- Fem-dagars-verifieringen — spelar ut sig i verkligheten, inte i en session
+
+### PÅ VANLIG SVENSKA
+
+Varje morgon möter du nu en lista överst i Fokus idag som säger exakt vem som väntar på
+dig och varför — testat på riktigt just nu, och Sofia Boudon (väntat 12 dagar) hamnade
+överst, precis som den borde. Jag hittade och rättade ett fel innan det hann bli
+irriterande: utan rättningen hade listan fortsatt tjata om affärer du redan bestämt dig
+för och satt en påminnelse på. Det enda jag inte rört är de knappar som skriver till ditt
+riktiga GHL-konto (Klart och Om en vecka på en förfallen uppgift) — de väntar på ditt
+eget klick, som allt annat den här sessionen.
+
+---
+
+## Alla fyra DRIV-etapper byggda 2026-08-15 — sammanfattning
+
+DRIV-0 (kartläggning) → DRIV-1 (kortet + städning) → DRIV-2 (agera) → DRIV-3 (pris/offert)
+→ DRIV-4 (Dagens drag), alla byggda i en session, flera live-verifierade mot skarp DT-data.
+Kundversionen (DRIV-5) är fortsatt medvetet parkerad, ingen kod skriven där.
+
+**Kvarstående innan allt är skarpt i drift:**
+1. Google måste kopplas om (gmail.send) — Håkan valde att skjuta upp detta.
+2. `conversations/message.write` obekräftat — kan bara bevisas genom ett riktigt skick.
+3. Städningens 25 uppgifter väntar på Håkans godkännande i `/dashboard/driv/stadning`.
+4. Testkontakten ("TEST Mejllasning") lämnas kvar — Håkan städar bort den själv.
+5. Fem-dagars-mätningen av morgonkön spelar ut sig i verkligheten från och med imorgon.
+
+Se respektive etapps sektion ovan för fullständiga DoD-tabeller.
