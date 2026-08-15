@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle, RefreshCw, LayoutGrid } from "lucide-react";
 
 interface Forslag {
   ghlOpportunityId: string; ghlContactId: string; namn: string | null; stegNamn: string | null;
@@ -131,6 +131,16 @@ export default function StadningPage() {
                           onChange={(e) => setRedigerad((s) => ({ ...s, [f.ghlOpportunityId]: { titel: r?.titel ?? f.titel, datum: e.target.value } }))}
                           className="text-sm rounded-lg border border-gray-200 px-3 py-1.5 focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
                         />
+                        {/* Generella förslag passar inte alla — öppna det riktiga kortet (tidslinje,
+                            senaste kontakt) i en ny flik när texten ovan inte känns rätt. */}
+                        <a
+                          href={`/dashboard/driv/${f.ghlOpportunityId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 flex-shrink-0"
+                        >
+                          <LayoutGrid className="w-3.5 h-3.5" /> Öppna kort
+                        </a>
                       </div>
                     </div>
                   </div>
