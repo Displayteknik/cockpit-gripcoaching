@@ -565,11 +565,19 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const suggestImage = useCallback(async (mode: "stock" | "ai") => {
     setError(""); setSearchingImg(mode); setImgTextInfo(null);
     try {
+      // ÄMNE-1 (Håkans fråga 15/8): skicka rubrik/underrubrik/text/ämne/caption VAR FÖR
+      // SIG i stället för att klistra ihop dem till en enda `topic`-sträng här. Servern
+      // avgör nu ämneskällan (caption > skapad text > Ämnesfält > tomt, samma regel som
+      // bildtexten) — den gamla `topic || headline1 || caption`-ordningen lät Ämnesfältet
+      // vinna OVILLKORLIGT så fort det var ifyllt, även när det pekade på ett gammalt inlägg.
       const r = await fetch("/api/studio/suggest-image", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        // Skriv eget: ingen rubrik finns — använd bildtexten så bilden matchar det man skrev.
         // B3: exactText = texten som ska synas I bilden → verifieringsslinga server-side.
-        body: JSON.stringify({ mode, topic: topic || headline1 || caption.slice(0, 200), aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square", exactText: mode === "ai" ? imgText.trim() : "" }),
+        body: JSON.stringify({
+          mode, headline: headline1, headline2, body, topic, caption,
+          aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square",
+          exactText: mode === "ai" ? imgText.trim() : "",
+        }),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Bildförslag misslyckades");
@@ -588,7 +596,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSearchingImg("");
     }
-  }, [topic, headline1, caption, format, imgText, hamtaCredits]);
+  }, [topic, headline1, headline2, body, caption, format, imgText, hamtaCredits]);
 
   // ── Mediabibliotek: klientens sparade bilder (studio-images/<clientId>/) ──
   const loadMedia = useCallback(async () => {
@@ -619,10 +627,17 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const generateOnBrandImage = useCallback(async (textOverride?: string) => {
     setError(""); setSearchingImg("ai");
     try {
-      const t = (textOverride || [headline1, topic, body].filter(Boolean).join(". ")).slice(0, 220) || topic;
+      // ÄMNE-1: `textOverride` bär den NYSS VALDA idén (applySuggestion, state hinner inte
+      // uppdateras i samma tick) — den är då mer aktuell än headline1/body/topic-state och
+      // skickas som den skapade textens innehåll, ensam. Utan override används samma
+      // ämneskälla-prioritet som "Föreslå bild" (servern avgör: caption > text > ämne).
       const r = await fetch("/api/studio/suggest-image", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "ai", topic: t, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }),
+        body: JSON.stringify(
+          textOverride
+            ? { mode: "ai", body: textOverride.slice(0, 220), aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" }
+            : { mode: "ai", headline: headline1, headline2, body, topic, caption, aspect: isStoryFormat(format) ? "story" : format === "1080x1350" ? "portrait" : "square" },
+        ),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Bildgenerering misslyckades");
@@ -640,7 +655,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSearchingImg("");
     }
-  }, [headline1, topic, body, format, setImage]);
+  }, [headline1, headline2, topic, body, caption, format, setImage]);
 
   // ── G-6: omdöme om AI-bilden ───────────────────────────────────────────────
   // Sparar betyg + kundens egna ord, bundet till genereringen. Nästa bildgenerering

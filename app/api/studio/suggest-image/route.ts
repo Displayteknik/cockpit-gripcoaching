@@ -7,6 +7,7 @@ import { getKitDirectives, imageDirectiveSuffix } from "@/lib/studio/kit";
 import { seasonPromptLineEn } from "@/lib/content/sasong";
 import { supabaseService } from "@/lib/supabase-admin";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
+import { harledBildamne } from "@/lib/content/amneskalla";
 
 export const runtime = "nodejs";
 // B3-slingan (upp till 3 gen + vision + fallback) behöver mer tid än enkel generering.
@@ -54,7 +55,19 @@ export async function POST(req: NextRequest) {
     // saknas industry används klientnamnet, annars neutralt.
     const niche = client?.industry || client?.name || "företaget";
     const body = await req.json().catch(() => ({}));
-    const topic = (body.topic || "").toString().slice(0, 200) || niche;
+    // ÄMNE-1 (Håkans fråga 15/8, "är bilderna relaterade till texterna?"): karusellens
+    // slide-anrop skickar redan `rubrik`/`brodtext` SEPARAT per slide — det är rätt,
+    // orört här. Singelvägen (StudioMaker: suggestImage/generateOnBrandImage) kollapsade
+    // allt till en enda `topic`-sträng, och Ämnesfältet vann OVILLKORLIGT om det bara var
+    // ifyllt (`topic || headline1 || caption`) — samma bugg som bildtexten hade, fast utan
+    // ens en prioritetsordning. Samma regel som suggest-caption nu: caption > skapad
+    // rubrik/text > Ämnesfält > tomt. Ett explicit `rubrik`-fält i anropet (även tomt)
+    // signalerar "jag har redan valt ut rätt innehåll" (karusellen) och kringgår regeln.
+    const harEgenRubrikBrodtext = typeof body.rubrik === "string" || typeof body.brodtext === "string";
+    const amne = harEgenRubrikBrodtext
+      ? { rubrik: String(body.rubrik || "").slice(0, 200), brodtext: String(body.brodtext || "").slice(0, 400), kalla: "bild" as const }
+      : harledBildamne({ caption: body.caption, headline: body.headline, headline2: body.headline2, body: body.body, topic: body.topic });
+    const topic = [amne.rubrik, amne.brodtext].filter(Boolean).join(". ").slice(0, 200) || niche;
 
     if (body.mode === "ai") {
       const ar = body.aspect === "story" ? "9:16" : body.aspect === "portrait" ? "3:4" : body.aspect === "square" ? "1:1" : "4:3";
@@ -145,8 +158,8 @@ export async function POST(req: NextRequest) {
         clientId: await resolveClientId(),
         niche,
         syfte: body.serieAntal ? "karusell-slide" : "singel",
-        rubrik: String(body.rubrik || "").slice(0, 200) || topic,
-        brodtext: String(body.brodtext || "").slice(0, 400),
+        rubrik: amne.rubrik || topic,
+        brodtext: amne.brodtext,
         serie: body.serieAntal ? { index: serieIndex, antal: Number(body.serieAntal) } : undefined,
         scen: scene,
       });
@@ -269,6 +282,8 @@ export async function POST(req: NextRequest) {
             `tid:${byggd.tid ? byggd.tid.slice(0, 40) : "ej härledd"}`,
             `rekvisita:${byggd.rekvisita.kalla}`,
           ].join(" | "),
+          // K4 (ÄMNE-1): samma ämneskälla-loggning som bildtexten.
+          amneKalla: amne.kalla,
         });
       } catch (e) {
         console.error("[suggest-image] generationsloggen kunde inte skrivas:", e);

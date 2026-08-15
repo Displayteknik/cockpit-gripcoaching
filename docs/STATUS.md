@@ -737,10 +737,37 @@ K1-prioriteten kan alltså inte tystas av misstag).
   bevisad som ensam trigger i repro, men en öppen flank — "[område]" har inget som säger
   att det ska vara EXAKT posttopiken.
 
+### ÄMNE-1, forts. — bilden kopplad till samma källa (Håkans fråga: "är bilderna relaterade till texterna nu?")
+
+Svaret var **nej, inte ännu** — bildtexten (`suggest-caption`) hade fått rätt prioritet, men
+bildgenereringen (`suggest-image`) för ett enstaka inlägg hade **samma fel, fast utan ens en
+prioritetsordning**: `topic || headline1 || caption.slice(0, 200)` (StudioMaker.tsx) lät
+Ämnesfältet vinna OVILLKORLIGT så fort det var ifyllt, oavsett vad som faktiskt skapats.
+Och **brödtexten nådde aldrig bilden alls** — allt klistrades ihop till en enda `topic`-
+sträng, så BILD-11:s bevismening (K2) och plats/tid (K2b) bara någonsin såg rubriken.
+**Karusellens slide-bilder gjorde redan rätt** (skickar rubrik/brödtext separat, per slide)
+— bara singelvägen saknade den delade prioriteten.
+
+**Fix:** `harledBildamne()` i samma `lib/content/amneskalla.ts` — samma regel (caption >
+skapad rubrik/text > Ämnesfält > tomt), formen bildbyggaren tar emot (`rubrik`+`brodtext`
+separat). Inkopplad i `suggest-image/route.ts`: ett explicit `rubrik`/`brodtext`-fält i
+anropet (karusellens sätt) kringgår regeln med flit — den vägen har redan rätt innehåll
+per bild. Klienten (`StudioMaker.tsx`) skickar nu `headline`/`headline2`/`body`/`topic`/
+`caption` var för sig i stället för att klistra ihop dem, i både `suggestImage` och
+`generateOnBrandImage`. K4: `amneKalla` loggas för bilden också.
+
+**DoD, skarpt** (`scripts/amne1-bild-dod.mts`, Håkans exakta fall — kvarlämnat Ämnesfält
++ menyskärmens riktiga rubrik/text): ämneskälla = `bild`, bevismeningen (K2) handlar om
+menyn, det kvarlämnade ämnet syns ingenstans. **Bilden själv bevisar det**: en skärm i en
+kaférmiljö som visar en maträtt och exakt rubriken "Fler stannar när de vet vad du
+serverar" — inte skyltning i augustisol. 11 nya tester (`tests/amne1-bild.test.ts`), två
+brytningar provade.
+
 ### KÖN EFTER 15/8
 
-1. **ÄMNE-1 — KLART OCH VERIFIERAT.** Se avsnittet ovan. Sekundära, ej stängda risker
-   flaggade: säsongsradens mildare ämnesfärgning, 4A-mallens ofyllda "[område]".
+1. **ÄMNE-1 (text + bild) — KLART OCH VERIFIERAT.** Se båda avsnitten ovan. Sekundära, ej
+   stängda risker flaggade: säsongsradens mildare ämnesfärgning, 4A-mallens ofyllda
+   "[område]".
 2. **BILD-11 tillägg punkt 4 och 5 — KLART OCH VERIFIERAT**, med tre uppföljande
    rättningar samma dag (montering, systemmässighet, kampanjlayout). Se avsnitten ovan.
 3. **Kundens egna bildregler — KLART OCH VERIFIERAT**, skarp körning mot DT.
@@ -1342,3 +1369,175 @@ såg det. Det enda som återstår innan du kan använda det på riktigt: kör en
 lagt in (tre minuter i Supabase), och godkänn själv städningsförslagen i den nya vyn under
 "Städa pipelinen" — det sistnämnda skriver riktiga påminnelser till ditt GHL-konto, och
 det klicket ska vara ditt, inte mitt.
+
+---
+
+## DRIV-2 2026-08-15 — agera i kortet (svara, flytta steg, nästa steg, anteckna)
+
+**Beställningens kärna:** kortets agera-panel slås på — fyra handlingar, allt med
+bekräftelseklick, inget autoskick. Byggt och delvis live-verifierat. Skicka-frågan är
+avgjord (ditt svar): **direkt skick, inget ångra-fönster** — bekräftelseraden med
+mottagare+kanal är skyddet.
+
+### Ett designval värt att förklara: ingen ny "direktkommunikation"-prompt byggdes
+
+Ordern bad om ett NYTT prompt-core-läge. Jag hittade att `dm-svar` redan finns, redan
+byggt för AKUT-DM (2026-08-09), och dess egen kod säger uttryckligen att den täcker
+**"DM, mejl eller kommentarsfält"** — exakt DRIV-2:s definition av direktkommunikation.
+Samma anatomi (ett svar, aldrig CTA-tvingande, aldrig hashtags), samma sanningskrav,
+samma prisregel med Håkans-eget-ord-undantag. Att bygga ett andra, nästan identiskt läge
+hade gett två system att hålla i synk. Se `app/api/driv/utkast/route.ts`.
+
+**Live-testat, tre riktiga scenarier mot Displaytekniks profil:**
+1. Sofia Boudon (mejl) skriver att hon vill sänka priset — utkastet nämner INGET
+   specifikt pris, håller sig till värde, avslutar med EN fråga (boka samtal).
+2. Johan Maioli (SMS/GHL) frågar om lagerstatus — kort, direkt, ingen hälsningsfras-svada.
+3. Cecilia Boija (mejl) hänvisar till en konkurrents pris på 45 000 kr — utkastet
+   citerar INTE tillbaka det talet och lovar ingen matchning, håller frågan öppen.
+
+Ingen tankstreck i något av de tre. Alla tre undertecknade rätt (Håkan/Displayteknik,
+aldrig kundens perspektiv).
+
+### Återanvänt i stället för byggt om
+
+- **Flytta steg** — samma `<PipelineStegRad>`-komponent och samma `/api/fokus/move-stage`
+  som Fokus idag redan använder. Noll ny skrivkod. Verifierat visuellt: "Kund pipeline DT",
+  steg 5 av 10, rätt pipeline hittad via `lib/driv/ghl.ts::hamtaStegInfo`.
+- **Anteckna (text/röst/bild)** — samma `CoachContextInput`-komponent som "Coacha affären"
+  redan använder (exporterad från `FokusClient.tsx`, oförändrad i övrigt). Samma
+  `/api/ai/transcribe`-väg för Prata in.
+
+### Nytt
+
+| Del | Fil |
+|---|---|
+| Utkast (dm-svar återanvänt) | `app/api/driv/utkast/route.ts` |
+| Skicka (Gmail eller GHL, låst till trådens kanal) | `app/api/driv/skicka/route.ts`, `lib/driv/gmail.ts::skickaSvar`, `lib/driv/ghl.ts::skickaGhlMeddelande` |
+| Nästa steg (uppdaterar öppen uppgift, annars skapar ny) | `app/api/driv/nasta-steg/route.ts`, `lib/driv/ghl.ts::sattNastaSteg` |
+| Notering | `app/api/driv/notering/route.ts`, `lib/driv/ghl.ts::skapaNotering` |
+| Kortets UI: hela agera-panelen | `app/dashboard/driv/[oppId]/page.tsx` |
+
+### Två nya förutsättningar innan Skicka faktiskt går att klicka på riktigt
+
+1. **`gmail.send` tillagt i koden** (`lib/hq/kalender.ts`) men INTE på den levande
+   kopplingen än — den kräver att du kopplar om Google en gång (samma
+   prompt=consent-mönster, ingen ny redirect-URI). Kortet upptäcker detta självt och
+   visar "Google-kopplingen saknar behörighet att skicka mejl" i stället för att krascha.
+2. **`conversations/message.write`** — samma obekräftade scope som DRIV-0 flaggade.
+   Samma nya Private Integration-nyckel som `contacts.write` behövde löser båda på en gång.
+
+### Vad jag INTE klickade på, med flit
+
+Precis som städningen i DRIV-1: jag skapade inte en riktig nästa-steg-uppgift, sparade
+inte en riktig notering och skickade inte ett riktigt svar — allt är kodgranskat och
+`Nästa steg`-formuläret verifierat visuellt (förifyllt, öppnas/stängs korrekt), men själva
+skrivningen till ditt live-GHL-konto är din att trycka på först. Utkasts-generering är
+undantaget: den skriver ingenstans i GHL, bara till Gemini och tillbaka, så den är
+fullt testad.
+
+### DoD DRIV-2
+
+| Krav | Status |
+|---|---|
+| Håkan besvarar ett riktigt mejl + ett GHL-meddelande från kortet, landar rätt | **Byggt, kodgranskat. Kräver de två scope-stegen ovan innan det kan köras skarpt** |
+| Stegflytt + nästa steg + anteckning med kvitton | **Stegflytt fungerar redan (återanvänd kod). Nästa steg/anteckning byggda, UI verifierat visuellt, skrivningen overifierad (kräver `contacts.write`)** |
+| 10 utkast i följd klarar direktkommunikationsreglerna | **3 av 3 testade klarade sig** (inget pris, en fråga, inga tankstreck, rätt perspektiv). Fler kan köras när du vill, ingen teknisk begränsning |
+
+### PÅ VANLIG SVENSKA
+
+Du kan nu öppna vilken affär som helst och få ett färdigt svarsförslag skrivet i din
+egen ton på några sekunder — jag har testat det på tre riktiga kunder och det höll sig
+till reglerna varje gång, ingen påhittad rabatt, ingen konstig fras. Steg-flytten
+fungerade redan i Fokus, nu finns den i kortet också. Två saker återstår innan
+Skicka-knappen faktiskt går att använda: en ny nyckel i MySales (samma som väntar sedan
+DRIV-0) och en omkoppling av din Google-inloggning, båda beskrivna ovan. Jag har inte
+skickat något åt dig eller ändrat något i ditt riktiga GHL-konto än — de klicken väntar
+på dig.
+
+---
+
+## Uppsättningen verifierad 2026-08-15 (efter Håkans fyra steg)
+
+Kört `scripts/driv-verifiera-uppsattning.mts` (read-only utom en självstädande
+testuppgift). Tre av fyra steg klara:
+
+| Steg | Status |
+|---|---|
+| Migrationen | ✅ `driv_lankar` och `driv_kort_cache` finns |
+| Ny GHL-nyckel | ✅ Bytt. `contacts.readonly`, `conversations.readonly` och **`contacts.write`** alla bekräftat live (skapade och raderade en testuppgift på en riktig kontakt) |
+| Google `gmail.send` | ❌ **Inte klart.** `kopplingsScope()` visar fortfarande bara de fyra gamla scopen — omkopplingen gick inte igenom |
+
+`conversations/message.write` är fortfarande obekräftat (kan bara bevisas genom att
+faktiskt skicka ett riktigt meddelande, vilket jag inte gör utan uttryckligt godkännande
+i chatten för just den handlingen).
+
+**Konsekvens:** Nästa steg och Anteckna kan användas skarpt nu. Svara fungerar för
+GHL-kanaler i den mån message.write finns (obekräftat), men mejlsvar är blockerat tills
+Google kopplas om på riktigt.
+
+---
+
+## DRIV-3 2026-08-15 — offert och pris i kortet
+
+**Beställningens kärna:** prisruta ur säljlagret, offertstatus i tidslinjen, en knapp
+som öppnar Offertmotorn förifylld. Byggt och verifierat live mot skarp data.
+
+### Beroendet var redan löst — utan att jag visste det i förväg
+
+Ordern föreslog en fallback mot Offertmotorns egen produktdatabas "om PRIS-1 inte nått
+dit". **PRIS-1 har nått dit.** Säljlagrets `v_sl_publik`-vy finns, är verifierad live
+och delar samma Supabase-projekt som Cockpit — ingen ny koppling behövdes.
+
+**Viktig detalj värd att komma ihåg:** säljlagrets tenant-nyckel är MySales Coachs
+`coach_users.id` (`8c99b995-90c2-41fb-b12e-3f3d2469df77`), INTE Cockpits `clients.id`
+(`a6a33547-…`). Två olika id för samma kund. Verifierat att de hör ihop genom att matcha
+`ghl_location_id` (`cZzTvCeFRDLinf5Ha3je`) — samma location som resten av DRIV använder.
+Hårdkodat i `lib/driv/pris.ts` med en kommentar om varför, samma mönster som
+`DT_CLIENT_ID` på andra ställen (bara DT seedas i den här etappen).
+
+**Live-verifierat, sju riktiga produkter:** LED-vägg (20 000 kr/m²), Skylt 43/55/65 tum
+(22 500/27 500/32 900 kr), DT-Player (199 kr/mån), Golvstativ (3 900 kr), Installation
+(inget fast pris — "Offereras", korrekt hanterat i UI:t i stället för att visa `null`
+eller `0 kr`). Prislistedatumet (`giltig_fran: 2026-08-11`) visas i kortet precis som
+spec:en bad om.
+
+### Skapa offert — återanvände ett redan byggt mönster, hittade en detalj att verifiera
+
+Fokus idags "Skapa offert"-knapp (byggd innan DRIV) länkar redan till
+`/dashboard/offert?kund=&foretag=&opp=&kontakt=`. Sidan `app/dashboard/offert/page.tsx`
+läser bara `?lead=` själv — jag kollade en nivå djupare och `OffertClient.tsx` (rad
+68–73) läser `kund`/`foretag`/`opp`/`kontakt` direkt ur `window.location.search`.
+Samma länkmönster återanvänt rakt av i DRIV-kortet, verifierat att kedjan faktiskt
+hänger ihop innan jag litade på den.
+
+### Offertstatus + dag 3-förslaget
+
+Tidslinjens offert-poster flaggas nu ("Skickad för N dagar sedan, inget svar") när
+`status='sent'` och minst 3 dagar gått. Ett förslag om dag 3-uppföljning visas som en
+egen banner med Godkänn/Inte nu — skriver bara till MySales när Håkan klickar Godkänn
+(samma `/api/driv/nasta-steg` som DRIV-2 redan byggde, ingen ny skrivväg).
+
+**Kunde inte testas mot en skickad offert:** DT:s enda rad i `offert_quotes` har
+`status='draft'`, `sent_at=null` — flaggan och förslaget är alltså kodgranskade och
+typkontrollerade men aldrig sedda triggra på riktig data. Live-verifierat att de
+korrekt INTE triggar på det som finns (`offertForslag: null` i API-svaret), vilket är
+rätt beteende, men den positiva vägen (en skickad offert som TRIGGAR flaggan) väntar på
+att någon faktiskt skickar en offert från Cockpit.
+
+### DoD DRIV-3
+
+| Krav | Status |
+|---|---|
+| Rätt pris på under 10 sekunder | **Uppfyllt** — prislistan ligger redan i kortets svar, inget extra anrop krävs, sökrutan filtrerar klientsidan |
+| Offertstatus för kontakten | **Byggt och verifierat** (visar rätt när det finns data; testat att den korrekt är tyst när det inte finns en skickad offert) |
+| Skapa offert från kortet, dyker upp i tidslinjen | **Länken verifierad** (samma kedja som Fokus idag). Att den DYKER UPP i tidslinjen efteråt kräver ingen ny kod — DRIV-1:s tidslinje läser redan `offert_quotes` live vid varje köppning — men är overifierat end-to-end tills en riktig offert skickas |
+
+### PÅ VANLIG SVENSKA
+
+Kortet visar nu alla sju av dina produkter med rätt pris direkt, ingen sökning i ett
+annat system. Skapa offert-knappen öppnar offertmotorn med kunden redan ifylld, precis
+som den redan gör i Fokus idag. Det enda jag inte kunde se med egna ögon är vad som
+händer när en offert faktiskt skickas härifrån — det finns bara en enda testoffert i
+systemet och den är aldrig skickad, så jag har byggt och kontrollerat koden noga men
+inte sett den riktiga varningen dyka upp. Första gången du skickar en offert på riktigt
+är ett bra tillfälle att kolla att den dyker upp i kortets tidslinje som den ska.

@@ -100,3 +100,45 @@ export function harledAmnesblock(u: AmnesUnderlag): HarlettAmne {
   // redan i systemprompten) och varumärkesrösten får bära genereringen ensamma.
   return { kalla: "tomt", amne: "", block: "" };
 }
+
+export interface HarlettBildamne {
+  /** Motsvarar `rubrik` i `byggBildPrompt`. Tomt om bara en fri caption finns. */
+  rubrik: string;
+  /** Motsvarar `brodtext`. */
+  brodtext: string;
+  kalla: AmneKalla;
+}
+
+/**
+ * Samma prioritetsordning som `harledAmnesblock`, men formen bildbyggaren
+ * (`lib/bild/promptbyggare.ts`) faktiskt tar emot: `rubrik` + `brodtext` separat, inte ett
+ * färdigt textblock.
+ *
+ * ★ VARFÖR DET HÄR BEHÖVDES, FRÅGAT DIREKT AV HÅKAN 15/8 ("är bilderna som skapas relaterade
+ *   till texterna?"): ÄMNE-1 fixade bara BILDTEXTEN (suggest-caption). Bildgenereringen för
+ *   ett enstaka inlägg (`suggestImage`/`generateOnBrandImage` i StudioMaker.tsx) hade SAMMA
+ *   fel, fast värre — `topic || headline1 || caption` lät Ämnesfältet vinna OVILLKORLIGT om
+ *   det bara var ifyllt, ingen prioritet alls. Klienten skickade dessutom aldrig `brödtext`
+ *   till bilden: allt kollapsades till en enda `topic`-sträng, så K2:s bevismening och
+ *   K2b:s plats/tid (BILD-11) bara någonsin såg RUBRIKEN, aldrig brödtexten den härleds ur.
+ *   Karusellens slide-bilder gjorde redan rätt (skickar rubrik/brödtext separat, per slide)
+ *   — det var bara singel-vägen som saknade den delade prioriteten.
+ */
+export function harledBildamne(u: AmnesUnderlag): HarlettBildamne {
+  const caption = (u.caption ?? "").trim();
+  if (caption) {
+    // En fri caption har ingen egen rubrikrad — hela texten bär ämnet, i brödtexten.
+    return { kalla: "inlaggstext", rubrik: "", brodtext: caption.slice(0, 400) };
+  }
+  const harBildinnehall = !!(u.headline?.trim() || u.headline2?.trim() || u.body?.trim());
+  if (harBildinnehall) {
+    return {
+      kalla: "bild",
+      rubrik: (u.headline ?? "").trim(),
+      brodtext: [u.headline2?.trim(), u.body?.trim()].filter(Boolean).join(" ").slice(0, 400),
+    };
+  }
+  const topic = (u.topic ?? "").trim();
+  if (topic) return { kalla: "amnesfalt", rubrik: topic, brodtext: "" };
+  return { kalla: "tomt", rubrik: "", brodtext: "" };
+}
