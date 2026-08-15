@@ -1,7 +1,7 @@
 // Verifierar de fyra uppsättningsstegen Håkan just gjort. READ-ONLY.
-import { supabaseService } from "../lib/supabase-admin.ts";
-import { hamtaHqGhl } from "../lib/hq/pipeline.ts";
-import { kopplingsScope } from "../lib/hq/kalender.ts";
+import { supabaseService } from "../lib/supabase-admin";
+import { hamtaHqGhl } from "../lib/hq/pipeline";
+import { kopplingsScope } from "../lib/hq/kalender";
 
 const BASE = "https://services.leadconnectorhq.com";
 const VERSION = "2021-07-28";

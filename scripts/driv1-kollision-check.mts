@@ -1,6 +1,6 @@
 // Kollar om de tre delade e-postadresserna hör till SAMMA ghl_contact_id (flera affärer,
 // samma person — ingen tvetydighet) eller OLIKA ghl_contact_id (äkta kollision).
-import { supabaseService } from "../lib/supabase-admin.ts";
+import { supabaseService } from "../lib/supabase-admin";
 
 const sb = supabaseService();
 const { data } = await sb

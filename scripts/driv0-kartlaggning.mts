@@ -1,8 +1,8 @@
 // DRIV-0 — engångs kartläggningsskript. READ-ONLY mot både Supabase och GHL.
 // Skriver ingenting, rör ingenting. Körs en gång för rapporten till Håkan.
-import { supabaseService } from "../lib/supabase-admin.ts";
-import { hamtaHqGhl } from "../lib/hq/pipeline.ts";
-import { kopplingsScope, hamtaKoppling, agarToken } from "../lib/hq/kalender.ts";
+import { supabaseService } from "../lib/supabase-admin";
+import { hamtaHqGhl } from "../lib/hq/pipeline";
+import { kopplingsScope, hamtaKoppling, agarToken } from "../lib/hq/kalender";
 
 const BASE = "https://services.leadconnectorhq.com";
 const VERSION = "2021-07-28";

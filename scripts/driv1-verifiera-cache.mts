@@ -1,5 +1,5 @@
 // Verifierar DoD-kravet "ingen mejlkropp i databasen" mot skarpa driv_kort_cache-rader.
-import { supabaseService } from "../lib/supabase-admin.ts";
+import { supabaseService } from "../lib/supabase-admin";
 
 const sb = supabaseService();
 const { data: kort } = await sb.from("driv_kort_cache").select("ghl_opportunity_id, payload, hamtad_tidsstampel");
