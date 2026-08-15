@@ -8,6 +8,25 @@ import { Palette, Save, Check, Loader2, Upload, Type, Sparkles, ImageIcon, Ban, 
 import { DashHero, LivePill } from "@/components/ui/dash";
 
 const FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display", "Kalnia", "Caveat"];
+
+/**
+ * Läser fältet "människor i bilder" oavsett hur det skrevs.
+ *
+ * ⚠ Fältet har burit tre sorters värden i skarp data: `true`/`false` från den gamla
+ *   kryssrutan, och svenska ord från brand-kit-agenten (Annas Blommor har "ibland").
+ *   Samma tolkning finns server-sidan i `lib/studio/kit.ts` (`tolkaPersoner`) — ytan och
+ *   prompten måste läsa fältet likadant, annars visar rutan ett val och bilden följer ett
+ *   annat.
+ */
+function tolkaPersonval(varde: unknown): "alltid" | "ibland" | "aldrig" {
+  if (varde === false) return "aldrig";
+  if (varde === true) return "ibland";
+  const v = String(varde ?? "").toLowerCase().trim();
+  if (!v) return "ibland";
+  if (/aldrig|never|nej|no|inga|utan/.test(v)) return "aldrig";
+  if (/alltid|always|krav|ska/.test(v)) return "alltid";
+  return "ibland";
+}
 const COLOR_ROLES: { key: string; label: string; hint: string }[] = [
   { key: "primary", label: "Primär", hint: "Rubriker, bärande ytor" },
   { key: "primaryDeep", label: "Primär mörk", hint: "Kontrast, footrar" },
@@ -387,14 +406,53 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Stil-beskrivning (bilder ska kännas som…)</label>
                 <input value={kit.imageStyle?.prompt || ""} onChange={(e) => set("imageStyle.prompt", e.target.value)} placeholder="Verkliga människor i nordisk miljö, naturligt ljus" className={inputCls} />
+                <p className="mt-1 text-xs text-gray-400">Styr färg och ljus. Vad som SKA synas skriver du i rutan under.</p>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Undvik i bilder</label>
-                <input value={kit.imageStyle?.negative || ""} onChange={(e) => set("imageStyle.negative", e.target.value)} placeholder="stockfoto-känsla, plastigt leende, text i bild" className={inputCls} />
+
+              {/*
+                ★ DINA EGNA BILDREGLER (Håkans beställning 15/8: "min kund ska själv kunna
+                  lägga till regler för bildskapande, det är en styrka").
+
+                ⚠ Rutorna fanns delvis förut men bar inte hela vägen: "Får innehålla
+                  människor" skrevs in i en mening som uttryckligen sa "gäller bara färg
+                  och ljus, ändra aldrig motivet", och personrotationen delade samtidigt ut
+                  en person. Kryssrutan gjorde alltså ingenting. Nu är motivreglerna en
+                  egen del av prompten som väger tyngst, och "aldrig" stänger av
+                  personrotationen i stället för att argumentera med den.
+              */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3 space-y-3">
+                <div className="text-sm font-semibold text-gray-800">Dina egna bildregler</div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Människor i bilderna</label>
+                  <div className="flex gap-1.5">
+                    {([["alltid", "Alltid"], ["ibland", "Ibland"], ["aldrig", "Aldrig"]] as const).map(([v, label]) => {
+                      const nuvarande = tolkaPersonval(kit.imageStyle?.people);
+                      const vald = nuvarande === v;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => set("imageStyle.people", v)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${vald ? "text-white border-transparent" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
+                          style={vald ? { background: previewColors.primary } : undefined}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">Väljer du Aldrig ritas inga personer alls, oavsett vad inlägget handlar om.</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Visa alltid i bilderna</label>
+                  <input value={kit.imageStyle?.motiv || ""} onChange={(e) => set("imageStyle.motiv", e.target.value)} placeholder="Våra egna produkter i verklig miljö, gärna våra egna lokaler" className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Undvik i bilderna</label>
+                  <input value={kit.imageStyle?.negative || ""} onChange={(e) => set("imageStyle.negative", e.target.value)} placeholder="stockfoto-känsla, plastigt leende, tomma skyltar" className={inputCls} />
+                </div>
+                <p className="text-xs text-gray-500">Skriv som du säger det. Reglerna gäller varje bild vi skapar åt dig, och de väger tyngre än våra egna förslag.</p>
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" checked={kit.imageStyle?.people ?? true} onChange={(e) => set("imageStyle.people", e.target.checked)} style={{ accentColor: previewColors.primary }} /> Får innehålla människor
-              </label>
             </section>
 
             {/* Format & innehåll */}

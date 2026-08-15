@@ -95,9 +95,14 @@ export async function POST(req: NextRequest) {
           // BILD-10: B3 äger sin EGEN text och stavar den rätt. Är det ÖVRIG text i bilden
           // som är felstavad går bilden ändå inte ut — samma regel som friprompt-vägen.
           if (!grind.utfall.ok) {
-            console.error("[suggest-image] BILD-10 (text i bilden): felstavad bakgrundstext kvar:", grind.utfall.fel);
+            // BILD-11 punkt 5: engelska ord fälls "oavsett vägval" — alltså även här, där
+            // vår EGEN rad är godkänd. Det är bakgrundstexten som är fel, inte vår.
+            const engelska = grind.utfall.orsak === "engelska";
+            console.error(`[suggest-image] BILD-10/11 (text i bilden, ${grind.utfall.orsak}):`, grind.utfall.fel);
             return NextResponse.json({
-              error: "Bilden fick felstavad text i bakgrunden och stoppades. Prova en gång till, eller ”Sök foto”.",
+              error: engelska
+                ? "Bilden fick engelsk text på en skylt i bakgrunden och stoppades. Prova en gång till, eller ”Sök foto”."
+                : "Bilden fick felstavad text i bakgrunden och stoppades. Prova en gång till, eller ”Sök foto”.",
               stavfel: grind.utfall.fel,
             }, { status: 502 });
           }
@@ -145,8 +150,13 @@ export async function POST(req: NextRequest) {
         serie: body.serieAntal ? { index: serieIndex, antal: Number(body.serieAntal) } : undefined,
         scen: scene,
       });
-      const bas = `${byggd.prompt}${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
-      const branschKrav = `${byggd.prompt} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers, no metaphors from other industries.${REALISM}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
+      // ⚠ BILD-11 punkt 4, mätt 15/8: REALISM bär orden "natural light". Har byggaren
+      //   härlett en TID ("efter mörkrets inbrott") säger prompten då både att det ska
+      //   vara mörkt och att ljuset ska vara naturligt dagsljus — och modellen valde
+      //   solnedgång. Ljuset ägs av tidsraden när den finns; annars av REALISM.
+      const realism = byggd.tid ? REALISM.replace(", natural light,", ",") : REALISM;
+      const bas = `${byggd.prompt}${realism}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
+      const branschKrav = `${byggd.prompt} The scene must clearly and unmistakably belong to this business: ${niche}. Show its real environment, products or customers, no metaphors from other industries.${realism}${SEASON}${imageDirectiveSuffix(directives)}${FEEDBACK}`;
       // Motiv-grind: bilden måste höra hemma i verksamheten (skarpt fel: "Sluta köpa
       // billigt" gav en sliten tröja för ett digital signage-företag). Ett omtag med
       // hårdare branschkrav, sen fail-closed — hellre "prova Sök foto" än fel bransch.
@@ -174,6 +184,10 @@ export async function POST(req: NextRequest) {
           bild: gen.image,
           maxOmtag: 2,
           tidsbudgetMs: MAX_MS - (Date.now() - t0),
+          // BILD-11 punkt 5: friprompt-vägen äger ingen text i bilden. Läsbara ord på
+          // bildens huvudskylt är alltså ett fel, inte en detalj — och engelska ord fälls
+          // oavsett. Skarpt fall: "FRESH-BAKED" och "KANELBULLE" på en avbildad skärm.
+          ordfri: true,
           generera: ({ skarpning }) => generateImagen(`${promptIBruk}${skarpning}`, ar),
           kontrollera: diagnostik
             ? async (b, o) => { const u = await kontrolleraAvbildadText(b, o); avlasningar.push(u); return u; }
@@ -185,11 +199,24 @@ export async function POST(req: NextRequest) {
         // tidsbudgeten tog slut — tyst, och kunden såg felet i stället för koden.
         // Nu stoppas den, med ett besked som pekar på de två vägar som ÄR säkra.
         if (!grind.utfall.ok) {
-          console.error("[suggest-image] BILD-10: felstavad text kvar efter", grind.omtag, "omtag:", grind.utfall.fel);
-          return NextResponse.json({
-            error: "Bilden fick felstavad text i motivet och stoppades. Prova ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva och stavar alltid rätt.",
-            stavfel: grind.utfall.fel,
-          }, { status: 502 });
+          // BILD-11 punkt 5: tre skilda fel, tre skilda besked. Ett engelskt ord på en
+          // svensk skylt stoppas alltid; ett rättstavat SVENSKT ord som överlevt både
+          // omtagen och det textlösa motivet släpps igenom med en logg — bilden är inte
+          // trasig, bara sämre, och ett hårt stopp där hade kostat kunden en bild för en
+          // sak hon inte kan påverka. Kvar att mäta: hur ofta det händer.
+          const engelska = grind.utfall.orsak === "engelska";
+          const lasbart = grind.utfall.orsak === "lasbar-text";
+          if (lasbart && !engelska) {
+            console.error("[suggest-image] BILD-11: läsbara ord kvar efter", grind.omtag, "omtag:", grind.utfall.fel);
+          } else {
+            console.error(`[suggest-image] BILD-10/11 (${grind.utfall.orsak}) efter ${grind.omtag} omtag:`, grind.utfall.fel);
+            return NextResponse.json({
+              error: engelska
+                ? "Bilden fick engelsk text på en skylt i motivet och stoppades. Prova en gång till, ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva."
+                : "Bilden fick felstavad text i motivet och stoppades. Prova ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva och stavar alltid rätt.",
+              stavfel: grind.utfall.fel,
+            }, { status: 502 });
+          }
         }
         // Fältet följer bara med när anroparen ber om det — vanliga svar till Studio är oförändrade.
         if (diagnostik) {
@@ -236,6 +263,10 @@ export async function POST(req: NextRequest) {
             promptIBruk === branschKrav ? "branschkrav-omtag" : "standard",
             `person:${byggd.personkategori.slice(0, 40)}`,
             `bevis:${byggd.bevismening.slice(0, 60)}`,
+            // BILD-11 punkt 4: plats och tid loggas var för sig. Utan dem går en bild som
+            // visar rätt sak på fel plats inte att skilja från en som visar fel sak.
+            `plats:${byggd.plats ? byggd.plats.slice(0, 40) : "ej härledd"}`,
+            `tid:${byggd.tid ? byggd.tid.slice(0, 40) : "ej härledd"}`,
             `rekvisita:${byggd.rekvisita.kalla}`,
           ].join(" | "),
         });

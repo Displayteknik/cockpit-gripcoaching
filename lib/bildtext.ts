@@ -38,6 +38,10 @@ export type TextOrsak =
   | "godkand"
   | "felstavning"
   | "avviker"
+  // BILD-11 punkt 5: läsbara ord i ett flöde där modellen inte äger någon text, och
+  // engelska ord på en avbildad skärm — som aldrig är tillåtna, oavsett vägval.
+  | "lasbar-text"
+  | "engelska"
   | "tekniskt-fel";
 
 export interface StavUtfall {
@@ -52,6 +56,8 @@ export interface StavUtfall {
   raw?: string;
   /** Orden som fälldes (tomt när ok). */
   fel: string[];
+  /** BILD-11 punkt 5: engelska ord som lästes av på bildens huvudsakliga skylt/skärm. */
+  engelska?: string[];
   /** BILD-8c: bakgrundsklotter som lämnades odömt (riktningsoenighet, ej huvudskylt). */
   ignorerad?: string[];
   orsak: TextOrsak;
@@ -422,6 +428,81 @@ export function okandaOrd(ord: string[]): string[] {
   return ord.filter((o) => ordStatus(o) === "okant");
 }
 
+// ── BILD-11 punkt 5 · LÄSBARA OCH ENGELSKA ORD ─────────────────────────────
+//
+// ★ SKARPT FALL 15/8, singelinlägg hos DT: den avbildade skärmen visade "FRESH-BAKED" och
+//   "KANELBULLE" i fullt läsbar text. BILD-10 säger att fria bildmotiv inte ska ha någon
+//   läsbar text alls — men grinden ovan dömer bara STAVNING. Båda orden är rättstavade,
+//   alltså passerade de. Det var inte ett hål i regeln utan ett hål i MÄTNINGEN: ingen
+//   kod har någonsin frågat om det STÅR ord, bara om orden är rätt stavade.
+//
+// Två domar, med olika stränghet och av olika skäl:
+//   ENGELSKA ord fälls ALLTID (Håkans ord: "får aldrig förekomma oavsett vägval"). En
+//     engelsk rad på en svensk skylt är fel även när den är perfekt stavad.
+//   LÄSBARA ord fälls i flöden där modellen inte äger någon text (`ordfri`). I text-i-
+//     bild-vägen äger B3 sin egen rad, och den ska naturligtvis gå att läsa.
+//
+// Domen gäller bara bildens HUVUDSAKLIGA skylt eller skärm — samma avgränsning som
+// BILD-8c gjorde för stavningen. En butiksfasad i bakgrunden har ord på sig i verkligheten
+// också, och att jaga dem ger omtag utan att bilden blir bättre.
+
+/**
+ * Engelska ord som dyker upp på skyltar och skärmar i genererade bilder.
+ *
+ * ⚠ LISTAN ÄR KURERAD, INTE FULLSTÄNDIG. Tre saker hålls medvetet utanför:
+ *   1. Ord som också är svenska ("hot", "all", "service", "special", "premium", "design",
+ *      "studio", "gym", "juice") — de hade fällt korrekta svenska skyltar.
+ *   2. Korta funktionsord ("for", "the", "and") — avläsningen kan läsa svenskans "FÖR"
+ *      som "FOR", och en falsk träff kostar ett omtag i onödan.
+ *   3. Egennamn och varumärken — de är inte engelska, de heter så.
+ */
+const ENGELSKA_ORD = new Set(
+  `
+  fresh baked bakery homemade delicious tasty crispy sweet savoury savory
+  coffee drinks beverage food meal breakfast brunch lunchtime dinner takeaway takeout
+  bread cake cakes cookies pastry pastries salad soup smoothies
+  open opening closing hours closed welcome greetings
+  sale sales discount offer offers deal deals bargain clearance savings
+  price prices pricing cheap value buy order ordering delivery shipping
+  free quality best better premium-quality finest handmade handcrafted
+  today tomorrow tonight weekend daily weekly monthly always everyday
+  summer winter spring autumn holiday holidays christmas easter
+  love life happy enjoy taste natural organic healthy fresher
+  beauty hair nails skin fitness training workout wellness
+  store shop shopping boutique market house home made since limited edition exclusive
+  collection styling fashion trends interior lighting
+  everything must more save get call contact book booking reserve
+  new now off big small hot-deal super mega best-seller bestseller
+  we are you your our their with without from into
+  `
+    .split(/\s+/)
+    .map((o) => o.trim().toLowerCase())
+    .filter((o) => o.length >= 3),
+);
+
+/** Ord med minst tre bokstäver som faktiskt LÄSER som ett ord (siffror räknas inte). */
+export function lasbaraOrd(ord: string[]): string[] {
+  return ord.filter((o) => {
+    const r = rensaOrd(o);
+    return r.length >= 3 && ordStatus(o) !== "tal" && /[a-zåäöéèüáàóòíìúù]{3,}/i.test(r);
+  });
+}
+
+/**
+ * Engelska ord bland de avlästa. Svenska ord vinner alltid: står ordet i den svenska
+ * skyltvokabulären, eller är det en svensk sammansättning, är det inte engelska.
+ * Bindestreck delas ("FRESH-BAKED" = fresh + baked) — annars hade sammansättningen dolt
+ * exakt det fall som gjorde att regeln behövdes.
+ */
+export function engelskaOrd(ord: string[]): string[] {
+  return ord.filter((o) => {
+    const rensat = rensaOrd(o);
+    if (!rensat) return false;
+    const delar = rensat.split(/[-–—]/).map((d) => d.trim()).filter(Boolean);
+    return delar.some((d) => d.length >= 3 && ENGELSKA_ORD.has(d) && !iListan(d) && !arSammansatt(d));
+  });
+}
+
 /**
  * BILD-8c, steg 1: ord som (a) bara EN av läsriktningarna såg och (b) skulle kunna fällas.
  *
@@ -532,14 +613,22 @@ export async function kontrolleraAvbildadText(
     huvudskylt?: boolean;
     /** Injicerbar huvudskyltsavläsning för test. */
     lasHuvudskylt?: (bild: string) => Promise<string[] | null>;
+    /** Injicerbar teckenvis avläsning för test — samma seam som `lasHuvudskylt`. */
+    lasOrd?: (bild: string) => Promise<{ raw: string; ord: string[]; ordBak: string[] }>;
+    /**
+     * BILD-11 punkt 5: true = flödet äger ingen text i bilden, alltså ska INGA läsbara ord
+     * stå på bildens huvudsakliga skylt eller skärm. Engelska ord fälls oavsett.
+     */
+    ordfri?: boolean;
   },
 ): Promise<StavUtfall> {
-  if (!geminiNyckel()) return { ok: true, text: "", ord: [], fel: [], orsak: "ingen-nyckel" };
+  // Injicerad avläsning betyder att inget API anropas — då ska nyckeln inte heller krävas.
+  if (!opts?.lasOrd && !geminiNyckel()) return { ok: true, text: "", ord: [], fel: [], orsak: "ingen-nyckel" };
   let ord: string[];
   let ordBak: string[];
   let raw = "";
   try {
-    const avlast = await lasOrdTeckenvis(bild);
+    const avlast = await (opts?.lasOrd || lasOrdTeckenvis)(bild);
     ord = avlast.ord;
     ordBak = avlast.ordBak;
     raw = avlast.raw;
@@ -574,10 +663,17 @@ export async function kontrolleraAvbildadText(
   // den. Avläsningen av huvudskylten hämtas bara när det faktiskt finns ett riskord att
   // avgöra — kostar inget i det vanliga fallet. Svarar den inte (null) döms allt som förut:
   // en falsk misstanke kostar ett omtag, ett missat fel når kunden.
+  // Huvudskylten läses högst EN gång per bild, oavsett hur många grindar som behöver den.
+  let huvudLast: string[] | null | undefined;
+  const huvudskyltOrd = async (): Promise<string[] | null> => {
+    if (huvudLast === undefined) huvudLast = await (opts?.lasHuvudskylt || lasHuvudskyltOrd)(bild);
+    return huvudLast;
+  };
+
   let ignorerad: string[] = [];
   const riskord = opts?.huvudskylt === false ? [] : oenigaRiskord(bedomda, ord, ordBak);
   if (riskord.length) {
-    const huvud = await (opts?.lasHuvudskylt || lasHuvudskyltOrd)(bild);
+    const huvud = await huvudskyltOrd();
     if (huvud) {
       const bort = new Set(ordAttIgnorera(riskord, huvud).map(normaliseraTecken));
       if (bort.size) {
@@ -587,6 +683,29 @@ export async function kontrolleraAvbildadText(
     }
   }
   const medIgnorerad = ignorerad.length ? { ignorerad } : {};
+
+  // ── BILD-11 punkt 5: engelska ord, och läsbara ord i ordfria flöden ────────
+  //
+  // Körs FÖRE stavningsdomen, av två skäl: ett engelskt ord är rättstavat och hade
+  // sluppit igenom nedan, och skärpningen som ska begäras är en helt annan (ta bort
+  // orden, inte stava dem rätt).
+  const lasbara = lasbaraOrd(bedomda);
+  if (lasbara.length && opts?.huvudskylt !== false) {
+    const huvud = await huvudskyltOrd();
+    // `null` = avläsningen svarade inte → döm allt (samma fail-closed-val som stavningen).
+    // `[]`   = ingen tydlig huvudskylt → orden är bakgrund, och bakgrund jagar vi inte.
+    const paSkylten = (lista: string[]) => (huvud === null ? lista : lista.filter((o) => tillhorHuvudtext(o, huvud)));
+    const engelska = paSkylten(engelskaOrd(lasbara));
+    if (engelska.length) {
+      return { ok: false, text, ord, ordBak, raw, ...medIgnorerad, fel: engelska, engelska, orsak: "engelska" };
+    }
+    if (opts?.ordfri) {
+      const iBild = paSkylten(lasbara);
+      if (iBild.length) {
+        return { ok: false, text, ord, ordBak, raw, ...medIgnorerad, fel: iBild, orsak: "lasbar-text" };
+      }
+    }
+  }
 
   // 1. Strukturfel fälls direkt — otillåtna glyfer och bokstavsgröt finns inte i svenska.
   const struktur = strukturfel(bedomda);
@@ -632,6 +751,21 @@ export const TEXTFRITT_MOTIV_EN =
   "Instead build the picture around the people, their hands at work, the product itself, the room and the light, " +
   "and leave signs and screens out of frame or naturally absent. No letters, no words and no numbers anywhere in the image.";
 
+// BILD-11 punkt 5: skärpningen när felet är ORD, inte stavning. Att be om bättre stavning
+// hade varit fel medicin — SPELLING_REINFORCEMENT ber uttryckligen om "två till fem korta
+// svenska ord", alltså precis det som ska bort.
+export const ORDFRITT_MOTIV_EN =
+  " REMOVE THE WORDS: the previous attempt rendered readable words on a screen or sign in the scene. " +
+  "Every screen, sign, board, poster, menu and label in this picture now shows a PHOTOGRAPH of this business's own goods, premises or people instead of text, " +
+  "or is turned away, cropped by the frame, or switched off. No letters, no words, no captions on any surface — and never a word in English. " +
+  "Do not solve this with a blank white panel: an empty sign reads as broken.";
+
+export const ORDFRITT_MOTIV_SV =
+  " TA BORT ORDEN: förra försöket skrev läsbara ord på en skärm eller skylt i bilden. " +
+  "Varje skärm, skylt, tavla, affisch, meny och etikett visar nu ett FOTO av verksamhetens egna varor, lokaler eller människor i stället för text, " +
+  "eller är vänd bort, beskuren av bildkanten, eller släckt. Inga bokstäver, inga ord, inga rubriker på någon yta — och aldrig ett ord på engelska. " +
+  "Lös det inte med en tom vit ruta: en tom skylt läses som trasig.";
+
 export const SPELLING_REINFORCEMENT_SV =
   " STAVNING: förra försöket skrev felstavad svenska på en skylt i bilden. Varje svenskt ord på skärmar, " +
   "skyltar, tavlor, affischer, etiketter och förpackningar ska vara rättstavat, bokstav för bokstav: " +
@@ -673,8 +807,10 @@ export async function stavningsgrind(opts: {
   tidsbudgetMs?: number;
   /** false = sista utvägen (textlöst motiv) är förbjuden — texten ÄR poängen med bilden. */
   tillatBlank?: boolean;
+  /** BILD-11 punkt 5: true = flödet äger ingen text, alltså inga läsbara ord i bilden. */
+  ordfri?: boolean;
   /** Injicerbart för test. */
-  kontrollera?: (bild: string, o?: { forvantad?: string; ignorera?: string }) => Promise<StavUtfall>;
+  kontrollera?: (bild: string, o?: { forvantad?: string; ignorera?: string; ordfri?: boolean }) => Promise<StavUtfall>;
   nu?: () => number;
 }): Promise<GrindResultat> {
   const kontrollera = opts.kontrollera || kontrolleraAvbildadText;
@@ -685,16 +821,21 @@ export async function stavningsgrind(opts: {
   const tillatBlank = (opts.tillatBlank ?? true) && !opts.forvantad?.trim() && !opts.ignorera?.trim();
   const start = nu();
   const kvar = () => tidsbudget - (nu() - start);
-  const kontrollOpts = { forvantad: opts.forvantad, ignorera: opts.ignorera };
+  const kontrollOpts = { forvantad: opts.forvantad, ignorera: opts.ignorera, ordfri: opts.ordfri };
 
   let bild = opts.bild;
   let utfall = await kontrollera(bild, kontrollOpts);
   if (utfall.ok) return { image: bild, utfall, omtag: 0, blank: false };
 
+  // Skärpningen följer ORSAKEN. Fel medicin är värre än ingen: stavningsskärpningen ber om
+  // "två till fem korta svenska ord", vilket i ett ordfritt flöde beställer felet igen.
+  const skarpningFor = (u: StavUtfall) =>
+    u.orsak === "engelska" || u.orsak === "lasbar-text" ? ORDFRITT_MOTIV_EN : SPELLING_REINFORCEMENT_EN;
+
   let omtag = 0;
   while (omtag < maxOmtag && kvar() > 0) {
     omtag++;
-    const gen = await opts.generera({ omtag, skarpning: SPELLING_REINFORCEMENT_EN, blank: false });
+    const gen = await opts.generera({ omtag, skarpning: skarpningFor(utfall), blank: false });
     if (!gen.image) break; // generering nere → behåll bästa bilden, blockera aldrig
     bild = gen.image;
     utfall = await kontrollera(bild, kontrollOpts);
@@ -704,7 +845,9 @@ export async function stavningsgrind(opts: {
   if (tillatBlank && kvar() > 0) {
     const gen = await opts.generera({ omtag: omtag + 1, skarpning: TEXTFRITT_MOTIV_EN, blank: true });
     if (gen.image) {
-      const blankUtfall = await kontrollera(gen.image, {});
+      // Sista utvägen döms med samma ordkrav som resten: ett textlöst motiv som ändå bär
+      // ord är inte textlöst, och det ska synas i utfallet i stället för att antas.
+      const blankUtfall = await kontrollera(gen.image, { ordfri: opts.ordfri });
       return { image: gen.image, utfall: blankUtfall, omtag, blank: true };
     }
   }

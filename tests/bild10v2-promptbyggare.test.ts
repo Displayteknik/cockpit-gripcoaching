@@ -40,17 +40,53 @@ describe("K2 · bevismeningen härleds ur poängen", () => {
 });
 
 describe("K1 · rekvisita och miljöregler per bransch", () => {
-  it("skyltbolag: skärmar visar kampanjLAYOUT, aldrig ett foto som fyller panelen", () => {
+  it("skyltbolag: skärmen kör en RIKTIG KAMPANJ, inte en tavla", () => {
+    // ⚠ LÅSET ÄNDRAT TVÅ GÅNGER 15/8, och andra gången tog tillbaka det första tog bort.
+    //   Först: "CAMPAIGN LAYOUT" med "headline band" och "price block" gav läsbara ord
+    //   ("FRESH-BAKED", "KANELBULLE"), så jag bytte till ett foto av köparens vara.
+    //   Sedan Håkan: "skärmar visar inte bara en bulle eller pizza sådär, det är inte
+    //   relevant" — ett foto som fyller panelen är en TAVLA, och för ett skyltbolag ÄR
+    //   skärminnehållet produkten de säljer. Layouten är tillbaka (BILD-7a); orden hålls
+    //   borta med LÄSBARHET i stället för genom att ta bort kompositionen.
     const r = branschRekvisita("Digital signage & storformatsdisplayer");
-    expect(r).toMatch(/CAMPAIGN LAYOUT/);
-    expect(r).toMatch(/price or offer block/);
-    expect(r).toMatch(/[Nn]ever a loose stock photograph/);
+    expect(r).toMatch(/REAL CAMPAIGN/);
+    expect(r).toMatch(/offer or price block/i);
+    expect(r).toMatch(/never one big photograph filling the whole panel/i);
+    expect(r).toMatch(/[Nn]ever a decorative stock subject/);
+    expect(r).toMatch(/icebergs/); // BILD-12: fjällpanoramat är namngivet, inte antytt
   });
 
-  it("modellbegränsningen är inbakad: layout, inte läsbara ord", () => {
+  it("monteringen är en PLATTFORMSregel, inte en skyltbolagsregel", async () => {
+    // ⚠ Håkans fynd 15/8 på DoD-bilden: skärmen satt på snedden i skyltfönstret. "Så
+    //   skulle det aldrig sättas." Ordet "at an angle" i den förra lydelsen var min egen
+    //   inbjudan till det. Hans andra rättning samma dag: "gör inte missarna bara för DT,
+    //   se det systemmässigt" — därför K5, som gäller varje bransch.
+    const { VERKLIGHETSVAKT_EN } = await import("@/lib/bild/promptbyggare");
+    expect(VERKLIGHETSVAKT_EN).toMatch(/level, upright, square to the wall/);
+    expect(VERKLIGHETSVAKT_EN).toMatch(/[Nn]othing is tilted, leaning, rotated/);
+    expect(VERKLIGHETSVAKT_EN).toMatch(/no ladders/);
+    // Ingen bransch får ha "sett i vinkel" kvar som en inbjudan till snedhängd rekvisita.
+    for (const bransch of ["digital signage", "terapi", "bilhandel", "bageri", "bygg", "konsult"]) {
+      expect(branschRekvisita(bransch)).not.toMatch(/seen at an angle/);
+    }
+  });
+
+  it("beställs en layout måste OLÄSLIGHETEN beställas i samma andetag", () => {
+    // Rotorsaken i punkt 5, låst i sin nya form: en modell kan inte rita en rubrikzon utan
+    // bokstavsformer — men den kan visa den på avstånd, i vinkel eller ur fokus. Varje
+    // regel som ber om en layout måste därför bära kravet på att inget ord går att läsa.
+    for (const bransch of ["digital signage", "bageri och café", "bilhandel", "konsult", "terapi", "bygg"]) {
+      const r = branschRekvisita(bransch);
+      if (/layout|campaign|heading zone|price block/i.test(r)) {
+        expect(r, bransch).toMatch(/no single word can be read|nothing can be read|nothing on them can be read/i);
+      }
+    }
+  });
+
+  it("modellbegränsningen är inbakad: inget ord går att läsa, på något språk", () => {
     // BILD-10 (10/8) stängde av textbeställningen för att modellen inte kan stava
-    // svenska (AluCon: "HÄLLBARA PROFILER FÖR FRAMITDEN"). Regeln beställer därför form.
-    expect(branschRekvisita("digital signage")).toMatch(/never as sharp readable words/i);
+    // svenska (AluCon: "HÄLLBARA PROFILER FÖR FRAMITDEN").
+    expect(branschRekvisita("digital signage")).toMatch(/no single word can be read, in any language/i);
   });
 
   it("terapeut får trovärdig miljö i sin bransch, inte skyltregler", () => {

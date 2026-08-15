@@ -5,8 +5,22 @@ import { NEUTRAL_SIGNATURE, normalizeSignature, signaturePrompt, type BrandSigna
 // Kit-direktiv för AI-genereringar (bild + copy) — så allt innehåll följer kundens
 // grafiska profil. Läser studio_brand_kits per client_id (uuid). Tomma defaults = neutralt.
 export interface KitDirectives {
-  imageExtra: string; // vävs in i bildprompt
+  imageExtra: string; // STIL: färg och ljus, aldrig motivet
   imageNegative: string; // saker att undvika i bild
+  /**
+   * ★ KUNDENS EGNA MOTIVREGLER (Håkans beställning 15/8: "min kund ska själv kunna lägga
+   * till regler för bildskapande, det är en styrka").
+   *
+   * ⚠ VARFÖR FÄLTET MÅSTE VARA SKILT FRÅN `imageExtra`, mätt 15/8: kryssrutan "Får
+   *   innehålla människor" skrev "no people in the image" i imageExtra — som läggs i en
+   *   mening som börjar "Visual treatment (applies to colour and light only, NEVER CHANGE
+   *   THE SUBJECT…)". En motivregel inuti en mening som förbjuder motivändringar är ingen
+   *   regel alls, och samtidigt delade personrotationen ut "en kvinna som tittar på
+   *   skärmen". Kunden kryssade i rutan och ingenting hände.
+   */
+  imageMotiv: string;
+  /** Tolkat värde, inte råfältet: agenten skriver ibland "ibland" i en boolesk ruta. */
+  personer: "alltid" | "ibland" | "aldrig";
   donts: string[]; // hårda regler för copy
   colors: Partial<BrandColors>; // roll-färger (för UI-swatches m.m.)
   formats: string[]; // contentProfile.formats (tom = alla)
@@ -20,11 +34,31 @@ export interface KitDirectives {
 export const NEUTRAL_DIRECTIVES: KitDirectives = {
   imageExtra: "",
   imageNegative: "",
+  imageMotiv: "",
+  personer: "ibland",
   donts: [],
   colors: {},
   formats: [],
   signature: NEUTRAL_SIGNATURE,
 };
+
+/**
+ * Tolkar fältet "människor i bilder" språkoberoende.
+ *
+ * ⚠ MÄTT 15/8: Annas Blommor har `people: "ibland"` i databasen — brand-kit-agenten skriver
+ *   svenska värden i ett fält formuläret sätter som boolean. Koden jämförde `=== false`, så
+ *   ett agentsvar som "nej" eller "aldrig" hade ignorerats TYST. Exakt samma familj som
+ *   färgtonsbuggen (`fargTon`), som redan är rättad av samma skäl.
+ */
+export function tolkaPersoner(varde: unknown): "alltid" | "ibland" | "aldrig" {
+  if (varde === false) return "aldrig";
+  if (varde === true) return "ibland"; // "får innehålla människor" = tillåtet, inte påbjudet
+  const v = String(varde ?? "").toLowerCase().trim();
+  if (!v) return "ibland";
+  if (/aldrig|never|nej|no|inga|utan/.test(v)) return "aldrig";
+  if (/alltid|always|krav|ska/.test(v)) return "alltid";
+  return "ibland";
+}
 
 /**
  * BILD-7c: normaliserar profilens färgtemperatur.
@@ -68,18 +102,26 @@ export async function getKitDirectives(clientId: string): Promise<KitDirectives>
     } else if (grade === "cool") {
       parts.push("cool colour temperature throughout: crisp blue-grey daylight, clean cool highlights — never yellow or muddy (this colour temperature takes precedence over any neutral or muted treatment)");
     }
-    if (im.people === false) parts.push("no people in the image");
+    // MOTIVREGLERNA byggs för sig — de får INTE hamna bland stilraderna ovan, som är
+    // avgränsade till färg och ljus. Se kommentaren vid `imageMotiv`.
+    const personer = tolkaPersoner(im.people);
+    const motiv: string[] = [];
+    if (personer === "aldrig") motiv.push("no people at all in the picture: build it around the room, the product, the light and the traces of work");
+    if (personer === "alltid") motiv.push("there must be at least one real person in the picture, engaged in what the post is about");
+    if (im.motiv) motiv.push(String(im.motiv));
     const cp = (kit.contentProfile || {}) as Record<string, any>;
     return {
       imageExtra: parts.join(", "),
       imageNegative: [sig.negativ, im.negative ? String(im.negative) : ""].filter(Boolean).join(", "),
+      imageMotiv: motiv.join(". "),
+      personer,
       donts: Array.isArray(kit.donts) ? kit.donts.map(String) : [],
       colors: (kit.colors || {}) as Partial<BrandColors>,
       formats: Array.isArray(cp.formats) ? cp.formats.map(String) : [],
       signature,
     };
   } catch {
-    return { imageExtra: "", imageNegative: "", donts: [], colors: {}, formats: [], signature: NEUTRAL_SIGNATURE };
+    return NEUTRAL_DIRECTIVES;
   }
 }
 
@@ -97,8 +139,13 @@ export function imageDirectiveSuffix(d: KitDirectives): string {
   const stil = bits.length
     ? ` Visual treatment (applies to colour and light only, never change the subject, the setting or the time of day described above): ${bits.join(". ")}.`
     : "";
+  // Kundens egna motivregler ligger SIST och säger uttryckligen att de väger tyngst. De
+  // står utanför stilmeningen — den förbjuder motivändringar, och det här ÄR motivregler.
+  const motiv = d.imageMotiv
+    ? ` THE CUSTOMER'S OWN IMAGE RULES, these override the guidance above where they conflict: ${d.imageMotiv}.`
+    : "";
   const undvik = d.imageNegative ? ` Avoid: ${d.imageNegative}.` : "";
-  return `${stil}${undvik}`;
+  return `${stil}${motiv}${undvik}`;
 }
 
 // Bygger en regel-rad för copy-generering ur donts.

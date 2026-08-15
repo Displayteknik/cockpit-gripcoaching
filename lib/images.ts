@@ -99,10 +99,17 @@ export const DEPICTED_MESSAGE_SV =
 // ritas av oss och därför alltid är rättstavad. Fria bildmotiv har ingen läsbar text alls.
 // DEPICTED_MESSAGE finns kvar för den dagen en modell kan stava — den används inte nu.
 export const DEPICTED_NO_TEXT_EN =
-  "NO READABLE TEXT IN THE IMAGE: no words, letters, numbers, price tags, logos or captions anywhere — not on signs, screens, boards, posters, menus, packaging, walls, workwear or vehicles. " +
+  "NO READABLE TEXT IN THE IMAGE: no words, letters, numbers, price tags, logos or captions may be legible anywhere — not on signs, screens, boards, posters, menus, packaging, walls, workwear or vehicles, and never a word in English. " +
   "Do NOT show a blank or empty sign, screen or board either: an empty sign reads as broken, not as clean. " +
-  "Compose the picture so signs and screens are out of frame, turned away, or naturally absent, and build it around the people, their hands at work, the product itself, the room and the light. " +
-  "If a screen must be visible it shows a photograph or the product, never text. " +
+  // ⚠ HÅKANS RÄTTNING 15/8, och den tar tillbaka BILD-7a: "skärmar visar inte bara en
+  //   bulle eller pizza sådär, det är inte relevant". Raden sa förut att en synlig skärm
+  //   "shows a photograph or the product" — och en skärm med ETT stort foto är ingen
+  //   kampanj, det är en tavla. För ett skyltbolag är innehållet på skärmen produkten,
+  //   och en kund som ser en tavla ser inte vad de säljer.
+  //   Layouten är alltså tillbaka. Orden hålls borta med LÄSBARHET i stället: kompositionen
+  //   ska synas, men avstånd, vinkel och skärpedjup gör att inget ord går att läsa.
+  "A surface that carries content in real life — a digital screen, a menu board, a poster, a shop window display — shows a BELIEVABLE COMPOSED LAYOUT, not one big photograph filling the panel: a main image area, a heading zone, and an offer or price block, arranged the way that business really runs it. " +
+  "Show it from far enough away, at a slight angle, or with the focus on something nearer, so the layout is unmistakable while no individual word can be read. Letterforms may exist as texture; legible words must not. " +
   // ⚠ BILD-12 (Håkans fynd 11/8): raden "shows a photograph" var en inbjudan till
   // dekorbilder. Han fick berg, isberg och frukt på skyltarna hos ett skyltbolag — "vem
   // visar ett isberg på en skärm". Det är dessutom värst just där: för ett skyltbolag ÄR
@@ -114,10 +121,10 @@ export const DEPICTED_NO_TEXT_EN =
   "Cannot you place a believable picture on it: turn the screen away, crop it out of frame, or " +
   "show it switched off — an empty dark screen is honest, a mountain range is not.";
 export const DEPICTED_NO_TEXT_SV =
-  "INGEN LÄSBAR TEXT I BILDEN: inga ord, bokstäver, siffror, prislappar, logotyper eller pålagda rubriker någonstans — varken på skyltar, skärmar, tavlor, affischer, menyer, förpackningar, väggar, arbetskläder eller fordon. " +
+  "INGEN LÄSBAR TEXT I BILDEN: inga ord, bokstäver, siffror, prislappar, logotyper eller pålagda rubriker får gå att läsa — varken på skyltar, skärmar, tavlor, affischer, menyer, förpackningar, väggar, arbetskläder eller fordon, och aldrig ett ord på engelska. " +
   "Visa INTE en tom skylt, skärm eller tavla heller: en tom skylt läses som trasig, inte som ren. " +
-  "Komponera bilden så att skyltar och skärmar hamnar utanför bild, är vända bort eller saknas naturligt, och bygg den kring människorna, händerna som arbetar, produkten, rummet och ljuset. " +
-  "Måste en skärm synas visar den ett foto eller produkten, aldrig text. " +
+  "En yta som bär innehåll i verkligheten — en digital skärm, en menytavla, en affisch, ett skyltfönster — visar en TROVÄRDIG KOMPONERAD LAYOUT, inte ett enda stort foto som fyller panelen: en bildyta, en rubrikzon och en erbjudande- eller prisruta, ordnade som verksamheten faktiskt kör dem. " +
+  "Visa den på avstånd, i lätt vinkel eller med skärpan på något närmare, så att layouten syns tydligt medan inget enskilt ord går att läsa. Bokstavsformer får finnas som textur; läsbara ord får inte. " +
   "BILDEN PÅ EN AVBILDAD SKÄRM HÖR TILL KÖPARENS EGEN VÄRLD — det verksamhetens kunder faktiskt " +
   "visar på en skärm: sina varor, sina rätter, sina lokaler, sina människor, sitt evenemang. " +
   "ALDRIG ett dekorativt stockmotiv: inga berg, inga isberg, inga skogar, inga solnedgångar, " +
