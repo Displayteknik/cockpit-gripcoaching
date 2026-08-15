@@ -24,7 +24,16 @@
 
 import { talTokenForKalla } from "@/lib/deep-audit-granska";
 
-export type Sifferklass = "T" | "B" | "G";
+//   R-5b (Håkans granskning av Makzy-rapporten 14/8) lade till en fjärde klass och ett
+//   undantag. Se `arStrukturtal`, `arSeoFakta` och `arCrawlMatvarde` längre ned:
+//
+//     KLASS C (crawlen)     våra EGNA mätvärden om sajten: bildantal, ordantal, interna
+//                           länkar, titellängd. Alltid belagda — grinden får aldrig maska
+//                           det vi själva räknat fram.
+//     STRUKTURTAL           list-, rubrik- och tabellnumrering, FAQ-nummer och datum.
+//                           Undantas HELT: ingen maskering, ingen rad i beslutstabellen.
+
+export type Sifferklass = "T" | "B" | "G" | "C";
 export type Sifferutfall = "belagt" | "riktvarde" | "lucka";
 
 export interface Sifferbeslut {
@@ -91,15 +100,196 @@ const TENANT_MONSTER = [
  * maskade "72 541" mitt i det. Ett maskat telefonnummer i ett kundcitat är både fel och
  * pinsamt.
  */
-const EJ_PASTAENDE = [
-  /0\d{1,3}[-\s]?\d{2,3}\s?\d{2}\s?\d{2}/,   // 072 541 01 02, 08-123 45 67
-  /\d{6}-\d{4}/,                                // person- eller orgnummer
-  /(19|20)\d{2}-\d{2}-\d{2}/,                   // datum
-  /\+46\s?\d/,                                       // landsnummer
+const EJ_PASTAENDE: { monster: RegExp; skal: string }[] = [
+  { monster: /0\d{1,3}[-\s]?\d{2,3}\s?\d{2}\s?\d{2}/, skal: "telefonnummer" },
+  { monster: /\d{6}-\d{4}/, skal: "person- eller organisationsnummer" },
+  { monster: /(19|20)\d{2}-\d{2}-\d{2}/, skal: "datum" },
+  { monster: /\+46\s?\d/, skal: "telefonnummer med landsnummer" },
+  // ⚠ MÄTT PÅ DEN OMKÖRDA MAKZY-RAPPORTEN 15/8: "Husby, 602 95 Norrköping" gav TVÅ luckor.
+  //   Ett postnummer är lika lite ett påstående om storlek som telefonnumret bredvid det —
+  //   och att be kunden fylla i sitt eget postnummer är samma sorts pinsamhet.
+  { monster: /\b\d{3}\s?\d{2}\s+[A-ZÅÄÖ][a-zåäöA-ZÅÄÖ]/, skal: "postnummer" },
+  // Rapportens EGNA tidsuppskattningar i åtgärdsstegen: "→ ~4 timmar", "**Tid:** ~30 min".
+  // Tildet är rapportens formatering och förekommer aldrig i kundens egen text — därför
+  // är den, och bara den, signalen. "Första mötet tar cirka 30 minuter" är ett påstående
+  // om verksamheten och grindas som vanligt.
+  { monster: /~\s?\d+(?:[.,]\d+)?\s*(min|minut|minuter|timm|tim\b|h\b|dag|dagar|vecka|veckor|månad)/i,
+    skal: "rapportens egen tidsuppskattning för åtgärden" },
 ];
 
+/** Varför talet inte är ett påstående om storlek — eller null när det är det. */
+export function ejPastaendeSkal(kontext: string): string | null {
+  return EJ_PASTAENDE.find((m) => m.monster.test(kontext))?.skal ?? null;
+}
+
 export function arEjPastaende(kontext: string): boolean {
-  return EJ_PASTAENDE.some((m) => m.test(kontext));
+  return ejPastaendeSkal(kontext) !== null;
+}
+
+// ── R-5b · STRUKTURTAL ───────────────────────────────────────────────────────
+//
+// ★ MÄTT PÅ DEN SKARPA MAKZY-RAPPORTEN (asset 45bf59c4, 14/8): SEX luckor, och FEM av dem
+//   var numrering. Talet "4" stod först i en rubrik ("## 4. Inga kundcitat …"), fick
+//   utfallet lucka där, och eftersom beslutet gäller per TAL för hela rapporten maskades
+//   sedan varje fyra i dokumentet:
+//
+//     "## 4. Inga kundcitat …"                  → "## [DIN SIFFRA]. Inga kundcitat …"
+//     "**Fråga 4:**" / "**Svar 4:**"            → "**Fråga [DIN SIFFRA]:**"
+//     "leveranstiden är vanligtvis 4 veckor"    → maskad (den ENDA av dem som var ett
+//                                                 påstående, och alltså rätt maskad)
+//
+//   Konsekvenskravet — ett beslut per tal — är rätt, men det gör en enda felklassning till
+//   ett fel över hela dokumentet. Numrering är inte ett påstående om storlek och ska
+//   därför aldrig ens få ett beslut: den hoppas över på PLATSEN, så ett tal som är
+//   numrering här och en uppgift där behandlas rätt på båda ställena.
+//
+// Datum räknas hit av samma skäl. `EJ_PASTAENDE` gav dem redan utfallet "belagt", men de
+// tog plats som rader i beslutstabellen ("2026" och "08" ur `**Datum:** 2026-08-14`), och
+// en tabell man ska stickprova får inte bestå av brus.
+
+const MANADER = "januari|februari|mars|april|maj|juni|juli|augusti|september|oktober|november|december";
+
+/**
+ * Hela datum. Ett datum är aldrig en uppgift kunden ska fylla i.
+ *
+ * ⚠ MÄTT UNDER BYGGET: den lösa formen `\d{1,2}/\d{1,2}` läste "78/72" i sidtabellen
+ *   (SEO- och AEO-poäng) som ett datum, och då blev HELA raden undantagen — fem mätvärden
+ *   försvann ur beslutstabellen på en gång. Snedstrecksdatum kräver därför årtal, och
+ *   undantaget gäller bara talen som ligger INUTI datumet, aldrig resten av raden.
+ */
+const DATUM = [
+  /(19|20)\d{2}-\d{2}-\d{2}/g,
+  new RegExp(String.raw`\b\d{1,2}\s+(${MANADER})(\s+\d{4})?\b`, "gi"),
+  /\b\d{1,2}\/\d{1,2}\s+(19|20)\d{2}\b/g,
+];
+
+/** Ligger positionen inuti ett datum på raden? */
+function iDatum(rad: string, iRaden: number): boolean {
+  for (const d of DATUM) {
+    d.lastIndex = 0;
+    for (const m of rad.matchAll(d)) {
+      if (m.index == null) continue;
+      if (iRaden >= m.index && iRaden < m.index + m[0].length) return true;
+    }
+  }
+  return false;
+}
+
+/** Raden ett tal står på, plus talets position i den raden. */
+export function radRunt(text: string, index: number): { rad: string; iRaden: number } {
+  const start = text.lastIndexOf("\n", index - 1) + 1;
+  const slut = text.indexOf("\n", index);
+  return { rad: text.slice(start, slut === -1 ? text.length : slut), iRaden: index - start };
+}
+
+/**
+ * Är talet på den här platsen ren numrering?
+ *
+ * Bedömningen är POSITIONSBEROENDE med flit: femman i "## 5. 51 bilder saknar alt-text" är
+ * rubriknumrering, 51 i samma rubrik är ett mätvärde. En regel som bara tittar på raden
+ * hade tagit båda.
+ */
+export function arStrukturtal(rad: string, iRaden: number, tal: string): boolean {
+  // 1. Talet är en del av ett datum ("**Datum:** 2026-08-14", "14 augusti 2026").
+  if (iDatum(rad, iRaden)) return true;
+
+  // 2. Punkt- och rubriknumrering: "1. ", "  2) ", "### 3. ", "#### 2.1 ".
+  const numrering = rad.match(/^(\s*(?:[-*+]\s+)?|#{1,6}\s+)(\d+(?:\.\d+)*)[.)]?\s/);
+  if (numrering) {
+    const start = numrering[1].length;
+    if (iRaden >= start && iRaden < start + numrering[2].length) return true;
+  }
+
+  // 3. Namngiven numrering: "**Fråga 4:**", "Steg 2", "Post 7".
+  //    ALLA förekomster prövas, inte bara den första: "## Steg 2, vecka 2-3" har två tvåor
+  //    på samma rad, och bara den ena är numrering. Orden är få med flit — "Vecka 36-43"
+  //    är en kursperiod hos en kund, alltså innehåll, och står därför inte i listan.
+  for (const m of rad.matchAll(/(?:^|[\s*(])(?:Fråga|Svar|Steg|Punkt|Post|Rad|Nr)\s*\*{0,2}\s*(\d+)/gi)) {
+    if (m.index == null) continue;
+    const start = m.index + m[0].length - m[1].length;
+    if (iRaden >= start && iRaden < start + m[1].length) return true;
+  }
+
+  // 4. Tabellens radnummer: första cellen, och cellen innehåller BARA talet.
+  //    "| 7 | Så här mäter du … |" är numrering; "| 59 tecken | … |" är ett mätvärde.
+  if (rad.trimStart().startsWith("|")) {
+    const forstaSlut = rad.indexOf("|", rad.indexOf("|") + 1);
+    const cell = forstaSlut === -1 ? "" : rad.slice(rad.indexOf("|") + 1, forstaSlut);
+    if (cell.trim() === tal.trim() && iRaden < forstaSlut) return true;
+  }
+
+  return false;
+}
+
+// ── R-5b · GENERISK SEO-FAKTA ────────────────────────────────────────────────
+//
+// ★ MÄTT PÅ MAKZY-RAPPORTEN: "Meta-beskrivning … max cirka 150-160 tecken" blev
+//   "max cirka [DIN SIFFRA] tecken" i ordlistan. 150 och 160 är inte Makzys uppgifter,
+//   de är Googles gränser — samma sorts allmängods som IP-klassning och nits, alltså
+//   klass B. Och eftersom beslutet gäller per tal maskades DESSUTOM "över 150 tyger i
+//   provurvalet" längre ned i samma rapport.
+//
+// Listan är AVSIKTLIGT kort och namngiven. En bred regel ("allt som står nära ordet SEO
+// är fakta") hade släppt igenom tenantens egna siffror i samma andetag.
+
+const SEO_TERMER = /meta-?beskrivning|metabeskrivning|meta description|titel(tagg|n|rad)?|title|snippet|alt-?text|h1|h2|laddtid|LCP|INP|CLS|core web vitals|statuskod|redirect|omdirigering|sitemap|robots|tunn(a|t)? (sid|innehåll)|texttäthet|ordantal|tecken\b|ord\b/i;
+
+/** Kända gränsvärden i SEO-världen. Talet ska stå i sällskap med sin egen term. */
+const SEO_FAKTA: { term: RegExp; tal: string[]; vad: string }[] = [
+  { term: /meta-?beskrivning|metabeskrivning|meta description|snippet/i, tal: ["120", "150", "155", "160", "165"], vad: "Googles längd på meta-beskrivningen" },
+  { term: /titel|title/i, tal: ["50", "55", "60", "65", "70"], vad: "Googles längd på sidtiteln" },
+  { term: /alt-?text/i, tal: ["125"], vad: "rekommenderad längd på alt-text" },
+  { term: /laddtid|LCP|core web vitals/i, tal: ["2.5", "2,5", "4"], vad: "Googles gräns för LCP i sekunder" },
+  { term: /INP|core web vitals/i, tal: ["200", "500"], vad: "Googles gräns för INP i millisekunder" },
+  { term: /CLS|core web vitals/i, tal: ["0.1", "0,1", "0.25", "0,25"], vad: "Googles gräns för CLS" },
+  { term: /statuskod|redirect|omdirigering|felkod/i, tal: ["200", "301", "302", "307", "404", "410", "500", "503"], vad: "HTTP-statuskod" },
+  { term: /sitemap/i, tal: ["50000", "50 000"], vad: "sitemapens tak för antal adresser" },
+  { term: /h1|h2|rubrik/i, tal: ["1"], vad: "en H1 per sida" },
+  { term: /tunn(a|t)? (sid|innehåll)|texttäthet|ordantal/i, tal: ["300"], vad: "vanlig tumregel för tunt innehåll" },
+];
+
+/** Generisk SEO-fakta: allmängods som gäller alla sajter, aldrig tenantens egen uppgift. */
+export function arSeoFakta(kontext: string, tal: string): string | null {
+  if (!SEO_TERMER.test(kontext)) return null;
+  const nyckel = talNyckel(tal);
+  for (const f of SEO_FAKTA) {
+    if (!f.term.test(kontext)) continue;
+    if (f.tal.some((t) => talNyckel(t) === nyckel)) return f.vad;
+  }
+  return null;
+}
+
+// ── R-5b · CRAWLENS EGNA MÄTVÄRDEN ───────────────────────────────────────────
+//
+// ★ MÄTT PÅ MAKZY-RAPPORTEN: "51 av 58 bilder saknar beskrivning" blev "51 av [DIN SIFFRA]
+//   bilder". Femtioettan råkade finnas i crawl-JSON:en och slapp igenom; femtioåttan gjorde
+//   det inte, eftersom modellen räknade fram totalen själv. Att be kunden fylla i hur många
+//   bilder hennes sajt har är att be henne kontrollera vår egen mätning.
+//
+// Talet passerar därför när meningen handlar om något VI räknat på sajten. Det är en
+// medveten uppmjukning: en modell kan räkna fel, men ett fel mätvärde är ett fel vi ska
+// hitta i crawlen, inte en lucka vi lägger på kunden.
+
+const CRAWL_MATVARDEN = [
+  /\bbilder?\b/i, /\balt-?text/i, /\bord\b/i, /\bordantal\b/i, /\btexttäthet/i,
+  /\binterna länkar?\b/i, /\blänkar? per sida\b/i, /\bsid(a|an|or|orna)\b/i, /\brubrik(er)?\b/i,
+  /\bH1\b/i, /\bH2\b/i, /\btecken\b/i, /\bmeta-?beskrivning/i, /\btitel/i,
+  /\bsitemap\b/i, /\badresser\b/i, /\bschema(typer)?\b/i, /\bindexerade?\b/i,
+];
+
+/**
+ * Mätte VI det här på kundens sajt? Då är talet belagt per definition.
+ *
+ * Anropas BARA när meningen saknar tenant-markör (`arTenantTal`). Annars hade "våra priser
+ * börjar från 500 kr per sida" räknats som vår mätning, för att ordet "sida" står där.
+ */
+export function arCrawlMatvarde(kontext: string): boolean {
+  return CRAWL_MATVARDEN.some((m) => m.test(kontext));
+}
+
+/** Sa meningen UTTRYCKLIGEN att talet är tenantens eget? (T-klassens default räknas inte.) */
+export function arTenantTal(kontext: string): boolean {
+  return TENANT_MONSTER.some((m) => m.test(kontext));
 }
 
 /**
@@ -223,13 +413,15 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
     const befintligt = beslutPerNyckel.get(nyckel);
     if (befintligt) return befintligt;
 
-    const klass = klassaTal(kontext);
+    let klass = klassaTal(kontext);
     let utfall: Sifferutfall;
     let varifran: string;
+    const seoFakta = arSeoFakta(kontext, tal);
 
-    if (arEjPastaende(kontext)) {
+    const ejPastaende = ejPastaendeSkal(kontext);
+    if (ejPastaende) {
       utfall = "belagt";
-      varifran = "telefonnummer, orgnummer eller datum";
+      varifran = `inget påstående om storlek: ${ejPastaende}`;
     } else if (klass === "G" || indata.gscTal.has(nyckel)) {
       utfall = "belagt";
       varifran = "Googles sökdata";
@@ -239,6 +431,18 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
     } else if (kunskapstal.has(nyckel)) {
       utfall = "belagt";
       varifran = "tenantens kunskapsfält";
+    } else if (seoFakta) {
+      // R-5b punkt 2: generisk SEO-fakta är branschfakta, inte kundens uppgift. Den skrivs
+      // ut som den är — en riktvärdesmärkning på Googles egen teckengräns hade varit
+      // nonsens ("verifiera mot din leverantör" om något leverantören inte äger).
+      klass = "B";
+      utfall = "belagt";
+      varifran = `generisk SEO-standard: ${seoFakta}`;
+    } else if (!arTenantTal(kontext) && arCrawlMatvarde(kontext)) {
+      // R-5b punkt 3: våra egna mätvärden om sajten. Maskas aldrig.
+      klass = "C";
+      utfall = "belagt";
+      varifran = "crawlens egen mätning av sajten";
     } else if (klass === "B") {
       // Branschfakta maskas ALDRIG. Utan kunskapsfält skrivs de ut märkta i stället.
       utfall = "riktvarde";
@@ -270,7 +474,17 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
   const behandla = (del: string): string => {
     const gomda: string[] = [];
 
+    // R-5b punkt 1: numrering och datum hoppas över PÅ PLATSEN — inget beslut, ingen
+    // maskering, ingen rad i beslutstabellen. Kontrollen ligger här och inte i `avgor`,
+    // eftersom beslutet gäller per tal för hela rapporten: samma fyra kan vara
+    // rubriknumrering på en rad och en leveranstid på en annan.
+    const struktur = (text: string, i: number, tal: string): boolean => {
+      const { rad, iRaden } = radRunt(text, i);
+      return arStrukturtal(rad, iRaden, tal);
+    };
+
     let ut = del.replace(INTERVALL, (traff, a: string, b: string, i: number) => {
+      if (struktur(del, i, traff)) return traff;
       const kontext = meningRunt(del, i, traff.length);
       const ba = avgor(a, kontext, del, i, traff.length);
       const bb = avgor(b, kontext, del, i, traff.length);
@@ -285,6 +499,7 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
     });
 
     ut = ut.replace(ENSKILT, (tal: string, i: number) => {
+      if (struktur(ut, i, tal)) return tal;
       const kontext = meningRunt(ut, i, tal.length);
       const b = avgor(tal, kontext, ut, i, tal.length);
       if (b.utfall === "lucka") return LUCKA;
