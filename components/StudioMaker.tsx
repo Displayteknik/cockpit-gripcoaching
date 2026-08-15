@@ -1252,9 +1252,13 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const suggestCaption = useCallback(async () => {
     setError(""); setSuggestingCaption(true);
     try {
+      // ÄMNE-1: skickar den BEFINTLIGA captionen med. Finns en redan (knappen säger
+      // "Skriv om") är den den starkaste ämneskällan — se lib/content/amneskalla.ts.
+      // Utan den här raden regenererade "Skriv om" ur headline/body/ämne på nytt varje
+      // gång, i stället för att vinkla om texten som redan stod där.
       const r = await fetch("/api/studio/suggest-caption", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, compass }),
+        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, compass, caption }),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte föreslå bildtext");
@@ -1265,7 +1269,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setSuggestingCaption(false);
     }
-  }, [headline1, headline2, body, topic, slides, postType, compass, laggTillGeneration]);
+  }, [headline1, headline2, body, topic, slides, postType, compass, caption, laggTillGeneration]);
 
   // CC-3: auto-klassa inläggets text → fyll Content Compass-chips (redigerbara efteråt).
   const autoClassify = useCallback(async () => {
@@ -1297,9 +1301,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const suggestCaptionVariants = useCallback(async () => {
     setError(""); setLoadingVariants(true); setCaptionVariants([]);
     try {
+      // ÄMNE-1: samma ämneskälla-prioritet som "Skriv om" — se kommentaren i suggestCaption.
       const r = await fetch("/api/studio/suggest-caption", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, variants: 3, compass }),
+        body: JSON.stringify({ headline: headline1, headline2, body, topic, slides, postType, variants: 3, compass, caption }),
       });
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa varianter");
@@ -1309,7 +1314,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     } finally {
       setLoadingVariants(false);
     }
-  }, [headline1, headline2, body, topic, slides, postType, compass]);
+  }, [headline1, headline2, body, topic, slides, postType, compass, caption]);
 
   const toggleAccount = useCallback((id: string) => {
     setSelectedAccounts((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);

@@ -34,6 +34,8 @@ export interface GenereringsMeta {
   lager?: Record<string, boolean> | null;
   /** Antal varianter anropet gav. */
   varianter?: number;
+  /** ÄMNE-1/K4: "inlaggstext" | "bild" | "amnesfalt" | "tomt" — se lib/content/amneskalla.ts. */
+  amneKalla?: string | null;
 }
 
 export interface Generering {
@@ -51,6 +53,8 @@ export interface Generering {
   lager?: Record<string, boolean> | null;
   status?: GenerationStatus;
   varianter?: number;
+  /** ÄMNE-1/K4. Se GenereringsMeta.amneKalla. */
+  amneKalla?: string | null;
 }
 
 /** Var en generering hamnade. Tabellnamnet ingår — id ensamt säger inte vilken ID-rymd det är. */
@@ -81,6 +85,7 @@ export async function loggaGenerering(g: Generering): Promise<string | null> {
         lager: g.lager || null,
         status: g.status || "ok",
         varianter: g.varianter && g.varianter > 0 ? g.varianter : 1,
+        amne_kalla: g.amneKalla || null,
       })
       .select("id")
       .maybeSingle();

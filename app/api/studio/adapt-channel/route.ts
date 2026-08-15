@@ -4,6 +4,7 @@ import { generate } from "@/lib/gemini";
 import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { CTA_SKARPNING, harCtaISlutet } from "@/lib/content/writing-rules";
+import { harledAmnesblock } from "@/lib/content/amneskalla";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -62,11 +63,14 @@ export async function POST(req: NextRequest) {
     const clientId = await resolveClientId();
     const isCarousel = slides.length > 0;
 
+    // ÄMNE-1: samma ämneskälla-prioritet som suggest-caption (lib/content/amneskalla.ts) —
+    // caption > skapad bild/karusell > Ämnesfältet > tomt. baseCaption (grund-captionen
+    // från steg 5) är i praktiken nästan alltid satt här; övriga tre är fallbacken för det
+    // ovanliga fallet att steg 6 körs utan den.
+    const amne = harledAmnesblock({ caption: baseCaption, headline, headline2, body, slides, topic });
     const sourceBlock = baseCaption
       ? `Grund-caption att anpassa (behåll budskapet, ändra ton/längd/krok/hashtags per kanal):\n${baseCaption}`
-      : isCarousel
-        ? "Karusellens slides:\n" + slides.map((s, i) => `${i + 1}. [${s.kind || "slide"}] ${s.headline || ""}${s.body ? ` — ${s.body}` : ""}`).join("\n")
-        : [headline ? `Rubrik på bilden: ${headline}.` : "", headline2 ? `Underrubrik: ${headline2}.` : "", body ? `Text på bilden: ${body}.` : "", topic ? `Ämne: ${topic}.` : ""].filter(Boolean).join("\n");
+      : amne.block;
 
     // TEXT-1 T-2: prompten byggs av prompt-core (brand-profil, röst, winning, anatomi/compass,
     // kit-donts och skrivregler ägs av kärnan). Uppdraget = kanalguiderna + språkregler.

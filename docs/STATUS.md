@@ -659,21 +659,101 @@ TikTok/Pinterest/YouTube/Threads/Bluesky är inte kopplade hos DT → ska gråas
 GBP kräver (knapp + mål-URL). Kräver dokumentation eller en skarp testpublicering — den
 senare är vad DoD:n begär, och Håkan ska säga ja innan något publiceras mot hans Google-profil.
 
+### KLART 15/8 — ÄMNE-1: bildtexten bytte ämne, kedjan är nu ankrad
+
+**Beställning:** Håkan tog emot Cockpits förslag om en menyskärm, skapade bild för det,
+bad om bildtext i steg 5 — alla tre varianter handlade om ett HELT ANNAT ämne (skyltning
+i augustisol/sensommar). Hårt stopp begärt: orsak innan fix.
+
+**ORSAKSANALYS, mätt mot Displaytekniks riktiga profil (`scripts/amne1-repro1..3.mts`,
+tre skarpa körningar):**
+
+1. `topic` (Ämnesfältet, steg 1) och `headline`/`headline2`/`body` (Text på bilden, steg
+   4) är **två skilda state-fält** i `StudioMaker.tsx`. `applySuggestion` (rad 802) sätter
+   headline/body när en idé väljs — **rör aldrig `topic`**. Ämnesfältet kan alltså bära
+   en KVARLÄMNAD text (en tidigare idé, ett tidigare inlägg) rakt in i captiongenereringen.
+2. `/api/studio/suggest-caption` byggde `underlag` med `Ämne: X.` FÖRST — före "Rubrik på
+   bilden:"/"Text på bilden:", både positionellt och språkligt den mer auktoritativa raden.
+3. **Repro 1** (tomt Ämne, bara headline/body): på ämne, mild säsongsfärgning ("kvällssolen").
+   **Repro 2** (Förslag för dagen/Content Compass förifyllt): fortfarande på ämne — Compass
+   styr bara ton/struktur, precis som mikrocopyn lovar. `contentCompassBlock` läst rad för
+   rad: inget ämnesläckage där. **Repro 3** (kvarlämnat Ämne "Synlighet i sensommaren —
+   skyltar som fortfarande syns i augustisolen" + menyskärmens riktiga headline/body): **alla
+   tre varianter öppnade om sensommar/augustisol**, menyskärmen degraderad till bisats —
+   matchar Håkans fynd i klartext.
+4. **A2-läckans väg är INTE samma väg.** `suggest-caption` går genom `byggTextPrompt`
+   (prompt-core), bygger ingen egen kontext utanför kärnan. A2 (31/7) handlade om att
+   SANNINGSKRAVET läckte när ämnesraden bad om en kundberättelse — ett annat fel i samma
+   närhet, redan stängt. Rotorsaken här är prioritetsordningen mellan två separata
+   state-fält, inte en kringgången kärna.
+
+**FIX — `lib/content/amneskalla.ts`, en delad prioritetsfunktion (K1–K3):**
+`harledAmnesblock()` avgör ämneskällan i ordning: **(1) redan skriven caption** ("Skriv
+om" — starkast) **→ (2) skapad bild/mall-text** (headline/headline2/body/karusellens
+slides) **→ (3) Ämnesfältet, ENDAST om 1 och 2 är tomma → (4) inget alls**, då bär
+Förslag för dagen + varumärkesrösten genereringen ensamma (DoD punkt 3). Så fort en äkta
+källa finns UTESLUTS Ämnesfältet helt ur prompten — ett kvarlämnat, motstridigt ämne kan
+alltså aldrig vinna igen. Etiketten skärptes samtidigt: "Rubrik på bilden:" lästes som en
+bildbeskrivning, inte som en instruktion om vad HELA inlägget handlar om — nu **"ÄMNET FÖR
+DETTA INLÄGG (håll dig till exakt detta i alla varianter)"**.
+
+Inkopplat i `suggest-caption` (bildtext, "Ge mig 3 att välja på", "Skriv om" — alla samma
+route, hashtags genereras som en del av captionen) och defensivt i `adapt-channel`s
+fallback-gren (steg 6 använder redan `baseCaption` i normalfallet). **Klienten skickar nu
+`caption` med** i båda suggest-caption-anropen (`StudioMaker.tsx`) — utan den raden hade
+"Skriv om" fortsatt regenerera från grunden i stället för att vinkla om den text som redan
+stod där.
+
+**K4 — ämneskällan loggas:** ny kolumn `generation_log.amne_kalla`
+(`migrations/amne1_amnekalla.sql`, körd), trådad genom `GenereringsMeta` → `Generering` →
+`loggaGenerering`. Driver Ämnesfältet ofta topic-genereringar går att se i efterhand utan
+att gissa.
+
+**DoD, skarpt körd (`scripts/amne1-dod.mts`) mot Displayteknik:**
+
+| Punkt | Utfall |
+|---|---|
+| 1. Håkans exakta fall (kvarlämnat ämne + menyskärm) | **Alla tre varianter om menyskärmen**, ingen öppnar om sensommar/augustisol |
+| 2. "Skriv om" på samma inlägg | Ämnet består — ämneskälla blir `inlaggstext`, den omskrivna texten handlar fortfarande om menyskärmen |
+| 3. Tomt inlägg | Inget fel — genererar en text ur varumärkesrösten + Förslag för dagen ensamma |
+
+13 tester (`tests/amne1-amneskalla.test.ts`), fyra brytningar provade (två träffade,
+K1-prioriteten kan alltså inte tystas av misstag).
+
+**DoD punkt 4 — samma mönster på fler ställen, granskat:**
+- `app/api/blog/generate/route.ts` + `outline/route.ts` har samma `Ämne: ${topic}` textrad,
+  men topic är där DET ENDA inmatningsfältet (kastar 400 utan det) — ingen konkurrerande
+  headline/body finns att glida isär från. **Inte sårbart**, inte rört.
+- `app/api/studio/improve-post/route.ts` gör redan RÄTT: "Härled FÖRST bransch, målgrupp,
+  erbjudande, ton och tilltal ur det inklistrade inlägget. Det är din primära källa" —
+  samma princip som fixen här, byggd tidigare av ett annat skäl. Ingen ändring behövs.
+- **Sekundär, ej stängd risk:** `sasongsPromptRad` (BILD-5b) injiceras i VARJE textgenerering,
+  alla syften, som lager 1b — direkt efter uppdraget. Repro 1 och 2 visade mild
+  säsongsfärgning ("kvällssolen", "ljummen sommarkväll") även när ämnet var rätt. Det är
+  by design (säsongsmedvetenhet), men gränsen mot att FÄRGA för mycket är inte mätt. Inte
+  åtgärdat i den här etappen — flaggat för en egen titt om det återkommer.
+- **Sekundär, ej stängd risk:** Content Compass 4A-mallarna (`FOURA_TEMPLATES`, t.ex.
+  "3 fakta om [område]") bär en ofylld platshållare modellen själv måste tolka. Inte
+  bevisad som ensam trigger i repro, men en öppen flank — "[område]" har inget som säger
+  att det ska vara EXAKT posttopiken.
+
 ### KÖN EFTER 15/8
 
-1. **BILD-11 tillägg punkt 4 och 5 — KLART OCH VERIFIERAT**, med tre uppföljande
+1. **ÄMNE-1 — KLART OCH VERIFIERAT.** Se avsnittet ovan. Sekundära, ej stängda risker
+   flaggade: säsongsradens mildare ämnesfärgning, 4A-mallens ofyllda "[område]".
+2. **BILD-11 tillägg punkt 4 och 5 — KLART OCH VERIFIERAT**, med tre uppföljande
    rättningar samma dag (montering, systemmässighet, kampanjlayout). Se avsnitten ovan.
-2. **Kundens egna bildregler — KLART OCH VERIFIERAT**, skarp körning mot DT.
-3. **R-5b — KLART OCH VERIFIERAT.** Omkörd Makzy-rapport i `client_assets` (asset
+3. **Kundens egna bildregler — KLART OCH VERIFIERAT**, skarp körning mot DT.
+4. **R-5b — KLART OCH VERIFIERAT.** Omkörd Makzy-rapport i `client_assets` (asset
    `c668c538`), fortfarande dold för kund.
-4. **★ FÖRSTA UPPGIFT NÄSTA SESSION:** verifieringsbilden för brandingfälten
+5. **★ FÖRSTA UPPGIFT NÄSTA SESSION:** verifieringsbilden för brandingfälten
    (`bildregler-dt.png`) visar liten läsbar text på skärmen — DoD-skriptet hoppade över
    `stavningsgrind` för att testa branding-delen isolerat. Kör om med hela kedjan
    inkopplad (mönstret i `scripts/bild11-system.mts`) innan kampanjlayout-fixen räknas som
    bevisad i en riktig bild, inte bara i test.
-5. **De fem sakerna nedan väntar fortfarande på Håkan** (Gittes nyckel först). Ingen av dem
+6. **De fem sakerna nedan väntar fortfarande på Håkan** (Gittes nyckel först). Ingen av dem
    går att göra från kodsidan.
-6. **Öppet efter dagen:** ska allmänna råd med tidsangivelse ("svara på omdömen inom 24
+7. **Öppet efter dagen:** ska allmänna råd med tidsangivelse ("svara på omdömen inom 24
    timmar") räknas som branschfakta i rapporten?
 
 ### START HÄR I NÄSTA SESSION
@@ -956,3 +1036,309 @@ ska vara mekaniskt, inte en regel i en prompt.
 - **forbalance.se** har tre döda menylänkar: `/holistisk`, `/kropp`, `/kurser-workshops`
 - **forbalance.se** spärrar nio AI-robotar i robots.txt, inklusive GPTBot och ClaudeBot
 - **forbalance.se** 500:ar på cache-miss. Hemsida24 måste laga ursprungsservern
+
+---
+
+## DRIV-0 2026-08-15 — kartläggning av affärsdrivaren, HÅRT STOPP
+
+**Beställningens kärna:** innan kortet (DRIV-1) byggs ska GHL-scopes, Google/Gmail-läget,
+verklig datavolym och kollisioner vara MÄTTA, inte antagna. Read-only. Skript:
+`scripts/driv0-kartlaggning.mts` (kör mot skarp DT-data, ändrar ingenting).
+
+### 1. GHL-scopes — den stora överraskningen: nästan inget saknas
+
+Livekörning mot DT:s nuvarande nyckel (`clients.ghl_pit`, samma nyckel HQ-pipelinen
+redan använder, location `cZzTvCeFRDLinf5Ha3je`):
+
+| Behörighet | Endpoint | Resultat |
+|---|---|---|
+| `conversations.readonly` | `GET /conversations/search` | **200 OK — finns redan** |
+| `conversations/message.readonly` | `GET /conversations/{id}/messages` | **200 OK — finns redan** |
+| `contacts.readonly` (bär även tasks) | `GET /contacts/{id}/tasks` | **200 OK — finns redan** |
+| `opportunities.readonly` | `GET /opportunities/pipelines` | 200 OK (redan känt sedan tidigare) |
+
+Nyckeln som HQ, Fokus och Studio redan använder täcker alltså **hela DRIV-1:s läsbehov**
+för konversationer och uppgifter. Det som verifierat SAKNAS (går inte att testa read-only,
+noll kod i hela repot rör någonsin `contacts.write`):
+
+- **`contacts.write`** — krävs redan i DRIV-1, inte först i DRIV-2: engångsstädningens
+  uppgiftsskapande på affärskorten går via `POST /contacts/{id}/tasks`, som kräver write.
+- **`conversations/message.write`** — krävs först i DRIV-2 (svara-knappen). Billigt att ta
+  med i samma nya nyckel nu, så det inte blir en andra runda.
+
+**Plattformstak:** GHL:s Private Integrations tillåter max 24 scopes totalt (samma tak som
+onboardingens niostegs-nyckel redan är dokumenterad mot i `lib/onboard/steg.ts`). Långt
+under taket även med allt nedan.
+
+**Rekommenderad scope-lista för EN ny Private Integration** (regeln står redan i koden:
+skapa alltid en ny, ändringar på en befintlig ger inget genomslag på utfärdade tokens):
+
+```
+opportunities.readonly
+opportunities.write
+contacts.readonly
+contacts.write                    ← NY
+conversations.readonly            ← finns redan, men måste ändå kryssas i den NYA nyckeln
+conversations/message.readonly    ← finns redan, men måste ändå kryssas i den NYA nyckeln
+conversations/message.write       ← NY (DRIV-2, billigt att ta med nu)
+users.readonly
+socialplanner/account.readonly
+socialplanner/post.write
+```
+
+Utan de sex sista raderna tappar den nya nyckeln Studios publicering och Fokus/DM —
+[[lesson-smalare-nyckel-over-bredare]] gäller rakt av här. **⚠ Extra viktigt:**
+`ghl-config`-rutan (`app/api/studio/ghl-config/route.ts`) skriver den inklistrade nyckeln
+till `clients.ghl_pit` OVILLKORLIGT — säkerhetsnätet (`klararAffarer`) skyddar bara
+speglingen till `coach_users`, inte den här skrivningen. Saknar den nya nyckeln en enda
+rad ovan går Studios publicering sönder i samma sekund den sparas, inte bara Fokus.
+
+### 2. Google — Gmail och Kalender är redan kopplade (inte ett nybygge)
+
+Stor missuppfattning i beställningen rättad: det finns redan en fungerande
+Gmail+Kalender-koppling, byggd för KONTAKT-1 (tystnadsmätaren) och PLAN-1 (ägarens
+kalender) — `lib/hq/kalender.ts`, tabellen `hq_google_koppling` (en rad, ägarens egen,
+skild från den klientdelade `google_connections`).
+
+| Fråga | Svar (mätt live) |
+|---|---|
+| Är Gmail kopplat? | **Ja.** `harGmail: true`. Kopplad sedan 2026-08-02, `hakan@displayteknik.se` |
+| Är Kalender kopplat? | **Ja.** `harKalender: true` |
+| Scope som faktiskt gäller | `gmail.readonly` + `calendar.events` + `userinfo.email` + `openid` |
+| Klarar inkrementellt samtycke? | Kodens mönster är enklare än inkrementellt: `prompt=consent` begär ALLTID hela `SCOPES`-listan på nytt. En ändring i listan + en omkoppling räcker — ingen ny redirect-URI, inget nytt Google Cloud-steg |
+| `gmail.metadata` i stället för `gmail.readonly`? | **Nej, redan avfärdat med skäl i koden:** `gmail.metadata` tillåter inte `q`-sökparametern på `messages.list`, och utan den går adressökningen inte att göra |
+
+**Konsekvens för DRIV-1:** Gmail-delen av kortet kräver INGEN ny Google-koppling och
+INGEN ny scope-diskussion. Det som saknas är bara nytt KOD-arbete: dagens koppling hämtar
+enbart METADATA (avsändare/ämne/datum, aldrig kropp — exakt 1C:s regel, redan byggd) för
+att avgöra vem som väntar på svar. DRIV-1 vill dessutom visa FULL kropp när Håkan öppnar
+en tråd — det är en ny, enkel `messages.get?format=full`-anrop på klick, ovanpå samma
+token. Ingen lagring tillkommer, samma regel som redan gäller.
+
+**Viktigt öppet antagande att bekräfta med Håkan:** kopplingen är HANS EGNA Gmail-konto
+(`hakan@displayteknik.se`), inte en delad DT-brevlåda. Identitetsmatchningen i DRIV-1
+matchar alltså GHL-kontakter mot HANS inkorg. Stämmer det att DT:s kundkorrespondens går
+via hans egen adress, eller finns en delad `info@displayteknik.se`-brevlåda som också
+borde kopplas in?
+
+**Kvot:** inte undersökt i den här etappen (kräver Google Cloud Console-åtkomst, inte
+kod). Cachestrategin (10 min för listor, färsk hämtning bara vid klick) är samma mönster
+som redan bevisat sig hålla för HQ och KONTAKT-1, så risken bedöms låg.
+
+### 3. Datainventering (skarp data, DT, 2026-08-15)
+
+| Mått | Siffra | Anmärkning |
+|---|---|---|
+| Affärer i pipelinespegeln | **56** | Beställningen antog "ca 21" — utdaterat, rättat här |
+| ...med e-postadress | 46 | |
+| ...utan e-postadress | 10 | omätbara för Gmail-matchning tills adress finns |
+| Unika e-postadresser | 43 | |
+| Adresser som delas av mer än en affär | 3 | se kollisionsanalysen nedan |
+| Rader i `hq_kontakt_status` (KONTAKT-1 redan igång) | 27 | bollen hos kund: 18 · hos oss: 6 · okänt: 3 |
+| Offerter i `offert_quotes` (DT) | **1** | tabellen har inte ens en e-postkolumn — se gap nedan |
+| ...med `ghl_contact_id`/`ghl_opportunity_id` | 1 av 1 | |
+| Telefonnummer i pipelinespegeln | **0 — kolumnen finns inte** | `hq_pipeline_cache` sparar aldrig telefon i dag, bara e-post (samma mönster som när e-post lades till för KONTAKT-1) |
+| Gmail-trådar senaste 12 mån, riktigt räknade | **Ej mätt lokalt** | skriptet kraschade: `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` finns bara på Vercel, inte i `.env.local`. Se öppen punkt nedan |
+
+**Gap värt att flagga direkt:** `offert_quotes` har bara EN rad totalt för DT och saknar
+helt en e-postkolumn. Antingen används tabellen inte i praktiken än (DT:s riktiga
+offerter spåras via GHL-pipelinens stegnamn, t.ex. "Erbjudande skickad"), eller så är
+detta ett dataflöde som aldrig kopplats in. DRIV-3:s "offertstatus i kortet" kommer visa
+nästan ingenting förrän det här är utrett — värt att fråga Håkan innan DRIV-3 planeras.
+
+### 4. Kollisionsanalys
+
+| Adress | Antal affärer | Bedömning |
+|---|---|---|
+| `johan.maioli@argosit.se` | 2 | Samma kontakt, två separata affärer — INGEN tvetydighet, bara en kund med flera case |
+| `jan.nystedt@vannebergagard.se` | 2 | Samma som ovan |
+| `test-mejllasning@displayteknik.se` | 2 | **Ser ut som en intern testadress**, inte en riktig kund — fråga Håkan om den ska uteslutas ur matchningen |
+
+Ingen äkta "samma adress, två olika kunder"-kollision hittades i dagens data. De 10
+affärerna helt utan adress är den verkliga risken: de blir per definition "föreslagen
+koppling"-kandidater som aldrig kan auto-bekräftas, eller så förblir de omärkta i kortet.
+
+Telefonmatchning kunde inte kollisionstestas alls — telefonnummer finns inte i spegeln
+i dag (se tabellen ovan).
+
+### 5. Tabellplan
+
+**Återanvänd hellre än bygg om.** HQ har redan tre relevanta speglar som DRIV-1 bör
+bygga PÅ, inte bredvid: `hq_pipeline_cache` (affärer + e-post), `hq_kalender_cache`
+(möten), `hq_kontakt_status` (Gmail-matchning, bollen-status). Att lägga en parallell
+`driv_cache` för samma källor hade gett två sanningar om samma sak.
+
+Genuint nytt behövs för två saker KONTAKT-1 inte gör i dag (den läser bara SENASTE
+in/ut-meddelandet, inte hela tidslinjen, och den känner inte GHL-konversationer alls):
+
+```sql
+-- Meddelandenivå (inte bara "senaste"), källa Gmail och GHL-konversationer i en tidslinje.
+create table driv_tidslinje (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references clients(id),      -- bara DT seedas, multi-tenant från start
+  ghl_contact_id text,
+  ghl_opportunity_id text,
+  kalla text not null check (kalla in ('gmail','ghl_konversation','kalender','offert')),
+  extern_id text not null,                              -- gmail message-id / ghl message-id / event-id
+  riktning text check (riktning in ('in','ut',null)),
+  amne text,
+  snippet text,                                          -- Gmails egen, max ~200 tecken. ALDRIG kropp.
+  tidpunkt timestamptz not null,
+  hamtad_tidsstampel timestamptz not null default now(),
+  unique (tenant_id, kalla, extern_id)
+);
+
+-- Identitetsmatchningen — den enda tabell DRIV-1 verkligen saknar helt i dag.
+create table driv_lankar (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references clients(id),
+  ghl_contact_id text not null,
+  gmail_adress text,
+  kalla text not null check (kalla in ('email','telefon','manuell')),
+  belagg text not null,                                  -- det matchande värdet, synligt i UI:t
+  status text not null default 'foreslagen' check (status in ('bekraftad','foreslagen','avvisad')),
+  beslutad_av text,
+  beslutad_tid timestamptz,
+  created_at timestamptz not null default now()
+);
+```
+
+Båda RLS på utan policies, service-role only — samma mönster som `onboarding_korningar`.
+Ingen mejlkropp i någon kolumn, någonstans (1C:s regel, redan bevisat hållbar av
+KONTAKT-1:s `format=metadata`-mönster).
+
+### DoD DRIV-0
+
+| Krav | Status |
+|---|---|
+| Rapport med exakt scope-lista till Håkan | **Klart, se punkt 1** |
+| Google-scopebesked | **Klart, se punkt 2 — och det var redan löst** |
+| Siffror ur datainventeringen | **Klart, se punkt 3, med ett mätfel i orderns eget antagande rättat (21 → 56)** |
+| Kollisionslista med förslag | **Klart, se punkt 4 — inga äkta kollisioner, en trolig testadress** |
+| Tabellplan | **Klart, se punkt 5 — två nya tabeller, tre befintliga återanvänds** |
+
+**Beställt men ej levererat:** Gmail-kvotgränserna (kräver Google Cloud Console, inte
+kod) och en skarp 12-månaders trådräkning (lokalt skriptmiljöfel, `GOOGLE_CLIENT_ID`/
+`SECRET` saknas i `.env.local` — finns bara på Vercel). Ingetdera blockerar DRIV-1.
+
+### Öppna beslut innan DRIV-1 påbörjas (utöver ordens egna tre)
+
+1. Är Håkans personliga Gmail (`hakan@displayteknik.se`) rätt inkorg att matcha mot, eller
+   finns en delad DT-brevlåda?
+2. Ska `test-mejllasning@displayteknik.se` uteslutas ur matchningen?
+3. `offert_quotes` har nästan ingen data — ska DRIV-3 räkna med det ändå, eller är
+   GHL-pipelinens stegnamn den egentliga sanningskällan för offertstatus?
+
+### PÅ VANLIG SVENSKA
+
+Nyckeln som redan finns kan redan läsa dina mejlkonversationer och dina GHL-meddelanden —
+du behöver bara lägga till EN behörighet (att skapa uppgifter) på en ny nyckel, inte bygga
+om något. Gmail och kalendern är redan kopplade sedan två veckor tillbaka, så det steget
+är redan klart utan att du visste om det. Du har 56 affärer i systemet, inte 21 som vi
+trodde, och 46 av dem har en mejladress att matcha mot. En sak är värd fem minuter av din
+tid innan nästa steg: är det din egen mejl eller en delad kundmejl kortet ska läsa ur?
+
+---
+
+## DRIV-1 2026-08-15 — kortet (läsläge) + engångsstädningen, HÅRT STOPP
+
+**Beställningens kärna:** ett öppningsbart kort per affär (tidslinje ur GHL+Gmail+kalender+
+offerter, läget, avstängd agera-panel) plus en engångsstädning som ger varje öppen affär
+ett nästa steg. Byggt, testat mot skarp DT-data via API, men **inte klart förrän en
+migration är körd och du själv godkänt städningen i drift** — se de två blockerarna nedan.
+
+### Byggt (commit ej gjort ännu — allt ligger i arbetsträdet)
+
+| Del | Fil |
+|---|---|
+| Identitetsmatchning (1A) | `lib/driv/matchning.ts`, `lib/driv/normalisera.ts` |
+| GHL-läsning (konversationer, meddelanden, kontakt, uppgifter) | `lib/driv/ghl.ts` |
+| Gmail-läsning (metadata i listan, full kropp bara på klick) | `lib/driv/gmail.ts` |
+| Kortets sammansättning (läget + tidslinje) | `lib/driv/kort.ts` |
+| Engångsstädningens regeltabell + idempotent skapande | `lib/driv/stadning.ts` |
+| API | `app/api/driv/kort/[oppId]`, `/lank`, `/meddelande`, `/stadning` |
+| Kortets UI | `app/dashboard/driv/[oppId]/page.tsx` |
+| Städningens granskningsvy | `app/dashboard/driv/stadning/page.tsx` |
+| Öppningspunkt | `components/FokusClient.tsx` — ny "Öppna kort"-knapp på varje affärskort |
+| Meny | `app/dashboard/layout.tsx` — "Städa pipelinen" under Din vecka |
+| Tabellplan | `migrations/driv1_kortet.sql` (driv_lankar, driv_kort_cache) — **EJ KÖRD** |
+
+### Ett riktigt fel hittat och rättat mot skarp data
+
+DT:s riktiga stegnamn `"Förhandling / ändring (allt som "ändra i offert" hamnar här)"`
+innehåller ordet "offert" i en parentes. Med offert-regeln testad FÖRE Förhandling-regeln
+fick affären "LED skärm travet" fel förslag ("Ring och följ upp offerten" i stället för
+"Stäm av var förhandlingen står"). Ordningen är nu rättad och verifierad live — se
+`lib/driv/stadning.ts`, kommentaren vid `STADNINGSREGLER`. Samma familj som
+[[lesson-en-grind-bevisar-bara-det-den-mater]]: regeln såg rätt ut isolerad, fel uppstod
+först mot en riktig, långt formulerad stegtext.
+
+### En sak till som hittades mot skarp data (och rättades innan den syntes)
+
+GHL:s `/conversations/{id}/messages` blandar in egna aktivitetsloggrader
+(`TYPE_ACTIVITY_OPPORTUNITY`: "Opportunity updated", "Opportunity created") som INTE är
+kommunikation med kunden. Första versionen visade dem i tidslinjen som om de vore
+meddelanden ("phone: Opportunity updated"). Nu filtreras bara äkta kanaler in (SMS, mejl,
+samtal, socialt, webbchatt) — se `KANNDA_MEDDELANDETYPER` i `lib/driv/kort.ts`.
+
+### API-begränsning värd att känna till (påverkar hur "på affärskortet" tolkas)
+
+GHL:s publika API har **ingen affärs-scopad uppgiftsändpunkt** (verifierat mot den öppna
+OpenAPI-specen 2026-08-15, se `lib/driv/ghl.ts`). Uppgiften kan bara skapas på KONTAKTEN,
+aldrig direkt på en specifik affär — ingen integration kan göra det annorlunda med det
+här API:t. En kontakt med flera öppna affärer (t.ex. Johan Maioli, 2 affärer) får
+affärens namn i uppgiftstiteln för att disambiguera. Beställningens formulering "på
+affärskortet, aldrig på kontakt utan affär" är alltså uppfylld i sak (uppgiften pekar
+tydligt ut RÄTT affär) men inte bokstavligt (den sitter tekniskt på kontakten, som GHL
+kräver).
+
+### Två blockerare — ingen är ett kodfel
+
+1. **`migrations/driv1_kortet.sql` är INTE körd.** Kortet fungerar ändå (allt läses live),
+   men `driv_kort_cache` (cache åt framtida DRIV-4-kön) och `driv_lankar` (föreslagna
+   kalenderkopplingar) skriver ingenting förrän tabellerna finns — verifierat: 0 rader i
+   båda efter flera kortöppningar. Kör migrationen i Supabase SQL Editor, samma rutin som
+   `modell1_fable_pris.sql` tidigare.
+2. **Gmail kunde inte testas lokalt**, samma orsak som i DRIV-0: `GOOGLE_CLIENT_ID`/
+   `GOOGLE_CLIENT_SECRET` finns bara på Vercel. Kortet visar ett korrekt svenskt felbesked
+   i stället för att krascha ("Kunde inte läsa Gmail just nu") — verifierat live. Gmail-
+   delen av tidslinjen går alltså inte att se förrän du testar på skarp deploy, eller
+   lägger de två env-variablerna i `.env.local`.
+
+### DoD DRIV-1 — vad som är verifierat och vad som väntar på dig
+
+| Krav | Status |
+|---|---|
+| Öppna 5 affärer, tidslinjen vävd korrekt utan att lämna Cockpit | **Testat mot 3 skarpa affärer via API + 1 visuellt i browsern.** GHL-konversationer, uppgifter och offerter fungerar. Gmail-delen overifierad lokalt (se blockerare 2) |
+| Minst en "Föreslagen koppling", bekräfta/avvisa, överlever refresh | **Byggt och kodgranskat, INTE körd live** — kräver migrationen (blockerare 1). Mekaniken: kalenderträffar på namn/företag i `hq_kalender_cache`, aldrig e-post (den är redan säker) |
+| Ingen mejlkropp i databasen | **Bevisat i koden** (`hamtaFullMeddelande` returnerar bara till anroparen, sparas aldrig) — kunde inte köra den skarpa DB-kontrollen än eftersom cachen är tom (blockerare 1) |
+| Städningen: alla affärer får nästa steg, omkörning ger 0 nya | **Förslagsmotorn testad live — 25 riktiga förslag mot DT:s pipeline, ett fel hittat och rättat.** Skapandet (`POST /api/driv/stadning`) är byggt och kodgranskat men **medvetet INTE kört av mig** — det skriver riktiga uppgifter i ditt GHL-konto, och `contacts.write` är enligt DRIV-0 obekräftat på nuvarande nyckel. Detta är precis den verifiering ordern själv reserverar åt dig ("Håkan verifierar i drift") |
+| Svenska fel, inga råa error.message, loading-states | **Klart** — verifierat i koden och i browsern |
+
+### Beställt men ej levererat
+
+- Migrationen väntar på att köras.
+- Städningen väntar på ditt godkännande i granskningsvyn (`/dashboard/driv/stadning`) —
+  där ser du också om `contacts.write` saknas: då svarar MySales med ett fel per rad i
+  stället för att skapa uppgiften, och kvittot säger vilket.
+- Gmail-delen av tidslinjen overifierad lokalt.
+
+### Öppna frågor kvar sedan DRIV-0
+
+Test-adressen `test-mejllasning@displayteknik.se` (kontakten heter bokstavligen "TEST
+Mejllasning – Testfirman (radera)") ligger fortfarande med i städningsförslagen eftersom
+DRIV-1 inte fick ett beslut om att undanta den. Den dyker upp som "Sales Call Booked"-
+raderna gjorde inte, men skulle göra det i en framtida körning om steget matchar en
+regel. Vill du att den ska uteslutas helt, eller är det okej att den beter sig som vilken
+affär som helst tills du städat bort testkontakten själv i MySales?
+
+### PÅ VANLIG SVENSKA
+
+Kortet fungerar redan mot dina riktiga affärer — jag har testat det live mot Sofia
+Boudon, Cecilia Boija och Johan Maiolis affärer, och det ser rätt ut. Städningen hittade
+25 affärer som saknar ett nästa steg och föreslog rätt åtgärd för var och en, inklusive
+en affär där jag såg att mitt eget första förslag blev fel och rättade det innan du ens
+såg det. Det enda som återstår innan du kan använda det på riktigt: kör en databasfil jag
+lagt in (tre minuter i Supabase), och godkänn själv städningsförslagen i den nya vyn under
+"Städa pipelinen" — det sistnämnda skriver riktiga påminnelser till ditt GHL-konto, och
+det klicket ska vara ditt, inte mitt.

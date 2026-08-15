@@ -10,6 +10,7 @@ import type { CompassParams } from "@/lib/content-compass/prompt";
 import type { DiscLetter } from "@/lib/content-compass/data";
 import { BERATTELSE_UTAN_STORYBANK, MINNE_SKARPNING, harStorybank, hittaUppfunnetMinne } from "@/lib/minnesgrind";
 import { sakerstallCaption, talTokens } from "@/lib/content/writing-rules";
+import { harledAmnesblock } from "@/lib/content/amneskalla";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -53,6 +54,10 @@ export async function POST(req: NextRequest) {
     const headline2 = (b.headline2 || "").toString().slice(0, 200);
     const body = (b.body || "").toString().slice(0, 400);
     const topic = (b.topic || "").toString().slice(0, 200);
+    // ÄMNE-1: "Skriv om" — finns redan skriven text kör vi vidare på DEN, inte på ett
+    // nytt slag ur headline/body/ämne (den redan skrivna texten är den starkaste källan,
+    // se lib/content/amneskalla.ts).
+    const existingCaption = (b.caption || "").toString().slice(0, 3000);
     const postType = (b.postType || "post").toString();
     const slides: Slide[] = Array.isArray(b.slides) ? b.slides.slice(0, 12) : [];
 
@@ -76,9 +81,11 @@ export async function POST(req: NextRequest) {
       "- Inga telefonnummer/URL:er. Returnera ENDAST själva captionen (med radbrytningar), ingen förklaring.",
     ].filter(Boolean).join("\n");
 
-    const contentBlock = isCarousel
-      ? "Karusellens slides:\n" + slides.map((s, i) => `${i + 1}. [${s.kind || "slide"}] ${s.headline || ""}${s.body ? ` — ${s.body}` : ""}`).join("\n")
-      : [headline ? `Rubrik på bilden: ${headline}.` : "", headline2 ? `Underrubrik: ${headline2}.` : "", body ? `Text på bilden: ${body}.` : ""].filter(Boolean).join("\n");
+    // ÄMNE-1 (Håkans skarpfynd 15/8): EN ämneskälla, i prioritetsordning — redan skriven
+    // text, sedan skapad bild/mall-text, sedan Ämnesfältet, sist inget alls. Se
+    // lib/content/amneskalla.ts för rotorsaken (ett kvarlämnat Ämne vann tidigare över
+    // det inlägget faktiskt blev — mätt mot Displaytekniks profil i tre repro-körningar).
+    const amne = harledAmnesblock({ caption: existingCaption, headline, headline2, body, slides, topic });
 
     // T-6c (rotation), G-3d: senaste sparade captions (första raden = öppningen) →
     // "NYLIGEN ANVÄNT" i kärnan, så nästa caption inte återanvänder samma ingång.
@@ -105,8 +112,7 @@ export async function POST(req: NextRequest) {
       kanal: "instagram",
       uppdrag,
       underlag: [
-        topic ? `Ämne: ${topic}.` : "",
-        contentBlock,
+        amne.block,
         "\nSkriv captionen nu — strukturerad enligt reglerna.",
       ].filter(Boolean).join("\n"),
       compass: compassForPrompt,
@@ -143,6 +149,10 @@ export async function POST(req: NextRequest) {
             promptVersion: bygg.meta.promptVersion,
             funnel: bygg.meta.funnel,
             lager: bygg.meta.lager,
+            // K4: vilken ämneskälla styrde den här genereringen — så drift går att
+            // granska i efterhand utan att gissa (t.ex. "amnesfalt" som ofta pekar fel
+            // vore ett tecken på att klienten låter Ämnesfältet stå kvar för länge).
+            amneKalla: amne.kalla,
           },
         });
         out = svar.text.trim();
