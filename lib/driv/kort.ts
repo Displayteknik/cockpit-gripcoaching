@@ -10,7 +10,7 @@ import { supabaseService } from "@/lib/supabase-admin";
 import { hamtaHqGhl, type HqGhl } from "@/lib/hq/pipeline";
 import { hamtaKoppling, kopplingsScope, agarToken } from "@/lib/hq/kalender";
 import { hamtaKonversationer, hamtaMeddelanden, hamtaKontakt, hamtaUppgifterForKontakt, hamtaStegInfo, type GhlKontakt, type StegInfo } from "@/lib/driv/ghl";
-import { hamtaTradMetadata } from "@/lib/driv/gmail";
+import { hamtaTradMetadata, sokMeddelandenMedBilaga } from "@/lib/driv/gmail";
 import { foreslaLank, lasLankar, kalenderKandidat, type LankRad } from "@/lib/driv/matchning";
 import { hamtaPrislista, type Prisrad } from "@/lib/driv/pris";
 
@@ -33,6 +33,9 @@ export interface TidslinjePost {
   lankId?: string; // driv_lankar.id när posten är en föreslagen kalenderträff
   svar?: SvarsData; // DRIV-2: satt på inkommande poster som går att svara på
   varning?: string; // DRIV-3: t.ex. "Offert äldre än 3 dagar utan svar"
+  /** DRIV-3: mejlet har en bilaga (Håkans fynd — riktiga offerter skickas som mejlbilaga,
+   *  inte via Offertmotorn). Bilagelistan hämtas separat, live, på klick. */
+  harBilaga?: boolean;
 }
 
 export interface KortLage {
@@ -205,12 +208,19 @@ export async function byggKort(ghlOpportunityId: string, beslutadAv = "owner"): 
     try {
       const koppling = await hamtaKoppling();
       const token = await agarToken();
-      const meddelanden = await hamtaTradMetadata(token, lage.epost, koppling?.email || "");
+      const [meddelanden, bilageIds] = await Promise.all([
+        hamtaTradMetadata(token, lage.epost, koppling?.email || ""),
+        sokMeddelandenMedBilaga(token, lage.epost),
+      ]);
       for (const m of meddelanden) {
         if (m.autosvar) continue; // ett autosvar är inte ett tecken på liv, se KONTAKT-1
+        const harBilaga = bilageIds.has(m.id);
         tidslinje.push({
           kalla: "gmail", id: m.id, tidpunkt: m.datum, riktning: m.riktning,
-          titel: m.amne || "(inget ämne)", snippet: m.snippet, kanalIkon: "mejl",
+          titel: m.amne || "(inget ämne)",
+          snippet: harBilaga ? `📎 Bilaga bifogad — ${m.snippet}` : m.snippet,
+          kanalIkon: "mejl",
+          harBilaga,
           svar: m.riktning === "in"
             ? { kanal: "gmail", tradId: m.threadId, messageIdHeader: m.messageIdHeader, motpart: m.fran, amne: m.amne }
             : undefined,

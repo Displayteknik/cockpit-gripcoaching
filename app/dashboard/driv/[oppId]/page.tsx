@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Loader2, AlertTriangle, Phone, Mail, Calendar, FileText, CheckSquare,
   MessageSquare, Check, X, RefreshCw, Tag, Reply, Send, StickyNote, CalendarClock,
-  Search, ExternalLink,
+  Search, ExternalLink, Paperclip,
 } from "lucide-react";
 import PipelineStegRad, { type StegInfo } from "@/components/PipelineStegRad";
 import { CoachContextInput } from "@/components/FokusClient";
@@ -17,7 +17,7 @@ type SvarsData =
 interface TidslinjePost {
   kalla: string; id: string; tidpunkt: string; riktning: "in" | "ut" | null;
   titel: string; snippet: string | null; kanalIkon: string; osaker?: boolean; lankId?: string;
-  svar?: SvarsData; varning?: string;
+  svar?: SvarsData; varning?: string; harBilaga?: boolean;
 }
 interface Prisrad {
   artikelnr: string; benamning: string; kategori: string | null; pris: number | null;
@@ -87,6 +87,12 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
   const [offertForslagSparar, setOffertForslagSparar] = useState(false);
   const [offertForslagDold, setOffertForslagDold] = useState(false);
 
+  // Läs hela mejlet — hämtas live på klick, sparas ingenstans (1C)
+  const [lasFor, setLasFor] = useState<string | null>(null);
+  const [lasText, setLasText] = useState("");
+  const [lasar, setLasar] = useState(false);
+  const [lasFel, setLasFel] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => { if (c?.primary_color) setPrimary(c.primary_color); }).catch(() => {});
   }, []);
@@ -130,6 +136,25 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
       await ladda();
     } finally {
       setBeslutar(null);
+    }
+  }
+
+  // Läs hela mejlet live (1C: full kropp hämtas bara på klick, sparas aldrig).
+  async function lasMeddelande(post: TidslinjePost) {
+    if (lasFor === post.id) { setLasFor(null); return; } // klick igen = stäng
+    setLasFor(post.id);
+    setLasText("");
+    setLasFel(null);
+    setLasar(true);
+    try {
+      const r = await fetch(`/api/driv/meddelande?id=${encodeURIComponent(post.id)}`);
+      const d = await r.json();
+      if (d.error) { setLasFel(d.error); return; }
+      setLasText(d.kropp || "(inget innehåll hittades)");
+    } catch {
+      setLasFel("Kunde inte hämta mejlet just nu.");
+    } finally {
+      setLasar(false);
     }
   }
 
@@ -511,16 +536,50 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
                           <AlertTriangle className="w-3 h-3" /> {t.varning}
                         </div>
                       )}
-                      {t.svar && !utkastAktivt && (
-                        <button
-                          onClick={() => genereraUtkast(t)}
-                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
-                        >
-                          <Reply className="w-3.5 h-3.5" /> Utkast
-                        </button>
-                      )}
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        {t.kalla === "gmail" && (
+                          <button
+                            onClick={() => lasMeddelande(t)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Mail className="w-3.5 h-3.5" /> {lasFor === t.id ? "Dölj mejlet" : "Läs mejlet"}
+                          </button>
+                        )}
+                        {t.svar && !utkastAktivt && (
+                          <button
+                            onClick={() => genereraUtkast(t)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Reply className="w-3.5 h-3.5" /> Utkast
+                          </button>
+                        )}
+                        {t.harBilaga && (
+                          <a
+                            href={`/api/driv/bilaga?id=${encodeURIComponent(t.id)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Paperclip className="w-3.5 h-3.5" /> Se bilaga
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {lasFor === t.id && (
+                    <div className="mt-3 ml-11">
+                      {lasar ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-400"><Loader2 className="w-4 h-4 animate-spin" /> Hämtar mejlet…</div>
+                      ) : lasFel ? (
+                        <div className="text-sm text-red-600">{lasFel}</div>
+                      ) : (
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-xl px-3.5 py-2.5 max-h-80 overflow-y-auto">
+                          {lasText}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {utkastAktivt && t.svar && (
                     <div className="mt-3 ml-11 space-y-2.5">

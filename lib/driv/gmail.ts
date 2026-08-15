@@ -77,6 +77,52 @@ export async function hamtaTradMetadata(
   return rader.filter((m): m is GmailMeta => !!m);
 }
 
+/**
+ * DRIV-3 — Håkans fynd: de riktiga offerterna skickas som mejlbilaga, inte via
+ * Offertmotorn (som bara har en enda, aldrig skickad, rad totalt för DT). En bilaga TILL
+ * kunden är den bästa signalen som faktiskt finns på "offert skickad".
+ *
+ * Gmails `has:attachment`-operator räcker för att hitta ID:n — kroppen/bilagan hämtas
+ * ALDRIG här, bara vilka meddelanden som är kandidater. Samma lathet som resten av 1C.
+ */
+export async function sokMeddelandenMedBilaga(token: string, adress: string, max = 15): Promise<Set<string>> {
+  const r = await fetch(
+    `${GMAIL}/messages?maxResults=${max}&q=${encodeURIComponent(`to:${adress} has:attachment`)}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!r.ok) return new Set(); // fail-open — bilageflaggan är en bonus, inte kritisk
+  const d = (await r.json()) as { messages?: Array<{ id: string }> };
+  return new Set((d.messages || []).map((m) => m.id));
+}
+
+export interface Bilaga { attachmentId: string; filnamn: string; mimeType: string; storlek: number }
+
+/** Bilagelistan (namn/typ/storlek) för ETT meddelande — inga bytes hämtas här. */
+export async function hamtaBilagelista(token: string, messageId: string): Promise<Bilaga[]> {
+  const r = await fetch(`${GMAIL}/messages/${messageId}?format=full`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) return [];
+  const d = (await r.json()) as { payload?: GmailPayloadDel };
+  const ut: Bilaga[] = [];
+  const gaIgenom = (del: GmailPayloadDel | undefined) => {
+    if (!del) return;
+    if (del.filename && del.body?.attachmentId) {
+      ut.push({ attachmentId: del.body.attachmentId, filnamn: del.filename, mimeType: del.mimeType || "application/octet-stream", storlek: del.body.size || 0 });
+    }
+    for (const barn of del.parts || []) gaIgenom(barn);
+  };
+  gaIgenom(d.payload);
+  return ut;
+}
+
+/** Själva bilagens bytes, live, på klick. Returneras direkt till anroparen — lagras aldrig. */
+export async function hamtaBilagaData(token: string, messageId: string, attachmentId: string): Promise<Buffer | null> {
+  const r = await fetch(`${GMAIL}/messages/${messageId}/attachments/${attachmentId}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) return null;
+  const d = (await r.json()) as { data?: string };
+  if (!d.data) return null;
+  return Buffer.from(d.data.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+}
+
 export interface GmailFullMeddelande extends GmailMeta {
   kropp: string; // ALDRIG lagrad — returneras bara till klienten som bad om den
 }
@@ -164,8 +210,9 @@ function b64urlTillText(data: string): string {
 }
 
 interface GmailPayloadDel {
+  filename?: string;
   mimeType?: string;
-  body?: { data?: string };
+  body?: { data?: string; attachmentId?: string; size?: number };
   parts?: GmailPayloadDel[];
 }
 
