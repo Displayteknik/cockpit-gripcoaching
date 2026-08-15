@@ -371,6 +371,33 @@ webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en 
 | FÄRG-2 + FONT-3 | KLART OCH VERIFIERAT | For Balances palett mätt på hennes sajt. Kalnia tillagd (OFL) |
 | S-6 hämtningen | KLART, EJ VERIFIERAT I DRIFT | Djupgranskningens 500 mot forbalance.se. ⚠ **Härledning, ej återskapat fel** |
 
+### BESTÄLLT 15/8, EJ PÅBÖRJAT — BILD-11 TILLÄGG (skarpfynd, singelinlägg DT)
+
+Fyndet: inlägget **"Skärmen som säljer när du sover"** (skyltfönster, dygnet runt) fick en
+bild med **dagtid, butiksinteriör och personal vid en skärm inne i butiken**. K1 och K3
+fungerade (annonslayout med prisblock på skärmen, kvinna i butiksmiljö), men bevismeningen
+missade att påståendets **plats och tid** är själva poängen.
+
+**(4) K2 UTÖKAS MED PLATS OCH TID.** Bevismeningen ska fånga plats och tidpunkt när de bär
+påståendet, inte bara fel- eller framgångsläget.
+· "Skyltfönster" → skärmen sedd **utifrån gatan genom fönstret**
+· "Säljer när du sover" → **kväll eller natt**, upplyst skärm mot mörk gata, inga personer
+  eller på sin höjd en förbipasserande
+Härledningen ska ställa **tre** frågor till innehållet: vad ska bevisas, **VAR** utspelar det
+sig, **NÄR** utspelar det sig.
+**DoD:** regenerera exakt detta inlägg och verifiera att bilden visar skyltfönstret utifrån
+i kvällsljus.
+
+**(5) LÄSBARA ORD BEKRÄFTADE I SINGELFLÖDET.** Skärmen i bilden visade "FRESH-BAKED" och
+"KANELBULLE" i läsbar text, dessutom på engelska. Stärker misstanken i punkt 3 att orden
+**genereras** och inte är overlay.
+**Punkt 3:s DoD utökas till singelflödet:** 5 genereringar utan läsbara genererade ord, och
+**engelska ord får aldrig förekomma på avbildade skärmar** oavsett vägval.
+
+★ Punkt 5 hänger ihop med BILD-8:s stavningsgrind och BILD-10 ("bildmodellen skriver ingen
+text"). Att engelska ord dyker upp på en avbildad skärm i DT-flödet tyder på att någon väg
+förbi den grinden är öppen — leta där först, innan nya regler skrivs.
+
 ### BESTÄLLT 13/8, EJ PÅBÖRJAT — R-5b (litet varv)
 
 Håkans ord, ordagrant:
