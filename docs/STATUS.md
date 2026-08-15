@@ -371,7 +371,151 @@ webbläsaren kan sitta kvar på den gamla filen — hårdladda innan du drar en 
 | FÄRG-2 + FONT-3 | KLART OCH VERIFIERAT | For Balances palett mätt på hennes sajt. Kalnia tillagd (OFL) |
 | S-6 hämtningen | KLART, EJ VERIFIERAT I DRIFT | Djupgranskningens 500 mot forbalance.se. ⚠ **Härledning, ej återskapat fel** |
 
-### BESTÄLLT 15/8, EJ PÅBÖRJAT — BILD-11 TILLÄGG (skarpfynd, singelinlägg DT)
+### KLART 15/8 — KUNDENS EGNA BILDREGLER (Håkans beställning: "det är en styrka")
+
+**Fyndet:** fälten fanns redan i `/dashboard/brand-kit` (Bildstil-sektionen), men bar inte
+hela vägen. "Får innehålla människor" skrevs in i `lib/studio/kit.ts` som
+`imageExtra`-text — en mening som uttryckligen börjar "applies to colour and light only,
+**never change the subject**". En motivregel inuti ett förbud mot motivändringar gjorde
+ingenting, och personrotationen delade samtidigt ut en person. Kryssrutan var alltså
+kosmetisk. Samma familj som `fargTon`-buggen (svenska agentvärden mot en boolesk
+jämförelse) — mätt i skarp data: Annas Blommor har `people: "ibland"` i databasen, ett
+värde `=== false` aldrig hade läst.
+
+**Byggt:**
+- `KitDirectives.imageMotiv` — en EGEN kanal för motivregler, skild från `imageExtra`
+  (stil). Läggs sist i prompten, i en mening som säger att den väger tyngst.
+- `tolkaPersoner()` — språkoberoende tolkning (boolean, svenska ord, engelska ord), delad
+  mellan server (`lib/studio/kit.ts`) och ytan (`app/dashboard/brand-kit/page.tsx`).
+- "Aldrig" stänger AV personrotationen i `byggBildPrompt` i stället för att lägga en rad
+  som konkurrerar med den — samma lösning som "efter stängning" fick tidigare i dag.
+- Ytan: tre knappar (Alltid/Ibland/Aldrig) i stället för en kryssruta, plus fritextfält
+  **"Visa alltid i bilderna"** och **"Undvik i bilderna"**. Ligger i samma komponent som
+  `/k/brand-kit` redan renderar — kunden ser fälten utan nytt paket eller ny modul.
+
+**Bevis:** `tests/bildregler-kundens-egna.test.ts` (14 tester, fyra egna brytningar
+provade — alla fyra fångades) + `scripts/bildregler-dod.mts`, skarp körning mot
+Displayteknik: satte "aldrig människor" + en egen regel om LED-skärm i drift via samma
+tabellrad som kundens PUT-anrop skriver, byggde en bild, läste av med vision (NEJ på
+"syns någon person", JA på "verklig skärm i drift"), och **återställde tenantens
+ursprungliga kit efteråt** — testet lämnar inget skräp i skarp data.
+
+⚠ **Kvar:** kundens fält skriver INTE ännu till karusellens seriegenerering utanför
+`byggBildPrompt`s egna anrop (blogg-omslag, reel-scen går genom samma funktion och ärver
+alltså regeln automatiskt — obekräftat i skarp körning för de två syftena).
+
+### KLART 15/8 — BILD-11 TILLÄGG punkt 4 och 5 (skarpt verifierat mot DT)
+
+**Bevis:** `scripts/bild11-dod.mts` (skarp körning mot Displayteknik, bilderna ligger i
+`scripts/_bild11/`) + `tests/bild11-plats-tid-och-ord.test.ts` (17 tester, alla provade
+genom att brytas: fyra brytningar gav fyra röda).
+
+| Punkt | Utfall |
+|---|---|
+| **4 · plats och tid** | Härledningen ställer nu TRE frågor: vad ska bevisas, VAR, NÄR. `harledPlats` (10 platser) och `harledTid` (5 tidpunkter) i `lib/bild/promptbyggare.ts`. **DoD grön:** samma inlägg regenererat — vision svarar JA på "kameran utanför på gatan" och JA på "kväll eller natt", och bilden visar skyltfönstret utifrån i skymning med skärmen upplyst mot våt gata |
+| **5 · läsbara ord** | Noll läsbara ord på huvudskylten i **5 av 5** singelgenereringar, noll engelska ord. Två omtag behövdes i två av fem — grinden gjorde jobbet |
+
+**Rotorsaken till punkt 5 satt i BESTÄLLNINGEN, precis som Håkan misstänkte.** K1:s
+rekvisitaregel för skyltbranschen bad om "a strong headline band across the top" och "a
+clear price or offer block" — och i samma mening om "never sharp readable words". En modell
+kan inte rita en rubrikrad utan bokstäver, så den valde bokstäver. Samma familj som BILD-10
+(texten beställdes) och BILD-12 (dekorbilden beställdes). Regeln beställer nu INNEHÅLLET:
+ett foto av köparens egen vara, med layouten oskarp, vinklad eller beskuren.
+
+**Grinden som saknades:** stavningsgrinden dömde bara STAVNING. "FRESH-BAKED" och
+"KANELBULLE" är rättstavade och passerade därför. Nu klassas orden också: engelska ord fälls
+alltid (Håkans "oavsett vägval"), läsbara ord fälls i flöden där modellen inte äger någon
+text. Domen gäller bara bildens huvudsakliga skylt — bakgrundens butiksfasader jagas inte,
+samma avgränsning som BILD-8c gjorde för stavningen. Omtaget ber om att orden TAS BORT;
+stavningsskärpningen hade bett om "två till fem korta svenska ord", alltså felet igen.
+
+⚠ **Ett medvetet vägval:** ett rättstavat SVENSKT ord som överlever både omtagen och det
+textlösa motivet släpps igenom med en logg, medan ett engelskt ord alltid ger 502. Ett hårt
+stopp på svenska ord hade kostat kunden bilden för något hon inte kan påverka. Säg till om
+du vill ha hårt stopp på båda.
+
+★ **Ändrat lås:** två tester i `bild10v2-promptbyggare.test.ts` låste den GAMLA
+formuleringen ("CAMPAIGN LAYOUT", "price or offer block"). De låser nu den nya regeln, plus
+ett nytt test som fäller varje rekvisitaregel som beställer en rubrikrad eller prisruta.
+
+### ★ HÅKANS FJÄRDE RÄTTNING 15/8 — kampanjlayouten togs bort av misstag
+
+> *"personen framför skärmen tittar inte på skärmen o innehållet på skärmen saknar
+> relevans enligt tidigare jobb vi gjort, skärmar visar inte bara en bulle eller pizza
+> sådär det är inte relevant. så nej det är för dåligt o tappat tidigare vassa
+> uppdateringar vi gjort"*
+
+Två separata fel, båda rättade:
+
+1. **Blicken.** Tidsraden för "efter mörkrets inbrott" sa "a passer-by" — en förbipasserande
+   som per definition inte stannar. BILD-8b:s blickregel (person ska vara vänd mot det
+   inlägget handlar om) fanns kvar men konkurrerade med min egen rad. Nu: "STOPPED and are
+   looking straight at the subject, head and eyes on it".
+2. **Skärminnehållet, det allvarligare felet.** När jag löste BILD-11 punkt 5 (läsbara ord)
+   tog jag bort BILD-7a:s kampanjlayout helt och ersatte den med ETT foto av köparens vara
+   som fyller panelen — en TAVLA, inte en kampanj. Håkans ord: "skärmar visar inte bara en
+   bulle eller pizza sådär, det är inte relevant." Jag löste rätt problem (läsbara ord) med
+   fel medel (ta bort kompositionen) och tappade en tidigare byggd regel på vägen.
+   **Rättat:** K1 beställer nu en RIKTIG KAMPANJ igen — bildyta, rubrikzon, erbjudande-
+   eller prisruta — och håller orden borta med LÄSBARHET (avstånd, vinkel, skärpedjup)
+   i stället för att ta bort layouten. Samma mönster i K5's textrad.
+
+⚠ **Ärlig gräns, inte återöppnad i en fjärde iteration:** verifieringsbilden
+(`scripts/_bild11/bildregler-dt.png`, körd för brandingfälten) visar en liten läsbar
+bildtext på skärmen ("Think…", en klocka) trots layout-fixen. Min DoD-körning för
+brandingfälten anropade `generateImagen` direkt och hoppade över `stavningsgrind` (som
+`suggest-image`-routen kör med `ordfri: true`) — alltså testade den inte hela kedjan.
+Grinden är byggd och låst i test (`tests/bild11-plats-tid-och-ord.test.ts`), men den
+skarpa bilden bevisar den inte. **Nästa session:** kör om med hela grinden inkopplad
+(`scripts/bild11-system.mts`-mönstret) innan detta stängs som verifierat.
+
+### HÅKANS TREDJE RÄTTNING 15/8 — "se det systemmässigt"
+
+> *"gör inte missarna bara för DT, se det systemmässigt — oavsett vad som skrivs in måste
+> den tänka rätt."*
+
+Han hade rätt, och det höll på att bli en DT-lapp. Tre ändringar följde, alla mätta mot
+**fyra branscher**: `scripts/bild11-system.mts`.
+
+1. **K5 · VERKLIGHETSVAKTEN, en plattformsregel.** Fyndet var en skärm som satt **på
+   snedden** i skyltfönstret ("så skulle det aldrig sättas") och, i nästa försök, en man
+   med stege som monterade den mitt i ett inlägg om att skärmen säljer när ingen är där.
+   Båda felen är branschlösa: en snedhängd tavla hos en terapeut och en lutande menytavla i
+   ett café är samma fel. Regeln bor därför bredvid ljusvakten och gäller varje tenant:
+   allt sitter monterat som en fackman lämnar det, och monteringsarbetet är utanför bild.
+2. **Modellen tolkar, koden formulerar.** Nyckelordslistorna kan bara det de råkar
+   innehålla — "Displayen som jobbar vidare när personalen gått hem" träffade ingenting.
+   Nu läser modellen inlägget och svarar med en NYCKEL ur samma lista, och nyckeln slås upp
+   mot exakt samma text som regeln hade gett. Ordalydelsen förblir kodens, vilket är hela
+   poängen: hade texten kommit ur modellen hade härdningen mot gyllene timme försvunnit vid
+   nästa körning. Anropet sker bara när reglerna missar, och fail-open: inget svar → ingen
+   plats- och tidsrad, precis som förut. En gissad plats är sämre än ingen.
+3. **Nyckelorden matchar ORD, inte substrängar.** Mätningen mot fyra tenants avslöjade ett
+   fel som drabbade **alla** kunder: `väg` i platslistan matchade inuti "på **väg** hem" och
+   gav en fasadbild av en bukett, och `kö` i tidslistan matchade inuti "**kö**pa" — alltså
+   hade varje inlägg om att köpa något klassats som rusningstid. JavaScripts `\b` räknar
+   å/ä/ö som ordgräns, så gränserna skrivs nu ut med svenska bokstäver.
+
+**Mätt, fyra branscher, formuleringar som listorna INTE känner igen:**
+
+| Tenant | Rubrik | Reglerna gav | Systemet gav |
+|---|---|---|---|
+| Displayteknik | "Displayen som jobbar vidare när personalen gått hem" | inget | gatan utifrån + efter mörkrets inbrott |
+| For Balance | "Samtalet som ryms innan arbetsdagen börjar" | inget | behandlingsrummet + tidig morgon |
+| Annas Blommor | "Buketten du hinner hämta på väg hem från jobbet" | inget (efter ordgränsfixen) | butiken sedd utifrån + rusningstid |
+| Engens Träd | "Jobbet uppe i kronan, sett från marken" | inget | utomhus på plats |
+
+Bilderna: `scripts/_bild11/system-displayteknik.png` (natt, skärmen rak i fönstret, kvinna
+på gatans sida) och `system-forbalance.png` (behandlingsrum, morgonljus, två stolar).
+
+★ **Fynd i DoD:n, rättat efter Håkans invändning:** första bilden blev rätt plats och rätt
+tid men hade en bagare i arbete inne i den stängda butiken. Första rättningen tvingade fram
+"inga människor" — fel, det hade han aldrig sagt. Nu byts bara personal i ARBETE ut mot
+nästa kategori i rotationen; en förbipasserande, en kund som stannar utanför eller en tom
+lokal fungerar alla. Andra körningen: kvinna på trottoaren som tittar på skärmen, en
+förbipasserande längre bort, personalen borta.
+
+### BESTÄLLNINGEN (för spårbarhet) — BILD-11 TILLÄGG (skarpfynd, singelinlägg DT)
 
 Fyndet: inlägget **"Skärmen som säljer när du sover"** (skyltfönster, dygnet runt) fick en
 bild med **dagtid, butiksinteriör och personal vid en skärm inne i butiken**. K1 och K3
@@ -398,7 +542,57 @@ i kvällsljus.
 text"). Att engelska ord dyker upp på en avbildad skärm i DT-flödet tyder på att någon väg
 förbi den grinden är öppen — leta där först, innan nya regler skrivs.
 
-### BESTÄLLT 13/8, EJ PÅBÖRJAT — R-5b (litet varv)
+### KLART 15/8 — R-5b, siffergrindens tre kalibreringsfel
+
+**Bevis:** `scripts/r5b-dod.mts` (mätt på den skarpa Makzy-rapporten, asset `45bf59c4`) +
+`tests/r5b-sifferkalibrering.test.ts` (30 tester, provade genom att brytas: tre brytningar
+gav 7, 2 och 4 röda). Omkörd rapport: asset `c668c538`, batch `msgbatch_01Uv6gRKeuTBBUVvYMLyP7yx`.
+
+**★ FÖRE-LÄGET, MÄTT PÅ RIKTIG TEXT: rapporten hade SEX luckor, och ALLA SEX var
+kalibreringsfel.** Inte en enda av dem var en uppgift Madeleine skulle fylla i:
+
+| Tal | Stod i | Var egentligen |
+|---|---|---|
+| 150, 160 | "Meta-beskrivning … max cirka 150-160 tecken" | Googles gräns, inte Makzys uppgift |
+| 58 | "51 av 58 bilder saknar beskrivning" | vår egen mätning ur crawlen |
+| 4 | rubriknumrering ("## 4. Inga kundcitat …") | listnummer |
+| 7, 9 | tabellens radnummer i innehållsplanen | radnummer |
+
+**★ OCH KONSEKVENSKRAVET FÖRSTORADE VARJE FEL.** Beslutet fattas en gång per TAL och gäller
+hela rapporten — rätt princip, men en enda felklassning slår då över hela dokumentet. Fyran
+klassades i en rubrik och maskade sedan varenda fyra i texten: `**Fråga 4:**` blev
+`**Fråga [DIN SIFFRA]:**`, och 150 maskade även "över 150 tyger i provurvalet" långt
+därifrån. Därför hoppas strukturtal över PÅ PLATSEN i stället för att få ett beslut: samma
+fyra kan vara rubriknumrering på en rad och en leveranstid på nästa.
+
+| Punkt | Byggt | Mätt |
+|---|---|---|
+| 1 · strukturtal undantas | `arStrukturtal` — listnumrering, rubriknumrering, tabellradnummer, FAQ-nummer och datum, positionsberoende (femman i "## 5. 51 bilder" är numrering, 51 är ett mätvärde) | Numreringen står orörd, noll rader i beslutstabellen |
+| 2 · generisk SEO-fakta | `arSeoFakta` — kort namngiven faktalista (meta 150-160, titel 50-60, statuskoder, LCP/INP/CLS, alt-text 125, tunt innehåll 300 ord). Klass B, **belagt** — inte "riktvärde, verifiera mot din leverantör", vilket vore nonsens om Googles egen gräns | 150 och 160 belagda, med källan utskriven |
+| 3 · crawlens mätvärden | `arCrawlMatvarde` + ny **klass C**. Tenantens eget påstående vinner: "våra priser börjar från 500 kr per sida" är fortfarande ett pris | 58 belagt som "crawlens egen mätning" |
+
+**DoD:** lucklistan gick från **6 till 0** på samma text. Beslutstabellen: 38 rader → 30, och
+noll av dem är rena strukturtal. Datumraden i sidhuvudet ger inga rader alls längre.
+
+**★ DEN OMKÖRDA RAPPORTEN HITTADE TVÅ FEL TILL i samma familj, båda rättade:**
+postnumret "602 95 Norrköping" blev två luckor (att be kunden fylla i sitt eget postnummer
+är samma pinsamhet som det maskade telefonnumret), och rapportens EGEN tidsuppskattning
+"→ ~4 timmar" blev "→ ~[DIN SIFFRA] timmar". Tildet är signalen och bara den — "Första
+mötet tar cirka 30 minuter" är ett påstående om verksamheten och grindas som förut.
+Källtexten i beslutstabellen säger nu VILKET skäl som gällde, inte "telefonnummer, orgnummer
+eller datum" för allihop.
+
+⚠ **Kvar i den omkörda rapporten, tre luckor — och de är olika mycket rätt:**
+1. "snabb laddning (under 1,2 s)" — modellen hittade på en laddtid. **Rätt maskad.**
+2. `"Erik, 48"` i ett platshållarcitat — citatet är dessutom märkt som påhittat. **Rätt.**
+3. "svara på alla omdömen inom 24 timmar" — ett allmänt råd, inte Makzys uppgift, men det
+   maskas ändå. **Öppet:** ska allmänna råd med tidsangivelse räknas som branschfakta? Jag
+   lät bli att bygga det, eftersom gränsen mot "vi svarar inom 24 timmar" (ett löfte om
+   verksamheten) är verklig och en för bred regel hade släppt igenom påhittade löften.
+
+**Rapporterna står kvar dolda i kundvyn** (`DOLJ_RAPPORTER_I_KUNDVYN = true`).
+
+### BESTÄLLNINGEN (för spårbarhet) — R-5b (litet varv)
 
 Håkans ord, ordagrant:
 
@@ -410,13 +604,18 @@ Håkans ord, ordagrant:
 > (3) crawlens egna mätvärden (bildantal, ordantal) är alltid belagda, aldrig luckor.
 > DoD: omkörd Makzy-rapport med noll strukturtal i lucklistan och ren beslutstabell.
 
-⚠ **Rapporten var INTE bifogad** i meddelandet. Be om den, eller kör om en Makzy-rapport
-själv som utgångsläge — utan ett före-läge går DoD:n ("noll strukturtal i lucklistan") inte
-att bevisa, bara påstå.
+⚠ **Rapporten var INTE bifogad** i meddelandet. **Löst 15/8:** före-läget togs ur den
+sparade Makzy-rapporten i `client_assets` (asset `45bf59c4`, 14/8) — dess metadata bär hela
+beslutstabellen med meningen varje tal stod i, alltså exakt det före-läge DoD:n krävde.
+Ingen bilaga behövdes.
 
-Rör siffergrinden i `lib/content/writing-rules` (`talTokens`, `sakerstallCaption`) och
-sanningskravet i `lib/prompt-core`. Se raden om sifferkontrollen bland de öppna besluten:
-tal ur kundcitat räknas i dag som verifierade.
+★ **Anvisningen i den här beställningen pekade fel, och det är värt att veta:** rapportens
+siffergrind bor i `lib/deep-audit-siffror.ts` (R-5), inte i `lib/content/writing-rules`
+(`talTokens`, `sakerstallCaption`) — den senare är INLÄGGENS siffergrind och rördes inte.
+Två grindar med samma namn i talspråk, och ändringen hörde bara hemma i den ena.
+
+**Fortfarande öppet, orört av R-5b:** i INLÄGGSflödet räknas tal ur kundcitat som
+verifierade siffror. Det är Håkans beslut från 11/8 och står kvar bland de öppna besluten.
 
 ### KLART SENARE 13/8 (också pushat, `987901c`)
 
@@ -459,6 +658,23 @@ TikTok/Pinterest/YouTube/Threads/Bluesky är inte kopplade hos DT → ska gråas
 ⚠ **Ej verifierat:** om publiceringsanropet accepterar ett Google-konto och vilka extra fält
 GBP kräver (knapp + mål-URL). Kräver dokumentation eller en skarp testpublicering — den
 senare är vad DoD:n begär, och Håkan ska säga ja innan något publiceras mot hans Google-profil.
+
+### KÖN EFTER 15/8
+
+1. **BILD-11 tillägg punkt 4 och 5 — KLART OCH VERIFIERAT**, med tre uppföljande
+   rättningar samma dag (montering, systemmässighet, kampanjlayout). Se avsnitten ovan.
+2. **Kundens egna bildregler — KLART OCH VERIFIERAT**, skarp körning mot DT.
+3. **R-5b — KLART OCH VERIFIERAT.** Omkörd Makzy-rapport i `client_assets` (asset
+   `c668c538`), fortfarande dold för kund.
+4. **★ FÖRSTA UPPGIFT NÄSTA SESSION:** verifieringsbilden för brandingfälten
+   (`bildregler-dt.png`) visar liten läsbar text på skärmen — DoD-skriptet hoppade över
+   `stavningsgrind` för att testa branding-delen isolerat. Kör om med hela kedjan
+   inkopplad (mönstret i `scripts/bild11-system.mts`) innan kampanjlayout-fixen räknas som
+   bevisad i en riktig bild, inte bara i test.
+5. **De fem sakerna nedan väntar fortfarande på Håkan** (Gittes nyckel först). Ingen av dem
+   går att göra från kodsidan.
+6. **Öppet efter dagen:** ska allmänna råd med tidsangivelse ("svara på omdömen inom 24
+   timmar") räknas som branschfakta i rapporten?
 
 ### START HÄR I NÄSTA SESSION
 
