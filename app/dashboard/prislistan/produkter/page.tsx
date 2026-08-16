@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Package, ArrowLeft, ArrowUpDown, Search, Link2, FileText, CheckCircle2, Circle } from "lucide-react";
 import { DashHero, StatTile } from "@/components/ui/dash";
 
@@ -30,6 +31,7 @@ const KATEGORI_LABEL: Record<string, string> = {
 const kr = (n: number | null) => (n == null ? "—" : `${Math.round(n).toLocaleString("sv-SE")} kr`);
 
 export default function ProdukterPage() {
+  const router = useRouter();
   const [produkter, setProdukter] = useState<Produkt[]>([]);
   const [laddar, setLaddar] = useState(true);
   const [fel, setFel] = useState<string | null>(null);
@@ -127,7 +129,11 @@ export default function ProdukterPage() {
               </thead>
               <tbody>
                 {rader.map((p) => (
-                  <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60">
+                  <tr
+                    key={p.id}
+                    onClick={() => router.push(`/dashboard/prislistan/produkter/${encodeURIComponent(p.artikelnummer)}`)}
+                    className="cursor-pointer border-b border-gray-50 last:border-0 hover:bg-indigo-50/40"
+                  >
                     <td className="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-gray-500">{p.artikelnummer}</td>
                     <td className="px-4 py-2.5 font-medium text-gray-900">{p.namn}</td>
                     <td className="px-4 py-2.5 text-gray-600">{KATEGORI_LABEL[p.kategori] || p.kategori}</td>

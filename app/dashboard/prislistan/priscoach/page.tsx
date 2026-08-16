@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Sparkles, ArrowLeft, Loader2, Send, Check, AlertTriangle } from "lucide-react";
 import { DashHero } from "@/components/ui/dash";
 
@@ -9,9 +10,18 @@ interface Artikel { artikelnummer: string; namn: string }
 interface Meddelande { roll: "user" | "assistant"; text: string }
 interface Laget { saljpris: number | null; golv: number; bastaInkop: { landat_sek: number; tb_pct: number | null } | null }
 
-export default function PriscoachPage() {
+export default function PriscoachPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <PriscoachPage />
+    </Suspense>
+  );
+}
+
+function PriscoachPage() {
+  const forvald = useSearchParams().get("artikel") || "";
   const [artiklar, setArtiklar] = useState<Artikel[]>([]);
-  const [vald, setVald] = useState("");
+  const [vald, setVald] = useState(forvald);
   const [historik, setHistorik] = useState<Meddelande[]>([]);
   const [laget, setLaget] = useState<Laget | null>(null);
   const [laddar, setLaddar] = useState(false);
@@ -30,6 +40,11 @@ export default function PriscoachPage() {
       .then((d) => setArtiklar((d.artiklar || []).map((a: { artikelnummer: string; namn: string }) => ({ artikelnummer: a.artikelnummer, namn: a.namn }))))
       .catch(() => {});
   }, []);
+
+  // Kommer man hit via "Coacha priset" på en produktsida är artikeln redan vald — starta direkt.
+  useEffect(() => {
+    if (forvald) starta();
+  }, [forvald]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function starta() {
     if (!vald) return;
