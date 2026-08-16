@@ -251,7 +251,7 @@ export default function KostnaderPage() {
               <pre className="mt-2 max-h-32 overflow-auto rounded-lg bg-white/70 p-3 text-xs text-red-900">{h.senaste_svarskropp.slice(0, 1200)}</pre>
             )}
             <a
-              href={h.provider === "gemini" ? "https://console.cloud.google.com/billing" : h.provider === "anthropic" ? "https://console.anthropic.com/settings/billing" : h.provider === "fal" ? "https://fal.ai/dashboard/billing" : "#"}
+              href={h.provider === "gemini" || h.provider === "google" ? "https://console.cloud.google.com/billing" : h.provider === "anthropic" ? "https://console.anthropic.com/settings/billing" : h.provider === "fal" ? "https://fal.ai/dashboard/billing" : "#"}
               target="_blank" rel="noreferrer"
               className="mt-3 inline-flex rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700">
               Öppna fakturasidan hos {h.provider}
