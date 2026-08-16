@@ -212,24 +212,19 @@ export async function POST(req: NextRequest) {
         // tidsbudgeten tog slut — tyst, och kunden såg felet i stället för koden.
         // Nu stoppas den, med ett besked som pekar på de två vägar som ÄR säkra.
         if (!grind.utfall.ok) {
-          // BILD-11 punkt 5: tre skilda fel, tre skilda besked. Ett engelskt ord på en
-          // svensk skylt stoppas alltid; ett rättstavat SVENSKT ord som överlevt både
-          // omtagen och det textlösa motivet släpps igenom med en logg — bilden är inte
-          // trasig, bara sämre, och ett hårt stopp där hade kostat kunden en bild för en
-          // sak hon inte kan påverka. Kvar att mäta: hur ofta det händer.
+          // BILD-11 punkt 5 → BILD-11-TILLÄGG (16/8, Håkans beslut): hårt stopp gäller nu
+          // BÅDA språken. Fram till 15/8 släpptes ett rättstavat SVENSKT läsbart ord igenom
+          // med en logg (bilden ansågs "inte trasig, bara sämre") — det undantaget är nu
+          // borttaget på uttrycklig begäran: "genererad läsbar text får aldrig förekomma i
+          // bild oavsett språk". Engelska och läsbar-text-domarna stoppas alltså likadant.
           const engelska = grind.utfall.orsak === "engelska";
-          const lasbart = grind.utfall.orsak === "lasbar-text";
-          if (lasbart && !engelska) {
-            console.error("[suggest-image] BILD-11: läsbara ord kvar efter", grind.omtag, "omtag:", grind.utfall.fel);
-          } else {
-            console.error(`[suggest-image] BILD-10/11 (${grind.utfall.orsak}) efter ${grind.omtag} omtag:`, grind.utfall.fel);
-            return NextResponse.json({
-              error: engelska
-                ? "Bilden fick engelsk text på en skylt i motivet och stoppades. Prova en gång till, ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva."
-                : "Bilden fick felstavad text i motivet och stoppades. Prova ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva och stavar alltid rätt.",
-              stavfel: grind.utfall.fel,
-            }, { status: 502 });
-          }
+          console.error(`[suggest-image] BILD-10/11 (${grind.utfall.orsak}) efter ${grind.omtag} omtag:`, grind.utfall.fel);
+          return NextResponse.json({
+            error: engelska
+              ? "Bilden fick engelsk text på en skylt i motivet och stoppades. Prova en gång till, ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva."
+              : "Bilden fick läsbar text i motivet och stoppades. Prova en gång till, ”Sök foto”, eller skriv raden i fältet ”Text i bilden” — den ritar vi själva och stavar alltid rätt.",
+            stavfel: grind.utfall.fel,
+          }, { status: 502 });
         }
         // Fältet följer bara med när anroparen ber om det — vanliga svar till Studio är oförändrade.
         if (diagnostik) {
