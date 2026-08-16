@@ -28,6 +28,7 @@ const pfx = (path: string, p: string) => path === p || path.startsWith(p + "/");
 function isPublicApi(path: string): boolean {
   if (path === "/api/admin/login") return true;            // själva inloggningen
   if (path === "/api/google/callback") return true;        // OAuth-retur (Google, ingen cookie)
+  if (path === "/api/crm/oauth/callback") return true;     // OAuth-retur (GHL-appen, ingen cookie)
   if (path === "/api/ikigai/public") return true;          // publik lead-magnet
   if (pfx(path, "/api/track")) return true;                // spårningspixel
   if (pfx(path, "/api/lead")) return true;                 // publikt lead-formulär
