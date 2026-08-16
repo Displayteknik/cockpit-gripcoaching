@@ -306,19 +306,64 @@ export async function byraToken(): Promise<string> {
 // ── Location-token ──────────────────────────────────────────────────────────────────
 
 /**
+ * Underkonton som Cockpit får hämta en nyckel till.
+ *
+ * ★ REGELN ÄR HÅKANS, DATUM 2026-08-16: appen ska bara röra de kunder han faktiskt
+ *   arbetar med i Cockpit. Byrån har 316 underkonton; Cockpit hanterar en handfull.
+ *
+ * ★ VARFÖR SPÄRREN LIGGER I KODEN OCH INTE BARA I INSTALLATIONEN: GHL:s installation
+ *   avgör vad som är MÖJLIGT, men ett fel location-id någonstans i kedjan skulle annars
+ *   tyst hämta en nyckel till ett främmande konto — och en location-token returnerar sitt
+ *   eget kontos data oavsett vilket id som skickas med, så felet syns inte som ett fel.
+ *   Det är precis så widgets en gång visade fel kunds data. Se
+ *   [[solution_multi_tenant_ghl_token_leakage]].
+ */
+async function faronsHamtaNyckel(locationId: string): Promise<boolean> {
+  // Mallkontot är inte en kund men är källan alla kundkonton skapas ur.
+  if (locationId && locationId === (process.env.GHL_MALL_LOCATION_ID || "").trim()) return true;
+
+  const sb = supabaseService();
+  const { data } = await sb
+    .from("coach_users")
+    .select("id")
+    .eq("ghl_location_id", locationId)
+    .limit(1);
+  return Array.isArray(data) && data.length > 0;
+}
+
+export interface LocationTokenOpts {
+  /** Hoppar över sparad token och mintar en ny. Används av mätskript. */
+  tvinga?: boolean;
+  /**
+   * Kontot skapades av oss i den här körningen och har ännu ingen rad i `coach_users`.
+   *
+   * ⚠ Provisioneringen skriver custom values INNAN klientraden finns — utan det här
+   * undantaget skulle spärren ovan blockera själva provisioneringen den ska skydda.
+   * Sätts bara av den kod som just fått location-id:t ur `POST /locations/`.
+   */
+  nyskapad?: boolean;
+}
+
+/**
  * POST /oauth/locationToken — växlar byråtokenet mot en token för ETT underkonto.
  *
  * ★ STAVNINGEN ÄR MÄTT, INTE GISSAD. `lib/ghl-agency.ts` anropade `/oauth/location-token`
- *   med bindestreck. GHL:s dokumentation anger `/oauth/locationToken`. Den gamla vägen
- *   hann aldrig bevisas eftersom Private Integrations nekades redan på scopet.
- *
- * @param tvinga hoppar över den sparade tokenet och mintar en ny. Används av mätskript.
+ *   med bindestreck och läste `accessToken`. Mätningen 2026-08-16 visar `/oauth/locationToken`
+ *   och `access_token` — den gamla vägen hann aldrig bevisas eftersom Private Integrations
+ *   nekades redan på scopet.
  */
-export async function locationToken(locationId: string, tvinga = false): Promise<string> {
+export async function locationToken(locationId: string, opts: LocationTokenOpts = {}): Promise<string> {
   const k = ghlAppKonfig();
   if (!k) throw new Error(APP_SAKNAS_TEXT);
 
-  if (!tvinga) {
+  if (!opts.nyskapad && !(await faronsHamtaNyckel(locationId))) {
+    throw new Error(
+      `Underkontot ${locationId} är ingen kund i Cockpit. Ingen nyckel hämtades. ` +
+        "Appen ska bara röra konton som finns i kundregistret.",
+    );
+  }
+
+  if (!opts.tvinga) {
     const sparad = await lasToken(`location:${locationId}`);
     if (sparad && !harUtgatt(sparad.expires_at)) return sparad.access_token;
   }
@@ -345,26 +390,67 @@ export async function locationToken(locationId: string, tvinga = false): Promise
   return n.token;
 }
 
+export interface InstalleratKonto {
+  _id: string;
+  name?: string;
+  isInstalled: boolean;
+  installedAt?: string;
+}
+
 /**
- * GET /oauth/installedLocations — vilka underkonton appen faktiskt sitter på.
+ * GET /oauth/installedLocations — byråns underkonton och om appen sitter på dem.
  *
  * Kräver `oauth.readonly`. Den här skiljer "installationen saknas" från "växlingen är
  * trasig", och utan den skillnaden går ett 401 inte att felsöka.
+ *
+ * ★ TVÅ FÄLLOR, BÅDA MÄTTA 2026-08-16 — namnet ljuger:
+ *
+ *   1. Endpointen returnerar ALLA underkonton, inte bara de installerade. Sanningen står
+ *      i `isInstalled` per rad. Vid mätningen kom 316 konton tillbaka medan appen satt på
+ *      tre. Den som litar på listans längd tror att appen är installerad överallt.
+ *   2. `limit` taks till 100 oavsett vad man ber om. 500 gav 100 rader och `count: 316`.
+ *      Utan sidhämtning nedan tappas 216 konton tyst.
+ *
+ * @param inkluderaEjInstallerade tar med konton där appen INTE sitter (för översiktsvyer).
  */
-export async function installeradeLocations(appId: string): Promise<{ _id: string; name?: string }[]> {
+export async function installeradeLocations(
+  appId: string,
+  inkluderaEjInstallerade = false,
+): Promise<{ konton: InstalleratKonto[]; totalt: number; installerasPaNyaKonton: boolean }> {
   const k = ghlAppKonfig();
   if (!k) throw new Error(APP_SAKNAS_TEXT);
   const byra = await byraToken();
 
-  const p = new URLSearchParams({ companyId: k.companyId, appId, limit: "500" });
-  const svar = await fetch(`${BAS}/oauth/installedLocations?${p.toString()}`, {
-    headers: { Authorization: `Bearer ${byra}`, Version: VERSION_OAUTH, Accept: "application/json" },
-    signal: AbortSignal.timeout(30000),
-  });
-  const rå = await svar.text();
-  if (!svar.ok) {
-    throw new GhlFel(`GHL svarade HTTP ${svar.status} på /oauth/installedLocations: ${rå.slice(0, 400)}`, svar.status, rå);
+  const alla: InstalleratKonto[] = [];
+  let totalt = 0;
+  let framtida = false;
+  for (let skip = 0; skip < 5000; skip += 100) {
+    const p = new URLSearchParams({ companyId: k.companyId, appId, limit: "100", skip: String(skip) });
+    const svar = await fetch(`${BAS}/oauth/installedLocations?${p.toString()}`, {
+      headers: { Authorization: `Bearer ${byra}`, Version: VERSION_OAUTH, Accept: "application/json" },
+      signal: AbortSignal.timeout(30000),
+    });
+    const rå = await svar.text();
+    if (!svar.ok) {
+      throw new GhlFel(`GHL svarade HTTP ${svar.status} på /oauth/installedLocations: ${rå.slice(0, 400)}`, svar.status, rå);
+    }
+    const d = JSON.parse(rå || "{}") as {
+      locations?: InstalleratKonto[];
+      count?: number;
+      installToFutureLocations?: boolean;
+    };
+    if (skip === 0) {
+      totalt = d.count ?? 0;
+      framtida = d.installToFutureLocations === true;
+    }
+    const bunt = d.locations ?? [];
+    alla.push(...bunt);
+    if (bunt.length < 100 || alla.length >= totalt) break;
   }
-  const d = JSON.parse(rå || "{}") as { locations?: { _id: string; name?: string }[] };
-  return d.locations ?? [];
+
+  return {
+    konton: inkluderaEjInstallerade ? alla : alla.filter((x) => x.isInstalled),
+    totalt,
+    installerasPaNyaKonton: framtida,
+  };
 }

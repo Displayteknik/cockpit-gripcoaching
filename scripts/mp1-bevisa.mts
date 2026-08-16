@@ -93,10 +93,16 @@ console.log("\n3. Installerade underkonton (oauth.readonly)");
 if (APP_ID) {
   try {
     const l = await installeradeLocations(APP_ID);
-    ok("installedLocations", `${l.length} underkonto(n)`);
-    for (const x of l.slice(0, 10)) info(`${x._id}${x.name ? ` — ${x.name}` : ""}`);
+    ok("installedLocations", `appen sitter på ${l.konton.length} av byråns ${l.totalt} underkonton`);
+    for (const x of l.konton.slice(0, 10)) info(`${x._id}${x.name ? ` — ${x.name}` : ""}`);
+    // ⚠ Detta är INTE ett fel utan ett beslut. Håkan valde 2026-08-16 att appen bara ska
+    // röra kunder han arbetar med i Cockpit, inte byråns alla 316 underkonton. Priset är
+    // en installationsklick per ny kund. Rapporteras som upplysning, annars lär sig
+    // ögat att ignorera röd text som alltid står där.
+    if (l.installerasPaNyaKonton) info("nya konton: appen installeras automatiskt på nyskapade underkonton");
+    else info("nya konton: ärver INTE appen (valt) — varje ny kund kräver en installationsklick");
     if (MALL) {
-      if (l.some((x) => x._id === MALL)) ok("mallen", "appen sitter på MALL MySales Pro");
+      if (l.konton.some((x) => x._id === MALL)) ok("mallen", "appen sitter på MALL MySales Pro");
       else nej("mallen", `MALL ${MALL} finns INTE bland de installerade — växlingen nedan lär ge 401`);
     }
   } catch (e) { nej("installedLocations", (e as Error).message); }
@@ -131,9 +137,21 @@ if (MALL) {
   } catch (e) { nej("locationToken (rått)", (e as Error).message); }
 
   try {
-    mallToken = await locationToken(MALL, true);
+    mallToken = await locationToken(MALL, { tvinga: true });
     ok("lib/ghl-app", `location-token sparat, ${mallToken.length} tecken`);
   } catch (e) { nej("lib/ghl-app", (e as Error).message); }
+
+  // Spärren mot främmande konton: ett av byråns 316 underkonton som INTE är kund i
+  // Cockpit ska nekas. Utan den här mätningen är spärren bara en förhoppning.
+  const FRAMMANDE = "zjMVIvloivHwBjDJHaGj"; // ADVAR — byråns konto, ej kund i Cockpit
+  try {
+    await locationToken(FRAMMANDE, { tvinga: true });
+    nej("spärr", `nyckel hämtades till ${FRAMMANDE} som INTE är kund i Cockpit`);
+  } catch (e) {
+    const m = (e as Error).message;
+    if (m.includes("ingen kund i Cockpit")) ok("spärr", "främmande underkonto nekas");
+    else nej("spärr", `nekades av fel skäl: ${m.slice(0, 120)}`);
+  }
 }
 
 // ── 5. Kundscopen genom den nya nyckeln ─────────────────────────────────────────────
