@@ -1,15 +1,39 @@
 // Studio → GoHighLevel Social Planner. Publicerar en Studio-bild som UTKAST (draft)
-// till klientens kopplade sociala konton. Multi-tenant: varje klient har egen
-// location + Private Integration Token (PIT) i clients-tabellen.
+// eller direkt (KANAL-3) till klientens kopplade sociala konton. Multi-tenant: varje
+// klient har egen location + Private Integration Token (PIT) i clients-tabellen.
 //
-// API-kontrakt verifierat mot live-API 2026-07-16:
+// API-kontrakt verifierat mot live-API 2026-07-16, kompletterat mot GHL:s officiella
+// docs 2026-08-16 (PUBLICERA-1):
 //   GET  /social-media-posting/{loc}/accounts          → lista kopplade konton
 //   GET  /users/?locationId={loc}                       → userId (krävs vid post)
 //   POST /social-media-posting/{loc}/posts              → skapa post
 //   required: accountIds[], type(post|story|reel), userId, media[]; + summary, status
+//
+// ⚠ PUBLICERA-1 (16/8): media[] kräver EGET type-fält per objekt, en MIME-typ som
+// "image/jpeg" — inte bara `{ url }`. Källa: GHL:s officiella API-referens (Create post,
+// exempel-body: `{"url":"...","type":"image/jpeg","caption":"...","altText":"..."}`).
+// Docs egna ord: "Draft posts skip most validations (accountIds, media requirements)" —
+// det är DÄRFÖR utkastvägen alltid varit grön trots det saknade fältet, och först
+// "publicera direkt" (status=published) föll på media.0.type. En och samma funktion
+// bygger media för BÅDA vägarna (ghlCreateDraft), så fixen gäller dem automatiskt ihop.
 // Headers: Authorization: Bearer <pit>, Version: 2021-07-28
 
 import { supabaseService } from "@/lib/supabase-admin";
+import { ensureJpegUrl } from "@/lib/images";
+
+/**
+ * Bygger media[]-arrayen GHL kräver: varje url säkrad till JPEG (samma ensureJpegUrl som
+ * Instagram-vägen redan litar på — Studio/Gemini renderar ofta PNG) plus ett satt
+ * `type: "image/jpeg"`, aldrig gissat i efterhand. En trasig bild i en karusell stoppar
+ * hela posten hellre än att posta en trasig länk till kunden.
+ */
+export async function buildGhlMedia(urls: string[]): Promise<{ media?: { url: string; type: string }[]; error?: string }> {
+  if (!urls.length) return { media: [] };
+  const resultat = await Promise.all(urls.map((u) => ensureJpegUrl(u)));
+  const fel = resultat.find((r) => r.error);
+  if (fel) return { error: fel.error };
+  return { media: resultat.map((r) => ({ url: r.url!, type: "image/jpeg" })) };
+}
 
 const BASE = "https://services.leadconnectorhq.com";
 const VERSION = "2021-07-28";
@@ -109,6 +133,9 @@ export async function ghlCreateDraft(
     // starkare besked än "publicera nu", och utkast är det säkra grundläget.
     const scheduled = !!opts.scheduleDate;
     const publicerad = !scheduled && opts.publicera === true;
+    const bildUrls = opts.mediaUrls?.length ? opts.mediaUrls : opts.mediaUrl ? [opts.mediaUrl] : [];
+    const { media, error: mediaFel } = await buildGhlMedia(bildUrls);
+    if (mediaFel) return { error: mediaFel };
     const body: Record<string, unknown> = {
       accountIds: opts.accountIds,
       summary: opts.summary || "",
@@ -116,7 +143,7 @@ export async function ghlCreateDraft(
       userId: opts.userId,
       status: scheduled ? "scheduled" : publicerad ? "published" : "draft",
       ...(scheduled ? { scheduleDate: opts.scheduleDate } : {}),
-      media: (opts.mediaUrls?.length ? opts.mediaUrls : opts.mediaUrl ? [opts.mediaUrl] : []).map((url) => ({ url })),
+      media: media || [],
     };
     const r = await fetch(`${BASE}/social-media-posting/${cfg.locationId}/posts`, {
       method: "POST",

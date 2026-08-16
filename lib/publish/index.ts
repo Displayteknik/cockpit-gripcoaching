@@ -49,8 +49,33 @@ export interface PublishResult {
   notis?: string;
 }
 
+// PUBLICERA-1 (16/8): kunden ska aldrig möta rå API-text ("media.0.Invalid media format
+// type…"). Den råa texten loggas server-side för felsökning, kundvyn får ett svenskt
+// klarspråksfel. EN plats för alla kanaler — ingen komponent bygger sitt eget.
+function oversattFel(raw: string, channel: PublishChannel): string {
+  const r = raw.toLowerCase();
+  if (/media|image|bild|jpeg|jpg|png/.test(r)) {
+    return `Bilden kunde inte skickas till ${namnFor(channel)}, försök igen eller spara som utkast.`;
+  }
+  if (/token|auth|unauthoriz|401|403|nyckel/.test(r)) {
+    return `Kopplingen till ${namnFor(channel)} verkar bruten. Koppla om kontot och försök igen.`;
+  }
+  if (/rate.?limit|429|too many/.test(r)) {
+    return `${namnFor(channel)} tog emot för många förfrågningar just nu. Vänta en stund och försök igen.`;
+  }
+  if (/account|konto/.test(r)) {
+    return `Kontot kunde inte användas hos ${namnFor(channel)}. Kontrollera att det fortfarande är kopplat.`;
+  }
+  return `Publiceringen till ${namnFor(channel)} misslyckades. Försök igen, eller spara som utkast om felet upprepas.`;
+}
+function namnFor(channel: PublishChannel): string {
+  return channel === "ig-graph" ? "Instagram" : channel === "ghl-blog" ? "bloggen" : channel === "cockpit-blog" ? "bloggen" : "sociala kontot";
+}
+
 function fail(channel: PublishChannel, error: string): PublishResult {
-  return { status: "failed", error, channel };
+  // eslint-disable-next-line no-console
+  console.error(`[publish:${channel}]`, error);
+  return { status: "failed", error: oversattFel(error, channel), channel };
 }
 
 export async function publishContent(req: PublishRequest): Promise<PublishResult> {

@@ -460,7 +460,7 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
                     <span className="truncate">{p.benamning}</span>
                     {p.tb && (
                       <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 flex-shrink-0"
+                        className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 flex-shrink-0"
                         title={`Täckningsbidrag ${p.tb.kr.toLocaleString("sv-SE")} kr, bästa inköpsväg ${p.tb.bastaInkopsvag || "okänd"}. Endast synligt här, aldrig för kund.`}
                       >
                         TB {p.tb.pct}%
