@@ -25,6 +25,7 @@ import {
   ghlAgencyKonfig, GHL_SAKNAS_TEXT, hittaLocationForSajt,
   skapaLocation, vantaPaSnapshot, sattCustomValues, SNAPSHOT_EJ_LASBAR,
 } from "@/lib/ghl-agency";
+import { locationToken } from "@/lib/ghl-app";
 import { sattStegStatus } from "./steg-status";
 import { harVarde, type Falt, type Forslag, type Tjanst, type Oppettid } from "./typer";
 
@@ -364,6 +365,27 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
     }
   }
 
+  // ── Location-id:t skrivs ned DIREKT, inte först i slutuppdateringen ────────
+  //
+  // ★ TVÅ SKÄL, OCH BÅDA ÄR VIKTIGARE ÄN DE SER UT:
+  //
+  //   1. Spärren i `locationToken` släpper bara igenom konton som står i något av våra
+  //      register. Ett nyss skapat konto finns varken i `coach_users` (skapas i steg 6)
+  //      eller på körningen (skrevs tidigare först på sista raden). Utan den här
+  //      skrivningen skulle steg 4 nekas nyckel för exakt de konton provisioneringen
+  //      just skapat. Alternativet — en flagga som stänger av spärren — hade gjort
+  //      spärren till dekoration i den enda kod som faktiskt rör kundkonton.
+  //
+  //   2. Kraschar körningen mellan steg 2 och slutet fanns id:t tidigare ingenstans, och
+  //      en omkörning skapade ett ANDRA konto åt samma kund. Idempotensen i steg 1 låser
+  //      domänen, men skyddade inte mot det.
+  if (locationId && !torr && locationId !== korning.ghl_location_id) {
+    await sb
+      .from("onboarding_korningar")
+      .update({ ghl_location_id: locationId, updated_at: new Date().toISOString() })
+      .eq("id", opts.korningId);
+  }
+
   // ── Steg 3: vänta in snapshotet ────────────────────────────────────────────
   //
   // ★ ÅTERANVÄNT KONTO FÅR ALDRIG SNAPSHOT — AKUT-PROV 2026-08-09.
@@ -431,24 +453,51 @@ export async function provisionera(opts: ProvisioneraOpts): Promise<Provisioneri
         .maybeSingle();
       const kundToken = (cu as { ghl_api_token?: string } | null)?.ghl_api_token ?? null;
 
-      if (!kundToken) {
+      // ── MP-2: appens egen nyckel först, den handskapade som reserv ───────────
+      //
+      // ★ DEN GAMLA VÄGEN TAS INTE BORT. Marketplace-appen är bevisad mot sex konton
+      //   men har ännu inte burit en skarp kundstart. Rivs kundnyckeln ut nu och appen
+      //   fallerar mitt i en onboarding står en betalande kund still. Reserven försvinner
+      //   när den nya vägen klarat en riktig kund — inte tidigare.
+      //
+      // ★ VILKEN VÄG SOM BAR SYNS I STEGET. Utan det går ett fel inte att felsöka:
+      //   "13 av 13 satta" säger ingenting om appen fungerade eller om reserven räddade det.
+      let skrivToken: string | null = null;
+      let nyckelVia = "";
+      let appFel: string | null = null;
+      try {
+        skrivToken = await locationToken(locationId);
+        nyckelVia = "appens nyckel";
+      } catch (e) {
+        appFel = e instanceof Error ? e.message : String(e);
+      }
+      if (!skrivToken && kundToken) {
+        skrivToken = kundToken;
+        nyckelVia = "kundnyckeln (reserv)";
+      }
+
+      if (!skrivToken) {
         // Hellre ett tydligt stopp än 13 tysta 401:or. Steget kan köras om när nyckeln finns.
         steg.push({
           namn: "Custom values",
           status: "hoppade",
           detalj:
-            `Kundnyckeln saknas — värdena kan inte skrivas än. Skapa Private Integration i kundens konto (steg 4), ` +
-            `klistra in den i stegvyn, och kör provisioneringen igen. ${Object.keys(varden).length} värden ligger redo.`,
+            `Ingen nyckel kunde hämtas — värdena kan inte skrivas än. Installera Marketplace-appen på ` +
+            `kundens konto i GoHighLevel, eller skapa en Private Integration och klistra in den i stegvyn. ` +
+            `${Object.keys(varden).length} värden ligger redo.` + (appFel ? ` Appens svar: ${appFel}` : ""),
         });
       } else {
-        // konfig kan vara null här (byråtoken saknas) — och det gör inget: kundnyckeln
+        // konfig kan vara null här (byråtoken saknas) — och det gör inget: skrivnyckeln
         // finns, och den är den enda som får skriva. k.pit används bara som fallback.
-        const k = konfig ?? { pit: kundToken, companyId: "", locationId };
-        const r = await sattCustomValues(k, locationId, varden, kundToken);
+        const k = konfig ?? { pit: skrivToken, companyId: "", locationId };
+        const r = await sattCustomValues(k, locationId, varden, skrivToken);
         steg.push({
           namn: "Custom values",
           status: r.fel.length ? "fel" : "klar",
-          detalj: `${r.satta} av ${Object.keys(varden).length} värden satta via ${r.via}.` + (r.fel.length ? ` Fel: ${r.fel.slice(0, 3).join("; ")}` : ""),
+          detalj:
+            `${r.satta} av ${Object.keys(varden).length} värden satta via ${r.via} (${nyckelVia}).` +
+            (appFel ? ` Appens nyckel gick inte att hämta: ${appFel}` : "") +
+            (r.fel.length ? ` Fel: ${r.fel.slice(0, 3).join("; ")}` : ""),
         });
 
         // ★ KVITTOT MÅSTE SPARAS, ANNARS BLIR STEG 5 ALDRIG GRÖNT.

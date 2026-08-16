@@ -319,29 +319,32 @@ export async function byraToken(): Promise<string> {
  *   [[solution_multi_tenant_ghl_token_leakage]].
  */
 async function faronsHamtaNyckel(locationId: string): Promise<boolean> {
+  if (!locationId) return false;
+
   // Mallkontot är inte en kund men är källan alla kundkonton skapas ur.
-  if (locationId && locationId === (process.env.GHL_MALL_LOCATION_ID || "").trim()) return true;
+  if (locationId === (process.env.GHL_MALL_LOCATION_ID || "").trim()) return true;
 
   const sb = supabaseService();
-  const { data } = await sb
-    .from("coach_users")
+
+  // 1. Färdig kund: raden finns i kundregistret.
+  const { data: kund } = await sb.from("coach_users").select("id").eq("ghl_location_id", locationId).limit(1);
+  if (Array.isArray(kund) && kund.length > 0) return true;
+
+  // 2. Pågående onboarding: kontot är bundet till en körning Håkan själv startat.
+  //    Klientraden skapas först i steg 5, så under steg 4 är körningen det enda
+  //    register som känner kontot. Det är fortfarande ett UPPSLAG mot vår egen data —
+  //    inte en flagga anroparen kan sätta själv.
+  const { data: korning } = await sb
+    .from("onboarding_korningar")
     .select("id")
     .eq("ghl_location_id", locationId)
     .limit(1);
-  return Array.isArray(data) && data.length > 0;
+  return Array.isArray(korning) && korning.length > 0;
 }
 
 export interface LocationTokenOpts {
   /** Hoppar över sparad token och mintar en ny. Används av mätskript. */
   tvinga?: boolean;
-  /**
-   * Kontot skapades av oss i den här körningen och har ännu ingen rad i `coach_users`.
-   *
-   * ⚠ Provisioneringen skriver custom values INNAN klientraden finns — utan det här
-   * undantaget skulle spärren ovan blockera själva provisioneringen den ska skydda.
-   * Sätts bara av den kod som just fått location-id:t ur `POST /locations/`.
-   */
-  nyskapad?: boolean;
 }
 
 /**
@@ -356,7 +359,7 @@ export async function locationToken(locationId: string, opts: LocationTokenOpts 
   const k = ghlAppKonfig();
   if (!k) throw new Error(APP_SAKNAS_TEXT);
 
-  if (!opts.nyskapad && !(await faronsHamtaNyckel(locationId))) {
+  if (!(await faronsHamtaNyckel(locationId))) {
     throw new Error(
       `Underkontot ${locationId} är ingen kund i Cockpit. Ingen nyckel hämtades. ` +
         "Appen ska bara röra konton som finns i kundregistret.",

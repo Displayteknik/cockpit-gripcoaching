@@ -85,14 +85,30 @@ async function harleddaKlara(k: Korning): Promise<Set<string>> {
   if (k.ghl_location_id) klara.add("ghl_konto");
   if (k.client_id) klara.add("tenant");
 
-  // Kundnyckeln bor på coach_users — samma rad som Fokus läser.
+  // Steget är klart när kontot går att SKRIVA I — oavsett vilken av de två vägarna som bär.
+  //
+  //   1. Marketplace-appen har hämtat en nyckel till kontot (raden i ghl_app_tokens finns
+  //      bara om växlingen faktiskt lyckats — den är ett kvitto, inte en avsikt).
+  //   2. Den handskapade kundnyckeln ligger på coach_users, som förr.
+  //
+  // ★ VARFÖR INTE ETT NÄTANROP HIT: den här funktionen kör i listvyn, en gång per kund.
+  //   Ett anrop mot GHL per rad gör vyn långsam i takt med att kunderna blir fler.
+  //   Uppslaget mot ghl_app_tokens är lika sant och kostar ingenting.
   if (k.ghl_location_id) {
-    const { data } = await sb
-      .from("coach_users")
-      .select("ghl_api_token")
-      .eq("ghl_location_id", k.ghl_location_id)
+    const { data: app } = await sb
+      .from("ghl_app_tokens")
+      .select("id")
+      .eq("id", `location:${k.ghl_location_id}`)
       .maybeSingle();
-    if ((data as { ghl_api_token?: string } | null)?.ghl_api_token) klara.add("kundnyckel");
+    if (app) klara.add("kundnyckel");
+    else {
+      const { data } = await sb
+        .from("coach_users")
+        .select("ghl_api_token")
+        .eq("ghl_location_id", k.ghl_location_id)
+        .maybeSingle();
+      if ((data as { ghl_api_token?: string } | null)?.ghl_api_token) klara.add("kundnyckel");
+    }
   }
 
   if (k.client_id) {
