@@ -155,9 +155,16 @@ export async function ghlCreateDraft(
       const msg = Array.isArray(d?.message) ? d.message.join("; ") : d?.message || `GHL ${r.status}`;
       return { error: String(msg).slice(0, 300) };
     }
-    // Svaret är { results: { post: { _id } } } (verifierat mot live-API).
-    const p = d?.results?.post || d?.post || d;
-    const postId = p?._id || p?.id;
+    // Svaret för DRAFT är { results: { post: { _id } } } (verifierat mot live-API 16/7).
+    // ⚠ 16/8: samma extraktion missade för status=published — svaret hade `results` men
+    // inget postId på någon av de kända formerna. Bred sökning + full loggning av svaret
+    // så nästa miss (om någon) syns direkt i stället för att gissas fram igen.
+    const p = d?.results?.post || d?.post || d?.results || d;
+    const postId = p?._id || p?.id || p?.postId || d?.results?.postId || d?.postId;
+    if (!postId) {
+      // eslint-disable-next-line no-console
+      console.error(`[ghlCreateDraft] postId hittades inte i svaret (status=${body.status}). Rått svar:`, JSON.stringify(d).slice(0, 1000));
+    }
     return { postId: postId ? String(postId) : undefined, scheduled, publicerad };
   } catch (e) {
     return { error: (e as Error).message };
