@@ -49,7 +49,7 @@ export async function GET(req: Request) {
   const sb = supabaseService();
   const kollaSajten = new URL(req.url).searchParams.get("sajt") !== "0";
 
-  const [priser, volym, texter, kopplingar, golv, flaggor, konkurrenter, marknad] = await Promise.all([
+  const [priser, volym, texter, kopplingar, golv, flaggor, konkurrenter, marknad, artiklar, alKopplingar, datablad, artikelTillval] = await Promise.all([
     sb.from("sl_prices").select("*").eq("user_id", TENANT).eq("gallande", true).order("kategori").order("artikelnr"),
     sb.from("sl_volym").select("*").eq("user_id", TENANT).eq("gallande", true).order("min_antal"),
     sb.from("sl_texter").select("*").eq("user_id", TENANT).eq("gallande", true).order("typ").order("sortering"),
@@ -62,6 +62,12 @@ export async function GET(req: Request) {
       .select("category, competitor, price_sek, source_url, fetched_at, notering")
       .eq("user_id", TENANT)
       .gte("fetched_at", new Date(Date.now() - MARKNAD_GILTIG_DAGAR * 864e5).toISOString()),
+    // PRIS2-1: artikellagret (al_*). Nytt lager mellan säljlagret och inköpslistan,
+    // byggt 15/8. Läses här ihop med det gamla för att granskningsvyn ska se allt.
+    sb.from("al_artiklar").select("*").eq("user_id", TENANT).order("artikelnummer"),
+    sb.from("al_leverantorskoppling").select("artikel_id, produktnyckel, bekraftad, notering").eq("user_id", TENANT),
+    sb.from("al_datablad").select("artikel_id, titel, file_path, sprak").eq("user_id", TENANT),
+    sb.from("al_artikel_tillval").select("artikel_id, sl_artikelnr").eq("user_id", TENANT),
   ]);
 
   // Säljlagret finns inte i den här databasen om migrationerna inte körts.
@@ -125,12 +131,23 @@ export async function GET(req: Request) {
     }
   }
 
-  // 2. Kopplingar, kalkyl och marginal per artikel.
-  const koppFor = (a: string) => (kopplingar.data || []).filter((k) => k.artikelnr === a);
+  // 2. Kopplingar, kalkyl och marginal per artikel. Två källor för koppling till inköp:
+  // den gamla sl_inkop_koppling (P-2, pekar på om_prices.sku) och den nya al_leverantorskoppling
+  // (PRIS2-1, pekar på al_artiklar via katalog_kod → om_prices.produktnyckel). Slås ihop här så
+  // en artikel som bara finns i den nya vägen inte felaktigt visas som "ingen inköpsdata".
+  const artikelByNummer = new Map((artiklar.data || []).map((a) => [a.artikelnummer, a]));
+  const alKoppFor = (katalogKod: string | null) =>
+    !katalogKod ? [] : (alKopplingar.data || [])
+      .filter((k) => artikelByNummer.get(katalogKod)?.id === k.artikel_id)
+      .map((k) => ({ kalla: "al_leverantorskoppling", nyckel: k.produktnyckel, bekraftad: k.bekraftad, notering: k.notering }));
+  const koppFor = (a: string, katalogKod: string | null) => [
+    ...(kopplingar.data || []).filter((k) => k.artikelnr === a),
+    ...alKoppFor(katalogKod),
+  ];
   const marknadFor = (a: string) => (marknad.data || []).filter((m) => m.category === a);
 
   for (const p of rader) {
-    const kopp = koppFor(p.artikelnr);
+    const kopp = koppFor(p.artikelnr, p.katalog_kod);
     if (!kopp.length) {
       luckor.push({
         allvar: "hog",
@@ -200,14 +217,33 @@ export async function GET(req: Request) {
       kalla: p.kalla,
       beslut_av: p.beslut_av,
       volymtrappa: (volym.data || []).filter((v) => v.artikelnr === p.artikelnr),
-      kopplingar: koppFor(p.artikelnr),
+      kopplingar: koppFor(p.artikelnr, p.katalog_kod),
       marknad: marknadFor(p.artikelnr),
       flaggor: (flaggor.data || []).filter((f) => f.artikelnr === p.artikelnr),
+      artikellager: p.katalog_kod ? artikelByNummer.get(p.katalog_kod) || null : null,
     })),
     texter: texter.data || [],
     golv: golv.data || [],
     konkurrenter: konkurrenter.data || [],
     sajt,
     luckor,
+    // PRIS2-1: hela artikellagret, inte bara de som redan är kopplade till ett säljpris.
+    // Här ser Håkan ALLA 16 skärmar, även de utan koppling till säljlagret än.
+    artiklar: (artiklar.data || []).map((a) => ({
+      id: a.id,
+      artikelnummer: a.artikelnummer,
+      namn: a.namn,
+      kategori: a.kategori,
+      tum: a.tum,
+      ljusstyrka_nits: a.ljusstyrka_nits,
+      ip_klass: a.ip_klass,
+      miljo: a.miljo,
+      montering: a.montering,
+      status: a.status,
+      kopplatSaljpris: rader.find((p) => p.katalog_kod === a.artikelnummer)?.artikelnr || null,
+      leverantorskopplingar: (alKopplingar.data || []).filter((k) => k.artikel_id === a.id),
+      datablad: (datablad.data || []).filter((d) => d.artikel_id === a.id),
+      tillval: (artikelTillval.data || []).filter((t) => t.artikel_id === a.id).map((t) => t.sl_artikelnr),
+    })),
   });
 }

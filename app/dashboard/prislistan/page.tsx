@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Tag, AlertTriangle, RefreshCw, Globe, Lock, Link2, Search, ShieldAlert,
-  CheckCircle2, ExternalLink, Layers,
+  CheckCircle2, ExternalLink, Layers, FileText, Package, Upload, Calculator, Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { DashHero, HeroChip, LivePill, StatTile } from "@/components/ui/dash";
 
 // PRIS-1 granskningsvy. Läser säljlagret som byggdes i MySales Coach och visar
@@ -24,6 +25,15 @@ interface Prisrad {
 }
 interface Text { id: string; typ: string; text: string; synlighet: string }
 interface Lucka { allvar: "hog" | "medel" | "info"; omrade: string; text: string }
+interface Artikel {
+  id: string; artikelnummer: string; namn: string; kategori: string;
+  tum: number | null; ljusstyrka_nits: number | null; ip_klass: string | null;
+  miljo: string | null; montering: string | null; status: string;
+  kopplatSaljpris: string | null;
+  leverantorskopplingar: { produktnyckel: string; bekraftad: boolean }[];
+  datablad: { titel: string; file_path: string }[];
+  tillval: string[];
+}
 interface Svar {
   byggt: boolean; fel?: string; hamtad: string;
   priser: Prisrad[]; texter: Text[];
@@ -31,6 +41,7 @@ interface Svar {
   konkurrenter: { namn: string; webb: string | null; typ: string; aktiv: boolean }[];
   sajt: { url: string; status: number | null; saknasPaSidan: string[]; utanTackning: number[] } | null;
   luckor: Lucka[];
+  artiklar: Artikel[];
 }
 
 const kr = (n: number | null, enhet = "kr") =>
@@ -109,6 +120,37 @@ export default function PrislistanGranskning() {
         }
       />
 
+      {/* Verktygen — de tre sakerna man faktiskt GÖR här, resten av sidan är granskning */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Link href="/dashboard/prislistan/uppladdning" className="group flex items-start gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+            <Upload className="h-5 w-5 text-blue-600" />
+          </span>
+          <div>
+            <div className="font-display font-bold text-gray-900">Läs in prislista</div>
+            <p className="mt-0.5 text-sm text-gray-500">PDF, Excel eller en skärmdump. Visar vad som ändras innan något sparas.</p>
+          </div>
+        </Link>
+        <Link href="/dashboard/prislistan/kalkylator" className="group flex items-start gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+            <Calculator className="h-5 w-5 text-emerald-600" />
+          </span>
+          <div>
+            <div className="font-display font-bold text-gray-900">Kabinettkalkylatorn</div>
+            <p className="mt-0.5 text-sm text-gray-500">Mata in en LED-väggs mått, få kolumner, pixlar och pris på sekunden.</p>
+          </div>
+        </Link>
+        <Link href="/dashboard/prislistan/priscoach" className="group flex items-start gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50">
+            <Sparkles className="h-5 w-5 text-violet-600" />
+          </span>
+          <div>
+            <div className="font-display font-bold text-gray-900">Priscoachen</div>
+            <p className="mt-0.5 text-sm text-gray-500">Läser läget, spanar marknaden, föreslår ett pris. Du beslutar.</p>
+          </div>
+        </Link>
+      </div>
+
       {fel && (
         <div className="flex items-start gap-3 rounded-2xl border border-rose-100 bg-rose-50 p-5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100">
@@ -165,6 +207,59 @@ export default function PrislistanGranskning() {
               </div>
             )}
           </section>
+
+          {/* Artikellagret (PRIS2-1) — de fysiska artiklarna, oavsett om de redan har ett säljpris */}
+          {data.artiklar && data.artiklar.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-lg font-bold text-gray-900">Artikellagret</h2>
+                <span className="text-xs text-gray-500">{data.artiklar.length} artiklar</span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {data.artiklar.map((a) => (
+                  <div key={a.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                            <Package className="h-4 w-4 text-indigo-600" />
+                          </span>
+                          <span className="font-display font-bold text-gray-900 text-sm">{a.namn}</span>
+                        </div>
+                        <div className="mt-1.5 ml-10 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+                          <span className="font-mono">{a.artikelnummer}</span>
+                          {a.tum && <span>· {a.tum}″</span>}
+                          {a.ljusstyrka_nits && <span>· {a.ljusstyrka_nits} nits</span>}
+                          {a.ip_klass && <span>· {a.ip_klass}</span>}
+                        </div>
+                      </div>
+                      {a.kopplatSaljpris ? (
+                        <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                          {a.kopplatSaljpris}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
+                          Inget säljpris kopplat
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-3 ml-10 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                      <span className="inline-flex items-center gap-1">
+                        <Link2 className="h-3 w-3" /> {a.leverantorskopplingar.length} leverantörskoppling{a.leverantorskopplingar.length === 1 ? "" : "ar"}
+                        {a.leverantorskopplingar.length > 0 && !a.leverantorskopplingar.some((k) => k.bekraftad) && (
+                          <span className="text-amber-600">(obekräftad)</span>
+                        )}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <FileText className="h-3 w-3" /> {a.datablad.length} datablad
+                      </span>
+                      {a.tillval.length > 0 && <span>{a.tillval.length} tillval</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Priserna */}
           <section className="space-y-3">

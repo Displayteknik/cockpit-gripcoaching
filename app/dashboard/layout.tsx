@@ -93,8 +93,9 @@ function buildNavSections(resourceModule: string): NavSection[] {
       zon: "eget",
       label: "Verktyg",
       items: [
-        // PRIS-1: speglar säljlagret från MySales Coach. Läser bara, ändrar inga priser.
-        { href: "/dashboard/prislistan", label: "Prislistan (granska)", icon: Tag },
+        // PRIS-1/PRIS-2: säljlager + artikellager. Granskning här, verktygen (uppladdning,
+        // kabinettkalkylator, priscoach) nås via kort på sidan.
+        { href: "/dashboard/prislistan", label: "Prislistan", icon: Tag },
         { href: "/dashboard/setup", label: "Setup-agent", icon: Wrench },
         { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
         { href: "/dashboard/sms-paminnelse", label: "SMS-påminnelse", icon: MessageSquare },
