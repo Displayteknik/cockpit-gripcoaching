@@ -350,6 +350,15 @@ export function utanHashtags(text: string): string {
     .replace(/#[\p{L}\p{N}_]+/gu, " ");
 }
 
+/**
+ * Småfix 16/8 (5): steg 5 lovar hashtags, men fram till nu fanns bara en TAK-kontroll
+ * (begransaHashtags klipper om det är för många) — ingen GOLV-kontroll om modellen
+ * glömde dem helt. Minst en hashtag räcker för att golvet ska anses uppfyllt.
+ */
+export function harHashtags(text: string): boolean {
+  return /#[\p{L}\p{N}_]+/u.test(String(text || ""));
+}
+
 /** Skalar bort emoji, pilar, citattecken och inledande bindeord ur en sats. */
 function normaliseraKlausul(klausul: string): string {
   return String(klausul || "")
@@ -430,6 +439,15 @@ export const CTA_SKARPNING = [
   "Behåll budskapet, rösten och längden. Byt bara ut avslutet mot en riktig uppmaning.",
   "Uppmaningen ska vara textens SISTA MENING. Platsrader (\"Vi finns i Roslagen\"), löften (\"Vi hör av oss samma dag\") och annat placeras FÖRE den — aldrig efter.",
   "Finns hashtags ligger de kvar EFTER uppmaningen, på egen rad sist.",
+].join("\n");
+
+// Småfix 16/8 (5): samma familj som CTA-golvet — steg 5 lovar hashtags i mikrocopyn,
+// och löftet ska hållas, inte bara vara en instruktion modellen kan glömma.
+export const HASHTAG_SKARPNING = [
+  "=== RÄTTELSE: HASHTAGS SAKNAS (väger tyngst i den här körningen) ===",
+  "Föregående version innehöll inga hashtags. Lägg till 3–5 relevanta hashtags på EGEN RAD sist i texten, EFTER uppmaningen.",
+  "Hashtags ska vara relevanta ord ur ämnet, branschen eller orten — inte generiska fyllnadstaggar.",
+  "Behåll budskapet, rösten, längden och avslutets uppmaning oförändrade. Lägg bara till hashtag-raden sist.",
 ].join("\n");
 
 // ── CTA-VÄGEN (G-5) — uppmaningen ska leda NÅGONSTANS ───────────────────────
@@ -753,6 +771,9 @@ export async function sakerstallCaption(
     if (siffror.length) b.push(`siffror:${siffror.join("|")}`);
     const sken = skenfragor(t);
     if (sken.length) b.push(`frageform:${sken.join("|")}`);
+    // Småfix 16/8 (5): steg 5 lovar hashtags i mikrocopyn ("3–5 relevanta hashtags på
+    // egen rad sist") — det löftet hade fram till nu ingen golv-kontroll, bara ett tak.
+    if (!harHashtags(t)) b.push("hashtags");
     return b;
   };
   const brott = brottFor(text);
@@ -763,6 +784,7 @@ export async function sakerstallCaption(
     brott.some((b) => b === "cta-vag") ? CTA_VAG_SKARPNING : "",
     brott.some((b) => b.startsWith("siffror")) ? SIFFER_SKARPNING : "",
     brott.some((b) => b.startsWith("frageform")) ? FRAGEFORM_SKARPNING : "",
+    brott.some((b) => b === "hashtags") ? HASHTAG_SKARPNING : "",
   ]
     .filter(Boolean)
     .join("\n\n");

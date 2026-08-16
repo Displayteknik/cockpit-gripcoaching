@@ -233,6 +233,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const [editOpen, setEditOpen] = useState(false); // Fas C: inline-redigering (modal)
   const [scheduleRefresh, setScheduleRefresh] = useState(0); // bumpas efter schemaläggning → laddar om kön
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  // KVALITET-3/2a: löftesräkningen från API:t ("2 av 3 klara, generera fler") — visas
+  // i stället för att tyst lämna två idéer och låta rubriken fortsätta säga tre.
+  const [suggestMeddelande, setSuggestMeddelande] = useState("");
   const [posts, setPosts] = useState<StudioPost[]>([]);
   const [postQuery, setPostQuery] = useState(""); // sök i "Tidigare skapelser" på titel/det man skrev
   const [loadedPostId, setLoadedPostId] = useState<string | null>(null);
@@ -791,7 +794,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   // ── AI-textförslag (3 hook-drivna varianter) ──
   const suggest = useCallback(async () => {
-    setError(""); setSuggesting(true); setSuggestions([]);
+    setError(""); setSuggesting(true); setSuggestions([]); setSuggestMeddelande("");
     try {
       // Grunda förslagen i inläggets grundtext + bilden: skicka captionen och den aktuella
       // bilden. Beskrivningen skickas bara om den hör till just den bilden (annars gör
@@ -805,6 +808,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       const d = await lasJson<any>(r);
       if (!r.ok) throw new Error(d.error || "Förslag misslyckades");
       setSuggestions(Array.isArray(d.suggestions) ? d.suggestions : []);
+      // KVALITET-3/2a: API:t har redan räknat och skrivit meddelandet (lib/studio/copy.ts,
+      // ideerMeddelande) — visa det i stället för att låta rubriken tyst lova tre.
+      setSuggestMeddelande(typeof d.meddelande === "string" ? d.meddelande : "");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -818,7 +824,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setHeadline1(s.headline1 || "");
     setHeadline2(s.headline2 || "");
     setBody(s.body || "");
-    setSuggestions([]); // dölj listan efter val — annars ligger samma förslag kvar i både steg 1 och steg 4
+    setSuggestions([]); setSuggestMeddelande(""); // dölj listan efter val — annars ligger samma förslag kvar i både steg 1 och steg 4
     if (quickAutoImage.current) {
       quickAutoImage.current = false;
       void generateOnBrandImage([s.headline1, s.body].filter(Boolean).join(". "));
@@ -1635,8 +1641,9 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
         body: JSON.stringify({ templateId, format, topic: "", videoUrl }),
       });
       const d = await lasJson<any>(r);
-      if (!r.ok) throw new Error(d.error || "Kunde inte skapa förslag — försök igen.");
+      if (!r.ok) throw new Error(d.error || "Kunde inte skapa förslag, försök igen.");
       setSuggestions(Array.isArray(d.suggestions) ? d.suggestions : []);
+      setSuggestMeddelande(typeof d.meddelande === "string" ? d.meddelande : "");
       quickAutoImage.current = true; // efter användarens val: generera bild ur vald text
       setTimeout(() => document.getElementById("studio-forslag")?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
     } catch (e) {
@@ -1694,7 +1701,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             tomt — så fort innehåll finns försvinner de och stör aldrig pågående arbete. */}
         {visaSnabbstart && (
           <div className="space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Kom igång — välj det som stämmer</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Kom igång: välj det som stämmer</div>
             <div className="grid sm:grid-cols-3 gap-3">
               <button onClick={startMedFoto}
                 className="text-left rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-start gap-3">
@@ -1723,7 +1730,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </span>
                 <span className="leading-snug">
                   <span className="block text-sm font-bold text-gray-900">{quickBusy ? "Skapar förslag…" : "Skapa åt mig"}</span>
-                  <span className="block text-xs text-gray-500 mt-0.5">Få ett färdigt förslag ur er profil — justera och publicera.</span>
+                  <span className="block text-xs text-gray-500 mt-0.5">Få ett färdigt förslag ur er profil, justera och publicera.</span>
                 </span>
               </button>
             </div>
@@ -1988,7 +1995,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 {/* B3: exakt text i bilden — eget fält, stavas exakt via verifieringsslingan */}
                 <input
                   value={imgText} onChange={(e) => setImgText(e.target.value)} maxLength={120}
-                  placeholder="Text i bilden (valfri) — t.ex. Öppet i sommar"
+                  placeholder="Text i bilden (valfri), t.ex. Öppet i sommar"
                   className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2"
                   style={{ ["--tw-ring-color" as string]: `${primary}55` }}
                 />
@@ -1997,7 +2004,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     numera den ENDA vägen till ord i bilden, och texten ritas av oss.
                     Antyd aldrig att modellens egna skyltar är säkrade — de finns inte. */}
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Ska ett ord synas i bilden? Skriv det här — då ritar vi det, och det blir alltid rättstavat.
+                  Ska ett ord synas i bilden? Skriv det här, då ritar vi det, och det blir alltid rättstavat.
                   Bildhjälpen skriver inga egna ord i bilden.
                 </p>
                 <div className="flex gap-2">
@@ -2074,10 +2081,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 tom skaparyta och det redan skrivna arbetet syns inte. */}
             {oppnadeUnderlag && !headline1.trim() && !body.trim() && (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-                <p className="font-semibold">Bildtexten är redan skriven — den ligger i steg 5.</p>
+                <p className="font-semibold">Bildtexten är redan skriven, den ligger i steg 5.</p>
                 <p className="mt-1 leading-relaxed">
                   Det som är kvar är <strong>texten på bilden</strong> (steg 4, tre förslag skrivs fram åt dig här nedan) och en <strong>bild</strong> (steg 3).
-                  Texten på bilden skrivs i affischformat och kopieras aldrig ur bildtexten — därför är fältet tomt när du kommer hit.
+                  Texten på bilden skrivs i affischformat och kopieras aldrig ur bildtexten, därför är fältet tomt när du kommer hit.
                 </p>
               </div>
             )}
@@ -2115,7 +2122,16 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 <div className="space-y-2">
                   {/* KVALITET-3/3: förslagen ÄR färdigskriven text till bilden — skriven ur
                       ämnet och din röst, aldrig en avskrift av ämnet eller bildtexten. */}
-                  <div className="text-xs font-medium text-gray-500">Välj text till bilden — alla tre är skrivna ur ditt ämne och din röst:</div>
+                  <div className="text-xs font-medium text-gray-500">
+                    {suggestions.length === 1
+                      ? "Välj text till bilden. Förslaget är skrivet ur ditt ämne och din röst:"
+                      : `Välj text till bilden. Alla ${suggestions.length === 3 ? "tre" : suggestions.length} är skrivna ur ditt ämne och din röst:`}
+                  </div>
+                  {/* KVALITET-3/2a: löftet var tre — säg det rakt ut när färre levererades,
+                      i stället för att låta raden ovan låtsas att allt gick som utlovat. */}
+                  {suggestMeddelande && (
+                    <div className="text-xs text-amber-600">{suggestMeddelande}.</div>
+                  )}
                   {suggestions.map((s, i) => (
                     <button key={i} onClick={() => applySuggestion(s)}
                       className="w-full text-left rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 p-3 transition-colors">
@@ -2242,7 +2258,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       tom. Två rutor med samma utseende, en rad ifrån varandra, och bara den
                       ena tänder knappen. Rubrikerna säger nu vilken bild var ruta gäller. */}
                   <label className="block text-xs font-medium text-gray-600">
-                    Passade bilden? Svaret ändrar inte den här bilden — det styr NÄSTA bild vi gör åt dig.
+                    Passade bilden? Svaret ändrar inte den här bilden, det styr NÄSTA bild vi gör åt dig.
                   </label>
                   <SmartTextarea
                     value={bildOmdomeKommentar}
@@ -2264,7 +2280,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     >
                       <ThumbsDown className="w-4 h-4" /> Passar inte
                     </button>
-                    {bildOmdomeSparat && <span className="text-xs text-gray-500">Sparat — vi tar med det nästa gång.</span>}
+                    {bildOmdomeSparat && <span className="text-xs text-gray-500">Sparat, vi tar med det nästa gång.</span>}
                   </div>
                 </div>
               )}
@@ -2292,7 +2308,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     </button>
                     {/* En knapp som ser trasig ut är värre än en som säger varför den sover. */}
                     {!editingImg && !imgComment.trim() && (
-                      <span className="text-xs text-gray-500">Skriv i rutan ovan först — då tänds knappen.</span>
+                      <span className="text-xs text-gray-500">Skriv i rutan ovan först, då tänds knappen.</span>
                     )}
                     {prevImageUrl && (
                       <button onClick={undoImageEdit} disabled={editingImg}
@@ -2488,7 +2504,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                     style={{ borderColor: `${primary}55`, color: primary }}>
                     {genSlideImgs
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Skapar foto {genSlideImgs}…</>
-                      : <><ImageIcon className="w-4 h-4" /> {valdaBildIndex.length === 0 ? "Ingen slide vald — inga foton skapas" : `Skapa foto till ${valdaBildIndex.length} ${valdaBildIndex.length === 1 ? "slide" : "slides"}`}</>}
+                      : <><ImageIcon className="w-4 h-4" /> {valdaBildIndex.length === 0 ? "Ingen slide vald, inga foton skapas" : `Skapa foto till ${valdaBildIndex.length} ${valdaBildIndex.length === 1 ? "slide" : "slides"}`}</>}
                   </button>
                   <p className="text-xs text-gray-500 mt-1.5">
                     Foton som redan finns rörs inte om du inte kryssar i dem. Eget foto på en slide: bläddra dit med pilarna och ladda upp under <strong>Bild</strong>. Ångrar du ett foto tar du bort det på sliden.
@@ -2662,7 +2678,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={suggestCaptionVariants} disabled={loadingVariants || suggestingCaption}
-                    title="Få 3 varianter att jämföra — olika krok, olika tonläge och olika väg framåt"
+                    title="Få 3 varianter att jämföra: olika krok, olika tonläge och olika väg framåt"
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border shadow-sm hover:bg-gray-50 disabled:opacity-40"
                     style={{ borderColor: `${primary}55`, color: primary }}>
                     {loadingVariants ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />} Ge mig 3 att välja på
@@ -2710,7 +2726,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       {compassBusy === "review" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ClipboardCheck className="w-3.5 h-3.5" />} Granska
                     </button>
                   </div>
-                  <span className="w-full text-sm text-violet-600">Förslag för dagen — styr ton och struktur. Ändra fritt. Tre förslag ger tre tonlägen, med det här först.</span>
+                  <span className="w-full text-sm text-violet-600">Förslag för dagen: styr ton och struktur. Ändra fritt. Tre förslag ger tre tonlägen, med det här först.</span>
                   {reviewResult && (
                     <div className={`w-full rounded-lg border p-3 mt-1 ${reviewResult.passed ? "border-emerald-200 bg-emerald-50/60" : "border-amber-200 bg-amber-50/60"}`}>
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
@@ -2733,7 +2749,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
               {captionVariants.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant — olika krok, olika tonläge, olika väg framåt</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Välj en variant: olika krok, olika tonläge, olika väg framåt</span>
                     <button onClick={() => setCaptionVariants([])} className="text-xs text-gray-400 hover:text-gray-700">Dölj</button>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-2">
@@ -2929,7 +2945,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       Instagram-koppling nar det ar en nyckel som fattas hos oss.
                       Samma regel som resten av systemet: sag vad som faktiskt ar fel. */}
                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-                    title={conn ? undefined : ghlConnected === false ? "Cockpit saknar nyckeln till kundens MySales-konto. Kopplingen i MySales kan vara helt korrekt — det ar nyckeln hit som fattas." : undefined}
+                    title={conn ? undefined : ghlConnected === false ? "Cockpit saknar nyckeln till kundens MySales-konto. Kopplingen i MySales kan vara helt korrekt, det ar nyckeln hit som fattas." : undefined}
                     style={conn ? { background: "#dcfce7", color: "#15803d" } : ghlConnected === false ? { background: "#fef3c7", color: "#92400e" } : { background: "#f3f4f6", color: "#9ca3af" }}>
                     {conn ? "kopplad" : ghlConnected === false ? "nyckel saknas" : "ej kopplad"}
                   </span>
@@ -3060,7 +3076,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         // Ärligt läge: alla {n} bilder skickas med, men att GHL behåller dem
                         // som karusell är INTE verifierat mot skarpt konto. Säg det rakt ut
                         // i stället för att lova något vi inte mätt.
-                        <p className="text-xs text-amber-600">Alla {slideCount} bilderna skickas med som utkast. Kontrollera i {label} att hela karusellen följde med innan du publicerar — Instagram direkt är den väg vi vet håller ihop karusellen.</p>
+                        <p className="text-xs text-amber-600">Alla {slideCount} bilderna skickas med som utkast. Kontrollera i {label} att hela karusellen följde med innan du publicerar. Instagram direkt är den väg vi vet håller ihop karusellen.</p>
                       )}
                       </>
                     ) : (
@@ -3409,7 +3425,14 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1.5">Textbakgrund</label>
           <div className="flex items-center gap-2">
-            <input type="color" value={overrides.textBg || "#000000"} onChange={(e) => setOv({ textBg: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
+            {/* Småfix 16/8 (3): swatchen speglade aldrig "inget valt" — den defaultade tyst
+                till svart, som lätt lästes som "svart är valt". Ingen ram = inget aktivt val;
+                en ring + hexkoden syns bara när en färg faktiskt är satt. */}
+            <input type="color" value={overrides.textBg || "#000000"} onChange={(e) => setOv({ textBg: e.target.value })}
+              className="w-9 h-9 rounded-lg cursor-pointer"
+              style={overrides.textBg ? { border: "2px solid #6366f1" } : { border: "1px dashed #d1d5db", opacity: 0.5 }}
+              title={overrides.textBg || "Ingen platta"} />
+            {overrides.textBg && <span className="text-xs font-mono text-gray-500 uppercase">{overrides.textBg}</span>}
             <button onClick={() => setOv({ textBg: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.textBg ? "Ta bort" : "Ingen"}</button>
           </div>
         </div>

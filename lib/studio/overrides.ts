@@ -57,6 +57,15 @@ export function dragPos(p: StudioPayload, role: "h1" | "h2" | "body"): Record<st
 
 // Läsbar platta bakom texten (valfri) — gör vit text läsbar på rörigt foto.
 // Tom = ingen platta (mallens standard). Spreadas in i textblockets style.
+//
+// Småfix 16/8 (3): plattan skulle rita ur textens EGNA mått, rad för rad, och följa
+// fontstorlek/radavstånd/radbrytningar — men flödade utanför. `display: "inline-block"`
+// var felet: en inline-block-box är EN odelbar enhet som browsern aldrig bryter över
+// flera rader, så en lång rubrik body-ut ur sin platta i stället för att plattan följde
+// varje textrad. `box-decoration-break: clone` (redan satt) är byggd för RIKTIGA inline-
+// element: browsern klonar padding/bakgrund/radie på VARJE radfragment automatiskt när
+// texten radbryter — det är exakt "textens faktiska mått rad för rad" utan att någon
+// manuell mätning behövs. display: "inline" är den enda ändringen som krävdes.
 export function textPlate(p: StudioPayload): Record<string, string | number> {
   const bg = p.overrides?.textBg;
   if (!bg) return {};
@@ -66,6 +75,6 @@ export function textPlate(p: StudioPayload): Record<string, string | number> {
     borderRadius: 20,
     boxDecorationBreak: "clone",
     WebkitBoxDecorationBreak: "clone",
-    display: "inline-block",
+    display: "inline",
   };
 }
