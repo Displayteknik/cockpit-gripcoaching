@@ -23,6 +23,7 @@ interface TidslinjePost {
 interface Prisrad {
   artikelnr: string; benamning: string; kategori: string | null; pris: number | null;
   enhet: string | null; franPris: boolean; giltigFran: string;
+  tb?: { kr: number; pct: number; bastaInkopsvag: string | null };
 }
 interface DrivKort {
   lage: {
@@ -455,7 +456,17 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
             <div className="space-y-1.5">
               {prisTraffar.map((p) => (
                 <div key={p.artikelnr} className="flex items-center justify-between gap-3 text-sm py-1.5 border-t border-gray-50 first:border-t-0">
-                  <span className="text-gray-700">{p.benamning}</span>
+                  <span className="text-gray-700 flex items-center gap-2 min-w-0">
+                    <span className="truncate">{p.benamning}</span>
+                    {p.tb && (
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 flex-shrink-0"
+                        title={`Täckningsbidrag ${p.tb.kr.toLocaleString("sv-SE")} kr, bästa inköpsväg ${p.tb.bastaInkopsvag || "okänd"}. Endast synligt här, aldrig för kund.`}
+                      >
+                        TB {p.tb.pct}%
+                      </span>
+                    )}
+                  </span>
                   <span className="font-semibold text-gray-900 tabular-nums flex-shrink-0">
                     {p.pris === null ? "Offereras" : `${p.franPris ? "Från " : ""}${p.pris.toLocaleString("sv-SE")} ${p.enhet || "kr"}`}
                   </span>

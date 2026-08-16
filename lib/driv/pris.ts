@@ -22,6 +22,7 @@ export interface Prisrad {
   enhet: string | null;
   franPris: boolean;
   giltigFran: string;
+  tb?: Tb; // PRIS2-5, endast satt för artiklar med bekräftad leverantörskoppling
 }
 
 export async function hamtaPrislista(): Promise<Prisrad[]> {
@@ -41,4 +42,30 @@ export async function hamtaPrislista(): Promise<Prisrad[]> {
     franPris: r.fran_pris,
     giltigFran: r.giltig_fran,
   }));
+}
+
+// PRIS2-5 — TB, endast för DRIV-kortet i Cockpit (aldrig kundportalen /k/…, aldrig
+// assistenten). Läser DÄRFÖR `v_sl_gallande`, inte `v_sl_publik` — den enda platsen i DRIV
+// som medvetet läser det interna kalkylunderlaget. `tb_kr`/`tb_pct` är förräknade av
+// PRIS2-5-importen (samma formel som Prislisteagenten, `landatSek`/`tb` i kalkyl.ts) och
+// finns bara för artiklar som fått en bekräftad leverantörskoppling i artikellagret.
+export interface Tb {
+  kr: number;
+  pct: number;
+  bastaInkopsvag: string | null;
+}
+
+export async function hamtaTb(): Promise<Map<string, Tb>> {
+  const sb = supabaseService();
+  const { data, error } = await sb
+    .from("v_sl_gallande")
+    .select("artikelnr, tb_kr, tb_pct, kalkyl_underlag")
+    .eq("user_id", SALJLAGER_USER_ID)
+    .not("tb_kr", "is", null);
+  if (error) return new Map(); // TB är ett tillägg, en trasig läsning ska aldrig fälla kortet
+  const karta = new Map<string, Tb>();
+  for (const r of (data as Array<{ artikelnr: string; tb_kr: number; tb_pct: number; kalkyl_underlag: { basta_inkopsvag?: string } | null }>) || []) {
+    karta.set(r.artikelnr, { kr: r.tb_kr, pct: r.tb_pct, bastaInkopsvag: r.kalkyl_underlag?.basta_inkopsvag || null });
+  }
+  return karta;
 }

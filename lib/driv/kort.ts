@@ -12,7 +12,7 @@ import { hamtaKoppling, kopplingsScope, agarToken } from "@/lib/hq/kalender";
 import { hamtaKonversationer, hamtaMeddelanden, hamtaKontakt, hamtaUppgifterForKontakt, hamtaStegInfo, type GhlKontakt, type StegInfo } from "@/lib/driv/ghl";
 import { hamtaTradMetadata, sokMeddelandenMedBilaga } from "@/lib/driv/gmail";
 import { foreslaLank, lasLankar, kalenderKandidat, type LankRad } from "@/lib/driv/matchning";
-import { hamtaPrislista, type Prisrad } from "@/lib/driv/pris";
+import { hamtaPrislista, hamtaTb, type Prisrad } from "@/lib/driv/pris";
 
 export type TidslinjeKalla = "ghl_konversation" | "gmail" | "kalender" | "offert" | "uppgift";
 
@@ -302,6 +302,10 @@ export async function byggKort(ghlOpportunityId: string, beslutadAv = "owner"): 
   let prislista: Prisrad[] = [];
   try {
     prislista = await hamtaPrislista();
+    // PRIS2-5: TB läggs på EFTER den publika hämtningen, från en separat intern läsning.
+    // Kortet självt (/dashboard/driv, byråvyn) är enda platsen detta visas.
+    const tb = await hamtaTb();
+    prislista = prislista.map((r) => (tb.has(r.artikelnr) ? { ...r, tb: tb.get(r.artikelnr) } : r));
   } catch {
     fel.push("Kunde inte hämta prislistan just nu.");
   }
