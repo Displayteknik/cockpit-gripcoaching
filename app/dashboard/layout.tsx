@@ -75,7 +75,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
     },
     {
       zon: "eget",
-      label: "Byrån",
+      label: "Agency",
       items: [
         { href: "/dashboard/mysales-kunder", label: "MySales pionjärer", icon: Users },
         // Automatisk provisionering från enbart en webbadress (ONBOARD-1). Skild från
@@ -87,22 +87,34 @@ function buildNavSections(resourceModule: string): NavSection[] {
         // G-9: kvalitetssidan. Byråvy — vad varje regeluppsättning faktiskt producerade.
         // Ligger i menyn med flit: en sida som inte går att hitta finns inte.
         { href: "/dashboard/kvalitet", label: "Kvalitet", icon: BarChart3 },
+        { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
+      ],
+    },
+    {
+      // Håkans beslut 16/8: samlat eget avsnitt för det som bara gäller Displayteknik idag
+      // (fysiska produkter, inköp, prislistor) — till skillnad från DRIV/Fokus/etc som är
+      // byggda generiskt och kan slås på för vilken kund som helst. Egen rubrik så det syns
+      // tydligt att det här INTE är en standardmodul än.
+      zon: "eget",
+      label: "DT special",
+      items: [
+        { href: "/dashboard/prislistan/produkter", label: "Produkter", icon: Package },
+        { href: "/dashboard/prislistan", label: "Prislistan (översikt)", icon: Tag },
+        { href: "/dashboard/prislistan/uppladdning", label: "Läs in prislista", icon: FileText },
+        { href: "/dashboard/prislistan/kalkylator", label: "Kabinettkalkylatorn", icon: BarChart3 },
+        { href: "/dashboard/prislistan/priscoach", label: "Priscoachen", icon: Sparkles },
       ],
     },
     {
       zon: "eget",
       label: "Verktyg",
       items: [
-        // PRIS-1/PRIS-2: säljlager + artikellager. Granskning här, verktygen (uppladdning,
-        // kabinettkalkylator, priscoach) nås via kort på sidan.
-        { href: "/dashboard/prislistan", label: "Prislistan", icon: Tag },
         { href: "/dashboard/setup", label: "Setup-agent", icon: Wrench },
         { href: "/dashboard/specialister", label: "AI-specialister", icon: Sparkles },
         { href: "/dashboard/sms-paminnelse", label: "SMS-påminnelse", icon: MessageSquare },
         { href: "/dashboard/studio/reels", label: "Reels (test)", icon: Film },
         { href: "/dashboard/webbdata-demo", label: "Webbdata (demo)", icon: Activity },
         { href: "/dashboard/handbok", label: "Handbok", icon: HelpCircle },
-        { href: "/dashboard/installningar", label: "Inställningar", icon: Settings },
       ],
     },
 
@@ -123,7 +135,6 @@ function buildNavSections(resourceModule: string): NavSection[] {
       zon: "byra",
       label: "Underlag och sajt",
       items: [
-        { href: "/dashboard/brand-kit", label: "Grafisk profil", icon: Palette },
         { href: "/dashboard/konkurrenter", label: "Konkurrenter", icon: Users },
         { href: "/dashboard/analysator", label: "Profil-analysator", icon: Search },
         { href: "/dashboard/innehall", label: "Navet", icon: Compass, match: ["/dashboard/innehall"] },
@@ -141,6 +152,7 @@ function buildNavSections(resourceModule: string): NavSection[] {
       zon: "kundens",
       label: "Skapa och publicera",
       items: [
+        { href: "/dashboard/brand-kit", label: "Grafisk profil", icon: Palette, kundHref: "/k/brand-kit" },
         { href: "/dashboard/studio", label: "Studio", icon: ImageIcon, match: ["/dashboard/studio", "/dashboard/skapa"], kundHref: "/k/studio" },
         { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText, kundHref: "/k/blogg" },
         { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar, kundHref: "/k/kalender" },

@@ -208,57 +208,23 @@ export default function PrislistanGranskning() {
             )}
           </section>
 
-          {/* Artikellagret (PRIS2-1) — de fysiska artiklarna, oavsett om de redan har ett säljpris */}
+          {/* Artikellagret (PRIS2-1) — kort summering, full tabell på egen sida */}
           {data.artiklar && data.artiklar.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display text-lg font-bold text-gray-900">Artikellagret</h2>
-                <span className="text-xs text-gray-500">{data.artiklar.length} artiklar</span>
+            <Link href="/dashboard/prislistan/produkter" className="group flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+                  <Package className="h-5 w-5 text-indigo-600" />
+                </span>
+                <div>
+                  <div className="font-display font-bold text-gray-900">Artikellagret</div>
+                  <p className="text-sm text-gray-500">
+                    {data.artiklar.length} artiklar · {data.artiklar.filter((a) => a.kopplatSaljpris).length} har säljpris ·{" "}
+                    {data.artiklar.filter((a) => a.leverantorskopplingar.some((k) => k.bekraftad)).length} bekräftad inköpskoppling
+                  </p>
+                </div>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {data.artiklar.map((a) => (
-                  <div key={a.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
-                            <Package className="h-4 w-4 text-indigo-600" />
-                          </span>
-                          <span className="font-display font-bold text-gray-900 text-sm">{a.namn}</span>
-                        </div>
-                        <div className="mt-1.5 ml-10 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
-                          <span className="font-mono">{a.artikelnummer}</span>
-                          {a.tum && <span>· {a.tum}″</span>}
-                          {a.ljusstyrka_nits && <span>· {a.ljusstyrka_nits} nits</span>}
-                          {a.ip_klass && <span>· {a.ip_klass}</span>}
-                        </div>
-                      </div>
-                      {a.kopplatSaljpris ? (
-                        <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                          {a.kopplatSaljpris}
-                        </span>
-                      ) : (
-                        <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
-                          Inget säljpris kopplat
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-3 ml-10 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                      <span className="inline-flex items-center gap-1">
-                        <Link2 className="h-3 w-3" /> {a.leverantorskopplingar.length} leverantörskoppling{a.leverantorskopplingar.length === 1 ? "" : "ar"}
-                        {a.leverantorskopplingar.length > 0 && !a.leverantorskopplingar.some((k) => k.bekraftad) && (
-                          <span className="text-amber-600">(obekräftad)</span>
-                        )}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <FileText className="h-3 w-3" /> {a.datablad.length} datablad
-                      </span>
-                      {a.tillval.length > 0 && <span>{a.tillval.length} tillval</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+              <span className="text-sm font-medium text-indigo-600">Öppna tabellen →</span>
+            </Link>
           )}
 
           {/* Priserna */}
