@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, ChevronDown, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3, Tag } from "lucide-react";
+import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3, Tag } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -41,11 +41,154 @@ interface NavSection { label: string; items: NavItem[]; zon?: ZonId }
  */
 type ZonId = "eget" | "byra" | "kundens";
 
-const ZONER: { id: ZonId; rubrik: string; forklaring: string }[] = [
-  { id: "eget", rubrik: "Ditt eget", forklaring: "Bara du. Byter inte när du växlar kund." },
-  { id: "byra", rubrik: "Om valda kunden", forklaring: "Ditt arbete med kunden. Kunden ser inte det här." },
-  { id: "kundens", rubrik: "Kundens egna ytor", forklaring: "Samma innehåll som kunden når i sin portal." },
+// Zonerna lever kvar som METADATA på posterna (`zon`, `kundHref`) och styr prickmarkeringen
+// i flikraden. De renderas inte längre som tre rubriker — se MENY-3 nedan.
+
+/**
+ * MENY-3 (Håkans beslut 2026-08-18) — SEX OMRÅDEN EFTER ARBETE, inte efter ägare.
+ *
+ * Bakgrunden: menyn visade 50 rader i 8 sektioner, alla alltid utfällda, och han hittade
+ * inte det han sökte. Diagnosen (docs/MENY-KARTA.md) var inte att den var rörig utan att
+ * den svarade på fel fråga. Zonerna ovan sorterar efter VEM SOM ÄGER sidan — men på
+ * morgonen frågar man "vad ska jag göra?". Ett enda jobb, att sälja, låg utspritt på ÅTTA
+ * menyrader i tre zoner och fyra sektioner, och alla åtta ledde till samma affärskort.
+ *
+ * Nu: sju ingångar i sidomenyn, och områdets sidor som FLIKAR över innehållet. Zonen är
+ * inte borta — den har blivit en markering på fliken ("kunden ser det här") i stället för
+ * tre rubriker man ska läsa och minnas.
+ *
+ * ⚠ Områdena pekar ut sidor med HREF, inte med kopior. Posterna byggs fortfarande i
+ * buildNavSections (ikon, `match`, `kundHref` bor kvar där) och plockas ihop härifrån.
+ * En sida som inte nämns nedan FÖRSVINNER INTE — den hamnar sist i Byrån. Att tappa en
+ * sida ur menyn är samma sak som att ta bort den (MENY-2).
+ */
+const OMRADEN: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; hrefs: string[] }[] = [
+  {
+    id: "hq",
+    label: "Founder HQ",
+    icon: Command,
+    hrefs: ["/dashboard/hq", "/dashboard/hq/planering", "/dashboard/hq/uppstart"],
+  },
+  {
+    id: "salj",
+    label: "Sälj",
+    icon: TrendingUp,
+    hrefs: [
+      "/dashboard/pag",
+      "/dashboard/fokus",
+      "/dashboard/leads",
+      "/dashboard/dm",
+      "/dashboard/kunder",
+      "/dashboard/offert",
+      "/dashboard/hq/kontakt",
+      "/dashboard/driv/stadning",
+    ],
+  },
+  {
+    id: "skapa",
+    label: "Skapa",
+    icon: ImageIcon,
+    hrefs: [
+      "/dashboard/studio",
+      "/dashboard/studio/blogg",
+      "/dashboard/studio/kalender",
+      "/dashboard/linkedin",
+      "/dashboard/nyhetsbrev",
+      "/dashboard/agents",
+      "/dashboard/veckoplan",
+      "/dashboard/brand-kit",
+    ],
+  },
+  {
+    id: "kunden",
+    label: "Kunden",
+    icon: Users,
+    hrefs: [
+      "/dashboard",
+      "/dashboard/profil",
+      "/dashboard/konkurrenter",
+      "/dashboard/analysator",
+      "/dashboard/godkannande",
+      "/dashboard/rapport",
+      "/dashboard/paket",
+      "/dashboard/kund-access",
+      "/dashboard/ikigai",
+    ],
+  },
+  {
+    id: "sajt",
+    label: "Sajt & SEO",
+    icon: Layers,
+    hrefs: [
+      "/dashboard/sidor",
+      "/dashboard/seo",
+      "/dashboard/innehall",
+      "/dashboard/blogg",
+      "/dashboard/mejl",
+      "/dashboard/fordon",
+      "/dashboard/verk",
+      "/dashboard/utstallningar",
+    ],
+  },
+  {
+    id: "priser",
+    label: "Priser (DT)",
+    icon: Tag,
+    hrefs: [
+      "/dashboard/prislistan/produkter",
+      "/dashboard/prislistan",
+      "/dashboard/prislistan/uppladdning",
+      "/dashboard/prislistan/kalkylator",
+      "/dashboard/prislistan/priscoach",
+    ],
+  },
+  {
+    id: "byran",
+    label: "Byrån",
+    icon: Settings,
+    hrefs: [
+      "/dashboard/mysales-kunder",
+      "/dashboard/onboarding",
+      "/dashboard/setup/onboard",
+      "/dashboard/betalning",
+      "/dashboard/kostnader",
+      "/dashboard/kvalitet",
+      "/dashboard/installningar",
+      "/dashboard/setup",
+      "/dashboard/specialister",
+      "/dashboard/sms-paminnelse",
+      "/dashboard/studio/reels",
+      "/dashboard/webbdata-demo",
+      "/dashboard/handbok",
+    ],
+  },
 ];
+
+interface Omrade {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+}
+
+/** Plockar ihop områdena ur de befintliga posterna. Allt som inte nämns hamnar i Byrån. */
+function byggOmraden(sections: NavSection[]): Omrade[] {
+  const alla = sections.flatMap((s) => s.items);
+  const anvanda = new Set<string>();
+  const omraden = OMRADEN.map((o) => {
+    const items = o.hrefs
+      .map((h) => alla.find((i) => i.href === h))
+      .filter((i): i is NavItem => !!i);
+    items.forEach((i) => anvanda.add(i.href));
+    return { id: o.id, label: o.label, icon: o.icon, items };
+  });
+  const kvar = alla.filter((i) => !anvanda.has(i.href));
+  if (kvar.length) {
+    const byran = omraden.find((o) => o.id === "byran");
+    if (byran) byran.items.push(...kvar);
+  }
+  return omraden.filter((o) => o.items.length > 0);
+}
 
 function buildNavSections(resourceModule: string): NavSection[] {
   const resourceItems: NavItem[] =
@@ -224,32 +367,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navSections = scoped ? buildScopedNavSections() : buildNavSections(resourceModule);
 
-  // MENY-3 (Håkans invändning 18/8: "åt skogen för rörigt, jag letar leta o leta").
-  // Menyn visade 50 rader samtidigt — åtta sektioner, alla alltid utfällda. Strukturen
-  // var inte fel, den var bara helt uppslagen hela tiden. Nu fälls sektionerna ihop och
-  // BARA den som innehåller sidan du står på är öppen. Valet sparas per webbläsare, så
-  // den som vill ha allt öppet får ha det.
-  const [oppnaSektioner, setOppnaSektioner] = useState<string[] | null>(null);
-  useEffect(() => {
-    try {
-      const sparat = localStorage.getItem("cockpit_meny_oppna");
-      if (sparat) setOppnaSektioner(JSON.parse(sparat));
-    } catch {
-      /* utan sparat val gäller standarden: bara den aktiva sektionen */
-    }
-  }, []);
-  const vaxlaSektion = (label: string, aktivLabel: string | null) => {
-    setOppnaSektioner((nu) => {
-      const bas = nu ?? (aktivLabel ? [aktivLabel] : []);
-      const nasta = bas.includes(label) ? bas.filter((l) => l !== label) : [...bas, label];
-      try {
-        localStorage.setItem("cockpit_meny_oppna", JSON.stringify(nasta));
-      } catch {
-        /* privat läge: valet gäller bara den här sidvisningen */
-      }
-      return nasta;
-    });
-  };
 
   // Sidor som visar en TAVLA (kolumner sida vid sida) får hela fönstret. Listan är kort med
   // flit: varje sida här måste tåla 1600 px utan att bli glesa fält och lång radlängd.
@@ -268,10 +385,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     .filter(itemActive)
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
   const activeItem = allItems.find((i) => i.href === activeHref);
-  // Sektionen du står i ska alltid gå att se, även innan du rört menyn.
-  const aktivSektion = navSections.find((s) => s.items.some((i) => i.href === activeHref))?.label ?? null;
-  const arOppen = (label: string) =>
-    oppnaSektioner === null ? label === aktivSektion : oppnaSektioner.includes(label);
+
+  // MENY-3: sidomenyn visar OMRÅDEN, flikraden visar områdets sidor.
+  const omraden = scoped ? [] : byggOmraden(navSections);
+  const aktivtOmrade = omraden.find((o) => o.items.some((i) => i.href === activeHref)) ?? null;
+  const flikar = aktivtOmrade?.items ?? [];
 
   // Sätt browser-flikens titel (admin-yta ärver annars publika HM Motor-titeln)
   useEffect(() => {
@@ -299,76 +417,54 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {navSections.map((section, si) => (
-            <div key={section.label} className="mb-5">
-              {/* MENY-1: zonrubriken skrivs EN gång, vid första sektionen i zonen. Den bär
-                  förklaringen — utan den är "Ditt eget" bara ett ord, och det var just
-                  otydligheten som fick Planering att läsas som kundens vecka. */}
-              {section.zon && section.zon !== navSections[si - 1]?.zon && (
-                <div className={si > 0 ? "mt-6 mb-3 pt-4 border-t border-gray-200" : "mb-3"}>
-                  <div className="px-3 text-xs font-bold uppercase tracking-wider text-gray-900">
-                    {ZONER.find((z) => z.id === section.zon)?.rubrik}
-                    {section.zon === "byra" && klientNamn ? `: ${klientNamn}` : ""}
-                  </div>
-                  <div className="px-3 mt-0.5 text-xs leading-snug text-gray-400">
-                    {ZONER.find((z) => z.id === section.zon)?.forklaring}
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={() => vaxlaSektion(section.label, aktivSektion)}
-                aria-expanded={arOppen(section.label)}
-                className="w-full flex items-center gap-1.5 px-3 mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-700"
-              >
-                <ChevronDown
-                  className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${arOppen(section.label) ? "" : "-rotate-90"}`}
-                />
-                <span className="truncate">{section.label}</span>
-                {!arOppen(section.label) && (
-                  <span className="ml-auto tabular-nums text-gray-300">{section.items.length}</span>
-                )}
-              </button>
-              <div className={`space-y-0.5 ${arOppen(section.label) ? "" : "hidden"}`}>
-                {section.items.map((item) => {
-                  const isActive = item.href === activeHref;
-                  // Extern genväg (t.ex. Lobbyn i MySales Coach) → ny flik, aldrig aktiv-markerad.
-                  if (item.href.startsWith("http")) {
-                    return (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => setMobileOpen(false)}
-                        className="group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                      >
-                        <item.icon className="w-[18px] h-[18px] flex-shrink-0 text-gray-400 group-hover:text-gray-600" />
-                        <span className="truncate">{item.label}</span>
-                        <ExternalLink className="w-3.5 h-3.5 ml-auto text-gray-300 group-hover:text-gray-400" />
-                      </a>
-                    );
-                  }
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        isActive
-                          ? "bg-indigo-50 text-indigo-700 font-semibold"
-                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        {/* MENY-3: sju ingångar efter ARBETE. Områdets sidor ligger som flikar över
+            innehållet, inte som femtio rader här. Se docs/MENY-KARTA.md. */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          {scoped
+            ? navSections.flatMap((s) => s.items).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={item.href === activeHref ? "page" : undefined}
+                  className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                    item.href === activeHref
+                      ? "bg-indigo-50 text-indigo-700 font-semibold"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <item.icon className={`w-[18px] h-[18px] flex-shrink-0 ${item.href === activeHref ? "text-indigo-600" : "text-gray-400"}`} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              ))
+            : omraden.map((o) => {
+                const aktiv = o.id === aktivtOmrade?.id;
+                // Ingången leder till områdets FÖRSTA sida. Flikraden tar dig vidare.
+                const href = o.items[0].href;
+                return (
+                  <Link
+                    key={o.id}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={aktiv ? "page" : undefined}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                      aktiv
+                        ? "bg-indigo-50 text-indigo-700 font-semibold"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    <span
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        aktiv ? "bg-indigo-100" : "bg-gray-100 group-hover:bg-gray-200"
                       }`}
                     >
-                      <item.icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}`} />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+                      <o.icon className={`w-[18px] h-[18px] ${aktiv ? "text-indigo-600" : "text-gray-500"}`} />
+                    </span>
+                    <span className="truncate">{o.label}</span>
+                    <span className="ml-auto text-xs tabular-nums text-gray-300">{o.items.length}</span>
+                  </Link>
+                );
+              })}
         </nav>
 
         {/* Sidfot: byrå-genvägar (döljs i låst klientvy) + utloggning (alltid synlig) */}
@@ -415,6 +511,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             pipeline med sju fack trängdes ihop fastän utrymmet fanns. Tavelsidor får därför
             hela bredden. Resten av sidorna behåller kapet: en löptext som är 1600 px bred är
             svårläst, och det var inte det han klagade på. */}
+        {/* MENY-3: områdets sidor som flikar. Ersätter fyrtio menyrader — och gör
+            grannskapet synligt: står du på Fokus idag ser du att Offerter och Nya leads
+            hör till samma jobb, vilket menyn aldrig visade. `kundHref` blir en prick:
+            zonen är kvar som information, men inte längre som tre rubriker att minnas. */}
+        {flikar.length > 1 && (
+          <div className="bg-white border-b border-gray-100 sticky top-0 lg:top-0 z-20">
+            <div className={`${bredSida ? "max-w-none" : "max-w-7xl"} mx-auto px-4 sm:px-6 lg:px-8`}>
+              <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-2">
+                <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider text-gray-400 pr-3 flex-shrink-0">
+                  {aktivtOmrade?.label}
+                </span>
+                {flikar.map((f) => {
+                  const aktiv = f.href === activeHref;
+                  return (
+                    <Link
+                      key={f.href}
+                      href={f.href}
+                      aria-current={aktiv ? "page" : undefined}
+                      title={f.kundHref ? "Kunden ser den här sidan i sin egen portal" : undefined}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
+                        aktiv
+                          ? "bg-indigo-50 text-indigo-700 font-semibold"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      {f.label}
+                      {f.kundHref && (
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${aktiv ? "bg-indigo-400" : "bg-gray-300"}`}
+                          aria-label="Kunden ser den här sidan"
+                        />
+                      )}
+                    </Link>
+                  );
+                })}
+                {/* MENY-1:s poäng får inte gå förlorad. Zonrubrikerna är borta, men den
+                    upplysning som faktiskt behövdes — "ändrar jag här ser kunden det" —
+                    står kvar, med kundens namn utskrivet så det inte går att missta. */}
+                {flikar.some((f) => f.kundHref) && (
+                  <span className="hidden md:inline-flex items-center gap-1.5 pl-4 text-xs text-gray-400 whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                    {klientNamn ? `${klientNamn} ser sidan i sin portal` : "kunden ser sidan i sin portal"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <main className={`${bredSida ? "max-w-none" : "max-w-7xl"} mx-auto px-4 sm:px-6 lg:px-8 py-6`}>{children}</main>
       </div>
     </div>
