@@ -5,10 +5,11 @@ import Link from "next/link";
 import {
   ArrowLeft, Loader2, AlertTriangle, Phone, Mail, Calendar, FileText, CheckSquare,
   MessageSquare, Check, X, RefreshCw, Tag, Reply, Send, StickyNote, CalendarClock,
-  Search, ExternalLink, Paperclip,
+  Search, ExternalLink, Paperclip, Sparkles,
 } from "lucide-react";
 import PipelineStegRad, { type StegInfo } from "@/components/PipelineStegRad";
-import { CoachContextInput } from "@/components/FokusClient";
+import { CoachContextInput, CoachPanel, type ScoredCard } from "@/components/FokusClient";
+import { regelForSteg } from "@/lib/fokus/config";
 import { mysalesKontaktUrl } from "@/lib/mysales";
 
 type SvarsData =
@@ -25,6 +26,12 @@ interface Prisrad {
   enhet: string | null; franPris: boolean; giltigFran: string;
   tb?: { kr: number; pct: number; bastaInkopsvag: string | null };
 }
+interface Kontaktforslag {
+  epost: string;
+  traffar: number;
+  senasteAmne: string;
+  senasteDatum: string;
+}
 interface DrivKort {
   lage: {
     ghlOpportunityId: string; ghlContactId: string | null; namn: string | null; foretag: string | null;
@@ -36,6 +43,7 @@ interface DrivKort {
   senasteKontakt: { text: string; bollenHos: "kund" | "oss" | "okant" };
   tidslinje: TidslinjePost[];
   foreslagnaLankar: Array<{ id: string; belagg: string; ref_typ: string }>;
+  kontaktforslag: Kontaktforslag[];
   prislista: Prisrad[];
   offertForslag: { offertId: string; titel: string; datum: string } | null;
   fel: string[];
@@ -60,12 +68,46 @@ function isoTillInputvarde(iso: string) {
   return new Date(iso).toISOString().slice(0, 16);
 }
 
+/**
+ * DRIV-kortet → det kortformat Säljcoachen redan talar (samma väg DM tog, se
+ * dm/page.tsx::kortFranKontakt). Skillnaden mot DM: här FINNS ett affärs-id, och
+ * `/api/fokus/coach` matchar spegelraden på just `kort.id` → coachen hittar affärens
+ * eget minne direkt i stället för att falla tillbaka på namnmatchning.
+ *
+ * Prioritet och färg lämnas neutrala med flit: de hör till Fokus idags rankning, och
+ * coachen räknar aldrig på dem. Lägesbilden tas ur kortets egen `senasteKontakt` — den
+ * är redan deterministisk och sann, till skillnad från en text vi hittar på här.
+ */
+function kortForCoach(k: DrivKort): ScoredCard {
+  const { lage, senasteKontakt } = k;
+  const regel = regelForSteg(lage.stegNamn || "");
+  const dagarISteget = lage.dagarISteget ?? 0;
+  return {
+    id: lage.ghlOpportunityId,
+    namn: lage.namn || "Affären",
+    foretag: lage.foretag || "",
+    varde: lage.varde,
+    stegNamn: lage.stegNamn || regel.namn,
+    typ: regel.typ,
+    dagarISteget,
+    dagarOverSla: regel.sla === null ? 0 : Math.max(0, dagarISteget - regel.sla),
+    prioritet: 0,
+    farg: "neutral",
+    okantVarde: !lage.varde,
+    ghlContactId: lage.ghlContactId || undefined,
+    lagesText: senasteKontakt.text,
+    rekommenderatDrag: lage.nastaSteg?.titel || "",
+  };
+}
+
 export default function DrivKortPage({ params }: { params: Promise<{ oppId: string }> }) {
   const { oppId } = usePromise(params);
   const [primary, setPrimary] = useState("#4f46e5");
   const [kort, setKort] = useState<DrivKort | null>(null);
   const [laddar, setLaddar] = useState(true);
   const [beslutar, setBeslutar] = useState<string | null>(null);
+  // Säljcoachen — samma dialog som Fokus idag och DM öppnar, ingen parallell logik.
+  const [coachOppen, setCoachOppen] = useState(false);
 
   // Svara
   const [utkastFor, setUtkastFor] = useState<string | null>(null);
@@ -79,6 +121,11 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
   const [nsTitel, setNsTitel] = useState("");
   const [nsDatum, setNsDatum] = useState("");
   const [nsSparar, setNsSparar] = useState(false);
+
+  // Kontaktuppgift som systemet hittat i mejlen (visas bara när fältet är tomt)
+  const [forslagSparar, setForslagSparar] = useState<string | null>(null);
+  const [forslagAvvisade, setForslagAvvisade] = useState<string[]>([]);
+  const [forslagFel, setForslagFel] = useState<string | null>(null);
 
   // Anteckna
   const [noteringText, setNoteringText] = useState("");
@@ -248,6 +295,24 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
     }
   }
 
+  async function sparaKontaktuppgift(epost: string) {
+    if (!kort?.lage.ghlContactId) return;
+    setForslagSparar(epost);
+    setForslagFel(null);
+    try {
+      const r = await fetch("/api/driv/kontaktuppgift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ghlContactId: kort.lage.ghlContactId, epost }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setForslagFel(d.error || "Kunde inte spara adressen."); return; }
+      await ladda(); // adressen finns nu → förslaget försvinner, tidslinjen får mejlen
+    } finally {
+      setForslagSparar(null);
+    }
+  }
+
   async function sparaNotering() {
     if (!kort?.lage.ghlContactId || !noteringText.trim()) return;
     setNoteringSparar(true);
@@ -287,7 +352,8 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
     );
   }
 
-  const { lage, senasteKontakt, tidslinje, foreslagnaLankar, prislista, offertForslag, fel } = kort;
+  const { lage, senasteKontakt, tidslinje, foreslagnaLankar, kontaktforslag, prislista, offertForslag, fel } = kort;
+  const kvarvarandeForslag = (kontaktforslag || []).filter((f) => !forslagAvvisade.includes(f.epost));
   const kanalNamn = (k: SvarsData) => (k.kanal === "gmail" ? "Gmail" : "MySales (samma kanal som tråden)");
 
   // Samma URL-mönster som Fokus idag redan använder för "Skapa offert" (FokusClient.tsx).
@@ -391,8 +457,17 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
           </div>
         )}
 
-        {/* DRIV-3: Skapa offert — samma URL-mönster/väg som Fokus idag redan använder */}
+        {/* Handlingsraden. Coacha affären först — det är draget man vill göra när man
+            precis läst läget, och den låg tidigare bara i Fokus idag och DM. */}
         <div className="mt-4 flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setCoachOppen(true)}
+            title="Konkret nästa steg för just den här affären"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg text-white shadow-sm hover:opacity-90"
+            style={{ background: primary }}
+          >
+            <Sparkles className="w-4 h-4" /> Coacha affären
+          </button>
           <a
             href={offertHref}
             title="Öppnar offertmotorn med kunden ifylld"
@@ -412,6 +487,76 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
             </a>
           )}
         </div>
+      </div>
+
+      {/* Saknad e-post → systemet har letat i mejlkorgen. Ett förslag med sitt belägg,
+          aldrig en gissning ur domännamnet, och aldrig satt utan ett klick. Rutan finns
+          bara så länge fältet är tomt: sparas adressen försvinner den av sig själv. */}
+      {kvarvarandeForslag.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+          <div>
+            <h2 className="font-display font-bold text-gray-900 text-sm inline-flex items-center gap-1.5">
+              <Mail className="w-4 h-4" style={{ color: primary }} /> Kontakten saknar e-post — jag hittade den här i din mejl
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Utan adress kan kortet varken visa mejlen i tidslinjen eller mäta hur länge det varit tyst.
+            </p>
+          </div>
+          {kvarvarandeForslag.map((f) => (
+            <div key={f.epost} className="flex items-center justify-between gap-3 flex-wrap rounded-xl bg-gray-50 px-4 py-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-gray-900 truncate">{f.epost}</div>
+                <div className="text-xs text-gray-500 truncate">
+                  {f.traffar} {f.traffar === 1 ? "mejl" : "mejl"} · senast {f.senasteDatum} · &quot;{f.senasteAmne}&quot;
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => sparaKontaktuppgift(f.epost)}
+                  disabled={forslagSparar === f.epost}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg text-white disabled:opacity-40"
+                  style={{ background: primary }}
+                >
+                  {forslagSparar === f.epost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  Spara i MySales
+                </button>
+                <button
+                  onClick={() => setForslagAvvisade((a) => [...a, f.epost])}
+                  className="text-sm text-gray-500 hover:text-gray-700 px-2"
+                >
+                  Inte den
+                </button>
+              </div>
+            </div>
+          ))}
+          {forslagFel && <div className="text-xs text-red-600">{forslagFel}</div>}
+        </div>
+      )}
+
+      {/* Uppdatera kortet. Låg tidigare längst ner och hette "Anteckna", med `compact`
+          satt — vilket gömde raden som berättar att man får klistra in en skärmbild.
+          Tre vägar in, samma ruta: skriva, prata in, klistra in. Den hör hemma direkt
+          under handlingsraden: det är det man gör när man precis lagt på luren. */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+        <div>
+          <h2 className="font-display font-bold text-gray-900 text-lg inline-flex items-center gap-2">
+            <StickyNote className="w-[18px] h-[18px]" style={{ color: primary }} /> Uppdatera kortet
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Skriv, prata in eller klistra in — en skärmbild av en SMS-tråd fungerar lika bra som text.
+            Det du sparar hamnar på kontakten i MySales och syns i tidslinjen.
+          </p>
+        </div>
+        <CoachContextInput
+          value={noteringText}
+          onChange={setNoteringText}
+          onSubmit={sparaNotering}
+          submitLabel={noteringSparar ? "Sparar…" : "Spara på kontakten"}
+          placeholder="Vad hände? T.ex. &quot;ringde, han vill ha svar på leveranstid innan fredag&quot;"
+          primaryColor={primary}
+          rows={3}
+        />
+        {noteringKvitto && <div className="text-xs text-gray-500">{noteringKvitto}</div>}
       </div>
 
       {/* DRIV-3: dag 3-uppföljning på en skickad offert — förslag, aldrig automatiskt */}
@@ -513,22 +658,6 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
           {fel.map((f, i) => <div key={i}>{f}</div>)}
         </div>
       )}
-
-      {/* Anteckna */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-        <h2 className="font-display font-bold text-gray-900 text-sm inline-flex items-center gap-1.5"><StickyNote className="w-4 h-4" style={{ color: primary }} /> Anteckna</h2>
-        <CoachContextInput
-          value={noteringText}
-          onChange={setNoteringText}
-          onSubmit={sparaNotering}
-          submitLabel={noteringSparar ? "Sparar…" : "Spara på kontakten"}
-          placeholder="Skriv eller prata in vad som är på gång…"
-          primaryColor={primary}
-          rows={2}
-          compact
-        />
-        {noteringKvitto && <div className="text-xs text-gray-500">{noteringKvitto}</div>}
-      </div>
 
       {/* Tidslinjen */}
       <div className="space-y-3">
@@ -642,6 +771,18 @@ export default function DrivKortPage({ params }: { params: Promise<{ oppId: stri
           </div>
         )}
       </div>
+
+      {/* Säljcoachen: EXAKT samma dialog som Fokus idag och DM öppnar. Coachen hämtar
+          själv affärsminne, planering och kontakthistorik via /api/fokus/coach — här
+          hittar den dessutom spegelraden direkt på affärs-id:t. */}
+      {coachOppen && (
+        <CoachPanel
+          kort={kortForCoach(kort)}
+          primaryColor={primary}
+          onClose={() => setCoachOppen(false)}
+          onRefresh={ladda}
+        />
+      )}
     </div>
   );
 }

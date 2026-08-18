@@ -614,7 +614,16 @@ export default function HqPage() {
                       return (
                         <tr key={k.ghl_opportunity_id} className={`border-b border-gray-50 last:border-0 ${forfallen ? "bg-red-50/60" : ""}`}>
                           <td className="px-5 py-2.5">
-                            <span className="font-medium text-gray-900">{k.namn || k.kontakt || "Namnlös affär"}</span>
+                            {/* Affärsnamnet öppnar DRIV-kortet — samma kort som Fokus idag,
+                                Dagens drag och städningen pekar på. En affär, ett kort. */}
+                            <a
+                              href={`/dashboard/driv/${k.ghl_opportunity_id}`}
+                              className="font-medium text-gray-900 hover:underline"
+                              style={{ textDecorationColor: "#94a3b8" }}
+                              title="Öppna kortet — tidslinje, coach och nästa steg"
+                            >
+                              {k.namn || k.kontakt || "Namnlös affär"}
+                            </a>
                             {k.foretag && <span className="ml-2 text-xs text-gray-500">{k.foretag}</span>}
                           </td>
                           <td className="px-3 py-2.5">

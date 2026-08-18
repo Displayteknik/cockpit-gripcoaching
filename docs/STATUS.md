@@ -1641,3 +1641,98 @@ Kundversionen (DRIV-5) är fortsatt medvetet parkerad, ingen kod skriven där.
 5. Fem-dagars-mätningen av morgonkön spelar ut sig i verkligheten från och med imorgon.
 
 Se respektive etapps sektion ovan för fullständiga DoD-tabeller.
+
+---
+
+## Massuppdatering av DT:s pipeline 2026-08-18 (+ full inventering, steg 0)
+
+Inventeringen ligger i `docs/DT-PIPELINE-INVENTERING-2026-08-18.md` (61 kort, 47 utan
+nästa åtgärd, 57 lobby-leads varav 25 utan kopplat kort).
+
+**Skrivet till GHL** (`scripts/_dt-massuppdatering.mts`, kördes med `--kor`): 6 aktiva
+kort, 2 vilande, 1 bevakning, 1 avslutad. Fem kort uppdaterade, sex skapade (fyra affärer
++ tre kontakter). Varje kort fick steg, värde, notering med datum och en uppgift med
+förfallodatum. Spegeln synkad om (61 rader) och utfallet verifierat i
+`scripts/_dt-verifiera.mts`.
+
+### Tre premisser i beställningen som inte höll
+
+| Beställningen antog | Verkligheten |
+|---|---|
+| "På G-vyn (under byggnad enligt tidigare beställning)" | Finns inte i repot — inte på master, inte på någon gren, ingen beställning i STATUS. Verifieringen "6 aktiva kort sorterade på nästa åtgärdsdatum" kan därför inte köras mot någon vy |
+| "2 vilande utanför standardvyn" | Vilande-steget FINNS nu i GHL (position 8), men `synkaPipeline` skriver `harledd_status` med den trevägs `harledStatus` — "Vilande" faller igenom som **open**. `arVilande`/`harledSteglage` returnerar rätt svar men har noll anropare: dödkod sedan FIX-1-REST B2 |
+| "exakt 6 aktiva kort" | Kund pipeline DT har **31 öppna kort**. De sex är de sex med nästa åtgärd inom en vecka, inte de sex systemet visar |
+
+### Fyra-vägs-status är INTE byggd — medvetet val
+
+Att låta `harledd_status` bli `'vilande'` kräver tre saker samtidigt, och det tredje rör
+pengar: (1) migration, `hq.sql:76` har `check (harledd_status in ('open','won','lost'))`,
+(2) synkens uppgiftshämtning måste släppa in vilande, annars försvinner
+återkontaktdatumet ur spegeln och påminnelsen dör tyst, (3) `lib/hq/likviditet.ts::vikt`
+viktar allt som inte är won/lost med stegets sannolikhet — vilande skulle annars ligga
+kvar i tolvveckorsprognosen. Väntar på Håkans beslut.
+
+### Ett scope-svar som DRIV-0 hade fel om
+
+Nyckeln HAR `contacts.write` och `opportunities.write`. DRIV-0 noterade contacts.write som
+"saknas idag" och DRIV-4:s uppgiftsskrivning var kodgranskad men aldrig körd. Elva
+skrivningar i rad gick igenom: kontakter, affärer, noteringar och uppgifter.
+
+### PÅ VANLIG SVENSKA
+
+Dina åtta kunder ligger nu rätt i MySales: var och en med sitt pris, en anteckning om vad
+som hände senast och en påminnelse med datum. På onsdag möter du Linus, Annica och Jonas
+Edberg överst i Fokus idag — precis de tre du bad om. Två kunder är parkerade med datum
+för när du ska höra av dig igen. Det jag inte kunde göra: den nya översiktsvyn du trodde
+var under byggnad finns inte, och de parkerade kunderna räknas fortfarande som pågående i
+sifforna tills du säger till att jag får ändra det. Och listan över gamla kort som ingen
+bestämt något om är längre än du tror — nitton stycken.
+
+---
+
+## PÅ G-vyn + ett kort som kan allt (2026-08-18, kväll)
+
+Beställningen: "allt på samma ställe, alla smarta funktioner på alla kort, färdigt synkat
+och komplett — lättast möjliga system för att få överblick och flytta affärer framåt."
+
+### Fyra ändringar
+
+1. **Säljcoachen in på DRIV-kortet.** `CoachPanel` (samma dialog som Fokus idag och DM
+   öppnar) monteras nu på `/dashboard/driv/<oppId>` med en `kortForCoach`-adapter, samma
+   väg DM tog. Skillnaden: här FINNS ett affärs-id, så `/api/fokus/coach` hittar affärens
+   eget minne direkt i stället för att falla tillbaka på namnmatchning.
+   Kommentaren på `FokusClient.tsx:1241` sa redan att panelen var exporterad "så DM &
+   Pipeline kan öppna EXAKT samma dialog" — DM plockade upp den, kortet gjorde det aldrig.
+2. **PÅ G-vyn** (`/dashboard/pag` + `/api/pag`, menypost i zon "Din vecka" före Planering).
+   Alla affärer i spel sorterade på NÄSTA ÅTGÄRDSDATUM, i fem fack: Försenat, I dag,
+   Framåt, Utan plan (äldst i steget överst) och Vilande (utanför standardvyn, hopfällt).
+   Varje rad öppnar samma DRIV-kort. Läser spegeln, aldrig GHL direkt — ingen tredje sanning.
+3. **Vilande löst i vyn, inte i statusfältet.** `arVilande` fanns färdig sedan FIX-1-REST B2
+   men hade noll anropare. Nu har den en. `__ghl_vilande_stage_id` är dessutom satt i
+   `coach_users.personal_os` (båda raderna för locationen), så facket pekas ut på id och
+   inte gissas ur stegnamnet. **Ingen migration, ingen ändrad likviditetsprognos** — se
+   föregående sektion för varför den vägen är dyrare än den ser ut.
+4. **"Anteckna" → "Uppdatera kortet".** Rutan kunde redan skriva, prata in (`/api/ai/transcribe`)
+   och klistra in skärmbild (`/api/ai/vision`) — men `compact` var satt, vilket gömde raden
+   som berättar om Ctrl+V, och den låg under prislistan och tidslinjen. Nu ligger den direkt
+   under handlingsraden med alla tre vägarna utskrivna.
+
+### Verifierat
+
+- `npx tsc --noEmit` rent, `npx next build` rent (`/api/pag` och `/dashboard/pag` i utfallet).
+- Grupperingen körd mot skarp DT-data (`scripts/_pag-verifiera.mts`): 0 försenat, 0 i dag,
+  **8 framåt** (19/8 Linus + Annica + Jonas ×2, 21/8 Lars + Martin, 24/8 Robin, 26/8 Magnus),
+  **21 utan plan**, **2 vilande**. 29 kort i spel, 1 405 900 kr.
+- **INTE visuellt verifierat.** Sidan ligger bakom admin-inloggningen, och jag matar aldrig
+  in lösenord. Byggd strikt på designspråket i `cockpit-design` (DashHero, StatTile,
+  färgade ikonbrickor, `rounded-2xl`, `tabular-nums`) — men ögat är ditt.
+
+### PÅ VANLIG SVENSKA
+
+Nu finns en sida som heter På G. Den visar alla dina affärer i den ordning de behöver dig:
+försenat först, sen i dag, sen framåt, och längst ner de tjugoen som ingen bestämt något om.
+Klickar du en rad öppnas kortet, och där kan du nu få coachning direkt — den hjälpen fanns
+förut bara på en annan sida. Du uppdaterar ett kort genom att skriva, prata in eller klistra
+in en skärmbild, och den rutan ligger nu högst upp där du ser den. De två parkerade kunderna
+ligger för sig själva och stör inte. En sak har jag inte gjort: sett sidan med egna ögon,
+för den kräver din inloggning.

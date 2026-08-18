@@ -67,6 +67,9 @@ function buildNavSections(resourceModule: string): NavSection[] {
         // Founder HQ = ägarens kommandobrygga. Den gamla länklistan bor på
         // /dashboard/genvagar och ligger med flit utanför menyn (REV-0).
         { href: "/dashboard/hq", label: "Founder HQ", icon: Command },
+        // På G = affärerna i den ordning de behöver dig. Ligger före Planering:
+        // det är den vy man öppnar först på morgonen.
+        { href: "/dashboard/pag", label: "På G", icon: TrendingUp },
         { href: "/dashboard/hq/planering", label: "Planering", icon: Calendar },
         { href: "/dashboard/hq/uppstart", label: "Uppstart", icon: Rocket },
         { href: "/dashboard/hq/kontakt", label: "Vem har bollen", icon: Radio },
@@ -221,6 +224,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navSections = scoped ? buildScopedNavSections() : buildNavSections(resourceModule);
 
+  // MENY-3 (Håkans invändning 18/8: "åt skogen för rörigt, jag letar leta o leta").
+  // Menyn visade 50 rader samtidigt — åtta sektioner, alla alltid utfällda. Strukturen
+  // var inte fel, den var bara helt uppslagen hela tiden. Nu fälls sektionerna ihop och
+  // BARA den som innehåller sidan du står på är öppen. Valet sparas per webbläsare, så
+  // den som vill ha allt öppet får ha det.
+  const [oppnaSektioner, setOppnaSektioner] = useState<string[] | null>(null);
+  useEffect(() => {
+    try {
+      const sparat = localStorage.getItem("cockpit_meny_oppna");
+      if (sparat) setOppnaSektioner(JSON.parse(sparat));
+    } catch {
+      /* utan sparat val gäller standarden: bara den aktiva sektionen */
+    }
+  }, []);
+  const vaxlaSektion = (label: string, aktivLabel: string | null) => {
+    setOppnaSektioner((nu) => {
+      const bas = nu ?? (aktivLabel ? [aktivLabel] : []);
+      const nasta = bas.includes(label) ? bas.filter((l) => l !== label) : [...bas, label];
+      try {
+        localStorage.setItem("cockpit_meny_oppna", JSON.stringify(nasta));
+      } catch {
+        /* privat läge: valet gäller bara den här sidvisningen */
+      }
+      return nasta;
+    });
+  };
+
   // Sidor som visar en TAVLA (kolumner sida vid sida) får hela fönstret. Listan är kort med
   // flit: varje sida här måste tåla 1600 px utan att bli glesa fält och lång radlängd.
   const BREDA_SIDOR = ["/dashboard/dm"];
@@ -238,6 +268,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     .filter(itemActive)
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
   const activeItem = allItems.find((i) => i.href === activeHref);
+  // Sektionen du står i ska alltid gå att se, även innan du rört menyn.
+  const aktivSektion = navSections.find((s) => s.items.some((i) => i.href === activeHref))?.label ?? null;
+  const arOppen = (label: string) =>
+    oppnaSektioner === null ? label === aktivSektion : oppnaSektioner.includes(label);
 
   // Sätt browser-flikens titel (admin-yta ärver annars publika HM Motor-titeln)
   useEffect(() => {
@@ -282,8 +316,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 </div>
               )}
-              <div className="px-3 mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">{section.label}</div>
-              <div className="space-y-0.5">
+              <button
+                onClick={() => vaxlaSektion(section.label, aktivSektion)}
+                aria-expanded={arOppen(section.label)}
+                className="w-full flex items-center gap-1.5 px-3 mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-700"
+              >
+                <ChevronDown
+                  className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${arOppen(section.label) ? "" : "-rotate-90"}`}
+                />
+                <span className="truncate">{section.label}</span>
+                {!arOppen(section.label) && (
+                  <span className="ml-auto tabular-nums text-gray-300">{section.items.length}</span>
+                )}
+              </button>
+              <div className={`space-y-0.5 ${arOppen(section.label) ? "" : "hidden"}`}>
                 {section.items.map((item) => {
                   const isActive = item.href === activeHref;
                   // Extern genväg (t.ex. Lobbyn i MySales Coach) → ny flik, aldrig aktiv-markerad.

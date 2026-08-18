@@ -13,6 +13,7 @@ import { hamtaKonversationer, hamtaMeddelanden, hamtaKontakt, hamtaUppgifterForK
 import { hamtaTradMetadata, sokMeddelandenMedBilaga } from "@/lib/driv/gmail";
 import { foreslaLank, lasLankar, kalenderKandidat, type LankRad } from "@/lib/driv/matchning";
 import { hamtaPrislista, hamtaTb, type Prisrad } from "@/lib/driv/pris";
+import { hittaKontaktuppgifter, type Kontaktforslag } from "@/lib/driv/kontaktuppgift";
 
 export type TidslinjeKalla = "ghl_konversation" | "gmail" | "kalender" | "offert" | "uppgift";
 
@@ -66,6 +67,8 @@ export interface DrivKort {
   senasteKontakt: SenasteKontakt;
   tidslinje: TidslinjePost[];
   foreslagnaLankar: LankRad[];
+  /** Adresser hittade i ägarens egen Gmail när kontakten saknar e-post. Förslag, aldrig satt. */
+  kontaktforslag: Kontaktforslag[];
   prislista: Prisrad[]; // DRIV-3, ur säljlagret (v_sl_publik)
   /** DRIV-3: en skickad offert utan uppföljning → förslag, ALDRIG automatiskt satt. */
   offertForslag: { offertId: string; titel: string; datum: string } | null;
@@ -233,6 +236,21 @@ export async function byggKort(ghlOpportunityId: string, beslutadAv = "owner"): 
     fel.push("Google-kopplingen saknar behörighet till Gmail. Koppla om Google så följer den med.");
   }
 
+  // 2b. SAKNAS e-posten? Låt systemet leta i stället för att be Håkan fylla i.
+  //
+  // Körs BARA när fältet är tomt — har kontakten en adress finns inget att föreslå, och
+  // den här sökningen kostar då ingenting. Utan adress är kortet dessutom halvblint:
+  // tidslinjen ovan hoppas över helt, och KONTAKT-1 kan inte mäta tystnad (se
+  // lib/driv/matchning.ts). Att fylla luckan är alltså inte en bekvämlighet.
+  let kontaktforslag: Kontaktforslag[] = [];
+  if (!lage.epost && scope?.harGmail && (lage.namn || lage.foretag)) {
+    try {
+      kontaktforslag = await hittaKontaktuppgifter(await agarToken(), lage.namn, lage.foretag);
+    } catch {
+      /* fail-open: ett uteblivet förslag är inget fel värt att visa */
+    }
+  }
+
   // 3. Kalender — svag textmatchning på namn/företag (aldrig en säker koppling, se lib/driv/matchning.ts).
   const sokord = [lage.namn, lage.foretag].filter(Boolean) as string[];
   if (sokord.length && lage.ghlContactId) {
@@ -315,7 +333,7 @@ export async function byggKort(ghlOpportunityId: string, beslutadAv = "owner"): 
   const senasteKontakt = harledSenasteKontakt(tidslinje);
   const foreslagnaLankar = lage.ghlContactId ? (await lasLankar(lage.ghlContactId)).filter((l) => l.status === "foreslagen") : [];
 
-  const kort: DrivKort = { lage, senasteKontakt, tidslinje, foreslagnaLankar, prislista, offertForslag, fel, hamtadTidsstampel: new Date().toISOString() };
+  const kort: DrivKort = { lage, senasteKontakt, tidslinje, foreslagnaLankar, kontaktforslag, prislista, offertForslag, fel, hamtadTidsstampel: new Date().toISOString() };
 
   // Cache åt framtida listvyer — kortet självt visar alltid det just hämtade.
   try {
