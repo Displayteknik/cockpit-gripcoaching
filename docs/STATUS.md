@@ -39,6 +39,21 @@ och dra-och-släpp är obeklickad. Arbetsträdet: 1094 tester gröna i 70 filer,
 VERIFIERAT till verifierad; G-4/G-5/G-6 från BESTÄLLT till verifierade. G-9 klar 10/8. Kvar i GRANSK-serien: G-7 (blindtestet — Håkans egen
 bedömning) och G-8 (mätloopen — kräver Instagram-omkoppling per kund).*
 
+*Uppdaterad 19/8 — **OPTICUR-1 Etapp A KLART OCH VERIFIERAT** (`310e1f0`). Två skarpa
+Opticur-annonser hade fel gröna: den stående hade Ingelas riktiga koder ersatta av
+platshållarfärger på tre ställen samtidigt (`clients/opticur/brand.json`, `studio_brand_kits`,
+`clients.primary_color` — alla `#1A6B3C`/`#5AAF32`), rättat till `#007A3D`/`#62A936` + CMYK,
+verifierat mot faktisk mall-rendering. Den liggande annonsens fel logga/färg kom från en
+AI-bildväg (inget liggande format finns i Studios mallsystem) där `build-image-prompt`
+uttryckligen instruerade modellen att rita "OPTICUR" som logotyp — instruktionen borttagen,
+stoppar hallucinationen. Blast radius: ~24 ställen hade Opticurs gröna hårdkodad som generisk
+nödfallsfärg för ALLA tenants (inkl. ett catch-block som gav vilken tenant som helst Opticurs
+grön vid databasfel) — bytt till neutral grå (`#6B7280`). Omvänt test kört: For Balance
+opåverkad. **Nästa steg, väntar på eget mandat: Etapp B** — fritt skärmformat ("Egen
+storlek/Skärm", t.ex. Opticurs infartsskärm 1200×900), måttoberoende layout, riktig
+logg-kompositering i det formatet (det som saknas strukturellt idag), bakom entitlement
+och PÅ endast för Opticur. Hårt stopp före Etapp B per beställningen — inte påbörjad.*
+
 ### Topp 5 kundsynliga brister, efter risk
 
 > ~~1. Sju djupgranskningsrapporter synliga för kund~~ — **ÅTGÄRDAD 9/8.** Dolda i kundvyn
