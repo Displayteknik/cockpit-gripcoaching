@@ -77,12 +77,17 @@ interface Props {
   // rutans proportion när imageSrc är satt — `format` är frikopplat från cropen där
   // och får aldrig avgöra hur mycket av bilden som object-cover klipper bort.
   imageEditRatio?: ImageEditRatio;
+  // Finns det text inbränd i bildens pixlar (AI-genererad med exakt text, eller mall med
+  // rubrik ovanpå)? Rutnäts-varningen (3:4) betyder bara nåt när nåt faktiskt kan hamna
+  // utanför kanten. Ett vanligt uppladdat råfoto har aldrig inbränd text — default true
+  // (mallägen har alltid text ovanpå bilden); Skriv eget-läget sätter det explicit.
+  hasImageText?: boolean;
   // Ett-klicks-fix i rutnäts-varningen: byt till Porträtt (4:5) direkt där problemet syns,
   // utan att användaren behöver hitta formatväljaren. Sätts bara när bytet är möjligt.
   onFixFormat?: () => void;
 }
 
-export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc, imageEditRatio, onFixFormat }: Props) {
+export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc, imageEditRatio, hasImageText = true, onFixFormat }: Props) {
   const { w, h } = imageEditRatio ? RATIO_DIMS[imageEditRatio] : (FORMAT_DIMENSIONS[format] ?? FORMAT_DIMENSIONS["1080x1350"]);
   const MW = mediaWidth;
   const MH = Math.round((MW * h) / w);
@@ -223,7 +228,7 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
   // Story (9:16) beskärs inte i profilrutnätet — kolla den faktiska croppen där den finns,
   // annars det frikopplade `format`-fältet (mallägen, som saknar imageEditRatio).
   const notStory = imageEditRatio ? imageEditRatio !== "9:16" : format !== "1080x1920";
-  const visaGrid = channel === "ig" && notStory && (imageSrc !== undefined || w / h > 0.76);
+  const visaGrid = channel === "ig" && notStory && hasImageText && (imageSrc !== undefined || w / h > 0.76);
   const gridScale = gridH / h;
   const GridThumb = visaGrid ? (
     <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-2">

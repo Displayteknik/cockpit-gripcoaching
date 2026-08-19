@@ -3007,6 +3007,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                       clientName={client?.name || slug} handle={key === "ig" ? igConn?.handle : null} primary={primary}
                       imageSrc={mode === "simple" ? (editedPreview || imageUrl) : undefined}
                       imageEditRatio={mode === "simple" ? imageEdit?.ratio : undefined}
+                      hasImageText={mode === "simple" ? !!imgText.trim() : undefined}
                       // Ett-klicks-fix: Kvadrat klipps i IG:s rutnät → byt till Porträtt direkt i varningen
                       // (mall-läget; i Skriv eget styr bildredigerarens formatval istället).
                       onFixFormat={key === "ig" && mode !== "simple" && format === "1080x1080" && meta.formats.includes("1080x1350") ? () => setFormat("1080x1350") : undefined} />
