@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { effectiveDims } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { dragPos } from "@/lib/studio/overrides";
+import { dragPos, fs, lh, hlColor, bodyColor, font, imgPosition, imgScale } from "@/lib/studio/overrides";
 import { valjLogga, logoPlateStyle, type LogoHint } from "@/lib/studio/logo-style";
 
 // Mall: opticur-skarm-split (referens: "REDO INFÖR HÖSTEN" facit-annonsen, Ingelas egen bild).
@@ -31,10 +31,13 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
   // "HÖSTEN?" en fjärde rad som sköt hela rubriken utanför ytan (Håkans fynd 19/8, canvasen
   // centreras vertikalt så överskott trycker både uppåt och nedåt). Mindre storlek + tightare
   // kerning ger plats för tre rader igen, som i facit.
-  const h1Size = Math.round(h * 0.092);
+  // Basstorlekar (andel av canvashöjden — samma princip som ArkSkarm), sen genom fs() så
+  // Textstorlek-reglagen (Rubrik/Underrubrik/Brödtext %) fungerar precis som i andra mallar.
+  const h1Size = fs(h * 0.092, payload, "h1");
   // Facit har underrubriken på EN rad. 0.045 var för stort för textfältets bredd — bröt till
   // två rader (Håkans fynd 19/8). Mindre storlek, mätt empiriskt mot exporten, inte gissat.
-  const h2Size = Math.round(h * 0.028);
+  const h2Size = fs(h * 0.028, payload, "h2");
+  const bodySize = fs(h * 0.028, payload, "body");
 
   // Fotplattan (facit): bara stad + telefon, inte hela adressen. Härlett ur den riktiga
   // adressdatan ("Storgatan 44 · Högsby · Tel 0491-200 62") i stället för hårdkodat — mallen
@@ -49,7 +52,7 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
       <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: w - textW }}>
         {payload.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img data-edit-image src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `center ${payload.imageFocusY}%`, display: "block" }} />
+          <img data-edit-image src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})`, display: "block" }} />
         ) : (
           <div style={{ width: "100%", height: "100%", background: `linear-gradient(160deg, ${c.primary}, ${c.primaryDeep})` }} />
         )}
@@ -59,7 +62,7 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
 
       {/* Textfält vänster */}
       <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: textW, display: "flex", flexDirection: "column", justifyContent: "center", padding: `0 ${pad}px` }}>
-        <div data-drag="h1" style={{ ...dragPos(payload, "h1"), fontFamily: "Playfair Display, serif", fontWeight: 900, color: c.primary, fontSize: h1Size, lineHeight: 0.94, letterSpacing: -1.5, textTransform: "uppercase" }}>
+        <div data-drag="h1" style={{ ...dragPos(payload, "h1"), fontFamily: font("Playfair Display", payload), fontWeight: 900, color: hlColor(c.primary, payload), fontSize: h1Size, lineHeight: lh(0.94, payload), letterSpacing: -1.5, textTransform: "uppercase" }}>
           <span data-edit="headline1">{payload.headline1}</span>
         </div>
 
@@ -71,13 +74,13 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
         </div>
 
         {payload.headline2 ? (
-          <div data-drag="h2" style={{ ...dragPos(payload, "h2"), fontFamily: "Inter, sans-serif", fontWeight: 800, color: c.ink, fontSize: h2Size, lineHeight: 1.2 }}>
+          <div data-drag="h2" style={{ ...dragPos(payload, "h2"), fontFamily: "Inter, sans-serif", fontWeight: 800, color: bodyColor(c.ink, payload), fontSize: h2Size, lineHeight: lh(1.2, payload) }}>
             <span data-edit="headline2">{payload.headline2}</span>
           </div>
         ) : null}
 
         {payload.body ? (
-          <div data-drag="body" style={{ ...dragPos(payload, "body"), fontFamily: "Inter, sans-serif", fontWeight: 500, color: c.ink, fontSize: Math.round(h * 0.028), lineHeight: 1.35, marginTop: h * 0.015 }}>
+          <div data-drag="body" style={{ ...dragPos(payload, "body"), fontFamily: "Inter, sans-serif", fontWeight: 500, color: bodyColor(c.ink, payload), fontSize: bodySize, lineHeight: lh(1.35, payload), marginTop: h * 0.015 }}>
             <span data-edit="body">{payload.body}</span>
           </div>
         ) : null}
