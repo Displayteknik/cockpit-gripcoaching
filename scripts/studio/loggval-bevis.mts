@@ -76,6 +76,7 @@ async function main() {
     clientId: "bevis",
     name: "Märket",
     colors: { primary: "#1A6B3C", primaryDeep: "#0F4F2A", primaryLight: "#5AAF32", accent: "#F2B01E", support: "#7ECECA", ink: "#14281F", paper: "#FFFFFF" },
+    colorsCmyk: {},
     forbiddenColors: [],
     fonts: { headline: "Inter", body: "Inter", logo: "Inter" },
     elements: { brush: { enabled: false, color: "accent" as const }, shapes: { enabled: false, style: "rounded" as const }, lines: { enabled: false, weight: "thin" as const }, badge: { enabled: false, shape: "circle" as const }, underline: { enabled: false } },
