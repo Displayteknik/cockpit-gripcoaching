@@ -88,7 +88,7 @@ interface Props {
 }
 
 export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc, imageEditRatio, hasImageText = true, onFixFormat }: Props) {
-  const { w, h } = imageEditRatio ? RATIO_DIMS[imageEditRatio] : (FORMAT_DIMENSIONS[format] ?? FORMAT_DIMENSIONS["1080x1350"]);
+  const { w, h } = imageEditRatio && imageEditRatio !== "custom" ? RATIO_DIMS[imageEditRatio] : (FORMAT_DIMENSIONS[format] ?? FORMAT_DIMENSIONS["1080x1350"]);
   const MW = mediaWidth;
   const MH = Math.round((MW * h) / w);
   const fold = foldCaption(caption, channel);

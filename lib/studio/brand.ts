@@ -64,6 +64,12 @@ export interface StudioBrand {
   colors: BrandColors;
   colorsCmyk: Partial<Record<keyof BrandColors, CmykColor>>;
   forbiddenColors: string[];
+  // OPTICUR-1 Etapp B: sparade fria mått ("Egen storlek/Skärm"), t.ex. Opticurs
+  // "Infartsskärmen" (1200x900). ALLTID DB-lästa (se loadBrand) — även för en tenant
+  // som annars går via clients/<slug>/brand.json (premium-override, Opticur). Den
+  // filen är statisk i repot och kan inte skrivas till från en sparaknapp i produktion;
+  // ett fält som måste vara redigerbart av kunden får därför aldrig bo där.
+  screenFormats: { name: string; w: number; h: number }[];
   fonts: { headline: string; body: string; logo: string };
   elements: BrandElements;
   imageStyle: BrandImageStyle;
@@ -93,6 +99,7 @@ export interface BrandKit {
   contentProfile?: Partial<BrandContent>;
   footer?: { show?: boolean; tagline?: string; address?: string; ctaLabel?: string; ctaUrl?: string; qrUrl?: string };
   donts?: string[];
+  screenFormats?: { name: string; w: number; h: number }[];
 }
 
 const ALLOWED_FONTS = ["Inter", "Archivo", "Poppins", "Anton", "Playfair Display", "Kalnia", "Caveat"];
@@ -118,7 +125,22 @@ export async function loadBrand(slug: string): Promise<StudioBrand> {
     const footerPng = path.join(process.cwd(), "public", "clients", safeSlug, "footer.png");
     if (existsSync(footerPng)) brand.assets.footer = `/clients/${safeSlug}/footer.png`;
   }
+  // screenFormats är ALLTID DB-läst, oavsett om resten av brandet kom från filen ovan
+  // eller från kitet — en spara-knapp i produktion kan aldrig skriva till en repo-fil.
+  brand.screenFormats = await fetchScreenFormats(safeSlug);
   return brand;
+}
+
+async function fetchScreenFormats(slug: string): Promise<{ name: string; w: number; h: number }[]> {
+  try {
+    const sb = await sbService();
+    const { data: client } = await sb.from("clients").select("id").eq("slug", slug).maybeSingle();
+    if (!client?.id) return [];
+    const { data: row } = await sb.from("studio_brand_kits").select("kit").eq("client_id", client.id).maybeSingle();
+    return normalizeScreenFormats((row?.kit as BrandKit | undefined)?.screenFormats);
+  } catch {
+    return [];
+  }
 }
 
 // Bygger StudioBrand direkt ur ett kit (används av UI-live-preview via render-route).
@@ -139,6 +161,7 @@ export function brandFromKit(slug: string, name: string, primary: string, kit: B
     colors,
     colorsCmyk: kit.colorsCmyk || {},
     forbiddenColors: kit.colors?.forbidden || [],
+    screenFormats: normalizeScreenFormats(kit.screenFormats),
     fonts: {
       headline: pickFont(kit.fonts?.headline, "Inter"),
       body: pickFont(kit.fonts?.body, "Inter"),
@@ -195,6 +218,7 @@ function adaptLegacyBrand(raw: LegacyBrand, slug: string): StudioBrand {
       primaryLight: raw.colorsCmyk?.greenLight,
     },
     forbiddenColors: [],
+    screenFormats: [], // alltid ompopulerad från DB i loadBrand — se kommentaren på fältet
     fonts: raw.fonts,
     elements: normalizeElements({ brush: { enabled: true, color: "accent" }, badge: { enabled: true, shape: "starburst" } }),
     imageStyle: normalizeImageStyle(undefined),
@@ -286,6 +310,20 @@ function normalizeContent(c?: Partial<BrandContent>): BrandContent {
     overlayStyle: c?.overlayStyle || "scrim-bottom",
     formats: Array.isArray(c?.formats) ? (c!.formats as ContentFormat[]) : [],
   };
+}
+
+function normalizeScreenFormats(raw: unknown): { name: string; w: number; h: number }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r) => {
+      const o = (r || {}) as { name?: unknown; w?: unknown; h?: unknown };
+      const w = Math.round(Number(o.w));
+      const h = Math.round(Number(o.h));
+      if (!Number.isFinite(w) || !Number.isFinite(h) || w < 200 || w > 4096 || h < 200 || h > 4096) return null;
+      return { name: typeof o.name === "string" && o.name.trim() ? o.name.trim().slice(0, 60) : `${w}×${h}`, w, h };
+    })
+    .filter((x): x is { name: string; w: number; h: number } => x !== null)
+    .slice(0, 20);
 }
 
 function pickFont(f: string | undefined, fallback: string): string {

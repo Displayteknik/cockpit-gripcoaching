@@ -14,7 +14,7 @@ import { chromium } from "playwright";
 import { readFile, mkdir } from "fs/promises";
 import path from "path";
 import { spawn, ChildProcess } from "child_process";
-import { normalizePayload, encodePayload, FORMAT_DIMENSIONS } from "../lib/studio/payload";
+import { normalizePayload, encodePayload, effectiveDims } from "../lib/studio/payload";
 
 const BASE = process.env.STUDIO_BASE_URL || "http://localhost:3481";
 
@@ -55,7 +55,7 @@ async function main() {
 
   const raw = JSON.parse(await readFile(payloadFile, "utf8"));
   const payload = normalizePayload(raw);
-  const { w, h } = FORMAT_DIMENSIONS[payload.format];
+  const { w, h } = effectiveDims(payload);
 
   // Säkerställ att dev-servern kör (starta den annars, riv ner efteråt).
   let child: ChildProcess | undefined;

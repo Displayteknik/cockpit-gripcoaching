@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizePayload, encodePayload, FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { normalizePayload, encodePayload, effectiveDims } from "@/lib/studio/payload";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     const raw = await req.json();
     const payload = normalizePayload(raw);
-    const { w, h } = FORMAT_DIMENSIONS[payload.format];
+    const { w, h } = effectiveDims(payload);
 
     const host = req.headers.get("host") || "localhost:3481";
     const isLocal = host.startsWith("localhost") || host.startsWith("127.");

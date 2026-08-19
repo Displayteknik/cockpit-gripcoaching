@@ -17,8 +17,8 @@ import {
   ThumbsUp, ThumbsDown,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
-import type { StudioFormat, StudioOverrides, StudioSlide, LogoVariantVal } from "@/lib/studio/payload";
-import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, punktNummer, STUDIO_FONTS, LOGO_VARIANT_LABELS } from "@/lib/studio/payload";
+import type { StudioFormat, StudioOverrides, StudioSlide, LogoVariantVal, CustomSize } from "@/lib/studio/payload";
+import { DEFAULT_OVERRIDES, FORMAT_LABELS, FORMAT_DIMENSIONS, isStoryFormat, emptySlide, MAX_SLIDES, derivePostType, punktNummer, STUDIO_FONTS, LOGO_VARIANT_LABELS, effectiveDims, CUSTOM_SIZE_PRESETS } from "@/lib/studio/payload";
 import { fangaAllaSlides, slideFilnamn } from "@/lib/studio/export-slides";
 // Ett svar som inte är JSON ska säga VAD som hände, inte visa parserns text. Se lib/las-json.
 import { lasJson } from "@/lib/las-json";
@@ -141,10 +141,14 @@ function encodePayload(obj: unknown): string {
 
 // customerMode = kundvyn (/k/studio): döljer byrå-only (GHL-config, CLI-payload),
 // publicering endast Instagram-direkt. Admin-vyn (/dashboard/studio) = full.
-export default function StudioMaker({ customerMode = false }: { customerMode?: boolean }) {
+export default function StudioMaker({ customerMode = false, entitledModules = null }: { customerMode?: boolean; entitledModules?: string[] | null }) {
   const [client, setClient] = useState<ClientInfo | null>(null);
   const [templateId, setTemplateId] = useState(TEMPLATE_META[0].id);
   const [format, setFormat] = useState<StudioFormat>("1080x1350");
+  // OPTICUR-1 Etapp B: fri storlek ("Egen storlek/Skärm"). Satt = vinner över `format` för
+  // canvasmåttet överallt (effectiveDims) — `format` ligger ändå kvar som giltigt värde,
+  // orört, ifall customSize nollställs.
+  const [customSize, setCustomSize] = useState<CustomSize | null>(null);
   const [headline1, setHeadline1] = useState("");
   const [headline2, setHeadline2] = useState("");
   const [body, setBody] = useState("");
@@ -291,7 +295,10 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const slug = client?.slug || "";
   // Mall-väljaren: använd RIKTIGA slugen (tom när klienten ännu inte laddats) så klient-exklusiva
   // mallar (t.ex. Opticur) ALDRIG visas för fel klient under laddning. Rot-fix mot footer-läckan.
-  const availableTemplates = useMemo(() => templatesForClient(client?.slug || "", contentFormats as never), [client?.slug, contentFormats]);
+  const availableTemplates = useMemo(
+    () => templatesForClient(client?.slug || "", contentFormats as never, customerMode ? entitledModules : null),
+    [client?.slug, contentFormats, customerMode, entitledModules],
+  );
 
   // Vald mall stödjer kanske inte aktuellt format (t.ex. byte till Opticur-mall utan 9:16) → hoppa till mallens första.
   useEffect(() => {
@@ -333,7 +340,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
 
   const payload = useMemo(
     () => ({
-      clientId: slug, templateId, format, headline1, headline2, body,
+      clientId: slug, templateId, format, customSize, headline1, headline2, body,
       badge: { enabled: meta.fields.badge && badgeEnabled, line1: badgeLine1, line2: badgeLine2 },
       imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, imageEdit,
       // Ämnet/grafikbriefen sparas med inlägget — annars tappas den vid omladdning och
@@ -342,7 +349,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
       // Spara läget så inlägget öppnas i samma vy det skapades i (mall vs skriv eget).
       mode,
     }),
-    [slug, templateId, format, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, imageEdit, topic, mode],
+    [slug, templateId, format, customSize, headline1, headline2, body, meta, badgeEnabled, badgeLine1, badgeLine2, imageUrl, imageFocusY, brushColor, overrides, slides, videoUrl, imageEdit, topic, mode],
   );
 
   const isCarousel = Boolean(meta.carousel);
@@ -458,7 +465,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     if (slideIdx > Math.max(0, slideCount - 1)) setSlideIdx(Math.max(0, slideCount - 1));
   }, [slideCount, slideIdx]);
 
-  const { w, h } = FORMAT_DIMENSIONS[format];
+  const { w, h } = effectiveDims({ format, customSize });
   // Förhandsvisningen skalas efter den bredd den FAKTISKT får, inte efter en gissad siffra.
   // Buggen: skalan var hårdkodad 300/w medan karusellens pilar lägger px-11 (44 px per sida)
   // på behållaren. Kortet ritades 300 px brett i en ~265 px bred ruta med overflow-hidden →
@@ -961,14 +968,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
   const nodeTillBlob = useCallback(async (node: HTMLDivElement | null): Promise<Blob | null> => {
     if (!node || !brand) return null;
     try {
-      const { w: cw, h: ch } = FORMAT_DIMENSIONS[format];
+      const { w: cw, h: ch } = effectiveDims({ format, customSize });
       if (document.fonts?.ready) await document.fonts.ready;
       await new Promise((r) => setTimeout(r, 150)); // låt bilden i den dolda editorn ladda klart
       return await toBlob(node, { width: cw, height: ch, pixelRatio: 1, cacheBust: true, backgroundColor: "#ffffff" });
     } catch {
       return null;
     }
-  }, [brand, format]);
+  }, [brand, format, customSize]);
 
   const captureDesignBlob = useCallback(async (): Promise<Blob | null> => {
     // Karusell: den bild som representerar inlägget är omslaget (slide 1), aldrig den
@@ -1025,6 +1032,14 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     // innehållsformat), och ett okänt värde kraschar mått-uppslagningen.
     const sparatFormat = d.format as StudioFormat;
     setFormat(sparatFormat && FORMAT_DIMENSIONS[sparatFormat] ? sparatFormat : "1080x1350");
+    // OPTICUR-1 Etapp B: fri storlek, om sparad. Samma klampning som normalizePayload
+    // (200-4096) så en trasig/manipulerad rad aldrig ger en orimlig canvas.
+    const sparatCustom = d.customSize as { w?: number; h?: number; name?: string } | null | undefined;
+    setCustomSize(
+      sparatCustom && Number.isFinite(sparatCustom.w) && Number.isFinite(sparatCustom.h)
+        ? { w: Math.round(Math.min(4096, Math.max(200, sparatCustom.w!))), h: Math.round(Math.min(4096, Math.max(200, sparatCustom.h!))), ...(sparatCustom.name ? { name: sparatCustom.name } : {}) }
+        : null,
+    );
     setHeadline1((d.headline1 as string) ?? ""); setHeadline2((d.headline2 as string) ?? ""); setBody((d.body as string) ?? "");
     setBadgeEnabled(!!badge.enabled); setBadgeLine1(badge.line1 ?? "FRÅN"); setBadgeLine2(badge.line2 ?? "0 KR");
     setImageUrl((d.imageUrl as string) ?? ""); setImageFocusY((d.imageFocusY as number) ?? 40);
@@ -1097,6 +1112,7 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
     setCaption(""); setChannelCaptions({ ig: "", fb: "", li: "" });
     setSuggestions([]); setSlides([]); setSlideIdx(0);
     setOverrides(DEFAULT_OVERRIDES); setBadgeEnabled(false);
+    setCustomSize(null);
     setLoadedPostId(null); setError("");
     setBildGenerationId(null); setBildOmdome(null); setBildOmdomeKommentar(""); setBildOmdomeSparat(false);
     // UTKAST-2: utkastet bär även Compass-chipsen och kanalvalet. Stod de kvar hörde de
@@ -2168,23 +2184,33 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
                         <span className="text-sm font-semibold text-gray-900">{t.name}</span>
                         {rec && <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full" style={{ background: `${primary}1a`, color: primary }}>Föreslås</span>}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">{t.formats.map((f) => FORMAT_LABELS[f]).join(" · ")}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{t.freeSize ? "Fri storlek" : t.formats.map((f) => FORMAT_LABELS[f]).join(" · ")}</div>
                     </button>
                   );
                 })}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {meta.formats.map((f) => {
-                  const active = f === format;
-                  return (
-                    <button key={f} onClick={() => setFormat(f)}
-                      className="flex-1 min-w-[90px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
-                      style={active ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#374151" }}>
-                      {FORMAT_LABELS[f]}
-                    </button>
-                  );
-                })}
-              </div>
+              {meta.freeSize ? (
+                <SkarmStorlekValjare
+                  value={customSize}
+                  onChange={setCustomSize}
+                  saved={brand?.screenFormats || []}
+                  primary={primary}
+                  onSaved={(sf) => setBrand((b) => (b ? { ...b, screenFormats: sf } : b))}
+                />
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {meta.formats.map((f) => {
+                    const active = f === format;
+                    return (
+                      <button key={f} onClick={() => setFormat(f)}
+                        className="flex-1 min-w-[90px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                        style={active ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#374151" }}>
+                        {FORMAT_LABELS[f]}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             {/* Foto */}
@@ -3209,7 +3235,11 @@ export default function StudioMaker({ customerMode = false }: { customerMode?: b
             ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {visiblePosts.map((p) => {
-                const { w: pw, h: ph } = FORMAT_DIMENSIONS[p.format] ?? FORMAT_DIMENSIONS["1080x1350"];
+                const pCustom = p.payload?.customSize as { w?: number; h?: number } | null | undefined;
+                const { w: pw, h: ph } =
+                  pCustom && Number.isFinite(pCustom.w) && Number.isFinite(pCustom.h)
+                    ? { w: pCustom.w as number, h: pCustom.h as number }
+                    : (FORMAT_DIMENSIONS[p.format] ?? FORMAT_DIMENSIONS["1080x1350"]);
                 const cardW = 150;
                 const s = cardW / pw;
                 const active = loadedPostId === p.id;
@@ -3360,6 +3390,131 @@ function StegNr({ n, color }: { n: number; color: string }) {
       style={{ background: color, boxShadow: `0 2px 8px -2px ${color}80` }}>
       {n}
     </span>
+  );
+}
+
+// OPTICUR-1 Etapp B (B1) — fri storlek i pixlar, "som i Canva": fritt fält är kärnan,
+// snabbknappar (vanliga mått + tenantens egna sparade) är genvägar ovanpå det.
+function SkarmStorlekValjare({ value, onChange, saved, primary, onSaved }: {
+  value: CustomSize | null;
+  onChange: (v: CustomSize) => void;
+  saved: { name: string; w: number; h: number }[];
+  primary: string;
+  onSaved: (sf: { name: string; w: number; h: number }[]) => void;
+}) {
+  const v: CustomSize = value || { w: CUSTOM_SIZE_PRESETS[0].w, h: CUSTOM_SIZE_PRESETS[0].h };
+  const [namn, setNamn] = useState("");
+  const [sparar, setSparar] = useState(false);
+  const [fel, setFel] = useState("");
+
+  // Fri storlek behöver ett startvärde — sätt genvägens första mått om inget valt än.
+  useEffect(() => {
+    if (!value) onChange(CUSTOM_SIZE_PRESETS[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const satt = (patch: Partial<CustomSize>) => {
+    const w = Math.round(Math.min(4096, Math.max(200, patch.w ?? v.w)));
+    const h = Math.round(Math.min(4096, Math.max(200, patch.h ?? v.h)));
+    onChange({ w, h, ...(v.name ? { name: v.name } : {}) });
+  };
+
+  const spara = async () => {
+    if (!namn.trim()) { setFel("Skriv ett namn först"); return; }
+    setSparar(true); setFel("");
+    try {
+      const r = await fetch("/api/studio/screen-formats", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: namn.trim(), w: v.w, h: v.h }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setFel(d.error || "Kunde inte spara"); return; }
+      onSaved(d.screenFormats || []);
+      onChange({ w: v.w, h: v.h, name: namn.trim() });
+      setNamn("");
+    } catch {
+      setFel("Nätverksfel — försök igen");
+    } finally {
+      setSparar(false);
+    }
+  };
+
+  const taBort = async (namnAttTa: string) => {
+    try {
+      const r = await fetch("/api/studio/screen-formats", {
+        method: "DELETE", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: namnAttTa }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) onSaved(d.screenFormats || []);
+    } catch { /* tyst — inget kritiskt om borttagning inte lyckas direkt */ }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+          Bredd
+          <input type="number" min={200} max={4096} value={v.w}
+            onChange={(e) => satt({ w: Number(e.target.value) })}
+            className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:border-gray-400 outline-none" />
+        </label>
+        <span className="text-gray-300">×</span>
+        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+          Höjd
+          <input type="number" min={200} max={4096} value={v.h}
+            onChange={(e) => satt({ h: Number(e.target.value) })}
+            className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:border-gray-400 outline-none" />
+        </label>
+        <span className="text-xs text-gray-400">px · 200–4096</span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {CUSTOM_SIZE_PRESETS.map((p) => {
+          const active = v.w === p.w && v.h === p.h;
+          return (
+            <button key={p.label} onClick={() => onChange({ w: p.w, h: p.h })}
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+              style={active ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#374151" }}>
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {saved.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-xs font-semibold text-gray-500">Sparade mått</div>
+          <div className="flex flex-wrap gap-2">
+            {saved.map((s) => {
+              const active = v.w === s.w && v.h === s.h && v.name === s.name;
+              return (
+                <div key={s.name} className="flex items-center gap-1 rounded-lg border overflow-hidden"
+                  style={active ? { borderColor: primary } : { borderColor: "#e5e7eb" }}>
+                  <button onClick={() => onChange(s)}
+                    className="px-3 py-1.5 text-xs font-medium"
+                    style={active ? { color: primary, background: `${primary}0f` } : { color: "#374151" }}>
+                    {s.name} <span className="text-gray-400">{s.w}×{s.h}</span>
+                  </button>
+                  <button onClick={() => taBort(s.name)} title="Ta bort" className="px-2 py-1.5 text-gray-400 hover:text-red-500">×</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <input value={namn} onChange={(e) => setNamn(e.target.value)} placeholder="Namn, t.ex. Infartsskärmen"
+          className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-gray-400 outline-none" />
+        <button onClick={spara} disabled={sparar}
+          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+          style={{ background: primary }}>
+          {sparar ? "Sparar…" : "Spara mått"}
+        </button>
+      </div>
+      {fel && <p className="text-xs text-red-500">{fel}</p>}
+    </div>
   );
 }
 

@@ -7,6 +7,6 @@ import StudioMaker from "@/components/StudioMaker";
 export const dynamic = "force-dynamic";
 
 export default async function KStudio() {
-  await requireCustomerFeature("skapa");
-  return <StudioMaker customerMode />;
+  const session = await requireCustomerFeature("skapa");
+  return <StudioMaker customerMode entitledModules={session.features} />;
 }

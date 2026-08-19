@@ -49,15 +49,15 @@ export default function BildRedigerare({
   useEffect(() => {
     if (!dims || edit) return;
     const ratio: ImageEditRatio = dims.w > dims.h ? "1:1" : "4:5";
-    onChange({ ratio, fit: "beskar", crop: defaultCrop(dims.w, dims.h, ratio), fill: "blur", fillColor: brandColor });
+    onChange({ ratio, fit: "beskar", crop: defaultCrop(dims.w, dims.h, { ratio }), fill: "blur", fillColor: brandColor });
   }, [dims, edit, onChange, brandColor]);
 
   const e = edit;
-  const crop = e?.crop ?? (dims && e ? defaultCrop(dims.w, dims.h, e.ratio) : null);
-  const neutral = Boolean(dims && e && e.fit === "beskar" && matcharRatio(dims.w, dims.h, e.ratio));
+  const crop = e?.crop ?? (dims && e ? defaultCrop(dims.w, dims.h, e) : null);
+  const neutral = Boolean(dims && e && e.fit === "beskar" && matcharRatio(dims.w, dims.h, e));
 
   // Zoom härleds ur croppens storlek relativt största möjliga (1 = hela ytan, 3 = max inzoomat).
-  const maxCrop = dims && e ? defaultCrop(dims.w, dims.h, e.ratio) : null;
+  const maxCrop = dims && e ? defaultCrop(dims.w, dims.h, e) : null;
   const zoom = crop && maxCrop ? Math.max(1, Math.min(3, (maxCrop.w < 1 ? maxCrop.w / crop.w : maxCrop.h / crop.h))) : 1;
 
   const sattZoom = useCallback((z: number, centrum?: { cx: number; cy: number }) => {
@@ -78,7 +78,7 @@ export default function BildRedigerare({
   const bytRatio = useCallback((ratio: ImageEditRatio) => {
     if (!dims || !e) return;
     const c = e.crop;
-    const ny = defaultCrop(dims.w, dims.h, ratio);
+    const ny = defaultCrop(dims.w, dims.h, { ratio });
     // Behåll ungefär samma centrum när formatet byts.
     if (c) {
       const cx = c.x + c.w / 2;

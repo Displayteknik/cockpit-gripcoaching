@@ -4,7 +4,11 @@
 // funktions output → det som syns ÄR publicerings-pixlarna (pixelparitet per konstruktion).
 // Typerna är client-säkra; renderfunktionerna kör bara i webbläsaren (canvas/createImageBitmap).
 
-export type ImageEditRatio = "4:5" | "1:1" | "1.91:1" | "9:16";
+// "custom" (OPTICUR-1 Etapp B): fri storlek — målmåttet kommer inte ur RATIO_DIMS utan
+// ur ImageEdit.customTargetDims (satt till payload.customSize när ett skärmformat väljer
+// bild). Samma delade beskärningsfunktion, samma princip som BESKÄR-1: EN väg, aldrig
+// två separata beräkningar som kan glida isär.
+export type ImageEditRatio = "4:5" | "1:1" | "1.91:1" | "9:16" | "custom";
 export type ImageEditFit = "beskar" | "hela";
 export type ImageEditFill = "blur" | "farg";
 
@@ -16,9 +20,10 @@ export interface ImageEdit {
   crop: ImageCrop | null; // null = centrerad default
   fill: ImageEditFill; // används bara vid fit "hela"
   fillColor: string; // hex vid fill "farg" (klientens profilfärg)
+  customTargetDims?: { w: number; h: number }; // bara när ratio === "custom"
 }
 
-export const RATIO_DIMS: Record<ImageEditRatio, { w: number; h: number }> = {
+export const RATIO_DIMS: Record<Exclude<ImageEditRatio, "custom">, { w: number; h: number }> = {
   "4:5": { w: 1080, h: 1350 },
   "1:1": { w: 1080, h: 1080 },
   "1.91:1": { w: 1080, h: 566 },
@@ -30,17 +35,26 @@ export const RATIO_LABELS: Record<ImageEditRatio, string> = {
   "1:1": "Kvadrat 1:1",
   "1.91:1": "Liggande 1.91:1",
   "9:16": "Story 9:16",
+  custom: "Egen storlek",
 };
 
+// EN källa för målmåttet — RATIO_DIMS för de fyra fasta, customTargetDims för "custom".
+// Alla tre nedanstående funktioner läser HÄRIFRÅN, aldrig RATIO_DIMS[edit.ratio] direkt.
+export function targetDims(edit: Pick<ImageEdit, "ratio" | "customTargetDims">): { w: number; h: number } {
+  if (edit.ratio === "custom" && edit.customTargetDims) return edit.customTargetDims;
+  return RATIO_DIMS[edit.ratio as Exclude<ImageEditRatio, "custom">] ?? RATIO_DIMS["4:5"];
+}
+
 // Matchar originalet redan valt format (±2 %)? Då behövs ingen beskärning (neutralläge).
-export function matcharRatio(imgW: number, imgH: number, ratio: ImageEditRatio): boolean {
-  const d = RATIO_DIMS[ratio];
+export function matcharRatio(imgW: number, imgH: number, edit: Pick<ImageEdit, "ratio" | "customTargetDims">): boolean {
+  const d = targetDims(edit);
   return Math.abs(imgW / imgH - d.w / d.h) / (d.w / d.h) < 0.02;
 }
 
 // Störst möjliga centrerade crop i rätt proportion. Liggande foto + 1:1 → centrerad (spec).
-export function defaultCrop(imgW: number, imgH: number, ratio: ImageEditRatio): ImageCrop {
-  const mal = RATIO_DIMS[ratio].w / RATIO_DIMS[ratio].h;
+export function defaultCrop(imgW: number, imgH: number, edit: Pick<ImageEdit, "ratio" | "customTargetDims">): ImageCrop {
+  const d = targetDims(edit);
+  const mal = d.w / d.h;
   const bild = imgW / imgH;
   if (bild > mal) {
     const w = mal / bild; // andel av bildbredden
@@ -83,7 +97,7 @@ export async function laddaBitmap(src: string): Promise<ImageBitmap> {
  * eller enfärgad yta ur klientens profil. Standardknepet för liggande foto i 4:5.
  */
 export async function renderImageEdit(bitmap: ImageBitmap, edit: ImageEdit): Promise<Blob> {
-  const { w, h } = RATIO_DIMS[edit.ratio];
+  const { w, h } = targetDims(edit);
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
@@ -113,7 +127,7 @@ export async function renderImageEdit(bitmap: ImageBitmap, edit: ImageEdit): Pro
     ctx.drawImage(bitmap, (w - iw) / 2, (h - ih) / 2, iw, ih);
     ctx.shadowBlur = 0;
   } else {
-    const c = edit.crop ?? defaultCrop(bitmap.width, bitmap.height, edit.ratio);
+    const c = edit.crop ?? defaultCrop(bitmap.width, bitmap.height, edit);
     ctx.drawImage(
       bitmap,
       c.x * bitmap.width, c.y * bitmap.height, c.w * bitmap.width, c.h * bitmap.height,

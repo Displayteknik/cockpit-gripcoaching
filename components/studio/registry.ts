@@ -9,6 +9,7 @@ import ArkErbjudande from "./archetypes/ArkErbjudande";
 import ArkOverlay from "./archetypes/ArkOverlay";
 import ArkTextkort from "./archetypes/ArkTextkort";
 import ArkKarusell from "./archetypes/ArkKarusell";
+import ArkSkarm from "./archetypes/ArkSkarm";
 import type { StudioPayload, StudioFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import type { LogoHint } from "@/lib/studio/logo-style";
@@ -52,6 +53,9 @@ export const STUDIO_TEMPLATES: Record<string, TemplateDef> = {
   "ark-overlay": { id: "ark-overlay", name: "Foto + overlay", formats: ["1080x1350", "1080x1080", "1080x1920"], component: ArkOverlay },
   "ark-textkort": { id: "ark-textkort", name: "Textkort", formats: ["1080x1350", "1080x1080", "1080x1920"], component: ArkTextkort },
   "ark-karusell": { id: "ark-karusell", name: "Karusell", formats: ["1080x1350", "1080x1080"], component: ArkKarusell },
+  // OPTICUR-1 Etapp B: fri storlek — `formats` är en oanvänd platshållare, canvasmåttet
+  // kommer alltid från payload.customSize (effectiveDims), aldrig FORMAT_DIMENSIONS.
+  "ark-skarm": { id: "ark-skarm", name: "Egen storlek / Skärm", formats: ["1080x1350"], component: ArkSkarm },
 };
 
 export function getTemplate(id: string): TemplateDef | null {

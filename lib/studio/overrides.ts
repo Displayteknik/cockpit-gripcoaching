@@ -1,5 +1,5 @@
 import type { StudioPayload } from "./payload";
-import { FORMAT_DIMENSIONS } from "./payload";
+import { effectiveDims } from "./payload";
 
 // Tweak-lager: mallarna läser overrides via dessa hjälpare. Tom/1 = mallens standard.
 // Samma funktioner används i live-editorn och i export-rendern → WYSIWYG.
@@ -51,7 +51,7 @@ export function dragPos(p: StudioPayload, role: "h1" | "h2" | "body"): Record<st
   const x = role === "h1" ? o?.h1X : role === "h2" ? o?.h2X : o?.bodyX;
   const y = role === "h1" ? o?.h1Y : role === "h2" ? o?.h2Y : o?.bodyY;
   if (!x && !y) return {};
-  const { w, h } = FORMAT_DIMENSIONS[p.format] ?? { w: 1080, h: 1350 };
+  const { w, h } = effectiveDims(p);
   return { transform: `translate(${Math.round(((x || 0) / 100) * w)}px, ${Math.round(((y || 0) / 100) * h)}px)` };
 }
 

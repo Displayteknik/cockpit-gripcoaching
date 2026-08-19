@@ -13,6 +13,16 @@ export interface TemplateMeta {
   clientSlug?: string; // exklusiv för denna klient (t.ex. Opticurs handgjorda mallar)
   carousel?: boolean; // fler-slide-mall (redigeras via slides[], inte standardfälten)
   formatKey?: ContentFormat; // vilket contentProfile-format mallen tillhör
+  /**
+   * OPTICUR-1 Etapp B: modul-id (platform_modules/tenant_modules) som krävs för att se
+   * mallen i KUNDVYN (/k/studio). Byrå-dashboarden (/dashboard/studio) filtrerar aldrig
+   * på detta — ägaren kan alltid testa mallen för vilken tenant som helst där, utan att
+   * ge just den tenanten modulen (se templatesForClient). Bygget är generellt; det är
+   * synligheten i kundvyn som grindas.
+   */
+  entitlement?: string;
+  /** Fri storlek (B1) — mallen använder payload.customSize, inte `formats`. */
+  freeSize?: boolean;
   fields: {
     headline1: string; // etikett; tom = dölj fältet
     headline2: string;
@@ -56,6 +66,11 @@ export const TEMPLATE_META: TemplateMeta[] = [
     id: "ark-karusell", name: "Karusell", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 32, archetype: true, formatKey: "carousel", carousel: true,
     fields: { headline1: "", headline2: "", body: "", badge: false, brush: false },
   },
+  {
+    id: "ark-skarm", name: "Egen storlek / Skärm", formats: ["1080x1350"], headlineSoftMax: 28, archetype: true, freeSize: true,
+    entitlement: "studio-skarmformat",
+    fields: { headline1: "Rubrik", headline2: "Underrubrik (valfri)", body: "Text (valfri)", badge: false, brush: false },
+  },
   // ── Opticur-exklusiva (handgjorda, premium) ──
   {
     id: "opticur-foto-gul-ruta", name: "Opticur — foto + gul ruta", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 26, clientSlug: "opticur",
@@ -80,8 +95,14 @@ export function templateNeedsImage(id: string): boolean {
 // ALLA klienter har tillgång till ALLA arketyper — flexibilitet byggs aldrig bort.
 // `recommended` (contentProfile.formats) FILTRERAR inte, den bara sorterar de
 // föreslagna formaten först. Opticurs exklusiva mallar visas bara för Opticur.
-export function templatesForClient(slug: string, recommended?: ContentFormat[]): TemplateMeta[] {
-  const list = TEMPLATE_META.filter((t) => !t.clientSlug || t.clientSlug === slug);
+//
+// `entitledModules`: modul-id:n tenanten FAKTISKT har (kundvyn, /k/studio). null/undefined
+// = ingen filtrering på `entitlement` alls — byrå-dashboarden (/dashboard/studio) skickar
+// aldrig detta, så ägaren ser alltid alla mallar för vilken tenant som helst (ägarverifiering
+// utan att röra tenant_modules). Kundvyn skickar tenantens riktiga effektiva moduler.
+export function templatesForClient(slug: string, recommended?: ContentFormat[], entitledModules?: string[] | null): TemplateMeta[] {
+  const ent = entitledModules ? new Set(entitledModules) : null;
+  const list = TEMPLATE_META.filter((t) => (!t.clientSlug || t.clientSlug === slug) && (!t.entitlement || !ent || ent.has(t.entitlement)));
   if (!recommended || !recommended.length) return list;
   const rec = new Set(recommended);
   return [...list].sort((a, b) => {

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { STUDIO_TEMPLATES } from "@/components/studio/registry";
 import type { StudioPayload, StudioOverrides } from "@/lib/studio/payload";
-import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
+import { effectiveDims } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
 import type { LogoHint } from "@/lib/studio/logo-style";
 
@@ -64,7 +64,7 @@ export default function StudioEditor({
   onTextPatch?: (p: TextPatch) => void;
 }) {
   const Tpl = STUDIO_TEMPLATES[templateId]?.component;
-  const { w, h } = FORMAT_DIMENSIONS[payload.format] ?? FORMAT_DIMENSIONS["1080x1350"];
+  const { w, h } = effectiveDims(payload);
   const drag = useRef<{ x: number; y: number; fx: number; fy: number } | null>(null);
   const canDragImage = Boolean(payload.imageUrl) && IMAGE_TEMPLATES.has(templateId) && !editMode;
   const canvasRef = useRef<HTMLDivElement>(null);

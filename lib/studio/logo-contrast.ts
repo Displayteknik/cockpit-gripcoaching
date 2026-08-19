@@ -200,6 +200,24 @@ export async function computeLogoHint(
     // Point + bild: mörkt scrim (rgba 0.9) nedtill → alltid mörk loggzon.
     // Hook/cta + bild: scrimmen är bakgrundsfärgen (~85 % täckning) → färgen styr.
     zon = solidZon(slide.kind === "point" && hasImg ? 0.12 : hexLum(bgHex));
+  } else if (templateId === "ark-skarm") {
+    // OPTICUR-1 Etapp B: måttoberoende — zonen är alltid en ANDEL av ytan (aldrig
+    // fasta pixlar som OVERLAY_TOP_ZONE), och skiftar med layoutläget (ArkSkarm.tsx):
+    // enradigt läge har loggan vertikalcentrerad över hela vänsterkanten, normalläget
+    // har den i ett smalt band uppe till vänster.
+    const enrad = Boolean(payload.customSize && payload.customSize.w / payload.customSize.h >= 2.4);
+    const zone: Zone = enrad ? { left: 0.02, top: 0.1, width: 0.35, height: 0.8 } : { left: 0.02, top: 0.02, width: 0.42, height: 0.16 };
+    if (payload.imageUrl) {
+      const stats = await zoneStats(payload.imageUrl, zone);
+      if (!stats) return { url: dark || light, plate: null };
+      // Mörka scrimmen ArkSkarm alltid lägger ovanpå fotot i den zonen (se ArkSkarm.tsx):
+      // flat 0.4 i enradigt läge, ~0.15 upptill i normalläget.
+      const f = enrad ? 0.6 : 0.85;
+      zon = { mean: stats.mean * f, p05: stats.p05 * f, p95: stats.p95 * f };
+      troskel = IMAGE_LIGHT_BG;
+    } else {
+      zon = solidZon(hexLum(brand.colors.primaryDeep));
+    }
   } else {
     return null;
   }

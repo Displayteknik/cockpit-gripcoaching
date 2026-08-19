@@ -89,10 +89,24 @@ export interface StudioSlide {
   imageUrl: string; // valfri; tom = ingen bild
 }
 
+// OPTICUR-1 Etapp B: fri storlek i pixlar ("Egen storlek/Skärm"), t.ex. en infartsskärm
+// 1200x900. Namnet är valfritt — sätts när måttet sparas för återanvändning (kit.screenFormats).
+export interface CustomSize {
+  w: number;
+  h: number;
+  name?: string;
+}
+
 export interface StudioPayload {
   clientId: string;
   templateId: string;
   format: StudioFormat;
+  // Satt = fri storlek styr canvasmåttet i stället för `format` (som ändå håller ett
+  // giltigt värde av bakåtkompatibilitetsskäl, men ignoreras när customSize finns).
+  // Läs ALLTID mått via effectiveDims(payload) — aldrig FORMAT_DIMENSIONS[payload.format]
+  // direkt, annars uppstår exakt samma bugg som BESKÄR-1 (en väg som inte känner till den
+  // andra källan för sanning).
+  customSize: CustomSize | null;
   headline1: string;
   headline2: string;
   body: string;
@@ -148,6 +162,32 @@ export const FORMAT_DIMENSIONS: Record<StudioFormat, { w: number; h: number }> =
   "1080x1920": { w: 1080, h: 1920 },
 };
 
+export const CUSTOM_SIZE_MIN = 200;
+export const CUSTOM_SIZE_MAX = 4096;
+
+// Vanliga mått som snabbknappar i "Egen storlek"-väljaren (B1) — fritt fält är kärnan,
+// de här är bara genvägar för de vanligaste skärmarna/formaten.
+export const CUSTOM_SIZE_PRESETS: { label: string; w: number; h: number }[] = [
+  { label: "1200×900 (4:3-skärm)", w: 1200, h: 900 },
+  { label: "1920×1080 (16:9)", w: 1920, h: 1080 },
+  { label: "1080×1920 (9:16)", w: 1080, h: 1920 },
+];
+
+function normalizeCustomSize(raw: unknown): CustomSize | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Partial<CustomSize>;
+  const w = Math.round(clamp(Number(o.w), CUSTOM_SIZE_MIN, CUSTOM_SIZE_MAX));
+  const h = Math.round(clamp(Number(o.h), CUSTOM_SIZE_MIN, CUSTOM_SIZE_MAX));
+  if (!Number.isFinite(w) || !Number.isFinite(h)) return null;
+  return { w, h, ...(typeof o.name === "string" && o.name.trim() ? { name: o.name.trim().slice(0, 60) } : {}) };
+}
+
+// EN källa för canvasmåttet — läs ALLTID via denna, aldrig FORMAT_DIMENSIONS[format] direkt.
+// customSize (Etapp B, fri storlek) vinner över det fasta formatet när den finns.
+export function effectiveDims(payload: Pick<StudioPayload, "format" | "customSize">): { w: number; h: number } {
+  return payload.customSize ?? FORMAT_DIMENSIONS[payload.format];
+}
+
 // UTF-8-säker base64 (åäö) — fungerar i node (render-route + export-CLI, båda server-side).
 export function encodePayload(p: StudioPayload): string {
   return Buffer.from(JSON.stringify(p), "utf8").toString("base64");
@@ -169,6 +209,7 @@ export function normalizePayload(raw: Partial<StudioPayload>): StudioPayload {
     clientId: raw.clientId || "",
     templateId: raw.templateId || "ark-textkort",
     format,
+    customSize: normalizeCustomSize(raw.customSize),
     headline1: raw.headline1 ?? "",
     headline2: raw.headline2 ?? "",
     body: raw.body ?? "",

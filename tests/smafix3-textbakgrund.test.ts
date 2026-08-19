@@ -6,7 +6,7 @@ import { textPlate } from "../lib/studio/overrides";
 import type { StudioPayload } from "../lib/studio/payload";
 
 const bas: StudioPayload = {
-  clientId: "", templateId: "ark-textkort", format: "1080x1350",
+  clientId: "", templateId: "ark-textkort", format: "1080x1350", customSize: null,
   headline1: "", headline2: "", body: "",
   badge: { enabled: false, line1: "", line2: "" },
   imageUrl: "", imageFocusY: 50, brushColor: "",
