@@ -91,7 +91,7 @@ export function getTemplateMeta(id: string): TemplateMeta | undefined {
 }
 
 // Mallar där bilden BÄR inlägget — får aldrig publiceras med tom yta (§00 världsklass).
-const IMAGE_TEMPLATES = new Set(["ark-overlay", "ark-foto-ruta", "ark-erbjudande", "opticur-foto-gul-ruta"]);
+const IMAGE_TEMPLATES = new Set(["ark-overlay", "ark-foto-ruta", "ark-erbjudande", "opticur-foto-gul-ruta", "opticur-skarm-split"]);
 export function templateNeedsImage(id: string): boolean {
   return IMAGE_TEMPLATES.has(id);
 }

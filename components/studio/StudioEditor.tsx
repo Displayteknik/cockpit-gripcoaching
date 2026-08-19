@@ -27,7 +27,7 @@ const FONT_CSS = `
 @font-face{font-family:"Anton";src:url("/fonts/anton.ttf");font-weight:400}
 `;
 
-const IMAGE_TEMPLATES = new Set(["ark-overlay", "ark-foto-ruta", "ark-erbjudande", "opticur-foto-gul-ruta"]);
+const IMAGE_TEMPLATES = new Set(["ark-overlay", "ark-foto-ruta", "ark-erbjudande", "opticur-foto-gul-ruta", "opticur-skarm-split"]);
 
 export interface ImagePatch { imageX?: number; imageFocusY?: number; imageScale?: number }
 // B2: positions-patch för fritt placerade textrutor (h1X/h1Y/h2X/h2Y/bodyX/bodyY).

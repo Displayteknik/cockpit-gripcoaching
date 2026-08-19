@@ -27,8 +27,21 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
   });
   const logoH = Math.round(h * 0.09);
 
-  const h1Size = Math.round(h * 0.115);
-  const h2Size = Math.round(h * 0.045);
+  // Versalt (facit) breddar texten märkbart mer än gemener — samma h1Size som innan gav
+  // "HÖSTEN?" en fjärde rad som sköt hela rubriken utanför ytan (Håkans fynd 19/8, canvasen
+  // centreras vertikalt så överskott trycker både uppåt och nedåt). Mindre storlek + tightare
+  // kerning ger plats för tre rader igen, som i facit.
+  const h1Size = Math.round(h * 0.092);
+  // Facit har underrubriken på EN rad. 0.045 var för stort för textfältets bredd — bröt till
+  // två rader (Håkans fynd 19/8). Mindre storlek, mätt empiriskt mot exporten, inte gissat.
+  const h2Size = Math.round(h * 0.028);
+
+  // Fotplattan (facit): bara stad + telefon, inte hela adressen. Härlett ur den riktiga
+  // adressdatan ("Storgatan 44 · Högsby · Tel 0491-200 62") i stället för hårdkodat — mallen
+  // ska aldrig känna till att kunden sitter i Högsby, bara veta hur adressfältet är byggt.
+  const addrDelar = brand.footer.address.split("·").map((s) => s.trim()).filter(Boolean);
+  const stad = (addrDelar[1] || addrDelar[0] || "").toUpperCase();
+  const telefon = (addrDelar[2] || "").replace(/^tel\.?\s*/i, "");
 
   return (
     <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", background: c.paper, fontFamily: "Inter, sans-serif" }}>
@@ -46,7 +59,7 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
 
       {/* Textfält vänster */}
       <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: textW, display: "flex", flexDirection: "column", justifyContent: "center", padding: `0 ${pad}px` }}>
-        <div data-drag="h1" style={{ ...dragPos(payload, "h1"), fontFamily: "Playfair Display, serif", fontWeight: 900, color: c.primary, fontSize: h1Size, lineHeight: 0.98, letterSpacing: -0.5 }}>
+        <div data-drag="h1" style={{ ...dragPos(payload, "h1"), fontFamily: "Playfair Display, serif", fontWeight: 900, color: c.primary, fontSize: h1Size, lineHeight: 0.94, letterSpacing: -1.5, textTransform: "uppercase" }}>
           <span data-edit="headline1">{payload.headline1}</span>
         </div>
 
@@ -85,13 +98,26 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
         ) : null}
       </div>
 
-      {/* Fotplatta — mörkgrön, vit text. Samma färgroll (primary) som ArkSkarm, aldrig ljus. */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.round(h * 0.11), background: c.primary, display: "flex", alignItems: "center", justifyContent: "center", padding: `0 ${pad}px` }}>
-        <div style={{ color: c.paper, fontSize: Math.round(h * 0.032), fontWeight: 800, fontFamily: "Inter, sans-serif", textAlign: "center" }}>
-          {brand.footer.address}
-        </div>
+      {/* Fotplatta — Håkans besked 19/8: ljusgrön (primaryLight), inte mörkgrön. Texten större. */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.round(h * 0.11), background: c.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: Math.round(h * 0.02), padding: `0 ${pad}px` }}>
+        <span style={{ color: c.paper, fontSize: Math.round(h * 0.042), fontWeight: 800, fontFamily: "Inter, sans-serif" }}>{stad}</span>
+        {telefon ? (
+          <>
+            <span style={{ width: 2, height: Math.round(h * 0.032), background: "rgba(255,255,255,0.6)" }} />
+            <TelefonIkon color={c.paper} size={Math.round(h * 0.036)} />
+            <span style={{ color: c.paper, fontSize: Math.round(h * 0.042), fontWeight: 800, fontFamily: "Inter, sans-serif" }}>{telefon}</span>
+          </>
+        ) : null}
       </div>
     </div>
+  );
+}
+
+function TelefonIkon({ color, size }: { color: string; size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.4 21 3 13.6 3 4.6c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8Z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
   );
 }
 
