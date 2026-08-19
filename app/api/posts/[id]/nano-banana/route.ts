@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .single();
 
     // Bygg en prompt som väver in brand-kontext
-    const fullPrompt = `${userPrompt}\n\nStil: professionell social-media-bild för ${profile?.company_name || "klienten"}${profile?.location ? ` i ${profile.location}` : ""}. Använd brand-färg ${client?.primary_color || "#1A6B3C"} som accent. Modern, ren, scrollstoppande. Inga flaggor, inga generiska stockfoto-stilar.`;
+    const fullPrompt = `${userPrompt}\n\nStil: professionell social-media-bild för ${profile?.company_name || "klienten"}${profile?.location ? ` i ${profile.location}` : ""}. Använd brand-färg ${client?.primary_color || "#6B7280"} som accent. Modern, ren, scrollstoppande. Inga flaggor, inga generiska stockfoto-stilar.`;
 
     // Anropa Gemini 2.5 Flash Image (preview eller stable beroende på tillgång)
     const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [

@@ -22,7 +22,7 @@ function fmt(d: string | null): string {
   catch { return d; }
 }
 
-export default function CustomerCalendar({ primary = "#1A6B3C", canStudio = true, canLinkedin = true, canBlog = true }: { primary?: string; canStudio?: boolean; canLinkedin?: boolean; canBlog?: boolean }) {
+export default function CustomerCalendar({ primary = "#6B7280", canStudio = true, canLinkedin = true, canBlog = true }: { primary?: string; canStudio?: boolean; canLinkedin?: boolean; canBlog?: boolean }) {
   const [vald, setVald] = useState<ContentItem | null>(null); // öppnad post i detaljvyn
   const [raderar, setRaderar] = useState(false);
   const [items, setItems] = useState<ContentItem[]>([]);

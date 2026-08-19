@@ -123,7 +123,7 @@ const ZON: Record<Farg, { kant: string; chip: string; text: string; namn: string
 
 const VARDE_PRESETS = [10000, 25000, 50000, 100000];
 
-export default function FokusClient({ primaryColor = "#1A6B3C" }: { primaryColor?: string }) {
+export default function FokusClient({ primaryColor = "#6B7280" }: { primaryColor?: string }) {
   const [loading, setLoading] = useState(true);
   const [b, setB] = useState<Board>({ linked: false });
   const [coachKort, setCoachKort] = useState<ScoredCard | null>(null);

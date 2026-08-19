@@ -211,7 +211,7 @@ export default function AnalyticsDashboard() {
       url: data?.client?.public_url ?? "",
       // Klientobjektet här bär inte märkesfärgen. Mallens egen standard får gälla i
       // adminvyn — kundvyn skickar in kundens riktiga färg.
-      primarFarg: "#1A6B3C",
+      primarFarg: "#6B7280",
     });
     const w = window.open("", "_blank");
     if (!w) { alert("Tillåt popup-fönster för att spara rapporten som PDF."); return; }

@@ -13,7 +13,7 @@ interface BlogSite { id: string; name: string }
 interface BlogAuthor { id: string; name: string }
 interface BlogCategory { id: string; label: string }
 
-const DEFAULT_COLOR = "#1A6B3C";
+const DEFAULT_COLOR = "#6B7280";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

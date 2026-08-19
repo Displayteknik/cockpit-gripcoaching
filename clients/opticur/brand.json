@@ -2,13 +2,17 @@
   "clientId": "opticur",
   "name": "Opticur",
   "colors": {
-    "greenDark": "#1A6B3C",
-    "greenDeep": "#0F4F2A",
-    "greenLight": "#5AAF32",
+    "greenDark": "#007A3D",
+    "greenDeep": "#00582C",
+    "greenLight": "#62A936",
     "mint": "#7ECECA",
     "yellow": "#F2B01E",
     "black": "#1A1A1A",
     "white": "#FFFFFF"
+  },
+  "colorsCmyk": {
+    "greenDark": { "c": 100, "m": 35, "y": 100, "k": 0 },
+    "greenLight": { "c": 65, "m": 0, "y": 100, "k": 8.5 }
   },
   "fonts": {
     "headline": "Inter",
@@ -26,5 +30,5 @@
     "zeiss": "/clients/opticur/zeiss.svg",
     "qr": "/clients/opticur/qr.png"
   },
-  "_todo": "Kvar (platshållare): zeiss.svg → officiell ZEISS-logga. QR + font (Inter/Playfair) + OPTICUR-logga (Playfair-text) + färger = riktiga, från Opticur_Editor_Tisdag.html. (Penselrutan ritas numera som färgbar vektor — ingen bildfil behövs.)"
+  "_todo": "Kvar (platshållare): zeiss.svg → officiell ZEISS-logga. QR + font (Inter/Playfair) + OPTICUR-logga (Playfair-text). Färger uppdaterade 19/8 (OPTICUR-1) till kundens officiella koder (Ingela): greenDark/greenLight + CMYK. greenDeep är auto-uträknad skugga av greenDark (samma formel som resten av systemet), inte kundgiven. (Penselrutan ritas numera som färgbar vektor — ingen bildfil behövs.)"
 }

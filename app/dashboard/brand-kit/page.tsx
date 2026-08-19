@@ -61,7 +61,7 @@ function shade(hex: string, t: number): string {
 export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean }) {
   const [kit, setKit] = useState<Kit>({});
   const [clientName, setClientName] = useState("");
-  const [clientPrimary, setClientPrimary] = useState("#1A6B3C");
+  const [clientPrimary, setClientPrimary] = useState("#6B7280");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -85,7 +85,7 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
   useEffect(() => {
     fetch("/api/brand-kit").then((r) => r.json()).then((d) => {
       setKit(d.kit || {}); setSparatKit(d.kit || {});
-      setClientName(d.clientName || ""); setClientPrimary(d.clientPrimary || "#1A6B3C");
+      setClientName(d.clientName || ""); setClientPrimary(d.clientPrimary || "#6B7280");
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -167,8 +167,8 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
 
   const previewColors = useMemo(() => ({
     primary: colors.primary || clientPrimary,
-    accent: colors.accent || "#F2B01E",
-    support: colors.support || "#7ECECA",
+    accent: colors.accent || "#6B7280",
+    support: colors.support || "#9CA3AF",
     ink: colors.ink || "#1A1A1A",
     paper: colors.paper || "#FFFFFF",
   }), [colors, clientPrimary]);

@@ -41,7 +41,7 @@ function prisForslag(p: Partial<Product>, rates: Record<string, number>): number
   return Math.round(landat * (1 + (Number(p.markup_pct) || 0) / 100));
 }
 
-export default function OffertKatalog({ primaryColor = "#1A6B3C" }: { primaryColor?: string }) {
+export default function OffertKatalog({ primaryColor = "#6B7280" }: { primaryColor?: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<Partial<Product> | null>(null);

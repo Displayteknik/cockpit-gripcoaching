@@ -477,7 +477,7 @@ code{
  */
 export function byggRapportHtml(markdown: string, ctx: RapportKontext): string {
   const md = String(markdown || "").trim();
-  const farg = /^#[0-9a-f]{6}$/i.test(ctx.primarFarg || "") ? ctx.primarFarg : "#1A6B3C";
+  const farg = /^#[0-9a-f]{6}$/i.test(ctx.primarFarg || "") ? ctx.primarFarg : "#6B7280";
 
   // Titelraden och datumet ur rapportens eget huvud — aldrig påhittade.
   const datum = ctx.datum || md.match(/^\*\*Datum:\*\*\s*(.+)$/m)?.[1]?.trim() || "";

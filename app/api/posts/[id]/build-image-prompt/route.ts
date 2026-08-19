@@ -83,17 +83,16 @@ DIN UPPGIFT:
 5. Var EXPLICIT om vad som ska UNDVIKAS (text overlay, generic stock-look, klyschor)
 
 VIKTIGA REGLER:
-- INGEN svensk text i bilden. Inga skyltar, inga ord på skärmar, ingen overlay-text på svenska. Modellen klarar inte å/ä/ö.
-- Om text BEHÖVS i bilden — bara klientens varumärkesnamn på engelska/symboliskt vis (t.ex. "OPTICUR" som logotyp).
+- INGEN text i bilden överhuvudtaget. Inga skyltar, inga ord på skärmar, ingen overlay-text, inget varumärkesnamn, INGEN logotyp — varken riktig eller AI-återgiven. En bildmodell som ombeds rita ett varumärkesnamn eller en logotyp hallucinerar förvrängda bokstäver och otydliga ikoner. Klientens riktiga logotyp läggs alltid på separat, som ett eget lager ovanpå den AI-genererade bilden — aldrig genom att be modellen rita den.
 - INGA klyschor: handslag, glödlampor, pussel-bitar, riktningspilar mot framgång, generiska business-personer.
 - Naturligt ljus, candid-känsla, dokumentärfoto-stil när möjligt.
-- Konkret människa eller scen — inte abstraktion. Ingela vill se igenkänning hos läsaren.
+- Konkret människa eller scen — inte abstraktion. Kunden vill se igenkänning hos läsaren.
 
 KLIENTENS KONTEXT (brand-profil + voice + customer voice + winning examples):
 ${profileMd}
 
 KLIENT-NAMN: ${client?.name || "okänd"}
-PRIMARY COLOR: ${client?.primary_color || "#1A6B3C"}
+PRIMARY COLOR: ${client?.primary_color || "#6B7280"}
 
 RETURNERA JSON:
 {
@@ -102,7 +101,7 @@ RETURNERA JSON:
   "visual_style": "Stil: dokumentär / cinematisk / minimalistisk / etc",
   "composition": "Komposition: porträtt / wide / närbild / etc",
   "mood": "Känsla: hopp / igenkänning / lugn / etc",
-  "text_overlay": "EITHER 'none' OR very short brand-text in safe English chars",
+  "text_overlay": "always 'none' — text and logos are never rendered by the image model, they are composited afterward as a separate layer",
   "avoid": "Klyschor + AI-tells att specifikt undvika i denna bild"
 }`;
 

@@ -37,7 +37,7 @@ interface WebbLead {
   tidsplan?: string; budget?: string; bild_url?: string | null; created_at?: string;
 }
 
-export default function OffertClient({ primaryColor = "#1A6B3C", leadId, onKlientBytt }: { primaryColor?: string; leadId?: string; onKlientBytt?: () => void }) {
+export default function OffertClient({ primaryColor = "#6B7280", leadId, onKlientBytt }: { primaryColor?: string; leadId?: string; onKlientBytt?: () => void }) {
   const [loading, setLoading] = useState(true);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [bp, setBp] = useState<Blueprint | null>(null);

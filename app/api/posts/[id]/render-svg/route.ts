@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .eq("client_id", clientId)
       .maybeSingle();
 
-    const accent = body.accent || client?.primary_color || "#1A6B3C";
+    const accent = body.accent || client?.primary_color || "#6B7280";
     const accent2 = lighten(accent, 0.15);
     const text = (post.hook || "").trim().slice(0, 200);
     const subtitle = profile?.founder_name

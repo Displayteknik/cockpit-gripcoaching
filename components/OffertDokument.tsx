@@ -23,7 +23,7 @@ interface QuoteRef { id: string; quote_number?: string }
 function kr(n?: number | null) { return typeof n === "number" ? n.toLocaleString("sv-SE") + " kr" : "—"; }
 const VILLKOR_ETIKETT: Record<string, string> = { betalning: "Betalning", garanti: "Garanti", giltighet: "Giltighet", leverans: "Leverans", ovrigt: "Övrigt" };
 
-export default function OffertDokument({ quote, primaryColor = "#1A6B3C", onClose }: { quote: QuoteRef; primaryColor?: string; onClose: () => void }) {
+export default function OffertDokument({ quote, primaryColor = "#6B7280", onClose }: { quote: QuoteRef; primaryColor?: string; onClose: () => void }) {
   const [offert, setOffert] = useState<Offert | null>(null);
   const [fel, setFel] = useState<string | null>(null);
   const [laddar, setLaddar] = useState(false);

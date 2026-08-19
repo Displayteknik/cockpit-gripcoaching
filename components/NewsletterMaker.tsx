@@ -52,7 +52,7 @@ export default function NewsletterMaker({ customerMode = false }: { customerMode
   const [testing, setTesting] = useState(false);
   const [testMsg, setTestMsg] = useState("");
 
-  const primary = client?.primary_color || "#1A6B3C";
+  const primary = client?.primary_color || "#6B7280";
 
   const loadDrafts = useCallback(async () => {
     try { const r = await fetch("/api/newsletter"); const d = await r.json(); if (r.ok) setDrafts(d.newsletters || []); } catch { /* ignore */ }

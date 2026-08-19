@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .select("primary_color")
       .eq("id", clientId)
       .single();
-    const accent = body.accent || client?.primary_color || "#1A6B3C";
+    const accent = body.accent || client?.primary_color || "#6B7280";
 
     const text = (post.hook || "").trim().slice(0, 180);
     const lines = wrapText(text, 24);

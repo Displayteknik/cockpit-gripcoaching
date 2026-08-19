@@ -19,7 +19,7 @@ export async function GET() {
     const { data } = await sb.from("studio_brand_kits").select("kit").eq("client_id", clientId).maybeSingle();
     return NextResponse.json({
       kit: data?.kit || {},
-      clientPrimary: client?.primary_color || "#1A6B3C",
+      clientPrimary: client?.primary_color || "#6B7280",
       clientName: client?.name || "",
       publicUrl: client?.public_url || "",
     });

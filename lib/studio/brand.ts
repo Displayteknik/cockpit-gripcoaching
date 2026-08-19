@@ -9,6 +9,11 @@ import { normalizeSignature, NEUTRAL_SIGNATURE, type BrandSignature } from "@/li
 //   2) studio_brand_kits-rad (DB) = kundens grafiska profil (normalfallet)
 //   3) clients-raden              = neutral fallback (namn + primary_color)
 
+// OPTICUR-1 (19/8): var tidigare Opticurs faktiska (felaktiga) grön #1A6B3C — vilken
+// tenant som helst som föll igenom till fallback fick tyst en annan kunds varumärkesfärg.
+// En nödfallsfärg får aldrig råka vara en riktig tenants färg.
+const NEUTRAL_FALLBACK_COLOR = "#6B7280";
+
 export interface BrandColors {
   primary: string;
   primaryDeep: string;
@@ -17,6 +22,15 @@ export interface BrandColors {
   support: string;
   ink: string;
   paper: string;
+}
+
+// CMYK, procent 0-100 per kanal. Behövs bara där färg går till tryck (t.ex. Opticurs
+// annonstidning) — hex styr allt som renderas på skärm, CMYK är ett bevarat referensvärde.
+export interface CmykColor {
+  c: number;
+  m: number;
+  y: number;
+  k: number;
 }
 
 export interface BrandElements {
@@ -48,6 +62,7 @@ export interface StudioBrand {
   clientId: string;
   name: string;
   colors: BrandColors;
+  colorsCmyk: Partial<Record<keyof BrandColors, CmykColor>>;
   forbiddenColors: string[];
   fonts: { headline: string; body: string; logo: string };
   elements: BrandElements;
@@ -70,6 +85,7 @@ export interface StudioBrand {
 // Rå kit-jsonb från studio_brand_kits (allt valfritt — normaliseras).
 export interface BrandKit {
   colors?: Partial<BrandColors> & { forbidden?: string[] };
+  colorsCmyk?: Partial<Record<keyof BrandColors, CmykColor>>;
   fonts?: { headline?: string; body?: string; logo?: string };
   logo?: { primaryUrl?: string; onDarkUrl?: string; iconUrl?: string };
   elements?: Partial<BrandElements>;
@@ -109,11 +125,11 @@ export async function loadBrand(slug: string): Promise<StudioBrand> {
 export function brandFromKit(slug: string, name: string, primary: string, kit: BrandKit): StudioBrand {
   const c = kit.colors || {};
   const colors: BrandColors = {
-    primary: c.primary || primary || "#1A6B3C",
-    primaryDeep: c.primaryDeep || shade(c.primary || primary || "#1A6B3C", -0.28),
-    primaryLight: c.primaryLight || shade(c.primary || primary || "#1A6B3C", 0.35),
-    accent: c.accent || "#F2B01E",
-    support: c.support || "#7ECECA",
+    primary: c.primary || primary || NEUTRAL_FALLBACK_COLOR,
+    primaryDeep: c.primaryDeep || shade(c.primary || primary || NEUTRAL_FALLBACK_COLOR, -0.28),
+    primaryLight: c.primaryLight || shade(c.primary || primary || NEUTRAL_FALLBACK_COLOR, 0.35),
+    accent: c.accent || NEUTRAL_FALLBACK_COLOR,
+    support: c.support || "#9CA3AF",
     ink: c.ink || "#1A1A1A",
     paper: c.paper || "#FFFFFF",
   };
@@ -121,6 +137,7 @@ export function brandFromKit(slug: string, name: string, primary: string, kit: B
     clientId: slug,
     name,
     colors,
+    colorsCmyk: kit.colorsCmyk || {},
     forbiddenColors: kit.colors?.forbidden || [],
     fonts: {
       headline: pickFont(kit.fonts?.headline, "Inter"),
@@ -153,6 +170,7 @@ export function brandFromKit(slug: string, name: string, primary: string, kit: B
 interface LegacyBrand {
   clientId: string; name: string;
   colors: { greenDark: string; greenDeep: string; greenLight: string; mint: string; yellow: string; black: string; white: string };
+  colorsCmyk?: { greenDark?: CmykColor; greenLight?: CmykColor };
   fonts: { headline: string; body: string; logo: string };
   footer: { tagline: string; address: string; bookingLabel: string; bookingUrl: string };
   assets: { logo: string; zeiss?: string; brush?: string; qr?: string; footer?: string };
@@ -171,6 +189,10 @@ function adaptLegacyBrand(raw: LegacyBrand, slug: string): StudioBrand {
       support: lc.mint,
       ink: lc.black,
       paper: lc.white,
+    },
+    colorsCmyk: {
+      primary: raw.colorsCmyk?.greenDark,
+      primaryLight: raw.colorsCmyk?.greenLight,
     },
     forbiddenColors: [],
     fonts: raw.fonts,
@@ -217,9 +239,9 @@ async function fetchClientBasics(slug: string): Promise<{ name: string; primary:
   try {
     const sb = await sbService();
     const { data } = await sb.from("clients").select("name, primary_color").eq("slug", slug).maybeSingle();
-    return { name: data?.name || slug, primary: data?.primary_color || "#1A6B3C" };
+    return { name: data?.name || slug, primary: data?.primary_color || NEUTRAL_FALLBACK_COLOR };
   } catch {
-    return { name: slug, primary: "#1A6B3C" };
+    return { name: slug, primary: NEUTRAL_FALLBACK_COLOR };
   }
 }
 
@@ -230,7 +252,7 @@ async function fetchKit(slug: string): Promise<{ name: string; primary: string; 
     if (!client?.id) return null;
     const { data: row } = await sb.from("studio_brand_kits").select("kit").eq("client_id", client.id).maybeSingle();
     if (!row?.kit || Object.keys(row.kit).length === 0) return null;
-    return { name: client.name || slug, primary: client.primary_color || "#1A6B3C", kit: row.kit as BrandKit };
+    return { name: client.name || slug, primary: client.primary_color || NEUTRAL_FALLBACK_COLOR, kit: row.kit as BrandKit };
   } catch {
     return null;
   }

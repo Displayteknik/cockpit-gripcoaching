@@ -150,7 +150,7 @@ describe("byggRapportHtml — dokumentet", () => {
   it("vägrar en påhittad färg och faller tillbaka på standard", () => {
     const h = byggRapportHtml("# T", { klientNamn: "X", url: "", primarFarg: "javascript:alert(1)" });
     expect(h).not.toContain("javascript:");
-    expect(h).toContain("#1A6B3C");
+    expect(h).toContain("#6B7280");
   });
 
   it("klarar en rapport helt utan tabell — då ritas ingen översikt", () => {

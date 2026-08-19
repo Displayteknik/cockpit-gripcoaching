@@ -134,7 +134,7 @@ export async function listaAvtal(): Promise<AvtalVy[]> {
       client_id: k.id,
       klient: k.name,
       slug: k.slug,
-      primary_color: k.primary_color || "#1A6B3C",
+      primary_color: k.primary_color || "#6B7280",
       plan_id: a?.plan_id ?? null,
       plan_label: plan?.label ?? null,
       belopp_sek: belopp,

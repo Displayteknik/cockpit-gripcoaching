@@ -36,7 +36,7 @@ type UppslagSvar = Uppslag | TrappaSaknas | ProduktSaknas;
 function kr(n?: number | null) { return typeof n === "number" ? n.toLocaleString("sv-SE") + " kr" : "—"; }
 function nOrNull(v: string): number | null { const s = v.replace(",", ".").replace(/[^\d.]/g, ""); return s === "" ? null : Number(s); }
 
-export default function OffertSkapa({ primaryColor = "#1A6B3C", onClose, onSaved, forifyllNamn, forifyllForetag, forifyllContactId, forifyllOppId }: { primaryColor?: string; onClose: () => void; onSaved: () => void; forifyllNamn?: string; forifyllForetag?: string; forifyllContactId?: string; forifyllOppId?: string }) {
+export default function OffertSkapa({ primaryColor = "#6B7280", onClose, onSaved, forifyllNamn, forifyllForetag, forifyllContactId, forifyllOppId }: { primaryColor?: string; onClose: () => void; onSaved: () => void; forifyllNamn?: string; forifyllForetag?: string; forifyllContactId?: string; forifyllOppId?: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   // Kommer offerten ur en webbförfrågan eller ett Fokus-kort är kunden redan känd. Fälten är

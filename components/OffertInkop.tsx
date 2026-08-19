@@ -64,7 +64,7 @@ function ljus(v: string | null) {
   return /^\d+$/.test(v.trim()) ? `${v} nits` : v;
 }
 
-export default function OffertInkop({ primaryColor = "#1A6B3C" }: { primaryColor?: string }) {
+export default function OffertInkop({ primaryColor = "#6B7280" }: { primaryColor?: string }) {
   const [prisbok, setPrisbok] = useState<Prisbok | null>(null);
   const [produkter, setProdukter] = useState<Produkt[]>([]);
   const [delade, setDelade] = useState<Record<string, string[]>>({});

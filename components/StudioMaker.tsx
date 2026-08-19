@@ -97,7 +97,7 @@ function nastaBastaTid(channels: ChannelKey[]): string {
   return "";
 }
 
-const DEFAULT_COLOR = "#1A6B3C";
+const DEFAULT_COLOR = "#6B7280";
 
 // Kort svenskt datum för "Tidigare skapelser" (t.ex. "5 jul") — ger snabb överblick.
 function kortDatum(iso: string): string {
@@ -120,14 +120,14 @@ function stegRam(c: string): React.CSSProperties {
   };
 }
 
-// Standardfärg + snabbval för penseldrags-rutan. Gul = Opticurs standard.
-const DEFAULT_BRUSH = "#F2B01E";
+// Standardfärg + snabbval för penseldrags-rutan INNAN klientens grafiska profil hunnit
+// laddas — swatches-useEffect nedan byter ut dessa mot kundens egna roll-färger så fort
+// de finns. Rent neutrala: ingen enskild tenants varumärkesfärg får vara startvärdet här.
+const DEFAULT_BRUSH = "#6B7280";
 const BRUSH_SWATCHES: { name: string; hex: string }[] = [
-  { name: "Gul", hex: "#F2B01E" },
-  { name: "Grön", hex: "#1A6B3C" },
-  { name: "Ljusgrön", hex: "#5AAF32" },
-  { name: "Mint", hex: "#7ECECA" },
-  { name: "Mörkgrön", hex: "#0F4F2A" },
+  { name: "Grå", hex: "#6B7280" },
+  { name: "Mörkgrå", hex: "#374151" },
+  { name: "Ljusgrå", hex: "#D1D5DB" },
   { name: "Vit", hex: "#FFFFFF" },
 ];
 

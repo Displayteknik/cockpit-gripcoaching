@@ -13,7 +13,7 @@ export default async function EjIPaketPage({
 }) {
   const { m } = await searchParams;
   const session = await getCustomerSession();
-  const primary = session?.primary_color || "#1A6B3C";
+  const primary = session?.primary_color || "#6B7280";
   const registry = await getModuleRegistry();
   const mod = registry.find((x) => x.id === m);
   const namn = mod?.label || "Den här funktionen";

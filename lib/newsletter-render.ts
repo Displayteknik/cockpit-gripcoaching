@@ -36,7 +36,7 @@ function paras(t: string): string {
 
 // Email-säker HTML (inline styles). Brandad topplist + CTA-knapp.
 export function renderNewsletterHtml(c: NewsletterContent, o: RenderOpts): string {
-  const primary = o.primaryColor || "#1A6B3C";
+  const primary = o.primaryColor || "#6B7280";
   const sections = c.sections
     .map((s) => `${s.heading ? `<h2 style="margin:22px 0 8px;font-size:17px;color:#111827">${esc(s.heading)}</h2>` : ""}${paras(s.body)}`)
     .join("");

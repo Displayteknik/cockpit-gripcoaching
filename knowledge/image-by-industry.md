@@ -33,7 +33,7 @@ För varje aktiv klient i Cockpit: vad som faktiskt funkar visuellt, samlat på 
 ```
 A [subject] in a soft-lit optometry practice in [setting].
 [Action] with [emotion]. Documentary photography, 85mm lens, shallow depth of field, warm tungsten lighting, slight grain.
-Muted earth tones with subtle emerald accent (matching brand color #1A6B3C visible in 5-10% of the image).
+Muted earth tones with subtle emerald accent (matching brand color #007A3D visible in 5-10% of the image).
 Avoid: stock photo style, smiling, blue lighting, technical overlays, perfect symmetry, glasses-on-face hero shots.
 Aspect ratio: square 1:1.
 ```

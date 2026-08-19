@@ -22,6 +22,9 @@ Lärdomar under bygget. Abstrahera till generell regel; samma misstag två gång
 - **GISSA ALDRIG typsnitt.** Första försöket använde Anton (smal/kondenserad) — helt fel mot Opticurs Canva-mallar som använder en tung BRED rundad sans (Poppins-klass). Rätt approach: gör typsnittet till en brand.json-variabel (`fonts.headline/body`) som byts på en rad, och BEKRÄFTA namnet mot kundens Canva innan man kallar det klart. [[feedback_never_guess]]
 - **Platshållar-assets får resultatet att se billigt ut.** Riktiga assets (logga stor+centrerad, ZEISS-logga, penseldrag-PNG, QR) är inte "nice to have" — de ÄR designen. Bygg layouten rätt mot referensbilden, men flagga tydligt vad som är platshållare och vad som krävs skarpt.
 - **Font var Inter, inte Poppins.** Definitiv källa = kundens egen editor-fil (`Opticur_Editor_Tisdag.html`): Inter (rubrik/brödtext) + Playfair Display (logotyp). MEN riktiga publicerade annonsen (v14d) använder sans-wordmark `logo.png` för OPTICUR → använd den riktiga logo-filen, inte Playfair-text. Färger: `#1A6B3C` / `#0F4F2A` / gul `#F2B01E`.
+  **RÄTTAT 19/8 (OPTICUR-1):** dessa var läsfel/platshållare, inte kundens riktiga koder — de
+  syntes i två skarpa annonser och blev kundens klagomål. Ingelas officiella koder är
+  `#007A3D` (mörkgrön) / `#62A936` (ljusgrön), med CMYK för tryck. Gul `#F2B01E` oförändrad.
 - **Använd ALDRIG en godtycklig platshållar-bild** (jag satte ett moody kvinno-foto → "helt kasst", såg inget ut som exemplet). Klipp den RENA bilden ur kundens egna färdiga annonser: `scratchpad/crop.mjs` (Playwright + canvas via data-URL, inte file:// som blockeras) klipper barn-fotot ur `opticur barn202607.png` / `v14d.jpg` utan text/pensel/stjärna.
 ## L-004 · Fas 2 — textkvalitet (Håkans "usel text-skapare")
 - **Ett billigt Gemini-anrop med generisk prompt räcker inte för träffsäker copy.** Hårda teckengränser
