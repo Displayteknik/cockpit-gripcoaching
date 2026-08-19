@@ -49,10 +49,23 @@ uttryckligen instruerade modellen att rita "OPTICUR" som logotyp — instruktion
 stoppar hallucinationen. Blast radius: ~24 ställen hade Opticurs gröna hårdkodad som generisk
 nödfallsfärg för ALLA tenants (inkl. ett catch-block som gav vilken tenant som helst Opticurs
 grön vid databasfel) — bytt till neutral grå (`#6B7280`). Omvänt test kört: For Balance
-opåverkad. **Nästa steg, väntar på eget mandat: Etapp B** — fritt skärmformat ("Egen
-storlek/Skärm", t.ex. Opticurs infartsskärm 1200×900), måttoberoende layout, riktig
-logg-kompositering i det formatet (det som saknas strukturellt idag), bakom entitlement
-och PÅ endast för Opticur. Hårt stopp före Etapp B per beställningen — inte påbörjad.*
+opåverkad. Hårt stopp före Etapp B per beställningen togs 19/8 ("kör b").*
+
+*Uppdaterad 19/8 — **OPTICUR-1 Etapp B KLART OCH VERIFIERAT** (`d7fdb69`). Nytt formatslag
+"Egen storlek/Skärm" (200–4096 px/led), ny måttoberoende arketyp `ark-skarm` (zoner relativt
+ytan, typografi skalar mot canvashöjden, enradigt läge vid w/h ≥ 2,4 — verifierat mot 4:3,
+16:9 och en avlång remsa 1920×360). Canvasmåttet har EN källa (`effectiveDims(payload)`,
+`payload.customSize`) som alla konsumenter läser — export, publiceringsfångst, live-editor,
+CLI-export — samma princip som BESKÄR-1, ingen risk för att måttet glider isär mellan vägar.
+Riktig loggfil med automatiskt ljus/mörk-val (logo-contrast.ts utökad med en proportionell
+loggzon). Bakom en vanlig platform_modules/tenant_modules-modul (`studio-skarmformat`), AV
+som standard, PÅ bara för Opticur — byrå-dashboarden filtrerar aldrig på detta, så ägaren kan
+testa formatet för vilken tenant som helst utan att ge just den tenanten modulen.
+
+DoD kört: Opticurs "Redo inför hösten" återgiven exakt 1200×900 med `#007A3D` och riktig
+logga, sparad som "Infartsskärmen" (återanvändbar). Displayteknik i ägarläge: 1920×1080
+(normalläge) och 1920×360 (enradigt, autobytt) med egna färger, ingen Opticur-läckage.
+Omvänt synlighetstest: For Balance och HM Motor saknar modulen i kundvyn.*
 
 ### Topp 5 kundsynliga brister, efter risk
 
