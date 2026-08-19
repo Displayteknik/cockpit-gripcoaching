@@ -13,6 +13,7 @@ function LinkedinIcon({ className }: { className?: string }) {
   );
 }
 import ClientPicker from "@/components/ClientPicker";
+import { DT_CLIENT_ID } from "@/lib/dt-client";
 
 interface NavItem {
   href: string;
@@ -353,6 +354,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // MENY-1: kundens namn skrivs i zonrubriken ("Om valda kunden: AluCon AB"), så det aldrig
   // går att tro att en sida hör till kunden när den i själva verket är din egen.
   const [klientNamn, setKlientNamn] = useState<string>("");
+  // Läckage-fix 19/8: Founder HQ visar Håkans/DT:s egna siffror oavsett aktiv klient
+  // (medvetet, "eget"-zonen) — men Håkan vill ändå att ingången göms när en annan
+  // klient är vald, precis som Dagens drag. arDt styr om "hq"-området visas alls.
+  const [arDt, setArDt] = useState(false);
 
   useEffect(() => {
     fetch("/api/clients/active")
@@ -361,6 +366,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (c?.resource_module) setResourceModule(c.resource_module);
         if (c?.name) setKlientNamn(String(c.name));
         setScoped(!!c?.scoped);
+        setArDt(c?.id === DT_CLIENT_ID);
       })
       .catch(() => {});
   }, []);
@@ -386,8 +392,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
   const activeItem = allItems.find((i) => i.href === activeHref);
 
+  // Läckage-fix 19/8: dessa sidor (utöver hela "hq"-området) är också hårdkodade mot
+  // DT:s data, men ligger blandade i "Sälj" tillsammans med tenant-generella sidor —
+  // så bara posterna, inte hela området, göms för andra klienter.
+  const DT_ENDAST_HREFS = ["/dashboard/hq/kontakt", "/dashboard/driv/stadning"];
+
   // MENY-3: sidomenyn visar OMRÅDEN, flikraden visar områdets sidor.
-  const omraden = scoped ? [] : byggOmraden(navSections);
+  // "hq" (Founder HQ) göms för alla andra klienter än DT — se läckage-fix 19/8 ovan.
+  const omraden = scoped
+    ? []
+    : byggOmraden(navSections)
+        .filter((o) => arDt || o.id !== "hq")
+        .map((o) => (arDt ? o : { ...o, items: o.items.filter((i) => !DT_ENDAST_HREFS.includes(i.href)) }));
   const aktivtOmrade = omraden.find((o) => o.items.some((i) => i.href === activeHref)) ?? null;
   const flikar = aktivtOmrade?.items ?? [];
 

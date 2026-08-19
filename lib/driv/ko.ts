@@ -19,8 +19,7 @@ import { sattNastaSteg, markeraTidigasteUppgiftKlar } from "@/lib/driv/ghl";
 import { kalenderKandidat } from "@/lib/driv/matchning";
 import { byggKort } from "@/lib/driv/kort";
 import { byggMoteForberedelse, type MoteForberedelse } from "@/lib/driv/mote-forberedelse";
-
-const DT_CLIENT_ID = "a6a33547-5ca7-475f-9a62-43ff2c74d000";
+import { DT_CLIENT_ID } from "@/lib/dt-client";
 
 export type KoTyp = "uppgift_forfallen" | "obesvarat" | "offert_uppfoljning" | "mote_forberedelse" | "steg_aldrat";
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
+import { getActiveClientId } from "@/lib/client-context";
+import { DT_CLIENT_ID } from "@/lib/dt-client";
 import { supabaseService } from "@/lib/supabase-admin";
 import { hamtaValdaPipelines, lasPipeline, senastSynkad, synkaPipeline, type PipelineRad } from "@/lib/hq/pipeline";
 import {
@@ -21,6 +23,12 @@ async function ownerGrind() {
   if (denied) return denied;
   if ((await getAdminScope()) !== null) {
     return NextResponse.json({ error: "Endast huvudadmin har åtkomst" }, { status: 403 });
+  }
+  // Läckage-fix 19/8: Founder HQ är hårdkodad mot DT/Grips egna siffror, inte
+  // tenant-generell. Utan spärren visades den ändå när en annan klient var aktiv
+  // i Cockpit. Andra tenants ska bara se sitt eget, precis som i /k.
+  if ((await getActiveClientId()) !== DT_CLIENT_ID) {
+    return NextResponse.json({ error: "Founder HQ visas bara när Displayteknik är aktiv klient." }, { status: 403 });
   }
   return null;
 }
