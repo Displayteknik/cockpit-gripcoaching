@@ -2875,7 +2875,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
             {/* Redigera — tweak-lager (delad EditControls, samma i modalen) */}
             <section className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
               <EditControls overrides={overrides} setOv={setOv} onReset={() => setOverrides(DEFAULT_OVERRIDES)}
-                primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} />
+                primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} swatches={swatches} />
             </section>
 
             {/* Spara i biblioteket (återanvändbar skapelse) */}
@@ -3316,7 +3316,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
                 </div>
                 <div className="w-full lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 overflow-auto p-5">
                   <EditControls overrides={overrides} setOv={setOv} onReset={() => setOverrides(DEFAULT_OVERRIDES)}
-                    primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} />
+                    primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} swatches={swatches} />
                 </div>
               </div>
             </div>
@@ -3520,7 +3520,38 @@ function SkarmStorlekValjare({ value, onChange, saved, primary, onSaved }: {
 
 // Full redigering av text (typsnitt, storlek, färg, radavstånd) + bildzoom. Delas mellan
 // mall-lägets högerkolumn OCH "Redigera direkt"-modalen (bild vänster, detta till höger).
-function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush, showBadge }: {
+// Håkans besked 19/8: färgval på text/rubrik/textbakgrund ska ENBART gå att välja bland
+// tenantens uppsatta brand-färger — ingen fri färgruta (till skillnad från penseldragets
+// swatch-väljare, som medvetet har en "+"-genväg till valfri hex). Samma swatch-lista
+// (klientens kit.colors) som redan laddas för brush-väljaren, återanvänd här.
+function FargSwatchar({ value, onChange, swatches, standardLabel = "Standard" }: {
+  value: string;
+  onChange: (hex: string) => void;
+  swatches: { name: string; hex: string }[];
+  standardLabel?: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <button onClick={() => onChange("")} title={standardLabel === "Ingen" ? "Ingen platta" : "Mallens standardfärg"}
+        className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+        style={!value
+          ? { border: "2px solid #111827", boxShadow: "0 0 0 2px #fff, 0 0 0 4px #111827" }
+          : { border: "1px dashed #d1d5db", opacity: 0.6 }}>
+        <span className="block w-4 h-px bg-gray-400 rotate-45" />
+      </button>
+      {swatches.map((s) => {
+        const active = value?.toUpperCase() === s.hex.toUpperCase();
+        return (
+          <button key={s.hex} onClick={() => onChange(s.hex)} title={s.name}
+            className="w-8 h-8 rounded-full border transition-transform hover:scale-110"
+            style={{ background: s.hex, borderColor: active ? "#111827" : "#e5e7eb", boxShadow: active ? "0 0 0 2px #fff, 0 0 0 4px #111827" : "none" }} />
+        );
+      })}
+    </div>
+  );
+}
+
+function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush, showBadge, swatches }: {
   overrides: StudioOverrides;
   setOv: (patch: Partial<StudioOverrides>) => void;
   onReset: () => void;
@@ -3528,6 +3559,7 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
   hasImage: boolean;
   showBrush: boolean;
   showBadge: boolean;
+  swatches: { name: string; hex: string }[];
 }) {
   const inputCls = "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
   return (
@@ -3558,17 +3590,11 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1.5">Rubrikfärg</label>
-          <div className="flex items-center gap-2">
-            <input type="color" value={overrides.headlineColor || "#1A1A1A"} onChange={(e) => setOv({ headlineColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
-            <button onClick={() => setOv({ headlineColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.headlineColor ? "Auto" : "Standard"}</button>
-          </div>
+          <FargSwatchar value={overrides.headlineColor} onChange={(hex) => setOv({ headlineColor: hex })} swatches={swatches} />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1.5">Textfärg</label>
-          <div className="flex items-center gap-2">
-            <input type="color" value={overrides.bodyColor || "#1A1A1A"} onChange={(e) => setOv({ bodyColor: e.target.value })} className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer" />
-            <button onClick={() => setOv({ bodyColor: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.bodyColor ? "Auto" : "Standard"}</button>
-          </div>
+          <FargSwatchar value={overrides.bodyColor} onChange={(hex) => setOv({ bodyColor: hex })} swatches={swatches} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -3581,17 +3607,7 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1.5">Textbakgrund</label>
-          <div className="flex items-center gap-2">
-            {/* Småfix 16/8 (3): swatchen speglade aldrig "inget valt" — den defaultade tyst
-                till svart, som lätt lästes som "svart är valt". Ingen ram = inget aktivt val;
-                en ring + hexkoden syns bara när en färg faktiskt är satt. */}
-            <input type="color" value={overrides.textBg || "#000000"} onChange={(e) => setOv({ textBg: e.target.value })}
-              className="w-9 h-9 rounded-lg cursor-pointer"
-              style={overrides.textBg ? { border: "2px solid #6366f1" } : { border: "1px dashed #d1d5db", opacity: 0.5 }}
-              title={overrides.textBg || "Ingen platta"} />
-            {overrides.textBg && <span className="text-xs font-mono text-gray-500 uppercase">{overrides.textBg}</span>}
-            <button onClick={() => setOv({ textBg: "" })} className="text-xs text-gray-500 hover:text-gray-700">{overrides.textBg ? "Ta bort" : "Ingen"}</button>
-          </div>
+          <FargSwatchar value={overrides.textBg} onChange={(hex) => setOv({ textBg: hex })} swatches={swatches} standardLabel="Ingen" />
         </div>
       </div>
       {hasImage && (
