@@ -5,6 +5,7 @@
 // plattformens egen grafik/färg, så det syns direkt vilken del som är IG/FB/LI.
 import { Heart, MessageCircle, Send, Bookmark, ThumbsUp, Repeat2, Globe } from "lucide-react";
 import { FORMAT_DIMENSIONS, type StudioFormat } from "@/lib/studio/payload";
+import { RATIO_DIMS, type ImageEditRatio } from "@/lib/studio/image-edit";
 
 export type ChannelKey = "ig" | "fb" | "li";
 
@@ -72,13 +73,17 @@ interface Props {
   mediaWidth?: number;
   // Skriv eget-läget: visa råfotot direkt (ingen mall-render). Tomt → placeholder.
   imageSrc?: string;
+  // Skriv eget-läget: den valda croppens proportion (BILD-1). Detta är sanningen för
+  // rutans proportion när imageSrc är satt — `format` är frikopplat från cropen där
+  // och får aldrig avgöra hur mycket av bilden som object-cover klipper bort.
+  imageEditRatio?: ImageEditRatio;
   // Ett-klicks-fix i rutnäts-varningen: byt till Porträtt (4:5) direkt där problemet syns,
   // utan att användaren behöver hitta formatväljaren. Sätts bara när bytet är möjligt.
   onFixFormat?: () => void;
 }
 
-export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc, onFixFormat }: Props) {
-  const { w, h } = FORMAT_DIMENSIONS[format] ?? FORMAT_DIMENSIONS["1080x1350"];
+export default function ChannelPreview({ channel, renderSrc, format, caption, clientName, handle, primary, mediaWidth = 264, imageSrc, imageEditRatio, onFixFormat }: Props) {
+  const { w, h } = imageEditRatio ? RATIO_DIMS[imageEditRatio] : (FORMAT_DIMENSIONS[format] ?? FORMAT_DIMENSIONS["1080x1350"]);
   const MW = mediaWidth;
   const MH = Math.round((MW * h) / w);
   const fold = foldCaption(caption, channel);
@@ -215,7 +220,10 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
   // rutnätets faktiska beskärning här, på SAMMA media som publiceras.
   const gridW = 76;
   const gridH = Math.round((gridW * 4) / 3);
-  const visaGrid = channel === "ig" && format !== "1080x1920" && (imageSrc !== undefined || w / h > 0.76);
+  // Story (9:16) beskärs inte i profilrutnätet — kolla den faktiska croppen där den finns,
+  // annars det frikopplade `format`-fältet (mallägen, som saknar imageEditRatio).
+  const notStory = imageEditRatio ? imageEditRatio !== "9:16" : format !== "1080x1920";
+  const visaGrid = channel === "ig" && notStory && (imageSrc !== undefined || w / h > 0.76);
   const gridScale = gridH / h;
   const GridThumb = visaGrid ? (
     <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-2">
