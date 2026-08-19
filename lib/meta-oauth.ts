@@ -11,11 +11,16 @@ import crypto from "node:crypto";
 const GRAPH = "https://graph.facebook.com/v21.0";
 const OAUTH_DIALOG = "https://www.facebook.com/v21.0/dialog/oauth";
 
-// Scopes appen redan är godkänd för.
+// Scopes appen redan är godkänd för. `pages_manage_posts` togs bort 19/8 — Facebook
+// avvisade HELA OAuth-dialogen med "Invalid Scopes: pages_manage_posts" (aldrig godkänt
+// i Meta App Dashboard för Display Engine AI), vilket blockerade anslutningen helt för
+// alla tenants. Ingen kod i lib/publish eller lib/instagram anropar Graph-endpoints som
+// kräver den — Facebook-publicering går via GHL, inte direkt mot /me/feed. Om direkt
+// FB-publicering byggs senare måste scopet både läggas till här OCH godkännas i Meta App
+// Dashboard (Permissions and Features) innan det kan begäras igen.
 export const META_SCOPES = [
   "pages_show_list",
   "pages_read_engagement",
-  "pages_manage_posts",
   "business_management",
   "instagram_basic",
   "instagram_content_publish",
