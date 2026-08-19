@@ -1,6 +1,7 @@
 import type React from "react";
 import OpticurFotoGulRuta from "./templates/OpticurFotoGulRuta";
 import OpticurBageRubrik from "./templates/OpticurBageRubrik";
+import OpticurSkarmSplit from "./templates/OpticurSkarmSplit";
 import ArkFotoRuta from "./archetypes/ArkFotoRuta";
 import ArkStatement from "./archetypes/ArkStatement";
 import ArkCitat from "./archetypes/ArkCitat";
@@ -44,6 +45,13 @@ export const STUDIO_TEMPLATES: Record<string, TemplateDef> = {
     name: "Opticur — bågform + rubrik",
     formats: ["1080x1350", "1080x1080"],
     component: OpticurBageRubrik,
+  },
+  // Opticur-exklusiv, fri storlek — se lib/studio/templates-meta.ts (freeSize).
+  "opticur-skarm-split": {
+    id: "opticur-skarm-split",
+    name: "Opticur — delad yta (skärm)",
+    formats: ["1080x1350"],
+    component: OpticurSkarmSplit,
   },
   "ark-foto-ruta": { id: "ark-foto-ruta", name: "Foto + ruta", formats: ["1080x1350", "1080x1080"], component: ArkFotoRuta },
   "ark-statement": { id: "ark-statement", name: "Statement", formats: ["1080x1350", "1080x1080", "1080x1920"], component: ArkStatement },

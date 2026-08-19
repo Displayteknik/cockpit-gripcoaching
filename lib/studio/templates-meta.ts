@@ -80,6 +80,10 @@ export const TEMPLATE_META: TemplateMeta[] = [
     id: "opticur-bage-rubrik", name: "Opticur — bågform + rubrik", formats: ["1080x1350", "1080x1080"], headlineSoftMax: 15, clientSlug: "opticur",
     fields: { headline1: "Jätterubrik (gul kontur)", headline2: "Underrubrik (grön)", body: "Brödtext (valfri)", badge: false, brush: false },
   },
+  {
+    id: "opticur-skarm-split", name: "Opticur — delad yta (skärm)", formats: ["1080x1350"], headlineSoftMax: 22, clientSlug: "opticur", freeSize: true,
+    fields: { headline1: "Rubrik (grön serif)", headline2: "Underrubrik (svart, fet)", body: "Brödtext (valfri)", badge: false, brush: false },
+  },
 ];
 
 export function getTemplateMeta(id: string): TemplateMeta | undefined {
