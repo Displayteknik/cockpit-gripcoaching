@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getAdminScope } from "@/lib/api-auth";
+import { getActiveClientId } from "@/lib/client-context";
+import { DT_CLIENT_ID } from "@/lib/dt-client";
 import {
   arVilande,
   hamtaHqGhl,
@@ -89,6 +91,11 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
   if ((await getAdminScope()) !== null) {
     return NextResponse.json({ error: "Endast huvudadmin har åtkomst" }, { status: 403 });
+  }
+  // Läckage-fix 19/8: samma hq_pipeline_cache-spegel som Founder HQ och Dagens drag
+  // (se filkommentaren ovan) — samma DT-spärr.
+  if ((await getActiveClientId()) !== DT_CLIENT_ID) {
+    return NextResponse.json({ error: "På G visas bara när Displayteknik är aktiv klient." }, { status: 403 });
   }
 
   const tvinga = req.nextUrl.searchParams.get("synk") === "1";

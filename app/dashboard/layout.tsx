@@ -395,7 +395,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Läckage-fix 19/8: dessa sidor (utöver hela "hq"-området) är också hårdkodade mot
   // DT:s data, men ligger blandade i "Sälj" tillsammans med tenant-generella sidor —
   // så bara posterna, inte hela området, göms för andra klienter.
-  const DT_ENDAST_HREFS = ["/dashboard/hq/kontakt", "/dashboard/driv/stadning"];
+  const DT_ENDAST_HREFS = ["/dashboard/hq/kontakt", "/dashboard/driv/stadning", "/dashboard/pag"];
 
   // MENY-3: sidomenyn visar OMRÅDEN, flikraden visar områdets sidor.
   // "hq" (Founder HQ) göms för alla andra klienter än DT — se läckage-fix 19/8 ovan.
