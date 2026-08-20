@@ -42,9 +42,14 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
   // Fotplattan (facit): bara stad + telefon, inte hela adressen. Härlett ur den riktiga
   // adressdatan ("Storgatan 44 · Högsby · Tel 0491-200 62") i stället för hårdkodat — mallen
   // ska aldrig känna till att kunden sitter i Högsby, bara veta hur adressfältet är byggt.
+  // Håkans fynd 19/8: texten gick inte att ändra — mallen räknade om den varje gång i
+  // stället för att låta ett sparat val vinna. Nu ETT redigerbart fält (payload.overrides.
+  // footerText), samma data-edit/commit-on-blur-mekanism som rubrik/underrubrik/brödtext,
+  // förhandsifyllt med den härledda standarden.
   const addrDelar = brand.footer.address.split("·").map((s) => s.trim()).filter(Boolean);
   const stad = (addrDelar[1] || addrDelar[0] || "").toUpperCase();
   const telefon = (addrDelar[2] || "").replace(/^tel\.?\s*/i, "");
+  const footerLabel = payload.overrides?.footerText || [stad, telefon].filter(Boolean).join("   ·   ");
 
   return (
     <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", background: c.paper, fontFamily: "Inter, sans-serif" }}>
@@ -91,32 +96,25 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
           </div>
         ) : null}
 
-        {/* Riktig loggfil — aldrig genererad text/ikon. */}
+        {/* Riktig loggfil — aldrig genererad text/ikon. Ingen separat "Leg. optiker"-rad
+            under (Håkans besked 19/8: den ska inte stå där — loggfilen bär hela budskapet
+            själv, glasögonikonen är redan inbakad i filen). */}
         {logga.url ? (
           <div style={{ marginTop: Math.round(h * 0.04) }}>
             <div style={logoPlateStyle(logga.plate)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logga.url} alt="" style={{ height: logoH, width: "auto", maxWidth: textW - pad * 2, objectFit: "contain", display: "block" }} />
             </div>
-            {brand.footer.tagline ? (
-              <div style={{ fontFamily: "Inter, sans-serif", fontWeight: 700, color: c.primaryDeep, fontSize: Math.round(h * 0.024), marginTop: Math.round(h * 0.008) }}>
-                {brand.footer.tagline}
-              </div>
-            ) : null}
           </div>
         ) : null}
       </div>
 
-      {/* Fotplatta — Håkans besked 19/8: ljusgrön (primaryLight), större text, och 19/8 (2): högre platta. */}
+      {/* Fotplatta — ljusgrön (primaryLight), redigerbar (data-edit="footerText", 19/8). */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.round(h * 0.145), background: c.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: Math.round(h * 0.02), padding: `0 ${pad}px` }}>
-        <span style={{ color: c.paper, fontSize: Math.round(h * 0.042), fontWeight: 800, fontFamily: "Inter, sans-serif" }}>{stad}</span>
-        {telefon ? (
-          <>
-            <span style={{ width: 2, height: Math.round(h * 0.032), background: "rgba(255,255,255,0.6)" }} />
-            <TelefonIkon color={c.paper} size={Math.round(h * 0.036)} />
-            <span style={{ color: c.paper, fontSize: Math.round(h * 0.042), fontWeight: 800, fontFamily: "Inter, sans-serif" }}>{telefon}</span>
-          </>
-        ) : null}
+        {telefon ? <TelefonIkon color={c.paper} size={Math.round(h * 0.055)} /> : null}
+        <span data-edit="footerText" style={{ color: c.paper, fontSize: Math.round(h * 0.065), fontWeight: 800, fontFamily: "Inter, sans-serif", whiteSpace: "nowrap" }}>
+          {footerLabel}
+        </span>
       </div>
     </div>
   );

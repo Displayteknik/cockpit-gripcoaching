@@ -732,6 +732,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
     else if (field === "body") setBody(text);
     else if (field === "badge1") setBadgeLine1(text);
     else if (field === "badge2") setBadgeLine2(text);
+    else if (field === "footerText") setOv({ footerText: text });
     else if (field === "slide-headline") updateSlide(slideIdx, { headline: text });
     else if (field === "slide-body") updateSlide(slideIdx, { body: text });
     else if (field.startsWith("list-")) {
@@ -743,7 +744,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
         return prev;
       });
     }
-  }, [slideIdx, updateSlide]);
+  }, [slideIdx, updateSlide, setOv]);
 
   // Klistra in eget utkast → AI delar upp i rubrik/underrubrik/brödtext.
   const applyPaste = useCallback(async () => {

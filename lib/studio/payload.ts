@@ -68,6 +68,9 @@ export interface StudioOverrides {
   h1X: number; h1Y: number;
   h2X: number; h2Y: number;
   bodyX: number; bodyY: number;
+  // Redigerbar fotplatta-text (t.ex. opticur-skarm-split): "" = mallens härledda standard
+  // (stad + telefon ur brand-profilen), annars användarens eget värde för just detta inlägg.
+  footerText: string;
 }
 
 // En karusell-slide (ark-karusell). kind styr layouten: hook = omslag/krok,
@@ -151,6 +154,7 @@ export const DEFAULT_OVERRIDES: StudioOverrides = {
   fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false, visaPunktNummer: false,
   logoVariant: "",
   h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0,
+  footerText: "",
 };
 
 // Typsnitt som får väljas i editorn (self-hostade → live = export). "" = mallens standard.
@@ -277,6 +281,7 @@ function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOv
     h2Y: clamp(Number(o.h2Y ?? 0), -100, 100),
     bodyX: clamp(Number(o.bodyX ?? 0), -100, 100),
     bodyY: clamp(Number(o.bodyY ?? 0), -100, 100),
+    footerText: typeof o.footerText === "string" ? o.footerText.slice(0, 120) : "",
   };
 }
 
