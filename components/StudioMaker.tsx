@@ -305,6 +305,18 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
     if (!meta.formats.includes(format)) setFormat(meta.formats[0]);
   }, [meta, format]);
 
+  // Håkans fynd 20/8: bytte man FRÅN en fri-storleks-mall (Egen storlek/Skärm, delad yta)
+  // TILL en fast-format-mall stod `customSize` kvar i state. StudioEditor mäter alltid ut
+  // förhandsvisningsrutan via effectiveDims() (customSize vinner om den finns) — men en
+  // fast-format-mall som opticur-foto-gul-ruta läser sin egen höjd direkt ur
+  // FORMAT_DIMENSIONS[format] (1350px), inte effectiveDims. De två glider isär: rutan blev
+  // t.ex. lika hög som den gamla fria storleken medan mallen själv bara fyllde 1350px av
+  // den — resten stod tomt och grått. Samma "en delad funktion saknades"-mönster som
+  // format-effekten ovan, nu för customSize.
+  useEffect(() => {
+    if (!meta.freeSize && customSize) setCustomSize(null);
+  }, [meta, customSize]);
+
   useEffect(() => {
     fetch("/api/clients/active").then((r) => r.json()).then((c) => c && setClient(c)).catch(() => {});
     // Content Compass-schema (för förifylld dagsprofil). Tyst om modul/data saknas.
