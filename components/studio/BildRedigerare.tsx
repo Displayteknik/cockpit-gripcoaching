@@ -30,9 +30,23 @@ export default function BildRedigerare({
   const pekare = useRef(new Map<number, { x: number; y: number }>());
 
   // Läs originalets mått EXIF-korrekt (mobilfoton är ofta roterade i metadata).
+  //
+  // Håkans fynd 20/8: en extern bildkälla (t.ex. Sök foto/Pexels) kan blockera fetch()
+  // med CORS trots att en vanlig <img>-tagg visar samma bild utan problem — då kastade
+  // fetchen tyst och `dims` blev aldrig satt, vilket gömde HELA beskärningsverktyget
+  // (format, zoom, allt) permanent, fast bilden syntes fint i förhandsvisningarna
+  // (vanliga <img>-taggar, opåverkade av CORS). Fallback: samma mått går nästan alltid
+  // att läsa via ett vanligt Image()-element (moderna browsers EXIF-roterar <img> också),
+  // som inte kräver CORS för att exponera naturalWidth/naturalHeight.
   useEffect(() => {
     let aktiv = true;
     setDims(null);
+    const viaImgFallback = () => {
+      const img = new Image();
+      img.onload = () => { if (aktiv) setDims({ w: img.naturalWidth, h: img.naturalHeight }); };
+      img.onerror = () => { /* bilden går inte att läsa alls — redigering förblir inaktiv */ };
+      img.src = src;
+    };
     (async () => {
       try {
         const res = await fetch(src);
@@ -40,7 +54,9 @@ export default function BildRedigerare({
         const bm = await createImageBitmap(blob, { imageOrientation: "from-image" });
         if (aktiv) setDims({ w: bm.width, h: bm.height });
         bm.close();
-      } catch { /* bilden visas ändå, redigering inaktiv */ }
+      } catch {
+        viaImgFallback();
+      }
     })();
     return () => { aktiv = false; };
   }, [src]);
