@@ -48,16 +48,22 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
 
   return (
     <div id="studio-canvas" style={{ overflowWrap: "break-word", width: w, height: h, position: "relative", overflow: "hidden", background: c.paper, fontFamily: "Inter, sans-serif" }}>
-      {/* Foto höger, fullt kant-till-kant */}
-      <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: w - textW }}>
+      {/* Foto höger, fullt kant-till-kant. overflow:hidden här (inte bara på roten) — annars
+          kan en inzoomad bild (imageScale) rendera utanför fotorutan in i textfältet. */}
+      <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: w - textW, overflow: "hidden" }}>
         {payload.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img data-edit-image src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})`, display: "block" }} />
         ) : (
           <div style={{ width: "100%", height: "100%", background: `linear-gradient(160deg, ${c.primary}, ${c.primaryDeep})` }} />
         )}
-        {/* Mjuk vit tonvärdesövergång mot textfältet — annars ser skarven avklippt ut. */}
-        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, ${c.paper} 0%, ${c.paper}00 ${Math.round((w * 0.16) / (w - textW) * 100)}%)` }} />
+        {/* Mjuk vit tonvärdesövergång mot textfältet. Bred och flerstegad med flit (Håkans
+            fynd 19/8): en smal tvåstegs-övertoning såg bra ut mot fotots STANDARDbeskärning,
+            men bilden kan dras/zoomas (imageX/imageScale) så vad som helst — även en
+            kontrastrik kant — hamnar i övertoningszonen. En smal, hård avtoning gör då att
+            det ser ut som en dubbelbild/skarv. Bredare + fler mellansteg håller oavsett
+            vad som råkar ligga där. */}
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, ${c.paper} 0%, ${c.paper}cc 18%, ${c.paper}55 32%, ${c.paper}00 46%)` }} />
       </div>
 
       {/* Textfält vänster */}
@@ -101,8 +107,8 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
         ) : null}
       </div>
 
-      {/* Fotplatta — Håkans besked 19/8: ljusgrön (primaryLight), inte mörkgrön. Texten större. */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.round(h * 0.11), background: c.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: Math.round(h * 0.02), padding: `0 ${pad}px` }}>
+      {/* Fotplatta — Håkans besked 19/8: ljusgrön (primaryLight), större text, och 19/8 (2): högre platta. */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.round(h * 0.145), background: c.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: Math.round(h * 0.02), padding: `0 ${pad}px` }}>
         <span style={{ color: c.paper, fontSize: Math.round(h * 0.042), fontWeight: 800, fontFamily: "Inter, sans-serif" }}>{stad}</span>
         {telefon ? (
           <>
