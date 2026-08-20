@@ -10,7 +10,7 @@ const bas: StudioPayload = {
   headline1: "", headline2: "", body: "",
   badge: { enabled: false, line1: "", line2: "" },
   imageUrl: "", imageFocusY: 50, brushColor: "",
-  overrides: { fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false, visaPunktNummer: false, logoVariant: "", h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0, footerText: "" },
+  overrides: { fontScale: 1, h1Scale: 1, h2Scale: 1, bodyScale: 1, fontFamily: "", headlineColor: "", bodyColor: "", textBg: "", lineScale: 1, imageScale: 1, imageX: 0, hideBrush: false, hideBadge: false, visaPunktNummer: false, logoVariant: "", h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0, footerText: "", footerScale: 1 },
   slides: [], videoUrl: "", brief: "", imageEdit: null,
 };
 

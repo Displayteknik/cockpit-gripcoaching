@@ -23,6 +23,8 @@ export interface TemplateMeta {
   entitlement?: string;
   /** Fri storlek (B1) — mallen använder payload.customSize, inte `formats`. */
   freeSize?: boolean;
+  /** Mallen har en fotplatta med egen textstorlek-skala (overrides.footerScale). */
+  hasFooterScale?: boolean;
   fields: {
     headline1: string; // etikett; tom = dölj fältet
     headline2: string;
@@ -81,7 +83,7 @@ export const TEMPLATE_META: TemplateMeta[] = [
     fields: { headline1: "Jätterubrik (gul kontur)", headline2: "Underrubrik (grön)", body: "Brödtext (valfri)", badge: false, brush: false },
   },
   {
-    id: "opticur-skarm-split", name: "Opticur — delad yta (skärm)", formats: ["1080x1350"], headlineSoftMax: 22, clientSlug: "opticur", freeSize: true,
+    id: "opticur-skarm-split", name: "Opticur — delad yta (skärm)", formats: ["1080x1350"], headlineSoftMax: 22, clientSlug: "opticur", freeSize: true, hasFooterScale: true,
     fields: { headline1: "Rubrik (grön serif)", headline2: "Underrubrik (svart, fet)", body: "Brödtext (valfri)", badge: false, brush: false },
   },
 ];

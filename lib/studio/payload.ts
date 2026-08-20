@@ -71,6 +71,10 @@ export interface StudioOverrides {
   // Redigerbar fotplatta-text (t.ex. opticur-skarm-split): "" = mallens härledda standard
   // (stad + telefon ur brand-profilen), annars användarens eget värde för just detta inlägg.
   footerText: string;
+  // Fotplattans textstorlek (samma roll-mönster som h1Scale/h2Scale/bodyScale), 1 = mallens
+  // standard. Egen skala i stället för att återanvända bodyScale — fotplattan är ett separat
+  // element, inte inläggets brödtext, och ska kunna justeras utan att röra den.
+  footerScale: number;
 }
 
 // En karusell-slide (ark-karusell). kind styr layouten: hook = omslag/krok,
@@ -155,6 +159,7 @@ export const DEFAULT_OVERRIDES: StudioOverrides = {
   logoVariant: "",
   h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0,
   footerText: "",
+  footerScale: 1,
 };
 
 // Typsnitt som får väljas i editorn (self-hostade → live = export). "" = mallens standard.
@@ -282,6 +287,7 @@ function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOv
     bodyX: clamp(Number(o.bodyX ?? 0), -100, 100),
     bodyY: clamp(Number(o.bodyY ?? 0), -100, 100),
     footerText: typeof o.footerText === "string" ? o.footerText.slice(0, 120) : "",
+    footerScale: clamp(Number(o.footerScale ?? 1), 0.5, 2),
   };
 }
 

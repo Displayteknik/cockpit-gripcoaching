@@ -2876,7 +2876,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
             {/* Redigera — tweak-lager (delad EditControls, samma i modalen) */}
             <section className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
               <EditControls overrides={overrides} setOv={setOv} onReset={() => setOverrides(DEFAULT_OVERRIDES)}
-                primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} swatches={swatches} />
+                primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} swatches={swatches} showFooterScale={!!meta.hasFooterScale} />
             </section>
 
             {/* Spara i biblioteket (återanvändbar skapelse) */}
@@ -3317,7 +3317,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
                 </div>
                 <div className="w-full lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 overflow-auto p-5">
                   <EditControls overrides={overrides} setOv={setOv} onReset={() => setOverrides(DEFAULT_OVERRIDES)}
-                    primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} swatches={swatches} />
+                    primary={primary} hasImage={!!payload.imageUrl} showBrush={!!meta.fields.brush} showBadge={!!meta.fields.badge} swatches={swatches} showFooterScale={!!meta.hasFooterScale} />
                 </div>
               </div>
             </div>
@@ -3552,7 +3552,7 @@ function FargSwatchar({ value, onChange, swatches, standardLabel = "Standard" }:
   );
 }
 
-function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush, showBadge, swatches }: {
+function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush, showBadge, swatches, showFooterScale }: {
   overrides: StudioOverrides;
   setOv: (patch: Partial<StudioOverrides>) => void;
   onReset: () => void;
@@ -3561,6 +3561,7 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
   showBrush: boolean;
   showBadge: boolean;
   swatches: { name: string; hex: string }[];
+  showFooterScale?: boolean;
 }) {
   const inputCls = "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none";
   return (
@@ -3587,6 +3588,12 @@ function EditControls({ overrides, setOv, onReset, primary, hasImage, showBrush,
           <label className="block text-xs text-gray-500 mb-0.5">Radavstånd ({Math.round(overrides.lineScale * 100)}%)</label>
           <input type="range" min={0.8} max={1.8} step={0.05} value={overrides.lineScale} onChange={(e) => setOv({ lineScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
         </div>
+        {showFooterScale && (
+          <div>
+            <label className="block text-xs text-gray-500 mb-0.5">Fotplatta ({Math.round(overrides.footerScale * 100)}%)</label>
+            <input type="range" min={0.5} max={2} step={0.05} value={overrides.footerScale} onChange={(e) => setOv({ footerScale: Number(e.target.value) })} className="w-full" style={{ accentColor: primary }} />
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

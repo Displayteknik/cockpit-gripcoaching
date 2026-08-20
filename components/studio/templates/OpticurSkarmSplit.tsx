@@ -25,7 +25,7 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
     // mot fotozonen (den mäter fel yta här).
     fallback: brand.assets.logo || brand.assets.logoOnDark || "",
   });
-  const logoH = Math.round(h * 0.09);
+  const logoH = Math.round(h * 0.115);
 
   // Versalt (facit) breddar texten märkbart mer än gemener — samma h1Size som innan gav
   // "HÖSTEN?" en fjärde rad som sköt hela rubriken utanför ytan (Håkans fynd 19/8, canvasen
@@ -109,10 +109,11 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
         ) : null}
       </div>
 
-      {/* Fotplatta — ljusgrön (primaryLight), redigerbar (data-edit="footerText", 19/8). */}
+      {/* Fotplatta — ljusgrön (primaryLight), redigerbar text (data-edit="footerText") och
+          egen storleksskala (footerScale, samma reglage-mönster som rubrik/underrubrik/brödtext). */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.round(h * 0.145), background: c.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: Math.round(h * 0.02), padding: `0 ${pad}px` }}>
-        {telefon ? <TelefonIkon color={c.paper} size={Math.round(h * 0.055)} /> : null}
-        <span data-edit="footerText" style={{ color: c.paper, fontSize: Math.round(h * 0.065), fontWeight: 800, fontFamily: "Inter, sans-serif", whiteSpace: "nowrap" }}>
+        {telefon ? <TelefonIkon color={c.paper} size={fs(h * 0.055, payload, "footer")} /> : null}
+        <span data-edit="footerText" style={{ color: c.paper, fontSize: fs(h * 0.065, payload, "footer"), fontWeight: 800, fontFamily: "Inter, sans-serif", whiteSpace: "nowrap" }}>
           {footerLabel}
         </span>
       </div>
