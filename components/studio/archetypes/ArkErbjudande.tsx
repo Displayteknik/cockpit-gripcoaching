@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS, isPortraitFormat } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs, hlColor, bodyColor, imgPosition, imgScale, font, textPlate, lh, dragPos } from "@/lib/studio/overrides";
+import { fs, hlColor, bodyColor, imgPosition, imgScale, imgFit, font, textPlate, lh, dragPos } from "@/lib/studio/overrides";
 import KitFooter from "@/components/studio/KitFooter";
 import { StarBadge, isLightColor } from "@/components/studio/StudioBits";
 
@@ -25,7 +25,7 @@ export default function ArkErbjudande({ payload, brand }: { payload: StudioPaylo
         <div data-edit-image style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           {payload.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
+            <img src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: imgFit(payload), objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
           ) : <div style={{ width: "100%", height: "100%", background: c.primary }} />}
         </div>
 

@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { dragPos } from "@/lib/studio/overrides";
+import { dragPos, imgFit } from "@/lib/studio/overrides";
 import ClientFooterOpticur from "@/components/studio/ClientFooterOpticur";
 import { SunOutline, StarBadge, BrushBox, isLightColor } from "@/components/studio/StudioBits";
 
@@ -86,7 +86,7 @@ export default function OpticurFotoGulRuta({ payload, brand }: { payload: Studio
               style={{
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                objectFit: imgFit(payload),
                 objectPosition: `center ${payload.imageFocusY}%`,
                 display: "block",
               }}

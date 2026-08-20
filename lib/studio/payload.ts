@@ -1,7 +1,7 @@
 // Studio — payload-kontrakt (samma för alla mallar, se docs/studio/PLAN.md §3.3 i KICKOFF).
 // Deterministisk: mallen ritas ENBART från detta objekt. AI rör aldrig layout.
 
-import { normalizeImageEdit, type ImageEdit } from "@/lib/studio/image-edit";
+import { normalizeImageEdit, type ImageEdit, type ImageEditFit } from "@/lib/studio/image-edit";
 
 export type StudioFormat = "1080x1350" | "1080x1080" | "1080x1920";
 
@@ -75,6 +75,12 @@ export interface StudioOverrides {
   // standard. Egen skala i stället för att återanvända bodyScale — fotplattan är ett separat
   // element, inte inläggets brödtext, och ska kunna justeras utan att röra den.
   footerScale: number;
+  // Håkans fynd 20/8: "Hela bilden" fanns bara i Skriv eget (BILD-1/BildRedigerare), inte i
+  // Mallar & guide — där gick fotot ALLTID till fullt kant-till-kant-beskuret (objectFit
+  // "cover" hårdkodat i varje arketyp). "beskar" (mallens standard, = cover) eller "hela"
+  // (= contain, fotot syns intakt, canvasens EGEN bakgrundsfärg fyller ut runt om — ingen
+  // extra bakgrundslogik behövs, arketyperna har redan en bakgrundsfärg satt på canvas-roten).
+  imageFit: ImageEditFit;
 }
 
 // En karusell-slide (ark-karusell). kind styr layouten: hook = omslag/krok,
@@ -160,6 +166,7 @@ export const DEFAULT_OVERRIDES: StudioOverrides = {
   h1X: 0, h1Y: 0, h2X: 0, h2Y: 0, bodyX: 0, bodyY: 0,
   footerText: "",
   footerScale: 1,
+  imageFit: "beskar",
 };
 
 // Typsnitt som får väljas i editorn (self-hostade → live = export). "" = mallens standard.
@@ -288,6 +295,7 @@ function normalizeOverrides(raw: Partial<StudioOverrides> | undefined): StudioOv
     bodyY: clamp(Number(o.bodyY ?? 0), -100, 100),
     footerText: typeof o.footerText === "string" ? o.footerText.slice(0, 120) : "",
     footerScale: clamp(Number(o.footerScale ?? 1), 0.5, 2),
+    imageFit: o.imageFit === "hela" ? "hela" : "beskar",
   };
 }
 

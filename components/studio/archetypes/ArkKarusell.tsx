@@ -1,7 +1,7 @@
 import type { StudioPayload, StudioSlide } from "@/lib/studio/payload";
 import { FORMAT_DIMENSIONS, punktNummer } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { fs } from "@/lib/studio/overrides";
+import { fs, imgFit } from "@/lib/studio/overrides";
 import { isLightColor } from "@/components/studio/StudioBits";
 import { logoImgStyle, logoPlateStyle, valjLogga, type LogoHint } from "@/lib/studio/logo-style";
 
@@ -47,7 +47,7 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
       {hasImg ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={slide.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={slide.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: imgFit(payload) }} />
           <div style={{ position: "absolute", inset: 0, background: slide.kind === "point"
             ? "linear-gradient(180deg, rgba(15,13,11,0.15) 0%, rgba(15,13,11,0.32) 45%, rgba(15,13,11,0.9) 100%)"
             : `linear-gradient(180deg, ${bg}cc 0%, ${bg}dd 100%)` }} />

@@ -14,7 +14,7 @@ import {
   Image as ImageIcon, Download, Upload, Loader2, Wand2, Star,
   Maximize2, Save, Check, Search, RefreshCw, Trash2, Copy, FolderOpen, Send,
   ExternalLink, CalendarClock, ClipboardCheck, X, Pencil, LayoutGrid, Sparkles,
-  ThumbsUp, ThumbsDown,
+  ThumbsUp, ThumbsDown, Crop, Expand,
 } from "lucide-react";
 import { TEMPLATE_META, templatesForClient, isRecommendedFormat, templateNeedsImage } from "@/lib/studio/templates-meta";
 import type { StudioFormat, StudioOverrides, StudioSlide, LogoVariantVal, CustomSize } from "@/lib/studio/payload";
@@ -2258,6 +2258,48 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
               </div>
+
+              {/* Håkans fynd 20/8: format och "Hela bilden" fanns bara i Skriv eget
+                  (BildRedigerare) — här i Mallar & guide fick man beskärningen (cover)
+                  hårdkodad utan att kunna se eller ändra formatet där bilden faktiskt sitter,
+                  bara uppe i steg 2. Samma två verktyg, återanvända här, bredvid fotot. */}
+              {!isCarousel && (
+                meta.freeSize ? (
+                  <SkarmStorlekValjare value={customSize} onChange={setCustomSize} saved={brand?.screenFormats || []}
+                    primary={primary} onSaved={(sf) => setBrand((b) => (b ? { ...b, screenFormats: sf } : b))} />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {meta.formats.map((f) => {
+                      const active = f === format;
+                      return (
+                        <button key={f} onClick={() => setFormat(f)}
+                          className="flex-1 min-w-[90px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                          style={active ? { borderColor: primary, color: primary, background: `${primary}0f` } : { borderColor: "#e5e7eb", color: "#374151" }}>
+                          {FORMAT_LABELS[f]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+              {curImg && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500">Bilden:</span>
+                  <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
+                    <button onClick={() => setOv({ imageFit: "beskar" })}
+                      className="px-2.5 py-1.5 inline-flex items-center gap-1"
+                      style={overrides.imageFit !== "hela" ? { background: primary, color: "#fff" } : { background: "#fff", color: "#374151" }}>
+                      <Crop className="w-3.5 h-3.5" /> Beskär
+                    </button>
+                    <button onClick={() => setOv({ imageFit: "hela" })}
+                      className="px-2.5 py-1.5 inline-flex items-center gap-1"
+                      style={overrides.imageFit === "hela" ? { background: primary, color: "#fff" } : { background: "#fff", color: "#374151" }}>
+                      <Expand className="w-3.5 h-3.5" /> Hela bilden
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* BILD-1: fokuspunkt-reglaget ersatt — bilden justeras direkt i förhandsvisningen */}
               {curImg && (
                 <div className="flex items-center justify-between gap-3 flex-wrap">

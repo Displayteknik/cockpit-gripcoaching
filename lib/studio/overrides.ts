@@ -34,6 +34,12 @@ export function imgPosition(p: StudioPayload): string {
 export function imgScale(p: StudioPayload): number {
   return p.overrides?.imageScale || 1;
 }
+// "Hela bilden" (samma val som BildRedigerare i Skriv eget, nu delat till Mallar & guide):
+// "cover" (mallens standard) beskär fotot kant-till-kant, "contain" visar det intakt —
+// canvasens egen bakgrundsfärg fyller ut runt om, ingen extra bakgrundslogik krävs.
+export function imgFit(p: StudioPayload): "cover" | "contain" {
+  return p.overrides?.imageFit === "hela" ? "contain" : "cover";
+}
 export function showBrush(p: StudioPayload): boolean {
   return !p.overrides?.hideBrush;
 }

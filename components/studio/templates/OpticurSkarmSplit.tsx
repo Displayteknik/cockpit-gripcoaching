@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { effectiveDims } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { dragPos, fs, lh, hlColor, bodyColor, font, imgPosition, imgScale } from "@/lib/studio/overrides";
+import { dragPos, fs, lh, hlColor, bodyColor, font, imgPosition, imgScale, imgFit } from "@/lib/studio/overrides";
 import { valjLogga, logoPlateStyle, type LogoHint } from "@/lib/studio/logo-style";
 
 // Mall: opticur-skarm-split (referens: "REDO INFÖR HÖSTEN" facit-annonsen, Ingelas egen bild).
@@ -58,7 +58,7 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
       <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: w - textW, overflow: "hidden" }}>
         {payload.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img data-edit-image src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})`, display: "block" }} />
+          <img data-edit-image src={payload.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: imgFit(payload), objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})`, display: "block" }} />
         ) : (
           <div style={{ width: "100%", height: "100%", background: `linear-gradient(160deg, ${c.primary}, ${c.primaryDeep})` }} />
         )}

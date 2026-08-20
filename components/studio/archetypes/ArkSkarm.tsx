@@ -1,7 +1,7 @@
 import type { StudioPayload } from "@/lib/studio/payload";
 import { effectiveDims } from "@/lib/studio/payload";
 import type { StudioBrand } from "@/lib/studio/brand";
-import { hlColor, bodyColor, imgPosition, imgScale, font, lh, showBadge } from "@/lib/studio/overrides";
+import { hlColor, bodyColor, imgPosition, imgScale, imgFit, font, lh, showBadge } from "@/lib/studio/overrides";
 import { logoPlateStyle, valjLogga, type LogoHint } from "@/lib/studio/logo-style";
 
 // Arketyp: fri storlek / skärmformat (OPTICUR-1 Etapp B). Måttoberoende — bygger på
@@ -61,7 +61,7 @@ export default function ArkSkarm({ payload, brand, logoHint }: { payload: Studio
           mekanism som övriga arketyper (BESKÄR-1-principen: en delad, inte en egen väg). */}
       {payload.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img data-edit-image src={payload.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
+        <img data-edit-image src={payload.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: imgFit(payload), objectPosition: imgPosition(payload), transform: `scale(${imgScale(payload)})` }} />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${c.primary}, ${c.primaryDeep})` }} />
       )}
