@@ -71,36 +71,48 @@ export default function OpticurSkarmSplit({ payload, brand, logoHint }: { payloa
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, ${c.paper} 0%, ${c.paper}cc 18%, ${c.paper}55 32%, ${c.paper}00 46%)` }} />
       </div>
 
-      {/* Textfält vänster */}
-      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: textW, display: "flex", flexDirection: "column", justifyContent: "center", padding: `0 ${pad}px` }}>
-        <div data-drag="h1" style={{ ...dragPos(payload, "h1"), fontFamily: font("Playfair Display", payload), fontWeight: 900, color: hlColor(c.primary, payload), fontSize: h1Size, lineHeight: lh(0.94, payload), letterSpacing: -1.5, textTransform: "uppercase" }}>
-          <span data-edit="headline1">{payload.headline1}</span>
-        </div>
-
-        {/* Dekorlinje + sol — samma detalj som facit-annonsen. */}
-        <div style={{ display: "flex", alignItems: "center", gap: h * 0.012, margin: `${Math.round(h * 0.02)}px 0` }}>
-          <div style={{ flex: 1, height: 2, background: c.primary }} />
-          <SolIkon color={c.primary} size={Math.round(h * 0.03)} />
-          <div style={{ flex: 1, height: 2, background: c.primary }} />
-        </div>
-
-        {payload.headline2 ? (
-          <div data-drag="h2" style={{ ...dragPos(payload, "h2"), fontFamily: "Inter, sans-serif", fontWeight: 800, color: bodyColor(c.ink, payload), fontSize: h2Size, lineHeight: lh(1.2, payload) }}>
-            <span data-edit="headline2">{payload.headline2}</span>
+      {/* Textfält vänster. `bottom: fotplattans höjd` (inte 0) — text och logga kan då
+          aldrig hamna bakom den gröna fotplattan, oavsett hur hög kolumnen blir. */}
+      <div style={{ position: "absolute", top: 0, left: 0, bottom: Math.round(h * 0.145), width: textW, display: "flex", flexDirection: "column", padding: `0 ${pad}px` }}>
+        {/* Håkans fynd 20/8: extremt hög Underrubrik-skala (h2Scale) fick "Boka tid för
+            synundersökning!" att bryta till fyra rader — med `justifyContent:"center"` på
+            HELA kolumnen (gamla upplägget) svällde det då både uppåt OCH nedåt: rubriken
+            klipptes av mot canvasens topp, och loggan trycktes ner bakom fotplattan tills
+            den försvann helt. Samma buggklass som h1-fyndet 19/8, nu i en ny variant.
+            Fixet är strukturellt, inte bara en ny siffra: den växande texten får en EGEN
+            `flex:1, minHeight:0, overflow:"hidden"`-zon den aldrig kan svälla ur — värsta
+            fall blir en avklippt rad, inte en trasig hel design. Loggan står i sin EGEN
+            `flexShrink:0`-zon under, opåverkad av hur texten ovanför beter sig. */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div data-drag="h1" style={{ ...dragPos(payload, "h1"), fontFamily: font("Playfair Display", payload), fontWeight: 900, color: hlColor(c.primary, payload), fontSize: h1Size, lineHeight: lh(0.94, payload), letterSpacing: -1.5, textTransform: "uppercase" }}>
+            <span data-edit="headline1">{payload.headline1}</span>
           </div>
-        ) : null}
 
-        {payload.body ? (
-          <div data-drag="body" style={{ ...dragPos(payload, "body"), fontFamily: "Inter, sans-serif", fontWeight: 500, color: bodyColor(c.ink, payload), fontSize: bodySize, lineHeight: lh(1.35, payload), marginTop: h * 0.015 }}>
-            <span data-edit="body">{payload.body}</span>
+          {/* Dekorlinje + sol — samma detalj som facit-annonsen. */}
+          <div style={{ display: "flex", alignItems: "center", gap: h * 0.012, margin: `${Math.round(h * 0.02)}px 0`, flexShrink: 0 }}>
+            <div style={{ flex: 1, height: 2, background: c.primary }} />
+            <SolIkon color={c.primary} size={Math.round(h * 0.03)} />
+            <div style={{ flex: 1, height: 2, background: c.primary }} />
           </div>
-        ) : null}
+
+          {payload.headline2 ? (
+            <div data-drag="h2" style={{ ...dragPos(payload, "h2"), fontFamily: "Inter, sans-serif", fontWeight: 800, color: bodyColor(c.ink, payload), fontSize: h2Size, lineHeight: lh(1.2, payload) }}>
+              <span data-edit="headline2">{payload.headline2}</span>
+            </div>
+          ) : null}
+
+          {payload.body ? (
+            <div data-drag="body" style={{ ...dragPos(payload, "body"), fontFamily: "Inter, sans-serif", fontWeight: 500, color: bodyColor(c.ink, payload), fontSize: bodySize, lineHeight: lh(1.35, payload), marginTop: h * 0.015 }}>
+              <span data-edit="body">{payload.body}</span>
+            </div>
+          ) : null}
+        </div>
 
         {/* Riktig loggfil — aldrig genererad text/ikon. Ingen separat "Leg. optiker"-rad
             under (Håkans besked 19/8: den ska inte stå där — loggfilen bär hela budskapet
             själv, glasögonikonen är redan inbakad i filen). */}
         {logga.url ? (
-          <div style={{ marginTop: Math.round(h * 0.04) }}>
+          <div style={{ marginTop: Math.round(h * 0.04), flexShrink: 0 }}>
             <div style={logoPlateStyle(logga.plate)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logga.url} alt="" style={{ height: logoH, width: "auto", maxWidth: textW - pad * 2, objectFit: "contain", display: "block" }} />
