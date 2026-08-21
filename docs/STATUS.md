@@ -2261,6 +2261,40 @@ provad genom att brytas på exakt gränsvärdena och på eskalerings-/återhämt
 
 ---
 
+## HELG-1 DEL 9 — KALIBRERING-1, read-only-granskning, 2026-08-21
+
+**Hårt stopp respekterat: ingen kod ändrad.** Granskningen gäller "Sid-analys (teknisk
+SEO + AEO)"-kortet i `/k/seo` (`app/k/seo/SeoClient.tsx:396`), motorn är
+`scoreSignals()` i `lib/seo-deep.ts:309` (samma funktion `/api/seo/audit` kör i
+produktion via `auditUrlRendered()` i `lib/seo-audit.ts:130`) — INTE den stora
+AI-skrivna DT-rapporten från DEL 2, det är ett annat verktyg.
+
+**Snabbtestet kördes utan att röra Annas (Oppråbys) riktiga sida.** I stället kördes
+`scoreSignals()` rent i minnet med syntetiska signaler byggda på Oppråbys riktiga
+titeltext, i `scripts/_kalibrering1-rorlighet.mts` (skriptet ligger kvar, run:
+`npx tsx --tsconfig scripts/text1/tsconfig.json scripts/_kalibrering1-rorlighet.mts`).
+Motivering: samma svar, mätt exaktare (isolerar en variabel i taget utan
+nätverksbrus), utan minsta risk att en riktig kundsida ligger med fel titel synlig
+för besökare eller Google mitt i testet.
+
+| Fråga | Svar | Bevis |
+|---|---|---|
+| **Rörlighet** — rör poängen sig när sidtiteln ändras? | **Trappstegsfunktion, inte kontinuerlig.** Inom samma "band" (t.ex. 54→66 tecken, båda under 65-gränsen) rör sig SEO-poängen **noll**, oavsett hur mycket bättre eller sämre titeln faktiskt blivit som text. Poängen rör sig BARA vid två hårda trösklar: tom↔ifylld (±15) och över/under 65 tecken (±4). En titel som går från utmärkt till medioker men stannar inom samma band ger identisk poäng | Skriptets steg 1–3. Uppmätt: 66→54 tecken (samma band) = 0 poängs skillnad; tom titel = −15 mot en ren baseline |
+| **Golv/tak** | Fungerar som avsett, ingen bugg hittad. Golv: `Math.max(0, seo)` (`seo-deep.ts:380`). Tak: en icke-indexerbar sida (`noindex` eller robots.txt-block) kapas till **max 25 SEO-poäng** oavsett hur perfekt allt annat är (`seo-deep.ts:379`) | Skriptets golv/tak-steg: noindex + i övrigt fläckfri sida → SEO stannar exakt vid 25 |
+| **Åtgärdslistans sortering och täckning** | **Två separata problem, det andra allvarligt.** (1) Ordning: listan är INTE sorterad efter poängvikt — den råkar följa insättningsordning (`seo-deep.ts:337–389`), och `schema` (upp till −20 AEO-poäng, den enskilt tyngsta enskilda posten i hela systemet) hamnar sist i listan trots att UI-texten lovar "Följ åtgärdslistan uppifrån; de översta ger mest effekt" (`SeoClient.tsx:400`). (2) Täckning — det allvarliga fyndet: FEM av AEO:s sex avdragsposter (FAQ −12, textdjup −8, frågerubriker −8, listor −5, färskhet −5 = −38 poäng) skrivs **ALDRIG** till `checks`-arrayen (`seo-deep.ts:390–396` saknar `add()`-anrop som de andra raderna har). De syns därför aldrig i `issues`/åtgärdslistan kunden ser. En kund kan se AEO 62 med en helt TOM åtgärdslista | Skriptets sista steg: AEO 100→62 (−38 poäng), men `checks.filter(fel).length === 0` — noll förklarande rader för hela nedgången |
+| **Plattformsärlighet** | **Konkret asymmetri, verklig risk för falska minus på klientrenderade sajter (GHL, Next.js/SPA).** `title`, `metaDescription`, `robots`, `ogTags`, `schemaTypes`/`faqs` och `canonical` söks i BÅDE rå HTML och avkodad JS-payload (`hay = raw + decoded`, `seo-deep.ts:462`) — byggt precis för att inte straffa GHL-sajter (kommentaren rad 1–8 om `lesson_ghl_client_side_verify`). Men `headings` (H1-kollen), `wordCount`, `paragraphCount`, `listCount`, `images` och `links` läses ENDAST ur rå HTML (`seo-deep.ts:501,507,509,510,512,516`, kommentaren rad 498 säger uttryckligen "på den synliga HTML:en, inte payloaden"). En sajt vars H1, brödtext, bilder eller menylänkar renderas av JS (GoHighLevel, Next.js) riskerar därför falskt "H1 saknas" (−10), "tunt innehåll" (−10) och "bilder utan alt-text" — exakt samma klass av bugg som canonical/schema redan skyddades mot, fast oskyddad här | Kodläsning, `lib/seo-deep.ts:462` (hay-sökning) jämfört med rad 501–524 (raw-only). Inte körd live — verifierbart genom att läsa samma rader |
+
+**Ingen kod ändrad, som beställt.** Fyndens allvarlighetsordning: åtgärdslistans
+täckningslucka (AEO kan tappa 38 poäng utan en enda förklarande rad) och
+plattforms-asymmetrin (H1/innehåll/bilder/länkar oskyddade mot samma buggklass som
+canonical/schema redan fixades för) är de två som bör prioriteras när Håkan ger OK
+att bygga. Sorteringsordningen och rörlighets-trappstegen är mindre akuta —
+trappstegsbeteendet är sannolikt en medveten avvägning (binära pass/fail-krav är
+enklare att förklara för en kund än ett kontinuerligt betyg), men värt att bekräfta
+med Håkan snarare än att anta.
+
+---
+
 ## SESSIONSSLUT 2026-08-21, kväll — sparat för ny session
 
 **Committat:** `6878bbf`, 45 filer. Inte pushat (ingen deploy denna session — inget
@@ -2273,7 +2307,8 @@ ostagade precis som de var vid sessionens start.
 K1-rutan, kapad CTA), DEL 4 (KUNDREGISTER-1-tillägget), DEL 5 (KANAL-2), DEL 6
 (KUNSKAP-1, redan klart, omvänt test tillagt), DEL 7 (BETAL-1, redan klart utom
 MRR-bryggan, blockerat på Stripe-konto), DEL 8 (KOSTNAD-2, saldolarm skarpt bevisat
-via sms).
+via sms), DEL 9 (KALIBRERING-1, read-only-granskning klar — se sektionen ovan för
+alla fyra svar, ingen kod ändrad).
 
 **Reda ut, BILD-11/karusellslides (Håkans egen precisering under sessionen):** de tre
 slides han bad om (2=läsbara ord, 4=matfoto/rekvisita, 7=kapad CTA) är nu alla
@@ -2283,11 +2318,8 @@ slide 7 idag (DEL 3). Håkan sa själv att han genererar om och bedömer resulta
 det ersätter "kör om med hela grinden inkopplad"-uppgiften som stod öppen i DEL 0.
 Inget ytterligare byggarbete väntar här; nästa steg är hans egen bedömning.
 
-**EJ PÅBÖRJAT, väntar på nästa session:**
-- **DEL 9 (KALIBRERING-1)** — read-only-granskning av sid-analysens viktning
-  (rörlighet, golv/tak, åtgärdslistans sortering, plattformsärlighet). Snabbtestet
-  (byt Annas sidtitel, kör om analysen, se om poängen rör sig) är inte kört. Ingen
-  kod ska ändras utan Håkans OK — se HELG-1-dokumentet.
+**EJ PÅBÖRJAT:** inget kvarstår från HELG-1:s nio delar. DEL 9 klar (se ovan), inga
+kodändringar gjorda där — de fyra fynden väntar på Håkans OK innan något byggs.
 
 **Väntar på Håkan innan det går vidare:**
 1. **DEL 2:** granska den omkörda DT-rapporten (`scripts/_rapport1-dt-ny-kund.md` /
@@ -2300,11 +2332,14 @@ Inget ytterligare byggarbete väntar här; nästa steg är hans egen bedömning.
    lokalt) — bevisas automatiskt av morgondagens cron (06:30) eller genom att köra om
    skriptet efter deploy.
 4. **Fyll på 46elks och fal.ai** — båda under sina trösklar just nu (48 kr resp. 100,5 kr).
-5. **Nya fynd, ej fixade, köas efter helgen:** dubbel AI-promptomgång i ImageStudios
+5. **DEL 9:** OK att bygga fix för åtgärdslistans täckningslucka (AEO kan tappa 38
+   poäng utan förklarande rad) och plattformsasymmetrin (H1/innehåll/bilder/länkar
+   läses bara ur rå HTML, inte avkodad JS-payload)? Se sektionen ovan för exakta rader.
+6. **Nya fynd, ej fixade, köas efter helgen:** dubbel AI-promptomgång i ImageStudios
    Imagen-flik (DEL 3), meny1-zoner.test.ts fallerar sedan MENY-3 (19/8, orört av
    HELG-1), fyra av fem bildvägar fortfarande okopplade (Pinterest/YouTube/Threads/
    Bluesky-plattformssträngar overifierade).
 
 **Nästa session börjar här:** läs det här avsnittet + `docs/STATUS.md` i sin helhet,
-kör DEL 9, och stäm av de fem punkterna ovan med Håkan.
+och stäm av punkterna ovan med Håkan.
 rent.
