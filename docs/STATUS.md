@@ -2351,6 +2351,46 @@ testkörningen — fångat och rättat innan commit.
 helg — inget nytt fel). De nio befintliga SEO-relaterade testerna
 (`seo1-hamtning.test.ts`, `seo2-omatt.test.ts`) opåverkade.
 
+### Skarp DoD-körning före push (Håkans krav — testsviten räckte inte som bevis)
+
+Kört mot tre RIKTIGA sajter, riktiga nätverksanrop, gammal kod (commit `7568507`,
+före KALIBRERING-2) mot ny kod (HEAD), samma URL:er. Skriptet var tillfälligt
+(`_kalibrering2-dod-skarpt.mts` + en extraherad kopia av gammal kod), kört och
+sedan raderat — resultatet står här i stället för i en fil.
+
+| Sajt | FÖRE (SEO/AEO) | NU (SEO/AEO) | H1 hittat båda? | Identiskt? |
+|---|---|---|---|---|
+| **opprabygamlaskola.se (Anna)** | 72/55 | 72/55 | Ja, "Deltagare berättar" båda | Ja |
+| www.displayteknik.se | 88/100 | 88/100 | Ja, båda | Ja |
+| www.alucon.se | 82/47 | 82/47 | Ja, båda | Ja |
+
+**Omvända testet (en rå-HTML-sajt får identisk poäng före/efter): BEVISAT, på tre
+riktiga sajter, inklusive Annas egen.** SEO, AEO, ordantal, bildantal och
+länkantal exakt lika i alla tre.
+
+**Åtgärdslistans ärlighet och sortering: BEVISAT LIVE på Annas sida.** FÖRE (5
+rader, osorterade, inga poäng): meta, canonical, bilder, schema, PLUS en duplicerad
+"saknar schema"-rad (bekräftar bifyndet som togs bort). NU (7 rader, sorterade,
+poäng synliga): schema (−20) överst, sedan meta (−12), FAQ (−12), canonical (−8),
+bilder (−8), frågerubriker (−8), färskhet (−5) — FAQ och frågerubriker och
+färskhet var HELT OSYNLIGA förut trots att de redan drog ner AEO-poängen då också.
+
+**H1/text/bilder/länkar-falsklarmet på klientrenderade sajter: INTE reproducerat
+live — ärligt sagt.** Alla tre testade sajter (inklusive Annas) visade sig vara
+ren, server-renderad HTML redan i botten, inte GHL-/Next-klientrendering — därför
+fanns inget falskt "H1 saknas" att bevisa bort på just dessa sidor; koden hade
+inget att rätta till där. Fixen i sig är bevisad genom en realistisk simulerad
+GHL-hydreringspayload i `tests/kalibrering2-atgardslista.test.ts` (H1 som bara
+finns i en avkodad JS-payload hittas nu) — men det är en konstruerad
+reproduktion, inte en live kundsida. Jag letade inte vidare efter en riktig
+klientrenderad kundsida bortom dessa tre — säg till om du vill att jag ska leta
+efter en specifik sida (t.ex. en GHL-funnelsida, inte huvuddomänen) för att bevisa
+den delen live också.
+
+**Slutsats:** två av tre DoD-krav bevisade live på riktiga sajter (omvänt test +
+åtgärdslistans ärlighet/sortering). Det tredje (H1-falsklarmet) bevisat konstruerat,
+inte live — ingen riktig kundsida i urvalet hade buggen till att börja med.
+
 ### Trappstegsfunktionen (rörligheten) — INTE byggd, beslutsunderlag
 
 **Håkans instruktion:** poängmodellsbeslut som flyttar siffror kunder redan sett —
@@ -2389,6 +2429,13 @@ någon faktiskt klistrat in i Sid-analys-kortet, inte alla kunders alla sidor. A
 ingen i just detta urval ligger i riskzonen är inte samma sak som att ingen gör
 det på en sida som aldrig körts genom verktyget. Läs det som "lågt observerat
 akutläge", inte "garanterat noll påverkan".
+
+**Håkans preliminära svar (21/8, INTE genomfört — slutgiltigt beslut efter helgen):**
+ja, en för KORT titel ska också kosta i en framtida gradvis skala. Motivering: en
+titel på 15 tecken slösar bort utrymmet lika mycket som en på 80 tecken spränger
+det — samma princip åt båda hållen, med ett neutralt band i mitten där ingen av
+ramperna gör något. Det här är en NY regel (inget kortstraff finns alls idag),
+inte bara en mjukare variant av dagens 65-tecknersgräns. Ingen kod byggd på detta.
 
 ---
 
