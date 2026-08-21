@@ -95,6 +95,22 @@ const stripText = (html: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/**
+ * Samma rensning som `stripText`, men UTAN att slänga `<script>`-block. Används bara
+ * på den AVKODADE JS-payloaden: dess riktiga innehåll (KALIBRERING-2, DEL 9-fyndet)
+ * ligger typiskt sett textuellt inuti ett `<script>`-taggpar i den ursprungliga rå
+ * HTML:en (det är själva anledningen till att det behöver avkodas). `stripText` skulle
+ * kasta bort exakt det innehållet igen — samma bugg som fallbacket var till för att lösa.
+ */
+const stripTextPayload = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 // Avkoda JS-strängars escaping så client-side-renderade taggar blir sökbara.
 // Bor i lib/lankupptackt (delad av SEO-motorn och onboarding-skrapan); re-exporteras här
 // eftersom flera anropsställen importerar den härifrån sedan tidigare.
@@ -102,6 +118,24 @@ export { decodePayload } from "@/lib/lankupptackt";
 
 const first = (html: string, re: RegExp) => (html.match(re)?.[1] || "").trim();
 const allMatches = (html: string, re: RegExp) => Array.from(html.matchAll(re));
+
+/**
+ * Render-medveten matchning för RÄKNADE signaler (rubriker, bilder, länkar, listor):
+ * sök i rå HTML först. Ger den NOLL träffar, sök i den avkodade JS-payloaden i stället
+ * — ALDRIG konkatenering av båda, det skulle kunna dubbelräkna om samma markup speglas
+ * i en hydreringspayload. Samma "raw, decoded bara om raw är tomt"-mönster som
+ * `canonical` redan använde (rad ~514 nedan). En sajt som serverar allt i rå HTML
+ * tar alltid raw-grenen och får identisk räkning som innan.
+ *
+ * KALIBRERING-2 (DEL 9-fyndet): H1/textmängd/bilder/länkar saknade detta skydd medan
+ * title/meta/canonical/schema redan hade det — falsk risk för minus på klientrenderade
+ * sajter (GoHighLevel, Next.js) som denna funktion nu tar bort.
+ */
+function extraheraRenderMedvetet<T>(raw: string, decoded: string, extrahera: (html: string) => T[]): T[] {
+  const franRaw = extrahera(raw);
+  if (franRaw.length > 0) return franRaw;
+  return extrahera(decoded);
+}
 
 function collectTypes(node: unknown, out: Set<string>) {
   if (!node) return;
@@ -287,6 +321,13 @@ export interface SeoCheck {
   label: string;
   status: CheckStatus;
   detail: string;
+  /**
+   * Poängeffekten av just DENNA check (negativ = poäng förlorade). 0 för "ok" och
+   * "ej-matt" (okänd effekt). KALIBRERING-2 (DEL 9-fyndet): utan detta fält kunde
+   * varken kunden se VARFÖR en poäng blev vad den blev, eller åtgärdslistan sorteras
+   * efter faktisk vikt — se sorteringen i `auditUrlRendered()`.
+   */
+  poang: number;
 }
 
 /** Checkar som alltid ska synas när en sida inte kunde läsas — ingen får saknas tyst. */
@@ -301,6 +342,11 @@ const ALLA_CHECKAR: [string, string][] = [
   ["internlankar", "Interna länkar"],
   ["schema", "Strukturerad data"],
   ["sitemap", "Sitemap finns"],
+  ["aeo_faq", "FAQ / vanliga frågor"],
+  ["aeo_djup", "Innehållsdjup för AI-sökmotorer"],
+  ["aeo_fragerubriker", "Rubriker formulerade som frågor"],
+  ["aeo_listor", "Listor och punktuppställningar"],
+  ["aeo_farskhet", "Synligt uppdateringsdatum"],
 ];
 
 // Render-medveten, deterministisk poängsättning — ankrad i Lighthouse där det finns.
@@ -310,7 +356,7 @@ export function scoreSignals(s: PageSignals): {
   seo: number | null; aeo: number | null; indexerbar: boolean | null; checks: SeoCheck[];
 } {
   const checks: SeoCheck[] = [];
-  const add = (id: string, label: string, status: CheckStatus, detail: string) => checks.push({ id, label, status, detail });
+  const add = (id: string, label: string, status: CheckStatus, detail: string, poang = 0) => checks.push({ id, label, status, detail, poang });
 
   // Sidan lästes aldrig → ingenting får bedömas, allt blir "ej mätt" med orsak.
   if (s.ejMattOrsak) {
@@ -322,12 +368,17 @@ export function scoreSignals(s: PageSignals): {
   let osakert = false;
   const ejMatt = (id: string, label: string, orsak: string) => { osakert = true; add(id, label, "ej-matt", orsak); };
 
+  // Indexerbarhet är en grind, inte ett fast poängavdrag (den verkliga effekten beror
+  // på hur högt sidan annars skulle legat) — en sentinel som alltid sorterar överst
+  // i åtgärdslistan (KALIBRERING-2).
+  const INDEXERBAR_POANG = -1000;
+
   // ── Indexerbarhet ────────────────────────────────────────────
   const noindex = /noindex/i.test(s.robots || "");
   const robotsOkant = s.sajtHamtFel.robots;
   let indexerbar: boolean | null;
-  if (noindex) { indexerbar = false; add("indexerbar", "Indexerbar", "fel", "meta robots: noindex"); }
-  else if (s.robotsTxt?.blocksEverything === true) { indexerbar = false; add("indexerbar", "Indexerbar", "fel", "robots.txt blockerar allt"); }
+  if (noindex) { indexerbar = false; add("indexerbar", "Indexerbar", "fel", "meta robots: noindex", INDEXERBAR_POANG); }
+  else if (s.robotsTxt?.blocksEverything === true) { indexerbar = false; add("indexerbar", "Indexerbar", "fel", "robots.txt blockerar allt", INDEXERBAR_POANG); }
   else if (robotsOkant) { indexerbar = null; add("indexerbar", "Indexerbar", "ej-matt", `robots.txt kunde inte läsas: ${robotsOkant}`); }
   else { indexerbar = true; add("indexerbar", "Indexerbar", "ok", "ok"); }
 
@@ -335,41 +386,44 @@ export function scoreSignals(s: PageSignals): {
   let seo = 100;
 
   if (s.titleLength == null) ejMatt("title", "Title finns", "titeln kunde inte mätas");
-  else if (!s.title) { seo -= 15; add("title", "Title finns", "fel", "saknas"); }
-  else { add("title", "Title finns", "ok", `${s.titleLength} tecken`); if (s.titleLength > 65) seo -= 4; }
+  else if (!s.title) { seo -= 15; add("title", "Title finns", "fel", "saknas", -15); }
+  // KALIBRERING-2: för lång titel gav förut tyst -4 poäng bakom en grön "ok"-rad.
+  else if (s.titleLength > 65) { seo -= 4; add("title", "Title finns", "fel", `${s.titleLength} tecken (över 65 — korta ner)`, -4); }
+  else add("title", "Title finns", "ok", `${s.titleLength} tecken`);
 
   if (s.metaLength == null) ejMatt("meta", "Meta description", "meta description kunde inte mätas");
-  else if (!s.metaDescription) { seo -= 12; add("meta", "Meta description", "fel", "saknas"); }
-  else { add("meta", "Meta description", "ok", `${s.metaLength} tecken`); if (s.metaLength > 170) seo -= 4; }
+  else if (!s.metaDescription) { seo -= 12; add("meta", "Meta description", "fel", "saknas", -12); }
+  else if (s.metaLength > 170) { seo -= 4; add("meta", "Meta description", "fel", `${s.metaLength} tecken (över 170 — korta ner)`, -4); }
+  else add("meta", "Meta description", "ok", `${s.metaLength} tecken`);
 
   if (s.headings == null) ejMatt("h1", "H1 finns", "rubrikerna kunde inte mätas");
-  else if (s.headings.filter((h) => h.level === 1).length === 0) { seo -= 10; add("h1", "H1 finns", "fel", "saknas"); }
+  else if (s.headings.filter((h) => h.level === 1).length === 0) { seo -= 10; add("h1", "H1 finns", "fel", "saknas", -10); }
   else add("h1", "H1 finns", "ok", "ok");
 
   if (s.emptyHeadings == null) { /* täcks av h1-raden ovan */ }
-  else if (s.emptyHeadings > 0) { seo -= 4; add("tomma_rubriker", "Inga tomma rubriker", "fel", `${s.emptyHeadings} tomma`); }
+  else if (s.emptyHeadings > 0) { seo -= 4; add("tomma_rubriker", "Inga tomma rubriker", "fel", `${s.emptyHeadings} tomma`, -4); }
 
   if (s.canonicalSource === "okand") ejMatt("canonical", "Canonical finns", "canonical kunde inte mätas");
-  else if (s.canonicalSource === "none") { seo -= 8; add("canonical", "Canonical finns", "fel", "ingen hittad"); }
+  else if (s.canonicalSource === "none") { seo -= 8; add("canonical", "Canonical finns", "fel", "ingen hittad", -8); }
   else add("canonical", "Canonical finns", "ok", s.canonicalSource === "payload" ? "renderad (client-side)" : "statisk");
 
   if (s.wordCount == null) ejMatt("innehall", "Tillräckligt innehåll", "textmängden kunde inte mätas");
-  else if (s.wordCount < 300) { seo -= 10; add("innehall", "Tillräckligt innehåll", "fel", `${s.wordCount} ord`); }
+  else if (s.wordCount < 300) { seo -= 10; add("innehall", "Tillräckligt innehåll", "fel", `${s.wordCount} ord`, -10); }
   else add("innehall", "Tillräckligt innehåll", "ok", `${s.wordCount} ord`);
 
   // ⚠ Kärnan i S-2: "inga bilder utan alt-text" får ALDRIG sättas när bildantalet är null.
   // Det var precis den raden som gav grönt ljus på sajtens enda riktiga brist.
   if (s.images == null) ejMatt("bilder_alt", "Bilder har alt-text", "bilderna kunde inte räknas");
-  else if (s.images.withoutAlt > 0) { seo -= Math.min(8, s.images.withoutAlt); add("bilder_alt", "Bilder har alt-text", "fel", `${s.images.withoutAlt} av ${s.images.total} saknar alt-text`); }
+  else if (s.images.withoutAlt > 0) { const p = -Math.min(8, s.images.withoutAlt); seo += p; add("bilder_alt", "Bilder har alt-text", "fel", `${s.images.withoutAlt} av ${s.images.total} saknar alt-text`, p); }
   else add("bilder_alt", "Bilder har alt-text", "ok", s.images.total === 0 ? "0 bilder totalt" : `${s.images.total} bilder, alla har alt-text`);
 
   if (s.links == null) ejMatt("internlankar", "Interna länkar", "länkarna kunde inte räknas");
-  else if (s.links.internal < 3) { seo -= 4; add("internlankar", "Interna länkar", "fel", `${s.links.internal} interna länkar`); }
+  else if (s.links.internal < 3) { seo -= 4; add("internlankar", "Interna länkar", "fel", `${s.links.internal} interna länkar`, -4); }
   else add("internlankar", "Interna länkar", "ok", `${s.links.internal} interna länkar`);
 
   // Sitemap är en SAJT-signal — att den inte gick att läsa gör inte sidans poäng osann.
   if (s.sajtHamtFel.sitemap) add("sitemap", "Sitemap finns", "ej-matt", `sitemap kunde inte läsas: ${s.sajtHamtFel.sitemap}`);
-  else if (s.sitemap && !s.sitemap.found) { seo -= 4; add("sitemap", "Sitemap finns", "fel", "hittades ej"); }
+  else if (s.sitemap && !s.sitemap.found) { seo -= 4; add("sitemap", "Sitemap finns", "fel", "hittades ej", -4); }
   else if (s.sitemap) add("sitemap", "Sitemap finns", "ok", s.sitemap.urlCount != null ? `${s.sitemap.urlCount} URL:er` : "hittad");
 
   // Ankra mot Lighthouse SEO (renderad) FÖRE grinden
@@ -380,20 +434,42 @@ export function scoreSignals(s: PageSignals): {
   seo = Math.max(0, seo);
 
   // ── AEO (citerbarhet) ────────────────────────────────────────
+  // KALIBRERING-2 (DEL 9-fyndet): alla sex avdrag skrevs INTE till `checks` förut —
+  // bara schema. En kund kunde se AEO 62 med en helt tom åtgärdslista. Nu får varje
+  // avdrag en egen rad med poäng, precis som SEO-sidan redan hade.
   let aeo = 100;
   if (s.schemaTypes == null) ejMatt("schema", "Strukturerad data", "schema kunde inte läsas");
   else {
-    if (s.schemaTypes.length === 0) { aeo -= 20; add("schema", "Strukturerad data", "fel", "ingen JSON-LD hittad"); }
+    if (s.schemaTypes.length === 0) { aeo -= 20; add("schema", "Strukturerad data", "fel", "ingen JSON-LD hittad", -20); }
     else add("schema", "Strukturerad data", "ok", s.schemaTypes.join(", "));
-    if (!s.schemaTypes.includes("FAQPage") && (s.faqs?.length ?? 0) === 0) aeo -= 12;
+
+    if (!s.schemaTypes.includes("FAQPage") && (s.faqs?.length ?? 0) === 0) {
+      aeo -= 12;
+      add("aeo_faq", "FAQ / vanliga frågor", "fel", "ingen FAQPage-schema eller frågor hittades", -12);
+    } else {
+      add("aeo_faq", "FAQ / vanliga frågor", "ok", s.faqs?.length ? `${s.faqs.length} frågor` : "FAQPage-schema finns");
+    }
   }
-  if (s.wordCount != null && s.wordCount < 600) aeo -= 8;
-  if (s.headings != null) {
+
+  if (s.wordCount == null) ejMatt("aeo_djup", "Innehållsdjup för AI-sökmotorer", "textmängden kunde inte mätas");
+  else if (s.wordCount < 600) { aeo -= 8; add("aeo_djup", "Innehållsdjup för AI-sökmotorer", "fel", `${s.wordCount} ord (AI-motorer föredrar 600+)`, -8); }
+  else add("aeo_djup", "Innehållsdjup för AI-sökmotorer", "ok", `${s.wordCount} ord`);
+
+  if (s.headings == null) ejMatt("aeo_fragerubriker", "Rubriker formulerade som frågor", "rubrikerna kunde inte mätas");
+  else {
     const qHeadings = s.headings.filter((h) => /\?$/.test(h.text) || /^(varför|hur|vad|när|vilken|vilka|kan)/i.test(h.text));
-    if (qHeadings.length === 0) aeo -= 8;
+    if (qHeadings.length === 0) { aeo -= 8; add("aeo_fragerubriker", "Rubriker formulerade som frågor", "fel", "inga frågeformulerade rubriker hittades", -8); }
+    else add("aeo_fragerubriker", "Rubriker formulerade som frågor", "ok", `${qHeadings.length} frågerubriker`);
   }
-  if (s.listCount != null && s.listCount < 2) aeo -= 5;
-  if (s.hasUpdatedDate === false) aeo -= 5;
+
+  if (s.listCount == null) ejMatt("aeo_listor", "Listor och punktuppställningar", "listorna kunde inte räknas");
+  else if (s.listCount < 2) { aeo -= 5; add("aeo_listor", "Listor och punktuppställningar", "fel", `${s.listCount} listor (AI-motorer citerar gärna punktlistor)`, -5); }
+  else add("aeo_listor", "Listor och punktuppställningar", "ok", `${s.listCount} listor`);
+
+  if (s.hasUpdatedDate == null) ejMatt("aeo_farskhet", "Synligt uppdateringsdatum", "kunde inte avgöras");
+  else if (s.hasUpdatedDate === false) { aeo -= 5; add("aeo_farskhet", "Synligt uppdateringsdatum", "fel", "inget synligt uppdaterad-datum", -5); }
+  else add("aeo_farskhet", "Synligt uppdateringsdatum", "ok", "finns");
+
   aeo = Math.max(0, aeo);
 
   return {
@@ -495,25 +571,38 @@ export async function extractPageSignals(url: string, opts?: { skipLighthouse?: 
     } catch { /* ogiltig JSON-LD */ }
   });
 
-  // Rubrikhierarki H1-H3 (på den synliga HTML:en, inte payloaden)
+  // Rubrikhierarki H1-H3 — render-medvetet: rå HTML först, avkodad JS-payload bara om
+  // rå HTML inte har NÅGON rubrik alls (KALIBRERING-2, DEL 9-fyndet).
+  const headingsRaTraff = extraheraRenderMedvetet(raw, decoded, (html) => allMatches(html, /<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/gi));
   const headings: { level: number; text: string }[] = [];
   let emptyHeadings = 0;
-  allMatches(raw, /<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/gi).forEach((m) => {
+  headingsRaTraff.forEach((m) => {
     const text = stripText(m[2]);
     if (text) headings.push({ level: parseInt(m[1]), text: text.slice(0, 160) });
     else emptyHeadings++;
   });
 
-  const text = stripText(raw);
+  // Textmängd — samma princip, men avgörs på BRÖDTEXTEN (title/head räknas inte som
+  // "riktigt innehåll"): en helt klientrenderad sida har ofta bara <title> och ett
+  // tomt <div id="root">, vilket annars gav en falsk träff och aldrig föll tillbaka
+  // på den avkodade payloaden. Vinner rå HTML behålls exakt samma räkning som förut
+  // (hela dokumentet) — den omvända DoD:n ("identisk poäng för en rå-HTML-sajt") rörs inte.
+  const kropp = raw.replace(/<title[^>]*>[\s\S]*?<\/title>/i, " ");
+  const harRiktigtInnehallIRaw = stripText(kropp).split(/\s+/).filter(Boolean).length > 0;
+  const textRaw = stripText(raw);
+  // Faller vi tillbaka på payloaden används stripTextPayload — den behåller innehåll
+  // som textuellt ligger inuti ett <script>-block, vilket är precis där en avkodad
+  // hydreringspayload befinner sig (se kommentaren på stripTextPayload).
+  const text = harRiktigtInnehallIRaw ? textRaw : stripTextPayload(decoded);
   const wordCount = text.split(/\s+/).filter(Boolean).length;
-  const paragraphCount = allMatches(raw, /<p[\s>]/gi).length;
-  const listCount = allMatches(raw, /<(ul|ol)[\s>]/gi).length;
+  const paragraphCount = extraheraRenderMedvetet(raw, decoded, (html) => allMatches(html, /<p[\s>]/gi)).length;
+  const listCount = extraheraRenderMedvetet(raw, decoded, (html) => allMatches(html, /<(ul|ol)[\s>]/gi)).length;
 
-  const imgs = allMatches(raw, /<img[^>]*>/gi).map((m) => m[0]);
+  const imgs = extraheraRenderMedvetet(raw, decoded, (html) => allMatches(html, /<img[^>]*>/gi).map((m) => m[0]));
   const withoutAlt = imgs.filter((i) => !/alt=["'][^"']+["']/i.test(i)).length;
 
   let internal = 0, external = 0;
-  allMatches(raw, /<a[^>]+href=["']([^"']+)["']/gi).forEach((m) => {
+  extraheraRenderMedvetet(raw, decoded, (html) => allMatches(html, /<a[^>]+href=["']([^"']+)["']/gi)).forEach((m) => {
     const href = m[1];
     if (!href || /^(#|mailto:|tel:|javascript:)/i.test(href)) return;
     try {

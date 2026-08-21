@@ -130,12 +130,18 @@ export async function auditUrl(url: string, baseUrl: string): Promise<AuditResul
 export async function auditUrlRendered(url: string): Promise<AuditResult> {
   const s = await extractPageSignals(url);
   const sc = scoreSignals(s);
-  const issues: AuditResult["issues"] = [];
-  for (const c of sc.checks) {
-    if (c.status === "fel") issues.push({ level: c.id === "indexerbar" ? "error" : "warn", field: c.id, message: `${c.label}: ${c.detail}` });
-    else if (c.status === "ej-matt") issues.push({ level: "info", field: c.id, message: `${c.label}: EJ MÄTT — ${c.detail}` });
-  }
-  if (s.schemaTypes != null && s.schemaTypes.length === 0) issues.push({ level: "warn", field: "schema", message: "Saknar strukturerad data (JSON-LD)" });
+  // Åtgärdslistan sorteras efter poängeffekt, tyngsta avdraget överst — annars stämmer
+  // inte kortets eget löfte "Följ åtgärdslistan uppifrån; de översta ger mest effekt"
+  // (KALIBRERING-2, DEL 9-fyndet). "ok" filtreras bort; "ej-matt" saknar känd
+  // poängeffekt (0) och hamnar därför sist bland de synliga raderna.
+  const atgarder = sc.checks.filter((c) => c.status !== "ok").sort((a, b) => a.poang - b.poang);
+  const issues: AuditResult["issues"] = atgarder.map((c) => {
+    if (c.status === "fel") {
+      const poangText = c.poang && c.poang > -999 ? ` (${c.poang} poäng)` : "";
+      return { level: (c.id === "indexerbar" ? "error" : "warn") as "error" | "warn", field: c.id, message: `${c.label}: ${c.detail}${poangText}` };
+    }
+    return { level: "info" as const, field: c.id, message: `${c.label}: EJ MÄTT — ${c.detail}` };
+  });
   return {
     url: s.url,
     hamtning: { ok: s.hamtning.ok, status: s.hamtning.status, bytes: s.hamtning.bytes, slutUrl: s.hamtning.slutUrl, ms: s.hamtning.ms, orsak: s.hamtning.orsak },

@@ -2295,20 +2295,121 @@ med Håkan snarare än att anta.
 
 ---
 
+## HELG-1 KALIBRERING-2 — byggd på Håkans beslut, 2026-08-21
+
+**Håkans beslut på DEL 9-fynden:** bygg punkt 1 (AEO-avdrag synliga) och 2
+(poängviktad sortering) direkt — ren ärlighet, ingen poängändring. Bygg punkt 3
+(delad render-medveten extraktionsväg för H1/textmängd/bilder/länkar). Bygg INTE
+trappstegsfunktionen (rörligheten) — skriv i stället ett beslutsunderlag. Allt
+klart, ingen ny kod väntar.
+
+### 1–2. Åtgärdslistan: alla avdrag synliga, tyngsta överst
+
+`lib/seo-deep.ts::SeoCheck` fick ett `poang`-fält. Alla check-rader (SEO och AEO)
+skriver nu sin faktiska poängeffekt. Fem tidigare osynliga AEO-avdrag
+(`aeo_faq` −12, `aeo_djup` −8, `aeo_fragerubriker` −8, `aeo_listor` −5,
+`aeo_farskhet` −5) syns nu som egna rader — täcker hela DEL 9-fyndet (AEO kunde
+tappa 38 poäng utan förklaring, nu 0). Samma ärlighetsfix på två ställen till som
+hittades under bygget: titel över 65 tecken och meta över 170 tecken gav förut
+tyst −4 poäng bakom en grön "ok"-rad — visas nu som "fel" med poäng, exakt samma
+mönster som DEL 9 redan flaggat, ingen poäng ändrad.
+
+`lib/seo-audit.ts::auditUrlRendered()` sorterar nu åtgärdslistan efter `poang`
+(mest negativ överst) innan den returneras, och varje rad visar sin poängeffekt i
+klartext, t.ex. "Strukturerad data: ingen JSON-LD hittad (-20 poäng)". Indexerbarhet
+har ingen fast poäng (grinden kapar taket, effekten beror på resten av sidan) och
+sorteras alltid överst via en sentinel. Bonusfynd: en redan existerande dubblettrad
+för "saknar schema" (två separata poster för samma fel) togs bort i samma veva.
+
+### 3. Delad render-medveten extraktionsväg
+
+Ny funktion `extraheraRenderMedvetet()` i `lib/seo-deep.ts`: matcha i rå HTML
+först, ge den NOLL träffar — matcha i den avkodade JS-payloaden i stället. Aldrig
+konkatenering (skulle kunna dubbelräkna om samma markup speglas i en
+hydreringspayload). Kopplad in för headings (H1-kollen), bilder, länkar och
+paragraf/list-räkning. Textmängd (`wordCount`) fick samma princip men en egen
+implementation: avgörs på BRÖDTEXTEN (title-taggen räknas inte som "riktigt
+innehåll" i sig), och när den avkodade payloaden vinner används en ny
+`stripTextPayload()` — vanliga `stripText()` kastar bort `<script>`-block, och det
+är precis där en avkodad hydreringspayload textuellt ligger (det är själva
+anledningen till att den behöver avkodas). Utan den andra funktionen skulle
+fallbacket tyst returnera tomt, vilket också var det som hände första
+testkörningen — fångat och rättat innan commit.
+
+**DoD-bevis (`tests/kalibrering2-atgardslista.test.ts`, 5 nya tester):**
+- Alla fem AEO-avdrag ger egna "fel"-rader med rätt poäng.
+- Titel >65 / meta >170 ger "fel" med poäng i stället för tyst "ok".
+- `auditUrlRendered` sorterar schema (−20) före title-liknande avdrag, poäng syns i
+  klartext.
+- H1 som bara finns i en avkodad JS-payload hittas nu (simulerad GHL-liknande
+  hydrering) — tidigare hade det gett falskt "H1 saknas".
+- **Omvänt test:** en sajt som serverar allt i rå HTML räknar bilder/länkar/H1
+  identiskt före och efter (ingen dubbelräkning när raw redan har allt).
+
+**Verifiering:** `tsc --noEmit` rent. Hela testsviten: **1663 av 1664 gröna**
+(samma redan kända, orörda MENY-3-fel från 19/8 som i alla tidigare DEL:ar denna
+helg — inget nytt fel). De nio befintliga SEO-relaterade testerna
+(`seo1-hamtning.test.ts`, `seo2-omatt.test.ts`) opåverkade.
+
+### Trappstegsfunktionen (rörligheten) — INTE byggd, beslutsunderlag
+
+**Håkans instruktion:** poängmodellsbeslut som flyttar siffror kunder redan sett —
+väntar hans beslut efter helgen.
+
+**Läget idag:** fyra tröskelvärden är rena klipp — allt eller inget vid en enda
+gräns: titel 65 tecken (±4p), meta description 170 tecken (±4p), SEO-innehåll 300
+ord (−10p), AEO-djup 600 ord (−8p). En sida på 299 ord straffas fullt ut, en på 300
+ord straffas inte alls. `bilder_alt`-checken är redan gradvis
+(`Math.min(8, antalUtanAlt)`) — beviset att mönstret redan finns och är enkelt att
+använda som mall.
+
+**Förslag, ETT mönster för alla fyra:** en linjär ramp mellan "inget straff" och
+dagens fasta maxstraff, i stället för ett kliv. Exempel för titel: 0 poäng vid
+≤65 tecken, sedan −1 poäng per påbörjade 5 tecken över gränsen, med samma tak (−8,
+dvs aldrig värre än att halvera "saknas"-straffet på −15) som idag är hårdkodat
+till −4. Samma idé för meta (170) och för de två ordgränserna (300/600), fast
+neråt: full poäng vid gränsen, linjärt fallande mot 0 ord. **Öppen fråga till
+Håkan:** ska en för KORT titel (under t.ex. 15 tecken) också straffas gradvis —
+det finns inget straff alls för det idag, och det vore en ny regel, inte bara en
+mjukare variant av en befintlig.
+
+**Vilka kunders poäng skulle röra sig — mätt på riktig data, inte gissat**
+(`scripts/_kalibrering2-trappsteg-underlag.mts`, läser `hm_seo_audits`):
+
+Av 13 sparade Sid-analyser (5 tenants: HM Motor Krokom, Ledarskapskultur/
+Carl-Fredrik Zetterman, Oppråby Gamla Skola, For Balance, AluCon AB) ligger **noll
+rader precis över** någon av de fyra gränserna — alltså den zon som faktiskt skulle
+förbättras av en gradvis skala (i dag full −4/−10/−8-smäll, med en ramp bara någon
+poäng). En rad (Ledarskapskultur, samma URL scannad två gånger) ligger nära
+65-gränsen men UNDER den (59 tecken) — om ramp:en bara straffar ÖVER gränsen (som
+förslaget ovan) rör den sig inte alls.
+
+**Ärligt om underlaget:** 13 rader är ett litet, historiskt urval — bara sidor som
+någon faktiskt klistrat in i Sid-analys-kortet, inte alla kunders alla sidor. Att
+ingen i just detta urval ligger i riskzonen är inte samma sak som att ingen gör
+det på en sida som aldrig körts genom verktyget. Läs det som "lågt observerat
+akutläge", inte "garanterat noll påverkan".
+
+---
+
 ## SESSIONSSLUT 2026-08-21, kväll — sparat för ny session
 
-**Committat:** `6878bbf`, 45 filer. Inte pushat (ingen deploy denna session — inget
-begärt). Pre-existerande ostagade ändringar (`app/admin/[[...path]]/page.tsx`, `proxy.ts`,
-`tsconfig.json`, Makzy-sidfilerna, DT-inventeringsskripten) rörda INTE, ligger kvar
-ostagade precis som de var vid sessionens start.
+**Committat:** `6878bbf` (45 filer) + `7568507` (DEL 9). KALIBRERING-2:s kodändringar
+(`lib/seo-deep.ts`, `lib/seo-audit.ts`, nytt testfall, nytt underlagsskript) är ÄNNU
+INTE committade i detta avsnitt — commita i samma veva som du läser detta, om inget
+nytt dykt upp. Inte pushat (ingen deploy denna session — inget begärt). Pre-existerande
+ostagade ändringar (`app/admin/[[...path]]/page.tsx`, `proxy.ts`, `tsconfig.json`,
+Makzy-sidfilerna, DT-inventeringsskripten) rörda INTE, ligger kvar ostagade precis
+som de var vid sessionens start.
 
 **Klart och dokumenterat i tur och ordning:** DEL 0 (statusinventering), AKUT
 (GRIND_INFORD), DEL 2 (RAPPORT-1:s fjärde krav + ny DT-rapport), DEL 3 (bildvägar,
 K1-rutan, kapad CTA), DEL 4 (KUNDREGISTER-1-tillägget), DEL 5 (KANAL-2), DEL 6
 (KUNSKAP-1, redan klart, omvänt test tillagt), DEL 7 (BETAL-1, redan klart utom
 MRR-bryggan, blockerat på Stripe-konto), DEL 8 (KOSTNAD-2, saldolarm skarpt bevisat
-via sms), DEL 9 (KALIBRERING-1, read-only-granskning klar — se sektionen ovan för
-alla fyra svar, ingen kod ändrad).
+via sms), DEL 9 (KALIBRERING-1, read-only-granskning klar), KALIBRERING-2 (byggd på
+Håkans beslut samma dag — åtgärdslistans ärlighet + sortering, delad render-medveten
+extraktion, trappstegsbeslutsunderlag — se egen sektion ovan).
 
 **Reda ut, BILD-11/karusellslides (Håkans egen precisering under sessionen):** de tre
 slides han bad om (2=läsbara ord, 4=matfoto/rekvisita, 7=kapad CTA) är nu alla
@@ -2318,8 +2419,9 @@ slide 7 idag (DEL 3). Håkan sa själv att han genererar om och bedömer resulta
 det ersätter "kör om med hela grinden inkopplad"-uppgiften som stod öppen i DEL 0.
 Inget ytterligare byggarbete väntar här; nästa steg är hans egen bedömning.
 
-**EJ PÅBÖRJAT:** inget kvarstår från HELG-1:s nio delar. DEL 9 klar (se ovan), inga
-kodändringar gjorda där — de fyra fynden väntar på Håkans OK innan något byggs.
+**EJ PÅBÖRJAT:** inget kvarstår från HELG-1:s nio delar eller KALIBRERING-2:s tre
+byggpunkter. Enda öppna poängmodellsfrågan är trappstegsfunktionen — beslutsunderlag
+skrivet, ingen kod, väntar Håkans beslut efter helgen (se KALIBRERING-2-sektionen).
 
 **Väntar på Håkan innan det går vidare:**
 1. **DEL 2:** granska den omkörda DT-rapporten (`scripts/_rapport1-dt-ny-kund.md` /
@@ -2332,9 +2434,10 @@ kodändringar gjorda där — de fyra fynden väntar på Håkans OK innan något
    lokalt) — bevisas automatiskt av morgondagens cron (06:30) eller genom att köra om
    skriptet efter deploy.
 4. **Fyll på 46elks och fal.ai** — båda under sina trösklar just nu (48 kr resp. 100,5 kr).
-5. **DEL 9:** OK att bygga fix för åtgärdslistans täckningslucka (AEO kan tappa 38
-   poäng utan förklarande rad) och plattformsasymmetrin (H1/innehåll/bilder/länkar
-   läses bara ur rå HTML, inte avkodad JS-payload)? Se sektionen ovan för exakta rader.
+5. **Trappstegsfunktionen:** ditt beslut efter helgen — se beslutsunderlaget i
+   KALIBRERING-2-sektionen ovan (förslag på gradvis skala + vilka kunder som skulle
+   röra sig, mätt på riktig data). Öppen delfråga: ska en för KORT titel också
+   straffas, eller bara en för lång?
 6. **Nya fynd, ej fixade, köas efter helgen:** dubbel AI-promptomgång i ImageStudios
    Imagen-flik (DEL 3), meny1-zoner.test.ts fallerar sedan MENY-3 (19/8, orört av
    HELG-1), fyra av fem bildvägar fortfarande okopplade (Pinterest/YouTube/Threads/
