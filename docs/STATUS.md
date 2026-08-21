@@ -2242,8 +2242,69 @@ och [46elks.se/mina-sidor/fakturering](https://46elks.se/mina-sidor/fakturering)
 
 **DoD-status:** larmlogiken är enhetstestad (16 tester, `tests/kostnad2-saldolarm.test.ts`,
 provad genom att brytas på exakt gränsvärdena och på eskalerings-/återhämtningslogiken).
-Det SKARPA larmet (mail + sms med fungerande länkar, den del av DoD:n som kräver en
-verklig leverans) väntar på ditt OK ovan.
+
+**★ SKARPT KÖRT, på Håkans OK (`scripts/kostnad2-saldolarm-skarpt.mts`):**
+- **46elks (48 kr, akut): sms SKICKAT på riktigt** till +46725410102, 0,52 kr, status
+  "created". DoD:ns krav ("skarpt testlarm via 46elks låga saldo når Håkan som sms") är
+  därmed **VERIFIERAT KLART, bevisat i skarp drift**, inte bara i test.
+- **Mejlet (både fal.ai och 46elks) MISSLYCKADES lokalt: `RESEND_API_KEY` finns inte i
+  `.env.local`.** Nyckeln finns sannolikt bara i Vercels miljövariabler (produktion), inte
+  i den lokala utvecklingsmiljön där skriptet kördes. Mejl-loggiken i sig är oprövad i
+  skarp drift — koden är identisk med `paminnelser.ts`s redan bevisade mejlväg (BETAL-1),
+  men har inte skickat ett riktigt mejl den här gången. **Kvar att bevisa:** kör om samma
+  skript (eller vänta på cronen, 06:30 dagligen) efter deploy, då Vercels riktiga
+  `RESEND_API_KEY` finns tillgänglig.
+- `saldolarm_skickade` uppdaterad för båda kontona — nästa körning samma dag skickar
+  alltså INGET nytt (dedup fungerar), vilket är avsett.
 
 **Hela sviten:** 1658 av 1659 gröna (samma förinställda meny1-zoner-fel, orört), `tsc --noEmit`
+
+---
+
+## SESSIONSSLUT 2026-08-21, kväll — sparat för ny session
+
+**Committat:** `6878bbf`, 45 filer. Inte pushat (ingen deploy denna session — inget
+begärt). Pre-existerande ostagade ändringar (`app/admin/[[...path]]/page.tsx`, `proxy.ts`,
+`tsconfig.json`, Makzy-sidfilerna, DT-inventeringsskripten) rörda INTE, ligger kvar
+ostagade precis som de var vid sessionens start.
+
+**Klart och dokumenterat i tur och ordning:** DEL 0 (statusinventering), AKUT
+(GRIND_INFORD), DEL 2 (RAPPORT-1:s fjärde krav + ny DT-rapport), DEL 3 (bildvägar,
+K1-rutan, kapad CTA), DEL 4 (KUNDREGISTER-1-tillägget), DEL 5 (KANAL-2), DEL 6
+(KUNSKAP-1, redan klart, omvänt test tillagt), DEL 7 (BETAL-1, redan klart utom
+MRR-bryggan, blockerat på Stripe-konto), DEL 8 (KOSTNAD-2, saldolarm skarpt bevisat
+via sms).
+
+**Reda ut, BILD-11/karusellslides (Håkans egen precisering under sessionen):** de tre
+slides han bad om (2=läsbara ord, 4=matfoto/rekvisita, 7=kapad CTA) är nu alla
+kodmässigt täckta: slide 2 sedan 16/8 (`0ac2d29`), slide 4 sedan 15/8 (K1-rättningen,
+kod korrekt men ENDA obeviset var att hela grindkedjan aldrig kördes ihop — se DEL 0),
+slide 7 idag (DEL 3). Håkan sa själv att han genererar om och bedömer resultatet —
+det ersätter "kör om med hela grinden inkopplad"-uppgiften som stod öppen i DEL 0.
+Inget ytterligare byggarbete väntar här; nästa steg är hans egen bedömning.
+
+**EJ PÅBÖRJAT, väntar på nästa session:**
+- **DEL 9 (KALIBRERING-1)** — read-only-granskning av sid-analysens viktning
+  (rörlighet, golv/tak, åtgärdslistans sortering, plattformsärlighet). Snabbtestet
+  (byt Annas sidtitel, kör om analysen, se om poängen rör sig) är inte kört. Ingen
+  kod ska ändras utan Håkans OK — se HELG-1-dokumentet.
+
+**Väntar på Håkan innan det går vidare:**
+1. **DEL 2:** granska den omkörda DT-rapporten (`scripts/_rapport1-dt-ny-kund.md` /
+   `_agare.md`, redan skickade till dig) mot ditt kontrollprotokoll + prisstickprovet.
+   Öppen fråga: ska "kundrapporten slutar vid ordlistan" tolkas bokstavligt (då
+   försvinner handlingslistan och lucklistan också) eller som "beslutstabellen bort"
+   (så jag byggt den)?
+2. **DEL 7:** Stripe-konto + testnycklar innan betalkedjan kan köras skarpt.
+3. **DEL 8:** mejldelen av saldolarmet är oprövad i skarp drift (RESEND_API_KEY saknas
+   lokalt) — bevisas automatiskt av morgondagens cron (06:30) eller genom att köra om
+   skriptet efter deploy.
+4. **Fyll på 46elks och fal.ai** — båda under sina trösklar just nu (48 kr resp. 100,5 kr).
+5. **Nya fynd, ej fixade, köas efter helgen:** dubbel AI-promptomgång i ImageStudios
+   Imagen-flik (DEL 3), meny1-zoner.test.ts fallerar sedan MENY-3 (19/8, orört av
+   HELG-1), fyra av fem bildvägar fortfarande okopplade (Pinterest/YouTube/Threads/
+   Bluesky-plattformssträngar overifierade).
+
+**Nästa session börjar här:** läs det här avsnittet + `docs/STATUS.md` i sin helhet,
+kör DEL 9, och stäm av de fem punkterna ovan med Håkan.
 rent.
