@@ -2394,10 +2394,8 @@ akutläge", inte "garanterat noll påverkan".
 
 ## SESSIONSSLUT 2026-08-21, kväll — sparat för ny session
 
-**Committat:** `6878bbf` (45 filer) + `7568507` (DEL 9). KALIBRERING-2:s kodändringar
-(`lib/seo-deep.ts`, `lib/seo-audit.ts`, nytt testfall, nytt underlagsskript) är ÄNNU
-INTE committade i detta avsnitt — commita i samma veva som du läser detta, om inget
-nytt dykt upp. Inte pushat (ingen deploy denna session — inget begärt). Pre-existerande
+**Committat:** `6878bbf` (45 filer) + `7568507` (DEL 9) + `8f6b52c` (KALIBRERING-2).
+Inte pushat (ingen deploy denna session — inget begärt). Pre-existerande
 ostagade ändringar (`app/admin/[[...path]]/page.tsx`, `proxy.ts`, `tsconfig.json`,
 Makzy-sidfilerna, DT-inventeringsskripten) rörda INTE, ligger kvar ostagade precis
 som de var vid sessionens start.
