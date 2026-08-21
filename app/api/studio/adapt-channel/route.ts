@@ -5,6 +5,7 @@ import { byggTextPrompt, saneraText } from "@/lib/prompt-core";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { CTA_SKARPNING, harCtaISlutet } from "@/lib/content/writing-rules";
 import { harledAmnesblock } from "@/lib/content/amneskalla";
+import { KANAL_NYCKLAR, KANAL_ANATOMI, kanalGuideText, type KanalKey } from "@/lib/kanal-anatomi";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -27,16 +28,29 @@ function sanitize(t: string): string {
     .replace(/\bskalbar[t]?\b/gi, "lätt att växa");
 }
 
-const CHANNEL_KEYS = ["ig", "fb", "li"] as const;
-type ChannelKey = (typeof CHANNEL_KEYS)[number];
+// KANAL-2 (HELG-1 DEL 5, 2026-08-21): kanallistan och guiderna kommer nu ur
+// lib/kanal-anatomi.ts — EN källa som kanalväljaren (StudioMaker) och förhandsvisningen
+// (ChannelPreview) också läser, i stället för en egen hårdkodad 3-lista här.
+const CHANNEL_KEYS = KANAL_NYCKLAR;
+type ChannelKey = KanalKey;
 
-const CHANNEL_LABEL: Record<ChannelKey, string> = { ig: "Instagram", fb: "Facebook", li: "LinkedIn" };
+const CHANNEL_LABEL: Record<ChannelKey, string> = Object.fromEntries(
+  KANAL_NYCKLAR.map((k) => [k, KANAL_ANATOMI[k].namn]),
+) as Record<ChannelKey, string>;
 
-// Hur captionen ska anpassas per plattform (krok, längd, ton, hashtags).
+// Hur captionen ska anpassas per plattform (krok, längd, ton, hashtags) — byggd ur samma
+// anatomi-data, med IG/FB/LI:s ursprungliga, mätta formuleringar bevarade ordagrant
+// (skarpa promptversioner låg redan låsta i test mot dessa tre).
 const CHANNEL_GUIDE: Record<ChannelKey, string> = {
   ig: "Instagram: krok på rad 1 som stoppar scrollen, sedan tom rad. Varmt och konkret, radbryt för luft. Emoji sparsamt (0–2). Avsluta med EN uppmaning och 3–5 relevanta hashtags på sista raden.",
   fb: "Facebook: lite mer samtalston, gärna en fråga som bjuder in till kommentar. Kortare stycken. Nästan inga hashtags (0–1). Ingen hashtag-vägg. Uppmaningen i klartext, länkvänlig ton.",
   li: "LinkedIn: professionell och insiktsdriven, aldrig säljig. VIKTIGT: de första ~140 tecknen måste bära hela kroken (det som syns före '…se mer'). Ett stycke som ger en konkret insikt/lärdom, sedan ev. kort utveckling. Max 0–1 emoji. Avsluta med 2–3 branschhashtags.",
+  google: kanalGuideText("google"),
+  tiktok: kanalGuideText("tiktok"),
+  pinterest: kanalGuideText("pinterest"),
+  youtube: kanalGuideText("youtube"),
+  threads: kanalGuideText("threads"),
+  bluesky: kanalGuideText("bluesky"),
 };
 
 // POST /api/studio/adapt-channel — { caption?, headline?, headline2?, body?, topic?, slides[], postType, channels[] }

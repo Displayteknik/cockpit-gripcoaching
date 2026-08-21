@@ -881,7 +881,7 @@ brytningar provade.
 | PLAN-1 + START-1 | KLART, EJ VERIFIERAT | `9960624`, `08e445c`, `tests/plan1-planering.test.ts`. Byggdes i parallell session | Nej | Nej |
 | KONTAKT-1 tystnadsmätare | KLART, EJ VERIFIERAT | `bbf1e18`, `tests/kontakt1-tystnad.test.ts` | Nej | Nej |
 | OFFERT-2 O-1 produktdatabasen | KLART, EJ VERIFIERAT | `b8ae213`, `tests/offert2-inkopsdata.test.ts` (22 tester) | Nej | Nej |
-| OFFERT-2 offertmotorn (specialist 17) | PÅBÖRJAT | **⚠ OSTAGAT I ARBETSTRÄDET 11/8, alltså utanför git-historiken.** Oskrivna i git: `lib/offert/underlag.ts`, `prompts/specialists/17-offertmotorn.md` och två testfiler. Ändrade: `lib/offert/fx.ts`, `lib/specialists.ts`, `components/OffertSkapa.tsx`, `lib/iterate.ts`, specialist-routen och två sidor. Innehåll: valutakurs live från Riksbanken med buffert och åldersvarning, marknadsbild med citerade källor, kundtyp med partnerpris ~82 %. Byggd i parallell session. **Går förlorad vid en `git checkout` — behöver committas eller kastas medvetet** | Nej | Nej |
+| OFFERT-2 offertmotorn (specialist 17) | KLART, EJ VERIFIERAT | **RÄTTAT 2026-08-21 (HELG-1 DEL 0/F):** raden ovan var stale sedan 11/8. `git status` visar idag NOLL ostagade ändringar i `lib/offert/`, `prompts/specialists/17-offertmotorn.md`, `lib/specialists.ts`, `components/OffertSkapa.tsx` eller `lib/iterate.ts` — allt är redan committat, `git log -- lib/offert/underlag.ts` visar commit `fcdc41b` ("OFFERT-2: offertmotorn räknar aldrig med en gissad kurs eller ett gissat marknadspris"). Ingen risk att tappa arbetet kvarstår, ingen ny commit behövdes | Nej | Nej |
 
 ## Säkerhet (ur rot-`STATUS.md`, 2026-07-19/20)
 
@@ -1764,3 +1764,486 @@ förut bara på en annan sida. Du uppdaterar ett kort genom att skriva, prata in
 in en skärmbild, och den rutan ligger nu högst upp där du ser den. De två parkerade kunderna
 ligger för sig själva och stör inte. En sak har jag inte gjort: sett sidan med egna ögon,
 för den kräver din inloggning.
+
+---
+
+## HELG-1 DEL 0 — Statusinventering 2026-08-21 (read-only, hårt stopp)
+
+**Metod:** git-loggen sedan 13/8 (60 commits), denna fil (hela, 1767 rader), fem parallella
+kodgranskningar (ett spår per område nedan) och projektminnet. OPTICUR-1 är klar och
+verifierad av Håkan sedan tidigare och ingår inte i denna rapport.
+
+**Viktigt att veta innan tabellerna läses:** den här filens egen huvudtext (rad 1–1757) har
+inga poster daterade 19/8 eller 20/8 — bara toppens sammanfattningsrader (rad 42–68) har
+19/8-noteringar om OPTICUR-1. Det betyder att **BESKÄR-1** (stängd 19/8, tre commits, se
+`de9990b`, `296d898`, `ef7cafd`, `39be60e`, `1fb87e3`, `20e3ac3`) och OPTICUR-1 Etapp A+B
+finns bevisade i git-loggen och projektminnet men saknar egen sektion i denna fil. De räknas
+här som **VERIFIERAT KLART** på Håkans egen bekräftelse, men filen bör kompletteras med en
+riktig sektion om BESKÄR-1 nästa gång någon är inne och skriver här.
+
+### A1–A2. PUBLICERA-1 och ÄMNE-1
+
+| Post | Status | Bevis |
+|---|---|---|
+| PUBLICERA-1 (FB-direktpublicering) | VERIFIERAT KLART | Live-verifierad med lyckad publicering (Håkans skärmdump), `buildGhlMedia()` delad payloadbyggare, svenska fel till kund. Commits `c03fb98`, `cd16ba4` |
+| ÄMNE-1, text | VERIFIERAT KLART | `lib/content/amneskalla.ts::harledAmnesblock()`, DoD `scripts/amne1-dod.mts` + dedikerat script för det specifika fallet `scripts/amne1-sedan2015-dod.mts`. Båda driftfallen (menyförslaget, "Sedan 2015") körda skarpt mot Displayteknik. 13 tester |
+| ÄMNE-1, bild | VERIFIERAT KLART | `harledBildamne()`, samma fil. DoD `scripts/amne1-bild-dod.mts`. Karusellens slide-bilder hade redan rätt prioritet, det var singelvägen som saknade den |
+| Etiketten "Grundas på inläggets innehåll" | **Landad fix, inte sammanträffande** | `components/StudioMaker.tsx:2868`. Etiketten fanns redan i UI:t före fixen men var då ett löfte utan täckning (Ämnesfältet kunde vinna över det faktiska innehållet). ÄMNE-1:s prioritetsordning gör nu påståendet sant |
+
+### A3. BILD-11
+
+| Punkt | Status | Bevis/motivering |
+|---|---|---|
+| K1 rekvisita, deterministisk 10/10-DoD | KLART MEN OBEVISAT | `lib/bild/promptbyggare.ts:56–143`. Koden är deterministisk per tenant, men den egna filen (rad 491–498) säger rakt ut att verifieringsbilden fortfarande visade läsbar text och att "kör om med hela grinden inkopplad" aldrig hände. Ingen 10/10-mätning finns |
+| Kapad CTA-text i export (slide 7) | EJ PÅBÖRJAT | `components/studio/archetypes/ArkKarusell.tsx:75–101` saknar samma flex/overflow-skydd som byggdes för OpticurSkarmSplit (`296d898`). Ingen commit, inget test |
+| Läsbara ord — overlay eller genererad | Frågan besvarad: **genererad, ingen overlay byggd** | Modellen ritar fortfarande orden, en grind stoppar dem (hårt stopp båda språk sedan `0ac2d29`, 16/8). `tests/bild11-tillagg-hart-stopp-sprak.test.ts` |
+| K2 plats/tid + folktomt-prioritet | VERIFIERAT KLART, med nyans | `harledPlats`/`harledTid`, DoD `scripts/bild11-dod.mts`, 17 tester. "Folktomt-prioritet" i dagens ordval är dock en formulering Håkan själv strök 15/8 — byggt blev i stället att personal I ARBETE under stängd tid byts ut, en förbipasserande/kund/tom lokal godtas alla |
+
+### A4. Studio-småfix 16/8
+
+| Punkt | Status | Bevis |
+|---|---|---|
+| Tre-idéer-validering | VERIFIERAT KLART | `tests/smafix1-ideer-meddelande.test.ts`, `48a568b` |
+| Underrubrik-reglaget | PÅBÖRJAT | Kedjan sparad och live-testad 16/8 (headline2 renderade rätt), men Håkans ursprungliga fel ("ändrar inget") gick INTE att återskapa och ingen senare session har tagit upp tråden igen |
+| Textbakgrund som styrbart lager | VERIFIERAT KLART | `tests/smafix3-textbakgrund.test.ts`, `display: inline` ersatte `inline-block` |
+| Tankstreck i UI-copy | VERIFIERAT KLART | `48a568b`, flera tankstreck i steg 5 ersatta med komma. Inget regressionstest |
+| Uppmaning + hashtags-golv i steg 5 | VERIFIERAT KLART | `lib/content/writing-rules.ts`, `tests/smafix5-hashtag-golv.test.ts` |
+
+### B. RAPPORT-1-stängningen
+
+| Punkt | Status | Bevis/motivering |
+|---|---|---|
+| DT-rapport omkörd efter R-4/R-5 | PÅBÖRJAT | Batchen från 13/8 kl 18:55 (`a1927e6`) ligger fortfarande i scratch — det var FÖRE citat-regeln R-4 (kl 19:57 samma dag) och FÖRE R-5b (14–15/8). Ingen bekräftad omkörning med dagens kod finns. Ordet "kontrollprotokoll" finns noll gånger i repot |
+| R-5b, fjärde kravet (beslutstabell bort ur kundexport) | EJ PÅBÖRJAT | `lib/deep-audit-finalize.ts:101–117` bygger EN gemensam text för både admin- och kundrouten (`app/api/analytics/deep-audit/route.ts`, `app/api/seo/deep-audit/route.ts`). De tre första R-5b-kraven är byggda och mätta, det fjärde inte påbörjat |
+| DoD 5 mot Engens (tom sitemap, länkburen crawl) | VERIFIERAT KLART | "engenstrad.se 20/20, sitemapen tom, länkarna bar crawlen", mätt 13/8. Inget kvarliggande script för att köra om |
+| Makzy omkörd med ren beslutstabell | VERIFIERAT KLART | Lucklistan 6→0, asset `c668c538`, 30 tester i `tests/r5b-sifferkalibrering.test.ts` |
+| GRIND_INFORD | Finns, men FÖR SNÄV — klassas PÅBÖRJAT | `app/api/seo/deep-audit/route.ts:78`, byggd redan 11/8 (`15fc777`), döljer rapporter äldre än underlagsgrinden. Gränsen är ALDRIG flyttad för R-4/R-5/R-5b (13–15/8) — en rapport skriven 11–15/8 skulle visas för kund trots att den saknar citat-regeln och sifferkalibreringen. Dessutom obesvarat: filen säger att den omkörda Makzy-rapporten är dold trots att den ligger EFTER gränsen — kräver databaskoll |
+
+**Vad som konkret återstår innan Håkans hårda stopp-granskning:** en ny skarp DT-rapport med
+dagens kod, det fjärde R-5b-kravet byggt, GRIND_INFORD-gränsen flyttad och förklarad, och en
+definition av vad "kontrollprotokoll" faktiskt innehåller (finns ingenstans i repot idag).
+
+### C. Bildvägskopplingen
+
+Bara EN väg är inkopplad mot `lib/bild/promptbyggare.ts` — `app/api/studio/suggest-image/route.ts`
+(Studios huvudväg, singel + karusell). Grep över hela repot gav noll andra träffar utanför
+testfiler.
+
+| Steg | Status | Bevis |
+|---|---|---|
+| Studios huvudväg (referens, redan godkänd 14/8) | VERIFIERAT KLART | `suggest-image/route.ts:155,157` |
+| 1. Reels in i byggaren | EJ PÅBÖRJAT | `app/api/studio/reels/media/route.ts` bygger prompt själv via `lib/images` |
+| 2. Blogg-maskinen in i byggaren | EJ PÅBÖRJAT | `app/api/blog/generate-cover/route.ts` samma sak |
+| 3. Pensioneringsutredning legacy (ImagePicker) | EJ PÅBÖRJAT | `app/api/social/generate-image/route.ts`, aktivt anropad av `components/ImagePicker.tsx` som renderas från StudioMaker och `/dashboard/(inlagg)/social`. Ingen konsekvensanalys skriven |
+| 5. K1-rutan i brand-kit-vyn | EJ PÅBÖRJAT | `hamtaRekvisita()` läser redan `kit.rekvisita` ur DB, men inget UI skriver dit — varken `/dashboard/brand-kit` eller `/k/brand-kit`. Detta är INTE samma sak som personregelrutan (15/8) |
+
+### D. DRIV-2 och DRIV-3
+
+**Rättelse av uppdragets premiss:** "Gmail i kortet är verifierat live" stämmer bara för att
+LÄSA Gmail. Att SKICKA (gmail.send) är fortfarande inte omkopplat — Håkan sköt upp det
+medvetet 15/8, och ingen commit sedan dess rör Google-kopplingen.
+
+| Post | Status | Bevis |
+|---|---|---|
+| DRIV-2 Svara, textgenerering | VERIFIERAT KLART | 3/3 skarpa scenarier |
+| DRIV-2 Svara, skicka via Gmail | EJ PÅBÖRJAT I DRIFT | Blockerad på `gmail.send`, Håkans eget beslut att skjuta upp |
+| DRIV-2 Svara, skicka via GHL-kanal | KLART MEN OBEVISAT | `conversations/message.write` obekräftat |
+| DRIV-2 Flytta steg | VERIFIERAT KLART | Återanvänd, redan i produktion via Fokus |
+| DRIV-2 Nästa steg (uppgift till GHL) | Scope VERIFIERAT KLART, knapp obevisad | `contacts.write` bevisat live 18/8 (elva skrivningar). Knappen själv aldrig loggad klickad |
+| DRIV-2 Anteckna | Scope VERIFIERAT KLART, knapp obevisad | Byggd om till "Uppdatera kortet" 18/8, flyttad högst upp |
+| DRIV-3 Prisruta | VERIFIERAT KLART | Live mot `v_sl_publik`, sju produkter inkl. "Installation: Offereras" |
+| DRIV-3 Offertstatus i tidslinjen | PÅBÖRJAT, i praktiken tomt | Svag premiss bekräftad 18/8: DT:s riktiga offerter går som MEJLBILAGA, inte via Offertmotorn — `offert_quotes` har fortfarande en enda rad |
+| DRIV-3 "Skapa offert"-knapp | KLART MEN OBEVISAT | Länken återanvänd, syns-i-tidslinjen overifierad end-to-end |
+| Sidoeffekt 18/8: mejlbilaga-sökning | VERIFIERAT KLART, nytt utanför spec | `sokMeddelandenMedBilaga` + `/api/driv/bilaga` |
+
+### E. Karusellens tre omgjorda slides (14/8-granskningen)
+
+**EJ ÅTERFUNNEN I DOKUMENTATIONEN, INGEN BEDÖMNING MÖJLIG UTAN HÅKANS INPUT.** Hela git-loggen
+och samtliga `.md`-filer i repot genomsökta. Enda commit på 14/8 (`cde3ece`) rör siffergrindens
+kalibrering, inte karusellen. AKUT-KARUSELL-sektionen (rad 241–252) nämner ingen "slide 2/4/7"
+eller "omgjord". Antingen skedde granskningen i en session vars anteckningar aldrig kom in i
+denna fil, eller så syftar ordvalet på något som heter något annat i koden. Kräver Håkans
+precisering av vilket inlägg/vilken granskning det gäller innan arbete kan klassas.
+
+### F. Övrigt i "Beställt men ej levererat" (från resten av filen, rad 843–1757)
+
+**Mätbarhet/engagemang:** `instagram_manage_insights` saknas i `META_SCOPES` (tysta nollor i
+mätvärden), `post_metrics.post_id` skrivs aldrig (winning-patterns saknar data),
+`insights.ts` läser fel tabell, `studio_posts.ghl_post_id` blandar två sorters id.
+
+**Handbok/ICP:** HANDBOK-1 (H-0-planen ogjord), FunctionGuide (REV-4), ICP-motorn — samtliga
+utanför detta dokuments scope enligt uppdraget, tas inte upp under helgen.
+
+**Kredit/kostnad/säkerhet:** K3:s manuella siffror väntar på Håkan, LIKVID-1-prognosen tom
+tills banksaldo fylls i, nyckelrotationer FAS 2 väntar på Håkan i Google/Meta/GHL.
+~~OFFERT-2 ligger ostagad i arbetsträdet~~ — **rättat 21/8, se HELG-1 DEL 0/F nedan: redan
+committat sedan tidigare, ingen risk.**
+
+**DRIV-serien, redan känt ovan plus:** städningens 25 GHL-förslag väntar på godkännande i
+`/dashboard/driv/stadning`, testkontakten "TEST Mejllasning" ligger kvar, morgonköns
+fem-dagarsmätning pågår fortfarande i drift.
+
+**DT-pipeline/På G-vyn (18/8):** byggd och deployad, men INTE visuellt verifierad (kräver
+inloggning). Fyra-vägs-status (vilande som eget läge i DB och likviditetsprognos) medvetet
+inte byggd, väntar Håkans beslut. 19 gamla GHL-kort utan nästa åtgärd kvarstår.
+
+**Utanför denna fil helt, bekräftat via projektminnet:** BESKÄR-1 (stängd 19/8, se ovan),
+OPTICUR-1 Etapp A+B (klar och Håkan-godkänd, ingår inte i denna rapport per uppdraget).
+
+### PÅ VANLIG SVENSKA
+
+Publicering till Facebook och att texten håller sig till ämnet är klart och bevisat, du kan
+lita på båda. Bildreglerna för skyltbranschen är också klara. Fem saker är INTE klara trots
+att de låter klara: den nya DT-rapporten är inte omkörd med dagens regler, karusellexportens
+text kan fortfarande klippas av, bara en av fem bildvägar pratar med den nya bildmotorn,
+Gmail-kortet kan läsa men inte skicka mejl än, och jag hittar inte de tre karusellslides du
+frågade om i någon anteckning. Jag väntar på din OK innan jag fortsätter till nästa del.
+
+### Beställt men ej levererat, sammandrag av denna DEL 0
+
+R-5b:s fjärde krav, GRIND_INFORD-gränsen, ny skarp DT-rapport, kapad CTA i karusellexport,
+fyra av fem bildvägskopplingar, gmail.send-omkopplingen, karusellslides-granskningen
+(kräver precisering), samt hela F-listan ovan.
+
+---
+
+## HELG-1 AKUT + DEL 2 + DEL 3 — 2026-08-21 (samma session, kör i Håkans justerade ordning)
+
+### AKUT: GRIND_INFORD-gränsen flyttad
+
+**KLART OCH VERIFIERAT.** `app/api/seo/deep-audit/route.ts` — gränsen var satt till
+underlagsgrindens datum (11/8, commit `5151297`) och rörde sig aldrig när R-4 (`7010a79`,
+13/8) och R-5b (`aea5f5c`, 15/8, den senast landade av de tre) tillkom. Ny gräns:
+`2026-08-15T12:06:03Z` (R-5b:s commit-tid i UTC).
+
+**Bevis, kört mot skarp data** (`scripts/grind-infort-tenantlista.mts`): av 18 sparade
+djupgranskningsrapporter var **11 synliga för kund FÖRE flytten** trots att de saknade minst
+en av R-4/R-5b (AluCon ×1, Displayteknik ×2, Engens Träd ×1, For Balance ×1, Makzy ×3,
+Oppråby ×1). Efter flytten är **bara 2 synliga** (Displayteknik och Oppråby, båda skrivna
+17/8 — efter alla tre grindarna). **Noll regression**: ingen tidigare dold rapport blev
+synlig av flytten (skriptet kontrollerar detta explicit och skriver ut OK/FEL).
+
+### DEL 2: R-5b:s fjärde krav + ny skarp DT-rapport
+
+**Fjärde kravet (beslutstabell bort ur kundens export) — VERIFIERAT KLART.**
+`lib/deep-audit-siffror.ts::beslutstabellBlock()` (bygger ägarvyns block på nytt ur
+`metadata.grind_sifferbeslut`) + `kundtext()` (klipper bort blocket vid LÄSNING i
+`app/api/seo/deep-audit`, inte bara vid skrivning — självläker även de 18 rapporter som
+redan låg sparade med tabellen inbakad, ingen migrering behövdes). `lib/deep-audit-finalize.ts`
+slutade bifoga blocket i `body` som sparas. 6 nya tester i
+`tests/r5b-fjarde-kravet-kundexport.test.ts`, provade genom att brytas.
+
+⚠ **Nyans, flaggad för din granskning:** "kundrapporten slutar vid ordlistan" stämmer inte
+bokstavligt — mätt på den skarpa DT-rapporten ligger "Vad jag kan göra åt dig direkt" (en
+handlingslista) och "Siffror du behöver fylla i" (lucklistan) EFTER Ordlistan men FÖRE
+beslutstabellen, och båda är genuint kundnyttiga. Jag klipper vid beslutstabellen (det
+mätbara kravet: "beslutstabellen tas bort"), inte bokstavligt vid ordet "Ordlista" — annars
+hade kunden förlorat handlingslistan och lucklistan. Säg till om du vill ha det annorlunda.
+
+**Ny skarp DT-körning — KLART, VÄNTAR PÅ DIN GRANSKNING.** Körd med dagens kod (R-4 + R-5b +
+fjärde kravet), asset `454aef48-b5ba-40e5-bff0-aadf86b245e0`, 92 sifferbeslut, **14 luckor**
+(inte 18 — nytt, oberoende crawl-resultat). Kundversion och ägarversion skrivna till
+`scripts/_rapport1-dt-ny-kund.md` respektive `scripts/_rapport1-dt-ny-agare.md` för din
+läsning. Verifierat: kundversionen saknar beslutstabellen, ägarversionen har den.
+
+⚠ **Stickprovsregeln gick INTE att köra fullt ut — datafynd, inte kodfel.**
+`hm_brand_profile.pricing_notes` för Displayteknik är **TOM** (0 tecken) i databasen just nu,
+trots att DT har en fastslagen, publicerad prislista på egna sajten (se
+[[project-dt-prislista]], kanon på /pris sedan 12/8). Den listan har alltså aldrig skrivits in
+i profilfältet grinden läser för att klassa ett tal som "T · din egen uppgift". Konsekvens:
+mitt eget stickprov (5 belagda tal, prioriterat klass T) kunde INTE innehålla ett pris ur
+pricing_notes, för fältet är tomt — 0 av 5. **Lucklistan är däremot ärlig givet detta:**
+kontrollerat att INGEN av de 14 luckorna ändå fanns i pricing_notes (0 av 14, skulle varit en
+falsk lucka annars) — `scripts/rapport1-stickprov.mts`. **Ditt beslut:** fyll i DT:s riktiga
+prislista i profilfältet (Cockpit → Displayteknik → Brand-profil → Prisanteckningar) så
+framtida rapporter kan citera dina egna priser som belagda, eller sänk kravet i
+kontrollprotokollet tills dess. Jag har inte skrivit in priser själv — det är din data.
+
+### DEL 3: Bildvägskopplingen
+
+| Steg | Status | Bevis |
+|---|---|---|
+| 1. Reels in i `lib/bild/promptbyggare.ts` | **VERIFIERAT KLART** | `app/api/studio/reels/media/route.ts` — K1–K5 kopplade in i den vanliga scengrenen (inte exaktText/text-i-bild-grenen, som är orörd med flit). Rubrik/brödtext hämtas ur scenens SVENSKA overlaytext (`overlay.line1/line2`), inte den redan-engelska motivraden. `components/studio/ReelSceneMedia.tsx` + `app/dashboard/studio/reels/page.tsx` trådar igenom scenindex/antal för personrotationen |
+| 2. Blogg-maskinen in i byggaren | **VERIFIERAT KLART** | `app/api/blog/generate-cover/route.ts` byggd om helt — bytte `generateImageForPost` (egen AI-craftningsomgång) mot `byggBildPrompt()` + direkt `generateFlux`. `style`-parametern var redan obruklig (aldrig skickad av UI:t), borttagen utan konsekvens |
+| 3. Pensioneringsutredning, legacy-vägen | **KONSEKVENSANALYS LEVERERAD, INGEN KOPPLING GJORD** | Se separat sektion nedan — premissen i beställningen ("legacy via ImagePicker") stämde inte med koden |
+| 5. K1-rutan i brand-kit-vyn | **VERIFIERAT KLART** | Nytt fält "Rekvisita och miljö i bilderna" i `app/dashboard/brand-kit/page.tsx`, skriver till `kit.rekvisita` — exakt fältet `hamtaRekvisita()` redan läste sedan 13/8 utan att någon yta skrev dit. `/k/brand-kit` återanvänder samma sida (`kundlage`-prop) så kunden ser samma ruta direkt, inget nytt paket |
+| BILD-11 punkt 2, kapad CTA i karusellexport | **VERIFIERAT KLART** | `components/studio/archetypes/ArkKarusell.tsx` — samma buggklass och samma fix som OpticurSkarmSplits h2-överflöde (`296d898`): rubrik+brödtext får en egen `flex:1, minHeight:0, overflow:hidden`-zon, CTA-knappen står i sin egen `flexShrink:0`-zon som aldrig kan tryckas ut. Värsta fall blir nu en avklippt textrad, aldrig en bortklippt knapp |
+
+#### Pensioneringsutredning: legacy-vägen (korrigerad premiss)
+
+**Beställningens premiss var fel, och det är själva fyndet.** `components/ImagePicker.tsx`
+renderades ingenstans i appen — noll `import`, noll JSX-användning, bara variabelnamnet
+`imagePickerFor` levde kvar som ett spöke i `app/dashboard/(inlagg)/social/page.tsx` sedan
+den sidan bytte till en annan komponent. **Raderad nu** (`git rm` via `rm` + committad status),
+zero risk — dess enda "konsekvens" var att den redan var död.
+
+**Den RIKTIGA legacy-vägen är en annan, och den är inte enkel:** `/dashboard/social` — nåbar
+direkt från huvuddashboarden via ActionCard **"Skapa social-inlägg"** (`app/dashboard/page.tsx`
+rad 96), alltså en central ingång, inte en bortglömd sida — renderar `ImageStudio.tsx`, ett
+helt eget bildverktyg med FYRA vägar: textkort (`render-svg`), fotomontage
+(`render-photo-overlay`), Nano Banana (Gemini-bildredigering) och "Imagen" (den väg som
+faktiskt anropar `/api/social/generate-image`, alltså den kod som HELG-1-dokumentet kallar
+"legacy"). Imagen-fliken hämtar dessutom FÖRST en AI-craftad prompt via
+`/api/posts/[id]/build-image-prompt` (Gemini 2.5 Pro, läser image-generation/anti-klyschor-
+kunskapen) och skickar den in i `generateImageForPost`, som craftar en ANDRA gång — en
+dubbel AI-promptomgång, värt ett eget fynd men inte löst nu.
+
+**Varför jag inte kopplade eller pensionerade detta i dag:** HELG-1-dokumentets EGNA DEL 3,
+punkt 4 säger uttryckligen "hårt stopp före text-i-bild... OCH FÖRE IMAGESTUDIO" — och
+`ImageStudio.tsx` är precis den komponent den riktiga legacy-vägen sitter i. Att koppla in
+eller pensionera `/api/social/generate-image` betyder att röra ImageStudios flöde, vilket
+dokumentet redan bett mig vänta med. Din order i dag namngav "legacy-vägen (generate-image
+via ImagePicker)" — en beskrivning som byggde på att ImagePicker fortfarande levde, vilket
+den inte gjorde. **Rekommendation:** låt detta höra till samma hårda stopp som ImageStudio
+redan har, i stället för att avgöra det som en egen "legacy"-fråga i dag. Övriga tre delar av
+`/dashboard/social` (textkort, fotomontage, Nano Banana) rör inte K1–K5 alls och påverkas
+inte av vare sig koppling eller pensionering av Imagen-fliken.
+
+### Övrigt från denna omgång
+
+- **1 test fallerar sedan innan denna session, orört av mina ändringar:**
+  `tests/meny1-zoner.test.ts` ("varje zon har både rubrik och förklaring") — testet förväntar
+  sig tre namngivna zoner (`eget`/`byra`/`kundens`) som MENY-3 (`5612e88`, 19/8) troligen
+  ersatte med sju ingångar. Ingen fil jag rört den här sessionen berör meny-strukturen. Flaggat
+  som nytt fynd, inte fixat — hör inte till HELG-1:s scope.
+- Fullständig testsvit körd efter alla ändringar i AKUT/DEL 2/DEL 3: **1604 av 1605 tester
+  gröna**, `tsc --noEmit`
+
+---
+
+## HELG-1 DEL 4 — KUNDREGISTER-1-tillägget, 2026-08-21
+
+**Premisskoll först (viktigast):** KUNDREGISTER-1 fanns REDAN, byggt 13/8 (`b46df6d`) —
+`/dashboard/kunder`, `/k/kunder`, `components/Kundregister.tsx`, `lib/kundregister/synk.ts`,
+läsande lista ur MySales med ärliga fellägen. Detta var alltså en UPPGRADERING mot DEL 4:s
+fylligare spec, inte ett nybygge. Mätt mot den punkt för punkt:
+
+| Krav | Läge 13/8 | Byggt idag |
+|---|---|---|
+| Sida i kundvyn, sök, taggfilter | Fanns | — |
+| Filter på källa (flerval) | Saknades helt | **Byggt** |
+| Taggfilter flerval (inte bara ett värde i taget) | Saknades | **Byggt** |
+| Cache med tidsstämpel + manuell uppdatering | Fanns (samma mönster som HQ-1) | — |
+| Taggar med kundbegripliga namn | Saknades (visade rå MySales-sträng) | **Byggt, se avgränsning nedan** |
+| Entitlement-styrd pilot (PÅ bara Gitte+DT) | Fanns INTE — låg bakom "dm"-modulen, alltså på för alla DM-kunder | **Byggt: egen modul `kundregister`** |
+| Delad komponent för framtida nyhetsbrevs mottagarurval | Fanns inte som egen enhet | **Byggt: `lib/kundregister/taggar.ts`** |
+| Sidan hade ingen egen nav-post i kundmenyn (bara nåbar via URL) | Fynd idag | **Rättat: `lib/customer-features.ts`** |
+
+**Byggt:** `lib/kundregister/taggar.ts` (`visningsnamnForTagg`, `matcharTaggar`, `matcharKalla`
+— rena funktioner, delas av kundregistrets yta OCH ett kommande nyhetsbrevsflödes
+mottagarurval, `migrations/newsletter.sql` finns redan registrerad men obyggd). API-routen
+(`app/api/kundregister/route.ts`) tar nu `tagg=a,b` och `kalla=x,y` (flerval, OR), returnerar
+`kallor`-listan bredvid `taggar`. UI:t (`components/Kundregister.tsx`) har två flervalsrutor
+(chips) i stället för en. Ny modul `kundregister` i `platform_modules`/`tenant_modules`
+(`migrations/kundregister1_pilotmodul.sql`, körd), AV som standard, PÅ manuellt bara för
+`displayteknik` och `forbalance` — samma mönster som OPTICUR-1:s `studio-skarmformat`.
+`app/k/kunder/page.tsx` grindar nu på `"kundregister"` i stället för `"dm"`. Ny nav-post i
+`lib/customer-features.ts` (sidan saknade en helt — bara nåbar om man redan visste URL:en).
+
+⚠ **Avgränsning, kundbegripliga taggnamn:** DEL 4 nämner "mallkontots 8 taggar" med
+underförstådd betydelse per tagg. Den listan finns INGENSTANS i kodbasen eller dokumentationen
+— bara en RÄKNING ("8 taggar") från en tidigare mätning, aldrig namnen. Jag har alltså inte
+byggt en semantisk ordbok (det hade krävt att hitta på betydelser jag inte har grund för) utan
+en GENERISK formatering (versaler, bindestreck hålls ihop som ett ord, kända förkortningar som
+MySales/VIP/SEO behåller sin egen skrivning) — "offert-lead" blir "Offert-lead", "mysales
+coach" blir "MySales Coach". Filtreringen matchar alltid mot RÅ-taggen, aldrig det formaterade
+namnet, så en framtida omskrivning av visningsnamnet aldrig kan tysta ett fungerande filter.
+
+**DoD, kört mot skarp data** (`scripts/kundregister-del4-dod.mts`, alla kontroller gröna):
+Displayteknik och For Balance har modulen, en tredje tenant (gripcoaching) har den INTE
+(omvänt test). Flervalsfiltret kört mot Displaytekniks 274 spegelrader: ett taggval ("email")
+gav en äkta delmängd (78 av 274), flerval (OR) gav fler eller lika många träffar, källfiltret
+kraschade inte. Alla fem verkliga DT-taggar formaterades läsbart.
+
+**Sidofynd, positivt:** For Balances MySales-nyckel kunde INTE läsa kontakter 13/8 (401,
+känt sedan bygget). Testade om idag (`synkaKundregister`, tvinga=true): **fungerar nu**, 1
+kontakt synkad. Nyckeln har alltså fått rätt behörighet sedan dess, utan att STATUS.md
+uppdaterats — ni kan alltså använda Gittes register direkt, inte bara Displaytekniks.
+
+**Testuppdatering:** två tester i `tests/kundregister1-lista.test.ts` som låste 13/8-versionens
+kontrakt (DB-nivå enkeltaggsfilter, `"dm"`-grinden) uppdaterade till att låsa dagens medvetna
+kontrakt i stället — inte bortplockade. Ny fil `tests/kundregister-taggar.test.ts` (11 tester).
+Hela sviten: **1615 av 1616 gröna** (samma förinställda meny1-zoner-fel som tidigare, orört),
+`tsc --noEmit` rent.
+
+---
+
+## HELG-1 DEL 5 — KANAL-2, dynamiskt kanalval, 2026-08-21
+
+**Premisskoll:** kopplingsdata fanns REDAN dynamisk och komplett (`ghlListAccounts` returnerar
+alla plattformar GHL känner till, inklusive Google Business Profile) — men den nåddes bara via
+`/api/studio/ghl-accounts` för PUBLICERINGEN (`selectedAccounts`). CONTENT-lagret (kanalväljaren,
+per-kanal-caption, förhandsvisning) var hårdkodat till tre kanaler på tre separata ställen:
+`CHANNELS` i StudioMaker, `CHANNEL_KEYS`/`CHANNEL_GUIDE` i adapt-channel-routen, och
+`ChannelKey`/`CHANNEL_BRAND` i ChannelPreview — exakt vad KANAL-2-utredningen (STATUS.md,
+tidigare session) redan pekat ut.
+
+**Byggt:**
+- `lib/kanal-anatomi.ts` — ny EN källa, klientsäker (samma mönster som `lib/format-anatomi.ts`).
+  Nio kanaler (ig/fb/li/google/tiktok/pinterest/youtube/threads/bluesky) med namn, ton,
+  hashtagbruk, CTA-form, tecken-tak och innehållstypskrav (bild/video/vilken). Plus ren,
+  testad logik: `arAnsluten`/`arUtgangen`/`synligaKanaler` (GHL-konton → vilka kanaler som
+  ska synas, oberoende av UI:t).
+- `app/api/studio/adapt-channel/route.ts` läser kanallistan och guiderna ur denna nya källa
+  i stället för sin egna hårdkodade 3-lista — alla nio kanaler kan nu textanpassas.
+- `components/studio/ChannelPreview.tsx`: `ChannelKey` utökad till nio, `CHANNEL_BRAND` med
+  ikon/färg för alla. De sex nya har INGEN skräddarsydd enhetsram ännu (medveten avgränsning
+  — de faller tillbaka på samma generiska kort som LinkedIn: header, caption, bild, gilla/
+  kommentera/dela). Pixelperfekta ramar för sex nya plattformar hör inte till DEL 5:s DoD.
+- `components/StudioMaker.tsx`: kanalväljaren visar nu `dynamiskaKanaler` (ig/fb/li alltid +
+  övriga bara vid matchande GHL-koppling), en ny badge "behöver förnyas" (röd) skild från
+  "ej kopplad" (grå) för utgångna kopplingar, och innehållstypsgrinden filtrerar video-
+  kanaler (YouTube, TikTok) mot bild-kanaler (GBP, Pinterest) utifrån `postType`.
+
+⚠ **Ej verifierat, ärligt flaggat i koden:** GHL:s exakta `platform`-sträng är MÄTT för
+ig/fb/li/google (fyra konton, se DoD nedan). För tiktok/pinterest/youtube/threads/bluesky
+finns just nu INGEN tenant med kopplingen påslagen någonstans, och GHL:s egen API-dokumentation
+gav bara exemplet `"google"` — inte de andra fem (sökt upp via WebFetch/WebSearch, se
+`lib/kanal-anatomi.ts` filhuvud). Strängarna där är GHL:s produktnamn i gemener, den mest
+sannolika gissningen — men overifierad. Går den fel gör det ingen skada (kanalen matchar då
+bara inte, fail-closed) och är en enrads-rättning den dag en tenant faktiskt kopplar in en av
+dem. **Ingen testpublicering gjord** mot GBP eller något annat nytt konto — det kräver
+Håkans egna ja (redan noterat i den tidigare KANAL-2-utredningen), och DEL 5:s DoD testar
+SELEKTORN, inte en skarp publicering.
+
+**DoD, kört mot skarp data** (`scripts/kanal2-dod.mts`): Displaytekniks sex riktiga GHL-konton
+läst (google/location, facebook/page, instagram×2, linkedin×2, inget utgånget). `google` dyker
+upp i `synligaKanaler()` för DT. Ett omvänt test utan google-kontot i listan visar INTE google.
+Ett simulerat utgånget google-konto visas ändå (som "behöver förnyas", inte "ej kopplad").
+24 enhetstester i `tests/kanal-anatomi.test.ts`, inklusive DoD-scenariot ordagrant som test.
+
+Hela sviten: **1639 av 1640 gröna** (samma förinställda meny1-zoner-fel, orört), `tsc --noEmit`
+rent.
+
+---
+
+## HELG-1 DEL 6 — KUNSKAP-1, 2026-08-21
+
+**Premisskoll (viktigast, samma mönster som DEL 4):** exakt detta scenario — Gitte, "regression",
+blogg vs inlägg — var REDAN byggt och verifierat 12/8 (`lib/ordlista.ts`, migration
+`kunskap1_ordlista.sql`, `scripts/kunskap1-dod.mts`, `tests/kunskap1-ordlista.test.ts`). Ingen ny
+kod behövdes för själva mekanismen — bara verifiering att den fortfarande håller live, plus det
+enda som saknades: det EXPLICITA omvända testet (DT opåverkad).
+
+**Verifierat idag, live mot skarp data:**
+1. `scripts/kunskap1-dod.mts` omkört: **11 gröna, 0 röda.** Fräsch generering (blogg, inlägg,
+   bildtext, studio-text) på ämnet "regression" mot For Balances riktiga profil gav
+   terapibetydelse i alla fyra flöden, aldrig statistikvokabulär.
+2. Ordlistan (`hm_brand_profile.ordlista`) är redan redigerbar i `/dashboard/profil` OCH
+   `/k/profil` (samma komponent, `kundlage`-mönstret) — hjälptexten visar Gittes exakta
+   fall som exempel ("regression = regressionsterapi, en resa till ett tidigare liv").
+3. **Nytt idag — omvänt test** (`scripts/kunskap1-omvant-test.mts` + nya tester i
+   `tests/kunskap1-ordlista.test.ts`): Displaytekniks ordlista och profiltext innehåller inte
+   Gittes "regression"-rad, och `amnesordIProfilen()` bevisat (provat genom att brytas) att
+   samma ämnesord ger OLIKA träffar beroende på vilken tenants profiltext som skickas in —
+   aldrig den andra partens rader. Mekanismen är dessutom strukturellt tenant-isolerad
+   (`hamtaOrdlista` frågar explicit på `client_id`, ingen delad tabell).
+
+**Ingen kod ändrad.** 8 nya tester tillagda, `tests/kunskap1-ordlista.test.ts` går nu 29/29.
+Hela sviten: **1642 av 1643 gröna** (samma förinställda meny1-zoner-fel, orört), `tsc --noEmit`
+rent.
+
+---
+
+## HELG-1 DEL 7 — BETAL-1, MySales Tokens, 2026-08-21
+
+**Premisskoll (samma mönster som DEL 4/6, men störst denna gång):** BETAL-1 var REDAN
+byggt i sin helhet 9/8 (se [[project-betal1-fakturering]]) — 8 tabeller, `lib/billing/`
+(status, stripe, stripe-ops, webhook, paminnelser, installningar, adress, avtal, datum,
+import), owner-vy `/dashboard/betalning`, kund-vy `/k/betalning`, tokens-vy `/k/credits`.
+Mätt punkt för punkt mot dagens beställning:
+
+| Krav | Status, mätt mot kod och databas idag |
+|---|---|
+| 1. Progressbar, varning 80/95/100 % | **VERIFIERAT KLART.** `components/TokenMatare.tsx` — exakt de tre nivåerna, färgkodade, med egen text per läge |
+| 2. Stripe Billing: abonnemang 1990/2490 kr, top-up 149 kr/100 tokens | **VERIFIERAT KLART.** `billing_plans`-tabellen har `pro_intro` (1990), `pro_ordinarie` (2490), `topup_100` (149 kr/100 tokens) — siffrorna matchar beställningen exakt. `skapaAbonnemangCheckout`/`skapaTopupCheckout`/`dragPaSparatKort` i `lib/billing/stripe-ops.ts` |
+| 3. `/k/betalning`: nästa debitering, kvitton, kortbyte | **VERIFIERAT KLART.** `hamtaNastaDebitering`, `billing_invoices`, `skapaPortalLank` (Stripe Customer Portal) |
+| 4. Dunning-statusmaskin (aktiv/försenad/påminnelser/spärrad) | **VERIFIERAT KLART.** `lib/billing/status.ts` — EN källa (`hamtaBetalstatus`), default 3 påminnelser dag 0/7/14 (matchar `billing_settings.paminnelse_dagar`), spärrad når bara betalsidan, auto-återaktivering i webhooken vid `invoice.paid`, `dunning_aktiv=false` som standard (ingen kund spärras av misstag) |
+| 5. Owner-vy med Stripe-MRR som brygga mot HQ | **BYGGT IDAG.** Saknades helt. Ny sektion "Cockpit (MySales Pro)" i `/dashboard/hq`, läsande brygga mot `billing_subscriptions`/`billing_status` (`app/api/hq/route.ts::cockpitMrr`) — MRR, antal aktiva abonnemang, försenade, spärrade. Årsabonnemang normaliseras till kr/månad. Skild tydligt från Grips egen klient-MRR |
+| 6. FK till `ai_usage_events`, text=0/social bild=3/herobild=8/video=15 per 5s | **VERIFIERAT KLART.** `credit_transactions.usage_event_id references ai_usage_events(id)` (migrations/credits.sql). `credit_pricing`-tabellen: social-bild=3, hero-bild=8, video=15 — siffrorna matchar beställningen exakt, satta redan 2/8 |
+
+**Slutsats: 5 av 6 krav var redan uppfyllda, siffra för siffra, innan jag rörde något.**
+Bara MRR-bryggan mot HQ saknades, och den är byggd nu.
+
+### ⚠ DEN ÄRLIGA BLOCKERAREN — kan inte kringgås, kräver dig
+
+**Det finns inget Stripe-konto.** Mätt direkt mot databasen: `billing_settings` har
+`stripe_secret_key = null`, `stripe_publik_nyckel = null`, `stripe_webhook_secret = null`.
+Ingen av dessa finns heller i miljövariablerna. `billing_plans.stripe_price_id` är `null`
+på alla fyra planer — `synkaPlanerTillStripe()` har aldrig körts, för det finns inget att
+synka mot. Det här är inte en kodlucka: hela webhook- och betalkedjan är byggd och testad
+med enhetstester, men **aldrig körd mot en riktig Stripe-session**, testläge eller ej.
+
+**Konsekvensen för DEL 7:s DoD** ("hel kedja i testläge: köp top-up, se saldo öka,
+förbruka, nå 80/95/100-varningarna, simulera utebliven betalning genom dunning till
+spärrad och tillbaka vid betalning") — **jag kan inte köra den.** Det kräver ett riktigt
+Stripe Checkout-anrop, och det anropet misslyckas direkt med `StripeSaknasError` utan en
+nyckel. Jag kan inte skapa ett Stripe-konto åt dig (kontoskapande är utanför vad jag får
+göra), och jag skriver aldrig in betalningsuppgifter någonstans.
+
+**Vad du behöver göra, konkret:**
+1. Skapa ett Stripe-konto om du inte redan har ett (stripe.com), eller logga in på ett
+   befintligt.
+2. Hämta **testlägets** nycklar under Utvecklare → API-nycklar: den hemliga nyckeln
+   (`sk_test_...`) och den publika (`pk_test_...`).
+3. Klistra in dem i `/dashboard/betalning` → Stripe-koppling (fältet finns redan, maskerar
+   nyckeln direkt efter sparning). Läget står redan på "test" i databasen.
+4. Säg till, så kör jag `synkaPlanerTillStripe()` (skapar de fyra planerna i ditt
+   Stripe-konto), sätter upp webhook-endpointen (kräver en riktig URL — cockpit.gripcoaching.se
+   är redan deployad, så den går att peka på direkt), och kör hela DoD-kedjan i testläge:
+   ett riktigt top-up-köp, verifiera att saldot ökar, simulera en misslyckad debitering med
+   Stripes testkort och följa dunning-trappan hela vägen till spärrad och tillbaka.
+
+**Tills dess står DEL 7 som KLART, EJ VERIFIERAT I SKARP DRIFT** — koden är rätt och testad
+isolerat, men den påstådda kedjan (köp → saldo → varning → dunning → spärr → återaktivering)
+är obevisad i praktiken, av samma skäl som `project-betal1-fakturering` redan varnade för
+för elva dagar sedan.
+
+**Hela sviten:** 1642 av 1643 gröna (orört av dagens ändring), `tsc --noEmit` rent.
+
+---
+
+## HELG-1 DEL 8 — KOSTNAD-2, saldoskydd, 2026-08-21
+
+**Premisskoll (samma mönster igen):** K3-INKÖP (`lib/inkop/`, `/dashboard/kostnader#inkop`,
+byggt tidigare i augusti) täcker redan saldospårning, dagars-kvar/prognos-larm och
+köprekommendation för fal.ai, 46elks, Anthropic, Google Cloud och Resend — nästan hela
+DEL 8. K3-INKÖP stod explicit som "rör inte" i botten av HELG-1-dokumentet. **Håkan
+tillfrågad och svarade: bygg på K3-INKÖP, rör befintlig kod minimalt.**
+
+| Krav | Läge innan idag | Byggt idag |
+|---|---|---|
+| 1. Saldoskydd: Anthropic auto reload, dagliga larm fal/46elks under 100 kr | Dagars-kvar-larm fanns, absolut kronorgräns saknades. Anthropic auto reload är en MANUELL inställning i Anthropics egen konsol — inget API finns att slå på den med | **Byggt: absolut 200/100 kr-larm** (`lib/inkop/saldolarm.ts`). Auto reload kvarstår som en checklisterad manuell kontroll, länkad direkt i `/dashboard/ekonomi` |
+| 2. `/dashboard/ekonomi`, saldokort per leverantör | Fanns inte som egen sida (fanns inbakat i den bredare `/dashboard/kostnader`) | **Byggt: ny, fokuserad sida**, tunn ovanpå samma `byggInkop()`-data. Saldo, statusfärg, direktlänk till betalsida (`fakturalank`, redan i K3), 30-dagarsförbrukning, "vad stannar om X tar slut"-text |
+| 3. Larmmail + SMS, 200/100 kr, max ett mail per nivå | Larmtext byggdes men skickades ALDRIG — bara visades i UI:t | **Byggt: `app/api/kostnader/saldolarm-cron`**, dagligt (vercel.json, 06:30). Mejl vid varning ELLER akut, sms bara vid akut, dedup via ny tabell `saldolarm_skickade` |
+| 4. SMS-pris i `ai_pricing`, fail-closed för opristsatta modeller | SMS-raden fanns men stod på **0 kr** (fel, `media_enhet` dessutom felaktigt "bild" av misstag vid seedning). `harPris()` (fail-safe-kollen) fanns redan i `lib/ai-usage.ts`, byggd exakt för detta syfte men aldrig kopplad till video (som inte finns än) | **Rättat: SMS-priset satt till 0,35 kr** (samma tal koden redan använde för förhandsvisning). Fail-closed för video byggs INTE nu — ingen videogenerering finns att koppla in det på, och att bygga en spärr utan en verklig anropspunkt är gissningsarbete. `harPris()` är redo när video kommer |
+| 5. Tokenprislappar som konfig | `credit_pricing`-tabellen (redan DB-konfig, redan ägarstyrd) | Redan uppfyllt — se DEL 7. ⚠ DEL 8:s exempel "bild 1, text 0" stämmer INTE mot de verifierade talen 3/8/15 (social-bild/hero-bild/video) — troligen en äldre, förenklad siffra som beskrivningen ärvt. Rörde inte de redan verifierade talen |
+
+### 🚨 AKUT FYND, LIVE DATA — inget hypotetiskt
+
+Körde den nya larmlogiken read-only mot de RIKTIGA saldona (ingen simulerad siffra):
+
+| Konto | Saldo just nu | Nivå |
+|---|---|---|
+| **46elks (SMS)** | **48 kr** | **AKUT** — under 100 kr redan idag |
+| **Fal.ai** | **100,5 kr** (9,57 USD × 10,5) | **Varning** — precis vid gränsen |
+
+**46elks:s SMS-tjänst riskerar att sluta fungera inom kort om inte fylls på.** Det här är
+inte ett påhittat testscenario för DoD:n — det är verkligt, mätt just nu.
+
+**Jag har INTE skickat något larm-mail eller sms än.** Att skicka ett riktigt sms kostar
+pengar och skickar ett meddelande i ditt namn, och det kräver ditt OK innan jag trycker på
+knappen, även när mottagaren är du själv. Säg till så kör jag `saldolarm-cron` skarpt —
+det blir samtidigt DoD:ns "skarpt testlarm", för 46elks-fallet är redan precis det scenariot
+beställningen bad om att bevisa.
+
+**Fyll gärna på båda kontona oavsett:** [fal.ai/dashboard/billing](https://fal.ai/dashboard/billing)
+och [46elks.se/mina-sidor/fakturering](https://46elks.se/mina-sidor/fakturering).
+
+**DoD-status:** larmlogiken är enhetstestad (16 tester, `tests/kostnad2-saldolarm.test.ts`,
+provad genom att brytas på exakt gränsvärdena och på eskalerings-/återhämtningslogiken).
+Det SKARPA larmet (mail + sms med fungerande länkar, den del av DoD:n som kräver en
+verklig leverans) väntar på ditt OK ovan.
+
+**Hela sviten:** 1658 av 1659 gröna (samma förinställda meny1-zoner-fel, orört), `tsc --noEmit`
+rent.

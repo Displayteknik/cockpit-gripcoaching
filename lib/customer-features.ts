@@ -144,6 +144,17 @@ export const CUSTOMER_FEATURES: CustomerFeature[] = [
     icon: Users,
     description: "Håll koll på DM-kontakter från kommentar till bokad kund.",
   },
+  {
+    // KUNDREGISTER-1 DEL 4-tillägget (HELG-1, 2026-08-21). Sidan (app/k/kunder) fanns
+    // sedan 13/8 men saknade en egen nav-post här — den syntes bara för den som redan
+    // visste URL:en. Egen entitlement "kundregister" (styrd pilot, se
+    // migrations/kundregister1_pilotmodul.sql), inte samma som "dm".
+    key: "kundregister",
+    label: "Kontakter",
+    href: "/k/kunder",
+    icon: Users,
+    description: "Din kundlista från MySales, sökbar och taggfiltrerad — samlad på ett ställe.",
+  },
 ];
 
 export const ALL_FEATURE_KEYS = CUSTOMER_FEATURES.map((f) => f.key);

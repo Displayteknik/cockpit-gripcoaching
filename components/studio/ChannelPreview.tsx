@@ -7,7 +7,12 @@ import { Heart, MessageCircle, Send, Bookmark, ThumbsUp, Repeat2, Globe } from "
 import { FORMAT_DIMENSIONS, type StudioFormat } from "@/lib/studio/payload";
 import { RATIO_DIMS, type ImageEditRatio } from "@/lib/studio/image-edit";
 
-export type ChannelKey = "ig" | "fb" | "li";
+// KANAL-2 (HELG-1 DEL 5, 2026-08-21): utökad från tre till nio, samma nycklar som
+// lib/kanal-anatomi.ts (EN källa för vilka kanaler som finns). De sex nya saknar ännu en
+// skräddarsydd förhandsvisning (se "generiskt kort" längre ner i filen) — det är en
+// medveten avgränsning, inte en glömska: DEL 5 gäller kanalväljaren och textanpassningen
+// per kanal, inte pixelperfekta enhetsramar för sex nya plattformar.
+export type ChannelKey = "ig" | "fb" | "li" | "google" | "tiktok" | "pinterest" | "youtube" | "threads" | "bluesky";
 
 // ── Brand-glyfer (lucide slutade exportera dem) — små inline-SVG:er ──
 export function IgIcon({ className }: { className?: string }) {
@@ -32,16 +37,36 @@ export function LiIcon({ className }: { className?: string }) {
   );
 }
 
+// Monogram-glyf för kanaler utan en handbyggd brand-ikon ännu (se ChannelKey-kommentaren).
+// Ett bokstavsmärke, inte ett försök att återge plattformens riktiga logotyp.
+function Monogram(bokstav: string) {
+  return function MonogramIcon({ className }: { className?: string }) {
+    return (
+      <svg viewBox="0 0 24 24" className={className}>
+        <text x="12" y="17" textAnchor="middle" fontSize="14" fontWeight={800} fill="currentColor" fontFamily="sans-serif">{bokstav}</text>
+      </svg>
+    );
+  };
+}
+
 // EN källa för kanalernas grafiska identitet (rubrik, chip, textetikett + ramaccent).
 export const CHANNEL_BRAND: Record<ChannelKey, { label: string; color: string; gradient: string; Icon: (p: { className?: string }) => React.JSX.Element }> = {
   ig: { label: "Instagram", color: "#DD2A7B", gradient: "linear-gradient(135deg,#FEDA75 0%,#FA7E1E 25%,#D62976 55%,#962FBF 80%,#4F5BD5 100%)", Icon: IgIcon },
   fb: { label: "Facebook", color: "#1877F2", gradient: "linear-gradient(135deg,#1877F2,#0a5fd0)", Icon: FbIcon },
   li: { label: "LinkedIn", color: "#0A66C2", gradient: "linear-gradient(135deg,#0A66C2,#004182)", Icon: LiIcon },
+  google: { label: "Google Business Profile", color: "#4285F4", gradient: "linear-gradient(135deg,#4285F4,#34A853)", Icon: Monogram("G") },
+  tiktok: { label: "TikTok", color: "#111827", gradient: "linear-gradient(135deg,#25F4EE,#111827,#FE2C55)", Icon: Monogram("T") },
+  pinterest: { label: "Pinterest", color: "#E60023", gradient: "linear-gradient(135deg,#E60023,#ad001a)", Icon: Monogram("P") },
+  youtube: { label: "YouTube", color: "#FF0000", gradient: "linear-gradient(135deg,#FF0000,#b30000)", Icon: Monogram("Y") },
+  threads: { label: "Threads", color: "#111827", gradient: "linear-gradient(135deg,#111827,#374151)", Icon: Monogram("@") },
+  bluesky: { label: "Bluesky", color: "#0085FF", gradient: "linear-gradient(135deg,#0085FF,#005bb3)", Icon: Monogram("B") },
 };
 
 // Var texten viks ihop på respektive plattform (ungefärligt, matchar hur flödet klipper).
-const FOLD: Record<ChannelKey, number> = { ig: 110, fb: 220, li: 140 };
-const MORE: Record<ChannelKey, string> = { ig: "… mer", fb: "Se mer", li: "…se mer" };
+// De sex nya kanalerna har ännu ingen mätt vikpunkt (ingen tenant har kopplingen påslagen,
+// se lib/kanal-anatomi.ts) — 140/"…mer" som en neutral, rimlig default tills det går att mäta.
+const FOLD: Record<ChannelKey, number> = { ig: 110, fb: 220, li: 140, google: 140, tiktok: 140, pinterest: 140, youtube: 140, threads: 140, bluesky: 140 };
+const MORE: Record<ChannelKey, string> = { ig: "… mer", fb: "Se mer", li: "…se mer", google: "…mer", tiktok: "…mer", pinterest: "…mer", youtube: "…mer", threads: "…mer", bluesky: "…mer" };
 
 // Klipp captionen där plattformen viker den: vid dubbel radbrytning eller teckengräns,
 // helst vid ett ordslut så inget ord kapas mitt itu.
@@ -198,7 +223,10 @@ export default function ChannelPreview({ channel, renderSrc, format, caption, cl
       </Card>
     );
   } else {
-    // ── LinkedIn: header med namn+roll, caption med "…se mer"-veck, bild under ──
+    // ── LinkedIn, och det GENERISKA kortet för de sex kanaler som ännu inte har en egen
+    //    handbyggd förhandsvisning (google/tiktok/pinterest/youtube/threads/bluesky) ──
+    // Header med namn+roll, caption med "…se mer"-veck, bild under. Rätt kort för LinkedIn,
+    // en rimlig och icke-krascha-nde fallback för resten — se ChannelKey-kommentaren ovan.
     card = (
       <Card>
         <div className="flex items-center gap-2 px-3 py-2.5">

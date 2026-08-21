@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3, Tag } from "lucide-react";
+import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3, Tag, ShieldCheck } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -152,6 +152,7 @@ const OMRADEN: { id: string; label: string; icon: React.ComponentType<{ classNam
       "/dashboard/onboarding",
       "/dashboard/setup/onboard",
       "/dashboard/betalning",
+      "/dashboard/ekonomi",
       "/dashboard/kostnader",
       "/dashboard/kvalitet",
       "/dashboard/installningar",
@@ -230,6 +231,8 @@ function buildNavSections(resourceModule: string): NavSection[] {
         { href: "/dashboard/onboarding", label: "Ny kund från webbadress", icon: Sparkles },
         { href: "/dashboard/setup/onboard", label: "Onboarding-checklista", icon: Rocket },
         { href: "/dashboard/betalning", label: "Betalning och abonnemang", icon: CreditCard },
+        // KOSTNAD-2 (HELG-1 DEL 8): en fokuserad saldoskyddsvy, tunn ovanpå K3-INKÖP.
+        { href: "/dashboard/ekonomi", label: "Ekonomi", icon: ShieldCheck },
         { href: "/dashboard/kostnader", label: "Vad AI:n kostar", icon: Coins },
         // G-9: kvalitetssidan. Byråvy — vad varje regeluppsättning faktiskt producerade.
         // Ligger i menyn med flit: en sida som inte går att hitta finns inte.

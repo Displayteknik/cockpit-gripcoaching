@@ -193,3 +193,32 @@ describe("KUNSKAP-1 · fältet går att fylla i", () => {
     expect(sql).not.toMatch(/^\s*update hm_brand_profile/im);
   });
 });
+
+describe("KUNSKAP-1 · DEL 6 omvänt test (HELG-1, 2026-08-21): en tenants betydelse läcker aldrig till en annan", () => {
+  // Gittes (For Balance) riktiga profilrad, ordagrant ur den skarpa DoD-körningen.
+  const gittesProfil = "## Erbjudande: tjänster\n- Regression, resa till ett tidigare liv: två tillfällen…\n";
+  // En annan tenants profil (skyltbolag) som råkar nämna ordet i en helt annan mening —
+  // t.ex. en ekonomisk regression i en marknadsanalys. Ingen påhittad data: bara ett
+  // konstruerat motexempel för att bevisa att den ENA tenantens rader aldrig läcker in.
+  const annanTenantsProfil = "## Marknad\n- Vi ser en regression i efterfrågan på fysiska skyltar sedan 2020.\n";
+
+  it("PROVAD GENOM ATT BRYTAS: samma ämnesord (\"regression\") ger OLIKA träffar beroende på VILKEN profiltext som skickas in", () => {
+    const gittesTraffar = amnesordIProfilen("regression", gittesProfil);
+    const andraTraffar = amnesordIProfilen("regression", annanTenantsProfil);
+    expect(gittesTraffar[0]?.rader.join(" ")).toContain("tidigare liv");
+    expect(andraTraffar[0]?.rader.join(" ")).toContain("efterfrågan");
+    // Beviset: ingen av de två träfflistorna innehåller den ANDRA tenantens rad.
+    expect(gittesTraffar[0]?.rader.join(" ")).not.toContain("efterfrågan");
+    expect(andraTraffar[0]?.rader.join(" ")).not.toContain("tidigare liv");
+  });
+
+  it("en tenant utan ordet i sin profil får inga träffar alls — aldrig en gissning ur en annan tenants data", () => {
+    const dtLiknandeProfil = "## Om oss\n- Vi levererar LED-skärmar och digital skyltning sedan 2015.\n";
+    expect(amnesordIProfilen("regression", dtLiknandeProfil)).toEqual([]);
+  });
+
+  it("hamtaOrdlista() är explicit client_id-scopad i sin egen fråga (ingen global tabell, inget delat cache)", () => {
+    const kod = las("lib/ordlista.ts");
+    expect(kod).toContain('.eq("client_id", clientId)');
+  });
+});

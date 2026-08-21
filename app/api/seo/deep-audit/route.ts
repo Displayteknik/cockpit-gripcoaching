@@ -4,6 +4,7 @@ import { resolveClientId } from "@/lib/client-context";
 import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { finalizePendingAudits } from "@/lib/deep-audit-finalize";
 import { runDeepAudit } from "@/lib/deep-audit-generate";
+import { kundtext } from "@/lib/deep-audit-siffror";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // POST submittar bara en batch (<10s) — genereringen sker async i bakgrunden
@@ -71,11 +72,23 @@ const DOLJ_RAPPORTER_I_KUNDVYN = true;
  *   Utfallet för kunden: knappen snurrar, batchen skickas, och sedan händer ingenting.
  *   Skarpt fall: Oppråby, batch msgbatch_01V2zRax…, låg kvar i `processing`.
  *
- *   Gränsen är tidpunkten då grinden gick live (commit 5151297). Allt före den är skrivet
- *   utan underlagsgrind och ska granskas en och en innan det visas — Håkans villkor 7/8.
- *   Allt efter är skrivet med grinden och får visas direkt.
+ *   Gränsen var tidpunkten då underlagsgrinden gick live (commit 5151297, 2026-08-11).
+ *
+ * ★ GRÄNSEN FLYTTAD 2026-08-21 — HELG-1 DEL 0 fann att den stod still sedan 11/8 trots att
+ *   TVÅ ytterligare grindar landade efter den: R-4 (citatregeln, "citaten är heliga",
+ *   commit `7010a79`, 2026-08-13 19:57 lokal tid) och R-5b (siffergrindens tre
+ *   kalibreringsfel — strukturtal, generisk SEO-fakta, crawlens egna mätvärden — commit
+ *   `aea5f5c`, 2026-08-15 14:06 lokal tid, den senare av de två). En rapport skriven mellan
+ *   11/8 och 15/8 saknar alltså citatregeln och sifferkalibreringen men visades ändå för
+ *   kund — exakt samma fel som öppningen 2026-08-11 skulle stänga.
+ *
+ *   Gränsen är nu tidpunkten för den SENAST landade av de tre grindarna (R-5b, `aea5f5c`).
+ *   Allt före den saknar minst en av underlagsgrinden/R-4/R-5b och ska granskas en och en
+ *   innan det visas — Håkans villkor 7/8. Allt efter är skrivet med alla tre grindarna på
+ *   plats och får visas direkt. Se `scripts/grind-infört-tenantlista.mts` för bevis på
+ *   vilka rapporter som var synliga före flytten och att de nu är dolda.
  */
-const GRIND_INFORD = Date.parse("2026-08-11T15:14:01Z");
+const GRIND_INFORD = Date.parse("2026-08-15T12:06:03Z");
 
 const DOLJ_TEXT =
   "Dina tidigare djupgranskningar är tillfälligt dolda. Vi upptäckte att de kunde innehålla " +
@@ -113,7 +126,12 @@ export async function GET() {
     DOLJ_RAPPORTER_I_KUNDVYN && Date.parse(r.created_at) < GRIND_INFORD;
 
   const dolda = rows.filter(foreGrinden).length;
-  const synliga = rows.filter((r) => !foreGrinden(r));
+  // R-5b, fjärde kravet: beslutstabellen hör bara hemma i ägarvyn (/api/analytics/deep-audit).
+  // kundtext() klipper bort den även på rapporter sparade före kravet fanns — ingen migrering
+  // krävs, och en ny formateringsbugg i skrivvägen kan aldrig läcka tabellen till kund igen.
+  const synliga = rows
+    .filter((r) => !foreGrinden(r))
+    .map((r) => ({ ...r, body: r.body ? kundtext(r.body) : r.body }));
 
   return NextResponse.json({
     reports: synliga.filter((r) => r.status === "active" && r.body?.trim()),

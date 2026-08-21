@@ -11,8 +11,9 @@
 //   En tom lista som egentligen är ett behörighetsfel säger "du har inga kunder", och det
 //   är en lögn. Samma regel som G-9: visa aldrig en nolla som ett mätvärde.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, ExternalLink, Loader2, MessageSquare, RefreshCw, Search, Users } from "lucide-react";
+import { visningsnamnForTagg } from "@/lib/kundregister/taggar";
 
 interface Kontakt {
   id: string;
@@ -29,7 +30,8 @@ interface Kontakt {
 
 interface Svar {
   kontakter: Kontakt[] | null;
-  taggar: { namn: string; antal: number }[];
+  taggar: { namn: string; visningsnamn: string; antal: number }[];
+  kallor: { namn: string; antal: number }[];
   totalt: number;
   visade: number;
   avkortad: boolean;
@@ -39,13 +41,32 @@ interface Svar {
   error?: string;
 }
 
+/** Ett flervalschip. Delas av tagg- och källfiltret — samma interaktion, olika data. */
+function ValChip({ vald, onClick, children }: { vald: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-sm px-2.5 py-1 rounded-lg border ${vald ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function Kundregister({ dmBasHref }: { dmBasHref: string }) {
   const [data, setData] = useState<Svar | null>(null);
   const [laddar, setLaddar] = useState(true);
   const [synkar, setSynkar] = useState(false);
   const [q, setQ] = useState("");
-  const [tagg, setTagg] = useState("");
+  // DEL 4-tillägget (HELG-1, 2026-08-21): flerval på både tagg och källa, i stället för
+  // ett enda valbart värde — samma filterkomponent en kommande nyhetsbrevs mottagarurval
+  // kan återanvända, se lib/kundregister/taggar.ts.
+  const [valdaTaggar, setValdaTaggar] = useState<string[]>([]);
+  const [valdaKallor, setValdaKallor] = useState<string[]>([]);
   const [tekniskFel, setTekniskFel] = useState<string | null>(null);
+
+  const vaxlaTagg = (t: string) => setValdaTaggar((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const vaxlaKalla = (k: string) => setValdaKallor((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
 
   const hamta = useCallback(async () => {
     setLaddar(true);
@@ -53,7 +74,8 @@ export default function Kundregister({ dmBasHref }: { dmBasHref: string }) {
     try {
       const p = new URLSearchParams();
       if (q.trim()) p.set("q", q.trim());
-      if (tagg) p.set("tagg", tagg);
+      if (valdaTaggar.length) p.set("tagg", valdaTaggar.join(","));
+      if (valdaKallor.length) p.set("kalla", valdaKallor.join(","));
       const r = await fetch(`/api/kundregister?${p.toString()}`);
       const d: Svar = await r.json();
       if (!r.ok) {
@@ -68,7 +90,7 @@ export default function Kundregister({ dmBasHref }: { dmBasHref: string }) {
     } finally {
       setLaddar(false);
     }
-  }, [q, tagg]);
+  }, [q, valdaTaggar, valdaKallor]);
 
   // Sökningen väntar in att man slutat skriva. Utan pausen går ett anrop per tangent.
   useEffect(() => {
@@ -146,22 +168,29 @@ export default function Kundregister({ dmBasHref }: { dmBasHref: string }) {
           />
         </div>
         {(data?.taggar.length ?? 0) > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => setTagg("")}
-              className={`text-sm px-2.5 py-1 rounded-lg border ${!tagg ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
-            >
-              Alla
-            </button>
-            {data!.taggar.map((t) => (
-              <button
-                key={t.namn}
-                onClick={() => setTagg(tagg === t.namn ? "" : t.namn)}
-                className={`text-sm px-2.5 py-1 rounded-lg border ${tagg === t.namn ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
-              >
-                {t.namn} <span className="opacity-60">{t.antal}</span>
-              </button>
-            ))}
+          <div>
+            <div className="text-xs font-medium text-gray-400 mb-1">Taggar — välj flera</div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <ValChip vald={valdaTaggar.length === 0} onClick={() => setValdaTaggar([])}>Alla</ValChip>
+              {data!.taggar.map((t) => (
+                <ValChip key={t.namn} vald={valdaTaggar.includes(t.namn)} onClick={() => vaxlaTagg(t.namn)}>
+                  {t.visningsnamn} <span className="opacity-60">{t.antal}</span>
+                </ValChip>
+              ))}
+            </div>
+          </div>
+        )}
+        {(data?.kallor.length ?? 0) > 0 && (
+          <div>
+            <div className="text-xs font-medium text-gray-400 mb-1">Källa — välj flera</div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <ValChip vald={valdaKallor.length === 0} onClick={() => setValdaKallor([])}>Alla</ValChip>
+              {data!.kallor.map((k) => (
+                <ValChip key={k.namn} vald={valdaKallor.includes(k.namn)} onClick={() => vaxlaKalla(k.namn)}>
+                  {k.namn} <span className="opacity-60">{k.antal}</span>
+                </ValChip>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -179,7 +208,7 @@ export default function Kundregister({ dmBasHref }: { dmBasHref: string }) {
                 behörighetsfel ser ut som ett tomt register. */}
             {data?.fel
               ? "Listan kunde inte hämtas den här gången — se meddelandet ovan."
-              : q || tagg
+              : q || valdaTaggar.length || valdaKallor.length
                 ? "Ingen kund matchar det du sökte på."
                 : "Inga kontakter i MySales än. De som läggs upp där dyker upp här."}
           </p>
@@ -209,7 +238,7 @@ export default function Kundregister({ dmBasHref }: { dmBasHref: string }) {
                   {k.taggar.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1.5">
                       {k.taggar.map((t) => (
-                        <span key={t} className="text-sm px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{t}</span>
+                        <span key={t} className="text-sm px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{visningsnamnForTagg(t)}</span>
                       ))}
                     </div>
                   )}

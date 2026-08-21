@@ -73,29 +73,40 @@ export default function ArkKarusell({ payload, brand, slideIndex = 0, logoHint }
 
       {/* Textblock — centrerat (hook/cta) eller nedre tredjedel (point) */}
       <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", flexDirection: "column", justifyContent: slide.kind === "point" ? "flex-end" : "center", padding: slide.kind === "point" ? "0 80px 150px" : "0 80px" }}>
-        {/* Skyddet mot text utanför ytan sitter som overflowWrap på #studio-canvas ovan
-            och ärvs hit. Inline med flit: en regel i globals.css nådde inte render-ytan
-            (mätt 2026-08-09, computed värde blev "normal"), och html-to-image tar med
-            inline-stilen med säkerhet. */}
-        {slide.headline ? (
-          <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: ink, fontSize: fs(isHook ? 84 : 58, payload), lineHeight: 1.04, letterSpacing: -1 }}>
-            <span data-edit="slide-headline">{slide.headline}</span>
-          </div>
-        ) : null}
-        {slide.body ? (
-          <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: ink, opacity: dim, fontSize: fs(isHook ? 34 : 32, payload), lineHeight: 1.4, marginTop: 24, maxWidth: 860 }}>
-            <span data-edit="slide-body">{slide.body}</span>
-          </div>
-        ) : null}
+        {/* BILD-11 punkt 2 (HELG-1 DEL 3, 2026-08-21, karusellslide 7): rubrik+brödtext
+            fick tidigare svälla FRITT i samma centrerade block som svep-hinten/CTA-knappen.
+            Blev blocket högre än canvasen (lång rubrik på en cta-slide) svällde det
+            symmetriskt åt båda håll under `justifyContent:"center"` — knappen klipptes mot
+            canvasens botten av #studio-canvas overflow:hidden. Samma buggklass och samma
+            fix som OpticurSkarmSplits h2-överflöde (296d898): den växande texten får en
+            EGEN flex:1, minHeight:0, overflow:"hidden"-zon den aldrig kan svälla ur — värsta
+            fall blir en avklippt textrad, aldrig en bortklippt CTA-knapp. Svep-hinten och
+            CTA-knappen står i sin EGEN flexShrink:0-zon under, opåverkade av hur höga
+            rubrik/brödtext blir. Skyddet mot text utanför ytan sitter som overflowWrap på
+            #studio-canvas ovan och ärvs hit. Inline med flit: en regel i globals.css nådde
+            inte render-ytan (mätt 2026-08-09, computed värde blev "normal"), och
+            html-to-image tar med inline-stilen med säkerhet. */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: slide.kind === "point" ? "flex-end" : "center" }}>
+          {slide.headline ? (
+            <div style={{ fontFamily: `${brand.fonts.headline}, sans-serif`, fontWeight: 800, color: ink, fontSize: fs(isHook ? 84 : 58, payload), lineHeight: 1.04, letterSpacing: -1 }}>
+              <span data-edit="slide-headline">{slide.headline}</span>
+            </div>
+          ) : null}
+          {slide.body ? (
+            <div style={{ fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 400, color: ink, opacity: dim, fontSize: fs(isHook ? 34 : 32, payload), lineHeight: 1.4, marginTop: 24, maxWidth: 860 }}>
+              <span data-edit="slide-body">{slide.body}</span>
+            </div>
+          ) : null}
+        </div>
 
-        {/* Svep-hint på hook, CTA-knappform på cta */}
+        {/* Svep-hint på hook, CTA-knappform på cta — flexShrink:0 så de aldrig trycks ut. */}
         {isHook ? (
-          <div style={{ marginTop: 40, display: "inline-flex", alignItems: "center", gap: 12, fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, fontSize: 26, color: ink, opacity: 0.85, textTransform: "uppercase", letterSpacing: 2 }}>
+          <div style={{ marginTop: 40, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 12, fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, fontSize: 26, color: ink, opacity: 0.85, textTransform: "uppercase", letterSpacing: 2 }}>
             Svep <span style={{ fontSize: 32 }}>→</span>
           </div>
         ) : null}
         {isCta && brand.footer.ctaLabel ? (
-          <div style={{ marginTop: 40, alignSelf: "flex-start", background: c.accent, color: isLightColor(c.accent) ? c.ink : c.paper, padding: "18px 34px", borderRadius: 10, fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, fontSize: 30 }}>
+          <div style={{ marginTop: 40, flexShrink: 0, alignSelf: "flex-start", background: c.accent, color: isLightColor(c.accent) ? c.ink : c.paper, padding: "18px 34px", borderRadius: 10, fontFamily: `${brand.fonts.body}, sans-serif`, fontWeight: 700, fontSize: 30 }}>
             {brand.footer.ctaLabel}
           </div>
         ) : null}

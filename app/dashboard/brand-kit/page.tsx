@@ -451,6 +451,27 @@ export default function BrandKitPage({ kundlage = false }: { kundlage?: boolean 
                   <label className="block text-xs font-medium text-gray-500 mb-1">Undvik i bilderna</label>
                   <input value={kit.imageStyle?.negative || ""} onChange={(e) => set("imageStyle.negative", e.target.value)} placeholder="stockfoto-känsla, plastigt leende, tomma skyltar" className={inputCls} />
                 </div>
+                <div>
+                  {/*
+                    K1 — REKVISITA OCH MILJÖ (HELG-1 DEL 3, steg 5: K1-rutan i brand-kit-vyn).
+                    Skriver till samma fält som lib/bild/promptbyggare.ts::hamtaRekvisita()
+                    redan LÄSER (kit.rekvisita) — det fältet fanns i backend sedan 13/8 men
+                    ingen yta skrev dit, så varje tenant fick branschdefaulten (branschRekvisita)
+                    utan att kunna ändra den. Tomt fält = branschdefault, inte "ingen regel".
+                  */}
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Rekvisita och miljö i bilderna</label>
+                  <textarea
+                    value={kit.rekvisita || ""}
+                    onChange={(e) => set("rekvisita", e.target.value)}
+                    placeholder="Lämna tomt för branschstandard. Eller beskriv på engelska: t.ex. vilka verktyg, produkter eller miljöer som ska synas — och vad som aldrig hör hemma i bild"
+                    rows={3}
+                    className={inputCls}
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Styr VAD som finns i bilden runt motivet — verktyg, produkter, lokal. Skiljs från "Visa alltid" och
+                    "Undvik" ovan genom att gälla hela scenens rekvisita, inte bara ett enskilt objekt. Skrivs på engelska.
+                  </p>
+                </div>
                 <p className="text-xs text-gray-500">Skriv som du säger det. Reglerna gäller varje bild vi skapar åt dig, och de väger tyngre än våra egna förslag.</p>
               </div>
             </section>

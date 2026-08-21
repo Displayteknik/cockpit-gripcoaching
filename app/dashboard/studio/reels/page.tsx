@@ -469,6 +469,10 @@ export default function ReelsPage() {
                 mediaUrl={s.mediaUrl}
                 source={s.source}
                 imagePrompt={s.imagePrompt}
+                overlayLine1={s.overlay.line1}
+                overlayLine2={s.overlay.line2}
+                sceneIndex={i}
+                scenesTotal={board.scenes.length}
                 onValj={(url, source) => sattMaterial(i, url, source)}
               />
             </div>

@@ -3,10 +3,13 @@ import Kundregister from "@/components/Kundregister";
 
 export const dynamic = "force-dynamic";
 
-// KUNDREGISTER-1 — kundvyns läsande kundlista. Bakom samma modul-grind som övriga
-// kundytor: syns bara för den som har DM-modulen, eftersom listan hör ihop med pipelinen.
+// KUNDREGISTER-1 — kundvyns läsande kundlista.
+//
+// DEL 4-tillägget (HELG-1, 2026-08-21): egen entitlement ("kundregister") i stället för
+// att åka på DM-modulen. Styrd pilot — PÅ bara för Displayteknik och For Balance
+// (migrations/kundregister1_pilotmodul.sql), AV för alla andra tills piloten är godkänd.
 export default async function KundvyKunder() {
-  await requireCustomerFeature("dm");
+  await requireCustomerFeature("kundregister");
 
   return (
     <div className="space-y-5">

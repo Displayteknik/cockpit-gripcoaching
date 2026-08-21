@@ -1,7 +1,6 @@
 import { supabaseService } from "@/lib/supabase-admin";
 import { loggaHandelse } from "@/lib/ai-usage";
 import { granskaRapport } from "@/lib/deep-audit-granska";
-import { beslutstabell } from "@/lib/deep-audit-siffror";
 
 const MODEL = "claude-sonnet-4-5";
 
@@ -98,23 +97,11 @@ export async function finalizePendingAudits(clientId?: string): Promise<number> 
         avvikelser = granskad.avvikelser;
         luckor = granskad.luckor;
         sifferbeslut = granskad.sifferbeslut;
-        // R-5/punkt 2: beslutstabellen bifogas rapporten sa varje tal gar att stickprova
-        // mot klass och kalla, utan att behova leta i loggar.
-        if (granskad.sifferbeslut.length) {
-          // R-5/punkt 2: beslutstabellen bifogas rapporten så varje tal går att stickprova
-          // mot klass och källa, utan att någon behöver leta i loggar.
-          text += [
-            "", "---", "",
-            "### Så här bedömdes varje siffra",
-            "",
-            "T = din egen uppgift, B = branschfakta, G = Googles data, C = vår egen mätning av din sajt.",
-            "",
-            "Numrering (listor, rubriker, tabellrader) och datum står inte med: de är inga uppgifter att fylla i.",
-            "",
-            beslutstabell(granskad.sifferbeslut),
-            "",
-          ].join("\n");
-        }
+        // R-5b, fjärde kravet (2026-08-21): beslutstabellen bifogas INTE längre `text` —
+        // `text` är vad KUNDEN ser (client_assets.body), och kundrapporten ska sluta vid
+        // Ordlistan. Beslutstabellen sparas oförändrat i metadata.grind_sifferbeslut nedan;
+        // ägarvyn (app/api/analytics/deep-audit) bygger blocket på nytt vid läsning via
+        // beslutstabellBlock(). Se lib/deep-audit-siffror.ts.
         if (avvikelser.length) {
           console.warn(`[djupgranskning] grinden rättade ${avvikelser.length} avvikelser i ${row.id}: ` +
             avvikelser.map((a) => a.typ).join(", "));

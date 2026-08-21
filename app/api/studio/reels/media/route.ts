@@ -58,7 +58,10 @@ export async function POST(req: NextRequest) {
   const denied = await grind();
   if (denied) return denied;
 
-  let body: { action?: string; prompt?: string; url?: string; source?: string; detail?: string };
+  let body: {
+    action?: string; prompt?: string; url?: string; source?: string; detail?: string;
+    overlayLine1?: string; overlayLine2?: string; sceneIndex?: number; scenesTotal?: number;
+  };
   try {
     body = await req.json();
   } catch {
@@ -120,15 +123,30 @@ export async function POST(req: NextRequest) {
       // Bildhjälpen, där indata är en bildtext. Reels-manuset levererar redan en färdig
       // engelsk motivbeskrivning, och att köra den genom översättningen en gång till
       // skriver om den och driver iväg motivet: "uninviting retail storefront during a
-      // grey daytime" blev en mörk bakgårdsdörr. Använd beskrivningen som den är.
-      const scene = prompt;
+      // grey daytime" blev en mörk bakgårdsdörr. Använd beskrivningen som den är — den
+      // skickas som `scen` till byggaren, som lägger K1–K5 RUNT den utan att röra den.
+      //
+      // Bildvägskopplingen (HELG-1 DEL 3, steg 1): Reels in i lib/bild/promptbyggare.ts.
+      // Rubrik/brödtext hämtas ur scenens svenska overlaytext, så bevismening/plats/tid
+      // härleds ur samma innehåll som visas på skärmen — inte ur den engelska motivraden,
+      // som redan är en tolkning. Kitsuffixet kommer nu från byggaren (kit hämtas där
+      // ändå för K1/K3), så det gamla extra anropet till imageDirectiveSuffix togs bort.
+      const { byggBildPrompt } = await import("@/lib/bild/promptbyggare");
+      const byggd = await byggBildPrompt({
+        clientId,
+        niche,
+        syfte: "reel-scen",
+        rubrik: body.overlayLine1,
+        brodtext: body.overlayLine2,
+        serie: Number.isFinite(body.scenesTotal)
+          ? { index: Number(body.sceneIndex ?? 0), antal: Number(body.scenesTotal) }
+          : undefined,
+        scen: prompt,
+      });
       // FLUX först: den tar image_size och ger ett FAKTISKT stående original.
       // generateImagen skickar bara formatet i prompttexten och svarade 1024x1024 i test,
       // vilket betyder att nära halva motivet beskärs bort i sidled. generateFlux faller
       // själv tillbaka på generateImagen om FAL_KEY saknas eller anropet fallerar.
-      // Motivet FÖRST, stilen sist. "natural light" stod tidigare här och krockade rakt
-      // av med signaturens ljusinstruktion: två motstridiga ljuskrav i samma prompt.
-      // Ljussättningen ägs numera enbart av signaturen, motivet enbart av scenen.
       // Bildmodeller hittar på läsbar text på skyltar och affischer även när prompten
       // säger no text. Förbudet upprepas därför i Avoid-form, som väger tyngre.
       const gen = await generateFlux(
@@ -137,7 +155,7 @@ export async function POST(req: NextRequest) {
         // bilden, därför står textförbudet kvar i Avoid-form.
         // BILD-8b: blickriktningsregeln nådde aldrig hit (död import sedan `77b8564`) —
         // den är en plattformsregel och gäller oavsett om bilden får bära text.
-        `${scene} Vertical 9:16 composition, calm space in the middle for text. Photographic and real, documentary style, believable everyday setting. ${DEPICTED_RELEVANCE_EN} ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN}${imageDirectiveSuffix(directives)} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
+        `${byggd.prompt} Vertical 9:16 composition, calm space in the middle for text. ${DEPICTED_RELEVANCE_EN} ${PERSON_ATTENTION_EN} ${NO_DASH_IN_IMAGE_EN} Avoid: readable words, lettering on signs or posters, watermarks, logos.`,
         "portrait",
       );
       if (gen.error || !gen.image) {

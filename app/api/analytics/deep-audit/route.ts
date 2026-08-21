@@ -3,6 +3,7 @@ import { supabaseService } from "@/lib/supabase-admin";
 import { resolveClientId } from "@/lib/client-context";
 import { finalizePendingAudits } from "@/lib/deep-audit-finalize";
 import { runDeepAudit } from "@/lib/deep-audit-generate";
+import { beslutstabellBlock, type Sifferbeslut } from "@/lib/deep-audit-siffror";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -36,9 +37,21 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(10);
 
-  const rows = (data ?? []) as Array<{ id: string; status: string; body?: string }>;
+  const rows = (data ?? []) as Array<{
+    id: string; status: string; body?: string;
+    metadata?: { grind_sifferbeslut?: Sifferbeslut[] } | null;
+  }>;
+
+  // ÄGARVYN, till skillnad från kundens /k/seo (app/api/seo/deep-audit): här bifogas
+  // beslutstabellen igen, återskapad ur metadata.grind_sifferbeslut — R-5b, fjärde kravet.
+  // `body` i databasen bär aldrig tabellen längre, den ägs bara av denna vy.
+  const medBeslutstabell = rows.map((r) => ({
+    ...r,
+    body: r.body ? r.body + beslutstabellBlock(r.metadata?.grind_sifferbeslut ?? []) : r.body,
+  }));
+
   return NextResponse.json({
-    reports: rows.filter((r) => r.status === "active" && r.body?.trim()),
-    generating: rows.filter((r) => r.status === "processing").map((r) => r.id),
+    reports: medBeslutstabell.filter((r) => r.status === "active" && r.body?.trim()),
+    generating: medBeslutstabell.filter((r) => r.status === "processing").map((r) => r.id),
   });
 }

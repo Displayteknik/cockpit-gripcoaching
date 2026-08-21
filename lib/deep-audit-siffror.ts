@@ -518,7 +518,7 @@ export function grindaSiffror(md: string, indata: SifferIndata): SifferResultat 
   return { text, beslut, luckor: beslut.filter((b) => b.utfall === "lucka") };
 }
 
-/** Beslutstabellen, färdig att stickprova. Bifogas rapporten och sparas i metadata. */
+/** Beslutstabellen, färdig att stickprova. Sparas i metadata (grind_sifferbeslut). */
 export function beslutstabell(beslut: Sifferbeslut[]): string {
   const rader = beslut.map((b) =>
     `| ${b.tal} | ${b.klass} | ${b.utfall} | ${b.kalla} | ${b.sektion} |`,
@@ -528,6 +528,48 @@ export function beslutstabell(beslut: Sifferbeslut[]): string {
     "|---|---|---|---|---|",
     ...rader,
   ].join("\n");
+}
+
+/**
+ * Hela beslutstabellens block med rubrik och förklaring — ENDA stället som formaterar
+ * detta, så ägarvyn (app/api/analytics/deep-audit) och kundexporten aldrig kan glida isär.
+ *
+ * R-5b, fjärde kravet (HELG-1 DEL 0/2, 2026-08-21): blocket bifogas INTE längre den text
+ * som sparas som `client_assets.body` (se lib/deep-audit-finalize.ts) — kunden ser bara
+ * själva rapporten, som slutar vid Ordlistan. Ägarvyn bygger blocket på nytt vid varje
+ * läsning, ur `metadata.grind_sifferbeslut`, som redan sparas oförändrat.
+ */
+export function beslutstabellBlock(beslut: Sifferbeslut[]): string {
+  if (!beslut.length) return "";
+  return [
+    "", "---", "",
+    "### Så här bedömdes varje siffra (syns bara i ägarvyn, aldrig i kundens export)",
+    "",
+    "T = din egen uppgift, B = branschfakta, G = Googles data, C = vår egen mätning av din sajt.",
+    "",
+    "Numrering (listor, rubriker, tabellrader) och datum står inte med: de är inga uppgifter att fylla i.",
+    "",
+    beslutstabell(beslut),
+    "",
+  ].join("\n");
+}
+
+const BESLUTSTABELL_MARKOR = "### Så här bedömdes varje siffra";
+
+/**
+ * Kundens säkra text — R-5b, fjärde kravet. Klipper bort allt från och med beslutstabellens
+ * rubrik, oavsett om blocket kom med av misstag. Körs vid LÄSNING i kundvägen
+ * (app/api/seo/deep-audit), inte bara vid skrivning i lib/deep-audit-finalize.ts — så även de
+ * rapporter som redan låg i databasen med tabellen inbakad (sparade före 2026-08-21) blir
+ * säkra utan en separat migrering. Kundrapporten slutar därmed vid Ordlistan, som redan är
+ * sista sektionen i själva den AI-genererade texten.
+ */
+export function kundtext(body: string): string {
+  const rubrikIdx = body.indexOf(BESLUTSTABELL_MARKOR);
+  if (rubrikIdx === -1) return body;
+  const separatorIdx = body.lastIndexOf("---", rubrikIdx);
+  const grans = separatorIdx !== -1 && rubrikIdx - separatorIdx < 20 ? separatorIdx : rubrikIdx;
+  return body.slice(0, grans).trimEnd() + "\n";
 }
 
 /** Lucklistan med kontext. En rå taldump går inte att fylla i. */

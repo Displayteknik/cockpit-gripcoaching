@@ -452,6 +452,41 @@ export async function GET(req: NextRequest) {
     .map((r) => ({ kund: r.kund, intakt: r.belopp_ex_moms, aiKostnad: aiPerNamn.get(r.kund.trim().toLowerCase()) ?? null }))
     .filter((r) => r.aiKostnad !== null);
 
+  // BETAL-1 DEL 7 (HELG-1, 2026-08-21): Cockpit/MySales Pro-abonnemangen är en TREDJE
+  // intäktsström, skild från Grips klient-MRR och DT:s pipeline — det här är Håkans egen
+  // SaaS-intäkt från Cockpit-tenanterna. Bara en LÄSANDE brygga: siffrorna kommer ur
+  // billing_subscriptions/billing_status (BETAL-1s egna tabeller), ingen ny källa och
+  // ingen skrivväg härifrån. Årsabonnemang normaliseras till kr/månad så summan är en
+  // äkta MRR, inte en blandning av intervall.
+  const cockpitMrr = await (async () => {
+    try {
+      const [{ data: prenumerationer }, { data: statusrader }] = await Promise.all([
+        sb.from("billing_subscriptions").select("client_id, belopp_sek, intervall, stripe_status"),
+        sb.from("billing_status").select("client_id, status"),
+      ]);
+      const aktivaStatusar = new Set(["active", "trialing", "past_due"]);
+      const pren = ((prenumerationer as Array<{ client_id: string; belopp_sek: number; intervall: string | null; stripe_status: string }> | null) || [])
+        .filter((p) => aktivaStatusar.has(p.stripe_status));
+      const mrrKr = pren.reduce((s, p) => s + (p.intervall === "year" ? (Number(p.belopp_sek) || 0) / 12 : Number(p.belopp_sek) || 0), 0);
+      const statusPerKund = new Map(((statusrader as Array<{ client_id: string; status: string }> | null) || []).map((s) => [s.client_id, s.status]));
+      const perStatus: Record<string, number> = { aktiv: 0, forsenad: 0, paminnelser: 0, sparrad: 0 };
+      for (const p of pren) {
+        const st = statusPerKund.get(p.client_id) || "aktiv";
+        if (st in perStatus) perStatus[st]++;
+      }
+      return {
+        mrrKr: Math.round(mrrKr),
+        antalAktivaAbonnemang: pren.length,
+        perStatus,
+        // Tomt läge är sant idag (inget Stripe-konto kopplat än, HELG-1 DEL 7) — ingen
+        // gissning, bara det verkliga talet, som råkar vara noll.
+        stripeKopplat: pren.length > 0 || statusrader !== null,
+      };
+    } catch {
+      return { mrrKr: 0, antalAktivaAbonnemang: 0, perStatus: { aktiv: 0, forsenad: 0, paminnelser: 0, sparrad: 0 }, stripeKopplat: false };
+    }
+  })();
+
   return NextResponse.json({
     idag,
     vecka,
@@ -480,6 +515,7 @@ export async function GET(req: NextRequest) {
     fasta,
     kostnadPerBolag,
     aiPerKund,
+    cockpitMrr,
     tasks,
     synk: {
       senastSynkad: synkadTid,

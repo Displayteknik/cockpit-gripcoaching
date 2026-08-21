@@ -31,6 +31,7 @@ import type { FourA } from "@/lib/content-framework";
 import type { StudioBrand } from "@/lib/studio/brand";
 import StudioEditor, { type ImagePatch } from "@/components/studio/StudioEditor";
 import ChannelPreview, { type ChannelKey, CHANNEL_BRAND } from "@/components/studio/ChannelPreview";
+import { KANAL_NYCKLAR, KANAL_ANATOMI, arAnsluten, arUtgangen, synligaKanaler } from "@/lib/kanal-anatomi";
 import ScheduleQueue from "@/components/studio/ScheduleQueue";
 import { toBlob } from "html-to-image";
 
@@ -63,18 +64,34 @@ function slideEtikett(s: { kind: string; roll?: string }): string {
 // Punktnumret (01, 02 …) räknas i lib/studio/payload — samma källa som mallen ritar ur.
 const punktNr = punktNummer;
 
-// Fas B — de tre kanalerna. platform = matchning mot GHL:s platform-sträng.
+// KANAL-2 (HELG-1 DEL 5, 2026-08-21): NIO möjliga kanaler i stället för tre hårdkodade,
+// byggda ur lib/kanal-anatomi.ts (EN källa, delas med adapt-channel-routen och
+// förhandsvisningen). `platform` = matchning mot GHL:s platform-sträng.
 // Grafisk identitet (label/färg/gradient/ikon) hämtas ur CHANNEL_BRAND (EN källa).
-const CHANNELS: { key: ChannelKey; platform: string }[] = [
-  { key: "ig", platform: "instagram" },
-  { key: "fb", platform: "facebook" },
-  { key: "li", platform: "linkedin" },
-];
+//
+// ⚠ ig/fb/li visas ALLTID (oförändrat beteende — IG har dessutom en egen native-koppling
+// utanför GHL). De sex nya visas BARA när tenanten faktiskt har en matchande GHL-koppling
+// (connectedOrExpiredChannelKeys nedan) — DoD:n är uttrycklig: "tenant utan GBP ser den
+// inte". Se `dynamiskaKanaler` (beräknas i komponenten, kräver ghlAccounts).
+const CHANNELS_BAS: { key: ChannelKey; platform: string }[] = KANAL_NYCKLAR.map((k) => ({
+  key: k, platform: KANAL_ANATOMI[k].ghlPlatform,
+}));
+const CHANNELS: { key: ChannelKey; platform: string }[] = CHANNELS_BAS.filter((c) => ["ig", "fb", "li"].includes(c.key));
+
+/** Tom post per kanal — generisk, håller Record<ChannelKey,T> komplett utan att en ny
+ * kanal kräver en manuell rad varje gång. */
+function tomKanalRecord<T>(varde: T): Record<ChannelKey, T> {
+  return Object.fromEntries(KANAL_NYCKLAR.map((k) => [k, varde])) as Record<ChannelKey, T>;
+}
 
 // Fas D — bästa publiceringstid (HEURISTIK, branschstandard per plattform, INTE
 // klientens egen data ännu). När engagemangsdata finns per inlägg kan detta bli
 // data-drivet. dagar: JS getDay() 0=sön..6=lör. Vardagar = 1–5, LI Tis–Tors = 2–4.
+// De sex nya kanalerna har ingen egen mätt branschstandard än — vardagar, förmiddag och
+// eftermiddag är en neutral, rimlig default (samma spann som IG/FB) tills det finns data.
+const VARDAG_DEFAULT = { dagar: [1, 2, 3, 4, 5], timmar: [10, 15] };
 const BASTA_TIDER: Record<ChannelKey, { dagar: number[]; timmar: number[] }> = {
+  ...tomKanalRecord(VARDAG_DEFAULT),
   ig: { dagar: [1, 2, 3, 4, 5], timmar: [11, 19] },
   fb: { dagar: [1, 2, 3, 4, 5], timmar: [9, 13] },
   li: { dagar: [2, 3, 4], timmar: [8, 12, 17] },
@@ -280,10 +297,10 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
   // flit — det gar att angra i MySales, ett publicerat inlagg har redan motts av folk.
   const [publiceraDirekt, setPubliceraDirekt] = useState(false);
   const [channelsSeeded, setChannelsSeeded] = useState(false);
-  const [channelCaptions, setChannelCaptions] = useState<Record<ChannelKey, string>>({ ig: "", fb: "", li: "" });
+  const [channelCaptions, setChannelCaptions] = useState<Record<ChannelKey, string>>(() => tomKanalRecord(""));
   const [adapting, setAdapting] = useState(false);
   const [pubBusy, setPubBusy] = useState<ChannelKey | "">("");
-  const [pubResult, setPubResult] = useState<Record<ChannelKey, "" | "ok" | "err">>({ ig: "", fb: "", li: "" });
+  const [pubResult, setPubResult] = useState<Record<ChannelKey, "" | "ok" | "err">>(() => tomKanalRecord("" as const));
   // BILD-3: kvitto efter lyckad publicering — direktlänk, tid, format.
   const [pubReceipt, setPubReceipt] = useState<{ permalink: string; tid: string; format: string } | null>(null);
   const [copied, setCopied] = useState<ChannelKey | "">("");
@@ -1059,7 +1076,9 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
     setImageEdit(normalizeImageEdit(d.imageEdit));
     setBrushColor((d.brushColor as string) || DEFAULT_BRUSH);
     setCaption((d.caption as string) ?? "");
-    setChannelCaptions((d.channelCaptions as Record<ChannelKey, string>) ?? { ig: "", fb: "", li: "" });
+    // Sammanslaget med tomKanalRecord: äldre sparade utkast (före KANAL-2) har bara
+    // ig/fb/li i sitt channelCaptions-objekt, aldrig de sex nya nycklarna.
+    setChannelCaptions({ ...tomKanalRecord(""), ...((d.channelCaptions as Partial<Record<ChannelKey, string>>) ?? {}) });
     setOverrides({ ...DEFAULT_OVERRIDES, ...((d.overrides as object) || {}) });
     setSlides(Array.isArray(d.slides) ? (d.slides as StudioSlide[]) : []);
     setSlideIdx(0);
@@ -1085,7 +1104,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
   const aterstallUtkast = useCallback((d: StudioUtkast) => {
     if (d.payload) applyPayload(d.payload as unknown as Record<string, unknown>);
     setCaption(d.caption ?? "");
-    if (d.channelCaptions) setChannelCaptions(d.channelCaptions);
+    if (d.channelCaptions) setChannelCaptions({ ...tomKanalRecord(""), ...d.channelCaptions });
     if (Array.isArray(d.selectedChannels) && d.selectedChannels.length) {
       setSelectedChannels(d.selectedChannels);
       setChannelsSeeded(true); // annars skriver kopplings-seeden över det återställda valet
@@ -1122,7 +1141,7 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
     setHeadline1(""); setHeadline2(""); setBody(""); setTopic("");
     setImageUrl(""); setImageEdit(null); setEditedPreview(""); setAiImageDesc(null);
     setImgText(""); setImgTextInfo(null); setVideoUrl("");
-    setCaption(""); setChannelCaptions({ ig: "", fb: "", li: "" });
+    setCaption(""); setChannelCaptions(tomKanalRecord(""));
     setSuggestions([]); setSlides([]); setSlideIdx(0);
     setOverrides(DEFAULT_OVERRIDES); setBadgeEnabled(false);
     setCustomSize(null);
@@ -1371,17 +1390,35 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
   }, []);
 
   // ── Fas B: kanaldetektering, anpassning, per-kanal-publicering ──
-  // Icke-utgångna GHL-konton för en plattform (facebook/linkedin/instagram).
+  // Icke-utgångna GHL-konton för en plattform (facebook/linkedin/instagram/…).
   const ghlFor = useCallback(
     (platform: string) => ghlAccounts.filter((a) => a.platform.toLowerCase().includes(platform) && !a.isExpired),
     [ghlAccounts],
   );
-  // Är kanalen publicerbar? IG = direkt-koppling ELLER GHL-IG. FB/LI = via GHL.
-  const channelConnected = useMemo<Record<ChannelKey, boolean>>(() => ({
-    ig: !!igConn?.connected || ghlFor("instagram").length > 0,
-    fb: ghlFor("facebook").length > 0,
-    li: ghlFor("linkedin").length > 0,
-  }), [igConn, ghlFor]);
+  // KANAL-2 (HELG-1 DEL 5): kanalstatus + synlighet räknas ur DELAD, testad ren logik i
+  // lib/kanal-anatomi.ts (arAnsluten/arUtgangen/synligaKanaler) — samma funktioner
+  // tests/kanal-anatomi.test.ts låser, inte en egen uträkning här som kan glida isär.
+  const channelConnected = useMemo<Record<ChannelKey, boolean>>(() => {
+    const bas = tomKanalRecord(false);
+    for (const k of KANAL_NYCKLAR) bas[k] = arAnsluten(k, ghlAccounts);
+    bas.ig = !!igConn?.connected || bas.ig;
+    return bas;
+  }, [igConn, ghlAccounts]);
+  // DEL 5 punkt 4: en koppling som FANNS men gått ut ska visas som "behöver förnyas",
+  // aldrig försvinna tyst in i "ej kopplad" (som annars är omöjlig att skilja från
+  // "aldrig kopplad" — det är precis den bugg beställningen pekar ut).
+  const channelExpired = useMemo<Record<ChannelKey, boolean>>(() => {
+    const bas = tomKanalRecord(false);
+    for (const k of KANAL_NYCKLAR) bas[k] = arUtgangen(k, ghlAccounts);
+    return bas;
+  }, [ghlAccounts]);
+  // DEL 5 punkt 1 + 3: kanalväljaren visar ALLA kanaler tenanten har kopplade i sin
+  // planerare (ig/fb/li alltid synliga, övriga bara vid matchande koppling), filtrerat på
+  // om inlägget faktiskt är video (postType "reel") mot varje kanals innehållskrav.
+  const dynamiskaKanaler = useMemo(() => {
+    const nycklar = synligaKanaler(ghlAccounts, postType === "reel");
+    return CHANNELS_BAS.filter((c) => nycklar.includes(c.key));
+  }, [ghlAccounts, postType]);
 
   // Effektiv caption för en kanal: den anpassade om den finns, annars grund-captionen.
   const capFor = useCallback((k: ChannelKey) => (channelCaptions[k]?.trim() ? channelCaptions[k] : caption), [channelCaptions, caption]);
@@ -3004,11 +3041,14 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
             </button>
           </div>
 
-          {/* Kanalväljare — förikryssad efter vad klienten kopplat */}
+          {/* Kanalväljare — förikryssad efter vad klienten kopplat. DEL 5: ig/fb/li alltid
+              synliga, övriga bara när det finns en matchande GHL-koppling (dynamiskaKanaler
+              filtrerar redan på det + på innehållstyp) — se definitionen ovan. */}
           <div className="flex flex-wrap items-center gap-2">
-            {CHANNELS.map(({ key }) => {
+            {dynamiskaKanaler.map(({ key }) => {
               const on = selectedChannels.includes(key);
               const conn = channelConnected[key];
+              const utgangen = channelExpired[key];
               const brand = CHANNEL_BRAND[key];
               const { Icon } = brand;
               return (
@@ -3024,11 +3064,14 @@ export default function StudioMaker({ customerMode = false, entitledModules = nu
                       kanalerna som "ej kopplad". Det ar tva helt olika saker, och att kalla
                       dem samma sak skickar felsokningen at fel hall: hon letar efter sin
                       Instagram-koppling nar det ar en nyckel som fattas hos oss.
-                      Samma regel som resten av systemet: sag vad som faktiskt ar fel. */}
+                      Samma regel som resten av systemet: sag vad som faktiskt ar fel.
+                      DEL 5 punkt 4: en UTGÅNGEN koppling far en egen etikett — den ska aldrig
+                      se ut som "ej kopplad" (det ser ut som att kunden aldrig kopplat nagot,
+                      nar hon i sjalva verket bara behover fornya). */}
                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-                    title={conn ? undefined : ghlConnected === false ? "Cockpit saknar nyckeln till kundens MySales-konto. Kopplingen i MySales kan vara helt korrekt, det ar nyckeln hit som fattas." : undefined}
-                    style={conn ? { background: "#dcfce7", color: "#15803d" } : ghlConnected === false ? { background: "#fef3c7", color: "#92400e" } : { background: "#f3f4f6", color: "#9ca3af" }}>
-                    {conn ? "kopplad" : ghlConnected === false ? "nyckel saknas" : "ej kopplad"}
+                    title={conn ? undefined : utgangen ? "Kopplingen i MySales har gått ut. Förnya den där, sedan syns kanalen som kopplad igen." : ghlConnected === false ? "Cockpit saknar nyckeln till kundens MySales-konto. Kopplingen i MySales kan vara helt korrekt, det ar nyckeln hit som fattas." : undefined}
+                    style={conn ? { background: "#dcfce7", color: "#15803d" } : utgangen ? { background: "#fee2e2", color: "#b91c1c" } : ghlConnected === false ? { background: "#fef3c7", color: "#92400e" } : { background: "#f3f4f6", color: "#9ca3af" }}>
+                    {conn ? "kopplad" : utgangen ? "behöver förnyas" : ghlConnected === false ? "nyckel saknas" : "ej kopplad"}
                   </span>
                 </button>
               );

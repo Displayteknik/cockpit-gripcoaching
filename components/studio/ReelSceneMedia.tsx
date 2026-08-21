@@ -23,11 +23,23 @@ export default function ReelSceneMedia({
   mediaUrl,
   source,
   imagePrompt,
+  overlayLine1,
+  overlayLine2,
+  sceneIndex,
+  scenesTotal,
   onValj,
 }: {
   mediaUrl: string;
   source: ReelMediaSource;
   imagePrompt: string;
+  // K1–K5 (lib/bild/promptbyggare.ts): scenens svenska overlaytext + position i serien,
+  // så AI-genereringen kan härleda bevismening/plats/tid/personrotation precis som
+  // Studios suggest-image gör. imagePrompt (redan färdig engelsk motivbeskrivning från
+  // reel-manuset) skickas orört vidare som `scen` — se kommentaren i reels/media/route.ts.
+  overlayLine1?: string;
+  overlayLine2?: string;
+  sceneIndex?: number;
+  scenesTotal?: number;
   onValj: (url: string, source: ReelMediaSource) => void;
 }) {
   const [spar, setSpar] = useState<Spar>(null);
@@ -150,7 +162,10 @@ export default function ReelSceneMedia({
       const r = await fetch("/api/studio/reels/media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "ai", prompt: imagePrompt, exactText: aiText.trim() }),
+        body: JSON.stringify({
+          action: "ai", prompt: imagePrompt, exactText: aiText.trim(),
+          overlayLine1, overlayLine2, sceneIndex, scenesTotal,
+        }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Kunde inte skapa bilden");

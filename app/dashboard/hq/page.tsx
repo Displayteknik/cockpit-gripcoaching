@@ -100,6 +100,12 @@ interface Data {
   fasta: FastRad[];
   kostnadPerBolag: { bolag: string; perValuta: { valuta: string; summa: number }[]; saknarBelopp: number }[];
   aiPerKund: { kund: string; intakt: number; aiKostnad: number }[];
+  // BETAL-1 DEL 7 (HELG-1, 2026-08-21): läsande brygga, siffrorna kommer ur billing_*.
+  cockpitMrr: {
+    mrrKr: number; antalAktivaAbonnemang: number;
+    perStatus: { aktiv: number; forsenad: number; paminnelser: number; sparrad: number };
+    stripeKopplat: boolean;
+  };
   tasks: TaskRad[];
   synk: { senastSynkad: string | null; ok: boolean; fel: string | null; locationId: string | null; utanforUrvalet: number };
 }
@@ -346,6 +352,31 @@ export default function HqPage() {
                 Lägg till
               </button>
             </div>
+          </section>
+
+          {/* ── Cockpit / MySales Pro: BETAL-1 DEL 7-bryggan (HELG-1, 2026-08-21) ──
+              Läsande brygga mot billing_subscriptions/billing_status — en tredje
+              intäktsström, skild från Grips klient-MRR och DT:s pipeline. Inget Stripe-
+              konto är kopplat än (ingen nyckel finns), så alla tal är sant noll idag —
+              det är verkligheten, inte ett trasigt läge. */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-xl font-semibold text-gray-900">Cockpit (MySales Pro)</h2>
+              {!data.cockpitMrr.stripeKopplat && (
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                  Inget Stripe-konto kopplat än
+                </span>
+              )}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatTile label="MRR ex moms" value={data.cockpitMrr.mrrKr} sub={kr(data.cockpitMrr.mrrKr)} icon={TrendingUp} tone="emerald" i={0} />
+              <StatTile label="Aktiva abonnemang" value={data.cockpitMrr.antalAktivaAbonnemang} sub={`${data.cockpitMrr.perStatus.aktiv} betalande`} icon={Users} tone="blue" i={1} />
+              <StatTile label="Försenade" value={data.cockpitMrr.perStatus.forsenad + data.cockpitMrr.perStatus.paminnelser} sub="misslyckad debitering eller påminnelse" icon={AlertTriangle} tone="amber" i={2} />
+              <StatTile label="Spärrade" value={data.cockpitMrr.perStatus.sparrad} sub="bara betalsidan nåbar" icon={Wallet} tone="slate" i={3} />
+            </div>
+            <a href="/dashboard/betalning" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900">
+              Hantera abonnemang och Stripe-koppling <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </section>
 
           {/* ── Grip: MRR-motorn ─────────────────────────────────────────── */}

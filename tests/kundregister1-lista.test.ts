@@ -140,8 +140,14 @@ describe("KUNDREGISTER-1 · sök, filter och koppling", () => {
     expect(route).toContain("[r.namn, r.foretag, r.epost, r.telefon]");
   });
 
-  it("taggfiltret går på databasen, inte i minnet", () => {
-    expect(route).toContain('fraga.contains("taggar", [tagg])');
+  it("DEL 4-tillägget (21/8): tagg- och källfiltret är flerval (OR), körs i minnet på samma dataset sökningen redan hämtat", () => {
+    // Ändrat med flit från ett DB-nivå .contains() för ETT värde till flerval. Ingen
+    // ny kostnad: sökningen läste redan HELA tenantens mirror in i minnet (samma skäl
+    // som förut — en OR-fråga över fyra textkolumner plus en array-kolumn med
+    // användarens fritext är just den sortens sträng-hopfogning som blir ett
+    // injektionshål), så tagg/källa-filtret kör på exakt samma redan hämtade data.
+    expect(route).toContain("matcharTaggar((r.taggar || []).map((t) => t.toLowerCase()), valdaTaggar)");
+    expect(route).toContain("matcharKalla(r.kalla || \"\", valdaKallor)");
   });
 
   it("taggarna räknas ur det tenanten faktiskt har", () => {
@@ -186,7 +192,8 @@ describe("KUNDREGISTER-1 · sidorna finns och går att hitta", () => {
     expect(layout).toContain('kundHref: "/k/kunder"');
   });
 
-  it("kundvyn är modul-grindad som övriga kundytor", () => {
-    expect(las("app/k/kunder/page.tsx")).toContain('requireCustomerFeature("dm")');
+  it("DEL 4-tillägget (21/8): kundvyn har en EGEN entitlement, styrd pilot i stället för att åka på DM-modulen", () => {
+    expect(las("app/k/kunder/page.tsx")).toContain('requireCustomerFeature("kundregister")');
+    expect(las("app/k/kunder/page.tsx")).not.toContain('requireCustomerFeature("dm")');
   });
 });
