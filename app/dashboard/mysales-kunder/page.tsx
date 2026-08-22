@@ -9,6 +9,9 @@ interface CoachUser {
   display_name: string | null;
   brand: string | null;
   brand_color: string | null;
+  /** Fallback-namn slaget mot Cockpits clients-tabell — bara när pionjären själv
+   * inte fyllt i display_name/brand i Coach → Inställningar. Skriver aldrig över. */
+  client_name: string | null;
   ghl_location_id: string | null;
   ghl_connected: boolean;
   ghl_pipeline_name: string | null;
@@ -64,10 +67,14 @@ export default function MySalesKunderPage() {
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
+      // Demo-konton döljs som standard i "Alla" — de är riktig testinfrastruktur,
+      // inte skräp att radera, men ska inte skymma de riktiga pionjärerna. Klicka
+      // "Demo"-kortet för att se dem, precis som förut.
+      if (filter === "all" && u.status === "demo") return false;
       if (filter !== "all" && u.status !== filter) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
-        const hay = `${u.display_name || ""} ${u.brand || ""} ${u.id} ${u.ghl_location_id || ""}`.toLowerCase();
+        const hay = `${u.display_name || ""} ${u.brand || ""} ${u.client_name || ""} ${u.id} ${u.ghl_location_id || ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -141,7 +148,7 @@ export default function MySalesKunderPage() {
               )}
               {!loading && filtered.map((u) => {
                 const s = STATUS_STYLE[u.status];
-                const name = u.display_name || u.brand || u.id.slice(0, 8) + "…";
+                const name = u.display_name || u.brand || u.client_name || u.id.slice(0, 8) + "…";
                 return (
                   <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-4 py-3">
@@ -192,6 +199,8 @@ export default function MySalesKunderPage() {
         Datakälla: <code className="bg-gray-100 px-1.5 py-0.5 rounded">coach_users</code> + <code className="bg-gray-100 px-1.5 py-0.5 rounded">lobby_contacts</code>
         <span className="text-gray-400">·</span>
         Identitet (namn, brand, färg) sätts av varje pionjär i Coach → Inställningar.
+        Har pionjären inte fyllt i något visas Cockpits eget kundnamn i stället, om id:t
+        matchar en känd kund. Demo-konton döljs i "Alla" — klicka "Demo" för att se dem.
       </div>
     </div>
   );

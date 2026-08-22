@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +10,11 @@ export const dynamic = "force-dynamic";
  * med deras identitet, GHL-anslutning, aktivitetsräkningar.
  *
  * Används av /dashboard/mysales-kunder.
+ *
+ * ⚠ Saknade admin-grinden fram till nu (hittat vid pionjär-städningen 22/8) —
+ * vem som helst kunde hämta hela listan (GHL-location-id, pipeline-namn,
+ * kontaktantal per pionjär) utan inloggning. Rättat direkt, samma mönster som
+ * alla andra Byrån-endpoints.
  */
 
 interface PersonalOs {
@@ -29,7 +35,12 @@ interface CoachUserRow {
   updated_at: string | null;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const sb = supabaseServer();
 
   // Hämta alla coach_users
@@ -50,8 +61,20 @@ export async function GET() {
     lobbyByUser.set(row.user_id, (lobbyByUser.get(row.user_id) || 0) + 1);
   });
 
+  // Namn-fallback: en pionjär som inte fyllt i namn/brand i Coach → Inställningar
+  // visade förut bara sitt eget id ("c6862313…") — otydligt för Håkan i Cockpit,
+  // trots att det ofta ÄR en känd Cockpit-kund (samma id som clients.id, delade
+  // vid provisionering). Läser BARA in namnet som fallback, skriver aldrig över
+  // pionjärens egen identitet — "Identitet sätts av varje pionjär" gäller fortfarande.
+  const users_ = (users as CoachUserRow[] | null) || [];
+  const clientIds = Array.from(new Set(users_.map((u) => u.id).filter((id) => UUID_RE.test(id))));
+  const { data: clients } = clientIds.length
+    ? await sb.from("clients").select("id, name").in("id", clientIds)
+    : { data: [] as { id: string; name: string }[] };
+  const clientNamnPerId = new Map((clients ?? []).map((c) => [c.id, c.name]));
+
   // Bygg respons med beräknade fält
-  const result = (users as CoachUserRow[] | null || []).map((u) => {
+  const result = users_.map((u) => {
     const pos = u.personal_os || {};
     const hasGhl = !!u.ghl_location_id && !!u.ghl_api_token;
     const isDemo = u.id.startsWith("demo-") || u.ghl_location_id?.startsWith("demo-");
@@ -73,6 +96,7 @@ export async function GET() {
       display_name: pos.display_name || null,
       brand: pos.brand || null,
       brand_color: pos.brand_color || null,
+      client_name: clientNamnPerId.get(u.id) || null,
       ghl_location_id: u.ghl_location_id,
       ghl_connected: hasGhl,
       ghl_pipeline_name: u.ghl_pipeline_name || null,
