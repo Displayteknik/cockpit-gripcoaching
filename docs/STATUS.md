@@ -2430,12 +2430,40 @@ ingen i just detta urval ligger i riskzonen är inte samma sak som att ingen gö
 det på en sida som aldrig körts genom verktyget. Läs det som "lågt observerat
 akutläge", inte "garanterat noll påverkan".
 
-**Håkans preliminära svar (21/8, INTE genomfört — slutgiltigt beslut efter helgen):**
-ja, en för KORT titel ska också kosta i en framtida gradvis skala. Motivering: en
-titel på 15 tecken slösar bort utrymmet lika mycket som en på 80 tecken spränger
-det — samma princip åt båda hållen, med ett neutralt band i mitten där ingen av
-ramperna gör något. Det här är en NY regel (inget kortstraff finns alls idag),
-inte bara en mjukare variant av dagens 65-tecknersgräns. Ingen kod byggd på detta.
+**Håkans SLUTGILTIGA specifikation (21/8, sent — fortfarande BESLUT, INTE byggorder,
+ingen kod skriven).** Svar på de tre öppna frågorna plus två tillägg:
+
+1. **Titel:** neutral zon **30–65 tecken** (inget straff). Övre gränsen ligger AVSIKTLIGT
+   kvar på dagens 65 — inte en ny siffra. Motivering (Håkans egen): det gör införandet
+   nästan churn-fritt, eftersom alla sidor som redan är godkända (≤65 tecken) förblir
+   exakt lika godkända. Enda förändringen är UTANFÖR zonen: en titel strax över 65 får
+   mjukare straff än dagens flata -4, en titel långt över får hårdare (upp mot -8). Under
+   30 tecken är helt NY bestraffning (fanns inte alls förut) — det ÄR en poängförändring
+   för de kunder det gäller, och det är avsiktligt (hela poängen med tillägget).
+2. **Meta description:** samma princip. Neutral zon **70–170 tecken**, övre gräns kvar på
+   170 av samma churn-skäl. **Arkitekturkrav:** bygg EN generell, konfigurerbar
+   rampfunktion (neutral zon + gradvis ramp åt båda håll, parametrar: undre gräns, övre
+   gräns, maxstraff) — INTE två fältspecifika implementationer för titel och meta.
+   Nästa mätvärde som behöver en ramp (H1-längd, bildantal, vad som helst) ska kunna
+   kopplas in med bara konfigparametrar, ingen ny kod. Samma princip som
+   `extraheraRenderMedvetet()` i KALIBRERING-2 punkt 3: en delad, generell lösning
+   istället för punktlagningar.
+3. **Ordantal (SEO 300 / AEO 600):** bekräftat, **bara nedåt**. Ingen övre gräns någonsin
+   — mer text är aldrig ett fel i sig.
+
+**Tillägg A — "saknas"-regler är EGNA, inte del av rampen.** Gäller alla fält, inte bara
+titel: "titel saknas helt" (-15) rörs inte av rampen, och samma princip gäller
+motsvarande saknas-regler för meta och framtida fält. Ramper appliceras BARA på
+ifyllda värden.
+
+**Tillägg B — DoD innan skarpt läge, obligatorisk:** när rampen väl byggs (efter
+Håkans go), kör om ALLA sparade sid-analyser (dagens 13 plus vad som tillkommit) och
+redovisa en tabell: exakt vilken kund, vilket håll poängen flyttar, och hur mycket —
+INNAN funktionen slås på skarpt. Håkans motivering: han ska kunna förklara varje
+poängflytt för en kund som frågar varför poängen ändrades.
+
+**Fortfarande ett beslut, inte en byggorder.** Nästa steg är Håkans go att bygga —
+ingen kod ska skrivas förrän dess.
 
 ---
 
@@ -2471,9 +2499,10 @@ skrivet, ingen kod, väntar Håkans beslut efter helgen (se KALIBRERING-2-sektio
 **Väntar på Håkan innan det går vidare:**
 1. ~~**DEL 2:** granska den omkörda DT-rapporten mot kontrollprotokollet.~~ **GODKÄND
    21/8** — Håkan granskade en renderad version (Cockpits befintliga rapportmall, inte
-   den råa markdown-filen) och var "supernöjd med rapporten". Tonfrågan stängd. Kvar:
-   pricing_notes-beslutet (fylla i fältet på `/dashboard/profil` eller sänka kravet i
-   protokollet) — inte uttryckligen besvarat, fråga honom separat om det behövs.
+   den råa markdown-filen) och var "supernöjd med rapporten". Tonfrågan stängd.
+   ~~pricing_notes-beslutet~~ **AVSKRIVET på Håkans instruktion** ("strunta i pris
+   notes") — kravet i kontrollprotokollet sänks, inget stickprovspris krävs. Ingen
+   åtgärd kvar.
 2. ~~**DEL 7:** Stripe-koppling + priser.~~ **HELT KLAR 21/8 kväll** — testnyckel +
    webhook kopplade, "Kopplingen fungerar" bekräftat. Alla fyra priser verifierat
    skapade i Stripe (`/dashboard/betalning` → Planer och priser): MySales 700 kr,
@@ -2486,11 +2515,13 @@ skrivet, ingen kod, väntar Håkans beslut efter helgen (se KALIBRERING-2-sektio
 3. **DEL 8:** mejldelen av saldolarmet är oprövad i skarp drift (RESEND_API_KEY saknas
    lokalt) — bevisas automatiskt av morgondagens cron (06:30) eller genom att köra om
    skriptet efter deploy.
-4. **Fyll på 46elks och fal.ai** — båda under sina trösklar just nu (48 kr resp. 100,5 kr).
-5. **Trappstegsfunktionen:** ditt beslut efter helgen — se beslutsunderlaget i
-   KALIBRERING-2-sektionen ovan (förslag på gradvis skala + vilka kunder som skulle
-   röra sig, mätt på riktig data). Öppen delfråga: ska en för KORT titel också
-   straffas, eller bara en för lång?
+4. ~~**Fyll på 46elks och fal.ai.**~~ **46elks KLART** — Håkan fyllde på, verifierat
+   direkt mot 46elks live API (förbi timmes-cachen): 147,64 SEK, upp från 48 kr.
+   Fal.ai visade redan "OK" i `/dashboard/ekonomi`, ingen påfyllning behövdes där.
+5. ~~**Trappstegsfunktionen:** beslut.~~ **SPECIFIKATION KLAR 21/8 sent, väntar
+   fortfarande Håkans "go" att bygga** — fullständigt svar på alla tre frågor plus
+   två tillägg (A: saknas-regler egna, B: obligatorisk före/efter-tabell som DoD)
+   inskrivet i KALIBRERING-2-sektionen ovan. Inget byggt.
 6. **Nya fynd, ej fixade, köas efter helgen:** dubbel AI-promptomgång i ImageStudios
    Imagen-flik (DEL 3), meny1-zoner.test.ts fallerar sedan MENY-3 (19/8, orört av
    HELG-1), fyra av fem bildvägar fortfarande okopplade (Pinterest/YouTube/Threads/
