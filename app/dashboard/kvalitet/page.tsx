@@ -30,8 +30,26 @@ interface Rad {
   andelKasserade: number | null;
 }
 
+interface TenantRad {
+  tenantId: string | null;
+  tenantNamn: string | null;
+  syfte: string;
+  antal: number;
+  kasserade: number;
+  publicerade: number;
+  utanKostnadskoppling: number;
+  forsta: string | null;
+  senaste: string | null;
+  andelPublicerade: number | null;
+  andelKasserade: number | null;
+}
+
 interface Svar {
   rader: Rad[] | null;
+  tenantRader?: TenantRad[];
+  /** Satt när tenant-vyn inte gick att läsa (t.ex. migrationen inte körd än) — skiljs
+   * uttryckligen från "läst men tom", samma SAKNAS-princip som resten av sidan. */
+  tenantFel?: string | null;
   minForAndel: number;
   totalt: number;
   utanKostnadskoppling: number;
@@ -78,6 +96,23 @@ export default function KvalitetPage() {
           senaste: svar.rader!.filter((r) => r.promptVersion === v).map((r) => r.senaste ?? "").sort().reverse()[0] ?? "",
         }))
         .sort((a, b) => b.senaste.localeCompare(a.senaste))
+    : [];
+
+  // Gruppera per tenant så "vem skapar vad, hur mycket" går att läsa i en blick.
+  // Nyckeln är tenantId (inte namnet) — två tenants utan matchande clients-namn
+  // ska aldrig slås ihop bara för att de båda visar "Okänd".
+  const tenantGrupper = svar?.tenantRader
+    ? Array.from(new Set(svar.tenantRader.map((r) => r.tenantId ?? "—ingen—")))
+        .map((nyckel) => {
+          const rader = svar.tenantRader!.filter((r) => (r.tenantId ?? "—ingen—") === nyckel);
+          return {
+            tenantId: nyckel === "—ingen—" ? null : nyckel,
+            namn: rader[0]?.tenantNamn ?? null,
+            rader,
+            totalt: rader.reduce((s, r) => s + r.antal, 0),
+          };
+        })
+        .sort((a, b) => b.totalt - a.totalt)
     : [];
 
   return (
@@ -146,6 +181,84 @@ export default function KvalitetPage() {
               </div>
             </div>
           )}
+
+          <div>
+            <h2 className="font-display font-bold text-gray-900 text-lg mb-1">Per tenant</h2>
+            <p className="text-sm text-gray-500 mb-3">Vilken kund som skapar vad, och hur mycket.</p>
+
+            {svar.tenantFel && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                <strong>Kunde inte läsa tenant-datan.</strong> {svar.tenantFel}
+                <div className="mt-1 text-red-700">
+                  Troligen är migrationen <code className="bg-red-100 px-1 rounded">generation_per_tenant.sql</code> inte
+                  körd än — inte samma sak som att ingen tenant genererat något.
+                </div>
+              </div>
+            )}
+
+            {!svar.tenantFel && tenantGrupper.length === 0 && (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                Ingen tenant-genereringar loggade ännu.
+              </div>
+            )}
+
+            {!svar.tenantFel && tenantGrupper.length > 0 && (
+              <div className="space-y-3">
+                {tenantGrupper.map(({ tenantId, namn, rader, totalt }) => (
+                  <div key={tenantId ?? "—ingen—"} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-100 flex items-baseline justify-between gap-3">
+                      <h3 className="font-semibold text-gray-900">
+                        {tenantId
+                          ? namn ?? <span className="text-gray-400 font-mono text-sm">{tenantId.slice(0, 8)}… (okänd tenant)</span>
+                          : <span className="text-gray-500">Byråflöde (ingen tenant)</span>}
+                      </h3>
+                      <span className="text-xs text-gray-500">{totalt} genereringar totalt</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                            <th className="px-5 py-2 font-medium">Typ av text</th>
+                            <th className="px-5 py-2 font-medium text-right">Gjorda</th>
+                            <th className="px-5 py-2 font-medium text-right">Kasserade</th>
+                            <th className="px-5 py-2 font-medium text-right">Blev inlägg</th>
+                            <th className="px-5 py-2 font-medium text-right">Utan kostnad</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rader.map((r) => (
+                            <tr key={`${tenantId ?? "—ingen—"}-${r.syfte}`} className="border-b border-gray-50 last:border-0">
+                              <td className="px-5 py-2.5 text-gray-900">{r.syfte}</td>
+                              <td className="px-5 py-2.5 text-right tabular-nums text-gray-900">{r.antal}</td>
+                              <td className="px-5 py-2.5 text-right tabular-nums text-gray-600">
+                                {r.kasserade}
+                                <span className="text-xs text-gray-400 ml-1.5">
+                                  {andelText(r.andelKasserade, r.antal, svar.minForAndel)}
+                                </span>
+                              </td>
+                              <td className="px-5 py-2.5 text-right tabular-nums text-gray-600">
+                                {r.publicerade}
+                                <span className="text-xs text-gray-400 ml-1.5">
+                                  {andelText(r.andelPublicerade, r.antal, svar.minForAndel)}
+                                </span>
+                              </td>
+                              <td className={`px-5 py-2.5 text-right tabular-nums ${r.utanKostnadskoppling > 0 ? "text-amber-700" : "text-gray-400"}`}>
+                                {r.utanKostnadskoppling}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h2 className="font-display font-bold text-gray-900 text-lg mb-3">Per regeluppsättning</h2>
+          </div>
 
           {versioner.map(({ version, rader }) => (
             <div key={version} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
