@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { repurposeToSocial } from "@/lib/studio/blog";
 import { getKitDirectives } from "@/lib/studio/kit";
 import { supabaseService } from "@/lib/supabase-admin";
@@ -9,7 +10,10 @@ export const maxDuration = 60;
 
 // POST /api/studio/blog/repurpose — { title, articleText, topic }
 // Gör om artikeln till 3 sociala affisch-inlägg → sparas i studio_posts (biblioteket).
+// ⚠ Säkerhetsfynd 22/8: saknade auth-grind helt — se lib/client-context.ts::getActiveClientId().
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const client = await getActiveClient();
     const clientId = await resolveClientId();

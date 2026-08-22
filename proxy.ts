@@ -11,7 +11,7 @@ const COCKPIT_HOSTS = ["cockpit.gripcoaching.se"];
 // Adminytan (sid-navigering). Skyddas av HMAC-signerad admin_session-cookie.
 // OBS: detta skyddar sidor — route handlers/Server Actions måste härdas separat
 // (se Next-docs: proxy täcker inte Server Functions). Det är steg 2.
-function isAdminArea(path: string): boolean {
+export function isAdminArea(path: string): boolean {
   return (
     path === "/dashboard" ||
     path.startsWith("/dashboard/") ||
@@ -25,7 +25,7 @@ function isAdminArea(path: string): boolean {
 const pfx = (path: string, p: string) => path === p || path.startsWith(p + "/");
 
 // Avsiktligt publika (självskyddande/scopade — verifierat i granskning).
-function isPublicApi(path: string): boolean {
+export function isPublicApi(path: string): boolean {
   if (path === "/api/admin/login") return true;            // själva inloggningen
   if (path === "/api/google/callback") return true;        // OAuth-retur (Google, ingen cookie)
   if (path === "/api/crm/oauth/callback") return true;     // OAuth-retur (GHL-appen, ingen cookie)
@@ -46,7 +46,7 @@ function isPublicApi(path: string): boolean {
 
 // Cron-rutter: Vercel Cron autentiserar via CRON_SECRET INNE i routen (fail-closed efter steg 3).
 // proxy:n får inte blockera dem (de har ingen admin-cookie).
-const CRON_PATHS = new Set([
+export const CRON_PATHS = new Set([
   "/api/agents/night-iterate",
   "/api/blog/cron",
   "/api/fordon/sync-cron",
@@ -60,7 +60,7 @@ const CRON_PATHS = new Set([
 
 // Rutter som BÅDE admin och kundportalen (/k) använder. Grindas i routen med
 // requireAdminOrCustomer() (admin- ELLER kund-session). proxy:n släpper igenom.
-function isCustomerServedApi(path: string): boolean {
+export function isCustomerServedApi(path: string): boolean {
   if (path.startsWith("/api/customer/")) return true;
   if (path.startsWith("/api/k/")) return true;   // kund-portalens egna endpoints (grindas i routen via kund-session)
   // Brand-profil-modulen (profil + kunskapsbank + intake-agent) — kunden fyller i sin egen
@@ -113,7 +113,7 @@ function isCustomerServedApi(path: string): boolean {
 }
 
 // True om routen ska admin-grindas av proxy:n.
-function isGuardedApi(path: string): boolean {
+export function isGuardedApi(path: string): boolean {
   if (!path.startsWith("/api/")) return false;
   if (isPublicApi(path)) return false;
   if (CRON_PATHS.has(path)) return false;

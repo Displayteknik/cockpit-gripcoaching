@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveClient, resolveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { generateBlogArticle, buildFaqJsonLd, type InternalLink } from "@/lib/studio/blog";
 import { getGhlConfig, ghlBlogMeta, ghlListBlogPosts, resolveBlogPostBase } from "@/lib/studio/ghl";
 import { generateImagen, searchStockPhotos } from "@/lib/images";
@@ -14,7 +15,10 @@ const BUCKET = "studio-images";
 
 // POST /api/studio/blog/generate — { topic, wordCount, withImage } →
 // stark SEO-artikel med interna länkar (klientens egna inlägg) + omslagsbild + FAQ-schema.
+// ⚠ Säkerhetsfynd 22/8: saknade auth-grind helt — se lib/client-context.ts::getActiveClientId().
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const client = await getActiveClient();
     const clientId = await resolveClientId();

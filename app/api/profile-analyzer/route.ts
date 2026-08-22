@@ -3,6 +3,7 @@ import { generateJSON } from "@/lib/gemini";
 import { getKnowledge } from "@/lib/knowledge";
 import { publicProfileSnapshot } from "@/lib/instagram";
 import { getActiveClient } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -18,7 +19,11 @@ interface Analysis {
   hooks_to_test: string[];
 }
 
+// ⚠ Säkerhetsfynd 22/8: saknade auth-grind helt — kostade riktiga Gemini-anrop per
+// oautentiserat anrop, ett missbruksmål utan grinden.
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   const { handle, recent_posts_text } = await req.json();
   if (!handle) return NextResponse.json({ error: "handle krävs" }, { status: 400 });
 

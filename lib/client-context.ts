@@ -59,8 +59,17 @@ export async function getActiveClientId(): Promise<string> {
       if (cs) return cs.client_id;
     }
 
-    // 3. Varken admin eller kund (publik/ogiltig kontext) → default.
-    return c.get(COOKIE_NAME)?.value || DEFAULT_CLIENT_ID;
+    // 3. Varken admin eller kund (publik/ogiltig kontext) → ALLTID default, aldrig
+    //    cookien. ⚠ SÄKERHETSFYND 22/8: den här grenen läste tidigare active_client_id
+    //    -cookien även utan en verifierad session. Cookien sätts server-side ENDAST av
+    //    tre redan admin-grindade rutter (admin/login, clients/switch, offert/lead) —
+    //    men httpOnly hindrar bara JS i en riktig webbläsare, inte en anropare som
+    //    skickar en egenhändigt satt cookie direkt i en rå HTTP-request. En oautentiserad
+    //    anropare kunde alltså sätta valfritt client_id och nå/ändra en annan tenants data
+    //    via rutter som litar på resolveClientId()/getActiveClientId() som enda spärr
+    //    (bevisat live mot /api/studio/posts/[id] DELETE, se STATUS.md). Grenen som körs
+    //    UTAN verifierad session får därför aldrig lita på en klientstyrd cookie.
+    return DEFAULT_CLIENT_ID;
   } catch {
     return DEFAULT_CLIENT_ID;
   }

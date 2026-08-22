@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
 // POST /api/studio/blog/publish-native — sparar bloggutkast i Cockpit-native (hm_blog, published:false).
 // För klienter vars blogg ligger på Cockpit-sajten (t.ex. HM Motor) i stället för GHL.
+// ⚠ Säkerhetsfynd 22/8: saknade auth-grind helt — se lib/client-context.ts::getActiveClientId().
 export async function POST(req: NextRequest) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const clientId = await resolveClientId();
     const b = await req.json().catch(() => ({}));

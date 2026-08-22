@@ -2467,6 +2467,72 @@ ingen kod ska skrivas förrän dess.
 
 ---
 
+## Säkerhetsgenomgång, samtliga API-rutter — 22/8
+
+**Rättelse först.** Tidigare i sessionen påstod jag att `/api/cockpit/coach-users`
+saknade skydd helt. Det stämde inte — jag såg bara att ROUTEN själv saknade
+`requireAdmin()` och drog slutsatsen utan att testa ett riktigt anrop. Ett skarpt
+`curl` mot produktionen visade att den redan gav **401 "ej inloggad"**, tack vare
+`proxy.ts`s centrala fail-closed-regel: **alla `/api/*`-rutter kräver admin-session
+som DEFAULT**, med tre uttryckliga undantagslistor (publika / cron / kund-betjänade).
+Mitt tillägg av `requireAdmin()` där var oskadlig extra härdning, inte en fix av ett
+verkligt hål. Håkan bad mig då bevisa systematiskt att det inte fanns fler —
+den granskningen hittade ett ÄKTA hål, allvarligare än den falska första rapporten.
+
+### Metod — testar mot koden själv, inte en avskrift
+
+`isPublicApi`, `isCustomerServedApi`, `CRON_PATHS` och `isGuardedApi` i `proxy.ts`
+exporterades (rent tillägg, ingen beteendeändring). Ett test
+(`tests/sakerhet-api-auth-audit.test.ts`) genomsöker `app/api/**/route.ts` på riktigt
+(283 filer just nu, självuppdaterande — nya rutter fångas automatiskt) och kör VARJE
+path genom proxy:ns egen `proxy()`-funktion med ett overifierat anrop (ingen cookie).
+
+| Kategori | Antal | Skyddsmekanism | Granskat |
+|---|---|---|---|
+| **Admin-grindad (default)** | 155 | `proxy.ts` fail-closed, 401 innan routen ens nås | Automatiskt, alla 155 bevisat 401 |
+| **Kund-betjänad** (proxy släpper igenom, routen skyddar sig själv) | 107 | `requireAdminOrCustomer()` / `getCustomerSession()` i routen | Alla 107 kontrollerade för auth-anrop — **7 saknade det helt, se fyndet nedan** |
+| **Cron** (Vercel anropar utan cookie) | 9 | `CRON_SECRET` i header, kollad i routen, fail-closed | Alla 9 läst manuellt — samtliga korrekta |
+| **Avsiktligt publika** | 12 | Självskyddande (webhook-signatur, OAuth-retur, honeypot, tokenlänk) eller genuint öppna (spårningspixel, leadformulär) | Alla 12 läst manuellt — rimliga |
+
+### Det verkliga fyndet: 7 kund-betjänade rutter saknade auth helt
+
+`resolveClientId()`/`getActiveClientId()` (`lib/client-context.ts`) har en gren för
+"ingen admin-session, ingen kund-session" som **litade på `active_client_id`-cookien
+rakt av**. Cookien sätts server-side ENDAST via tre redan admin-grindade rutter — men
+httpOnly hindrar bara JavaScript i en riktig webbläsare, inte en anropare som skickar
+samma cookienamn med ett eget valt värde i en rå HTTP-request utanför webbläsaren
+helt. Sju rutter litade UTESLUTANDE på den här funktionen för både tenant-identitet
+OCH behörighet, utan något eget auth-anrop:
+
+- `app/api/profile-analyzer/route.ts`
+- `app/api/studio/blog/generate/route.ts`
+- `app/api/studio/blog/meta/route.ts`
+- `app/api/studio/blog/publish/route.ts`
+- `app/api/studio/blog/publish-native/route.ts`
+- `app/api/studio/blog/repurpose/route.ts`
+- `app/api/studio/posts/[id]/route.ts` (DELETE)
+
+**Bevisat live, säkert** (inget riktigt data rördes — ett påhittat post-id som inte
+finns): `curl -X DELETE` med bara en självsatt `active_client_id`-cookie, INGEN
+inloggning alls, mot `/api/studio/posts/[id]` gav `200 {"ok":true}` — DELETE-frågan
+kördes mot databasen. Med ett riktigt post-id och ett gissat/känt tenant-id hade en
+oautentiserad anropare kunnat radera vilken kunds sparade Studio-skapelser som helst,
+eller skapa/publicera bloggutkast i deras GHL-konto.
+
+**Fixat i två lager:**
+1. **Grundorsaken** — `getActiveClientId()`s oautentiserade gren litar aldrig mer på
+   cookien, returnerar alltid `DEFAULT_CLIENT_ID` (HM Motor) om ingen session finns.
+2. **De sju rutterna** — fick alla `requireAdminOrCustomer()`, exakt samma mönster
+   som redan användes korrekt i de andra 100 kund-betjänade rutterna.
+
+**Verifiering:** 14 nya tester (`sakerhet-api-auth-audit.test.ts` +
+`client-context-cookie-fix.test.ts`), inklusive det omvända testet Håkan bad om —
+en oautentiserad anropare får 401 på samtliga 155 admin-grindade rutter, körd mot
+proxy:ns egen funktion, inte en handskriven lista. tsc rent, hela sviten 1683/1684
+(samma kända orörda MENY-3-fel).
+
+---
+
 ## SESSIONSSLUT 2026-08-21, kväll — sparat för ny session
 
 **Committat:** `6878bbf` (45 filer) + `7568507` (DEL 9) + `8f6b52c` (KALIBRERING-2).

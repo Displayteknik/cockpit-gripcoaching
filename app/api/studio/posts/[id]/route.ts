@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveClientId } from "@/lib/client-context";
+import { requireAdminOrCustomer } from "@/lib/api-auth";
 import { supabaseService } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
 // DELETE /api/studio/posts/[id] — ta bort en sparad skapelse (tenant-låst)
+// ⚠ Säkerhetsfynd 22/8: saknade auth-grind helt, tenant-lås ensamt räckte inte —
+// se lib/client-context.ts::getActiveClientId() för grundorsaken.
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdminOrCustomer();
+  if (denied) return denied;
   try {
     const clientId = await resolveClientId();
     const { id } = await params;
