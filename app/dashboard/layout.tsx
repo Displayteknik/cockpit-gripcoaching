@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3, Tag, ShieldCheck } from "lucide-react";
+import { CalendarDays, Car, Palette, Image as ImageIcon, FileText, LayoutDashboard, ExternalLink, Layers, Sparkles, BookOpen, Home, Target, HelpCircle, TrendingUp, Settings, Users, MessageSquare, FileBarChart, Calendar, Activity, Search, Menu, X, Mail, Bot, Wrench, Rocket, Command, Compass, LogOut, Package, Film, Coins, Radio, CreditCard, BarChart3, Tag, ShieldCheck, Eye } from "lucide-react";
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -22,6 +22,14 @@ interface NavItem {
   match?: string[];
   /** Kundens motsvarande yta i portalen. Satt = kunden når samma innehåll själv. */
   kundHref?: string;
+  /**
+   * MENY-4 (DEL 0, Håkans krav 22/8): platform_modules-id:t den här sidan speglar.
+   * Satt tillsammans med `kundHref` — samma modul, admin- och kundsidan är bara
+   * två vyer av den. Driver "Kundmoduler"-området: filtreras mot vald tenants
+   * FAKTISKA entitlements (samma data som bygger kundens egen /k-meny), så raden
+   * bara syns när modulen är PÅ för den kunden. Se byggKundmoduler nedan.
+   */
+  modul?: string;
 }
 interface NavSection { label: string; items: NavItem[]; zon?: ZonId }
 
@@ -192,6 +200,32 @@ function byggOmraden(sections: NavSection[]): Omrade[] {
   return omraden.filter((o) => o.items.length > 0);
 }
 
+/**
+ * MENY-4 / DEL 0 (Håkans krav 22/8) — "Kundmoduler": egen rad i vänstermenyn som
+ * visar EXAKT de sidor vald kund faktiskt ser i sin egen portal (/k), inget mer.
+ *
+ * Bakgrunden: han letade efter Fokus idag inloggad som DT och hittade den inte —
+ * den fanns bara som flik under "Sälj", ingen egen rad (docs/MENY-KARTA.md, MENY-3).
+ * Kundportalen visade sig redan göra rätt (CustomerNav.tsx, en rad per PÅ-modul) —
+ * gapet var bara i admin-Cockpiten. Det här området återanvänder SAMMA entitlements
+ * (`getEffectiveModuleIds`, samma data som bygger kundens riktiga meny) i stället för
+ * att lägga till en ny sanningskälla.
+ *
+ * `effectiveModules` = null medan hämtningen pågår → området göms tills vi vet
+ * (annars blinkar det till med fel innehåll). En items-lista med ingen `modul` satt
+ * matchar aldrig — bara sidor som EXPLICIT är taggade (samma platform_modules-id
+ * som `kundHref`-syskonet) räknas.
+ *
+ * Känd lucka: "besokare" och "credits" har ingen adminsida att peka på (bara
+ * kundportalen visar dem) — de kan därför inte listas här förrän en sådan sida finns.
+ */
+function byggKundmoduler(sections: NavSection[], effectiveModules: string[] | null): Omrade | null {
+  if (!effectiveModules) return null;
+  const items = sections.flatMap((s) => s.items).filter((i) => i.modul && effectiveModules.includes(i.modul));
+  if (items.length === 0) return null;
+  return { id: "kundmoduler", label: "Kundmoduler", icon: Eye, items };
+}
+
 function buildNavSections(resourceModule: string): NavSection[] {
   const resourceItems: NavItem[] =
     resourceModule === "art"
@@ -302,34 +336,34 @@ function buildNavSections(resourceModule: string): NavSection[] {
       zon: "kundens",
       label: "Skapa och publicera",
       items: [
-        { href: "/dashboard/brand-kit", label: "Grafisk profil", icon: Palette, kundHref: "/k/brand-kit" },
-        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon, match: ["/dashboard/studio", "/dashboard/skapa"], kundHref: "/k/studio" },
-        { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText, kundHref: "/k/blogg" },
-        { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar, kundHref: "/k/kalender" },
-        { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon, kundHref: "/k/linkedin" },
-        { href: "/dashboard/nyhetsbrev", label: "Nyhetsbrev", icon: Mail, kundHref: "/k/nyhetsbrev" },
-        { href: "/dashboard/agents", label: "Idé-bank", icon: Bot, kundHref: "/k/ideer" },
+        { href: "/dashboard/brand-kit", label: "Grafisk profil", icon: Palette, kundHref: "/k/brand-kit", modul: "profil" },
+        { href: "/dashboard/studio", label: "Studio", icon: ImageIcon, match: ["/dashboard/studio", "/dashboard/skapa"], kundHref: "/k/studio", modul: "skapa" },
+        { href: "/dashboard/studio/blogg", label: "Blogg", icon: FileText, kundHref: "/k/blogg", modul: "blog" },
+        { href: "/dashboard/studio/kalender", label: "Kalender", icon: Calendar, kundHref: "/k/kalender", modul: "compass" },
+        { href: "/dashboard/linkedin", label: "LinkedIn", icon: LinkedinIcon, kundHref: "/k/linkedin", modul: "linkedin" },
+        { href: "/dashboard/nyhetsbrev", label: "Nyhetsbrev", icon: Mail, kundHref: "/k/nyhetsbrev", modul: "newsletter" },
+        { href: "/dashboard/agents", label: "Idé-bank", icon: Bot, kundHref: "/k/ideer", modul: "ideer" },
         // MENY-2 (Håkans krav 11/8): "inloggad som displayteknik i cockpit (admin) ser jag inte
         // dm pipelinen. vill ha den". DM och veckoplanen nåddes bara via flikraden i
         // components/dashboard/PostsTabs.tsx — alltså bara om man redan stod på en inläggssida.
         // Båda har en motsvarighet i kundportalen och hör därför i den här zonen.
-        { href: "/dashboard/dm", label: "DM & pipeline", icon: MessageSquare, kundHref: "/k/dm" },
+        { href: "/dashboard/dm", label: "DM & pipeline", icon: MessageSquare, kundHref: "/k/dm", modul: "dm" },
         // KUNDREGISTER-1: står bredvid DM med flit — det är samma människor, sedda från
         // två håll. Listan är alla kontakter i MySales, tavlan är de som har ett pågående
         // samtal. En sida som inte finns i menyn finns inte (MENY-2).
-        { href: "/dashboard/kunder", label: "Kunder", icon: Users, kundHref: "/k/kunder" },
-        { href: "/dashboard/veckoplan", label: "Veckoplan", icon: CalendarDays, kundHref: "/k/veckoplan" },
+        { href: "/dashboard/kunder", label: "Kunder", icon: Users, kundHref: "/k/kunder", modul: "kundregister" },
+        { href: "/dashboard/veckoplan", label: "Veckoplan", icon: CalendarDays, kundHref: "/k/veckoplan", modul: "veckoplan" },
       ],
     },
     {
       zon: "kundens",
       label: "Kundens dag",
       items: [
-        { href: "/dashboard/profil", label: "Brand-profil", icon: Target, kundHref: "/k/profil" },
-        { href: "/dashboard/fokus", label: "Fokus idag", icon: Target, kundHref: "/k/fokus" },
-        { href: "/dashboard/offert", label: "Offerter", icon: FileText, kundHref: "/k/offert" },
-        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp, kundHref: "/k/seo" },
-        { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass, kundHref: "/k/ikigai" },
+        { href: "/dashboard/profil", label: "Brand-profil", icon: Target, kundHref: "/k/profil", modul: "profil" },
+        { href: "/dashboard/fokus", label: "Fokus idag", icon: Target, kundHref: "/k/fokus", modul: "fokus" },
+        { href: "/dashboard/offert", label: "Offerter", icon: FileText, kundHref: "/k/offert", modul: "offert" },
+        { href: "/dashboard/seo", label: "SEO & AEO", icon: TrendingUp, kundHref: "/k/seo", modul: "seo" },
+        { href: "/dashboard/ikigai", label: "Ikigai-motor", icon: Compass, kundHref: "/k/ikigai", modul: "ikigai" },
       ],
     },
   ];
@@ -361,15 +395,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // (medvetet, "eget"-zonen) — men Håkan vill ändå att ingången göms när en annan
   // klient är vald, precis som Dagens drag. arDt styr om "hq"-området visas alls.
   const [arDt, setArDt] = useState(false);
+  // MENY-4: vald tenants faktiska entitlements (samma platform_modules-id:n som
+  // kundens egen /k-meny visas efter). null = ännu inte hämtat → Kundmoduler göms
+  // tills vi vet, i stället för att blinka till med förra klientens innehåll.
+  const [effectiveModules, setEffectiveModules] = useState<string[] | null>(null);
+  // Vilket område användaren senast KLICKADE i sidomenyn. Flera moduler (t.ex.
+  // Fokus idag) ligger i både sitt ursprungsområde ("Sälj") och i Kundmoduler —
+  // utan den här minns UI:t bara den sist besökta HREF:en, så flikraden hade
+  // hoppat till fel område så fort man klickade en delad sida.
+  const [pinnedOmradeId, setPinnedOmradeId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/clients/active")
+    fetch("/api/clients/active?modules=1")
       .then((r) => r.json())
       .then((c) => {
         if (c?.resource_module) setResourceModule(c.resource_module);
         if (c?.name) setKlientNamn(String(c.name));
         setScoped(!!c?.scoped);
         setArDt(c?.id === DT_CLIENT_ID);
+        setEffectiveModules(Array.isArray(c?.modules) ? c.modules : null);
       })
       .catch(() => {});
   }, []);
@@ -402,12 +446,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // MENY-3: sidomenyn visar OMRÅDEN, flikraden visar områdets sidor.
   // "hq" (Founder HQ) göms för alla andra klienter än DT — se läckage-fix 19/8 ovan.
-  const omraden = scoped
+  const basOmraden = scoped
     ? []
     : byggOmraden(navSections)
         .filter((o) => arDt || o.id !== "hq")
         .map((o) => (arDt ? o : { ...o, items: o.items.filter((i) => !DT_ENDAST_HREFS.includes(i.href)) }));
-  const aktivtOmrade = omraden.find((o) => o.items.some((i) => i.href === activeHref)) ?? null;
+  // MENY-4: Kundmoduler sist i listan — dess sidor finns redan i ett "äkta" område
+  // (Sälj/Skapa/…) och den listan ska vinna som standardval. Kundmoduler blir bara
+  // aktivt när man klickar dit själv (pinnedOmradeId nedan), inte som fallback.
+  const kundmoduler = scoped ? null : byggKundmoduler(navSections, effectiveModules);
+  const omraden = kundmoduler ? [...basOmraden, kundmoduler] : basOmraden;
+  const pinnad = pinnedOmradeId
+    ? omraden.find((o) => o.id === pinnedOmradeId && o.items.some((i) => i.href === activeHref))
+    : undefined;
+  const aktivtOmrade = pinnad ?? omraden.find((o) => o.items.some((i) => i.href === activeHref)) ?? null;
   const flikar = aktivtOmrade?.items ?? [];
 
   // Sätt browser-flikens titel (admin-yta ärver annars publika HM Motor-titeln)
@@ -464,7 +516,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link
                     key={o.id}
                     href={href}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={() => { setMobileOpen(false); setPinnedOmradeId(o.id); }}
                     aria-current={aktiv ? "page" : undefined}
                     className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
                       aktiv
