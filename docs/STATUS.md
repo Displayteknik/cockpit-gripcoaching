@@ -2450,8 +2450,8 @@ som de var vid sessionens start.
 **Klart och dokumenterat i tur och ordning:** DEL 0 (statusinventering), AKUT
 (GRIND_INFORD), DEL 2 (RAPPORT-1:s fjärde krav + ny DT-rapport), DEL 3 (bildvägar,
 K1-rutan, kapad CTA), DEL 4 (KUNDREGISTER-1-tillägget), DEL 5 (KANAL-2), DEL 6
-(KUNSKAP-1, redan klart, omvänt test tillagt), DEL 7 (BETAL-1, redan klart utom
-MRR-bryggan, blockerat på Stripe-konto), DEL 8 (KOSTNAD-2, saldolarm skarpt bevisat
+(KUNSKAP-1, redan klart, omvänt test tillagt), DEL 7 (BETAL-1, HELT klart 21/8
+kväll — Stripe kopplat och alla priser verifierade, se sessionsslut nedan), DEL 8 (KOSTNAD-2, saldolarm skarpt bevisat
 via sms), DEL 9 (KALIBRERING-1, read-only-granskning klar), KALIBRERING-2 (byggd på
 Håkans beslut samma dag — åtgärdslistans ärlighet + sortering, delad render-medveten
 extraktion, trappstegsbeslutsunderlag — se egen sektion ovan).
@@ -2474,13 +2474,15 @@ skrivet, ingen kod, väntar Håkans beslut efter helgen (se KALIBRERING-2-sektio
    den råa markdown-filen) och var "supernöjd med rapporten". Tonfrågan stängd. Kvar:
    pricing_notes-beslutet (fylla i fältet på `/dashboard/profil` eller sänka kravet i
    protokollet) — inte uttryckligen besvarat, fråga honom separat om det behövs.
-2. ~~**DEL 7:** Stripe-koppling.~~ **KLAR 21/8 kväll** — testnyckel + webhook kopplade,
-   "Kopplingen fungerar" bekräftat i Cockpit (`/dashboard/betalning` → Stripe-fliken).
-   **En verklig fälla på vägen:** Håkan klistrade först in `pk_test_...` (den publika
-   nyckeln) i fältet för hemlig nyckel — Stripe avvisade den tydligt ("cannot be made
-   with a publishable API key"), rättat till `sk_test_...`. Kvar innan betalkedjan är
-   helt skarp: klicka "Skapa saknade priser i Stripe" under fliken "Planer och priser"
-   (synkar 1990/2490/149 kr-priserna automatiskt) — inte gjort än, litet steg.
+2. ~~**DEL 7:** Stripe-koppling + priser.~~ **HELT KLAR 21/8 kväll** — testnyckel +
+   webhook kopplade, "Kopplingen fungerar" bekräftat. Alla fyra priser verifierat
+   skapade i Stripe (`/dashboard/betalning` → Planer och priser): MySales 700 kr,
+   MySales Pro 1990 kr, MySales Pro ordinarie 2490 kr, 100 tokens 149 kr — samtliga
+   taggade "Finns i Stripe". **En verklig fälla på vägen:** Håkan klistrade först in
+   `pk_test_...` (den publika nyckeln) i fältet för hemlig nyckel — Stripe avvisade
+   den tydligt ("cannot be made with a publishable API key"), rättat till
+   `sk_test_...`. DEL 7:s DoD ("hel kedja i testläge") kan nu köras skarpt när Håkan
+   vill — bara det manuella klicket kvar, ingen kod blockerar längre.
 3. **DEL 8:** mejldelen av saldolarmet är oprövad i skarp drift (RESEND_API_KEY saknas
    lokalt) — bevisas automatiskt av morgondagens cron (06:30) eller genom att köra om
    skriptet efter deploy.
