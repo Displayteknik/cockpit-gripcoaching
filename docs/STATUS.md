@@ -2106,6 +2106,15 @@ dem. **Ingen testpublicering gjord** mot GBP eller något annat nytt konto — d
 Håkans egna ja (redan noterat i den tidigare KANAL-2-utredningen), och DEL 5:s DoD testar
 SELEKTORN, inte en skarp publicering.
 
+**Tillägg 22/8 (Håkans beslut):** fail-closed är rätt, men en tyst gissning som aldrig
+verifieras är inte rätt — den första riktiga inkopplingen ska LOGGAS, inte bara passera.
+`app/api/studio/ghl-accounts/route.ts::loggaOverifieradePlattformar()` (exporterad, testad)
+körs efter varje `ghlListAccounts`-anrop: matchar ett kopplat kontos `platform`-sträng en av
+de fem overifierade kanalerna loggas det (`[kanal-anatomi] Overifierad plattformssträng
+bekräftad live: ...`) med tenant-id och exakt vilken kanal. Redan verifierade kanaler
+(ig/fb/li/google) och helt okända plattformssträngar loggas aldrig — bara nya bevis om de
+fem gissningarna är intressanta. 5 nya tester (`tests/kanal2-overifierad-loggning.test.ts`).
+
 **DoD, kört mot skarp data** (`scripts/kanal2-dod.mts`): Displaytekniks sex riktiga GHL-konton
 läst (google/location, facebook/page, instagram×2, linkedin×2, inget utgånget). `google` dyker
 upp i `synligaKanaler()` för DT. Ett omvänt test utan google-kontot i listan visar INTE google.
@@ -2588,10 +2597,17 @@ skrivet, ingen kod, väntar Håkans beslut efter helgen (se KALIBRERING-2-sektio
    fortfarande Håkans "go" att bygga** — fullständigt svar på alla tre frågor plus
    två tillägg (A: saknas-regler egna, B: obligatorisk före/efter-tabell som DoD)
    inskrivet i KALIBRERING-2-sektionen ovan. Inget byggt.
-6. **Nya fynd, ej fixade, köas efter helgen:** dubbel AI-promptomgång i ImageStudios
+6. ~~**KANAL-2, overifierade plattformssträngar.**~~ **Passiv väntan ersatt med
+   loggning 22/8** — fail-closed kvarstår (avsiktligt, Håkans beslut), men första
+   riktiga inkopplingen av tiktok/pinterest/youtube/threads/bluesky loggas nu
+   automatiskt i stället för att tyst passera. Inget mer att göra förrän en tenant
+   faktiskt kopplar in en av dem och loggen syns.
+7. ~~**API-säkerhetsgenomgång.**~~ **KLAR 22/8** — samtliga 283 rutter klassificerade
+   och testade. Ett verkligt fynd (7 rutter utan auth, grundorsak i
+   `getActiveClientId()`), fixat i två lager, 14 nya tester. Se egen sektion ovan.
+8. **Nya fynd, ej fixade, köas efter helgen:** dubbel AI-promptomgång i ImageStudios
    Imagen-flik (DEL 3), meny1-zoner.test.ts fallerar sedan MENY-3 (19/8, orört av
-   HELG-1), fyra av fem bildvägar fortfarande okopplade (Pinterest/YouTube/Threads/
-   Bluesky-plattformssträngar overifierade).
+   HELG-1).
 
 **Nästa session börjar här:** läs det här avsnittet + `docs/STATUS.md` i sin helhet,
 och stäm av punkterna ovan med Håkan.
