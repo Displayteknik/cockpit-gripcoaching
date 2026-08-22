@@ -2469,12 +2469,15 @@ byggpunkter. Enda öppna poängmodellsfrågan är trappstegsfunktionen — beslu
 skrivet, ingen kod, väntar Håkans beslut efter helgen (se KALIBRERING-2-sektionen).
 
 **Väntar på Håkan innan det går vidare:**
-1. **DEL 2:** granska den omkörda DT-rapporten (`scripts/_rapport1-dt-ny-kund.md` /
-   `_agare.md`, redan skickade till dig) mot ditt kontrollprotokoll + prisstickprovet.
-   Öppen fråga: ska "kundrapporten slutar vid ordlistan" tolkas bokstavligt (då
-   försvinner handlingslistan och lucklistan också) eller som "beslutstabellen bort"
-   (så jag byggt den)?
-2. **DEL 7:** Stripe-konto + testnycklar innan betalkedjan kan köras skarpt.
+1. ~~**DEL 2:** granska den omkörda DT-rapporten mot kontrollprotokollet.~~ **GODKÄND
+   21/8** — Håkan granskade en renderad version (Cockpits befintliga rapportmall, inte
+   den råa markdown-filen) och var "supernöjd med rapporten". Tonfrågan stängd. Kvar:
+   pricing_notes-beslutet (fylla i fältet på `/dashboard/profil` eller sänka kravet i
+   protokollet) — inte uttryckligen besvarat, fråga honom separat om det behövs.
+2. **DEL 7:** Stripe — Håkan har kopierat en testnyckel och lägger in den i Cockpit
+   (`/dashboard/betalning` → Stripe-fliken) 21/8 kväll. Nästa steg efter sparad nyckel:
+   webhook-adressen (visas i samma vy) in i Stripe → Utvecklare → Webhooks, sedan
+   `whsec_...`-nyckeln tillbaka in i Cockpit, sedan "Skapa saknade priser i Stripe".
 3. **DEL 8:** mejldelen av saldolarmet är oprövad i skarp drift (RESEND_API_KEY saknas
    lokalt) — bevisas automatiskt av morgondagens cron (06:30) eller genom att köra om
    skriptet efter deploy.
