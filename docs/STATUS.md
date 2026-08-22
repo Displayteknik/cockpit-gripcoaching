@@ -2474,10 +2474,13 @@ skrivet, ingen kod, väntar Håkans beslut efter helgen (se KALIBRERING-2-sektio
    den råa markdown-filen) och var "supernöjd med rapporten". Tonfrågan stängd. Kvar:
    pricing_notes-beslutet (fylla i fältet på `/dashboard/profil` eller sänka kravet i
    protokollet) — inte uttryckligen besvarat, fråga honom separat om det behövs.
-2. **DEL 7:** Stripe — Håkan har kopierat en testnyckel och lägger in den i Cockpit
-   (`/dashboard/betalning` → Stripe-fliken) 21/8 kväll. Nästa steg efter sparad nyckel:
-   webhook-adressen (visas i samma vy) in i Stripe → Utvecklare → Webhooks, sedan
-   `whsec_...`-nyckeln tillbaka in i Cockpit, sedan "Skapa saknade priser i Stripe".
+2. ~~**DEL 7:** Stripe-koppling.~~ **KLAR 21/8 kväll** — testnyckel + webhook kopplade,
+   "Kopplingen fungerar" bekräftat i Cockpit (`/dashboard/betalning` → Stripe-fliken).
+   **En verklig fälla på vägen:** Håkan klistrade först in `pk_test_...` (den publika
+   nyckeln) i fältet för hemlig nyckel — Stripe avvisade den tydligt ("cannot be made
+   with a publishable API key"), rättat till `sk_test_...`. Kvar innan betalkedjan är
+   helt skarp: klicka "Skapa saknade priser i Stripe" under fliken "Planer och priser"
+   (synkar 1990/2490/149 kr-priserna automatiskt) — inte gjort än, litet steg.
 3. **DEL 8:** mejldelen av saldolarmet är oprövad i skarp drift (RESEND_API_KEY saknas
    lokalt) — bevisas automatiskt av morgondagens cron (06:30) eller genom att köra om
    skriptet efter deploy.
